@@ -1,0 +1,1 @@
+import { Router } from 'express';import { store,nextId } from '../db/store.js';const r=Router();r.post('/login',(req,res)=>{const { email, role='artist' }=req.body||{};let u=store.users.find(x=>x.email===email);if(!u){u={id:nextId('u'),email,role,name:email.split('@')[0]};store.users.push(u);}u.role=role;res.json({user:u});});export default r;

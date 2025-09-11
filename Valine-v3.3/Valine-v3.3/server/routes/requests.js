@@ -1,0 +1,1 @@
+import { Router } from 'express';import { store,nextId } from '../db/store.js';const r=Router();r.get('/',(_req,res)=>{res.json(store.requests);});r.post('/',(req,res)=>{const { scriptId, requesterId='u2' } = req.body||{};const item={id:nextId('r'),scriptId,requesterId,status:'PENDING'};store.requests.unshift(item);res.json(item);});export default r;
