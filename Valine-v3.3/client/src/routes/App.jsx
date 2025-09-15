@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import MarketingLayout from '../layouts/MarketingLayout';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 // Lazy load all pages to enable code splitting. Marketing pages are grouped
 // separately from the authenticated app pages. This ensures that public
@@ -31,11 +32,24 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Requests = lazy(() => import('../pages/Requests'));
 const Trending = lazy(() => import('../pages/Trending'));
 
+// Onboarding and error pages
+const ProfileSetup = lazy(() => import('../pages/ProfileSetup'));
+const NotFound = lazy(() => import('../pages/NotFound'));
+const Forbidden = lazy(() => import('../pages/Forbidden'));
+
 // Protect routes that require a logged-in user. If the user is not
-// authenticated, redirect them to the login page.
+// authenticated, redirect them to the login page. If the user is
+// authenticated but has not completed their profile, redirect them to
+// the onboarding wizard. The location hook is used to prevent a
+// redirect loop when already on the setup page.
 function Protected({ children }) {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/login" replace />;
+  const location = useLocation();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.profileComplete && location.pathname !== '/setup') {
+    return <Navigate to="/setup" replace />;
+  }
+  return children;
 }
 
 export default function App() {
@@ -57,6 +71,8 @@ export default function App() {
           {/* Authenticated application. These pages render after the user has
               logged in and display the LinkedIn/Instagram-inspired dashboard. */}
           <Route element={<AppLayout />}>
+            {/* Onboarding route is outside Protected so incomplete profiles can access it */}
+            <Route path="setup" element={<ProfileSetup />} />
             <Route
               path="feed"
               element={
@@ -177,12 +193,12 @@ export default function App() {
                 </Protected>
               }
             />
-            {/* Catch-all within the app redirects to feed */}
-            <Route path="*" element={<Navigate to="/feed" replace />} />
+            {/* Catch-all within the app shows a 404 */}
+            <Route path="*" element={<NotFound />} />
           </Route>
 
-          {/* Catch-all for public routes: redirect to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Catch-all for anything else shows a 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </AuthProvider>

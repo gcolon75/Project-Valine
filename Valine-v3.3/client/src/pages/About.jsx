@@ -77,7 +77,23 @@ export default function About() {
       </section>
       <section className="marketing-section">
         <h2>Have Questions?</h2>
-        <p>Feel free to call or email us. We’re here to support you on your creative journey.</p>
+        <p>Feel free to reach out. We’re here to support you on your creative journey.</p>
+        {/* Contact form placeholder. This form does not send anywhere yet */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            alert('Thanks for reaching out! We will respond soon.');
+            e.target.reset();
+          }}
+          style={{ maxWidth: '600px', margin: '2rem auto', display: 'grid', gap: '1rem' }}
+        >
+          <input type="text" name="name" placeholder="Your Name" required style={{ padding: '0.5rem' }} />
+          <input type="email" name="email" placeholder="Your Email" required style={{ padding: '0.5rem' }} />
+          <textarea name="message" placeholder="Your Message" rows={4} required style={{ padding: '0.5rem' }} />
+          <button type="submit" className="cta-button" style={{ width: 'fit-content', padding: '0.5rem 1.5rem' }}>
+            Send Message
+          </button>
+        </form>
       </section>
     </div>
   );

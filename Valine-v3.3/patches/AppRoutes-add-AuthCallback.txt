@@ -1,0 +1,6 @@
+// In: client/src/routes/App.jsx
+// Add near other lazy imports:
+const AuthCallback = lazy(() => import('../pages/AuthCallback'));
+
+// Inside the marketing/public Routes block, add:
+<Route path="auth/callback" element={<AuthCallback />} />

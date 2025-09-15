@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Navigation bar for the authenticated app pages. This component is only used
@@ -9,6 +10,7 @@ import { useEffect } from 'react';
  */
 export default function NavBar() {
   const nav = useNavigate();
+  const { user, logout, switchRole } = useAuth();
 
   // Register keyboard shortcuts for quick navigation within the app.
   useEffect(() => {
@@ -33,11 +35,17 @@ export default function NavBar() {
   });
 
   return (
-    <nav className="nav">
-      {/* Brand link points to the feed for logged-in users */}
-      <NavLink to="/feed" className="brand" style={linkStyle}>
-        Joint
+    <nav className="nav" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      {/* Brand: icon plus text. Clicking it goes to the feed */}
+      <NavLink
+        to="/feed"
+        className="brand"
+        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', fontWeight: 700 }}
+      >
+        <img src="/assets/logo.png" alt="Joint logo" style={{ height: '1.5rem' }} />
+        <span>Joint</span>
       </NavLink>
+      {/* Navigation links */}
       <NavLink to="/feed" style={linkStyle}>
         Feed
       </NavLink>
@@ -53,7 +61,31 @@ export default function NavBar() {
       <NavLink to="/search" style={linkStyle}>
         Search
       </NavLink>
-      <input id="global-search" placeholder="Search..." />
+      {/* Global search input */}
+      <input id="global-search" placeholder="Search..." style={{ marginLeft: 'auto' }} />
+      {/* User actions: show when logged in */}
+      {user && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem' }}>
+          <span style={{ fontWeight: 500 }}>{user.name || user.email} ({user.role})</span>
+          <button
+            className="btn"
+            style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+            onClick={() => {
+              const nextRole = user.role === 'artist' ? 'observer' : 'artist';
+              switchRole(nextRole);
+            }}
+          >
+            Switch to {user?.role === 'artist' ? 'Observer' : 'Artist'}
+          </button>
+          <button
+            className="btn"
+            style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+            onClick={logout}
+          >
+            Log Out
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

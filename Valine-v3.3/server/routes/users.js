@@ -22,4 +22,12 @@ r.post('/:id/follow',(req,res)=>{
     return res.json({followed:true});
   }
 });
+
+// Update a user's profile. Accepts a partial user object in the body.
+r.put('/:id', (req, res) => {
+  const user = store.users.find((u) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  Object.assign(user, req.body || {});
+  return res.json({ user });
+});
 export default r;

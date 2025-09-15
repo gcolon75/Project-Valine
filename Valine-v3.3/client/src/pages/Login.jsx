@@ -17,8 +17,14 @@ export default function Login() {
     // Use demo credentials for login. The server will create or
     // return a user with this email and role.
     const email = role === 'artist' ? 'artist@demo.com' : 'observer@demo.com';
-    await login(email, '', role);
-    navigate('/feed');
+    const u = await login(email, '', role);
+    // If the user has not completed their profile, send them to the
+    // onboarding wizard. Otherwise go straight to the feed.
+    if (!u.profileComplete) {
+      navigate('/setup');
+    } else {
+      navigate('/feed');
+    }
   };
 
   return (

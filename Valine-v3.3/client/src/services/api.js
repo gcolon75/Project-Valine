@@ -19,3 +19,7 @@ export const postMessage=(msg)=>req('/messages',{method:'POST',body:JSON.stringi
 
 export const likeScript = (id, userId) => req(`/scripts/${id}/like`, { method: 'POST', body: JSON.stringify({ userId }) });
 export const followUser = (id, userId) => req(`/users/${id}/follow`, { method: 'POST', body: JSON.stringify({ userId }) });
+
+// Update a user's profile. Accepts the user id and partial data to merge.
+export const updateUser = (id, data) =>
+  req(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
