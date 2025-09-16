@@ -1,16 +1,12 @@
 import { Outlet, NavLink } from 'react-router-dom';
-
-// Import marketing styles. These styles are scoped under the
-// `.marketing` container defined in marketing.css and will not
-// interfere with the internal app styles.
 import '../styles/marketing.css';
 
 /**
  * MarketingLayout wraps the public-facing pages of the Joint website.
  * It defines a simplified navigation bar and footer using the dark
- * and green colour palette. The layout sets a `.marketing` class
+ * and emerald colour palette. The layout sets a `.marketing` class
  * wrapper to scope CSS variables and styles defined for marketing
- * pages in global.css.
+ * pages.
  */
 export default function MarketingLayout() {
   return (

@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import artistImg from '/assets/login-artist.png';
-import observerImg from '/assets/login-seeker.png';
+import observerImg from '/assets/login-observer.png';
 
 /**
  * Login page with role selection. Presents two options: login as
  * Artist or as Observer. Selecting an option invokes the AuthContext
  * login function with the appropriate role and redirects the user to
- * the feed (dashboard). This page uses marketing styles.
+ * the feed (dashboard). This page uses marketing styling.
  */
 export default function Login() {
   const navigate = useNavigate();
@@ -35,20 +35,28 @@ export default function Login() {
       </section>
       <div className="login-options">
         <div className="login-option">
-          <img src={artistImg} alt="Login as Artist" />
+          <img
+            src={artistImg}
+            alt="Login as Artist"
+            className="login-image"
+          />
           <h3>Login as Artist</h3>
           <button
-            className="btn"
+            className="btn primary"
             onClick={() => handleLogin('artist')}
           >
             Continue as Artist
           </button>
         </div>
         <div className="login-option">
-          <img src={observerImg} alt="Login as Observer" />
+          <img
+            src={observerImg}
+            alt="Login as Observer"
+            className="login-image"
+          />
           <h3>Login as Observer</h3>
           <button
-            className="btn"
+            className="btn primary"
             onClick={() => handleLogin('observer')}
           >
             Continue as Observer

@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import heroImg from '/assets/hero.jpg';
 
 /**
- * Marketing landing page (home). Displays a hero section with a bold
- * headline and a call to action, followed by a section explaining
- * the core benefits of joining the platform and a final invite
- * section. Uses marketing-specific CSS classes defined in
- * `marketing.css`.
+ * Marketing landing page for Joint. The home page introduces the
+ * platform with a bold hero section, highlights a few core benefits
+ * and invites visitors to join the community. The dark and emerald
+ * colour palette draws inspiration from modern creative networks
+ * while remaining true to the Joint brand.
  */
 export default function Home() {
   return (
@@ -22,10 +22,10 @@ export default function Home() {
         }}
       >
         <div className="content">
-          <h1>Artists Connecting to Seekers&nbsp;24/7</h1>
+          <h1>Connect. Collaborate. Perform.</h1>
           <p>
-            Your stage, your story. Bring your creative vision to life and
-            discover the perfect collaborators.
+            A networking platform for new artists in the entertainment
+            industry.
           </p>
           <Link to="/login" className="cta-button">
             Get&nbsp;Started
@@ -57,16 +57,13 @@ export default function Home() {
         </div>
       </section>
       {/* Community invite section */}
-      <section
-        className="marketing-section"
-        style={{ background: 'var(--dark-color)', color: 'var(--contrast-color)' }}
-      >
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          Join Our Community
+      <section className="marketing-section dark-section">
+        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          Join the community
         </h2>
         <p
           style={{
-            maxWidth: '800px',
+            maxWidth: '700px',
             margin: '0 auto',
             textAlign: 'center',
           }}
