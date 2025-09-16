@@ -1,0 +1,21 @@
+QUICKEST WAYS TO APPLY THIS PACK
+
+Option A — GitHub web (no terminal)
+1) Download this ZIP and extract it locally.
+2) In your repo on github.com, open the folder you want to update (e.g., `Valine-v3.3/client/src/pages/`).
+3) Click **Add file → Upload files**, drag the corresponding folder from this pack, and **Commit**.
+   • Repeat for: client/src/pages, client/src/styles, client/src/layouts, client/src/components,
+     client/public, api/prisma, infra, infra/functions/presign, scripts, and amplify.yml at root.
+4) Push a new branch named `next-steps` and open a PR (GitHub website will offer this in the commit dialog).
+
+Option B — Local git (fastest end‑to‑end)
+```bash
+git clone https://github.com/<you>/Project-Valine.git
+cd Project-Valine
+git checkout -b next-steps
+unzip /path/to/Project-Valine_next-steps.zip -d .
+git add .
+git commit -m "Next steps scaffold: infra, prisma, presign, client polish"
+git push -u origin next-steps
+```
+Open a PR and merge.

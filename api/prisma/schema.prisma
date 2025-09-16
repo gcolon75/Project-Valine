@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("artist") // 'artist' | 'observer'
+  createdAt DateTime @default(now())
+  scripts   Script[]
+  auditions Audition[]
+}
+model Script {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+model Audition {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String
+  hostId    String
+  host      User     @relation(fields: [hostId], references: [id])
+  createdAt DateTime @default(now())
+}

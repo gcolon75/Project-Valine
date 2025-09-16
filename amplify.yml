@@ -1,11 +1,12 @@
 version: 1
 applications:
-  - appRoot: .
+  - appRoot: Valine-v3.3/client
     frontend:
       phases:
         preBuild:
           commands:
             - npm ci
+            - 'echo "VITE_API_URL=$VITE_API_URL" > .env'
         build:
           commands:
             - npm run build
