@@ -1,0 +1,14 @@
+{
+  "name": "valine-root",
+  "private": true,
+  "version": "0.0.32",
+  "scripts": {
+    "setup": "npm --prefix client i && npm --prefix server i",
+    "dev": "concurrently -k -n CLIENT,API -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

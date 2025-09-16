@@ -1,0 +1,1 @@
+import { Router } from 'express';import { store } from '../db/store.js';const r=Router();r.get('/',(req,res)=>{const q=(req.query.q||'').toLowerCase();const list=[...store.scripts.map(s=>({id:s.id,kind:'script',title:s.title})),...store.auditions.map(a=>({id:a.id,kind:'audition',title:a.title}))];res.json(list.filter(x=>x.title.toLowerCase().includes(q)));});export default r;

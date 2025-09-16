@@ -1,0 +1,1 @@
+import { Router } from 'express';import { store } from '../db/store.js';const r=Router();r.get('/',(req,res)=>{const { userId } = req.query;const list=userId?store.notifications.filter(n=>n.userId===userId):store.notifications;res.json(list);});export default r;
