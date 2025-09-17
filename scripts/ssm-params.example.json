@@ -1,0 +1,6 @@
+{
+  "bucket_name": "valine-uploads-yourname",
+  "allowed_origins": "http://localhost:5173",
+  "database_url": "postgresql://USER:PASS@HOST:5432/valine",
+  "jwt_secret": "replace-with-strong-secret"
+}

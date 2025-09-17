@@ -1,0 +1,44 @@
+service: valine-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${env:AWS_REGION, 'us-west-2'}
+  stage: ${env:STAGE, 'dev'}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - ${ssm:/valine/${self:provider.stage}/allowed_origins}
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+  environment:
+    BUCKET_NAME: ${ssm:/valine/${self:provider.stage}/bucket_name}
+    ALLOWED_TYPES: image/png,image/jpeg,application/pdf,video/mp4
+    URL_TTL_SECONDS: 300
+
+functions:
+  presign:
+    handler: infra/functions/presign/index.handler
+    events:
+      - httpApi:
+          method: POST
+          path: /uploads/presign
+
+resources:
+  Resources:
+    UploadsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${ssm:/valine/${self:provider.stage}/bucket_name}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders: ["*"]
+              AllowedMethods: ["GET","PUT"]
+              AllowedOrigins: ["${ssm:/valine/${self:provider.stage}/allowed_origins}"]
+              MaxAge: 3000

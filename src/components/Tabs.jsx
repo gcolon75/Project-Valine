@@ -1,0 +1,1 @@
+import { useState } from 'react';export default function Tabs({tabs,defaultIndex=0}){const [idx,setIdx]=useState(defaultIndex);const current=tabs[idx]||{};return(<div><div style={{display:'flex',gap:8,marginBottom:12}}>{tabs.map((t,i)=><button key={i} className={'btn'+(i===idx?' primary':'')} onClick={()=>setIdx(i)}>{t.label}</button>)}</div><div>{current.content}</div></div>);}

@@ -1,0 +1,1 @@
+export default function CommentList({comments}){if(!comments||!comments.length)return <p style={{color:'var(--muted)'}}>No comments yet.</p>;return(<ul style={{listStyle:'none',padding:0}}>{comments.map(c=><li key={c.id} style={{marginBottom:8}}><b>{c.userId}</b> <span style={{color:'var(--muted)',fontSize:12}}>{c.createdAt}</span><p>{c.content}</p></li>)}</ul>);}

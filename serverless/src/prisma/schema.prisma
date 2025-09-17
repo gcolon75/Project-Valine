@@ -1,0 +1,46 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      String
+  name      String?
+  createdAt DateTime @default(now())
+  scripts   Script[]
+  auditions Audition[]
+}
+
+model Script {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String?
+  isDraft   Boolean  @default(true)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Audition {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String?
+  isDraft   Boolean  @default(true)
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model AccessRequest {
+  id          String   @id @default(cuid())
+  scriptId    String
+  requesterId String
+  status      String   @default("PENDING") // APPROVED | REJECTED
+  createdAt   DateTime @default(now())
+}

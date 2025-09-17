@@ -1,0 +1,1 @@
+export default function Card({title,children,actions}){return(<div className='card'>{title&&<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}><b>{title}</b><div>{actions}</div></div>}{children}</div>);}
