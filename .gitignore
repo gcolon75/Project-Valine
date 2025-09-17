@@ -1,19 +1,4 @@
-# Node modules and build outputs
-node_modules/
-*/node_modules/
-dist/
-build/
-
-# Environment files
-.env
-.env.*
-
-# OS files
+node_modules
+dist
 .DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Serverless build outputs
-.serverless/
+.env
