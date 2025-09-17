@@ -95,7 +95,15 @@ export default function App() {
                 <Protected>
                   <NewScript />
                 </Protected>
-              }
+              } 
+            />
+            <Route
+              path="dashboard"
+              element={
+                <Protected>
+                <Feed /> {/* or <Dashboard /> if you have a dedicated page */}
+                </Protected>
+          }
             />
             <Route
               path="scripts/:id"

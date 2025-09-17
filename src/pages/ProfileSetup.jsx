@@ -59,7 +59,7 @@ export default function ProfileSetup() {
     } catch {
       /* noop */
     }
-    navigate('/feed');
+    navigate('/dashboard');
   };
 
   const renderArtistFields = () => (

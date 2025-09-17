@@ -1,6 +1,18 @@
-import React,{Suspense} from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './routes/App';
-import './styles/global.css';
-createRoot(document.getElementById('root')).render(<BrowserRouter><Suspense fallback={<div style={{padding:20}}>Loading...</div>}><App/></Suspense></BrowserRouter>);
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import "./index.css";
+
+// ✅ Use the routed App (old flow), not "./App"
+import App from "./routes/App";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
