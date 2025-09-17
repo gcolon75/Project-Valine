@@ -1,4 +1,7 @@
 /* Reset-ish */
+/* Import custom global and marketing styles */
+@import url('./styles/global.css');
+@import url('./styles/marketing.css');
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #0f172a; background: #fff; }
