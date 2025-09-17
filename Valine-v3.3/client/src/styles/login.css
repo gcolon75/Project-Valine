@@ -1,0 +1,93 @@
+/* ---- Login page layout ---- */
+.login-page{
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 48px 16px 80px;
+}
+
+.login-header{
+  text-align: center;
+  margin-bottom: 24px;
+  color: #cde7ff;
+}
+.login-title{
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+.login-subtitle{
+  margin: 0;
+  opacity: .8;
+}
+
+/* ---- Card grid ---- */
+.roles-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+  justify-items: center;
+}
+
+.role-card{
+  width: 320px;
+  height: 460px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #0b1320;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  cursor: pointer;
+  outline: none;
+  transition: transform .15s ease, box-shadow .15s ease;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.role-card:hover,
+.role-card:focus{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0,0,0,.45);
+}
+
+/* Top image block keeps consistent height across cards */
+.role-thumb{
+  width: 100%;
+  height: 60%;
+  overflow: hidden;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+.role-thumb img{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Body flexes and pins CTA to bottom */
+.role-body{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  text-align: center;
+}
+.role-title{
+  color: #e7f4ff;
+  margin: 4px 0 12px;
+  font-size: 18px;
+}
+
+.role-cta{
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 0;
+  background: #18c060;
+  color: #07111c;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+}
+.role-cta:focus{ outline: 2px solid #9ff3c7; outline-offset: 3px; }
