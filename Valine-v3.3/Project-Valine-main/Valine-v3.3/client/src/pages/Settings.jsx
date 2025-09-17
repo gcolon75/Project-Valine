@@ -1,1 +1,0 @@
-import { useAuth } from '../context/AuthContext';export default function Settings(){const {user}=useAuth();return(<div><h2>Settings</h2><div className='card'><label>Name<input defaultValue={user.name||''}/></label><label>Email<input defaultValue={user.email||''}/></label><button className='btn primary'>Save</button></div></div>);}

@@ -1,1 +1,0 @@
-import Tabs from '../components/Tabs';export default function Profile(){const tabs=[{label:'Overview',content:<p>Bio and reels coming soon.</p>},{label:'Scripts',content:<p>User scripts list.</p>},{label:'Auditions',content:<p>User auditions list.</p>},{label:'Reviews',content:<p>User reviews.</p>}];return(<div><h2>Profile</h2><Tabs tabs={tabs}/></div>);}
