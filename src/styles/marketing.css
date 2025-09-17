@@ -207,3 +207,12 @@
   margin-bottom: 1.5rem;
   width: fit-content;
 }
+.marketing .cta-button {
+  background: var(--primary-color);
+  color: var(--dark-color);
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  display: inline-block;
+  text-decoration: none;
+}

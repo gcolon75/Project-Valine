@@ -1,1 +1,10 @@
-import { useEffect,useState } from 'react';import * as api from '../services/api';export default function Requests(){const [items,setItems]=useState([]);const refresh=()=>api.listRequests().then(setItems).catch(()=>setItems([]));useEffect(()=>{refresh();},[]);const approve=async(id)=>{await api.requestAccess(id);// not actual but stub ; refresh();};return(<div><h2>Access Requests</h2>{items.map(r=>(<div key={r.id} className='card'><b>{r.scriptId}</b> from {r.requesterId}<div>Status: {r.status}</div></div>))}</div>);}
+import React from "react";
+
+export default function Requests() {
+  return (
+    <div className="container" style={{ padding: "1rem 1.5rem" }}>
+      <h1>Requests</h1>
+      <p>Coming soon — your collaboration requests will show up here.</p>
+    </div>
+  );
+}
