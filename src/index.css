@@ -1,11 +1,86 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Reset-ish */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #0f172a; background: #fff; }
 
-:root { color-scheme: light; }
+/* Layout helpers */
+.container-narrow { max-width: 960px; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+.mt-1 { margin-top: .25rem; }
+.mt-2 { margin-top: .5rem; }
+.mt-6 { margin-top: 1.5rem; }
+.grid { display: grid; }
+.gap-6 { gap: 1.5rem; }
+.card { background: #fff; border-radius: 1rem; box-shadow: 0 6px 20px rgba(2,6,23,.08); }
 
-.container-narrow { max-width: 1100px; }
-.btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium transition; }
-.btn-brand { @apply bg-brand text-white hover:bg-brand-dark; }
-.btn-ghost { @apply border border-gray-200 hover:bg-gray-50; }
-.card { @apply rounded-2xl border border-gray-200 shadow-sm bg-white; }
+/* Colors */
+.text-gray-600 { color: #475569; }
+.text-gray-700 { color: #334155; }
+
+/* Buttons */
+.cta-button,
+.btn.primary,
+.btn.btn-brand {
+  display: inline-block;
+  padding: .75rem 1.25rem;
+  border-radius: .75rem;
+  text-decoration: none;
+  font-weight: 600;
+  background: #059669;         /* emerald */
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.cta-button:hover,
+.btn.primary:hover,
+.btn.btn-brand:hover { filter: brightness(0.95); }
+
+/* Marketing hero */
+.marketing-hero {
+  min-height: 68vh;
+  display: grid;
+  place-items: center;
+  color: #ecfdf5;               /* light emerald */
+}
+.marketing-hero .content {
+  width: 100%;
+  max-width: 1100px;
+  padding: 0 1rem;
+  text-align: left;
+}
+.marketing-hero h1 {
+  margin: 0 0 1rem 0;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.1;
+}
+.marketing-hero p { max-width: 640px; font-size: 1.1rem; }
+
+/* Sections */
+.marketing-features {
+  max-width: 1100px; margin: 3rem auto; padding: 0 1rem;
+  display: grid; gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .marketing-features { grid-template-columns: repeat(3, 1fr); }
+}
+.marketing-feature { background: #f8fafc; border-radius: 1rem; padding: 1.25rem; }
+.marketing-feature h3 { margin: 0 0 .5rem 0; }
+
+.marketing-section { max-width: 1100px; margin: 3rem auto; padding: 0 1rem; }
+.dark-section { background: #052e2b; color: #d1fae5; border-radius: 1rem; padding: 2rem; }
+
+/* Login page layout */
+.login-options {
+  max-width: 1100px; margin: 2rem auto; padding: 0 1rem;
+  display: grid; gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .login-options { grid-template-columns: repeat(2, 1fr); }
+}
+.login-option {
+  background: #f8fafc; border-radius: 1rem; padding: 1.5rem;
+  text-align: center; box-shadow: 0 6px 20px rgba(2,6,23,.06);
+}
+.login-image { width: 100%; height: 200px; object-fit: cover; border-radius: .75rem; margin-bottom: 1rem; }

@@ -1,38 +1,33 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import api from '../lib/api'
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const AuthContext = createContext(null)
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(() => {
+    // restore from localStorage (optional)
+    const raw = localStorage.getItem("pv_user");
+    return raw ? JSON.parse(raw) : null;
+  });
 
   useEffect(() => {
-    const token = localStorage.getItem('valine_token')
-    if (!token) { setLoading(false); return }
-    api.get('/auth/me').then(({ data }) => {
-      setUser(data.user)
-    }).catch(() => {
-      localStorage.removeItem('valine_token')
-    }).finally(() => setLoading(false))
-  }, [])
+    if (user) localStorage.setItem("pv_user", JSON.stringify(user));
+    else localStorage.removeItem("pv_user");
+  }, [user]);
 
-  const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password })
-    localStorage.setItem('valine_token', data.token)
-    setUser(data.user)
-  }
+  const login = (role, name = "Guest") => {
+    // you could add token, id, etc. here
+    setUser({ name, role });
+  };
 
-  const logout = () => {
-    localStorage.removeItem('valine_token')
-    setUser(null)
-  }
+  const logout = () => setUser(null);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  const value = useMemo(() => ({ user, login, logout }), [user]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext)
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+}

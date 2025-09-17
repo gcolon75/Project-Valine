@@ -1,7 +1,7 @@
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user } = useAuth();
   return (
     <div className="mx-auto container-narrow px-4 py-10">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
@@ -24,5 +24,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }

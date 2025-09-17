@@ -1,11 +1,10 @@
-import { Routes, Route } from 'react-router-dom'
-
-// adjust these to match your actual files in src/pages
-import Home from '@/pages/Home.jsx'
-import Login from '@/pages/Login.jsx'
-import ArtistAuth from '@/pages/ArtistAuth.jsx'      // or '@/pages/auth/ArtistAuth.jsx'
-import ObserverAuth from '@/pages/ObserverAuth.jsx'  // or '@/pages/auth/ObserverAuth.jsx'
-import AuthCallback from '@/pages/AuthCallback.jsx'  // if you have a callback page
+import { Routes, Route, Navigate } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import ArtistAuth from "./pages/ArtistAuth";
+import ObserverAuth from "./pages/ObserverAuth";
+import Dashboard from "./pages/Dashboard";
+import RequireAuth from "./components/RequireAuth";
 
 export default function App() {
   return (
@@ -14,8 +13,17 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/auth/artist" element={<ArtistAuth />} />
       <Route path="/auth/observer" element={<ObserverAuth />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="*" element={<div>Not Found</div>} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }
