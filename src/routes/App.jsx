@@ -32,6 +32,9 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Requests = lazy(() => import('../pages/Requests'));
 const Trending = lazy(() => import('../pages/Trending'));
 
+// Dashboard page: our new feed with like/comment/bookmark/discover actions
+const Dashboard = lazy(() => import('../pages/Dashboard'));
+
 // Onboarding and error pages
 const ProfileSetup = lazy(() => import('../pages/ProfileSetup'));
 const NotFound = lazy(() => import('../pages/NotFound'));
@@ -82,6 +85,14 @@ export default function App() {
               }
             />
             <Route
+              path="dashboard"
+              element={
+                <Protected>
+                  <Dashboard />
+                </Protected>
+              }
+            />
+            <Route
               path="scripts"
               element={
                 <Protected>
@@ -95,15 +106,7 @@ export default function App() {
                 <Protected>
                   <NewScript />
                 </Protected>
-              } 
-            />
-            <Route
-              path="dashboard"
-              element={
-                <Protected>
-                <Feed /> {/* or <Dashboard /> if you have a dedicated page */}
-                </Protected>
-          }
+              }
             />
             <Route
               path="scripts/:id"
