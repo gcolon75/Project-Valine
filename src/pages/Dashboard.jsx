@@ -4,19 +4,81 @@ import * as api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
+/* -------------------------------------------------------
+   Dashboard: LinkedIn + Instagram-style feed
+   - Toolbar (tabs + search)
+   - Centered feed column
+   - Post cards with like / comment / save / Discover
+   - Empty state + skeletons
+-------------------------------------------------------- */
+
+function DashboardToolbar({ filter, setFilter, setQuery }) {
+  const tabs = ['All', 'Scripts', 'Auditions', 'Following'];
+  return (
+    <div className="card feed-toolbar">
+      <div className="tabs">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            className={`tab ${filter === t ? 'active' : ''}`}
+            onClick={() => setFilter(t)}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <input
+        className="toolbar-search"
+        placeholder="Search posts, tags, people…"
+        onChange={(e) => setQuery(e.target.value)}
+      />
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { items, sentinel } = useInfiniteList((page) => api.feed(page), []);
+  const [filter, setFilter] = useState('All');
+  const [query, setQuery] = useState('');
+
+  const { items, sentinel, end } = useInfiniteList((page) => api.feed(page), []);
+
+  const filtered = items
+    .filter((it) => filter === 'All' || it.kind?.toLowerCase().includes(filter.toLowerCase()))
+    .filter((it) =>
+      !query
+        ? true
+        : (it.title + ' ' + (it.summary || '') + ' ' + (it.tags || []).join(' '))
+            .toLowerCase()
+            .includes(query.toLowerCase())
+    );
 
   return (
     <div className="feed">
-      {items.map((item) => (
+      <DashboardToolbar filter={filter} setFilter={setFilter} setQuery={setQuery} />
+
+      {/* Skeletons while first page loads */}
+      {items.length === 0 && !end && (
+        <div className="skeleton-list">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="card skeleton">
+              <div className="sk-head">
+                <div className="sk-av" />
+                <div className="sk-lines" />
+              </div>
+              <div className="sk-body" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filtered.map((item) => (
         <PostCard key={item.id || item.title} item={item} />
       ))}
 
-      {items.length === 0 && (
+      {items.length === 0 && end && (
         <div className="card empty-state">
           <h3>Your feed is quiet</h3>
-          <p>Post a script or start the mock API to see sample content.</p>
+          <p>Post a script or follow creators to see content here.</p>
           <a href="/scripts" className="btn">Post a Script</a>
         </div>
       )}
@@ -60,7 +122,12 @@ function PostCard({ item }) {
     if (!showComments && item.id) {
       try {
         const list = await api.listComments(item.id);
-        setComments(list.map(c => ({ user: c.author?.name || 'User', body: c.text || c.body })));
+        setComments(
+          list.map((c) => ({
+            user: c.author?.name || 'User',
+            body: c.text || c.body,
+          }))
+        );
       } catch {
         push('Failed to load comments.');
       }
@@ -101,15 +168,18 @@ function PostCard({ item }) {
           )}
           <div>
             <div className="author-name">{item.author?.name || 'Unknown'}</div>
-            <div className="meta">{new Date(item.createdAt || Date.now()).toLocaleDateString()}</div>
+            <div className="meta">
+              {new Date(item.createdAt || Date.now()).toLocaleDateString()}
+            </div>
           </div>
         </div>
-        <span className="pill">{item.kind || ''}</span>
+        {item.kind && <span className="pill">{item.kind}</span>}
       </header>
 
       <div className="post-body">
         <div className="post-title">{item.title}</div>
-        <div className="post-summary">{item.summary}</div>
+        {item.summary && <div className="post-summary">{item.summary}</div>}
+
         {!!(item.tags && item.tags.length) && (
           <div className="post-tags">
             {item.tags.map((tag) => (
@@ -120,9 +190,16 @@ function PostCard({ item }) {
       </div>
 
       <div className="post-actions">
-        <button onClick={toggleLike} className={liked ? 'active' : ''}>👍 {likeCount}</button>
-        <button onClick={toggleBookmark} className={bookmarked ? 'active' : ''}>📌 Save</button>
-        <button onClick={toggleComments}>💬 {comments.length}</button>
+        <button onClick={toggleLike} className={liked ? 'active' : ''}>
+          👍 <span className="count">{likeCount}</span>
+        </button>
+        <button onClick={toggleComments}>
+          💬 <span className="count">{comments.length}</span>
+        </button>
+        <button onClick={toggleBookmark} className={bookmarked ? 'active' : ''}>
+          📌 <span className="count">Save</span>
+        </button>
+        <div className="spacer" />
         <button onClick={requestDiscover} className="discover">Discover</button>
       </div>
 
@@ -130,7 +207,9 @@ function PostCard({ item }) {
         <div className="post-comments">
           {comments.length === 0 && <div className="meta">No comments yet.</div>}
           {comments.map((c, i) => (
-            <div key={i} className="comment"><strong>{c.user}:</strong> {c.body}</div>
+            <div key={i} className="comment">
+              <strong>{c.user}:</strong> {c.body}
+            </div>
           ))}
           <div className="comment-input">
             <input

@@ -26,12 +26,22 @@ export default function AppLayout() {
       </main>
 
       <aside className="rightbar card">
-        <h4 style={{ marginTop: 0 }}>Trending Tags</h4>
-        <div className="tag-cloud">
-          <a href="/search?q=Sci-Fi" className="tag">Sci-Fi</a>
-          <a href="/search?q=Drama" className="tag">Drama</a>
-          <a href="/search?q=Fantasy" className="tag">Fantasy</a>
-          <a href="/search?q=Monologue" className="tag">Monologue</a>
+        <h4 style={{ marginTop: 0 }}>Who to follow</h4>
+        <div className="who-list">
+          {[
+            { name: "Ava Moreno", title: "Screenwriter" },
+            { name: "Kai Turner", title: "Actor" },
+            { name: "Lena Park", title: "Director" },
+          ].map((p) => (
+            <div key={p.name} className="who-item">
+              <div className="avatar placeholder">{p.name[0]}</div>
+              <div className="who-meta">
+                <div className="author-name">{p.name}</div>
+                <div className="meta">{p.title}</div>
+              </div>
+              <button className="btn btn-sm">Follow</button>
+            </div>
+          ))}
         </div>
       </aside>
     </div>
