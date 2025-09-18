@@ -1,2 +1,3 @@
-@import url("./styles/global.css");
-@import url("./styles/marketing.css");
+﻿/* src/index.css — minimal, safe */
+:root {}
+html, body, #root { height: 100%; }
