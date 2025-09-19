@@ -1,4 +1,3 @@
-// src/layouts/AppLayout.jsx
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -6,14 +5,13 @@ import { useAuth } from "../context/AuthContext";
 export default function AppLayout() {
   const { logout } = useAuth();
   const { pathname } = useLocation();
-  const isDashboard = pathname.startsWith("/dashboard");
 
-  // For the new dashboard page, render without the shell.
+  // Bypass the AppLayout shell on the dashboard page
+  const isDashboard = pathname.startsWith("/dashboard");
   if (isDashboard) {
     return <Outlet />;
   }
 
-  // Default app shell (left menu + content)
   return (
     <div
       className="container"

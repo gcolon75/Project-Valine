@@ -62,14 +62,15 @@ export default function App() {
         </Route>
 
         {/* NEW: Dashboard WITHOUT AppLayout (so no left menu) */}
-        <Route
-  path="dashboard"
-  element={
-    <Protected>
-      <Dashboard />
-    </Protected>
-  }
-/>
+          {/* NEW: dashboard */}
+          <Route
+            path="dashboard"
+            element={
+              <Protected>
+                <Dashboard />
+              </Protected>
+            }
+          />
 
         {/* Authenticated application (App shell with left menu) */}
         <Route element={<AppLayout />}>
