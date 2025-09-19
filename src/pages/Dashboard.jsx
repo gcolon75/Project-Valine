@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import React from "react";
 
 export default function Dashboard() {
@@ -5,23 +6,19 @@ export default function Dashboard() {
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
       <TopNav />
       <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-        {/* LEFT SIDEBAR */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 space-y-6">
             <LeftSidebar />
           </div>
         </aside>
-
-        {/* CENTER FEED */}
         <section className="space-y-6">
           <Composer />
-          {/* Example cards; swap with your real data later */}
           <PostCard
             author="Avery Quinn"
-            role="Writer • Sci-Fi"
+            role="Writer • Sci‑Fi"
             time="2h"
             title="Six-page pilot cold open"
-            body="Looking for feedback on pacing and hook. Short cold open for a space-noir pilot."
+            body="Looking for feedback on pacing and hook. Short cold open for a space‑noir pilot."
             tags={["#Script", "#SciFi", "#NeedEdits"]}
           />
           <PostCard
@@ -34,8 +31,6 @@ export default function Dashboard() {
             gated
           />
         </section>
-
-        {/* RIGHT SIDEBAR */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 space-y-6">
             <RightPanelDiscover />
@@ -47,15 +42,11 @@ export default function Dashboard() {
   );
 }
 
-/* ------------ Top navigation ------------ */
-
 function TopNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 lg:px-6 h-16 flex items-center">
-        {/* left spacer for logo (future) */}
         <div className="w-40 hidden md:block" />
-        {/* centered icons */}
         <nav className="mx-auto">
           <ul className="flex items-center gap-6 text-sm">
             <TopIcon label="Feed" />
@@ -65,7 +56,6 @@ function TopNav() {
             <TopIcon label="Profile" />
           </ul>
         </nav>
-        {/* right spacer */}
         <div className="w-40 hidden md:block" />
       </div>
     </header>
@@ -79,22 +69,16 @@ function TopIcon({ label }) {
         type="button"
         className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 border border-white/10 hover:border-white/20 hover:bg-white/5 transition"
       >
-        <span
-          aria-hidden
-          className="inline-block h-4 w-4 rounded-full border border-white/40"
-        />
+        <span aria-hidden className="inline-block h-4 w-4 rounded-full border border-white/40" />
         <span className="font-medium">{label}</span>
       </button>
     </li>
   );
 }
 
-/* ------------ Left sidebar ------------ */
-
 function LeftSidebar() {
   return (
     <div className="space-y-6">
-      {/* mini profile */}
       <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-full bg-neutral-800 ring-1 ring-white/10" />
@@ -109,47 +93,28 @@ function LeftSidebar() {
           <Stat label="Views" value="3.2k" />
         </div>
       </div>
-
-      {/* quick links */}
       <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
         <p className="text-sm font-semibold mb-3">Quick links</p>
         <ul className="space-y-2 text-sm">
-          <li>
-            <a className="block rounded-md px-2 py-1 hover:bg-white/5">
-              My Profile
-            </a>
-          </li>
-          <li>
-            <a className="block rounded-md px-2 py-1 hover:bg-white/5">
-              Bookmarks
-            </a>
-          </li>
-          <li>
-            <a className="block rounded-md px-2 py-1 hover:bg-white/5">
-              Requests
-            </a>
-          </li>
-          <li>
-            <a className="block rounded-md px-2 py-1 hover:bg-white/5">
-              Settings
-            </a>
-          </li>
+          {["My Profile", "Bookmarks", "Requests", "Settings"].map((item) => (
+            <li key={item}>
+              <a className="block rounded-md px-2 py-1 hover:bg-white/5">{item}</a>
+            </li>
+          ))}
         </ul>
       </div>
-
-      {/* saved tags */}
       <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
         <p className="text-sm font-semibold mb-3">Saved tags</p>
         <div className="flex flex-wrap gap-2 text-xs">
           {["#SciFi", "#Comedy", "#Audition", "#Script", "#ShortFilm"].map(
-            (t) => (
+            (tag) => (
               <span
-                key={t}
+                key={tag}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1"
               >
-                {t}
+                {tag}
               </span>
-            )
+            ),
           )}
         </div>
       </div>
@@ -166,8 +131,6 @@ function Stat({ label, value }) {
   );
 }
 
-/* ------------ Composer + cards ------------ */
-
 function Composer() {
   return (
     <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
@@ -180,12 +143,12 @@ function Composer() {
             className="w-full bg-transparent outline-none placeholder:text-neutral-500"
           />
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {["Add media", "Add tags", "Preview"].map((a) => (
+            {["Add media", "Add tags", "Preview"].map((action) => (
               <button
-                key={a}
+                key={action}
                 className="text-xs rounded-full border border-white/10 px-3 py-1 hover:bg-white/5"
               >
-                {a}
+                {action}
               </button>
             ))}
             <div className="ms-auto">
@@ -220,9 +183,7 @@ function PostCard({
           </p>
         </div>
       </div>
-
       <div className="aspect-video bg-neutral-800 ring-1 ring-inset ring-white/10" />
-
       <div className="p-4 space-y-3">
         <h3 className="font-semibold">{title}</h3>
         <p className="text-sm text-neutral-300">{body}</p>
@@ -241,7 +202,9 @@ function PostCard({
           <CardAction label="Save" />
           <CardAction label="Comment" />
           <div className="ms-auto">
-            <button className="rounded-full border border-emerald-600/40 bg-emerald-600/10 px-3 py-1.5 text-xs hover:bg-emerald-600/20">
+            <button
+              className="rounded-full border border-emerald-600/40 bg-emerald-600/10 px-3 py-1.5 text-xs hover:bg-emerald-600/20"
+            >
               {gated ? "Discover (request access)" : "Discover"}
             </button>
           </div>
@@ -259,8 +222,6 @@ function CardAction({ label }) {
   );
 }
 
-/* ------------ Right sidebar ------------ */
-
 function RightPanelDiscover() {
   return (
     <section className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden">
@@ -275,7 +236,9 @@ function RightPanelDiscover() {
               <p className="text-sm font-medium truncate">Creator {i}</p>
               <p className="text-xs text-neutral-400 truncate">Actor • Drama</p>
             </div>
-            <button className="ms-auto rounded-full border border-white/10 px-3 py-1 text-xs hover:bg-white/5">
+            <button
+              className="ms-auto rounded-full border border-white/10 px-3 py-1 text-xs hover:bg-white/5"
+            >
               View
             </button>
           </div>
@@ -294,14 +257,14 @@ function RightPanelTrending() {
       <div className="p-4">
         <div className="flex flex-wrap gap-2 text-xs">
           {["#Monologue", "#SciFi", "#ShortFilm", "#Casting", "#Reading"].map(
-            (t) => (
+            (tag) => (
               <span
-                key={t}
+                key={tag}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1"
               >
-                {t}
+                {tag}
               </span>
-            )
+            ),
           )}
         </div>
         <div className="mt-4 text-xs text-neutral-400">
