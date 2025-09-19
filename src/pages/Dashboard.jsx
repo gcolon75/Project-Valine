@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React from "react";
 
 export default function Dashboard() {
@@ -6,15 +5,17 @@ export default function Dashboard() {
     <div className="min-h-screen bg-neutral-950 text-neutral-100">
       <TopNav />
       <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+        {/* LEFT SIDEBAR */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 space-y-6">
             <LeftSidebar />
           </div>
         </aside>
 
+        {/* CENTER FEED */}
         <section className="space-y-6">
           <Composer />
-          {/* example cards; swap with your real data later */}
+          {/* Example cards; swap with your real data later */}
           <PostCard
             author="Avery Quinn"
             role="Writer • Sci-Fi"
@@ -34,6 +35,7 @@ export default function Dashboard() {
           />
         </section>
 
+        {/* RIGHT SIDEBAR */}
         <aside className="hidden lg:block">
           <div className="sticky top-24 space-y-6">
             <RightPanelDiscover />
