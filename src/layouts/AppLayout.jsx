@@ -1,13 +1,34 @@
+// src/layouts/AppLayout.jsx
 import React from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function AppLayout() {
   const { logout } = useAuth();
+  const { pathname } = useLocation();
+  const isDashboard = pathname.startsWith("/dashboard");
+
+  // For the new dashboard page, render without the shell.
+  if (isDashboard) {
+    return <Outlet />;
+  }
+
+  // Default app shell (left menu + content)
   return (
-    <div className="container" style={{ display:"grid", gridTemplateColumns:"250px 1fr", gap:"1rem", minHeight:"100vh" }}>
-      <aside className="card" style={{ position:"sticky", top:"1rem", height:"fit-content" }}>
-        <h3 style={{ marginTop:0 }}>Menu</h3>
+    <div
+      className="container"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "250px 1fr",
+        gap: "1rem",
+        minHeight: "100vh",
+      }}
+    >
+      <aside
+        className="card"
+        style={{ position: "sticky", top: "1rem", height: "fit-content" }}
+      >
+        <h3 style={{ marginTop: 0 }}>Menu</h3>
         <div className="grid">
           <Link to="/dashboard">Home</Link>
           <Link to="/scripts">Scripts</Link>
@@ -17,10 +38,14 @@ export default function AppLayout() {
           <Link to="/notifications">Notifications</Link>
           <Link to="/bookmarks">Bookmarks</Link>
           <Link to="/settings">Settings</Link>
-          <button className="btn" onClick={logout}>Logout</button>
+          <button className="btn" onClick={logout}>
+            Logout
+          </button>
         </div>
       </aside>
-      <main><Outlet /></main>
+      <main>
+        <Outlet />
+      </main>
     </div>
   );
 }
