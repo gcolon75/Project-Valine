@@ -1,4 +1,3 @@
-// src/layouts/AppLayout.jsx
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -7,11 +6,14 @@ export default function AppLayout() {
   const { logout } = useAuth();
   const { pathname } = useLocation();
 
-  // skip the shell for the dashboard route
-  if (pathname.startsWith("/dashboard")) {
+  // Bypass the layout on dashboard *and* setup pages
+  const bypassLayout =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/setup");
+  if (bypassLayout) {
     return <Outlet />;
   }
 
+  // old menu and container remain for other pages
   return (
     <div
       className="container"
