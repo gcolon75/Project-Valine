@@ -11,6 +11,7 @@ const Home = lazy(() => import('../pages/Home'));
 const About = lazy(() => import('../pages/About'));
 const BecomeArtist = lazy(() => import('../pages/BecomeArtist'));
 const BecomeObserver = lazy(() => import('../pages/BecomeObserver'));
+const Join = lazy(() => import('../pages/Join')); // NEW: combined Join page
 const Login = lazy(() => import('../pages/Login'));
 
 // Authenticated app pages
@@ -56,21 +57,22 @@ export default function App() {
         <Route element={<MarketingLayout />}>
           <Route index element={<Home />} />
           <Route path="about-us" element={<About />} />
+          {/* Keep these for backward compatibility; the components will redirect to /join */}
           <Route path="become-artist" element={<BecomeArtist />} />
           <Route path="become-observer" element={<BecomeObserver />} />
+          <Route path="join" element={<Join />} /> {/* NEW combined join page */}
           <Route path="login" element={<Login />} />
         </Route>
 
-        {/* NEW: Dashboard WITHOUT AppLayout (so no left menu) */}
-          {/* NEW: dashboard */}
-          <Route
-            path="dashboard"
-            element={
-              <Protected>
-                <Dashboard />
-              </Protected>
-            }
-          />
+        {/* Dashboard outside of AppLayout (no side menu) */}
+        <Route
+          path="dashboard"
+          element={
+            <Protected>
+              <Dashboard />
+            </Protected>
+          }
+        />
 
         {/* Authenticated application (App shell with left menu) */}
         <Route element={<AppLayout />}>
