@@ -6,15 +6,13 @@ import MarketingLayout from '../layouts/MarketingLayout';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 
-// Marketing (public) pages
+// ✅ Marketing (public) pages — only the ones we actually have
 const Home = lazy(() => import('../pages/Home'));
 const About = lazy(() => import('../pages/About'));
-const BecomeArtist = lazy(() => import('../pages/BecomeArtist'));
-const BecomeObserver = lazy(() => import('../pages/BecomeObserver'));
-const Join = lazy(() => import('../pages/Join')); // NEW: combined Join page
+const Join = lazy(() => import('../pages/Join'));
 const Login = lazy(() => import('../pages/Login'));
 
-// Authenticated app pages
+// ✅ Authenticated app pages
 const Feed = lazy(() => import('../pages/Feed'));
 const Scripts = lazy(() => import('../pages/Scripts'));
 const ScriptDetail = lazy(() => import('../pages/ScriptDetail'));
@@ -31,10 +29,8 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Requests = lazy(() => import('../pages/Requests'));
 const Trending = lazy(() => import('../pages/Trending'));
 
-// NEW: Dashboard page
+// ✅ Dashboard + Onboarding + Errors
 const Dashboard = lazy(() => import('../pages/Dashboard'));
-
-// Onboarding and error pages
 const ProfileSetup = lazy(() => import('../pages/ProfileSetup'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 const Forbidden = lazy(() => import('../pages/Forbidden'));
@@ -57,14 +53,11 @@ export default function App() {
         <Route element={<MarketingLayout />}>
           <Route index element={<Home />} />
           <Route path="about-us" element={<About />} />
-          {/* Keep these for backward compatibility; the components will redirect to /join */}
-          <Route path="become-artist" element={<BecomeArtist />} />
-          <Route path="become-observer" element={<BecomeObserver />} />
-          <Route path="join" element={<Join />} /> {/* NEW combined join page */}
+          <Route path="join" element={<Join />} />
           <Route path="login" element={<Login />} />
         </Route>
 
-        {/* Dashboard outside of AppLayout (no side menu) */}
+        {/* Dashboard outside AppLayout (no side menu) */}
         <Route
           path="dashboard"
           element={
@@ -74,133 +67,24 @@ export default function App() {
           }
         />
 
-        {/* Authenticated application (App shell with left menu) */}
+        {/* Authenticated application shell */}
         <Route element={<AppLayout />}>
-          {/* Onboarding route is outside Protected so incomplete profiles can access it */}
           <Route path="setup" element={<ProfileSetup />} />
-
-          <Route
-            path="feed"
-            element={
-              <Protected>
-                <Feed />
-              </Protected>
-            }
-          />
-          <Route
-            path="scripts"
-            element={
-              <Protected>
-                <Scripts />
-              </Protected>
-            }
-          />
-          <Route
-            path="scripts/new"
-            element={
-              <Protected>
-                <NewScript />
-              </Protected>
-            }
-          />
-          <Route
-            path="scripts/:id"
-            element={
-              <Protected>
-                <ScriptDetail />
-              </Protected>
-            }
-          />
-          <Route
-            path="auditions"
-            element={
-              <Protected>
-                <Auditions />
-              </Protected>
-            }
-          />
-          <Route
-            path="auditions/new"
-            element={
-              <Protected>
-                <NewAudition />
-              </Protected>
-            }
-          />
-          <Route
-            path="auditions/:id"
-            element={
-              <Protected>
-                <AuditionDetail />
-              </Protected>
-            }
-          />
-          <Route
-            path="trending"
-            element={
-              <Protected>
-                <Trending />
-              </Protected>
-            }
-          />
-          <Route
-            path="search"
-            element={
-              <Protected>
-                <Search />
-              </Protected>
-            }
-          />
-          <Route
-            path="messages"
-            element={
-              <Protected>
-                <Messages />
-              </Protected>
-            }
-          />
-          <Route
-            path="notifications"
-            element={
-              <Protected>
-                <Notifications />
-              </Protected>
-            }
-          />
-          <Route
-            path="bookmarks"
-            element={
-              <Protected>
-                <Bookmarks />
-              </Protected>
-            }
-          />
-          <Route
-            path="settings"
-            element={
-              <Protected>
-                <Settings />
-              </Protected>
-            }
-          />
-          <Route
-            path="profile/:id"
-            element={
-              <Protected>
-                <Profile />
-              </Protected>
-            }
-          />
-          <Route
-            path="requests"
-            element={
-              <Protected>
-                <Requests />
-              </Protected>
-            }
-          />
-
-          {/* Catch-all within the app */}
+          <Route path="feed" element={<Protected><Feed /></Protected>} />
+          <Route path="scripts" element={<Protected><Scripts /></Protected>} />
+          <Route path="scripts/new" element={<Protected><NewScript /></Protected>} />
+          <Route path="scripts/:id" element={<Protected><ScriptDetail /></Protected>} />
+          <Route path="auditions" element={<Protected><Auditions /></Protected>} />
+          <Route path="auditions/new" element={<Protected><NewAudition /></Protected>} />
+          <Route path="auditions/:id" element={<Protected><AuditionDetail /></Protected>} />
+          <Route path="trending" element={<Protected><Trending /></Protected>} />
+          <Route path="search" element={<Protected><Search /></Protected>} />
+          <Route path="messages" element={<Protected><Messages /></Protected>} />
+          <Route path="notifications" element={<Protected><Notifications /></Protected>} />
+          <Route path="bookmarks" element={<Protected><Bookmarks /></Protected>} />
+          <Route path="settings" element={<Protected><Settings /></Protected>} />
+          <Route path="profile/:id" element={<Protected><Profile /></Protected>} />
+          <Route path="requests" element={<Protected><Requests /></Protected>} />
           <Route path="*" element={<NotFound />} />
         </Route>
 
