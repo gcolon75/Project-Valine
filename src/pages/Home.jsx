@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import heroImg from "/assets/hero.jpg";
@@ -30,11 +31,20 @@ export default function Home() {
         }}
       >
         <div className="max-w-8xl mx-auto px-4 lg:px-6 py-16 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight">
+          {/* SIMPLE WORDMARK (not a button/pill) */}
+          <div className="heading-display text-emerald-200/90 uppercase tracking-[0.2em] text-xs md:text-sm font-semibold select-none">
+            Joint
+          </div>
+
+          {/* Bigger headline */}
+          <h1 className=" heading-display mt-3 text-4xl md:text-7xl font-extrabold leading-tight">
             Artists Connecting to Seekers 24/7
           </h1>
-          <p className="mt-4 text-neutral-300">
-            Your stage, your story. Bring your creative vision to life.
+
+          {/* Clear description of what we are */}
+          <p className="mt-4 text-neutral-300 text-base md:text-lg">
+            A creator-first network where actors, writers, and artists showcase their work
+            and connect with casting, producers, and collaborators.
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-3">
@@ -63,8 +73,19 @@ export default function Home() {
 
       {/* FEATURED STRIP */}
       <section className="max-w-8xl mx-auto px-4 lg:px-6 py-8">
+        {/* section title row */}
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg md:text-xl font-semibold">News</h2>
+          <Link
+            to="/news"
+            className="text-sm text-emerald-400 hover:text-emerald-300"
+          >
+            View all
+          </Link>
+        </div>
+
         <div className="relative featured-wrap">
-          {/* hover arrows (CSS to follow in global.css) */}
+          {/* hover arrows (CSS in marketing/global.css) */}
           <button
             aria-label="Scroll featured left"
             onClick={() => scrollFeat("left")}
@@ -107,25 +128,38 @@ export default function Home() {
         className="max-w-8xl mx-auto px-4 lg:px-6 py-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]"
       >
         {/* Content grid – larger cards */}
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <article
-              key={i}
-              className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden"
+        <div>
+          {/* section title row */}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg md:text-xl font-semibold">Top Posts</h2>
+            <Link
+              to="/feed"
+              className="text-sm text-emerald-400 hover:text-emerald-300"
             >
-              <div className="aspect-[16/10] bg-neutral-800 ring-1 ring-inset ring-white/10 skel" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 w-2/3 bg-white/10 rounded skel" />
-                <div className="h-3 w-1/3 bg-white/10 rounded skel" />
-                <div className="mt-3 h-3 w-1/2 bg-white/10 rounded skel" />
-              </div>
-            </article>
-          ))}
+              See more
+            </Link>
+          </div>
 
-          <div className="col-span-full flex justify-center">
-            <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm hover:bg-white/10">
-              Load more
-            </button>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <article
+                key={i}
+                className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden"
+              >
+                <div className="aspect-[16/10] bg-neutral-800 ring-1 ring-inset ring-white/10 skel" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 w-2/3 bg-white/10 rounded skel" />
+                  <div className="h-3 w-1/3 bg-white/10 rounded skel" />
+                  <div className="mt-3 h-3 w-1/2 bg-white/10 rounded skel" />
+                </div>
+              </article>
+            ))}
+
+            <div className="col-span-full flex justify-center">
+              <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm hover:bg-white/10">
+                Load more
+              </button>
+            </div>
           </div>
         </div>
 
@@ -146,9 +180,11 @@ export default function Home() {
                       key={t}
                       onClick={() => setActiveTag(t)}
                       className={`text-sm rounded-full border px-4 py-2 text-left transition
-                        ${activeTag === t
-                          ? 'bg-brand border-brand hover:bg-brand-hover'
-                          : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                        ${
+                          activeTag === t
+                            ? "bg-brand border-brand hover:bg-brand-hover"
+                            : "bg-white/5 border-white/10 hover:bg-white/10"
+                        }`}
                     >
                       {t}
                     </button>
