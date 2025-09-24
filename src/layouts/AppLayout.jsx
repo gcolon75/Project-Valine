@@ -1,51 +1,47 @@
-import React from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+// src/layouts/AppLayout.jsx
+import { NavLink, Outlet, Link } from "react-router-dom";
 
 export default function AppLayout() {
-  const { logout } = useAuth();
-  const { pathname } = useLocation();
-
-  // Bypass the layout on dashboard *and* setup pages
-  const bypassLayout =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/setup");
-  if (bypassLayout) {
-    return <Outlet />;
-  }
-
-  // old menu and container remain for other pages
   return (
-    <div
-      className="container"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "250px 1fr",
-        gap: "1rem",
-        minHeight: "100vh",
-      }}
-    >
-      <aside
-        className="card"
-        style={{ position: "sticky", top: "1rem", height: "fit-content" }}
-      >
-        <h3 style={{ marginTop: 0 }}>Menu</h3>
-        <div className="grid">
-          <Link to="/dashboard">Home</Link>
-          <Link to="/scripts">Scripts</Link>
-          <Link to="/auditions">Auditions</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/messages">Messages</Link>
-          <Link to="/notifications">Notifications</Link>
-          <Link to="/bookmarks">Bookmarks</Link>
-          <Link to="/settings">Settings</Link>
-          <button className="btn" onClick={logout}>
-            Logout
-          </button>
+    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      {/* App header (subnav) */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-neutral-900/75 backdrop-blur">
+        <div className="mx-auto max-w-7xl h-14 px-4 lg:px-6 flex items-center justify-between">
+          <Link to="/dashboard" className="text-white font-extrabold tracking-tight">
+            Joint
+          </Link>
+          <nav className="flex items-center gap-2">
+            <Tab to="/dashboard">Feed</Tab>
+            <Tab to="/discover">Discover</Tab>
+            <Tab to="/post">Post</Tab>
+            <Tab to="/inbox">Inbox</Tab>
+            <Tab to="/profile">Profile</Tab>
+          </nav>
         </div>
-      </aside>
-      <main>
+      </header>
+
+      {/* Page container */}
+      <main className="mx-auto max-w-7xl px-4 lg:px-6 py-6">
         <Outlet />
       </main>
     </div>
+  );
+}
+
+function Tab({ to, children }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          "px-3 py-1.5 rounded-full text-sm transition",
+          isActive
+            ? "bg-white/10 text-white border border-white/10"
+            : "text-neutral-300 hover:bg-white/5 border border-transparent",
+        ].join(" ")
+      }
+    >
+      {children}
+    </NavLink>
   );
 }

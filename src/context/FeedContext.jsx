@@ -2,23 +2,14 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { rankForUser, searchPosts } from "../services/search";
 
-// ---- Types ----
-// Post: {id, author:{name,role,avatar}, title, body, tags[], createdAt:number,
-//        mediaUrl?, likes:number, saved:boolean, comments:number}
-// Comment: {id, postId, author, text, createdAt}
-
-const FeedContext = createContext(null);
-export const useFeed = () => useContext(FeedContext);
-
-// Demo starter posts
+// ---- Demo seed data ----
 const NOW = Date.now();
 const demoPosts = [
   {
     id: "p1",
     author: { name: "Avery Quinn", role: "Writer • Sci-Fi", avatar: "" },
     title: "Six-page pilot cold open",
-    body:
-      "Looking for feedback on pacing and hook. Short cold open for a space-noir pilot.",
+    body: "Looking for feedback on pacing and hook. Short cold open for a space-noir pilot.",
     tags: ["#Script", "#SciFi", "#NeedEdits"],
     createdAt: NOW - 2 * 60 * 60 * 1000,
     mediaUrl: "",
@@ -30,8 +21,7 @@ const demoPosts = [
     id: "p2",
     author: { name: "Milo Reyes", role: "Actor • Drama", avatar: "" },
     title: "Audition tape (teaser)",
-    body:
-      "Monologue snippet; full tape gated — hit Discover to request access.",
+    body: "Monologue snippet; full tape gated — hit Discover to request access.",
     tags: ["#Audition", "#Drama"],
     createdAt: NOW - 5 * 60 * 60 * 1000,
     mediaUrl: "",
@@ -43,8 +33,7 @@ const demoPosts = [
     id: "p3",
     author: { name: "Noa Kim", role: "Director • Indie", avatar: "" },
     title: "ShortFilm board roughs",
-    body:
-      "Looking for a writer to punch up a key scene. Mood board and beat sheet attached.",
+    body: "Looking for a writer to punch up a key scene. Mood board and beat sheet attached.",
     tags: ["#ShortFilm", "#Indie", "#Collab"],
     createdAt: NOW - 24 * 60 * 60 * 1000,
     mediaUrl: "",
@@ -53,6 +42,9 @@ const demoPosts = [
     comments: 4,
   },
 ];
+
+const FeedContext = createContext(null);
+export const useFeed = () => useContext(FeedContext);
 
 const LS_KEY = "valine.feed.v1";
 
@@ -78,18 +70,10 @@ export function FeedProvider({ children }) {
   }, [posts, comments, prefs]);
 
   const likePost = (id) =>
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, likes: p.likes + 1 } : p
-      )
-    );
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, likes: p.likes + 1 } : p)));
 
   const toggleSave = (id) =>
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, saved: !p.saved } : p
-      )
-    );
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, saved: !p.saved } : p)));
 
   const addComment = (postId, text) => {
     const c = {
@@ -103,12 +87,8 @@ export function FeedProvider({ children }) {
       const arr = prev[postId] || [];
       return { ...prev, [postId]: [...arr, c] };
     });
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId ? { ...p, comments: p.comments + 1 } : p
-      )
-    );
-    // preference bump: reward tags from the commented post
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, comments: p.comments + 1 } : p)));
+
     const post = posts.find((p) => p.id === postId);
     if (post) bumpPrefs(post.tags, 1.5);
   };

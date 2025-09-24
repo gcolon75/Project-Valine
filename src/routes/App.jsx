@@ -1,95 +1,150 @@
 // src/routes/App.jsx
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import AppLayout from '../layouts/AppLayout';
-import MarketingLayout from '../layouts/MarketingLayout';
-import { useAuth } from '../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { useAuth } from "../context/AuthContext";
 
-// ✅ Marketing (public) pages — only the ones we actually have
-const Home = lazy(() => import('../pages/Home'));
-const About = lazy(() => import('../pages/About'));
-const Join = lazy(() => import('../pages/Join'));
-const Login = lazy(() => import('../pages/Login'));
+import MarketingLayout from "../layouts/MarketingLayout";
+import AppLayout from "../layouts/AppLayout";
 
-// ✅ Authenticated app pages
-const Feed = lazy(() => import('../pages/Feed'));
-const Scripts = lazy(() => import('../pages/Scripts'));
-const ScriptDetail = lazy(() => import('../pages/ScriptDetail'));
-const NewScript = lazy(() => import('../pages/NewScript'));
-const Auditions = lazy(() => import('../pages/Auditions'));
-const AuditionDetail = lazy(() => import('../pages/AuditionDetail'));
-const NewAudition = lazy(() => import('../pages/NewAudition'));
-const Search = lazy(() => import('../pages/Search'));
-const Messages = lazy(() => import('../pages/Messages'));
-const Notifications = lazy(() => import('../pages/Notifications'));
-const Bookmarks = lazy(() => import('../pages/Bookmarks'));
-const Settings = lazy(() => import('../pages/Settings'));
-const Profile = lazy(() => import('../pages/Profile'));
-const Requests = lazy(() => import('../pages/Requests'));
-const Trending = lazy(() => import('../pages/Trending'));
+/* Lazy pages */
+const HomePage = lazy(() => import("../pages/Home"));
+const AboutPage = lazy(() => import("../pages/About"));
+const JoinPage = lazy(() => import("../pages/Join"));
+const LoginPage = lazy(() => import("../pages/Login"));
 
-// ✅ Dashboard + Onboarding + Errors
-const Dashboard = lazy(() => import('../pages/Dashboard'));
-const ProfileSetup = lazy(() => import('../pages/ProfileSetup'));
-const NotFound = lazy(() => import('../pages/NotFound'));
-const Forbidden = lazy(() => import('../pages/Forbidden'));
+const DashboardPage = lazy(() => import("../pages/Dashboard"));
+const DiscoverPage = lazy(() => import("../pages/Discover"));
+const PostPage = lazy(() => import("../pages/Post"));
+const InboxPage = lazy(() => import("../pages/Inbox"));
+const ProfilePage = lazy(() => import("../pages/Profile"));
+const BookmarksPage = lazy(() => import("../pages/Bookmarks"));
+const RequestsPage = lazy(() => import("../pages/Requests"));
+const SettingsPage = lazy(() => import("../pages/Settings"));
+
+const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
+const NotFoundPage = lazy(() => import("../pages/NotFound"));
 
 function Protected({ children }) {
   const { user } = useAuth();
   const location = useLocation();
   if (!user) return <Navigate to="/login" replace />;
-  if (!user.profileComplete && location.pathname !== '/setup') {
+  if (!user.profileComplete && location.pathname !== "/setup") {
     return <Navigate to="/setup" replace />;
   }
   return children;
 }
 
+const Fallback = () => (
+  <div className="p-6 text-neutral-400">Loading…</div>
+);
+
 export default function App() {
   return (
-    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading…</div>}>
+    <Suspense fallback={<Fallback />}>
       <Routes>
-        {/* Public marketing site */}
+        {/* Marketing */}
         <Route element={<MarketingLayout />}>
-          <Route index element={<Home />} />
-          <Route path="about-us" element={<About />} />
-          <Route path="join" element={<Join />} />
-          <Route path="login" element={<Login />} />
+          <Route index element={<HomePage />} />
+          <Route path="about-us" element={<AboutPage />} />
+          <Route path="join" element={<JoinPage />} />
+          <Route path="login" element={<LoginPage />} />
         </Route>
 
-        {/* Dashboard outside AppLayout (no side menu) */}
+        {/* Dashboard (no side menu) */}
         <Route
           path="dashboard"
           element={
             <Protected>
-              <Dashboard />
+              <DashboardPage />
             </Protected>
           }
         />
 
-        {/* Authenticated application shell */}
+        {/* Authenticated app shell */}
         <Route element={<AppLayout />}>
-          <Route path="setup" element={<ProfileSetup />} />
-          <Route path="feed" element={<Protected><Feed /></Protected>} />
-          <Route path="scripts" element={<Protected><Scripts /></Protected>} />
-          <Route path="scripts/new" element={<Protected><NewScript /></Protected>} />
-          <Route path="scripts/:id" element={<Protected><ScriptDetail /></Protected>} />
-          <Route path="auditions" element={<Protected><Auditions /></Protected>} />
-          <Route path="auditions/new" element={<Protected><NewAudition /></Protected>} />
-          <Route path="auditions/:id" element={<Protected><AuditionDetail /></Protected>} />
-          <Route path="trending" element={<Protected><Trending /></Protected>} />
-          <Route path="search" element={<Protected><Search /></Protected>} />
-          <Route path="messages" element={<Protected><Messages /></Protected>} />
-          <Route path="notifications" element={<Protected><Notifications /></Protected>} />
-          <Route path="bookmarks" element={<Protected><Bookmarks /></Protected>} />
-          <Route path="settings" element={<Protected><Settings /></Protected>} />
-          <Route path="profile/:id" element={<Protected><Profile /></Protected>} />
-          <Route path="requests" element={<Protected><Requests /></Protected>} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="setup" element={<ProfileSetupPage />} />
+
+          {/* Legacy mappings */}
+          <Route
+            path="feed"
+            element={
+              <Protected>
+                <DashboardPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="search"
+            element={
+              <Protected>
+                <DiscoverPage />
+              </Protected>
+            }
+          />
+
+          {/* New pages */}
+          <Route
+            path="discover"
+            element={
+              <Protected>
+                <DiscoverPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="post"
+            element={
+              <Protected>
+                <PostPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="inbox"
+            element={
+              <Protected>
+                <InboxPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="profile/:id?"
+            element={
+              <Protected>
+                <ProfilePage />
+              </Protected>
+            }
+          />
+          <Route
+            path="bookmarks"
+            element={
+              <Protected>
+                <BookmarksPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="requests"
+            element={
+              <Protected>
+                <RequestsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Protected>
+                <SettingsPage />
+              </Protected>
+            }
+          />
+
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
 
-        {/* Global catch-all */}
-        <Route path="*" element={<NotFound />} />
+        {/* Global 404 */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

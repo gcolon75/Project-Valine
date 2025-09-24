@@ -1,276 +1,227 @@
 // src/pages/Dashboard.jsx
-import React from "react";
+import { useMemo, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import PostComposer from "../components/PostComposer";
+import PostCard from "../components/PostCard";
+import { useFeed } from "../context/FeedContext";
 
 export default function Dashboard() {
-  return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
-      <TopNav />
-      <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-6">
-            <LeftSidebar />
-          </div>
-        </aside>
-        <section className="space-y-6">
-          <Composer />
-          <PostCard
-            author="Avery Quinn"
-            role="Writer • Sci‑Fi"
-            time="2h"
-            title="Six-page pilot cold open"
-            body="Looking for feedback on pacing and hook. Short cold open for a space‑noir pilot."
-            tags={["#Script", "#SciFi", "#NeedEdits"]}
-          />
-          <PostCard
-            author="Milo Reyes"
-            role="Actor • Drama"
-            time="5h"
-            title="Audition tape (teaser)"
-            body="Monologue snippet; full tape gated — hit Discover to request access."
-            tags={["#Audition", "#Drama"]}
-            gated
-          />
-        </section>
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-6">
-            <RightPanelDiscover />
-            <RightPanelTrending />
-          </div>
-        </aside>
-      </main>
-    </div>
-  );
-}
+  const navigate = useNavigate();
+  const { posts } = useFeed();
 
-function TopNav() {
+  const [savedTags, setSavedTags] = useState([
+    "#SciFi",
+    "#Comedy",
+    "#Audition",
+    "#Script",
+    "#ShortFilm",
+  ]);
+  const [newTag, setNewTag] = useState("");
+  const [activeTag, setActiveTag] = useState("");
+
+  const results = useMemo(() => {
+    if (!activeTag) return posts;
+    const needle = activeTag.toLowerCase();
+    return posts.filter((p) =>
+      (p.tags || []).some((t) => t.toLowerCase() === needle)
+    );
+  }, [posts, activeTag]);
+
+  const addSavedTag = () => {
+    const raw = newTag.trim();
+    if (!raw) return;
+    const tag = raw.startsWith("#") ? raw : `#${raw}`;
+    if (!savedTags.includes(tag)) setSavedTags((x) => [...x, tag]);
+    setNewTag("");
+  };
+
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 h-16 flex items-center">
-        <div className="w-40 hidden md:block" />
-        <nav className="mx-auto">
-          <ul className="flex items-center gap-6 text-sm">
-            <TopIcon label="Feed" />
-            <TopIcon label="Discover" />
-            <TopIcon label="Post" />
-            <TopIcon label="Inbox" />
-            <TopIcon label="Profile" />
-          </ul>
+    <div className="bg-neutral-950 text-neutral-100">
+      <section className="mx-auto max-w-7xl px-4 lg:px-6 py-5">
+        {/* TOP SHORTCUTS — centered */}
+        <nav className="mb-5 flex flex-wrap items-center justify-center gap-2">
+          <TopLink to="/dashboard">Feed</TopLink>
+          <TopLink to="/discover">Discover</TopLink>
+          <TopLink to="/post">Post</TopLink>
+          <TopLink to="/inbox">Inbox</TopLink>
+          <TopLink to="/profile">Profile</TopLink>
         </nav>
-        <div className="w-40 hidden md:block" />
-      </div>
-    </header>
-  );
-}
 
-function TopIcon({ label }) {
-  return (
-    <li>
-      <button
-        type="button"
-        className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 border border-white/10 hover:border-white/20 hover:bg-white/5 transition"
-      >
-        <span aria-hidden className="inline-block h-4 w-4 rounded-full border border-white/40" />
-        <span className="font-medium">{label}</span>
-      </button>
-    </li>
-  );
-}
-
-function LeftSidebar() {
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-neutral-800 ring-1 ring-white/10" />
-          <div>
-            <p className="font-semibold">Your Name</p>
-            <p className="text-xs text-neutral-400">Writer • Actor • Producer</p>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-3 text-center text-xs">
-          <Stat label="Posts" value="12" />
-          <Stat label="Saves" value="48" />
-          <Stat label="Views" value="3.2k" />
-        </div>
-      </div>
-      <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
-        <p className="text-sm font-semibold mb-3">Quick links</p>
-        <ul className="space-y-2 text-sm">
-          {["My Profile", "Bookmarks", "Requests", "Settings"].map((item) => (
-            <li key={item}>
-              <a className="block rounded-md px-2 py-1 hover:bg-white/5">{item}</a>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
-        <p className="text-sm font-semibold mb-3">Saved tags</p>
-        <div className="flex flex-wrap gap-2 text-xs">
-          {["#SciFi", "#Comedy", "#Audition", "#Script", "#ShortFilm"].map(
-            (tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1"
-              >
-                {tag}
-              </span>
-            ),
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }) {
-  return (
-    <div>
-      <div className="font-semibold">{value}</div>
-      <div className="text-neutral-400">{label}</div>
-    </div>
-  );
-}
-
-function Composer() {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
-      <div className="flex gap-3">
-        <div className="h-10 w-10 rounded-full bg-neutral-800 ring-1 ring-white/10" />
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Share a script, audition, reading, or reel…"
-            className="w-full bg-transparent outline-none placeholder:text-neutral-500"
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {["Add media", "Add tags", "Preview"].map((action) => (
-              <button
-                key={action}
-                className="text-xs rounded-full border border-white/10 px-3 py-1 hover:bg-white/5"
-              >
-                {action}
-              </button>
-            ))}
-            <div className="ms-auto">
-              <button className="text-xs rounded-full bg-emerald-600 px-3 py-1.5 hover:bg-emerald-500 transition">
-                Post
-              </button>
+        <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+          {/* LEFT COLUMN */}
+          <aside className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-white/10" />
+                <div>
+                  <div className="font-semibold">Your Name</div>
+                  <div className="text-xs text-neutral-400">
+                    Writer • Actor • Producer
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 text-center text-sm text-neutral-300">
+                <div>
+                  12 <span className="block text-xs text-neutral-500">Posts</span>
+                </div>
+                <div>
+                  48 <span className="block text-xs text-neutral-500">Saves</span>
+                </div>
+                <div>
+                  3.2k <span className="block text-xs text-neutral-500">Views</span>
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* Quick links */}
+            <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+              <div className="text-sm font-semibold">Quick links</div>
+              <div className="mt-3 grid gap-2 text-sm">
+                <Link className="hover:underline" to="/profile">
+                  My Profile
+                </Link>
+                <Link className="hover:underline" to="/bookmarks">
+                  Bookmarks
+                </Link>
+                <Link className="hover:underline" to="/requests">
+                  Requests
+                </Link>
+                <Link className="hover:underline" to="/settings">
+                  Settings
+                </Link>
+              </div>
+            </div>
+
+            {/* Saved tags */}
+            <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+              <div className="text-sm font-semibold">Saved tags</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {savedTags.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTag((v) => (v === t ? "" : t))}
+                    className={[
+                      "rounded-full border px-3 py-1 text-xs",
+                      activeTag === t
+                        ? "bg-emerald-600/20 border-emerald-500 text-emerald-300"
+                        : "bg-white/5 border-white/10 hover:bg-white/10",
+                    ].join(" ")}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addSavedTag())
+                  }
+                  placeholder="Add tag"
+                  className="flex-1 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-xs outline-none placeholder:text-neutral-500"
+                />
+                <button
+                  onClick={addSavedTag}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          {/* CENTER COLUMN */}
+          <section className="space-y-4">
+            <PostComposer />
+
+            {activeTag && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="rounded-full border border-emerald-500 bg-emerald-600/20 px-3 py-1 text-emerald-300">
+                  {activeTag}
+                </span>
+                <button
+                  onClick={() => setActiveTag("")}
+                  className="text-neutral-400 hover:text-neutral-200"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {results.map((p) => (
+                <PostCard key={p.id} post={p} />
+              ))}
+            </div>
+          </section>
+
+          {/* RIGHT COLUMN */}
+          <aside className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+              <div className="text-sm font-semibold">Discover creators</div>
+              <div className="mt-3 grid gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-white/10" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm truncate">Creator {i}</div>
+                      <div className="text-xs text-neutral-400 truncate">
+                        Actor • Drama
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/profile/creator-${i}`)}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs hover:bg-white/10"
+                    >
+                      View
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+              <div className="text-sm font-semibold">Trending tags</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["#Monologue", "#SciFi", "#ShortFilm", "#Casting", "#Reading", "#Drama"].map(
+                  (t) => (
+                    <button
+                      key={t}
+                      onClick={() => setActiveTag(t)}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs hover:bg-white/10"
+                    >
+                      {t}
+                    </button>
+                  )
+                )}
+              </div>
+              <div className="mt-2 text-[11px] text-neutral-400">
+                Fresh this week. Tap a tag to filter the feed.
+              </div>
+            </div>
+          </aside>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
 
-function PostCard({
-  author,
-  role,
-  time,
-  title,
-  body,
-  tags = [],
-  gated = false,
-}) {
+/* ——— tiny helpers ——— */
+function TopLink({ to, children }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden">
-      <div className="p-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-neutral-800 ring-1 ring-white/10" />
-        <div className="min-w-0">
-          <p className="font-semibold truncate">{author}</p>
-          <p className="text-xs text-neutral-400">
-            {role} • {time}
-          </p>
-        </div>
-      </div>
-      <div className="aspect-video bg-neutral-800 ring-1 ring-inset ring-white/10" />
-      <div className="p-4 space-y-3">
-        <h3 className="font-semibold">{title}</h3>
-        <p className="text-sm text-neutral-300">{body}</p>
-        <div className="flex flex-wrap gap-2 text-xs">
-          {tags.map((t) => (
-            <span
-              key={t}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 pt-2">
-          <CardAction label="Like" />
-          <CardAction label="Save" />
-          <CardAction label="Comment" />
-          <div className="ms-auto">
-            <button
-              className="rounded-full border border-emerald-600/40 bg-emerald-600/10 px-3 py-1.5 text-xs hover:bg-emerald-600/20"
-            >
-              {gated ? "Discover (request access)" : "Discover"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function CardAction({ label }) {
-  return (
-    <button className="text-xs rounded-full border border-white/10 px-3 py-1 hover:bg-white/5">
-      {label}
-    </button>
-  );
-}
-
-function RightPanelDiscover() {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden">
-      <header className="px-4 py-3 border-b border-white/10">
-        <h4 className="text-sm font-semibold">Discover creators</h4>
-      </header>
-      <div className="p-4 space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-neutral-800 ring-1 ring-white/10" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">Creator {i}</p>
-              <p className="text-xs text-neutral-400 truncate">Actor • Drama</p>
-            </div>
-            <button
-              className="ms-auto rounded-full border border-white/10 px-3 py-1 text-xs hover:bg-white/5"
-            >
-              View
-            </button>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function RightPanelTrending() {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden">
-      <header className="px-4 py-3 border-b border-white/10">
-        <h4 className="text-sm font-semibold">Trending tags</h4>
-      </header>
-      <div className="p-4">
-        <div className="flex flex-wrap gap-2 text-xs">
-          {["#Monologue", "#SciFi", "#ShortFilm", "#Casting", "#Reading"].map(
-            (tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1"
-              >
-                {tag}
-              </span>
-            ),
-          )}
-        </div>
-        <div className="mt-4 text-xs text-neutral-400">
-          Fresh this week. Tap a tag to filter the feed (coming soon).
-        </div>
-      </div>
-    </section>
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          "rounded-full px-3 py-1.5 text-sm border transition",
+          isActive
+            ? "bg-white/10 text-white border-white/10"
+            : "bg-white/5 text-neutral-300 border-white/10 hover:bg-white/10",
+        ].join(" ")
+      }
+    >
+      {children}
+    </NavLink>
   );
 }
