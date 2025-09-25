@@ -1,5 +1,11 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
+import ThemeToggle from '@/components/ThemeToggle.jsx'; // or ../components/ThemeToggle
+
+<div className="ml-auto flex items-center gap-2">
+  {/* existing items */}
+  <ThemeToggle />
+</div>
 
 /**
  * Primary navigation bar for the authenticated application. It sticks to the top

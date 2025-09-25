@@ -12,8 +12,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Instant theme boot (prevents flash + syncs mobile address bar color) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+          var root = document.documentElement;
+          root.classList.toggle('dark', t === 'dark');
+          root.setAttribute('data-theme', t);
+
+          // keep the mobile browser UI in sync
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', t === 'dark' ? '#181D21' : '#10B981');
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="font-sans bg-neutral-950 text-neutral-100">
+  <!-- Remove hard-coded bg/text colors; theme.css will handle colors via CSS variables -->
+  <body class="font-sans">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
