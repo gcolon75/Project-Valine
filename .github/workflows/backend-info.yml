@@ -1,0 +1,24 @@
+name: Backend Info
+on: { workflow_dispatch: {} }
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
+          aws-region: us-west-2
+      - run: npm i -g serverless@3
+      - name: Show endpoint
+        working-directory: serverless
+        run: |
+          npx serverless info --stage prod --region us-west-2
+          URL=$(npx serverless info --stage prod --region us-west-2 | awk '/https:\/\/.*execute-api/ {print $3}' | head -n1 | sed 's#/health##; s#/hello##')
+          echo "API base: $URL" >> "$GITHUB_STEP_SUMMARY"
