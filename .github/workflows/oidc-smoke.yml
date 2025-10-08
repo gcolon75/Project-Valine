@@ -1,0 +1,16 @@
+name: OIDC Smoke Test
+on: { workflow_dispatch: {} }
+
+jobs:
+  assume:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - run: aws sts get-caller-identity
