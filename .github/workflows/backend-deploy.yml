@@ -17,5 +17,10 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
           aws-region: us-west-2
+      - run: node -v && npm -v
       - run: npm i -g serverless@3
-      - run: cd serverless && serverless deploy --verbose
+      - run: serverless -v
+      - run: ls -la && ls -la serverless
+      - name: Deploy
+        working-directory: serverless
+        run: serverless deploy --stage prod --region us-west-2 --verbose
