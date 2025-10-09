@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Project Valine AI Orchestrator
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.11
+    MemorySize: 512
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        RUN_TABLE_NAME: !Ref RunStateTable
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Deployment stage
+  
+  DiscordPublicKey:
+    Type: String
+    NoEcho: true
+    Description: Discord application public key for signature verification
+  
+  DiscordBotToken:
+    Type: String
+    NoEcho: true
+    Description: Discord bot token
+  
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub personal access token or app token
+  
+  GitHubWebhookSecret:
+    Type: String
+    NoEcho: true
+    Description: GitHub webhook secret for signature verification
+
+Resources:
+  # DynamoDB table for storing orchestrator run state
+  RunStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'valine-orchestrator-runs-${Stage}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: run_id
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: N
+      KeySchema:
+        - AttributeName: run_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CreatedAtIndex
+          KeySchema:
+            - AttributeName: created_at
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # Lambda function for Discord interactions (slash commands)
+  DiscordHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'valine-orchestrator-discord-${Stage}'
+      CodeUri: app/
+      Handler: handlers.discord_handler.handler
+      Environment:
+        Variables:
+          DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
+          DISCORD_BOT_TOKEN: !Ref DiscordBotToken
+          GITHUB_TOKEN: !Ref GitHubToken
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RunStateTable
+      Events:
+        DiscordWebhook:
+          Type: Api
+          Properties:
+            Path: /discord
+            Method: post
+            RestApiId: !Ref OrchestratorApi
+
+  # Lambda function for GitHub webhook events
+  GitHubWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'valine-orchestrator-github-${Stage}'
+      CodeUri: app/
+      Handler: handlers.github_handler.handler
+      Environment:
+        Variables:
+          GITHUB_WEBHOOK_SECRET: !Ref GitHubWebhookSecret
+          GITHUB_TOKEN: !Ref GitHubToken
+          DISCORD_BOT_TOKEN: !Ref DiscordBotToken
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RunStateTable
+      Events:
+        GitHubWebhook:
+          Type: Api
+          Properties:
+            Path: /github/webhook
+            Method: post
+            RestApiId: !Ref OrchestratorApi
+
+  # API Gateway for orchestrator endpoints
+  OrchestratorApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'valine-orchestrator-api-${Stage}'
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'POST'"
+        AllowHeaders: "'Content-Type,X-Hub-Signature-256,X-Signature-Ed25519,X-Signature-Timestamp'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  DiscordWebhookUrl:
+    Description: Discord interactions endpoint URL
+    Value: !Sub 'https://${OrchestratorApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/discord'
+    Export:
+      Name: !Sub '${AWS::StackName}-DiscordWebhookUrl'
+
+  GitHubWebhookUrl:
+    Description: GitHub webhook endpoint URL
+    Value: !Sub 'https://${OrchestratorApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/github/webhook'
+    Export:
+      Name: !Sub '${AWS::StackName}-GitHubWebhookUrl'
+
+  RunStateTableName:
+    Description: DynamoDB table for run state
+    Value: !Ref RunStateTable
+    Export:
+      Name: !Sub '${AWS::StackName}-RunStateTable'
