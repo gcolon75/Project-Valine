@@ -1,0 +1,29 @@
+# CODEOWNERS file for Project Valine
+# This file defines individuals or teams that are responsible for code in this repository.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @gcolon75
+
+# GitHub workflows and CI/CD configuration
+/.github/ @gcolon75
+
+# Infrastructure and deployment
+/infra/ @gcolon75
+/serverless/ @gcolon75
+*.yml @gcolon75
+*.yaml @gcolon75
+
+# Frontend code
+/src/ @gcolon75
+/client/ @gcolon75
+
+# Backend services
+/api/ @gcolon75
+/server/ @gcolon75
+
+# Sanity CMS configuration
+/sanity/ @gcolon75
+
+# Documentation
+*.md @gcolon75
