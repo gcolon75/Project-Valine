@@ -1,4 +1,4 @@
-﻿import audition from './audition'
+import audition from './audition'
 import script from './script'
 import user from './user'
 
