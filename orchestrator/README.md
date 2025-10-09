@@ -45,6 +45,12 @@ Before deploying, you need to gather the following credentials:
 
 ### Update samconfig.toml
 
+Copy the example configuration and edit with your credentials:
+
+```bash
+cp samconfig.toml.example samconfig.toml
+```
+
 Edit `orchestrator/samconfig.toml` and replace the placeholder values:
 
 ```toml
@@ -57,7 +63,7 @@ parameter_overrides = [
 ]
 ```
 
-**Important**: Do NOT commit actual secrets to the repository. Use AWS Secrets Manager or Parameter Store in production.
+**Important**: The `samconfig.toml` file is in `.gitignore` to prevent accidental secret commits. Never commit actual secrets to the repository. Use AWS Secrets Manager or Parameter Store in production.
 
 ## Step 2: Build and Deploy
 
