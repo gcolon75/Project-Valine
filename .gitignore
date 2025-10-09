@@ -2,3 +2,8 @@ node_modules
 dist
 .DS_Store
 .env
+
+# Orchestrator secrets and build artifacts
+orchestrator/samconfig.toml
+!orchestrator/samconfig.toml.example
+orchestrator/.aws-sam/
