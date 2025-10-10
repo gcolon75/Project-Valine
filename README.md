@@ -24,6 +24,8 @@ See `serverless/` and `infra/` directories for serverless function deployment.
 
 ### AI Orchestrator
 
+⚠️ **Note**: The orchestrator code is currently in this repository but is planned to be migrated to its canonical location at `ghawk75-ai-agent/orchestrator` for better separation of concerns. See [ORCHESTRATOR_CONSOLIDATION.md](ORCHESTRATOR_CONSOLIDATION.md) for the migration plan.
+
 The orchestrator manages automated workflows between Discord and GitHub:
 
 ```bash
@@ -68,7 +70,14 @@ cd orchestrator
 
 ## Documentation
 
+### Orchestrator Consolidation
+- [Orchestrator Consolidation Plan](ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
+- [Consolidation Status Report](CONSOLIDATION_STATUS_REPORT.md) - Current status and blockers
+
+### Orchestrator (Current Location - To Be Migrated)
 - [Orchestrator Documentation](orchestrator/README.md) - AI workflow automation
 - [Integration Guide](orchestrator/INTEGRATION_GUIDE.md) - Discord and GitHub setup
 - [Testing Guide](orchestrator/TESTING_GUIDE.md) - End-to-end testing
+
+### Other Documentation
 - [Sanity Setup](SANITY_SETUP.md) - CMS configuration
