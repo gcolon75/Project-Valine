@@ -117,3 +117,33 @@ jobs:
             echo "⚠️ Discord notification failed (HTTP $http_code)" >> "$GITHUB_STEP_SUMMARY"
             cat /tmp/discord_response.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
           fi
+      - name: Notify Discord via Bot
+        if: ${{ secrets.DISCORD_BOT_TOKEN != '' && vars.DISCORD_TARGET_CHANNEL_ID != '' }}
+        run: |
+          BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}"
+          CHANNEL_ID="${{ vars.DISCORD_TARGET_CHANNEL_ID }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_BASE_URL }}"
+          API_BASE="${{ env.VITE_API_BASE }}"
+          
+          # Build message content
+          MESSAGE="✅ Frontend deployment successful\n\n**API Base:** \`$API_BASE\`"
+          if [ -n "$FRONTEND_URL" ]; then
+            MESSAGE="$MESSAGE\n**Frontend URL:** https://$FRONTEND_URL"
+          fi
+          
+          # Create payload
+          payload=$(jq -nc --arg msg "$MESSAGE" '{content: $msg}')
+          
+          # Send to Discord Bot API
+          http_code=$(curl -sS -w "%{http_code}" -o /tmp/discord_bot_response.txt \
+            -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Discord Bot notification sent successfully (HTTP $http_code)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Discord Bot notification failed (HTTP $http_code)" >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/discord_bot_response.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
