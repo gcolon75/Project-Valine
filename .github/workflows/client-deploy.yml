@@ -105,7 +105,7 @@ jobs:
               }]
             }')
           
-          # Send to Discord webhook
+          # Send to Discord webhook edit test
           http_code=$(curl -sS -w "%{http_code}" -o /tmp/discord_response.txt \
             -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
