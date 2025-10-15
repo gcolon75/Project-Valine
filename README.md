@@ -95,5 +95,9 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed 
 - [Integration Guide](orchestrator/INTEGRATION_GUIDE.md) - Discord and GitHub setup
 - [Testing Guide](orchestrator/TESTING_GUIDE.md) - End-to-end testing
 
+### Deployment
+- [Deployment Verification](DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
+- [Verification Guide](scripts/VERIFICATION_GUIDE.md) - Detailed verification usage and troubleshooting
+
 ### Other Documentation
 - [Sanity Setup](SANITY_SETUP.md) - CMS configuration
