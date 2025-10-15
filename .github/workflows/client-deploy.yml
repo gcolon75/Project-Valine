@@ -65,3 +65,55 @@ jobs:
             echo "Frontend: https://${{ secrets.FRONTEND_BASE_URL }}" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "API base: ${{ env.VITE_API_BASE }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Notify Discord via Webhook
+        if: ${{ secrets.DISCORD_DEPLOY_WEBHOOK != '' }}
+        run: |
+          WEBHOOK_URL="${{ secrets.DISCORD_DEPLOY_WEBHOOK }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_BASE_URL }}"
+          API_BASE="${{ env.VITE_API_BASE }}"
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHA:0:7}"
+          WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          ACTOR="${{ github.actor }}"
+          
+          # Build embed fields
+          FIELDS='[]'
+          if [ -n "$FRONTEND_URL" ]; then
+            FIELDS=$(echo "$FIELDS" | jq --arg url "https://$FRONTEND_URL" '. += [{"name": "Frontend URL", "value": $url, "inline": false}]')
+          fi
+          FIELDS=$(echo "$FIELDS" | jq --arg api "$API_BASE" '. += [{"name": "API Base", "value": $api, "inline": false}]')
+          FIELDS=$(echo "$FIELDS" | jq --arg commit "$COMMIT_SHORT" --arg url "$COMMIT_URL" '. += [{"name": "Commit", "value": ("[`\($commit)`](\($url))"), "inline": true}]')
+          FIELDS=$(echo "$FIELDS" | jq --arg actor "$ACTOR" '. += [{"name": "Deployed by", "value": $actor, "inline": true}]')
+          
+          # Build the payload
+          payload=$(jq -nc \
+            --arg content "✅ Frontend deployment successful" \
+            --arg title "Client Deploy - Project Valine" \
+            --arg desc "Successfully deployed frontend to S3 and invalidated CloudFront cache" \
+            --arg url "$WORKFLOW_URL" \
+            --argjson fields "$FIELDS" \
+            '{
+              content: $content,
+              embeds: [{
+                title: $title,
+                description: $desc,
+                color: 3066993,
+                url: $url,
+                fields: $fields,
+                timestamp: (now | strftime("%Y-%m-%dT%H:%M:%SZ"))
+              }]
+            }')
+          
+          # Send to Discord webhook
+          http_code=$(curl -sS -w "%{http_code}" -o /tmp/discord_response.txt \
+            -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          
+          if [ "$http_code" = "204" ] || [ "$http_code" = "200" ]; then
+            echo "✅ Discord notification sent successfully (HTTP $http_code)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️ Discord notification failed (HTTP $http_code)" >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/discord_response.txt >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
