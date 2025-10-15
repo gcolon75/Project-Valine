@@ -68,6 +68,22 @@ cd orchestrator
 - Build with `npm run build`, preview with `npm run preview`
 - Edit pages in `src/pages/` and routes in `src/App.jsx`
 
+## Deployment Verification
+
+The repository includes a comprehensive verification script to validate deployments:
+
+```bash
+./scripts/verify-deployment.sh --help
+```
+
+This script checks:
+- GitHub Actions workflows and configuration files
+- S3 and CloudFront deployment status
+- Frontend accessibility and API health endpoints
+- Discord bot and webhook integration
+
+See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed usage instructions.
+
 ## Documentation
 
 ### Orchestrator Consolidation
