@@ -1,0 +1,46 @@
+name: Discord Bot Test
+on:
+  workflow_dispatch:
+    inputs:
+      channel_id:
+        description: "Discord channel ID to send the test message (leave blank to use repo variable DISCORD_TARGET_CHANNEL_ID)"
+        required: false
+        default: ""
+      message:
+        description: "Message to send"
+        required: false
+        default: "✅ Discord bot test from GitHub Actions (Project-Valine)"
+jobs:
+  bot-ping:
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      CHANNEL_ID: ${{ inputs.channel_id != '' && inputs.channel_id || vars.DISCORD_TARGET_CHANNEL_ID }}
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ env.DISCORD_BOT_TOKEN }}" ]; then
+            echo "Missing DISCORD_BOT_TOKEN secret"; exit 1; fi
+          if [ -z "${{ env.CHANNEL_ID }}" ]; then
+            echo "Provide channel_id input or set repo variable DISCORD_TARGET_CHANNEL_ID"; exit 1; fi
+      - name: Send message via Discord API
+        run: |
+          set -e
+          payload=$(jq -nc --arg msg "${{ inputs.message }}" '{content: $msg}')
+          resp=$(curl -sS -w "\n%{http_code}" -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          body=$(echo "$resp" | sed '$d'); code=$(echo "$resp" | tail -n1)
+          echo "HTTP $code" >> "$GITHUB_STEP_SUMMARY"
+          echo "Request payload:" >> "$GITHUB_STEP_SUMMARY"
+          echo "$payload" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" = "200" ]; then
+            echo "$body" | jq -r '.id, .channel_id, .timestamp, .content' | paste - - - - \
+              | awk -F'\t' '{print "- id: "$1"\n  channel_id: "$2"\n  timestamp: "$3"\n  content: "$4}' \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          else
+            echo "$body" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
