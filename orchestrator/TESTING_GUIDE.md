@@ -55,6 +55,62 @@ fields command, duration_ms
 | stats avg(duration_ms) as avg_duration, count() as executions by command
 ```
 
+## Dry-Run Mode
+
+The orchestrator supports a **dry-run mode** for testing without making actual external API calls. This is useful for:
+- Local development and testing
+- CI/CD pipeline validation
+- Integration test scenarios
+
+### Enabling Dry-Run Mode
+
+Set the `DRY_RUN` environment variable:
+
+```bash
+export DRY_RUN=true
+python -m pytest tests/
+```
+
+In dry-run mode:
+- External API calls are mocked/simulated
+- Discord and GitHub API interactions are logged but not executed
+- Traces are still created and can be inspected
+- All business logic is exercised
+
+### Example Dry-Run Test
+
+```python
+import os
+os.environ['DRY_RUN'] = 'true'
+
+from app.handlers.discord_handler import handle_status_command
+
+# Create mock interaction
+interaction = {
+    'data': {'options': []},
+    'member': {'user': {'id': '12345'}},
+    'channel': {'id': '67890'}
+}
+
+# Execute command in dry-run mode
+response = handle_status_command(interaction)
+
+# Verify response structure without external calls
+assert response['statusCode'] == 200
+```
+
+### Running Integration Tests
+
+Integration tests exercise multiple components together:
+
+```bash
+# Run all tests including integration tests
+python -m pytest tests/ -v
+
+# Run only integration tests (if tagged)
+python -m pytest tests/ -v -m integration
+```
+
 ## Test 1: Discord PING Verification
 
 **Purpose**: Verify Discord can communicate with the orchestrator
