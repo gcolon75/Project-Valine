@@ -13,6 +13,7 @@ The orchestrator consists of:
 - **Verification Module**: Deploy verification system for GitHub Actions workflow runs
 - **Diagnose Dispatcher**: On-demand workflow triggering with correlation tracking and result parsing
 - **Multi-Agent Registry**: Agent definitions and capabilities for orchestration and routing
+- **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md))
 
 ## Prerequisites
 
@@ -630,6 +631,69 @@ These prompts are designed for AI-assisted code review and deployment validation
 - Evidence gathering guidelines
 - Output format templates
 - Security and operational guidance
+
+## QA Checker Agent
+
+The orchestrator includes an automated QA checker agent for validating Phase 3 and Phase 4 PR implementations.
+
+### Overview
+
+The QA Checker agent (`app/agents/qa_checker.py`) validates pull requests against comprehensive acceptance criteria for:
+- **Phase 3**: Deploy client polish with deferred response and correlation tracking
+- **Phase 4**: Multi-agent foundation with registry, `/agents`, and `/status-digest` commands
+
+### Quick Start
+
+```bash
+# Set GitHub token
+export GITHUB_TOKEN=ghp_your_token_here
+
+# Validate two PRs (replace with actual PR numbers)
+python run_qa_checker.py 27 28
+
+# Post reviews to GitHub automatically
+python run_qa_checker.py 27 28 --post-reviews
+```
+
+### Features
+
+- **Automated Validation**: Checks code changes against acceptance criteria
+- **Evidence Collection**: Gathers files, patches, and implementation details
+- **Review Generation**: Creates formatted PR review comments
+- **GitHub Integration**: Posts approve/request changes reviews
+- **Comprehensive Testing**: Includes 23 unit tests for validation logic
+
+### Documentation
+
+See [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md) for:
+- Detailed usage instructions
+- Acceptance criteria for Phase 3 and Phase 4
+- Command-line options
+- Programmatic API usage
+- Testing guide
+- Troubleshooting tips
+
+### Example Output
+
+```markdown
+# QA: Phase 3 Polish — /deploy-client wait flow
+
+**Status:** PASS
+
+## Acceptance Checklist
+
+- [✅] PR Exists — PR #27 found
+- [✅] Workflow YAML Modified — Found .github/workflows/client-deploy.yml
+- [✅] Correlation ID Input — correlation_id input found
+- [✅] Requester Input — requester input found
+- [✅] Run Name with Correlation ID — run-name includes correlation_id
+- [✅] Dispatcher Modified — Found app/services/github_actions_dispatcher.py
+...
+
+## Final Verdict
+
+✅ **APPROVE** — All acceptance criteria met.
+```
 
 ## Next Steps
 
