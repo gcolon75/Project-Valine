@@ -96,7 +96,8 @@ class MessageComposer:
             build_time = run_info.get('step_durations', {}).get('build')
             build_str = f"{build_time}s" if build_time else 'N/A'
 
-            return f"✅ Client deploy OK | Frontend: {frontend_url} | API: {api_url} | cf: {cf_status} | build: {build_str}"
+            return (f"✅ Client deploy OK | Frontend: {frontend_url} | API: {api_url} | "
+                    f"cf: {cf_status} | build: {build_str}")
         else:
             # Failure one-liner
             reason = self._get_failure_reason(run_info, frontend_results, api_results)
@@ -172,8 +173,9 @@ class MessageComposer:
         index_status = self._format_endpoint_status(index_result)
 
         # Check cache control on index.html
-        cache_control = index_result.get('headers', {}).get('Cache-Control',
-                                                            index_result.get('headers', {}).get('cache-control', 'missing'))
+        cache_control = index_result.get('headers', {}).get(
+            'Cache-Control',
+            index_result.get('headers', {}).get('cache-control', 'missing'))
         cache_valid = 'no-cache' in cache_control.lower() if cache_control != 'missing' else False
         cache_str = f"cache-control={'no-cache' if cache_valid else cache_control}"
 
@@ -249,8 +251,9 @@ class MessageComposer:
                     fixes.append('Ensure build outputs index.html and s3 sync uploads it')
 
                 # Check cache control
-                cache_control = index_result.get('headers', {}).get('Cache-Control',
-                                                                    index_result.get('headers', {}).get('cache-control'))
+                cache_control = index_result.get('headers', {}).get(
+                    'Cache-Control',
+                    index_result.get('headers', {}).get('cache-control'))
                 if cache_control and 'no-cache' not in cache_control.lower():
                     fixes.append('Set Cache-Control: no-cache on index.html in deploy step')
 
