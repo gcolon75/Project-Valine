@@ -496,6 +496,12 @@ The `agent-prompts/` directory contains ready-to-use AI agent prompts for variou
 - **Usage:** PR review validation for repository/workflow dispatch, Discord integration, correlation tracking, and safety guardrails
 - **Acceptance Matrix:** 7 categories with comprehensive evidence requirements
 
+### Phase 3 QA Checker Agent
+- **File:** `agent-prompts/phase3_qa_checker.md`
+- **Purpose:** Validate Phase 3 quality-of-life commands implementation (/status, /deploy-client, admin setters)
+- **Usage:** PR review validation for command handlers, URL validators, admin authorization, and security guardrails
+- **Acceptance Matrix:** 7 categories covering command behavior, guardrails, UX, and tests
+
 These prompts are designed for AI-assisted code review and deployment validation. They include:
 - Detailed system prompts with role definitions
 - User prompt templates with placeholder values
