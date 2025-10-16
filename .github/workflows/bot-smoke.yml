@@ -1,0 +1,102 @@
+name: Bot Smoke Tests
+
+on:
+  pull_request:
+    paths:
+      - 'orchestrator/**'
+      - '.github/workflows/bot-smoke.yml'
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: orchestrator
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run linter (flake8)
+        working-directory: orchestrator
+        run: |
+          pip install flake8
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+      
+      - name: Type check with mypy
+        working-directory: orchestrator
+        run: |
+          pip install mypy types-requests
+          mypy app --ignore-missing-imports || echo "Type checking completed with warnings"
+        continue-on-error: true
+      
+      - name: Run unit tests
+        working-directory: orchestrator
+        run: |
+          python -m pytest tests/ -v --tb=short --cov=app --cov-report=term-missing
+      
+      - name: Validate prompt files
+        working-directory: orchestrator
+        run: |
+          # Check that key prompt files exist
+          test -f agent-prompts/phase3_qa_checker.md || (echo "Missing phase3_qa_checker.md" && exit 1)
+          
+          # Check that prompts have required sections
+          grep -q "Role" agent-prompts/phase3_qa_checker.md || (echo "Missing Role section" && exit 1)
+          grep -q "Acceptance" agent-prompts/phase3_qa_checker.md || (echo "Missing Acceptance section" && exit 1)
+          
+          echo "✅ Prompt validation passed"
+      
+      - name: Validate configuration
+        working-directory: orchestrator
+        run: |
+          # Check for required configuration files
+          test -f template.yaml || (echo "Missing SAM template" && exit 1)
+          test -f samconfig.toml.example || (echo "Missing samconfig example" && exit 1)
+          
+          # Check that samconfig.toml is in .gitignore
+          grep -q "samconfig.toml" .gitignore || (echo "samconfig.toml should be in .gitignore" && exit 1)
+          
+          echo "✅ Configuration validation passed"
+      
+      - name: Security check - no secrets in code
+        working-directory: orchestrator
+        run: |
+          # Check for common secret patterns (basic check)
+          ! grep -r "sk-[a-zA-Z0-9]\{20,\}" app/ tests/ || (echo "Potential OpenAI key found" && exit 1)
+          ! grep -r "ghp_[a-zA-Z0-9]\{36\}" app/ tests/ || (echo "Potential GitHub token found" && exit 1)
+          ! grep -r "xoxb-[a-zA-Z0-9-]\{50,\}" app/ tests/ || (echo "Potential Slack token found" && exit 1)
+          
+          echo "✅ No obvious secrets found"
+      
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## Bot Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Python version: $(python --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- Working directory: orchestrator/" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          cd orchestrator
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          python -m pytest tests/ --tb=no --quiet --cov=app --cov-report=term 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

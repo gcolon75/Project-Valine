@@ -17,6 +17,8 @@ from app.services.discord import DiscordService
 from app.utils.url_validator import URLValidator
 from app.utils.admin_auth import AdminAuthenticator
 from app.utils.time_formatter import TimeFormatter
+from app.utils.trace_store import get_trace_store
+from app.utils.logger import redact_secrets
 from app.agents.registry import get_agents
 
 
@@ -582,6 +584,96 @@ def handle_set_frontend_command(interaction):
         })
 
 
+def handle_debug_last_command(interaction):
+    """Handle /debug-last command - show last execution trace for debugging."""
+    try:
+        # Check if debug command is enabled (feature flag)
+        enable_debug_cmd = os.environ.get('ENABLE_DEBUG_CMD', 'false').lower() == 'true'
+        
+        if not enable_debug_cmd:
+            return create_response(4, {
+                'content': '❌ Debug commands are disabled (ENABLE_DEBUG_CMD=false)',
+                'flags': 64
+            })
+        
+        # Get user ID
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', '')
+        
+        # Get trace store
+        trace_store = get_trace_store()
+        
+        # Get last trace for this user
+        last_trace = trace_store.get_last_trace(user_id if user_id else None)
+        
+        if not last_trace:
+            return create_response(4, {
+                'content': '🔍 No recent trace found. Execute a command first.',
+                'flags': 64
+            })
+        
+        # Build debug output
+        lines = [
+            '🔍 **Last Execution Debug Info**',
+            '',
+            f'**Command:** `{last_trace.command}`',
+            f'**Trace ID:** `{last_trace.trace_id}`',
+            f'**Started:** {datetime.fromtimestamp(last_trace.started_at, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}'
+        ]
+        
+        # Duration
+        duration_ms = last_trace.get_duration_ms()
+        if duration_ms:
+            lines.append(f'**Duration:** {duration_ms:.0f}ms')
+        else:
+            lines.append('**Status:** In progress')
+        
+        # Steps with timings
+        if last_trace.steps:
+            lines.append('')
+            lines.append('**Steps:**')
+            for step in last_trace.steps:
+                status_emoji = '✅' if step['status'] == 'success' else '❌' if step['status'] == 'failure' else '⏳'
+                step_line = f"  {status_emoji} {step['name']}"
+                if 'duration_ms' in step:
+                    step_line += f" ({step['duration_ms']:.0f}ms)"
+                lines.append(step_line)
+                
+                if step.get('details'):
+                    # Redact secrets from details
+                    safe_details = redact_secrets({'details': step['details']})
+                    lines.append(f"     └─ {safe_details['details']}")
+        
+        # Error
+        if last_trace.error:
+            lines.append('')
+            lines.append(f'**Error:** {last_trace.error}')
+        
+        # Relevant links
+        if last_trace.metadata.get('run_link'):
+            lines.append('')
+            lines.append(f"[View Run]({last_trace.metadata['run_link']})")
+        
+        # Limit output length (Discord has 2000 char limit)
+        content = '\n'.join(lines)
+        if len(content) > 1900:
+            content = content[:1900] + '\n\n... (truncated)'
+        
+        return create_response(4, {
+            'content': content,
+            'flags': 64  # Ephemeral
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_debug_last_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error retrieving debug info: {str(e)}',
+            'flags': 64
+        })
+
+
 def handle_set_api_base_command(interaction):
     """Handle /set-api-base command - update VITE_API_BASE secret (admin only, feature-flagged)."""
     try:
@@ -879,6 +971,8 @@ def handler(event, context):
                 return handle_agents_command(interaction)
             elif command_name == 'status-digest':
                 return handle_status_digest_command(interaction)
+            elif command_name == 'debug-last':
+                return handle_debug_last_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
