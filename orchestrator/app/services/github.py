@@ -177,3 +177,145 @@ class GitHubService:
         except GithubException as e:
             print(f'Error merging PR #{pr_number}: {str(e)}')
             return False
+    
+    def update_repo_variable(self, variable_name, variable_value, repo_name='gcolon75/Project-Valine'):
+        """
+        Update or create a repository variable.
+        
+        Args:
+            variable_name: Name of the variable
+            variable_value: Value to set
+            repo_name: Full repository name
+        
+        Returns:
+            dict with 'success' (bool) and 'message' (str)
+        """
+        try:
+            import requests
+            
+            owner, repo = repo_name.split('/')
+            url = f'https://api.github.com/repos/{owner}/{repo}/actions/variables/{variable_name}'
+            
+            headers = {
+                'Authorization': f'token {self.token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            
+            payload = {
+                'name': variable_name,
+                'value': variable_value
+            }
+            
+            # Try to update first (PATCH)
+            response = requests.patch(url, headers=headers, json=payload, timeout=10)
+            
+            if response.status_code == 204:
+                print(f'Repository variable {variable_name} updated successfully')
+                return {
+                    'success': True,
+                    'message': f'Variable {variable_name} updated successfully'
+                }
+            elif response.status_code == 404:
+                # Variable doesn't exist, create it (POST)
+                create_url = f'https://api.github.com/repos/{owner}/{repo}/actions/variables'
+                response = requests.post(create_url, headers=headers, json=payload, timeout=10)
+                
+                if response.status_code == 201:
+                    print(f'Repository variable {variable_name} created successfully')
+                    return {
+                        'success': True,
+                        'message': f'Variable {variable_name} created successfully'
+                    }
+                else:
+                    print(f'Failed to create variable: {response.status_code} - {response.text}')
+                    return {
+                        'success': False,
+                        'message': f'Failed to create variable (status {response.status_code})'
+                    }
+            else:
+                print(f'Failed to update variable: {response.status_code} - {response.text}')
+                return {
+                    'success': False,
+                    'message': f'Failed to update variable (status {response.status_code})'
+                }
+        
+        except Exception as e:
+            print(f'Error updating repository variable: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}'
+            }
+    
+    def update_repo_secret(self, secret_name, secret_value, repo_name='gcolon75/Project-Valine'):
+        """
+        Update or create a repository secret.
+        Requires libsodium for encryption.
+        
+        Args:
+            secret_name: Name of the secret
+            secret_value: Value to set (will be encrypted)
+            repo_name: Full repository name
+        
+        Returns:
+            dict with 'success' (bool) and 'message' (str)
+        """
+        try:
+            import requests
+            from nacl import encoding, public
+            
+            owner, repo = repo_name.split('/')
+            
+            headers = {
+                'Authorization': f'token {self.token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            
+            # Get the repository's public key
+            pub_key_url = f'https://api.github.com/repos/{owner}/{repo}/actions/secrets/public-key'
+            pub_key_response = requests.get(pub_key_url, headers=headers, timeout=10)
+            
+            if pub_key_response.status_code != 200:
+                print(f'Failed to get public key: {pub_key_response.status_code}')
+                return {
+                    'success': False,
+                    'message': f'Failed to get repository public key (status {pub_key_response.status_code})'
+                }
+            
+            pub_key_data = pub_key_response.json()
+            public_key = pub_key_data['key']
+            key_id = pub_key_data['key_id']
+            
+            # Encrypt the secret value
+            public_key_obj = public.PublicKey(public_key.encode('utf-8'), encoding.Base64Encoder())
+            sealed_box = public.SealedBox(public_key_obj)
+            encrypted = sealed_box.encrypt(secret_value.encode('utf-8'))
+            encrypted_value = encoding.Base64Encoder().encode(encrypted).decode('utf-8')
+            
+            # Update/create the secret
+            secret_url = f'https://api.github.com/repos/{owner}/{repo}/actions/secrets/{secret_name}'
+            payload = {
+                'encrypted_value': encrypted_value,
+                'key_id': key_id
+            }
+            
+            response = requests.put(secret_url, headers=headers, json=payload, timeout=10)
+            
+            if response.status_code in [201, 204]:
+                print(f'Repository secret {secret_name} updated successfully')
+                return {
+                    'success': True,
+                    'message': f'Secret {secret_name} updated successfully'
+                }
+            else:
+                print(f'Failed to update secret: {response.status_code} - {response.text}')
+                return {
+                    'success': False,
+                    'message': f'Failed to update secret (status {response.status_code})'
+                }
+        
+        except Exception as e:
+            print(f'Error updating repository secret: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}'
+            }

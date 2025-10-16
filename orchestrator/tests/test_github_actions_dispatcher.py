@@ -5,7 +5,7 @@ Tests dispatch triggering, polling, and result parsing.
 import unittest
 from unittest.mock import Mock, patch, MagicMock
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.services.github_actions_dispatcher import GitHubActionsDispatcher
 
 
@@ -99,7 +99,7 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         mock_run = Mock()
         mock_run.id = 12345
         mock_run.name = 'Diagnose on Demand — test-123 by testuser'
-        mock_run.created_at = datetime.utcnow()
+        mock_run.created_at = datetime.now(timezone.utc)
         
         mock_workflow.get_runs.return_value = [mock_run]
         mock_repo.get_workflows.return_value = [mock_workflow]
@@ -119,7 +119,7 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         mock_run = Mock()
         mock_run.id = 12345
         mock_run.name = 'Diagnose on Demand — other-456 by otheruser'
-        mock_run.created_at = datetime.utcnow()
+        mock_run.created_at = datetime.now(timezone.utc)
         
         mock_workflow.get_runs.return_value = [mock_run]
         mock_repo.get_workflows.return_value = [mock_workflow]
@@ -138,7 +138,7 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         mock_run = Mock()
         mock_run.id = 12345
         mock_run.name = 'Diagnose on Demand — test-123 by testuser'
-        mock_run.created_at = datetime.utcnow() - timedelta(minutes=10)
+        mock_run.created_at = datetime.now(timezone.utc) - timedelta(minutes=10)
         
         mock_workflow.get_runs.return_value = [mock_run]
         mock_repo.get_workflows.return_value = [mock_workflow]
@@ -207,8 +207,8 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         mock_run.html_url = 'https://github.com/owner/repo/actions/runs/12345'
         mock_run.status = 'completed'
         mock_run.conclusion = 'success'
-        mock_run.created_at = datetime.utcnow()
-        mock_run.updated_at = datetime.utcnow()
+        mock_run.created_at = datetime.now(timezone.utc)
+        mock_run.updated_at = datetime.now(timezone.utc)
         mock_run.name = 'Diagnose on Demand — test-123 by testuser'
 
         result = self.dispatcher.get_run_summary(mock_run)

@@ -8,7 +8,7 @@ import json
 import time
 import uuid
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from github import GithubException
 
 
@@ -176,7 +176,7 @@ class GitHubActionsDispatcher:
         """
         try:
             repo = self.github_service.get_repository(self.repo_name)
-            cutoff_time = datetime.utcnow() - timedelta(minutes=max_age_minutes)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=max_age_minutes)
 
             # Get recent workflow runs
             workflows = repo.get_workflows()
@@ -425,3 +425,190 @@ class GitHubActionsDispatcher:
         return {
             'content': content
         }
+
+    def get_workflow_by_name(self, workflow_name):
+        """
+        Get a workflow by name.
+
+        Args:
+            workflow_name: Name of the workflow to find
+
+        Returns:
+            Workflow object or None if not found
+        """
+        try:
+            repo = self.github_service.get_repository(self.repo_name)
+            workflows = repo.get_workflows()
+            
+            for workflow in workflows:
+                if workflow.name == workflow_name:
+                    print(f'Found workflow "{workflow_name}" with ID: {workflow.id}')
+                    return workflow
+            
+            print(f'Workflow "{workflow_name}" not found')
+            return None
+        except GithubException as e:
+            print(f'Error getting workflow by name: {str(e)}')
+            return None
+
+    def list_workflow_runs(self, workflow_name, branch='main', count=3):
+        """
+        List recent runs for a workflow.
+
+        Args:
+            workflow_name: Name of the workflow
+            branch: Branch to filter by (default: main)
+            count: Number of runs to retrieve (default: 3, max: 100)
+
+        Returns:
+            list of workflow run dicts with relevant info, or empty list on error
+        """
+        try:
+            workflow = self.get_workflow_by_name(workflow_name)
+            if not workflow:
+                return []
+
+            # Get runs for the workflow on the specified branch
+            runs = workflow.get_runs(branch=branch)
+            
+            result = []
+            for i, run in enumerate(runs):
+                if i >= count:
+                    break
+                
+                # Calculate duration if completed
+                duration_seconds = None
+                if run.status == 'completed' and run.created_at and run.updated_at:
+                    duration = run.updated_at - run.created_at
+                    duration_seconds = int(duration.total_seconds())
+                
+                result.append({
+                    'id': run.id,
+                    'name': run.name,
+                    'status': run.status,
+                    'conclusion': run.conclusion,
+                    'html_url': run.html_url,
+                    'created_at': run.created_at,
+                    'updated_at': run.updated_at,
+                    'duration_seconds': duration_seconds,
+                    'event': run.event,
+                    'head_sha': run.head_sha[:7] if run.head_sha else None
+                })
+            
+            return result
+
+        except GithubException as e:
+            print(f'Error listing workflow runs for "{workflow_name}": {str(e)}')
+            return []
+        except Exception as e:
+            print(f'Unexpected error listing workflow runs: {str(e)}')
+            return []
+
+    def trigger_client_deploy(self, correlation_id, requester, api_base=''):
+        """
+        Trigger Client Deploy workflow via workflow_dispatch.
+
+        Args:
+            correlation_id: Unique correlation ID for tracking
+            requester: Username or ID of the requester
+            api_base: Optional API base URL override
+
+        Returns:
+            dict with 'success', 'message', and optionally 'workflow_id'
+        """
+        try:
+            workflow = self.get_workflow_by_name('Client Deploy')
+            if not workflow:
+                return {
+                    'success': False,
+                    'message': 'Client Deploy workflow not found'
+                }
+
+            owner, repo = self.repo_name.split('/')
+            url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/{workflow.id}/dispatches'
+
+            payload = {
+                'ref': 'main',
+                'inputs': {}
+            }
+            
+            # Add api_base input if provided
+            if api_base:
+                payload['inputs']['VITE_API_BASE'] = api_base
+
+            response = requests.post(url, headers=self.headers, json=payload, timeout=10)
+
+            if response.status_code == 204:
+                print(f'Client Deploy triggered with correlation_id: {correlation_id}')
+                return {
+                    'success': True,
+                    'message': f'Client Deploy triggered',
+                    'workflow_id': workflow.id
+                }
+            elif response.status_code == 403:
+                print(f'Client Deploy dispatch forbidden (403): {response.text}')
+                return {
+                    'success': False,
+                    'message': 'Permission denied. Check GitHub token permissions.'
+                }
+            elif response.status_code == 429:
+                print('Rate limit exceeded (429)')
+                return {
+                    'success': False,
+                    'message': 'Rate limit exceeded. Please try again later.'
+                }
+            else:
+                print(f'Client Deploy dispatch failed with status {response.status_code}: {response.text}')
+                return {
+                    'success': False,
+                    'message': f'Failed to trigger workflow (status {response.status_code})'
+                }
+
+        except requests.exceptions.Timeout:
+            print('Client Deploy dispatch request timed out')
+            return {
+                'success': False,
+                'message': 'Request timed out'
+            }
+        except Exception as e:
+            print(f'Error triggering Client Deploy: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}'
+            }
+
+    def find_recent_run_for_workflow(self, workflow_name, max_age_seconds=30):
+        """
+        Find the most recent run for a workflow (within max_age_seconds).
+
+        Args:
+            workflow_name: Name of the workflow
+            max_age_seconds: Maximum age of runs to consider (default: 30)
+
+        Returns:
+            Workflow run object or None if not found
+        """
+        try:
+            workflow = self.get_workflow_by_name(workflow_name)
+            if not workflow:
+                return None
+
+            cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=max_age_seconds)
+            runs = workflow.get_runs()
+
+            for run in runs:
+                # Ensure timezone-aware comparison
+                run_created = run.created_at
+                if run_created.tzinfo is None:
+                    run_created = run_created.replace(tzinfo=timezone.utc)
+                
+                if run_created >= cutoff_time:
+                    print(f'Found recent run {run.id} for workflow "{workflow_name}"')
+                    return run
+
+            print(f'No recent run found for workflow "{workflow_name}"')
+            return None
+
+        except GithubException as e:
+            print(f'Error finding recent run: {str(e)}')
+            return None

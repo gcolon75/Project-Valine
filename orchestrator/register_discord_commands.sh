@@ -60,12 +60,14 @@ curl -X POST "${BASE_URL}" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "status",
-    "description": "Check orchestrator status",
+    "description": "Show last 1-3 runs for Client Deploy and Diagnose workflows",
     "options": [{
-      "name": "run_id",
-      "description": "Optional run ID for specific status",
-      "type": 3,
-      "required": false
+      "name": "count",
+      "description": "Number of runs to show (1-3, default: 2)",
+      "type": 4,
+      "required": false,
+      "min_value": 1,
+      "max_value": 3
     }]
   }' \
   --silent -o /dev/null -w "Status: %{http_code}\n"
@@ -149,21 +151,89 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
-echo "✅ Commands registered successfully!"
+echo "📝 Registering /deploy-client command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "deploy-client",
+    "description": "Trigger Client Deploy workflow",
+    "options": [{
+      "name": "api_base",
+      "description": "Optional: override API base URL",
+      "type": 3,
+      "required": false
+    }, {
+      "name": "wait",
+      "description": "Optional: wait for deployment completion",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
+echo "📝 Registering /set-frontend command (admin only)..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "set-frontend",
+    "description": "Update FRONTEND_BASE_URL (admin only, feature-flagged)",
+    "options": [{
+      "name": "url",
+      "description": "New frontend URL (must be https)",
+      "type": 3,
+      "required": true
+    }, {
+      "name": "confirm",
+      "description": "Confirmation required (set to true)",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
+echo "📝 Registering /set-api-base command (admin only)..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "set-api-base",
+    "description": "Update VITE_API_BASE secret (admin only, feature-flagged)",
+    "options": [{
+      "name": "url",
+      "description": "New API base URL (must be https)",
+      "type": 3,
+      "required": true
+    }, {
+      "name": "confirm",
+      "description": "Confirmation required (set to true)",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
 echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
 echo "  • /plan - Create a daily plan from ready GitHub issues"
 echo "  • /approve - Approve and execute a plan"
-echo "  • /status - Check orchestrator status"
+echo "  • /status - Show last 1-3 runs for Client Deploy and Diagnose workflows"
 echo "  • /ship - Finalize and ship a completed run"
 echo "  • /verify-latest - Verify the latest Client Deploy workflow run"
 echo "  • /verify-run - Verify a specific workflow run by ID"
 echo "  • /diagnose - Trigger on-demand diagnose workflow"
+echo "  • /deploy-client - Trigger Client Deploy workflow with optional api_base override"
+echo "  • /set-frontend - Update FRONTEND_BASE_URL (admin only, feature-flagged)"
+echo "  • /set-api-base - Update VITE_API_BASE secret (admin only, feature-flagged)"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"
 echo "2. Set the Interactions Endpoint URL in Discord Developer Portal"
 echo "3. Test commands in your Discord server"
+echo "4. For admin commands, configure ALLOW_SECRET_WRITES, ADMIN_USER_IDS, ADMIN_ROLE_IDS"
 echo ""
