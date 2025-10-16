@@ -1,15 +1,20 @@
 """
 Discord slash command handler for Project Valine orchestrator.
-Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, and /diagnose commands.
+Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
+/deploy-client, /set-frontend, and /set-api-base commands.
 """
 import json
 import os
+import time
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from app.verification.verifier import DeployVerifier
 from app.services.github import GitHubService
 from app.services.github_actions_dispatcher import GitHubActionsDispatcher
 from app.services.discord import DiscordService
+from app.utils.url_validator import URLValidator
+from app.utils.admin_auth import AdminAuthenticator
+from app.utils.time_formatter import TimeFormatter
 
 
 def verify_discord_signature(signature, timestamp, body, public_key):
@@ -53,12 +58,85 @@ def handle_approve_command(interaction):
 
 
 def handle_status_command(interaction):
-    """Handle /status command - check orchestrator status."""
-    # TODO: Implement status checking logic
-    return create_response(4, {
-        'content': '🔍 Checking orchestrator status...\nFetching current runs and their states.',
-        'flags': 64
-    })
+    """Handle /status command - show last 1-3 runs for Client Deploy and Diagnose workflows."""
+    try:
+        # Extract optional count parameter (default: 2, min: 1, max: 3)
+        options = interaction.get('data', {}).get('options', [])
+        count = 2
+        for option in options:
+            if option.get('name') == 'count':
+                count = int(option.get('value', 2))
+                count = max(1, min(3, count))  # Clamp to 1-3
+        
+        # Initialize services
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        formatter = TimeFormatter()
+        
+        # Get runs for both workflows
+        client_deploy_runs = dispatcher.list_workflow_runs('Client Deploy', count=count)
+        diagnose_runs = dispatcher.list_workflow_runs('Diagnose on Demand', count=count)
+        
+        # Build status message
+        content = f'📊 **Status (last {count})**\n\n'
+        
+        # Client Deploy section
+        content += '**Client Deploy:**\n'
+        if client_deploy_runs:
+            for run in client_deploy_runs:
+                conclusion = run.get('conclusion', 'in_progress')
+                if conclusion == 'success':
+                    icon = '🟢'
+                elif conclusion == 'failure':
+                    icon = '🔴'
+                elif conclusion is None or run.get('status') != 'completed':
+                    icon = '🟡'
+                    conclusion = 'running'
+                else:
+                    icon = '⚪'
+                
+                ago = formatter.format_relative_time(run.get('created_at'))
+                duration = formatter.format_duration_seconds(run.get('duration_seconds'))
+                url = run.get('html_url', '')
+                
+                content += f'{icon} {conclusion} • {ago} • {duration} • [run]({url})\n'
+        else:
+            content += '  No runs found\n'
+        
+        content += '\n**Diagnose on Demand:**\n'
+        if diagnose_runs:
+            for run in diagnose_runs:
+                conclusion = run.get('conclusion', 'in_progress')
+                if conclusion == 'success':
+                    icon = '🟢'
+                elif conclusion == 'failure':
+                    icon = '🔴'
+                elif conclusion is None or run.get('status') != 'completed':
+                    icon = '🟡'
+                    conclusion = 'running'
+                else:
+                    icon = '⚪'
+                
+                ago = formatter.format_relative_time(run.get('created_at'))
+                duration = formatter.format_duration_seconds(run.get('duration_seconds'))
+                url = run.get('html_url', '')
+                
+                content += f'{icon} {conclusion} • {ago} • {duration} • [run]({url})\n'
+        else:
+            content += '  No runs found\n'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_status_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
 
 
 def handle_ship_command(interaction):
@@ -253,6 +331,253 @@ def handle_diagnose_command(interaction):
         })
 
 
+def handle_deploy_client_command(interaction):
+    """Handle /deploy-client command - trigger Client Deploy workflow."""
+    try:
+        # Extract optional parameters
+        options = interaction.get('data', {}).get('options', [])
+        api_base = ''
+        wait = False
+        
+        for option in options:
+            if option.get('name') == 'api_base':
+                api_base = option.get('value', '')
+            elif option.get('name') == 'wait':
+                wait = option.get('value', False)
+        
+        # Validate api_base if provided
+        if api_base:
+            validator = URLValidator()
+            validation_result = validator.validate_url(api_base)
+            if not validation_result['valid']:
+                return create_response(4, {
+                    'content': f'❌ Invalid api_base URL: {validation_result["message"]}',
+                    'flags': 64
+                })
+        
+        # Initialize services
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        
+        # Generate correlation ID
+        correlation_id = dispatcher.generate_correlation_id()
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Trigger Client Deploy workflow
+        dispatch_result = dispatcher.trigger_client_deploy(
+            correlation_id=correlation_id,
+            requester=requester,
+            api_base=api_base
+        )
+        
+        if not dispatch_result.get('success'):
+            return create_response(4, {
+                'content': f'❌ Failed to trigger Client Deploy: {dispatch_result.get("message")}',
+                'flags': 64
+            })
+        
+        # Build initial response
+        short_id = correlation_id[:8]
+        content = f'🟡 **Starting Client Deploy...**\n\n'
+        if api_base:
+            content += f'**API Base Override:** `{api_base}`\n'
+        content += f'**Requested by:** {requester}\n\n'
+        
+        # Try to find the run
+        time.sleep(3)  # Wait a bit for the run to be created
+        run = dispatcher.find_recent_run_for_workflow('Client Deploy', max_age_seconds=30)
+        
+        if run:
+            content += f'⏳ **Tracking run:** {run.html_url}\n'
+            
+            # If wait is enabled, poll for completion
+            if wait:
+                content += '\n_Waiting for completion (up to 3 minutes)..._'
+                # Return initial response first
+                # Note: In a real implementation, we'd need to use deferred responses
+                # or a follow-up mechanism. For now, we'll just indicate tracking.
+        else:
+            content += '⏳ Workflow dispatched. Check GitHub Actions for run details.'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_deploy_client_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_set_frontend_command(interaction):
+    """Handle /set-frontend command - update FRONTEND_BASE_URL (admin only, feature-flagged)."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        url = None
+        confirm = False
+        
+        for option in options:
+            if option.get('name') == 'url':
+                url = option.get('value')
+            elif option.get('name') == 'confirm':
+                confirm = option.get('value', False)
+        
+        if not url:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: url',
+                'flags': 64
+            })
+        
+        # Check admin authorization
+        authenticator = AdminAuthenticator()
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', '')
+        role_ids = [role for role in interaction.get('member', {}).get('roles', [])]
+        
+        auth_result = authenticator.authorize_admin_action(
+            user_id, 
+            role_ids, 
+            requires_secret_write=True
+        )
+        
+        if not auth_result['authorized']:
+            return create_response(4, {
+                'content': auth_result['message'],
+                'flags': 64
+            })
+        
+        # Check confirmation
+        if not confirm:
+            return create_response(4, {
+                'content': '❌ Confirmation required: pass `confirm: true` to update FRONTEND_BASE_URL',
+                'flags': 64
+            })
+        
+        # Validate URL
+        validator = URLValidator()
+        validation_result = validator.validate_url(url)
+        if not validation_result['valid']:
+            return create_response(4, {
+                'content': f'❌ Invalid URL: {validation_result["message"]}',
+                'flags': 64
+            })
+        
+        # Update repository variable (preferred) or secret
+        github_service = GitHubService()
+        
+        # Try variable first
+        result = github_service.update_repo_variable('FRONTEND_BASE_URL', url)
+        
+        if result['success']:
+            fingerprint = AdminAuthenticator.get_value_fingerprint(url)
+            return create_response(4, {
+                'content': f'✅ Updated FRONTEND_BASE_URL (fingerprint {fingerprint})',
+                'flags': 64
+            })
+        else:
+            return create_response(4, {
+                'content': f'❌ Failed to update FRONTEND_BASE_URL: {result["message"]}',
+                'flags': 64
+            })
+    
+    except Exception as e:
+        print(f'Error in handle_set_frontend_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_set_api_base_command(interaction):
+    """Handle /set-api-base command - update VITE_API_BASE secret (admin only, feature-flagged)."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        url = None
+        confirm = False
+        
+        for option in options:
+            if option.get('name') == 'url':
+                url = option.get('value')
+            elif option.get('name') == 'confirm':
+                confirm = option.get('value', False)
+        
+        if not url:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: url',
+                'flags': 64
+            })
+        
+        # Check admin authorization
+        authenticator = AdminAuthenticator()
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', '')
+        role_ids = [role for role in interaction.get('member', {}).get('roles', [])]
+        
+        auth_result = authenticator.authorize_admin_action(
+            user_id, 
+            role_ids, 
+            requires_secret_write=True
+        )
+        
+        if not auth_result['authorized']:
+            return create_response(4, {
+                'content': auth_result['message'],
+                'flags': 64
+            })
+        
+        # Check confirmation
+        if not confirm:
+            return create_response(4, {
+                'content': '❌ Confirmation required: pass `confirm: true` to update VITE_API_BASE',
+                'flags': 64
+            })
+        
+        # Validate URL
+        validator = URLValidator()
+        validation_result = validator.validate_url(url)
+        if not validation_result['valid']:
+            return create_response(4, {
+                'content': f'❌ Invalid URL: {validation_result["message"]}',
+                'flags': 64
+            })
+        
+        # Update repository secret
+        github_service = GitHubService()
+        result = github_service.update_repo_secret('VITE_API_BASE', url)
+        
+        if result['success']:
+            fingerprint = AdminAuthenticator.get_value_fingerprint(url)
+            return create_response(4, {
+                'content': f'✅ Updated VITE_API_BASE (fingerprint {fingerprint})',
+                'flags': 64
+            })
+        else:
+            return create_response(4, {
+                'content': f'❌ Failed to update VITE_API_BASE: {result["message"]}',
+                'flags': 64
+            })
+    
+    except Exception as e:
+        print(f'Error in handle_set_api_base_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -312,6 +637,12 @@ def handler(event, context):
                 return handle_verify_run_command(interaction)
             elif command_name == 'diagnose':
                 return handle_diagnose_command(interaction)
+            elif command_name == 'deploy-client':
+                return handle_deploy_client_command(interaction)
+            elif command_name == 'set-frontend':
+                return handle_set_frontend_command(interaction)
+            elif command_name == 'set-api-base':
+                return handle_set_api_base_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

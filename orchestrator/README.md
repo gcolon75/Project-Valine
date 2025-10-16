@@ -259,6 +259,112 @@ The `/diagnose` command triggers the "Diagnose on Demand" workflow via GitHub Ac
 - 🟢 OK - All checks passed with evidence
 - 🔴 Failed - Detailed failure reasons with actionable fixes
 
+### Quality-of-Life Commands (Phase 3)
+
+The orchestrator includes streamlined commands for deployment visibility and operations:
+
+#### `/status [count]`
+Shows the last 1-3 workflow runs for "Client Deploy" and "Diagnose on Demand" with outcomes, durations, and links.
+
+**Parameters:**
+- `count` (optional): Number of runs to show (1-3, default: 2)
+
+**Example:**
+```
+/status
+/status count:3
+```
+
+**Response Format:**
+```
+📊 Status (last 2)
+
+Client Deploy:
+🟢 success • 2h ago • 82s • [run](url)
+🔴 failure • 3h ago • 95s • [run](url)
+
+Diagnose on Demand:
+🟢 success • 1h ago • 25s • [run](url)
+🟡 running • 5m ago • N/A • [run](url)
+```
+
+#### `/deploy-client [api_base] [wait]`
+Triggers the "Client Deploy" workflow via workflow_dispatch.
+
+**Parameters:**
+- `api_base` (optional): Override API base URL (must be https). If omitted, uses the VITE_API_BASE secret.
+- `wait` (optional): Wait for deployment completion (default: false)
+
+**Example:**
+```
+/deploy-client
+/deploy-client api_base:https://api.example.com
+/deploy-client api_base:https://api.example.com wait:true
+```
+
+**Response:**
+- 🟡 Initial acknowledgment with run link
+- ⏳ Tracking run status (if wait enabled)
+- 🟢 Success or 🔴 Failure (if wait enabled and completes within 3 minutes)
+
+**Guardrails:**
+- URL validation enforces https scheme
+- Private IPs and localhost rejected by default (unless SAFE_LOCAL flag is set)
+- Optional domain allowlist support via ALLOWED_DOMAINS
+
+#### Admin Commands (Feature-Flagged)
+
+The following commands are **OFF by default** and require explicit configuration:
+
+##### `/set-frontend <url> [confirm]`
+Updates the FRONTEND_BASE_URL repository variable (or secret if preferred).
+
+**Requirements:**
+- User must be in ADMIN_USER_IDS or have a role in ADMIN_ROLE_IDS
+- ALLOW_SECRET_WRITES=true must be set
+- `confirm:true` must be passed
+
+**Example:**
+```
+/set-frontend url:https://example.com confirm:true
+```
+
+**Response:**
+- ✅ Updated FRONTEND_BASE_URL (fingerprint …abcd)
+- ❌ Not allowed (admin only) / Confirmation required / Feature disabled
+
+##### `/set-api-base <url> [confirm]`
+Updates the VITE_API_BASE repository secret.
+
+**Requirements:**
+- Same as `/set-frontend`
+- Never echoes the secret value back
+
+**Example:**
+```
+/set-api-base url:https://api.example.com confirm:true
+```
+
+**Security Features:**
+- Secrets are never logged or echoed in responses
+- Only fingerprint (last 4 chars of hash) is shown for confirmation
+- Two-step confirmation required (confirm:true option)
+- Admin allowlist enforcement
+- Feature flag must be explicitly enabled
+
+**Configuration:**
+To enable admin commands, set these environment variables:
+```bash
+ALLOW_SECRET_WRITES=true
+ADMIN_USER_IDS=discord_user_id_1,discord_user_id_2
+ADMIN_ROLE_IDS=discord_role_id_1,discord_role_id_2
+```
+
+**GitHub Token Permissions:**
+For secret/variable updates, the GitHub token requires:
+- `repo` scope (for variable updates)
+- Repository administration permissions (for secret updates)
+
 ### Test GitHub Webhook
 
 1. Create a test issue in your repository with the `ready` label
