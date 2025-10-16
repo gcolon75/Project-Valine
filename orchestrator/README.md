@@ -6,12 +6,13 @@ An AWS Lambda-based orchestrator that integrates Discord slash commands with Git
 
 The orchestrator consists of:
 
-- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`)
+- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`, `/deploy-client`, `/agents`, `/status-digest`)
 - **GitHub Webhook Handler**: Lambda function that processes GitHub events (issues, PRs, check suites)
 - **Orchestrator Graph**: Core workflow logic that coordinates between services
 - **Services Layer**: Interfaces for GitHub API, Discord API, DynamoDB state storage, and GitHub Actions dispatching
 - **Verification Module**: Deploy verification system for GitHub Actions workflow runs
 - **Diagnose Dispatcher**: On-demand workflow triggering with correlation tracking and result parsing
+- **Multi-Agent Registry**: Agent definitions and capabilities for orchestration and routing
 
 ## Prerequisites
 
@@ -367,6 +368,110 @@ Updates the VITE_API_BASE repository secret.
 - Two-step confirmation required (confirm:true option)
 - Admin allowlist enforcement
 - Feature flag must be explicitly enabled
+
+## Multi-Agent Orchestration
+
+The orchestrator includes a multi-agent system for coordinating different workflow automation capabilities.
+
+### Available Agents
+
+The orchestrator provides four specialized agents:
+
+1. **Deploy Verifier** (`deploy_verifier`)
+   - Verifies deployment health by checking GitHub Actions workflows, frontend endpoints, and API health
+   - Entry command: `/verify-latest`
+
+2. **Diagnose Runner** (`diagnose_runner`)
+   - Runs comprehensive infrastructure diagnostics including AWS credentials, S3, CloudFront, and API endpoints
+   - Entry command: `/diagnose`
+
+3. **Status Reporter** (`status_reporter`)
+   - Reports recent workflow run status for Client Deploy and Diagnose workflows
+   - Entry command: `/status`
+
+4. **Client Deploy** (`deploy_client`)
+   - Triggers Client Deploy workflow with optional API base override and completion tracking
+   - Entry command: `/deploy-client`
+
+### Multi-Agent Commands
+
+#### `/agents`
+Lists all available orchestrator agents with their descriptions and entry commands.
+
+**Example:**
+```
+/agents
+```
+
+**Response:**
+```
+🤖 Available Orchestrator Agents
+
+Deploy Verifier (deploy_verifier)
+Verifies deployment health by checking GitHub Actions workflows, frontend endpoints, and API health.
+Entry command: /verify-latest
+
+Diagnose Runner (diagnose_runner)
+Runs comprehensive infrastructure diagnostics including AWS credentials, S3, CloudFront, and API endpoints.
+Entry command: /diagnose
+
+Status Reporter (status_reporter)
+Reports recent workflow run status for Client Deploy and Diagnose workflows.
+Entry command: /status
+
+Client Deploy (deploy_client)
+Triggers Client Deploy workflow with optional API base override and completion tracking.
+Entry command: /deploy-client
+
+Total: 4 agents
+```
+
+#### `/status-digest [period]`
+Shows an aggregated status digest for workflows over a time period.
+
+**Parameters:**
+- `period` (optional): Time period for digest - `daily` (default) or `weekly`
+
+**Example:**
+```
+/status-digest
+/status-digest period:daily
+/status-digest period:weekly
+```
+
+**Response Format:**
+```
+📊 Status Digest - Last 24 Hours
+
+Client Deploy:
+• Runs: 5 (4 ✅ / 1 ❌)
+• Avg duration: 1m 25s
+• Latest: [success](https://github.com/...) (2h ago)
+
+Diagnose on Demand:
+• Runs: 3 (3 ✅ / 0 ❌)
+• Avg duration: 28s
+• Latest: [success](https://github.com/...) (45m ago)
+```
+
+**Digest Contents:**
+- Total run counts with success/failure breakdown
+- Average duration across all runs in the period
+- Link to the most recent run with relative time
+- Period can be daily (last 24 hours) or weekly (last 7 days)
+
+### Extensibility
+
+The agent registry is designed to be easily extensible. New agents can be added by:
+1. Defining the agent in `app/agents/registry.py`
+2. Implementing the corresponding command handler
+3. Registering the command via the Discord API
+
+This provides a foundation for future multi-agent capabilities such as:
+- Automated issue triage and labeling
+- PR review and approval workflows
+- Deployment rollback and recovery
+- Performance monitoring and alerting
 
 **Configuration:**
 To enable admin commands, set these environment variables:
