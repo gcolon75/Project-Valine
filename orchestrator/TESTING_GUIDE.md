@@ -9,6 +9,52 @@ This guide walks through testing the orchestrator after deployment and integrati
 - GitHub webhook configured
 - Discord channel ID obtained
 
+## Viewing Logs
+
+### Structured JSON Logs
+
+The orchestrator outputs structured JSON logs to CloudWatch. Each log entry includes:
+- `timestamp`: ISO 8601 timestamp
+- `level`: Log level (INFO, WARNING, ERROR)
+- `service`: Service name (orchestrator)
+- `function`: Function name
+- `message`: Log message
+- `trace_id`: Unique trace identifier
+- `user_id`: Discord user ID (when available)
+- `command`: Command name (when available)
+
+### CloudWatch Logs
+
+View logs in real-time:
+```bash
+aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
+```
+
+### CloudWatch Logs Insights
+
+Query logs using CloudWatch Logs Insights. Example queries:
+
+**Find all errors:**
+```
+fields @timestamp, level, message, trace_id
+| filter level = "ERROR"
+| sort @timestamp desc
+```
+
+**Track a specific trace:**
+```
+fields @timestamp, function, message
+| filter trace_id = "your-trace-id"
+| sort @timestamp asc
+```
+
+**Command execution statistics:**
+```
+fields command, duration_ms
+| filter command != ""
+| stats avg(duration_ms) as avg_duration, count() as executions by command
+```
+
 ## Test 1: Discord PING Verification
 
 **Purpose**: Verify Discord can communicate with the orchestrator
@@ -24,6 +70,7 @@ This guide walks through testing the orchestrator after deployment and integrati
 
 **Troubleshooting**:
 - Check CloudWatch Logs: `aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow`
+- View structured logs with trace_id for detailed debugging
 - Verify DISCORD_PUBLIC_KEY is correct
 - Ensure Lambda is responding with correct PONG response
 

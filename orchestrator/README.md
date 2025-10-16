@@ -560,6 +560,104 @@ aws dynamodb get-item --table-name valine-orchestrator-runs-dev \
 - Verify the Lambda execution role has DynamoDB permissions
 - Check that the table name in environment variables matches the actual table
 
+## Observability
+
+The orchestrator provides comprehensive observability through structured logging, distributed tracing, and debugging commands.
+
+### Structured JSON Logs
+
+All logs are output in structured JSON format for easy parsing in CloudWatch Logs Insights:
+
+```json
+{
+  "timestamp": "2024-10-16T17:56:00.123Z",
+  "level": "INFO",
+  "service": "orchestrator",
+  "function": "handle_status_command",
+  "message": "Status command started",
+  "trace_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "123456789",
+  "command": "/status"
+}
+```
+
+### Trace ID Propagation
+
+Each command execution is assigned a unique `trace_id` that is propagated across all service calls, logs, and workflow dispatches. For workflows triggered with correlation IDs, the correlation ID is used as the trace ID.
+
+### Secret Redaction
+
+The logger automatically redacts sensitive information including:
+- Tokens and API keys
+- Passwords and secrets
+- Authorization headers
+- URLs with embedded credentials
+- Discord and GitHub tokens
+
+### /debug-last Command
+
+Use `/debug-last` to retrieve the most recent execution trace for your user in the current channel:
+
+```
+/debug-last
+```
+
+This shows:
+- Trace ID
+- Command name and timestamp
+- Execution steps with timings
+- Any errors that occurred
+- Links to related workflow runs
+- Key metadata
+
+The command is enabled by default in development (`ENABLE_DEBUG_CMD=true`) and disabled in production.
+
+### CloudWatch Logs Insights Queries
+
+#### Find all errors in the last hour
+```
+fields @timestamp, level, message, trace_id, error
+| filter level = "ERROR"
+| sort @timestamp desc
+| limit 100
+```
+
+#### Track a specific trace
+```
+fields @timestamp, function, message, fields
+| filter trace_id = "your-trace-id-here"
+| sort @timestamp asc
+```
+
+#### Command execution duration statistics
+```
+fields command, duration_ms
+| filter command != ""
+| stats avg(duration_ms) as avg_duration, max(duration_ms) as max_duration, count() as executions by command
+```
+
+#### Find failed command executions
+```
+fields @timestamp, command, user_id, error.type, error.message
+| filter error.type != ""
+| sort @timestamp desc
+```
+
+### AWS X-Ray Tracing
+
+Both Discord and GitHub webhook handlers have X-Ray tracing enabled (`Tracing: Active`). View traces in the AWS X-Ray console to see:
+- Service call dependencies
+- Latency breakdown
+- Error rates
+- Downstream service performance
+
+### Environment Variables
+
+Control observability features with these environment variables:
+
+- `ENABLE_JSON_LOGGING` (default: `true`): Enable structured JSON logging
+- `ENABLE_DEBUG_CMD` (default: `true` in dev, `false` in prod): Enable `/debug-last` command
+
 ## Development
 
 ### Local Testing

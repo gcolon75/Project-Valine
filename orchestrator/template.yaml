@@ -51,6 +51,9 @@ Parameters:
     Default: ""
     Description: API base URL for verification checks
 
+Conditions:
+  IsProduction: !Equals [!Ref Stage, 'prod']
+
 Resources:
   # DynamoDB table for storing orchestrator run state
   RunStateTable:
@@ -81,6 +84,7 @@ Resources:
       FunctionName: !Sub 'valine-orchestrator-discord-${Stage}'
       CodeUri: app/
       Handler: handlers.discord_handler.handler
+      Tracing: Active  # Enable X-Ray tracing for observability
       Environment:
         Variables:
           DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
@@ -89,9 +93,12 @@ Resources:
           FRONTEND_BASE_URL: !Ref FrontendBaseUrl
           VITE_API_BASE: !Ref ViteApiBase
           GITHUB_REPO: gcolon75/Project-Valine
+          ENABLE_JSON_LOGGING: 'true'
+          ENABLE_DEBUG_CMD: !If [IsProduction, 'false', 'true']
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
+        - AWSXRayDaemonWriteAccess  # Allow X-Ray traces
       Events:
         DiscordWebhook:
           Type: Api
@@ -107,14 +114,17 @@ Resources:
       FunctionName: !Sub 'valine-orchestrator-github-${Stage}'
       CodeUri: app/
       Handler: handlers.github_handler.handler
+      Tracing: Active  # Enable X-Ray tracing for observability
       Environment:
         Variables:
           GITHUB_WEBHOOK_SECRET: !Ref GitHubWebhookSecret
           GITHUB_TOKEN: !Ref GitHubToken
           DISCORD_BOT_TOKEN: !Ref DiscordBotToken
+          ENABLE_JSON_LOGGING: 'true'
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
+        - AWSXRayDaemonWriteAccess  # Allow X-Ray traces
       Events:
         GitHubWebhook:
           Type: Api
