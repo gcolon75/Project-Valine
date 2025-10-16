@@ -728,6 +728,59 @@ Phase 5 implementation is **production-ready** with:
 
 This section will be populated after deploying to staging and exercising the Phase 5 features.
 
+### Staging Validator Agent
+
+A comprehensive Phase 5 Staging Validator agent has been created to safely validate Phase 5 features in staging environments. This agent manages feature flags, collects evidence, and produces validation artifacts.
+
+**Location:** `orchestrator/scripts/phase5_staging_validator.py`
+
+**Quick Start:**
+```bash
+cd orchestrator/scripts
+
+# Generate configuration
+python phase5_staging_validator.py generate-config --output staging_config.json
+
+# Edit staging_config.json with your values
+
+# Run preflight checks
+python phase5_staging_validator.py preflight --config staging_config.json
+
+# Run full validation
+python phase5_staging_validator.py full-validation --config staging_config.json
+```
+
+**Documentation:**
+- [Scripts README](orchestrator/scripts/README.md) - Complete validator documentation
+- [Quick Start Guide](orchestrator/scripts/QUICKSTART.md) - 5-minute setup guide
+- [GitHub Actions Workflow](.github/workflows/phase5-staging-validation.yml) - Automated validation
+
+**Features:**
+- ✅ Preflight checks (AWS CLI, config validation, safety checks)
+- ✅ Feature flag management (ENABLE_DEBUG_CMD, ENABLE_ALERTS, ALERT_CHANNEL_ID)
+- ✅ Debug command validation (/debug-last)
+- ✅ Alerts validation with rate-limiting
+- ✅ CloudWatch logs collection
+- ✅ Validation report generation
+- ✅ Safety: Production channel detection
+- ✅ 26 unit tests (all passing)
+
+### Running Staging Validation
+
+**Option 1: Local Execution**
+```bash
+cd orchestrator/scripts
+python phase5_staging_validator.py full-validation --config staging_config.json
+```
+
+**Option 2: GitHub Actions**
+1. Go to: https://github.com/gcolon75/Project-Valine/actions/workflows/phase5-staging-validation.yml
+2. Click "Run workflow"
+3. Select validation type (preflight, enable-debug, enable-alerts, full-validation)
+4. Click "Run workflow"
+
+Evidence will be saved in `orchestrator/scripts/validation_evidence/` directory.
+
 ### Logging Validation
 
 **Environment:**

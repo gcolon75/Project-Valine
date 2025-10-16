@@ -1,0 +1,155 @@
+name: Phase 5 Staging Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_type:
+        description: 'Type of validation to run'
+        required: true
+        type: choice
+        options:
+          - preflight
+          - enable-debug
+          - enable-alerts
+          - disable-alerts
+          - full-validation
+        default: 'preflight'
+      
+      alert_channel_id:
+        description: 'Alert channel ID (for enable-alerts)'
+        required: false
+        type: string
+      
+      trace_id:
+        description: 'Trace ID to collect logs for (optional)'
+        required: false
+        type: string
+  
+  schedule:
+    # Run weekly validation on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  validate-phase5:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write  # Required for AWS OIDC
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+      
+      - name: Verify AWS CLI
+        run: |
+          aws --version
+          aws sts get-caller-identity
+      
+      - name: Generate staging configuration
+        env:
+          STAGING_LAMBDA_DISCORD: ${{ secrets.STAGING_LAMBDA_DISCORD }}
+          STAGING_LAMBDA_GITHUB: ${{ secrets.STAGING_LAMBDA_GITHUB }}
+          STAGING_CHANNEL_ID: ${{ secrets.STAGING_CHANNEL_ID }}
+          LOG_GROUP_DISCORD: ${{ secrets.LOG_GROUP_DISCORD }}
+          LOG_GROUP_GITHUB: ${{ secrets.LOG_GROUP_GITHUB }}
+        run: |
+          cd orchestrator/scripts
+          cat > staging_config.json <<EOF
+          {
+            "staging_deploy_method": "aws_parameter_store",
+            "aws_region": "us-west-2",
+            "staging_lambda_discord": "${STAGING_LAMBDA_DISCORD}",
+            "staging_lambda_github": "${STAGING_LAMBDA_GITHUB}",
+            "test_channel_id": "${STAGING_CHANNEL_ID}",
+            "log_group_discord": "${LOG_GROUP_DISCORD}",
+            "log_group_github": "${LOG_GROUP_GITHUB}",
+            "correlation_id_prefix": "CI",
+            "evidence_output_dir": "./validation_evidence"
+          }
+          EOF
+          
+          echo "Configuration generated:"
+          cat staging_config.json | jq .
+      
+      - name: Run preflight checks
+        if: github.event.inputs.validation_type == 'preflight' || github.event.schedule != ''
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py preflight --config staging_config.json
+      
+      - name: Enable debug command
+        if: github.event.inputs.validation_type == 'enable-debug'
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py enable-debug --config staging_config.json
+      
+      - name: Enable alerts
+        if: github.event.inputs.validation_type == 'enable-alerts'
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py enable-alerts \
+            --config staging_config.json \
+            --channel-id ${{ github.event.inputs.alert_channel_id || secrets.STAGING_CHANNEL_ID }}
+      
+      - name: Disable alerts
+        if: github.event.inputs.validation_type == 'disable-alerts'
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py disable-alerts --config staging_config.json
+      
+      - name: Collect CloudWatch logs
+        if: github.event.inputs.trace_id != ''
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py collect-logs \
+            --config staging_config.json \
+            --trace-id ${{ github.event.inputs.trace_id }}
+      
+      - name: Run full validation
+        if: github.event.inputs.validation_type == 'full-validation' || github.event.schedule != ''
+        run: |
+          cd orchestrator/scripts
+          python phase5_staging_validator.py full-validation --config staging_config.json
+      
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-validation-evidence-${{ github.run_number }}
+          path: orchestrator/scripts/validation_evidence/
+          retention-days: 30
+      
+      - name: Post validation summary
+        if: always()
+        run: |
+          cd orchestrator/scripts
+          
+          # Find the latest validation report
+          REPORT_FILE=$(ls -t validation_evidence/validation_report_*.md 2>/dev/null | head -1)
+          
+          if [ -n "$REPORT_FILE" ]; then
+            echo "## Phase 5 Validation Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat "$REPORT_FILE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No validation report found" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Phase 5 validation failed!"
+          echo "Check the workflow logs and validation evidence for details."
+          exit 1
