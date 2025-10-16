@@ -1,261 +1,152 @@
 """
-Structured JSON logger utility with trace ID support and secret redaction.
-
-Provides centralized logging with:
-- JSON output format for CloudWatch parsing
-- Trace ID and correlation ID propagation
-- Secret/token redaction
-- Contextual fields (user, command, service)
+Structured logger utility for Project Valine orchestrator.
+Produces JSON logs with fields: ts, level, service, fn, trace_id, correlation_id, user_id, cmd, msg.
 """
 import json
-import logging
-import re
-import sys
-import traceback
+import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
-
-
-class SecretRedactor:
-    """Redacts sensitive information from log messages and data."""
-    
-    # Patterns for sensitive data
-    PATTERNS = [
-        # Tokens and keys
-        (r'(?i)(token|key|secret|password|auth)["\s:=]+([^\s"\']+)', r'\1=***REDACTED***'),
-        # Authorization headers
-        (r'(?i)authorization:\s*\w+\s+([^\s]+)', r'Authorization: ***REDACTED***'),
-        # URLs with credentials
-        (r'https?://([^:]+):([^@]+)@', r'https://***REDACTED***@'),
-        # Discord tokens (format: Bot token or Bearer token)
-        (r'Bot\s+[A-Za-z0-9_-]{20,}', r'Bot ***REDACTED***'),
-        (r'Bearer\s+[A-Za-z0-9_-]{20,}', r'Bearer ***REDACTED***'),
-    ]
-    
-    @classmethod
-    def redact(cls, text: str) -> str:
-        """
-        Redact sensitive information from text.
-        
-        Args:
-            text: Text that may contain sensitive information
-            
-        Returns:
-            Text with sensitive information redacted
-        """
-        if not isinstance(text, str):
-            text = str(text)
-        
-        redacted = text
-        for pattern, replacement in cls.PATTERNS:
-            redacted = re.sub(pattern, replacement, redacted)
-        
-        return redacted
-    
-    @classmethod
-    def redact_dict(cls, data: Dict[str, Any], keys_to_redact: Optional[list] = None) -> Dict[str, Any]:
-        """
-        Redact sensitive keys from a dictionary.
-        
-        Args:
-            data: Dictionary that may contain sensitive information
-            keys_to_redact: Additional keys to redact (default: standard sensitive keys)
-            
-        Returns:
-            Dictionary with sensitive values redacted
-        """
-        if keys_to_redact is None:
-            keys_to_redact = [
-                'token', 'password', 'secret', 'api_key', 'auth',
-                'authorization', 'discord_token', 'github_token',
-                'webhook_secret', 'bot_token'
-            ]
-        
-        redacted = {}
-        for key, value in data.items():
-            key_lower = key.lower()
-            if any(sensitive in key_lower for sensitive in keys_to_redact):
-                redacted[key] = '***REDACTED***'
-            elif isinstance(value, dict):
-                redacted[key] = cls.redact_dict(value, keys_to_redact)
-            elif isinstance(value, str):
-                redacted[key] = cls.redact(value)
-            else:
-                redacted[key] = value
-        
-        return redacted
-
-
-class JSONFormatter(logging.Formatter):
-    """Custom formatter that outputs structured JSON logs."""
-    
-    def __init__(self, service_name: str = 'orchestrator'):
-        """
-        Initialize JSON formatter.
-        
-        Args:
-            service_name: Name of the service for identification
-        """
-        super().__init__()
-        self.service_name = service_name
-    
-    def format(self, record: logging.LogRecord) -> str:
-        """
-        Format log record as JSON.
-        
-        Args:
-            record: Log record to format
-            
-        Returns:
-            JSON-formatted log string
-        """
-        log_data = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'level': record.levelname,
-            'service': self.service_name,
-            'function': record.funcName,
-            'message': record.getMessage(),
-        }
-        
-        # Add trace_id if present
-        if hasattr(record, 'trace_id'):
-            log_data['trace_id'] = record.trace_id
-        
-        # Add correlation_id if present
-        if hasattr(record, 'correlation_id'):
-            log_data['correlation_id'] = record.correlation_id
-        
-        # Add user_id if present
-        if hasattr(record, 'user_id'):
-            log_data['user_id'] = record.user_id
-        
-        # Add command if present
-        if hasattr(record, 'command'):
-            log_data['command'] = record.command
-        
-        # Add custom fields if present
-        if hasattr(record, 'fields'):
-            log_data['fields'] = record.fields
-        
-        # Add exception info if present
-        if record.exc_info:
-            log_data['exception'] = {
-                'type': record.exc_info[0].__name__,
-                'message': str(record.exc_info[1]),
-                'traceback': traceback.format_exception(*record.exc_info)
-            }
-        
-        # Redact sensitive information
-        log_data = SecretRedactor.redact_dict(log_data)
-        
-        return json.dumps(log_data)
+from typing import Optional, Dict, Any
 
 
 class StructuredLogger:
     """
-    Structured logger with context support for trace IDs and user information.
+    Structured logger that outputs JSON formatted logs.
+    Includes trace_id for distributed tracing and correlation.
     """
     
-    def __init__(self, name: str, service_name: str = 'orchestrator'):
+    def __init__(self, service: str = "orchestrator"):
         """
-        Initialize structured logger.
+        Initialize the structured logger.
         
         Args:
-            name: Logger name (usually module name)
-            service_name: Service name for identification
+            service: Service name for the logs (default: "orchestrator")
         """
-        self.logger = logging.getLogger(name)
-        self.service_name = service_name
-        self.context = {}
-        
-        # Configure logger if not already configured
-        if not self.logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(JSONFormatter(service_name))
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
+        self.service = service
+        self._context = {}
     
-    def with_context(self, **kwargs) -> 'StructuredLogger':
+    def set_context(self, **kwargs):
         """
-        Create a new logger with additional context.
+        Set context values that will be included in all subsequent logs.
         
         Args:
-            **kwargs: Context fields to add (trace_id, correlation_id, user_id, command, etc.)
-            
-        Returns:
-            New logger instance with context
+            **kwargs: Context key-value pairs (e.g., trace_id, correlation_id, user_id)
         """
-        new_logger = StructuredLogger(self.logger.name, self.service_name)
-        new_logger.context = {**self.context, **kwargs}
-        new_logger.logger = self.logger
-        return new_logger
+        self._context.update(kwargs)
     
-    def _log(self, level: int, message: str, **kwargs):
+    def clear_context(self):
+        """Clear all context values."""
+        self._context = {}
+    
+    def _log(self, level: str, msg: str, fn: Optional[str] = None, 
+             cmd: Optional[str] = None, **extra):
         """
-        Internal logging method that adds context.
+        Internal logging method that formats and outputs JSON logs.
         
         Args:
-            level: Log level
-            message: Log message
-            **kwargs: Additional fields
+            level: Log level (info, warn, error, debug)
+            msg: Log message
+            fn: Function name
+            cmd: Command being executed
+            **extra: Additional fields to include in the log
         """
-        extra = {**self.context}
+        log_entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "level": level,
+            "service": self.service,
+            "msg": msg
+        }
         
-        # Add any additional fields
-        if kwargs:
-            extra['fields'] = kwargs
+        # Add function name if provided
+        if fn:
+            log_entry["fn"] = fn
         
-        self.logger.log(level, message, extra=extra)
+        # Add command if provided
+        if cmd:
+            log_entry["cmd"] = cmd
+        
+        # Add context (trace_id, correlation_id, user_id)
+        log_entry.update(self._context)
+        
+        # Add any extra fields
+        log_entry.update(extra)
+        
+        # Output as JSON
+        print(json.dumps(log_entry))
     
-    def info(self, message: str, **kwargs):
+    def info(self, msg: str, **kwargs):
         """Log info level message."""
-        self._log(logging.INFO, message, **kwargs)
+        self._log("info", msg, **kwargs)
     
-    def warning(self, message: str, **kwargs):
+    def warn(self, msg: str, **kwargs):
         """Log warning level message."""
-        self._log(logging.WARNING, message, **kwargs)
+        self._log("warn", msg, **kwargs)
     
-    def error(self, message: str, exc_info: bool = False, **kwargs):
-        """
-        Log error level message.
-        
-        Args:
-            message: Error message
-            exc_info: Include exception info (traceback)
-            **kwargs: Additional fields
-        """
-        if exc_info:
-            self.logger.error(message, exc_info=True, extra={**self.context, 'fields': kwargs} if kwargs else self.context)
-        else:
-            self._log(logging.ERROR, message, **kwargs)
+    def error(self, msg: str, **kwargs):
+        """Log error level message."""
+        self._log("error", msg, **kwargs)
     
-    def debug(self, message: str, **kwargs):
+    def debug(self, msg: str, **kwargs):
         """Log debug level message."""
-        self._log(logging.DEBUG, message, **kwargs)
+        self._log("debug", msg, **kwargs)
 
 
-def get_logger(name: str, service_name: str = 'orchestrator') -> StructuredLogger:
+def redact_secrets(data: Any, secret_keys: Optional[list] = None) -> Any:
     """
-    Get a structured logger instance.
+    Redact sensitive information from data structures.
     
     Args:
-        name: Logger name (usually __name__)
-        service_name: Service name for identification
-        
+        data: Data to redact (dict, list, or primitive)
+        secret_keys: List of keys to redact (case-insensitive)
+                     Default: ["token", "secret", "password", "key", "authorization"]
+    
     Returns:
-        StructuredLogger instance
+        Redacted copy of the data
     """
-    return StructuredLogger(name, service_name)
+    if secret_keys is None:
+        secret_keys = ["token", "secret", "password", "key", "authorization", "api_key"]
+    
+    # Normalize secret keys to lowercase for comparison
+    secret_keys_lower = [k.lower() for k in secret_keys]
+    
+    if isinstance(data, dict):
+        redacted = {}
+        for key, value in data.items():
+            # Check if key contains any secret keyword
+            key_lower = key.lower()
+            is_secret = any(secret_key in key_lower for secret_key in secret_keys_lower)
+            
+            if is_secret:
+                # Redact the value but show fingerprint (last 4 chars)
+                if isinstance(value, str) and len(value) > 4:
+                    redacted[key] = f"***{value[-4:]}"
+                else:
+                    redacted[key] = "***"
+            else:
+                # Recursively redact nested structures
+                redacted[key] = redact_secrets(value, secret_keys)
+        return redacted
+    
+    elif isinstance(data, list):
+        return [redact_secrets(item, secret_keys) for item in data]
+    
+    elif isinstance(data, tuple):
+        return tuple(redact_secrets(item, secret_keys) for item in data)
+    
+    else:
+        # Primitive types (str, int, bool, None, etc.)
+        return data
 
 
-def redact(text: str) -> str:
+def get_trace_fingerprint(trace_id: str) -> str:
     """
-    Convenience function to redact sensitive information from text.
+    Get a short fingerprint of a trace_id for display.
     
     Args:
-        text: Text that may contain sensitive information
-        
+        trace_id: Full trace ID
+    
     Returns:
-        Text with sensitive information redacted
+        Short fingerprint (first 8 chars)
     """
-    return SecretRedactor.redact(text)
+    if not trace_id:
+        return "unknown"
+    return trace_id[:8] if len(trace_id) >= 8 else trace_id

@@ -1,407 +1,559 @@
 # Orchestrator Operations Runbook
 
-This runbook provides operational guidance for monitoring, troubleshooting, and managing the Project Valine orchestrator.
+This runbook provides guidance for handling failures, finding logs, diagnosing issues, and escalating problems.
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Monitoring](#monitoring)
-3. [Common Issues](#common-issues)
-4. [Debugging](#debugging)
-5. [Escalation](#escalation)
-6. [Maintenance](#maintenance)
+1. [Quick Reference](#quick-reference)
+2. [Finding Logs](#finding-logs)
+3. [Common Failures](#common-failures)
+4. [Diagnostic Commands](#diagnostic-commands)
+5. [Escalation Procedures](#escalation-procedures)
+6. [Feature Flags](#feature-flags)
+7. [Allowlists and Security](#allowlists-and-security)
 
-## Overview
+## Quick Reference
 
-The orchestrator is a serverless application running on AWS Lambda that:
-- Handles Discord slash commands
-- Triggers and monitors GitHub Actions workflows
-- Performs deployment verification
-- Provides diagnostic capabilities
+### Key Environment Variables
 
-**Key Components:**
-- Discord Handler Lambda (`valine-orchestrator-discord-{stage}`)
-- GitHub Webhook Lambda (`valine-orchestrator-github-{stage}`)
-- DynamoDB table for run state (`valine-orchestrator-runs-{stage}`)
-- CloudWatch Logs for observability
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENABLE_ALERTS` | `false` | Enable Discord alerts for critical failures |
+| `ENABLE_DEBUG_CMD` | `false` | Enable /debug-last command |
+| `ALERT_CHANNEL_ID` | None | Discord channel ID for alerts |
+| `ADMIN_USER_IDS` | None | Comma-separated Discord user IDs with admin access |
+| `ADMIN_ROLE_IDS` | None | Comma-separated Discord role IDs with admin access |
+| `ALLOW_SECRET_WRITES` | `false` | Allow updating repository secrets/variables |
 
-## Monitoring
+### Quick Commands
 
-### Health Checks
-
-**Discord Bot Health:**
 ```bash
-# Check if bot is responding to commands
-# In Discord, try: /status
-```
-
-**Lambda Function Health:**
-```bash
-# Check recent invocations
-aws lambda get-function --function-name valine-orchestrator-discord-dev
-
-# Check error rates
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/Lambda \
-  --metric-name Errors \
-  --dimensions Name=FunctionName,Value=valine-orchestrator-discord-dev \
-  --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
-  --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
-  --period 300 \
-  --statistics Sum
-```
-
-### Key Metrics
-
-**Lambda Invocations:**
-- Normal: 10-100 invocations per hour
-- Alert threshold: >500 invocations per hour (possible abuse)
-
-**Lambda Errors:**
-- Normal: <1% error rate
-- Alert threshold: >5% error rate
-
-**Lambda Duration:**
-- Normal: 1-10 seconds
-- Alert threshold: >30 seconds (approaching timeout)
-
-### Logs
-
-**View Recent Logs:**
-```bash
+# View Discord handler logs
 aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
+
+# View GitHub handler logs
+aws logs tail /aws/lambda/valine-orchestrator-github-dev --follow
+
+# Query DynamoDB for runs
+aws dynamodb scan --table-name valine-orchestrator-runs-dev
+
+# Check recent workflow runs
+gh run list --repo gcolon75/Project-Valine --limit 10
 ```
 
-**Search Logs by Trace ID:**
+## Finding Logs
+
+### CloudWatch Logs
+
+All Lambda functions log to CloudWatch. Logs include structured JSON with trace IDs for correlation.
+
+#### View Logs in Real-Time
+
 ```bash
+# Discord handler
+aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow --format short
+
+# GitHub webhook handler
+aws logs tail /aws/lambda/valine-orchestrator-github-dev --follow --format short
+```
+
+#### Query Logs by Trace ID
+
+```bash
+# Using CloudWatch Insights
+aws logs start-query \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --start-time $(date -d '1 hour ago' +%s) \
+  --end-time $(date +%s) \
+  --query-string 'fields @timestamp, msg, trace_id | filter trace_id = "YOUR_TRACE_ID" | sort @timestamp desc'
+```
+
+#### Search for Errors
+
+```bash
+# Find all errors in last hour
 aws logs filter-log-events \
   --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
-  --filter-pattern '{ $.trace_id = "trace-id-here" }'
+  --start-time $(date -d '1 hour ago' +%s000) \
+  --filter-pattern '"level":"error"'
 ```
 
-**CloudWatch Logs Insights Queries:**
+### Structured Log Format
 
-Find all errors:
+All logs follow this JSON structure:
+
+```json
+{
+  "ts": "2025-10-16T18:00:00.000Z",
+  "level": "info",
+  "service": "orchestrator",
+  "fn": "handle_diagnose_command",
+  "trace_id": "abc123de-456f-789g-hij0-klmnopqrstuv",
+  "correlation_id": "workflow-run-123",
+  "user_id": "discord-user-123",
+  "cmd": "/diagnose",
+  "msg": "Triggered diagnose workflow"
+}
 ```
-fields @timestamp, level, message, trace_id, user_id, command
-| filter level = "ERROR"
-| sort @timestamp desc
-| limit 100
-```
 
-Track command execution:
-```
-fields @timestamp, command, user_id, duration_ms
-| filter command != ""
-| stats count() as executions, avg(duration_ms) as avg_duration by command
-```
+### Log Retention
 
-## Common Issues
+- CloudWatch logs are retained for 30 days by default
+- Configure longer retention in CloudWatch Logs console if needed
+- Consider exporting to S3 for long-term storage
 
-### Issue: Discord Commands Not Responding
+## Common Failures
 
-**Symptoms:**
-- User reports that `/status` or other commands don't work
-- Discord shows "Application did not respond"
+### 1. Discord Command Timeout
+
+**Symptom:** Command doesn't respond or times out
+
+**Possible Causes:**
+- Lambda function timeout (default: 30s)
+- GitHub API rate limiting
+- Network issues
 
 **Diagnosis:**
-1. Check Lambda function status:
-   ```bash
-   aws lambda get-function --function-name valine-orchestrator-discord-dev
-   ```
-2. Check recent invocations and errors in CloudWatch
-3. Verify Discord bot token is valid
+1. Check CloudWatch logs for the specific command
+2. Look for trace_id in the Discord interaction
+3. Search logs by trace_id to see where it failed
 
 **Resolution:**
-- If Lambda is timing out, increase timeout or optimize code
-- If signature verification fails, verify `DISCORD_PUBLIC_KEY` is correct
-- If rate limited, wait and retry
+```bash
+# Check for rate limiting
+aws logs filter-log-events \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --filter-pattern '"429"' \
+  --start-time $(date -d '1 hour ago' +%s000)
 
-**Prevention:**
-- Set up CloudWatch alarms for Lambda errors
-- Monitor Lambda duration metrics
+# Check for timeouts
+aws logs filter-log-events \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --filter-pattern 'Task timed out'
+```
 
-### Issue: Workflow Dispatch Fails
+**Fix:**
+- Increase Lambda timeout in `template.yaml`
+- Implement caching for GitHub API calls
+- Use deferred responses for long-running operations
 
-**Symptoms:**
-- User runs `/diagnose` but workflow doesn't trigger
-- Error message about dispatch failure
+### 2. GitHub Actions Workflow Not Triggering
+
+**Symptom:** `/diagnose` or `/deploy-client` doesn't start workflow
+
+**Possible Causes:**
+- Insufficient GitHub token permissions
+- Workflow file syntax error
+- Repository settings blocking workflow_dispatch
 
 **Diagnosis:**
-1. Check GitHub token permissions:
-   - Token needs `repo` and `workflow` scopes
-2. Check API rate limits:
-   ```bash
-   curl -H "Authorization: token ${GITHUB_TOKEN}" \
-     https://api.github.com/rate_limit
-   ```
-3. Look for dispatch errors in logs:
-   ```
-   fields @timestamp, message, error.type
-   | filter message like /dispatch/
-   | sort @timestamp desc
-   ```
+1. Check logs for `trigger_workflow_dispatch` errors
+2. Verify GitHub token has `workflow` scope
+3. Check workflow file exists and is valid
 
 **Resolution:**
-- If rate limited (403), wait for rate limit reset
-- If unauthorized (401), verify token and regenerate if needed
-- If workflow not found, verify workflow file exists in `.github/workflows/`
+```bash
+# Test workflow dispatch manually
+gh workflow run "Diagnose on Demand" \
+  --repo gcolon75/Project-Valine \
+  --ref main
 
-**Prevention:**
-- Implement exponential backoff for retries
-- Monitor GitHub API rate limit usage
+# Check workflow file
+gh api repos/gcolon75/Project-Valine/actions/workflows \
+  | jq '.workflows[] | {name, path, state}'
+```
 
-### Issue: Verification Always Fails
+**Fix:**
+- Regenerate GitHub token with `workflow` scope
+- Validate workflow YAML syntax
+- Check repository workflow permissions
 
-**Symptoms:**
-- `/verify-latest` always reports failure
-- Frontend or API checks consistently fail
+### 3. Alert Not Sent
+
+**Symptom:** Critical failure but no Discord alert
+
+**Possible Causes:**
+- `ENABLE_ALERTS` is false (default)
+- `ALERT_CHANNEL_ID` not configured
+- Discord API error
 
 **Diagnosis:**
-1. Check if frontend is actually accessible:
-   ```bash
-   curl -I https://your-frontend-url.com
-   ```
-2. Check API health:
-   ```bash
-   curl https://your-api-url.com/health
-   ```
-3. Review verification logs:
-   ```bash
-   aws logs filter-log-events \
-     --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
-     --filter-pattern "verification"
-   ```
+1. Check if alerts are enabled: `echo $ENABLE_ALERTS`
+2. Verify channel ID: `echo $ALERT_CHANNEL_ID`
+3. Check logs for "Alert skipped" or "Alert rate-limited"
 
 **Resolution:**
-- If URLs are wrong, update with `/set-frontend` or `/set-api-base` (admin only)
-- If endpoints are down, investigate deployment issues
-- If checks are too strict, adjust verification logic
+```bash
+# Enable alerts
+aws lambda update-function-configuration \
+  --function-name valine-orchestrator-discord-dev \
+  --environment "Variables={ENABLE_ALERTS=true,ALERT_CHANNEL_ID=123456789}"
 
-**Prevention:**
-- Ensure deployment process is stable
-- Add smoke tests to deployment pipeline
+# Test alert manually
+# (via Discord: /debug-last to see if trace exists)
+```
 
-### Issue: High Lambda Costs
+### 4. Trace Not Available for /debug-last
 
-**Symptoms:**
-- Unexpectedly high AWS bill for Lambda
-- Excessive invocations
+**Symptom:** `/debug-last` says "No recent trace found"
+
+**Possible Causes:**
+- `ENABLE_DEBUG_CMD` is false (default)
+- Lambda container was recycled (in-memory store cleared)
+- No commands executed yet
 
 **Diagnosis:**
-1. Check invocation count:
-   ```bash
-   aws cloudwatch get-metric-statistics \
-     --namespace AWS/Lambda \
-     --metric-name Invocations \
-     --dimensions Name=FunctionName,Value=valine-orchestrator-discord-dev \
-     --start-time $(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%S) \
-     --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
-     --period 86400 \
-     --statistics Sum
-   ```
-2. Check for abuse patterns in logs
-3. Look for infinite loops or retry storms
+1. Check if debug command is enabled
+2. Verify user has executed commands recently
+3. Check Lambda cold start logs
 
 **Resolution:**
-- Implement rate limiting per user
-- Add DynamoDB or Redis-based request tracking
-- Block abusive users if necessary
+- Enable debug command: `ENABLE_DEBUG_CMD=true`
+- Execute a command first (e.g., `/status`)
+- Consider persisting traces to DynamoDB for durability
+
+### 5. Secrets Exposed in Logs
+
+**Symptom:** Sensitive data visible in CloudWatch logs
+
+**Possible Causes:**
+- Logging unredacted data structures
+- Error messages containing secrets
+- Debug logging enabled in production
+
+**Diagnosis:**
+1. Search logs for patterns: `token`, `password`, `secret`, `key`
+2. Check code for direct `print()` statements
+3. Review error handling paths
+
+**Resolution:**
+```bash
+# Immediately rotate exposed secrets
+gh secret set GITHUB_TOKEN --repo gcolon75/Project-Valine
+aws lambda update-function-configuration \
+  --function-name valine-orchestrator-discord-dev \
+  --environment "Variables={...}"
+
+# Fix code to use redact_secrets()
+# Review PR #XX for redaction implementation
+```
 
 **Prevention:**
-- Set up billing alarms
-- Monitor invocation patterns
+- Always use `redact_secrets()` before logging
+- Use structured logger with context
+- Never log raw API responses
+- Review CI security check in bot-smoke.yml
 
-## Debugging
+## Diagnostic Commands
 
-### Using /debug-last Command
+### Discord Commands
 
-The `/debug-last` command retrieves the most recent execution trace for a user:
+#### /debug-last
+Shows last command execution trace with timings and errors.
 
+**Usage:**
 ```
 /debug-last
 ```
 
-**What It Shows:**
-- Trace ID for correlation
-- Command that was executed
-- Timestamp and duration
-- Step-by-step execution flow
-- Any errors that occurred
-- Links to related workflow runs
+**Requires:** `ENABLE_DEBUG_CMD=true`
 
-**When to Use:**
-- User reports command failure
-- Investigating slow command execution
-- Debugging intermittent issues
+**Output:**
+- Command executed
+- Trace ID
+- Step timings
+- Last error (if any)
+- Relevant links
 
-### Manual Trace Lookup
+#### /status
+Shows recent workflow runs with outcomes.
 
-If `/debug-last` isn't available, find traces in CloudWatch:
-
+**Usage:**
 ```
-fields @timestamp, trace_id, command, user_id, message
-| filter user_id = "USER_ID_HERE"
-| sort @timestamp desc
-| limit 10
+/status
+/status count:3
 ```
 
-### Reproducing Issues
+#### /diagnose
+Triggers comprehensive infrastructure diagnostics.
 
-1. **Get trace ID** from user or logs
-2. **Review execution flow** using CloudWatch Logs Insights
-3. **Check for errors** in that trace
-4. **Reproduce locally** if possible:
-   ```bash
-   cd orchestrator
-   export DRY_RUN=true
-   python -m pytest tests/ -v
-   ```
+**Usage:**
+```
+/diagnose
+/diagnose frontend_url:https://example.com
+```
 
-### X-Ray Traces
+### AWS CLI Diagnostics
 
-View distributed traces in AWS X-Ray Console:
-1. Go to AWS X-Ray Console
-2. Navigate to "Traces"
-3. Filter by time range and function name
-4. Look for slow or failed traces
+#### Check Lambda Function Status
 
-## Escalation
-
-### When to Escalate
-
-- **Critical**: Production bot completely down (escalate immediately)
-- **High**: Significant feature broken, affects all users (escalate within 1 hour)
-- **Medium**: Minor feature broken, affects some users (escalate within 4 hours)
-- **Low**: Non-blocking issues, improvements (escalate within 1 day)
-
-### Escalation Path
-
-1. **Level 1**: Check this runbook and attempt resolution
-2. **Level 2**: Review GitHub Issues for similar problems
-3. **Level 3**: Contact repository maintainers via GitHub Issues
-4. **Level 4**: Emergency contact (if available)
-
-### Information to Gather
-
-When escalating, provide:
-- **Trace ID** (from `/debug-last` or logs)
-- **Timestamp** of issue
-- **User ID** experiencing the issue
-- **Command** that failed
-- **Error messages** from logs
-- **Steps to reproduce**
-
-### Emergency Contacts
-
-- **Repository**: https://github.com/gcolon75/Project-Valine
-- **Issues**: https://github.com/gcolon75/Project-Valine/issues
-- **Maintainer**: @gcolon75
-
-## Maintenance
-
-### Regular Tasks
-
-**Daily:**
-- Review CloudWatch alarms
-- Check error rate in Lambda metrics
-- Monitor bot-smoke CI results
-
-**Weekly:**
-- Review CloudWatch Logs for patterns
-- Check GitHub API rate limit usage
-- Verify DynamoDB table size is reasonable
-
-**Monthly:**
-- Review AWS costs
-- Update dependencies if needed
-- Check for deprecated API usage
-
-### Deployment Process
-
-1. **Test in Dev:**
-   ```bash
-   cd orchestrator
-   sam build
-   sam deploy --config-env dev
-   ```
-
-2. **Verify in Dev:**
-   - Test commands in dev Discord channel
-   - Check logs for errors
-   - Run `/debug-last` to verify tracing
-
-3. **Deploy to Prod:**
-   ```bash
-   sam deploy --config-env prod
-   ```
-
-4. **Monitor Prod:**
-   - Watch logs for 30 minutes post-deployment
-   - Test critical commands
-   - Set up alerts if not already configured
-
-### Rollback Procedure
-
-If deployment causes issues:
-
-1. **Immediate rollback:**
-   ```bash
-   # Redeploy previous version
-   git checkout <previous-commit>
-   sam build
-   sam deploy --config-env prod
-   ```
-
-2. **Verify rollback:**
-   - Test commands
-   - Check error rates return to normal
-   - Review logs
-
-3. **Post-mortem:**
-   - Document what went wrong
-   - Create GitHub Issue
-   - Add tests to prevent recurrence
-
-### Updating Secrets
-
-If secrets need rotation:
-
-1. **Update in AWS Parameter Store** (recommended) or **samconfig.toml** (not recommended)
-2. **Redeploy Lambda functions:**
-   ```bash
-   sam deploy --config-env prod --parameter-overrides \
-     "DiscordBotToken=NEW_TOKEN" \
-     "GitHubToken=NEW_TOKEN"
-   ```
-3. **Verify new secrets work**
-4. **Invalidate old secrets**
-
-### DynamoDB Maintenance
-
-**Check table size:**
 ```bash
-aws dynamodb describe-table --table-name valine-orchestrator-runs-prod
+# Get function configuration
+aws lambda get-function-configuration \
+  --function-name valine-orchestrator-discord-dev
+
+# Check recent invocations
+aws lambda get-function \
+  --function-name valine-orchestrator-discord-dev \
+  | jq '.Configuration.LastModified'
 ```
 
-**Clear old entries** (if needed):
+#### Query DynamoDB State
+
+```bash
+# Get all runs
+aws dynamodb scan \
+  --table-name valine-orchestrator-runs-dev \
+  --output json | jq '.Items'
+
+# Get specific run
+aws dynamodb get-item \
+  --table-name valine-orchestrator-runs-dev \
+  --key '{"run_id": {"S": "YOUR_RUN_ID"}}' \
+  | jq '.Item'
+```
+
+#### Check API Gateway
+
+```bash
+# Get API details
+aws apigateway get-rest-apis \
+  --query "items[?name=='valine-orchestrator-api-dev']" \
+  --output json
+
+# Check recent requests
+aws logs tail /aws/apigateway/valine-orchestrator-api-dev \
+  --since 1h
+```
+
+### GitHub CLI Diagnostics
+
+#### Check Workflow Runs
+
+```bash
+# List recent runs
+gh run list --repo gcolon75/Project-Valine --limit 20
+
+# View specific run
+gh run view RUN_ID --repo gcolon75/Project-Valine --log
+
+# Watch run in real-time
+gh run watch RUN_ID --repo gcolon75/Project-Valine
+```
+
+#### Check Repository Configuration
+
+```bash
+# List secrets (names only)
+gh secret list --repo gcolon75/Project-Valine
+
+# List variables
+gh variable list --repo gcolon75/Project-Valine
+
+# Check webhook deliveries
+gh api repos/gcolon75/Project-Valine/hooks \
+  | jq '.[] | {id, config: .config.url, active}'
+```
+
+## Escalation Procedures
+
+### Level 1: Self-Service (0-30 minutes)
+
+1. Check CloudWatch logs for errors
+2. Use `/debug-last` to see recent execution
+3. Try `/diagnose` to verify infrastructure
+4. Review recent GitHub Actions runs
+5. Check this runbook for matching symptoms
+
+### Level 2: Team Investigation (30-120 minutes)
+
+1. Create issue in GitHub with:
+   - Trace ID or correlation ID
+   - CloudWatch log excerpts (redacted)
+   - Steps to reproduce
+   - Expected vs actual behavior
+2. Notify team in Discord #orchestrator-alerts
+3. Assign to on-call engineer
+4. Review recent deployments for changes
+
+### Level 3: Incident Response (2+ hours)
+
+1. Declare incident in #incidents channel
+2. Create incident doc with timeline
+3. Assign incident commander
+4. Rollback recent changes if needed
+5. Enable debug mode: `ENABLE_DEBUG_CMD=true`
+6. Increase logging verbosity
+7. Consider temporary workarounds
+
+### Post-Incident
+
+1. Write postmortem document
+2. Update runbook with lessons learned
+3. Add monitoring/alerting for issue
+4. Create follow-up tasks for fixes
+5. Share learnings with team
+
+## Feature Flags
+
+### ENABLE_ALERTS
+
+**Default:** `false` (safe in production)
+
+**Purpose:** Enable Discord alerts for critical failures
+
+**When to Enable:**
+- In production after configuring `ALERT_CHANNEL_ID`
+- During staged rollout to staging channel first
+- After validating alert format and rate-limiting
+
+**Configuration:**
+```bash
+aws lambda update-function-configuration \
+  --function-name valine-orchestrator-discord-dev \
+  --environment "Variables={ENABLE_ALERTS=true,ALERT_CHANNEL_ID=YOUR_CHANNEL_ID,...}"
+```
+
+### ENABLE_DEBUG_CMD
+
+**Default:** `false` (safe in production)
+
+**Purpose:** Enable `/debug-last` command for troubleshooting
+
+**When to Enable:**
+- During development and testing
+- Temporarily during incident investigation
+- For authorized users only (consider allowlist)
+
+**Security Considerations:**
+- Traces may contain sensitive information
+- Use ephemeral messages (visible only to user)
+- Ensure redaction is working properly
+- Limit to admin users if possible
+
+### ALLOW_SECRET_WRITES
+
+**Default:** `false` (safe in production)
+
+**Purpose:** Enable `/set-frontend` and `/set-api-base` commands
+
+**When to Enable:**
+- Only for authorized administrators
+- During deployment configuration
+- Never enable without admin allowlists
+
+**Required with:**
+- `ADMIN_USER_IDS` or `ADMIN_ROLE_IDS` configured
+- Two-step confirmation required
+
+## Allowlists and Security
+
+### Admin User Allowlist
+
+Configure Discord user IDs who can perform admin actions:
+
+```bash
+export ADMIN_USER_IDS="123456789012345,234567890123456"
+```
+
+Get your Discord user ID:
+1. Enable Developer Mode in Discord
+2. Right-click your username
+3. Copy ID
+
+### Admin Role Allowlist
+
+Configure Discord role IDs for admin access:
+
+```bash
+export ADMIN_ROLE_IDS="987654321098765"
+```
+
+Get role ID:
+1. Server Settings > Roles
+2. Right-click role name > Copy ID
+
+### Command Allowlist
+
+For sensitive commands, consider implementing per-command allowlists:
+
 ```python
-# Use with caution in production
-import boto3
-from datetime import datetime, timedelta
+# In discord_handler.py
+COMMAND_ALLOWLISTS = {
+    'debug-last': os.environ.get('DEBUG_CMD_ALLOWED_USERS', '').split(','),
+    'set-api-base': os.environ.get('ADMIN_USER_IDS', '').split(',')
+}
+```
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('valine-orchestrator-runs-prod')
+### URL Validator Configuration
 
-# Delete items older than 30 days
-cutoff = int((datetime.now() - timedelta(days=30)).timestamp())
-# Scan and delete logic here
+Configure domain allowlist for URL parameters:
+
+```bash
+export ALLOWED_DOMAINS="*.example.com,api.example.com"
+export SAFE_LOCAL="false"  # Disallow localhost/private IPs
+```
+
+## Dashboard and Queries
+
+### CloudWatch Dashboard
+
+Create a dashboard with these metrics:
+
+1. **Lambda Invocations**
+   - Metric: `AWS/Lambda/Invocations`
+   - Functions: discord-handler, github-handler
+
+2. **Lambda Errors**
+   - Metric: `AWS/Lambda/Errors`
+   - Alarm threshold: > 5 in 5 minutes
+
+3. **Lambda Duration**
+   - Metric: `AWS/Lambda/Duration`
+   - P50, P90, P99 percentiles
+
+4. **DynamoDB Operations**
+   - Metrics: `AWS/DynamoDB/ConsumedReadCapacityUnits`, `ConsumedWriteCapacityUnits`
+
+### CloudWatch Insights Queries
+
+#### Error Summary
+```sql
+fields @timestamp, level, msg, trace_id, error
+| filter level = "error"
+| sort @timestamp desc
+| limit 50
+```
+
+#### Command Usage
+```sql
+fields @timestamp, cmd, user_id
+| filter cmd != ""
+| stats count() by cmd
+| sort count desc
+```
+
+#### Slow Operations
+```sql
+fields @timestamp, fn, duration_ms
+| filter duration_ms > 1000
+| sort duration_ms desc
+| limit 20
+```
+
+#### Trace Timeline
+```sql
+fields @timestamp, fn, msg, trace_id
+| filter trace_id = "YOUR_TRACE_ID"
+| sort @timestamp asc
 ```
 
 ## Additional Resources
 
-- **README**: [orchestrator/README.md](README.md)
-- **Testing Guide**: [orchestrator/TESTING_GUIDE.md](TESTING_GUIDE.md)
-- **CloudWatch Console**: https://console.aws.amazon.com/cloudwatch/
-- **X-Ray Console**: https://console.aws.amazon.com/xray/
-- **GitHub Actions**: https://github.com/gcolon75/Project-Valine/actions
+- [Orchestrator README](README.md) - Architecture and deployment
+- [Testing Guide](TESTING_GUIDE.md) - End-to-end testing procedures
+- [Integration Guide](INTEGRATION_GUIDE.md) - Discord and GitHub setup
+- [QA Checker Guide](QA_CHECKER_GUIDE.md) - Automated validation
+- [AWS Lambda Docs](https://docs.aws.amazon.com/lambda/)
+- [Discord API Docs](https://discord.com/developers/docs/intro)
+- [GitHub Actions Docs](https://docs.github.com/en/actions)

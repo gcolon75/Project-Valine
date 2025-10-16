@@ -1,267 +1,196 @@
 """
-In-memory trace store for storing recent command execution traces.
-
-Provides LRU-based storage for debugging and troubleshooting command executions.
-Traces are stored per user/channel/thread for easy retrieval via /debug-last.
+Trace store for tracking command execution traces.
+Used by /debug-last command to retrieve recent execution details.
 """
 import time
-import uuid
-from collections import OrderedDict
+from typing import Optional, Dict, List, Any
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
-from threading import Lock
 
 
 class ExecutionTrace:
-    """Represents a single command execution trace."""
+    """
+    Represents a single command execution trace.
+    """
     
-    def __init__(self, trace_id: str, user_id: str, channel_id: str, command: str):
+    def __init__(self, trace_id: str, command: str, user_id: Optional[str] = None):
         """
         Initialize execution trace.
         
         Args:
             trace_id: Unique trace identifier
-            user_id: Discord user ID
-            channel_id: Discord channel ID
-            command: Command that was executed
+            command: Command being executed
+            user_id: User who initiated the command
         """
         self.trace_id = trace_id
-        self.user_id = user_id
-        self.channel_id = channel_id
         self.command = command
-        self.started_at = datetime.now(timezone.utc)
-        self.completed_at: Optional[datetime] = None
+        self.user_id = user_id
+        self.started_at = time.time()
+        self.completed_at: Optional[float] = None
         self.steps: List[Dict[str, Any]] = []
-        self.error: Optional[Dict[str, str]] = None
+        self.error: Optional[str] = None
         self.metadata: Dict[str, Any] = {}
-        self.run_urls: List[str] = []
     
-    def add_step(self, name: str, status: str, duration_ms: Optional[float] = None, details: Optional[str] = None):
+    def add_step(self, name: str, duration_ms: Optional[float] = None, 
+                 status: str = "success", details: Optional[str] = None):
         """
         Add a step to the trace.
         
         Args:
             name: Step name
-            status: Step status (started, completed, failed)
-            duration_ms: Duration in milliseconds
+            duration_ms: Step duration in milliseconds
+            status: Step status (success, failure, in_progress)
             details: Additional details
         """
         step = {
-            'name': name,
-            'status': status,
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            "name": name,
+            "timestamp": time.time(),
+            "status": status
         }
+        
         if duration_ms is not None:
-            step['duration_ms'] = duration_ms
+            step["duration_ms"] = duration_ms
+        
         if details:
-            step['details'] = details
+            step["details"] = details
+        
         self.steps.append(step)
     
-    def set_error(self, error_type: str, message: str, trace: Optional[str] = None):
-        """
-        Set error information.
-        
-        Args:
-            error_type: Type of error
-            message: Error message
-            trace: Stack trace (optional)
-        """
-        self.error = {
-            'type': error_type,
-            'message': message
-        }
-        if trace:
-            self.error['trace'] = trace
+    def set_error(self, error: str):
+        """Set an error for this trace."""
+        self.error = error
     
     def complete(self):
-        """Mark trace as completed."""
-        self.completed_at = datetime.now(timezone.utc)
+        """Mark the trace as completed."""
+        self.completed_at = time.time()
     
-    def add_run_url(self, url: str):
-        """Add a workflow run URL to the trace."""
-        if url and url not in self.run_urls:
-            self.run_urls.append(url)
-    
-    def set_metadata(self, key: str, value: Any):
-        """Set metadata field."""
-        self.metadata[key] = value
+    def get_duration_ms(self) -> Optional[float]:
+        """Get total duration in milliseconds."""
+        if self.completed_at:
+            return (self.completed_at - self.started_at) * 1000
+        return None
     
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert trace to dictionary for serialization.
-        
-        Returns:
-            Dictionary representation of trace
-        """
-        duration = None
-        if self.completed_at:
-            duration = (self.completed_at - self.started_at).total_seconds() * 1000
-        
+        """Convert trace to dictionary."""
         return {
-            'trace_id': self.trace_id,
-            'user_id': self.user_id,
-            'channel_id': self.channel_id,
-            'command': self.command,
-            'started_at': self.started_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'duration_ms': duration,
-            'steps': self.steps,
-            'error': self.error,
-            'metadata': self.metadata,
-            'run_urls': self.run_urls
+            "trace_id": self.trace_id,
+            "command": self.command,
+            "user_id": self.user_id,
+            "started_at": datetime.fromtimestamp(self.started_at, tz=timezone.utc).isoformat(),
+            "completed_at": datetime.fromtimestamp(self.completed_at, tz=timezone.utc).isoformat() if self.completed_at else None,
+            "duration_ms": self.get_duration_ms(),
+            "steps": self.steps,
+            "error": self.error,
+            "metadata": self.metadata
         }
 
 
 class TraceStore:
     """
-    LRU cache for storing recent execution traces.
-    
-    Stores traces per user/channel for easy retrieval.
-    Automatically evicts oldest traces when capacity is reached.
+    In-memory store for execution traces.
+    Maintains last N traces per user for /debug-last command.
     """
     
-    def __init__(self, max_traces: int = 100):
-        """
-        Initialize trace store.
-        
-        Args:
-            max_traces: Maximum number of traces to store
-        """
-        self.max_traces = max_traces
-        self.traces: OrderedDict[str, ExecutionTrace] = OrderedDict()
-        self.user_traces: Dict[str, List[str]] = {}  # user_id -> [trace_ids]
-        self.lock = Lock()
+    # Maximum traces to keep per user
+    MAX_TRACES_PER_USER = 10
     
-    def create_trace(self, user_id: str, channel_id: str, command: str, 
-                     trace_id: Optional[str] = None, correlation_id: Optional[str] = None) -> ExecutionTrace:
+    # Maximum traces to keep globally
+    MAX_TRACES_GLOBAL = 100
+    
+    def __init__(self):
+        """Initialize trace store."""
+        self._traces: Dict[str, ExecutionTrace] = {}  # trace_id -> trace
+        self._user_traces: Dict[str, List[str]] = {}  # user_id -> [trace_ids]
+        self._last_trace_id: Optional[str] = None
+    
+    def create_trace(self, trace_id: str, command: str, 
+                     user_id: Optional[str] = None) -> ExecutionTrace:
         """
         Create a new execution trace.
         
         Args:
-            user_id: Discord user ID
-            channel_id: Discord channel ID
+            trace_id: Unique trace identifier
             command: Command being executed
-            trace_id: Optional trace ID (generated if not provided)
-            correlation_id: Optional correlation ID
-            
+            user_id: User who initiated the command
+        
         Returns:
-            ExecutionTrace instance
+            New ExecutionTrace instance
         """
-        if not trace_id:
-            trace_id = correlation_id if correlation_id else str(uuid.uuid4())
+        trace = ExecutionTrace(trace_id, command, user_id)
+        self._traces[trace_id] = trace
         
-        trace = ExecutionTrace(trace_id, user_id, channel_id, command)
+        # Track per user
+        if user_id:
+            if user_id not in self._user_traces:
+                self._user_traces[user_id] = []
+            self._user_traces[user_id].append(trace_id)
+            
+            # Limit traces per user
+            if len(self._user_traces[user_id]) > self.MAX_TRACES_PER_USER:
+                old_trace_id = self._user_traces[user_id].pop(0)
+                if old_trace_id in self._traces:
+                    del self._traces[old_trace_id]
         
-        with self.lock:
-            # Add trace
-            self.traces[trace_id] = trace
-            self.traces.move_to_end(trace_id)
-            
-            # Track by user
-            if user_id not in self.user_traces:
-                self.user_traces[user_id] = []
-            self.user_traces[user_id].append(trace_id)
-            
-            # Evict oldest if over capacity
-            while len(self.traces) > self.max_traces:
-                oldest_id, oldest_trace = self.traces.popitem(last=False)
-                # Remove from user index
-                if oldest_trace.user_id in self.user_traces:
-                    user_trace_ids = self.user_traces[oldest_trace.user_id]
-                    if oldest_id in user_trace_ids:
-                        user_trace_ids.remove(oldest_id)
-                    if not user_trace_ids:
-                        del self.user_traces[oldest_trace.user_id]
+        # Limit global traces
+        if len(self._traces) > self.MAX_TRACES_GLOBAL:
+            # Remove oldest traces
+            sorted_traces = sorted(self._traces.items(), 
+                                 key=lambda x: x[1].started_at)
+            for old_trace_id, _ in sorted_traces[:10]:
+                if old_trace_id in self._traces:
+                    del self._traces[old_trace_id]
+        
+        # Track last trace
+        self._last_trace_id = trace_id
         
         return trace
     
     def get_trace(self, trace_id: str) -> Optional[ExecutionTrace]:
+        """Get a trace by ID."""
+        return self._traces.get(trace_id)
+    
+    def get_last_trace(self, user_id: Optional[str] = None) -> Optional[ExecutionTrace]:
         """
-        Get trace by ID.
+        Get the last trace for a user (or globally if user_id not provided).
         
         Args:
-            trace_id: Trace identifier
-            
-        Returns:
-            ExecutionTrace if found, None otherwise
-        """
-        with self.lock:
-            return self.traces.get(trace_id)
-    
-    def get_last_trace_for_user(self, user_id: str, channel_id: Optional[str] = None) -> Optional[ExecutionTrace]:
-        """
-        Get the most recent trace for a user.
+            user_id: User ID to get last trace for
         
-        Args:
-            user_id: Discord user ID
-            channel_id: Optional channel ID to filter by
-            
         Returns:
-            Most recent ExecutionTrace for user, or None
+            Last ExecutionTrace or None
         """
-        with self.lock:
-            if user_id not in self.user_traces:
-                return None
-            
-            # Get trace IDs in reverse order (most recent first)
-            trace_ids = self.user_traces[user_id]
-            for trace_id in reversed(trace_ids):
-                trace = self.traces.get(trace_id)
-                if trace:
-                    # If channel_id specified, filter by it
-                    if channel_id is None or trace.channel_id == channel_id:
-                        return trace
-            
-            return None
+        if user_id and user_id in self._user_traces:
+            user_trace_ids = self._user_traces[user_id]
+            if user_trace_ids:
+                last_trace_id = user_trace_ids[-1]
+                return self._traces.get(last_trace_id)
+        elif self._last_trace_id:
+            return self._traces.get(self._last_trace_id)
+        
+        return None
     
-    def get_recent_traces_for_user(self, user_id: str, limit: int = 5) -> List[ExecutionTrace]:
+    def get_user_traces(self, user_id: str, limit: int = 5) -> List[ExecutionTrace]:
         """
         Get recent traces for a user.
         
         Args:
-            user_id: Discord user ID
+            user_id: User ID
             limit: Maximum number of traces to return
-            
+        
         Returns:
-            List of recent ExecutionTrace objects
+            List of ExecutionTrace instances (most recent first)
         """
-        with self.lock:
-            if user_id not in self.user_traces:
-                return []
-            
-            trace_ids = self.user_traces[user_id]
-            traces = []
-            for trace_id in reversed(trace_ids[-limit:]):
-                trace = self.traces.get(trace_id)
-                if trace:
-                    traces.append(trace)
-            
-            return traces
-    
-    def clear(self):
-        """Clear all traces."""
-        with self.lock:
-            self.traces.clear()
-            self.user_traces.clear()
+        if user_id not in self._user_traces:
+            return []
+        
+        trace_ids = self._user_traces[user_id][-limit:]
+        traces = [self._traces[tid] for tid in reversed(trace_ids) if tid in self._traces]
+        return traces
 
 
 # Global trace store instance
-_global_trace_store: Optional[TraceStore] = None
-_store_lock = Lock()
+_trace_store = TraceStore()
 
 
 def get_trace_store() -> TraceStore:
-    """
-    Get the global trace store instance.
-    
-    Returns:
-        TraceStore singleton instance
-    """
-    global _global_trace_store
-    
-    if _global_trace_store is None:
-        with _store_lock:
-            if _global_trace_store is None:
-                _global_trace_store = TraceStore()
-    
-    return _global_trace_store
+    """Get the global trace store instance."""
+    return _trace_store

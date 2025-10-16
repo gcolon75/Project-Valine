@@ -1,318 +1,264 @@
 """
-Tests for structured logging utility.
+Unit tests for structured logger utility.
 """
 import json
-import unittest
+import pytest
 from io import StringIO
-import logging
 import sys
-from app.utils.logger import (
-    get_logger,
-    redact,
-    SecretRedactor,
-    JSONFormatter,
-    StructuredLogger
-)
+from app.utils.logger import StructuredLogger, redact_secrets, get_trace_fingerprint
 
 
-class TestSecretRedactor(unittest.TestCase):
-    """Test cases for SecretRedactor."""
+class TestStructuredLogger:
+    """Tests for StructuredLogger class."""
     
-    def test_redact_token_in_text(self):
-        """Test redaction of token in plain text."""
-        text = 'token: ghp_1234567890abcdef'
-        result = SecretRedactor.redact(text)
-        self.assertNotIn('ghp_1234567890abcdef', result)
-        self.assertIn('***REDACTED***', result)
+    def test_logger_initialization(self):
+        """Test logger initializes with correct service name."""
+        logger = StructuredLogger(service="test-service")
+        assert logger.service == "test-service"
     
-    def test_redact_password_in_text(self):
-        """Test redaction of password in text."""
-        text = 'password=mySecretPassword123'
-        result = SecretRedactor.redact(text)
-        self.assertNotIn('mySecretPassword123', result)
-        self.assertIn('***REDACTED***', result)
+    def test_logger_default_service(self):
+        """Test logger uses default service name."""
+        logger = StructuredLogger()
+        assert logger.service == "orchestrator"
     
-    def test_redact_authorization_header(self):
-        """Test redaction of authorization header."""
-        text = 'Authorization: Bearer abc123xyz'
-        result = SecretRedactor.redact(text)
-        self.assertNotIn('abc123xyz', result)
-        self.assertIn('***REDACTED***', result)
+    def test_log_json_format(self, capsys):
+        """Test that logs are output in JSON format."""
+        logger = StructuredLogger(service="test")
+        logger.info("test message")
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        assert log_entry["level"] == "info"
+        assert log_entry["msg"] == "test message"
+        assert log_entry["service"] == "test"
+        assert "ts" in log_entry
     
-    def test_redact_url_with_credentials(self):
-        """Test redaction of credentials in URL."""
-        text = 'https://user:pass@example.com/path'
-        result = SecretRedactor.redact(text)
-        self.assertNotIn('user:pass', result)
-        self.assertIn('***REDACTED***@example.com', result)
+    def test_log_levels(self, capsys):
+        """Test different log levels."""
+        logger = StructuredLogger()
+        
+        logger.info("info message")
+        log = json.loads(capsys.readouterr().out.strip())
+        assert log["level"] == "info"
+        
+        logger.warn("warning message")
+        log = json.loads(capsys.readouterr().out.strip())
+        assert log["level"] == "warn"
+        
+        logger.error("error message")
+        log = json.loads(capsys.readouterr().out.strip())
+        assert log["level"] == "error"
+        
+        logger.debug("debug message")
+        log = json.loads(capsys.readouterr().out.strip())
+        assert log["level"] == "debug"
     
-    def test_redact_bot_token(self):
-        """Test redaction of Discord bot token."""
-        text = 'Bot MTk4NjIyNDgzNDcxOTI1MjQ4.Cl2FMQ.ZnCjm1XVW7vRze4b7Cq4se7kKWs'
-        result = SecretRedactor.redact(text)
-        self.assertNotIn('MTk4NjIyNDgzNDcxOTI1MjQ4', result)
-        self.assertIn('Bot ***REDACTED***', result)
+    def test_log_with_context(self, capsys):
+        """Test logging with context (trace_id, user_id)."""
+        logger = StructuredLogger()
+        logger.set_context(trace_id="trace-123", user_id="user-456")
+        logger.info("test message")
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        assert log_entry["trace_id"] == "trace-123"
+        assert log_entry["user_id"] == "user-456"
+    
+    def test_log_with_function_name(self, capsys):
+        """Test logging with function name."""
+        logger = StructuredLogger()
+        logger.info("test message", fn="my_function")
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        assert log_entry["fn"] == "my_function"
+    
+    def test_log_with_command(self, capsys):
+        """Test logging with command."""
+        logger = StructuredLogger()
+        logger.info("test message", cmd="/diagnose")
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        assert log_entry["cmd"] == "/diagnose"
+    
+    def test_log_with_extra_fields(self, capsys):
+        """Test logging with extra fields."""
+        logger = StructuredLogger()
+        logger.info("test message", custom_field="custom_value", count=42)
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        assert log_entry["custom_field"] == "custom_value"
+        assert log_entry["count"] == 42
+    
+    def test_context_persistence(self, capsys):
+        """Test that context persists across multiple log calls."""
+        logger = StructuredLogger()
+        logger.set_context(trace_id="trace-789")
+        
+        logger.info("first message")
+        log1 = json.loads(capsys.readouterr().out.strip())
+        
+        logger.info("second message")
+        log2 = json.loads(capsys.readouterr().out.strip())
+        
+        assert log1["trace_id"] == "trace-789"
+        assert log2["trace_id"] == "trace-789"
+    
+    def test_clear_context(self, capsys):
+        """Test clearing context."""
+        logger = StructuredLogger()
+        logger.set_context(trace_id="trace-999")
+        logger.info("with context")
+        log1 = json.loads(capsys.readouterr().out.strip())
+        
+        logger.clear_context()
+        logger.info("without context")
+        log2 = json.loads(capsys.readouterr().out.strip())
+        
+        assert log1["trace_id"] == "trace-999"
+        assert "trace_id" not in log2
+    
+    def test_timestamp_format(self, capsys):
+        """Test that timestamp is in ISO format."""
+        logger = StructuredLogger()
+        logger.info("test")
+        
+        captured = capsys.readouterr()
+        log_entry = json.loads(captured.out.strip())
+        
+        # Should be ISO 8601 format
+        assert "T" in log_entry["ts"]
+        assert log_entry["ts"].endswith("Z") or "+" in log_entry["ts"]
+
+
+class TestRedactSecrets:
+    """Tests for redact_secrets function."""
     
     def test_redact_dict_with_token(self):
-        """Test redaction of token in dictionary."""
-        data = {
-            'token': 'secret123',
-            'username': 'john',
-            'password': 'pass456'
-        }
-        result = SecretRedactor.redact_dict(data)
-        self.assertEqual(result['token'], '***REDACTED***')
-        self.assertEqual(result['password'], '***REDACTED***')
-        self.assertEqual(result['username'], 'john')
+        """Test redacting token from dictionary."""
+        data = {"token": "secret123456", "other": "value"}
+        redacted = redact_secrets(data)
+        
+        assert redacted["token"] == "***3456"
+        assert redacted["other"] == "value"
+    
+    def test_redact_dict_with_password(self):
+        """Test redacting password from dictionary."""
+        data = {"password": "mypassword123", "username": "john"}
+        redacted = redact_secrets(data)
+        
+        assert redacted["password"] == "***d123"
+        assert redacted["username"] == "john"
+    
+    def test_redact_dict_with_secret(self):
+        """Test redacting secret from dictionary."""
+        data = {"secret": "topsecret", "public": "data"}
+        redacted = redact_secrets(data)
+        
+        assert redacted["secret"] == "***cret"
+        assert redacted["public"] == "data"
     
     def test_redact_nested_dict(self):
-        """Test redaction in nested dictionary."""
+        """Test redacting from nested dictionary."""
         data = {
-            'config': {
-                'api_key': 'secret123',
-                'endpoint': 'https://api.example.com'
-            },
-            'user': 'john'
+            "user": {
+                "name": "john",
+                "api_key": "key12345678"
+            }
         }
-        result = SecretRedactor.redact_dict(data)
-        self.assertEqual(result['config']['api_key'], '***REDACTED***')
-        self.assertEqual(result['config']['endpoint'], 'https://api.example.com')
-        self.assertEqual(result['user'], 'john')
+        redacted = redact_secrets(data)
+        
+        assert redacted["user"]["name"] == "john"
+        assert redacted["user"]["api_key"] == "***5678"
     
-    def test_redact_preserves_safe_data(self):
-        """Test that redaction preserves safe data."""
-        text = 'User john logged in at 2024-01-01'
-        result = SecretRedactor.redact(text)
-        self.assertEqual(result, text)
+    def test_redact_list_of_dicts(self):
+        """Test redacting from list of dictionaries."""
+        data = [
+            {"name": "item1", "token": "token123456"},
+            {"name": "item2", "password": "pass789"}
+        ]
+        redacted = redact_secrets(data)
+        
+        assert redacted[0]["name"] == "item1"
+        assert redacted[0]["token"] == "***3456"
+        assert redacted[1]["password"] == "***s789"
     
-    def test_redact_function(self):
-        """Test the convenience redact function."""
-        text = 'secret: abc123'
-        result = redact(text)
-        self.assertNotIn('abc123', result)
-        self.assertIn('***REDACTED***', result)
+    def test_redact_case_insensitive(self):
+        """Test that redaction is case-insensitive."""
+        data = {
+            "TOKEN": "token123",
+            "Password": "pass456",
+            "API_KEY": "key789"
+        }
+        redacted = redact_secrets(data)
+        
+        assert redacted["TOKEN"] == "***n123"
+        assert redacted["Password"] == "***s456"
+        assert redacted["API_KEY"] == "***y789"
+    
+    def test_redact_short_values(self):
+        """Test redacting short values (< 4 chars)."""
+        data = {"token": "abc"}
+        redacted = redact_secrets(data)
+        
+        assert redacted["token"] == "***"
+    
+    def test_redact_custom_keys(self):
+        """Test redacting with custom secret keys."""
+        data = {"custom_secret": "value123", "token": "token456"}
+        redacted = redact_secrets(data, secret_keys=["custom_secret"])
+        
+        assert redacted["custom_secret"] == "***e123"
+        assert redacted["token"] == "token456"  # Not redacted
+    
+    def test_redact_primitives(self):
+        """Test that primitive types are returned unchanged."""
+        assert redact_secrets("string") == "string"
+        assert redact_secrets(123) == 123
+        assert redact_secrets(True) is True
+        assert redact_secrets(None) is None
+    
+    def test_redact_authorization_header(self):
+        """Test redacting authorization header."""
+        data = {"Authorization": "Bearer token12345678"}
+        redacted = redact_secrets(data)
+        
+        assert redacted["Authorization"] == "***5678"
 
 
-class TestJSONFormatter(unittest.TestCase):
-    """Test cases for JSONFormatter."""
+class TestGetTraceFingerprint:
+    """Tests for get_trace_fingerprint function."""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.formatter = JSONFormatter(service_name='test-service')
+    def test_fingerprint_length(self):
+        """Test that fingerprint is 8 characters."""
+        trace_id = "abc123def456"
+        fingerprint = get_trace_fingerprint(trace_id)
+        
+        assert len(fingerprint) == 8
+        assert fingerprint == "abc123de"
     
-    def test_format_basic_log(self):
-        """Test formatting of basic log record."""
-        record = logging.LogRecord(
-            name='test',
-            level=logging.INFO,
-            pathname='test.py',
-            lineno=1,
-            msg='Test message',
-            args=(),
-            exc_info=None
-        )
-        record.funcName = 'test_function'
+    def test_fingerprint_short_id(self):
+        """Test fingerprint with ID shorter than 8 chars."""
+        trace_id = "abc"
+        fingerprint = get_trace_fingerprint(trace_id)
         
-        result = self.formatter.format(record)
-        log_data = json.loads(result)
-        
-        self.assertEqual(log_data['level'], 'INFO')
-        self.assertEqual(log_data['service'], 'test-service')
-        self.assertEqual(log_data['function'], 'test_function')
-        self.assertEqual(log_data['message'], 'Test message')
-        self.assertIn('timestamp', log_data)
+        assert fingerprint == "abc"
     
-    def test_format_log_with_trace_id(self):
-        """Test formatting with trace_id."""
-        record = logging.LogRecord(
-            name='test',
-            level=logging.INFO,
-            pathname='test.py',
-            lineno=1,
-            msg='Test message',
-            args=(),
-            exc_info=None
-        )
-        record.funcName = 'test_function'
-        record.trace_id = 'trace-123'
+    def test_fingerprint_empty_id(self):
+        """Test fingerprint with empty ID."""
+        fingerprint = get_trace_fingerprint("")
         
-        result = self.formatter.format(record)
-        log_data = json.loads(result)
-        
-        self.assertEqual(log_data['trace_id'], 'trace-123')
+        assert fingerprint == "unknown"
     
-    def test_format_log_with_context(self):
-        """Test formatting with additional context."""
-        record = logging.LogRecord(
-            name='test',
-            level=logging.INFO,
-            pathname='test.py',
-            lineno=1,
-            msg='Test message',
-            args=(),
-            exc_info=None
-        )
-        record.funcName = 'test_function'
-        record.trace_id = 'trace-123'
-        record.correlation_id = 'corr-456'
-        record.user_id = 'user-789'
-        record.command = '/status'
+    def test_fingerprint_none_id(self):
+        """Test fingerprint with None ID."""
+        fingerprint = get_trace_fingerprint(None)
         
-        result = self.formatter.format(record)
-        log_data = json.loads(result)
-        
-        self.assertEqual(log_data['trace_id'], 'trace-123')
-        self.assertEqual(log_data['correlation_id'], 'corr-456')
-        self.assertEqual(log_data['user_id'], 'user-789')
-        self.assertEqual(log_data['command'], '/status')
-    
-    def test_format_log_with_exception(self):
-        """Test formatting with exception info."""
-        try:
-            raise ValueError('Test error')
-        except ValueError:
-            record = logging.LogRecord(
-                name='test',
-                level=logging.ERROR,
-                pathname='test.py',
-                lineno=1,
-                msg='Error occurred',
-                args=(),
-                exc_info=sys.exc_info()
-            )
-            record.funcName = 'test_function'
-            
-            result = self.formatter.format(record)
-            log_data = json.loads(result)
-            
-            self.assertIn('exception', log_data)
-            self.assertEqual(log_data['exception']['type'], 'ValueError')
-            self.assertIn('Test error', log_data['exception']['message'])
-            self.assertIsInstance(log_data['exception']['traceback'], list)
-    
-    def test_format_redacts_secrets(self):
-        """Test that formatter redacts secrets."""
-        record = logging.LogRecord(
-            name='test',
-            level=logging.INFO,
-            pathname='test.py',
-            lineno=1,
-            msg='Using token: secret123',
-            args=(),
-            exc_info=None
-        )
-        record.funcName = 'test_function'
-        
-        result = self.formatter.format(record)
-        log_data = json.loads(result)
-        
-        self.assertNotIn('secret123', log_data['message'])
-        self.assertIn('***REDACTED***', log_data['message'])
-
-
-class TestStructuredLogger(unittest.TestCase):
-    """Test cases for StructuredLogger."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        # Capture log output
-        self.log_output = StringIO()
-        self.handler = logging.StreamHandler(self.log_output)
-        self.handler.setFormatter(JSONFormatter('test-service'))
-        
-        # Create logger
-        self.logger = get_logger('test_logger', 'test-service')
-        self.logger.logger.handlers = [self.handler]
-        self.logger.logger.setLevel(logging.DEBUG)
-    
-    def tearDown(self):
-        """Clean up."""
-        self.log_output.close()
-    
-    def test_info_logging(self):
-        """Test info level logging."""
-        self.logger.info('Test info message')
-        
-        output = self.log_output.getvalue()
-        log_data = json.loads(output)
-        
-        self.assertEqual(log_data['level'], 'INFO')
-        self.assertEqual(log_data['message'], 'Test info message')
-    
-    def test_error_logging(self):
-        """Test error level logging."""
-        self.logger.error('Test error message')
-        
-        output = self.log_output.getvalue()
-        log_data = json.loads(output)
-        
-        self.assertEqual(log_data['level'], 'ERROR')
-        self.assertEqual(log_data['message'], 'Test error message')
-    
-    def test_logging_with_context(self):
-        """Test logging with context."""
-        logger_with_context = self.logger.with_context(
-            trace_id='trace-123',
-            user_id='user-456',
-            command='/status'
-        )
-        logger_with_context.info('Test message')
-        
-        output = self.log_output.getvalue()
-        log_data = json.loads(output)
-        
-        self.assertEqual(log_data['trace_id'], 'trace-123')
-        self.assertEqual(log_data['user_id'], 'user-456')
-        self.assertEqual(log_data['command'], '/status')
-    
-    def test_logging_with_fields(self):
-        """Test logging with additional fields."""
-        self.logger.info('Test message', duration=123, status='success')
-        
-        output = self.log_output.getvalue()
-        log_data = json.loads(output)
-        
-        self.assertIn('fields', log_data)
-        self.assertEqual(log_data['fields']['duration'], 123)
-        self.assertEqual(log_data['fields']['status'], 'success')
-    
-    def test_error_with_exception(self):
-        """Test error logging with exception info."""
-        try:
-            raise RuntimeError('Test runtime error')
-        except RuntimeError:
-            self.logger.error('Error occurred', exc_info=True)
-        
-        output = self.log_output.getvalue()
-        log_data = json.loads(output)
-        
-        self.assertEqual(log_data['level'], 'ERROR')
-        self.assertIn('exception', log_data)
-        self.assertEqual(log_data['exception']['type'], 'RuntimeError')
-    
-    def test_context_isolation(self):
-        """Test that context is isolated between loggers."""
-        logger1 = self.logger.with_context(trace_id='trace-1')
-        logger2 = self.logger.with_context(trace_id='trace-2')
-        
-        # Clear previous output
-        self.log_output.truncate(0)
-        self.log_output.seek(0)
-        
-        logger1.info('Message 1')
-        output1 = self.log_output.getvalue()
-        log_data1 = json.loads(output1.strip())
-        
-        self.log_output.truncate(0)
-        self.log_output.seek(0)
-        
-        logger2.info('Message 2')
-        output2 = self.log_output.getvalue()
-        log_data2 = json.loads(output2.strip())
-        
-        self.assertEqual(log_data1['trace_id'], 'trace-1')
-        self.assertEqual(log_data2['trace_id'], 'trace-2')
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert fingerprint == "unknown"

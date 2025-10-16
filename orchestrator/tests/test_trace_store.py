@@ -1,255 +1,234 @@
 """
-Tests for trace store utility.
+Unit tests for trace store utility.
 """
-import unittest
+import pytest
 import time
 from app.utils.trace_store import ExecutionTrace, TraceStore, get_trace_store
 
 
-class TestExecutionTrace(unittest.TestCase):
-    """Test cases for ExecutionTrace."""
+class TestExecutionTrace:
+    """Tests for ExecutionTrace class."""
     
-    def test_create_trace(self):
-        """Test creating a trace."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
+    def test_trace_initialization(self):
+        """Test trace initialization."""
+        trace = ExecutionTrace("trace-123", "/diagnose", user_id="user-456")
         
-        self.assertEqual(trace.trace_id, 'trace-123')
-        self.assertEqual(trace.user_id, 'user-456')
-        self.assertEqual(trace.channel_id, 'channel-789')
-        self.assertEqual(trace.command, '/status')
-        self.assertIsNotNone(trace.started_at)
-        self.assertIsNone(trace.completed_at)
-        self.assertEqual(len(trace.steps), 0)
-        self.assertIsNone(trace.error)
+        assert trace.trace_id == "trace-123"
+        assert trace.command == "/diagnose"
+        assert trace.user_id == "user-456"
+        assert trace.started_at > 0
+        assert trace.completed_at is None
+        assert trace.steps == []
+        assert trace.error is None
     
     def test_add_step(self):
         """Test adding steps to trace."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
+        trace = ExecutionTrace("trace-123", "/test")
         
-        trace.add_step('init', 'started')
-        trace.add_step('fetch_data', 'completed', duration_ms=150.5, details='Fetched 10 records')
+        trace.add_step("Step 1", duration_ms=100, status="success")
+        trace.add_step("Step 2", duration_ms=200, status="failure", details="Error details")
         
-        self.assertEqual(len(trace.steps), 2)
-        self.assertEqual(trace.steps[0]['name'], 'init')
-        self.assertEqual(trace.steps[0]['status'], 'started')
-        self.assertEqual(trace.steps[1]['duration_ms'], 150.5)
-        self.assertEqual(trace.steps[1]['details'], 'Fetched 10 records')
+        assert len(trace.steps) == 2
+        assert trace.steps[0]["name"] == "Step 1"
+        assert trace.steps[0]["duration_ms"] == 100
+        assert trace.steps[0]["status"] == "success"
+        assert trace.steps[1]["details"] == "Error details"
     
     def test_set_error(self):
         """Test setting error on trace."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
+        trace = ExecutionTrace("trace-123", "/test")
+        trace.set_error("Something went wrong")
         
-        trace.set_error('ValueError', 'Invalid input', 'Traceback...')
-        
-        self.assertIsNotNone(trace.error)
-        self.assertEqual(trace.error['type'], 'ValueError')
-        self.assertEqual(trace.error['message'], 'Invalid input')
-        self.assertEqual(trace.error['trace'], 'Traceback...')
+        assert trace.error == "Something went wrong"
     
     def test_complete(self):
         """Test completing a trace."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
-        
-        self.assertIsNone(trace.completed_at)
+        trace = ExecutionTrace("trace-123", "/test")
+        time.sleep(0.01)  # Small delay
         trace.complete()
-        self.assertIsNotNone(trace.completed_at)
+        
+        assert trace.completed_at is not None
+        assert trace.completed_at > trace.started_at
     
-    def test_add_run_url(self):
-        """Test adding run URLs."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/deploy')
+    def test_get_duration_ms(self):
+        """Test getting duration in milliseconds."""
+        trace = ExecutionTrace("trace-123", "/test")
+        time.sleep(0.01)  # Small delay
+        trace.complete()
         
-        trace.add_run_url('https://github.com/user/repo/actions/runs/123')
-        trace.add_run_url('https://github.com/user/repo/actions/runs/456')
-        
-        self.assertEqual(len(trace.run_urls), 2)
-        self.assertIn('https://github.com/user/repo/actions/runs/123', trace.run_urls)
+        duration = trace.get_duration_ms()
+        assert duration is not None
+        assert duration >= 10  # At least 10ms
     
-    def test_add_duplicate_run_url(self):
-        """Test that duplicate URLs are not added."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/deploy')
+    def test_get_duration_ms_incomplete(self):
+        """Test getting duration for incomplete trace."""
+        trace = ExecutionTrace("trace-123", "/test")
         
-        url = 'https://github.com/user/repo/actions/runs/123'
-        trace.add_run_url(url)
-        trace.add_run_url(url)
-        
-        self.assertEqual(len(trace.run_urls), 1)
-    
-    def test_set_metadata(self):
-        """Test setting metadata."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
-        
-        trace.set_metadata('workflow', 'Client Deploy')
-        trace.set_metadata('run_id', 12345)
-        
-        self.assertEqual(trace.metadata['workflow'], 'Client Deploy')
-        self.assertEqual(trace.metadata['run_id'], 12345)
+        duration = trace.get_duration_ms()
+        assert duration is None
     
     def test_to_dict(self):
-        """Test conversion to dictionary."""
-        trace = ExecutionTrace('trace-123', 'user-456', 'channel-789', '/status')
-        trace.add_step('init', 'started')
-        trace.add_run_url('https://github.com/user/repo/actions/runs/123')
+        """Test converting trace to dictionary."""
+        trace = ExecutionTrace("trace-123", "/test", user_id="user-456")
+        trace.add_step("Step 1", duration_ms=100)
         trace.complete()
         
-        result = trace.to_dict()
+        trace_dict = trace.to_dict()
         
-        self.assertEqual(result['trace_id'], 'trace-123')
-        self.assertEqual(result['user_id'], 'user-456')
-        self.assertEqual(result['command'], '/status')
-        self.assertIsNotNone(result['started_at'])
-        self.assertIsNotNone(result['completed_at'])
-        self.assertIsNotNone(result['duration_ms'])
-        self.assertEqual(len(result['steps']), 1)
-        self.assertEqual(len(result['run_urls']), 1)
+        assert trace_dict["trace_id"] == "trace-123"
+        assert trace_dict["command"] == "/test"
+        assert trace_dict["user_id"] == "user-456"
+        assert "started_at" in trace_dict
+        assert "completed_at" in trace_dict
+        assert trace_dict["duration_ms"] is not None
+        assert len(trace_dict["steps"]) == 1
 
 
-class TestTraceStore(unittest.TestCase):
-    """Test cases for TraceStore."""
+class TestTraceStore:
+    """Tests for TraceStore class."""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.store = TraceStore(max_traces=5)
+    def test_store_initialization(self):
+        """Test trace store initialization."""
+        store = TraceStore()
+        
+        assert len(store._traces) == 0
+        assert len(store._user_traces) == 0
+        assert store._last_trace_id is None
     
     def test_create_trace(self):
-        """Test creating a trace in store."""
-        trace = self.store.create_trace('user-1', 'channel-1', '/status')
+        """Test creating a trace."""
+        store = TraceStore()
+        trace = store.create_trace("trace-123", "/test", user_id="user-456")
         
-        self.assertIsNotNone(trace)
-        self.assertEqual(trace.user_id, 'user-1')
-        self.assertEqual(trace.channel_id, 'channel-1')
-        self.assertEqual(trace.command, '/status')
-    
-    def test_create_trace_with_trace_id(self):
-        """Test creating a trace with specific ID."""
-        trace = self.store.create_trace('user-1', 'channel-1', '/status', trace_id='custom-123')
-        
-        self.assertEqual(trace.trace_id, 'custom-123')
-    
-    def test_create_trace_with_correlation_id(self):
-        """Test creating a trace with correlation ID."""
-        trace = self.store.create_trace('user-1', 'channel-1', '/diagnose', correlation_id='corr-456')
-        
-        self.assertEqual(trace.trace_id, 'corr-456')
+        assert trace.trace_id == "trace-123"
+        assert trace.command == "/test"
+        assert store._last_trace_id == "trace-123"
     
     def test_get_trace(self):
-        """Test retrieving a trace by ID."""
-        trace = self.store.create_trace('user-1', 'channel-1', '/status', trace_id='trace-123')
+        """Test getting a trace by ID."""
+        store = TraceStore()
+        store.create_trace("trace-123", "/test")
         
-        retrieved = self.store.get_trace('trace-123')
-        
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.trace_id, 'trace-123')
-        self.assertEqual(retrieved.user_id, 'user-1')
+        trace = store.get_trace("trace-123")
+        assert trace is not None
+        assert trace.trace_id == "trace-123"
     
-    def test_get_nonexistent_trace(self):
-        """Test retrieving a non-existent trace."""
-        result = self.store.get_trace('nonexistent')
-        self.assertIsNone(result)
+    def test_get_trace_not_found(self):
+        """Test getting non-existent trace."""
+        store = TraceStore()
+        
+        trace = store.get_trace("non-existent")
+        assert trace is None
+    
+    def test_get_last_trace(self):
+        """Test getting last trace globally."""
+        store = TraceStore()
+        store.create_trace("trace-1", "/test1")
+        store.create_trace("trace-2", "/test2")
+        
+        last_trace = store.get_last_trace()
+        assert last_trace is not None
+        assert last_trace.trace_id == "trace-2"
     
     def test_get_last_trace_for_user(self):
-        """Test getting last trace for a user."""
-        # Create multiple traces for same user
-        trace1 = self.store.create_trace('user-1', 'channel-1', '/status', trace_id='trace-1')
-        time.sleep(0.01)  # Small delay to ensure ordering
-        trace2 = self.store.create_trace('user-1', 'channel-1', '/diagnose', trace_id='trace-2')
+        """Test getting last trace for specific user."""
+        store = TraceStore()
+        store.create_trace("trace-1", "/test1", user_id="user-1")
+        store.create_trace("trace-2", "/test2", user_id="user-2")
+        store.create_trace("trace-3", "/test3", user_id="user-1")
         
-        last_trace = self.store.get_last_trace_for_user('user-1')
-        
-        self.assertIsNotNone(last_trace)
-        self.assertEqual(last_trace.trace_id, 'trace-2')
+        last_trace = store.get_last_trace(user_id="user-1")
+        assert last_trace is not None
+        assert last_trace.trace_id == "trace-3"
     
-    def test_get_last_trace_for_user_with_channel_filter(self):
-        """Test getting last trace for user in specific channel."""
-        trace1 = self.store.create_trace('user-1', 'channel-1', '/status', trace_id='trace-1')
-        trace2 = self.store.create_trace('user-1', 'channel-2', '/diagnose', trace_id='trace-2')
+    def test_get_last_trace_empty(self):
+        """Test getting last trace from empty store."""
+        store = TraceStore()
         
-        last_trace = self.store.get_last_trace_for_user('user-1', channel_id='channel-1')
-        
-        self.assertIsNotNone(last_trace)
-        self.assertEqual(last_trace.trace_id, 'trace-1')
+        last_trace = store.get_last_trace()
+        assert last_trace is None
     
-    def test_get_last_trace_for_nonexistent_user(self):
-        """Test getting last trace for user with no traces."""
-        result = self.store.get_last_trace_for_user('nonexistent-user')
-        self.assertIsNone(result)
+    def test_get_user_traces(self):
+        """Test getting traces for a user."""
+        store = TraceStore()
+        store.create_trace("trace-1", "/test1", user_id="user-1")
+        store.create_trace("trace-2", "/test2", user_id="user-1")
+        store.create_trace("trace-3", "/test3", user_id="user-2")
+        
+        traces = store.get_user_traces("user-1")
+        assert len(traces) == 2
+        assert traces[0].trace_id == "trace-2"  # Most recent first
+        assert traces[1].trace_id == "trace-1"
     
-    def test_get_recent_traces_for_user(self):
-        """Test getting recent traces for a user."""
-        # Create multiple traces
-        for i in range(5):
-            self.store.create_trace('user-1', 'channel-1', f'/command-{i}', trace_id=f'trace-{i}')
+    def test_get_user_traces_with_limit(self):
+        """Test getting limited traces for a user."""
+        store = TraceStore()
+        for i in range(10):
+            store.create_trace(f"trace-{i}", "/test", user_id="user-1")
         
-        recent = self.store.get_recent_traces_for_user('user-1', limit=3)
-        
-        self.assertEqual(len(recent), 3)
-        # Should be in reverse order (most recent first)
-        self.assertEqual(recent[0].trace_id, 'trace-4')
-        self.assertEqual(recent[1].trace_id, 'trace-3')
-        self.assertEqual(recent[2].trace_id, 'trace-2')
+        traces = store.get_user_traces("user-1", limit=3)
+        assert len(traces) == 3
+        assert traces[0].trace_id == "trace-9"  # Most recent
     
-    def test_lru_eviction(self):
-        """Test that oldest traces are evicted when capacity is reached."""
-        # Store has max_traces=5
-        for i in range(7):
-            self.store.create_trace('user-1', 'channel-1', f'/cmd-{i}', trace_id=f'trace-{i}')
+    def test_get_user_traces_no_traces(self):
+        """Test getting traces for user with no traces."""
+        store = TraceStore()
         
-        # First two traces should be evicted
-        self.assertIsNone(self.store.get_trace('trace-0'))
-        self.assertIsNone(self.store.get_trace('trace-1'))
-        
-        # Last 5 should still exist
-        for i in range(2, 7):
-            self.assertIsNotNone(self.store.get_trace(f'trace-{i}'))
+        traces = store.get_user_traces("user-1")
+        assert len(traces) == 0
     
-    def test_eviction_updates_user_index(self):
-        """Test that user index is updated when traces are evicted."""
-        # Create traces that will cause eviction
-        for i in range(7):
-            self.store.create_trace('user-1', 'channel-1', f'/cmd-{i}', trace_id=f'trace-{i}')
+    def test_max_traces_per_user(self):
+        """Test that old traces are removed when limit is reached."""
+        store = TraceStore()
         
-        # Get recent traces - should only return ones still in store
-        recent = self.store.get_recent_traces_for_user('user-1', limit=10)
+        # Create more traces than the limit
+        for i in range(TraceStore.MAX_TRACES_PER_USER + 5):
+            store.create_trace(f"trace-{i}", "/test", user_id="user-1")
         
-        self.assertEqual(len(recent), 5)
-        self.assertEqual(recent[0].trace_id, 'trace-6')
+        traces = store.get_user_traces("user-1", limit=100)
+        assert len(traces) == TraceStore.MAX_TRACES_PER_USER
+        
+        # Old traces should be removed
+        assert store.get_trace("trace-0") is None
+        assert store.get_trace("trace-1") is None
     
-    def test_clear(self):
-        """Test clearing all traces."""
-        self.store.create_trace('user-1', 'channel-1', '/status', trace_id='trace-1')
-        self.store.create_trace('user-2', 'channel-2', '/diagnose', trace_id='trace-2')
+    def test_max_traces_global(self):
+        """Test that global trace limit is enforced."""
+        store = TraceStore()
         
-        self.store.clear()
+        # Create more traces than global limit
+        for i in range(TraceStore.MAX_TRACES_GLOBAL + 10):
+            store.create_trace(f"trace-{i}", "/test", user_id=f"user-{i}")
         
-        self.assertIsNone(self.store.get_trace('trace-1'))
-        self.assertIsNone(self.store.get_trace('trace-2'))
-        self.assertIsNone(self.store.get_last_trace_for_user('user-1'))
+        # Should not exceed global limit
+        assert len(store._traces) <= TraceStore.MAX_TRACES_GLOBAL
     
     def test_multiple_users(self):
-        """Test traces for multiple users."""
-        trace1 = self.store.create_trace('user-1', 'channel-1', '/status', trace_id='trace-1')
-        trace2 = self.store.create_trace('user-2', 'channel-1', '/status', trace_id='trace-2')
+        """Test handling multiple users."""
+        store = TraceStore()
+        store.create_trace("trace-1", "/test1", user_id="user-1")
+        store.create_trace("trace-2", "/test2", user_id="user-2")
+        store.create_trace("trace-3", "/test3", user_id="user-1")
         
-        user1_trace = self.store.get_last_trace_for_user('user-1')
-        user2_trace = self.store.get_last_trace_for_user('user-2')
+        user1_traces = store.get_user_traces("user-1")
+        user2_traces = store.get_user_traces("user-2")
         
-        self.assertEqual(user1_trace.trace_id, 'trace-1')
-        self.assertEqual(user2_trace.trace_id, 'trace-2')
+        assert len(user1_traces) == 2
+        assert len(user2_traces) == 1
 
 
-class TestGetTraceStore(unittest.TestCase):
-    """Test cases for get_trace_store singleton."""
+class TestGetTraceStore:
+    """Tests for get_trace_store function."""
     
-    def test_get_trace_store_returns_instance(self):
-        """Test that get_trace_store returns a TraceStore instance."""
-        store = get_trace_store()
-        self.assertIsInstance(store, TraceStore)
-    
-    def test_get_trace_store_returns_singleton(self):
+    def test_get_trace_store_singleton(self):
         """Test that get_trace_store returns same instance."""
         store1 = get_trace_store()
         store2 = get_trace_store()
-        self.assertIs(store1, store2)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        
+        assert store1 is store2
+    
+    def test_get_trace_store_returns_trace_store(self):
+        """Test that get_trace_store returns TraceStore instance."""
+        store = get_trace_store()
+        
+        assert isinstance(store, TraceStore)
