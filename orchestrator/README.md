@@ -804,9 +804,17 @@ See [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md) for:
 - Implement issue labeling automation
 - Add support for custom workflows and rules
 
+## Operational Documentation
+
+- **[RUNBOOK.md](RUNBOOK.md)**: Operations runbook with troubleshooting, monitoring, and maintenance procedures
+- **[ROLLOUT_PLAN.md](ROLLOUT_PLAN.md)**: Staged rollout plan for Phase 5 features with feature flags and success criteria
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)**: Testing guide with examples, CloudWatch queries, and dry-run mode
+
 ## Support
 
 For issues or questions:
-1. Check CloudWatch Logs for error details
-2. Review the GitHub repository issues
-3. Consult AWS SAM documentation: https://docs.aws.amazon.com/serverless-application-model/
+1. Check the **[RUNBOOK.md](RUNBOOK.md)** for common issues and troubleshooting steps
+2. Use `/debug-last` command for recent execution traces (dev environment)
+3. Check CloudWatch Logs for detailed error traces with trace IDs
+4. Review the GitHub repository issues
+5. Consult AWS SAM documentation: https://docs.aws.amazon.com/serverless-application-model/
