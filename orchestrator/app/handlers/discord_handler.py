@@ -6,6 +6,7 @@ Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
 import json
 import os
 import time
+import requests
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from app.verification.verifier import DeployVerifier
@@ -381,30 +382,84 @@ def handle_deploy_client_command(interaction):
         
         # Build initial response
         short_id = correlation_id[:8]
-        content = f'🟡 **Starting Client Deploy...**\n\n'
-        if api_base:
-            content += f'**API Base Override:** `{api_base}`\n'
-        content += f'**Requested by:** {requester}\n\n'
         
-        # Try to find the run
-        time.sleep(3)  # Wait a bit for the run to be created
-        run = dispatcher.find_recent_run_for_workflow('Client Deploy', max_age_seconds=30)
+        # If wait=false, return immediate response (unchanged behavior)
+        if not wait:
+            content = f'🟡 **Starting Client Deploy...**\n\n'
+            if api_base:
+                content += f'**API Base Override:** `{api_base}`\n'
+            content += f'**Correlation ID:** `{short_id}...`\n'
+            content += f'**Requested by:** {requester}\n\n'
+            content += '⏳ Workflow dispatched. Use `/status` to check progress.'
+            
+            return create_response(4, {
+                'content': content
+            })
+        
+        # If wait=true, use deferred response and follow-up
+        # Send deferred response (type 5)
+        deferred_response = create_response(5)  # DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+        
+        # Post follow-up messages in a background thread/async manner
+        # Since Lambda doesn't support long-running processes, we'll do polling here
+        # and return before timeout (3 seconds Lambda context)
+        
+        # Wait a bit for run to be created
+        time.sleep(3)
+        
+        # Find the run by correlation_id
+        run = dispatcher.find_run_by_correlation(correlation_id, 'Client Deploy')
         
         if run:
-            content += f'⏳ **Tracking run:** {run.html_url}\n'
+            # Send follow-up with run link
+            follow_up_content = f'🟡 **Client Deploy Started**\n\n'
+            if api_base:
+                follow_up_content += f'**API Base Override:** `{api_base}`\n'
+            follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
+            follow_up_content += f'**Requested by:** {requester}\n'
+            follow_up_content += f'**Run:** {run.html_url}\n\n'
+            follow_up_content += '⏳ Waiting for completion (up to 3 minutes)...'
             
-            # If wait is enabled, poll for completion
-            if wait:
-                content += '\n_Waiting for completion (up to 3 minutes)..._'
-                # Return initial response first
-                # Note: In a real implementation, we'd need to use deferred responses
-                # or a follow-up mechanism. For now, we'll just indicate tracking.
+            # Post follow-up via webhook/interaction token
+            _post_followup_message(interaction, follow_up_content)
+            
+            # Poll for completion (up to 180 seconds)
+            poll_result = dispatcher.poll_run_conclusion(run.id, timeout_seconds=180, poll_interval=3)
+            
+            # Send final outcome
+            if poll_result.get('completed'):
+                conclusion = poll_result.get('conclusion')
+                if conclusion == 'success':
+                    final_content = f'🟢 **Client Deploy Successful**\n\n'
+                    final_content += f'**Correlation ID:** `{short_id}...`\n'
+                    final_content += f'**Run:** {run.html_url}\n\n'
+                    final_content += '✅ Deployment completed successfully!'
+                else:
+                    final_content = f'🔴 **Client Deploy Failed**\n\n'
+                    final_content += f'**Correlation ID:** `{short_id}...`\n'
+                    final_content += f'**Run:** {run.html_url}\n'
+                    final_content += f'**Conclusion:** {conclusion}\n\n'
+                    final_content += '❌ Deployment failed. Check the run for details.'
+            else:
+                # Timed out
+                final_content = f'⏱️ **Client Deploy Timeout**\n\n'
+                final_content += f'**Correlation ID:** `{short_id}...`\n'
+                final_content += f'**Run:** {run.html_url}\n\n'
+                final_content += '⚠️ Deployment is still running after 3 minutes. Check the run for current status.'
+            
+            _post_followup_message(interaction, final_content)
         else:
-            content += '⏳ Workflow dispatched. Check GitHub Actions for run details.'
+            # Run not found, post searching message
+            follow_up_content = f'🟡 **Client Deploy Triggered**\n\n'
+            if api_base:
+                follow_up_content += f'**API Base Override:** `{api_base}`\n'
+            follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
+            follow_up_content += f'**Requested by:** {requester}\n\n'
+            follow_up_content += '⏳ Searching for run... Check GitHub Actions if this takes too long.'
+            
+            _post_followup_message(interaction, follow_up_content)
         
-        return create_response(4, {
-            'content': content
-        })
+        return deferred_response
     
     except Exception as e:
         print(f'Error in handle_deploy_client_command: {str(e)}')
@@ -414,6 +469,33 @@ def handle_deploy_client_command(interaction):
             'content': f'❌ Error: {str(e)}',
             'flags': 64
         })
+
+
+def _post_followup_message(interaction, content):
+    """Post a follow-up message to a Discord interaction."""
+    try:
+        # Get interaction token and application_id
+        token = interaction.get('token')
+        app_id = interaction.get('application_id')
+        
+        if not token or not app_id:
+            print('Missing interaction token or app_id for follow-up')
+            return
+        
+        # Post follow-up message
+        url = f'https://discord.com/api/v10/webhooks/{app_id}/{token}'
+        headers = {'Content-Type': 'application/json'}
+        payload = {'content': content}
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=5)
+        
+        if response.status_code in [200, 204]:
+            print('Follow-up message posted successfully')
+        else:
+            print(f'Failed to post follow-up message: {response.status_code} - {response.text}')
+    
+    except Exception as e:
+        print(f'Error posting follow-up message: {str(e)}')
 
 
 def handle_set_frontend_command(interaction):

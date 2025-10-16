@@ -4,10 +4,21 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
+      correlation_id:
+        description: "Correlation ID for tracking (UUID)"
+        required: false
+        default: ""
+      requester:
+        description: "Requester username or ID"
+        required: false
+        default: ""
       VITE_API_BASE:
         description: "Override API base URL (leave empty to use saved secret)"
         required: false
         default: ""
+
+run-name: "Client Deploy — ${{ inputs.correlation_id || github.sha }} by ${{ inputs.requester || github.actor }}"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
