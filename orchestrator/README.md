@@ -370,6 +370,226 @@ Updates the VITE_API_BASE repository secret.
 - Admin allowlist enforcement
 - Feature flag must be explicitly enabled
 
+## Observability
+
+The orchestrator provides comprehensive observability through structured logging, distributed tracing, alerts, and debugging tools.
+
+### Structured Logging
+
+All components use structured JSON logging with consistent fields:
+
+```python
+from app.utils.logger import StructuredLogger
+
+logger = StructuredLogger(service="my-service")
+logger.set_context(trace_id="abc123", user_id="user-456")
+logger.info("Processing command", fn="handle_command", cmd="/diagnose")
+```
+
+**Log Format:**
+```json
+{
+  "ts": "2025-10-16T18:00:00.000Z",
+  "level": "info",
+  "service": "orchestrator",
+  "fn": "handle_diagnose_command",
+  "trace_id": "abc123de-456f-789g-hij0-klmnopqrstuv",
+  "correlation_id": "workflow-run-123",
+  "user_id": "discord-user-123",
+  "cmd": "/diagnose",
+  "msg": "Triggered diagnose workflow"
+}
+```
+
+**Log Levels:**
+- `info` - Normal operations
+- `warn` - Unexpected but handled situations
+- `error` - Failures requiring attention
+- `debug` - Detailed diagnostic information
+
+### Secret Redaction
+
+The logger includes automatic secret redaction to prevent sensitive data leakage:
+
+```python
+from app.utils.logger import redact_secrets
+
+data = {
+    "username": "john",
+    "api_token": "secret12345678",
+    "config": {"password": "pass123"}
+}
+
+safe_data = redact_secrets(data)
+# Result: {"username": "john", "api_token": "***5678", "config": {"password": "***s123"}}
+```
+
+**Redacted Keys:**
+- `token`, `secret`, `password`, `key`, `authorization`, `api_key` (case-insensitive)
+- Shows last 4 characters for verification
+- Works with nested structures (dicts, lists)
+
+### Distributed Tracing
+
+Each command execution creates a trace with unique `trace_id` for correlation across services:
+
+**Creating a Trace:**
+```python
+from app.utils.trace_store import get_trace_store
+
+store = get_trace_store()
+trace = store.create_trace(trace_id="abc123", command="/diagnose", user_id="user-456")
+
+trace.add_step("Validate input", duration_ms=10, status="success")
+trace.add_step("Call GitHub API", duration_ms=250, status="success")
+trace.add_step("Parse response", duration_ms=5, status="success")
+trace.complete()
+```
+
+**Retrieving Traces:**
+- Via `/debug-last` Discord command (requires `ENABLE_DEBUG_CMD=true`)
+- Via CloudWatch Insights queries
+- Via trace store API in code
+
+### /debug-last Command
+
+Debug command to retrieve execution details for troubleshooting:
+
+**Usage:**
+```
+/debug-last
+```
+
+**Output:**
+- Trace ID for correlation
+- Command executed
+- Step-by-step timings
+- Last error (if any)
+- Links to relevant resources
+
+**Example:**
+```
+🔍 Last Execution Debug Info
+
+Command: /diagnose
+Trace ID: abc123de-456f-789g
+Started: 2025-10-16 18:00:00 UTC
+Duration: 2850ms
+
+Steps:
+  ✅ Validate input (10ms)
+  ✅ Trigger workflow (250ms)
+  ✅ Poll for completion (2500ms)
+  ✅ Parse results (90ms)
+
+[View Run](https://github.com/.../runs/123)
+```
+
+**Security:**
+- Feature-flagged with `ENABLE_DEBUG_CMD` (default: false)
+- Ephemeral messages (visible only to user)
+- Automatic secret redaction
+- Bounded output length (< 2000 chars)
+
+### Alerts
+
+Critical failures trigger Discord alerts with contextual information:
+
+**Features:**
+- Severity-based emojis (🔴 critical, ⚠️ error, 🟡 warning)
+- Root cause summary
+- Trace ID for correlation
+- Links to runs and logs
+- Rate-limiting (5-minute window) to prevent alert storms
+
+**Configuration:**
+```bash
+# Feature flag (default: false for safety)
+export ENABLE_ALERTS=true
+
+# Alert channel
+export ALERT_CHANNEL_ID=123456789012345
+```
+
+**Example Alert:**
+```
+🔴 CRITICAL ALERT
+
+GitHub Actions workflow dispatch failed
+
+Root Cause: Rate limit exceeded (403)
+Trace ID: abc123de-456f
+
+[View Run](https://github.com/.../runs/123)
+[CloudWatch Logs](https://console.aws.amazon.com/cloudwatch/...)
+```
+
+**Sending Alerts:**
+```python
+from app.utils.alerts import AlertsManager
+
+alerts = AlertsManager(enable_alerts=True, discord_service=discord)
+alerts.send_critical_alert(
+    "Workflow dispatch failed",
+    root_cause="Rate limit exceeded (403)",
+    trace_id="abc123de",
+    run_link="https://github.com/.../runs/123"
+)
+```
+
+### CloudWatch Insights Queries
+
+**Find errors by trace ID:**
+```sql
+fields @timestamp, level, msg, error
+| filter trace_id = "abc123de-456f-789g"
+| sort @timestamp asc
+```
+
+**Command usage statistics:**
+```sql
+fields @timestamp, cmd, user_id
+| filter cmd != ""
+| stats count() by cmd
+| sort count desc
+```
+
+**Slow operations (> 1 second):**
+```sql
+fields @timestamp, fn, duration_ms, msg
+| filter duration_ms > 1000
+| sort duration_ms desc
+| limit 20
+```
+
+**Error summary:**
+```sql
+fields @timestamp, level, msg, trace_id, error
+| filter level = "error"
+| sort @timestamp desc
+| limit 50
+```
+
+### Dashboards
+
+Recommended CloudWatch dashboard panels:
+
+1. **Lambda Invocations** - Track command volume
+2. **Lambda Errors** - Alert on failure spikes
+3. **Lambda Duration** - Monitor performance (P50, P90, P99)
+4. **DynamoDB Operations** - Track state storage usage
+5. **API Gateway 4xx/5xx** - Monitor client/server errors
+
+### Runbook
+
+See [RUNBOOK.md](RUNBOOK.md) for detailed operational procedures:
+- Finding logs by trace ID
+- Handling common failures
+- Diagnostic commands
+- Escalation procedures
+- Feature flag configuration
+- Admin allowlists
+
 ## Multi-Agent Orchestration
 
 The orchestrator includes a multi-agent system for coordinating different workflow automation capabilities.
@@ -560,104 +780,6 @@ aws dynamodb get-item --table-name valine-orchestrator-runs-dev \
 - Verify the Lambda execution role has DynamoDB permissions
 - Check that the table name in environment variables matches the actual table
 
-## Observability
-
-The orchestrator provides comprehensive observability through structured logging, distributed tracing, and debugging commands.
-
-### Structured JSON Logs
-
-All logs are output in structured JSON format for easy parsing in CloudWatch Logs Insights:
-
-```json
-{
-  "timestamp": "2024-10-16T17:56:00.123Z",
-  "level": "INFO",
-  "service": "orchestrator",
-  "function": "handle_status_command",
-  "message": "Status command started",
-  "trace_id": "550e8400-e29b-41d4-a716-446655440000",
-  "user_id": "123456789",
-  "command": "/status"
-}
-```
-
-### Trace ID Propagation
-
-Each command execution is assigned a unique `trace_id` that is propagated across all service calls, logs, and workflow dispatches. For workflows triggered with correlation IDs, the correlation ID is used as the trace ID.
-
-### Secret Redaction
-
-The logger automatically redacts sensitive information including:
-- Tokens and API keys
-- Passwords and secrets
-- Authorization headers
-- URLs with embedded credentials
-- Discord and GitHub tokens
-
-### /debug-last Command
-
-Use `/debug-last` to retrieve the most recent execution trace for your user in the current channel:
-
-```
-/debug-last
-```
-
-This shows:
-- Trace ID
-- Command name and timestamp
-- Execution steps with timings
-- Any errors that occurred
-- Links to related workflow runs
-- Key metadata
-
-The command is enabled by default in development (`ENABLE_DEBUG_CMD=true`) and disabled in production.
-
-### CloudWatch Logs Insights Queries
-
-#### Find all errors in the last hour
-```
-fields @timestamp, level, message, trace_id, error
-| filter level = "ERROR"
-| sort @timestamp desc
-| limit 100
-```
-
-#### Track a specific trace
-```
-fields @timestamp, function, message, fields
-| filter trace_id = "your-trace-id-here"
-| sort @timestamp asc
-```
-
-#### Command execution duration statistics
-```
-fields command, duration_ms
-| filter command != ""
-| stats avg(duration_ms) as avg_duration, max(duration_ms) as max_duration, count() as executions by command
-```
-
-#### Find failed command executions
-```
-fields @timestamp, command, user_id, error.type, error.message
-| filter error.type != ""
-| sort @timestamp desc
-```
-
-### AWS X-Ray Tracing
-
-Both Discord and GitHub webhook handlers have X-Ray tracing enabled (`Tracing: Active`). View traces in the AWS X-Ray console to see:
-- Service call dependencies
-- Latency breakdown
-- Error rates
-- Downstream service performance
-
-### Environment Variables
-
-Control observability features with these environment variables:
-
-- `ENABLE_JSON_LOGGING` (default: `true`): Enable structured JSON logging
-- `ENABLE_DEBUG_CMD` (default: `true` in dev, `false` in prod): Enable `/debug-last` command
-
 ## Development
 
 ### Local Testing
@@ -804,17 +926,9 @@ See [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md) for:
 - Implement issue labeling automation
 - Add support for custom workflows and rules
 
-## Operational Documentation
-
-- **[RUNBOOK.md](RUNBOOK.md)**: Operations runbook with troubleshooting, monitoring, and maintenance procedures
-- **[ROLLOUT_PLAN.md](ROLLOUT_PLAN.md)**: Staged rollout plan for Phase 5 features with feature flags and success criteria
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)**: Testing guide with examples, CloudWatch queries, and dry-run mode
-
 ## Support
 
 For issues or questions:
-1. Check the **[RUNBOOK.md](RUNBOOK.md)** for common issues and troubleshooting steps
-2. Use `/debug-last` command for recent execution traces (dev environment)
-3. Check CloudWatch Logs for detailed error traces with trace IDs
-4. Review the GitHub repository issues
-5. Consult AWS SAM documentation: https://docs.aws.amazon.com/serverless-application-model/
+1. Check CloudWatch Logs for error details
+2. Review the GitHub repository issues
+3. Consult AWS SAM documentation: https://docs.aws.amazon.com/serverless-application-model/
