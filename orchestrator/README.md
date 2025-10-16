@@ -6,11 +6,12 @@ An AWS Lambda-based orchestrator that integrates Discord slash commands with Git
 
 The orchestrator consists of:
 
-- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`)
+- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`)
 - **GitHub Webhook Handler**: Lambda function that processes GitHub events (issues, PRs, check suites)
 - **Orchestrator Graph**: Core workflow logic that coordinates between services
-- **Services Layer**: Interfaces for GitHub API, Discord API, and DynamoDB state storage
+- **Services Layer**: Interfaces for GitHub API, Discord API, DynamoDB state storage, and GitHub Actions dispatching
 - **Verification Module**: Deploy verification system for GitHub Actions workflow runs
+- **Diagnose Dispatcher**: On-demand workflow triggering with correlation tracking and result parsing
 
 ## Prerequisites
 
@@ -218,8 +219,45 @@ The `/verify-latest` and `/verify-run` commands perform comprehensive checks:
 Example usage:
 ```
 /verify-latest
+/verify-latest diagnose:true
 /verify-run 12345678
 ```
+
+### On-Demand Diagnose Workflow
+
+The `/diagnose` command triggers the "Diagnose on Demand" workflow via GitHub Actions, providing comprehensive infrastructure diagnostics:
+
+**Features:**
+- Repository/workflow dispatch triggers (supports both methods)
+- Correlation ID tracking for end-to-end tracing
+- OIDC AWS credential checks
+- S3 bucket access verification
+- CloudFront distribution status
+- API endpoint health checks (/health, /hello)
+- Structured JSON output with machine-readable results
+- Artifact upload with diagnostic summary
+
+**Usage:**
+```
+/diagnose
+/diagnose frontend_url:https://example.com
+/diagnose api_base:https://api.example.com
+/verify-latest diagnose:true
+```
+
+**Workflow Details:**
+- File: `.github/workflows/diagnose-dispatch.yml`
+- Triggered by: `repository_dispatch` (type: `diagnose.request`) or `workflow_dispatch`
+- Run name includes correlation_id and requester for easy identification
+- Outputs both human-readable summary and JSON block in GITHUB_STEP_SUMMARY
+- Respects rate limits with exponential backoff
+- Timeout: ~180 seconds for polling completion
+
+**Response Messages:**
+- 🟡 Starting - Initial acknowledgment with correlation ID
+- ⏳ Running - Link to GitHub Actions run
+- 🟢 OK - All checks passed with evidence
+- 🔴 Failed - Detailed failure reasons with actionable fixes
 
 ### Test GitHub Webhook
 
