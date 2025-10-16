@@ -62,7 +62,34 @@ def handle_approve_command(interaction):
 
 def handle_status_command(interaction):
     """Handle /status command - show last 1-3 runs for Client Deploy and Diagnose workflows."""
+    from app.utils.logger import get_logger
+    from app.utils.trace_store import get_trace_store
+    from app.utils.trace_helpers import should_enable_json_logging
+    
+    # Initialize logger
+    logger = get_logger(__name__) if should_enable_json_logging() else None
+    
+    # Get user and channel info for tracing
+    user = interaction.get('member', {}).get('user', {}) or interaction.get('user', {})
+    user_id = user.get('id', 'unknown')
+    channel_id = interaction.get('channel', {}).get('id') or interaction.get('channel_id', 'unknown')
+    
+    # Create trace
+    store = get_trace_store()
+    trace = store.create_trace(user_id, channel_id, '/status')
+    
+    # Add context to logger
+    if logger:
+        logger = logger.with_context(
+            trace_id=trace.trace_id,
+            user_id=user_id,
+            command='/status'
+        )
+        logger.info('Status command started')
+    
     try:
+        trace.add_step('init', 'started')
+        
         # Extract optional count parameter (default: 2, min: 1, max: 3)
         options = interaction.get('data', {}).get('options', [])
         count = 2
@@ -76,9 +103,13 @@ def handle_status_command(interaction):
         dispatcher = GitHubActionsDispatcher(github_service)
         formatter = TimeFormatter()
         
+        trace.add_step('init', 'completed', duration_ms=0)
+        
         # Get runs for both workflows
+        trace.add_step('fetch_workflow_runs', 'started')
         client_deploy_runs = dispatcher.list_workflow_runs('Client Deploy', count=count)
         diagnose_runs = dispatcher.list_workflow_runs('Diagnose on Demand', count=count)
+        trace.add_step('fetch_workflow_runs', 'completed')
         
         # Build status message
         content = f'📊 **Status (last {count})**\n\n'
@@ -128,11 +159,23 @@ def handle_status_command(interaction):
         else:
             content += '  No runs found\n'
         
+        trace.add_step('format_response', 'completed')
+        trace.complete()
+        
+        if logger:
+            logger.info('Status command completed successfully')
+        
         return create_response(4, {
             'content': content
         })
     
     except Exception as e:
+        trace.set_error(type(e).__name__, str(e))
+        trace.complete()
+        
+        if logger:
+            logger.error('Status command failed', exc_info=True, error=str(e))
+        
         print(f'Error in handle_status_command: {str(e)}')
         import traceback
         traceback.print_exc()
@@ -810,6 +853,61 @@ def handle_status_digest_command(interaction):
         })
 
 
+def handle_debug_last_command(interaction):
+    """Handle /debug-last command - show last execution trace for user."""
+    try:
+        from app.utils.trace_store import get_trace_store
+        from app.utils.trace_helpers import format_trace_for_discord, should_enable_debug_cmd
+        
+        # Check if command is enabled
+        if not should_enable_debug_cmd():
+            return create_response(4, {
+                'content': '⚠️ Debug command is not enabled in this environment.',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {}) or interaction.get('user', {})
+        user_id = user.get('id')
+        
+        if not user_id:
+            return create_response(4, {
+                'content': '❌ Unable to identify user.',
+                'flags': 64
+            })
+        
+        # Get channel info
+        channel_id = interaction.get('channel', {}).get('id') or interaction.get('channel_id')
+        
+        # Get trace store and fetch last trace
+        store = get_trace_store()
+        last_trace = store.get_last_trace_for_user(user_id, channel_id=channel_id)
+        
+        if not last_trace:
+            return create_response(4, {
+                'content': '📭 No recent traces found for this user in this channel.\n\n'
+                           'Traces are stored for recent command executions. Try running a command first.',
+                'flags': 64
+            })
+        
+        # Format trace for display
+        content = format_trace_for_discord(last_trace)
+        
+        return create_response(4, {
+            'content': content,
+            'flags': 64  # Ephemeral
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_debug_last_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error retrieving debug trace: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -879,6 +977,8 @@ def handler(event, context):
                 return handle_agents_command(interaction)
             elif command_name == 'status-digest':
                 return handle_status_digest_command(interaction)
+            elif command_name == 'debug-last':
+                return handle_debug_last_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

@@ -9,6 +9,108 @@ This guide walks through testing the orchestrator after deployment and integrati
 - GitHub webhook configured
 - Discord channel ID obtained
 
+## Viewing Logs
+
+### Structured JSON Logs
+
+The orchestrator outputs structured JSON logs to CloudWatch. Each log entry includes:
+- `timestamp`: ISO 8601 timestamp
+- `level`: Log level (INFO, WARNING, ERROR)
+- `service`: Service name (orchestrator)
+- `function`: Function name
+- `message`: Log message
+- `trace_id`: Unique trace identifier
+- `user_id`: Discord user ID (when available)
+- `command`: Command name (when available)
+
+### CloudWatch Logs
+
+View logs in real-time:
+```bash
+aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
+```
+
+### CloudWatch Logs Insights
+
+Query logs using CloudWatch Logs Insights. Example queries:
+
+**Find all errors:**
+```
+fields @timestamp, level, message, trace_id
+| filter level = "ERROR"
+| sort @timestamp desc
+```
+
+**Track a specific trace:**
+```
+fields @timestamp, function, message
+| filter trace_id = "your-trace-id"
+| sort @timestamp asc
+```
+
+**Command execution statistics:**
+```
+fields command, duration_ms
+| filter command != ""
+| stats avg(duration_ms) as avg_duration, count() as executions by command
+```
+
+## Dry-Run Mode
+
+The orchestrator supports a **dry-run mode** for testing without making actual external API calls. This is useful for:
+- Local development and testing
+- CI/CD pipeline validation
+- Integration test scenarios
+
+### Enabling Dry-Run Mode
+
+Set the `DRY_RUN` environment variable:
+
+```bash
+export DRY_RUN=true
+python -m pytest tests/
+```
+
+In dry-run mode:
+- External API calls are mocked/simulated
+- Discord and GitHub API interactions are logged but not executed
+- Traces are still created and can be inspected
+- All business logic is exercised
+
+### Example Dry-Run Test
+
+```python
+import os
+os.environ['DRY_RUN'] = 'true'
+
+from app.handlers.discord_handler import handle_status_command
+
+# Create mock interaction
+interaction = {
+    'data': {'options': []},
+    'member': {'user': {'id': '12345'}},
+    'channel': {'id': '67890'}
+}
+
+# Execute command in dry-run mode
+response = handle_status_command(interaction)
+
+# Verify response structure without external calls
+assert response['statusCode'] == 200
+```
+
+### Running Integration Tests
+
+Integration tests exercise multiple components together:
+
+```bash
+# Run all tests including integration tests
+python -m pytest tests/ -v
+
+# Run only integration tests (if tagged)
+python -m pytest tests/ -v -m integration
+```
+
 ## Test 1: Discord PING Verification
 
 **Purpose**: Verify Discord can communicate with the orchestrator
@@ -24,6 +126,7 @@ This guide walks through testing the orchestrator after deployment and integrati
 
 **Troubleshooting**:
 - Check CloudWatch Logs: `aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow`
+- View structured logs with trace_id for detailed debugging
 - Verify DISCORD_PUBLIC_KEY is correct
 - Ensure Lambda is responding with correct PONG response
 
