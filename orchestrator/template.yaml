@@ -95,6 +95,7 @@ Resources:
           GITHUB_REPO: gcolon75/Project-Valine
           ENABLE_JSON_LOGGING: 'true'
           ENABLE_DEBUG_CMD: !If [IsProduction, 'false', 'true']
+          ENABLE_ALERTS: 'false'
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
