@@ -721,3 +721,221 @@ Phase 5 implementation is **production-ready** with:
 **Validated by:** GitHub Copilot Agent  
 **Date:** 2025-10-16  
 **Status:** ✅ APPROVED FOR DEPLOYMENT
+
+---
+
+## Staging Validation Evidence
+
+This section will be populated after deploying to staging and exercising the Phase 5 features.
+
+### Logging Validation
+
+**Environment:**
+- Stage: staging
+- ENABLE_JSON_LOGGING: true
+- Lambda functions: valine-orchestrator-discord-staging, valine-orchestrator-github-staging
+
+**Test Commands Executed:**
+- [ ] /diagnose
+- [ ] /verify-latest
+- [ ] /deploy-client wait:false
+
+**CloudWatch Query Results:**
+
+```sql
+-- Query: Find all logs for a trace_id
+fields @timestamp, level, fn, msg, trace_id
+| filter trace_id = "STAGING_TRACE_ID"
+| sort @timestamp asc
+```
+
+**Sample Log Output (Redacted):**
+```json
+{
+  "ts": "2025-10-16T20:00:00.000Z",
+  "level": "info",
+  "service": "orchestrator",
+  "fn": "handle_diagnose_command",
+  "trace_id": "abc123de-456f-789g-hij0-klmnopqrstuv",
+  "correlation_id": "workflow-run-123456",
+  "user_id": "discord-user-***789",
+  "cmd": "/diagnose",
+  "msg": "Triggered diagnose workflow"
+}
+```
+
+**Trace Propagation Verified:**
+- [ ] Trace ID appears in all logs for the same command execution
+- [ ] Correlation ID links to GitHub Actions run
+- [ ] User ID correctly captured and redacted in documentation
+
+**Secret Redaction Test:**
+- [ ] Mock API token passed through logger
+- [ ] Verified last 4 characters visible, rest redacted
+- [ ] Nested secrets in config objects redacted
+
+### /debug-last Command Validation
+
+**Environment:**
+- ENABLE_DEBUG_CMD: true (staging default for non-prod)
+
+**Test Execution:**
+1. Execute /diagnose command
+2. Immediately execute /debug-last
+
+**Expected Output:**
+```
+🔍 **Last Execution Debug Info**
+
+**Command:** `/diagnose`
+**Trace ID:** `abc123de-456f-789g-hij0-klmnopqrstuv`
+**Started:** 2025-10-16 20:00:00 UTC
+**Duration:** 2850ms
+
+**Steps:**
+  ✅ Validate input (10ms)
+  ✅ Trigger workflow (250ms)
+  ✅ Poll for completion (2500ms)
+  ✅ Parse results (90ms)
+
+[View Run](https://github.com/gcolon75/Project-Valine/actions/runs/123456)
+```
+
+**Validation Checklist:**
+- [ ] Response is ephemeral (only visible to user)
+- [ ] Trace ID matches CloudWatch logs
+- [ ] All steps displayed with timings
+- [ ] GitHub run link present and valid
+- [ ] Secrets redacted in step details
+- [ ] Output length within Discord limit (< 2000 chars)
+
+### Alerts Validation
+
+**Environment:**
+- ENABLE_ALERTS: true
+- ALERT_CHANNEL_ID: [STAGING_CHANNEL_ID]
+
+**Test 1: Critical Alert**
+
+**Trigger:** Mock workflow dispatch failure (invalid workflow name)
+
+**Expected Alert:**
+```
+🔴 CRITICAL ALERT
+
+Workflow dispatch failed
+
+Root Cause: Workflow 'invalid-workflow' not found (404)
+Trace ID: def456gh-789i-012j-klm3-nopqrstuvwxy
+
+[View Run](https://github.com/gcolon75/Project-Valine/actions/runs/123456)
+[CloudWatch Logs](https://console.aws.amazon.com/cloudwatch/...)
+```
+
+**Validation Checklist:**
+- [ ] Alert posted to configured staging channel
+- [ ] Severity emoji correct (🔴 for critical)
+- [ ] Root cause message clear and actionable
+- [ ] Trace ID present for log correlation
+- [ ] GitHub run link present (if available)
+- [ ] CloudWatch logs link present
+
+**Test 2: Rate-Limiting (Dedupe)**
+
+**Trigger:** Same failure twice within 5 minutes
+
+**Expected Behavior:**
+- First alert posts immediately
+- Second alert suppressed (rate-limited)
+- After 5 minutes, next occurrence posts new alert
+
+**Validation Checklist:**
+- [ ] First alert posted successfully
+- [ ] Second alert suppressed within 5-minute window
+- [ ] Third alert (after 6 minutes) posted successfully
+- [ ] No alert storms observed
+
+**Test 3: Different Severities**
+
+**Trigger:** Multiple failures with different severities
+
+**Expected Emojis:**
+- 🔴 Critical (e.g., Lambda timeout, deployment failed)
+- ⚠️ Error (e.g., API rate limit, temporary failure)
+- 🟡 Warning (e.g., slow operation, degraded performance)
+
+**Validation Checklist:**
+- [ ] Critical alerts use 🔴
+- [ ] Error alerts use ⚠️
+- [ ] Warning alerts use 🟡
+
+### CI Workflow Validation
+
+**Workflow:** `.github/workflows/bot-smoke.yml`
+
+**Triggers:**
+- PR to orchestrator/** paths
+- Daily cron at 9 AM UTC
+- Manual workflow dispatch
+
+**Test PR:** [LINK_TO_TEST_PR]
+
+**CI Steps Executed:**
+1. Checkout code
+2. Set up Python 3.11
+3. Install dependencies
+4. Run linter (flake8) - ✅ Pass
+5. Type check (mypy) - ⚠️ Warnings allowed
+6. Run unit tests (pytest) - ✅ 199 tests pass
+7. Validate prompt files - ✅ Pass
+8. Validate configuration - ✅ Pass
+9. Security check (no secrets) - ✅ Pass
+10. Generate test summary - ✅ Pass
+
+**Validation Checklist:**
+- [ ] CI runs on PR to orchestrator/**
+- [ ] All critical steps pass (lint, test)
+- [ ] Type checking completes (warnings OK)
+- [ ] Test coverage report generated
+- [ ] Daily cron scheduled correctly
+- [ ] Manual dispatch works
+
+### Production Rollout Checklist
+
+**Week 1: Logging Only**
+- [ ] Deploy Phase 5 code to production
+- [ ] Verify ENABLE_JSON_LOGGING=true in prod
+- [ ] Verify ENABLE_DEBUG_CMD=false in prod (production safety)
+- [ ] Verify ENABLE_ALERTS=false in prod
+- [ ] Monitor CloudWatch for JSON log output
+- [ ] Verify X-Ray traces being captured
+- [ ] No errors in Lambda metrics
+
+**Week 2: Enable Debug Command**
+- [ ] Validate in staging (complete checklist above)
+- [ ] Create ops team allowlist (ADMIN_USER_IDS)
+- [ ] Set ENABLE_DEBUG_CMD=true in prod
+- [ ] Test /debug-last with ops team members
+- [ ] Monitor for any issues
+- [ ] Document common debug patterns
+
+**Week 3: Enable Alerts**
+- [ ] Validate in staging (complete checklist above)
+- [ ] Create prod alert channel in Discord
+- [ ] Configure ALERT_CHANNEL_ID in prod
+- [ ] Set ENABLE_ALERTS=true in prod
+- [ ] Monitor alerts for 48 hours
+- [ ] Adjust rate-limiting if needed
+- [ ] Document alert response procedures
+
+### Sign-off
+
+**Staging Validation Completed:**
+- Date: [YYYY-MM-DD]
+- Validated by: [NAME]
+- Evidence links: [CLOUDWATCH_QUERY_ID], [ALERT_SCREENSHOT], [DEBUG_LAST_TRANSCRIPT]
+
+**Production Deployment Approved:**
+- Date: [YYYY-MM-DD]
+- Approved by: [NAME]
+- Deployment link: [SAM_DEPLOY_LOG]
