@@ -375,6 +375,29 @@ sam delete
 5. **Monitor logs**: Set up CloudWatch alarms for errors and anomalies
 6. **Use VPC**: Consider deploying Lambdas in a VPC for additional security
 
+## AI Agent Prompts
+
+The `agent-prompts/` directory contains ready-to-use AI agent prompts for various orchestrator tasks:
+
+### Deploy Verifier Agent
+- **File:** `agent-prompts/deploy_verifier.md`
+- **Purpose:** Verify Client Deploy workflow runs and generate Discord-ready summaries
+- **Usage:** Post-deployment validation with evidence-backed status reporting
+
+### Phase 2 QA Checker Agent
+- **File:** `agent-prompts/phase2_qa_checker.md`
+- **Purpose:** Validate Phase 2 "Diagnose on Demand" feature implementation
+- **Usage:** PR review validation for repository/workflow dispatch, Discord integration, correlation tracking, and safety guardrails
+- **Acceptance Matrix:** 7 categories with comprehensive evidence requirements
+
+These prompts are designed for AI-assisted code review and deployment validation. They include:
+- Detailed system prompts with role definitions
+- User prompt templates with placeholder values
+- Acceptance criteria checklists
+- Evidence gathering guidelines
+- Output format templates
+- Security and operational guidance
+
 ## Next Steps
 
 - Implement full orchestrator graph logic in `app/orchestrator/graph.py`
