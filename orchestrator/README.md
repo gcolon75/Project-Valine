@@ -6,10 +6,11 @@ An AWS Lambda-based orchestrator that integrates Discord slash commands with Git
 
 The orchestrator consists of:
 
-- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`)
+- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`)
 - **GitHub Webhook Handler**: Lambda function that processes GitHub events (issues, PRs, check suites)
 - **Orchestrator Graph**: Core workflow logic that coordinates between services
 - **Services Layer**: Interfaces for GitHub API, Discord API, and DynamoDB state storage
+- **Verification Module**: Deploy verification system for GitHub Actions workflow runs
 
 ## Prerequisites
 
@@ -197,12 +198,28 @@ GitHub will send a test ping event. Check the webhook delivery to verify it was 
 
 ### Test Discord Commands
 
-1. In your Discord server, type `/plan` in a channel
-2. The bot should respond with a message about creating a daily plan
-3. Check CloudWatch Logs for the Lambda execution:
+1. In your Discord server, try the following commands:
+   - `/plan` - Create a daily plan from ready GitHub issues
+   - `/verify-latest` - Verify the latest Client Deploy workflow run
+   - `/verify-run <run_id>` - Verify a specific workflow run
+2. Check CloudWatch Logs for the Lambda execution:
    ```bash
    aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
    ```
+
+### Test Deploy Verification
+
+The `/verify-latest` and `/verify-run` commands perform comprehensive checks:
+- GitHub Actions workflow status and step durations
+- Frontend endpoint availability (root and index.html)
+- API endpoint health (/health and /hello)
+- Cache-Control header validation
+
+Example usage:
+```
+/verify-latest
+/verify-run 12345678
+```
 
 ### Test GitHub Webhook
 

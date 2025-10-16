@@ -88,6 +88,40 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /verify-latest command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "verify-latest",
+    "description": "Verify the latest Client Deploy workflow run",
+    "options": [{
+      "name": "run_url",
+      "description": "Optional: specific run URL to verify instead of latest",
+      "type": 3,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
+echo "📝 Registering /verify-run command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "verify-run",
+    "description": "Verify a specific workflow run by ID",
+    "options": [{
+      "name": "run_id",
+      "description": "GitHub Actions run ID to verify",
+      "type": 3,
+      "required": true
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Next Steps:"
