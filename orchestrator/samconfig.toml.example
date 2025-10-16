@@ -18,7 +18,9 @@ parameter_overrides = [
   "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
   "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
   "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
-  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\""
+  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
+  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
+  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
 ]
 
 [prod]
@@ -35,5 +37,7 @@ parameter_overrides = [
   "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
   "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
   "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
-  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\""
+  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
+  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
+  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
 ]
