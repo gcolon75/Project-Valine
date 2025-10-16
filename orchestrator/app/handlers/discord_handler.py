@@ -6,7 +6,6 @@ import json
 import os
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
-from app.services.discord import DiscordService
 from app.verification.verifier import DeployVerifier
 
 
@@ -77,23 +76,23 @@ def handle_verify_latest_command(interaction):
         for option in options:
             if option.get('name') == 'run_url':
                 run_url = option.get('value')
-        
+
         # Perform verification
         verifier = DeployVerifier()
         result = verifier.verify_latest_run(run_url)
-        
+
         # Get message from result
         message = result.get('message', {})
         content = message.get('content', '❌ Verification failed')
         embed = message.get('embed')
-        
+
         # Return response with embed
         response_data = {'content': content}
         if embed:
             response_data['embeds'] = [embed]
-        
+
         return create_response(4, response_data)
-        
+
     except Exception as e:
         print(f'Error in handle_verify_latest_command: {str(e)}')
         import traceback
@@ -113,38 +112,38 @@ def handle_verify_run_command(interaction):
         for option in options:
             if option.get('name') == 'run_id':
                 run_id = option.get('value')
-        
+
         if not run_id:
             return create_response(4, {
                 'content': '❌ Missing required parameter: run_id',
                 'flags': 64
             })
-        
+
         # Validate run_id is numeric
         try:
             run_id = int(run_id)
         except ValueError:
             return create_response(4, {
-                'content': f'❌ Invalid run_id: must be a number',
+                'content': '❌ Invalid run_id: must be a number',
                 'flags': 64
             })
-        
+
         # Perform verification
         verifier = DeployVerifier()
         result = verifier.verify_run(run_id)
-        
+
         # Get message from result
         message = result.get('message', {})
         content = message.get('content', '❌ Verification failed')
         embed = message.get('embed')
-        
+
         # Return response with embed
         response_data = {'content': content}
         if embed:
             response_data['embeds'] = [embed]
-        
+
         return create_response(4, response_data)
-        
+
     except Exception as e:
         print(f'Error in handle_verify_run_command: {str(e)}')
         import traceback
@@ -155,13 +154,10 @@ def handle_verify_run_command(interaction):
         })
 
 
-
-
-
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
-    
+
     Verifies Discord signature and routes commands to appropriate handlers.
     """
     try:
@@ -172,37 +168,37 @@ def handler(event, context):
                 'statusCode': 500,
                 'body': json.dumps({'error': 'Discord public key not configured'})
             }
-        
+
         # Extract signature headers
         signature = event.get('headers', {}).get('x-signature-ed25519')
         timestamp = event.get('headers', {}).get('x-signature-timestamp')
         body = event.get('body', '')
-        
+
         # Verify signature
         if not signature or not timestamp:
             return {
                 'statusCode': 401,
                 'body': json.dumps({'error': 'Missing signature headers'})
             }
-        
+
         if not verify_discord_signature(signature, timestamp, body, public_key):
             return {
                 'statusCode': 401,
                 'body': json.dumps({'error': 'Invalid request signature'})
             }
-        
+
         # Parse interaction
         interaction = json.loads(body)
         interaction_type = interaction.get('type')
-        
+
         # Handle PING
         if interaction_type == 1:
             return create_response(1)  # PONG
-        
+
         # Handle APPLICATION_COMMAND
         if interaction_type == 2:
             command_name = interaction.get('data', {}).get('name')
-            
+
             if command_name == 'plan':
                 return handle_plan_command(interaction)
             elif command_name == 'approve':
@@ -220,12 +216,12 @@ def handler(event, context):
                     'content': f'Unknown command: {command_name}',
                     'flags': 64
                 })
-        
+
         return {
             'statusCode': 400,
             'body': json.dumps({'error': 'Unknown interaction type'})
         }
-        
+
     except Exception as e:
         print(f'Error handling Discord interaction: {str(e)}')
         return {

@@ -11,11 +11,11 @@ from app.verification.message_composer import MessageComposer
 
 class DeployVerifier:
     """Main orchestrator for deploy verification."""
-    
+
     def __init__(self, github_token=None):
         """
         Initialize deploy verifier.
-        
+
         Args:
             github_token: GitHub token (default: from environment)
         """
@@ -23,14 +23,14 @@ class DeployVerifier:
         self.actions_verifier = GitHubActionsVerifier(self.github_service)
         self.http_checker = HTTPChecker()
         self.message_composer = MessageComposer()
-    
+
     def verify_latest_run(self, run_url=None):
         """
         Verify the latest Client Deploy run or a specific run by URL.
-        
+
         Args:
             run_url: Optional GitHub Actions run URL
-        
+
         Returns:
             Dictionary with verification results and Discord message
         """
@@ -50,7 +50,7 @@ class DeployVerifier:
         else:
             # Get latest run
             run = self.actions_verifier.get_latest_run()
-        
+
         if not run:
             return {
                 'error': 'No workflow run found',
@@ -63,16 +63,16 @@ class DeployVerifier:
                     }
                 }
             }
-        
+
         return self.verify_run(run.id)
-    
+
     def verify_run(self, run_id):
         """
         Verify a specific workflow run by ID.
-        
+
         Args:
             run_id: GitHub Actions run ID
-        
+
         Returns:
             Dictionary with verification results and Discord message
         """
@@ -86,7 +86,7 @@ class DeployVerifier:
                     'embed': None
                 }
             }
-        
+
         run_info = self.actions_verifier.get_run_info(run)
         if not run_info:
             return {
@@ -96,22 +96,22 @@ class DeployVerifier:
                     'embed': None
                 }
             }
-        
+
         # Get URLs from environment
         frontend_base_url = os.environ.get('FRONTEND_BASE_URL')
         api_base_url = os.environ.get('VITE_API_BASE')
-        
+
         # Perform HTTP checks
         frontend_results = self.http_checker.check_frontend(frontend_base_url)
         api_results = self.http_checker.check_api(api_base_url)
-        
+
         # Compose message
         message = self.message_composer.compose_verification_message(
             run_info,
             frontend_results,
             api_results
         )
-        
+
         return {
             'run_info': run_info,
             'frontend_results': frontend_results,
