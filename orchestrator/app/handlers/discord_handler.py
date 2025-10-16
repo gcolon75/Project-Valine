@@ -1,11 +1,13 @@
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, and /set-api-base commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, and /status-digest commands.
 """
 import json
 import os
 import time
+import requests
+from datetime import datetime, timedelta, timezone
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from app.verification.verifier import DeployVerifier
@@ -15,6 +17,7 @@ from app.services.discord import DiscordService
 from app.utils.url_validator import URLValidator
 from app.utils.admin_auth import AdminAuthenticator
 from app.utils.time_formatter import TimeFormatter
+from app.agents.registry import get_agents
 
 
 def verify_discord_signature(signature, timestamp, body, public_key):
@@ -381,30 +384,84 @@ def handle_deploy_client_command(interaction):
         
         # Build initial response
         short_id = correlation_id[:8]
-        content = f'🟡 **Starting Client Deploy...**\n\n'
-        if api_base:
-            content += f'**API Base Override:** `{api_base}`\n'
-        content += f'**Requested by:** {requester}\n\n'
         
-        # Try to find the run
-        time.sleep(3)  # Wait a bit for the run to be created
-        run = dispatcher.find_recent_run_for_workflow('Client Deploy', max_age_seconds=30)
+        # If wait=false, return immediate response (unchanged behavior)
+        if not wait:
+            content = f'🟡 **Starting Client Deploy...**\n\n'
+            if api_base:
+                content += f'**API Base Override:** `{api_base}`\n'
+            content += f'**Correlation ID:** `{short_id}...`\n'
+            content += f'**Requested by:** {requester}\n\n'
+            content += '⏳ Workflow dispatched. Use `/status` to check progress.'
+            
+            return create_response(4, {
+                'content': content
+            })
+        
+        # If wait=true, use deferred response and follow-up
+        # Send deferred response (type 5)
+        deferred_response = create_response(5)  # DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+        
+        # Post follow-up messages in a background thread/async manner
+        # Since Lambda doesn't support long-running processes, we'll do polling here
+        # and return before timeout (3 seconds Lambda context)
+        
+        # Wait a bit for run to be created
+        time.sleep(3)
+        
+        # Find the run by correlation_id
+        run = dispatcher.find_run_by_correlation(correlation_id, 'Client Deploy')
         
         if run:
-            content += f'⏳ **Tracking run:** {run.html_url}\n'
+            # Send follow-up with run link
+            follow_up_content = f'🟡 **Client Deploy Started**\n\n'
+            if api_base:
+                follow_up_content += f'**API Base Override:** `{api_base}`\n'
+            follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
+            follow_up_content += f'**Requested by:** {requester}\n'
+            follow_up_content += f'**Run:** {run.html_url}\n\n'
+            follow_up_content += '⏳ Waiting for completion (up to 3 minutes)...'
             
-            # If wait is enabled, poll for completion
-            if wait:
-                content += '\n_Waiting for completion (up to 3 minutes)..._'
-                # Return initial response first
-                # Note: In a real implementation, we'd need to use deferred responses
-                # or a follow-up mechanism. For now, we'll just indicate tracking.
+            # Post follow-up via webhook/interaction token
+            _post_followup_message(interaction, follow_up_content)
+            
+            # Poll for completion (up to 180 seconds)
+            poll_result = dispatcher.poll_run_conclusion(run.id, timeout_seconds=180, poll_interval=3)
+            
+            # Send final outcome
+            if poll_result.get('completed'):
+                conclusion = poll_result.get('conclusion')
+                if conclusion == 'success':
+                    final_content = f'🟢 **Client Deploy Successful**\n\n'
+                    final_content += f'**Correlation ID:** `{short_id}...`\n'
+                    final_content += f'**Run:** {run.html_url}\n\n'
+                    final_content += '✅ Deployment completed successfully!'
+                else:
+                    final_content = f'🔴 **Client Deploy Failed**\n\n'
+                    final_content += f'**Correlation ID:** `{short_id}...`\n'
+                    final_content += f'**Run:** {run.html_url}\n'
+                    final_content += f'**Conclusion:** {conclusion}\n\n'
+                    final_content += '❌ Deployment failed. Check the run for details.'
+            else:
+                # Timed out
+                final_content = f'⏱️ **Client Deploy Timeout**\n\n'
+                final_content += f'**Correlation ID:** `{short_id}...`\n'
+                final_content += f'**Run:** {run.html_url}\n\n'
+                final_content += '⚠️ Deployment is still running after 3 minutes. Check the run for current status.'
+            
+            _post_followup_message(interaction, final_content)
         else:
-            content += '⏳ Workflow dispatched. Check GitHub Actions for run details.'
+            # Run not found, post searching message
+            follow_up_content = f'🟡 **Client Deploy Triggered**\n\n'
+            if api_base:
+                follow_up_content += f'**API Base Override:** `{api_base}`\n'
+            follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
+            follow_up_content += f'**Requested by:** {requester}\n\n'
+            follow_up_content += '⏳ Searching for run... Check GitHub Actions if this takes too long.'
+            
+            _post_followup_message(interaction, follow_up_content)
         
-        return create_response(4, {
-            'content': content
-        })
+        return deferred_response
     
     except Exception as e:
         print(f'Error in handle_deploy_client_command: {str(e)}')
@@ -414,6 +471,33 @@ def handle_deploy_client_command(interaction):
             'content': f'❌ Error: {str(e)}',
             'flags': 64
         })
+
+
+def _post_followup_message(interaction, content):
+    """Post a follow-up message to a Discord interaction."""
+    try:
+        # Get interaction token and application_id
+        token = interaction.get('token')
+        app_id = interaction.get('application_id')
+        
+        if not token or not app_id:
+            print('Missing interaction token or app_id for follow-up')
+            return
+        
+        # Post follow-up message
+        url = f'https://discord.com/api/v10/webhooks/{app_id}/{token}'
+        headers = {'Content-Type': 'application/json'}
+        payload = {'content': content}
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=5)
+        
+        if response.status_code in [200, 204]:
+            print('Follow-up message posted successfully')
+        else:
+            print(f'Failed to post follow-up message: {response.status_code} - {response.text}')
+    
+    except Exception as e:
+        print(f'Error posting follow-up message: {str(e)}')
 
 
 def handle_set_frontend_command(interaction):
@@ -578,6 +662,154 @@ def handle_set_api_base_command(interaction):
         })
 
 
+def handle_agents_command(interaction):
+    """Handle /agents command - list available orchestrator agents."""
+    try:
+        agents = get_agents()
+        
+        content = '🤖 **Available Orchestrator Agents**\n\n'
+        
+        for agent in agents:
+            content += f'**{agent.name}** (`{agent.id}`)\n'
+            content += f'{agent.description}\n'
+            content += f'Entry command: `{agent.command}`\n\n'
+        
+        content += f'_Total: {len(agents)} agents_'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_agents_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_status_digest_command(interaction):
+    """Handle /status-digest command - show aggregated status digest for workflows."""
+    try:
+        # Extract optional period parameter
+        options = interaction.get('data', {}).get('options', [])
+        period = 'daily'
+        
+        for option in options:
+            if option.get('name') == 'period':
+                period = option.get('value', 'daily')
+        
+        # Validate period
+        if period not in ['daily', 'weekly']:
+            return create_response(4, {
+                'content': '❌ Invalid period. Must be "daily" or "weekly".',
+                'flags': 64
+            })
+        
+        # Calculate time window
+        now = datetime.now(timezone.utc)
+        if period == 'daily':
+            cutoff = now - timedelta(days=1)
+            period_label = 'Last 24 Hours'
+        else:  # weekly
+            cutoff = now - timedelta(days=7)
+            period_label = 'Last 7 Days'
+        
+        # Initialize services
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        formatter = TimeFormatter()
+        
+        # Get runs for both workflows (get more to aggregate)
+        client_deploy_runs = dispatcher.list_workflow_runs('Client Deploy', count=50)
+        diagnose_runs = dispatcher.list_workflow_runs('Diagnose on Demand', count=50)
+        
+        # Filter by time window and aggregate
+        def aggregate_runs(runs, cutoff_time):
+            """Aggregate runs within the time window."""
+            filtered_runs = []
+            for run in runs:
+                run_time = run.get('created_at')
+                if run_time:
+                    # Ensure timezone-aware
+                    if run_time.tzinfo is None:
+                        run_time = run_time.replace(tzinfo=timezone.utc)
+                    if run_time >= cutoff_time:
+                        filtered_runs.append(run)
+            
+            success_count = sum(1 for r in filtered_runs if r.get('conclusion') == 'success')
+            failure_count = sum(1 for r in filtered_runs if r.get('conclusion') == 'failure')
+            
+            # Calculate average duration
+            durations = [r.get('duration_seconds') for r in filtered_runs if r.get('duration_seconds')]
+            avg_duration = sum(durations) / len(durations) if durations else None
+            
+            # Get most recent run
+            latest_run = filtered_runs[0] if filtered_runs else None
+            
+            return {
+                'total': len(filtered_runs),
+                'success': success_count,
+                'failure': failure_count,
+                'avg_duration': avg_duration,
+                'latest_run': latest_run
+            }
+        
+        client_stats = aggregate_runs(client_deploy_runs, cutoff)
+        diagnose_stats = aggregate_runs(diagnose_runs, cutoff)
+        
+        # Build digest message
+        content = f'📊 **Status Digest - {period_label}**\n\n'
+        
+        # Client Deploy section
+        content += '**Client Deploy:**\n'
+        if client_stats['total'] > 0:
+            content += f"• Runs: {client_stats['total']} ({client_stats['success']} ✅ / {client_stats['failure']} ❌)\n"
+            if client_stats['avg_duration']:
+                avg_dur_str = formatter.format_duration_seconds(int(client_stats['avg_duration']))
+                content += f'• Avg duration: {avg_dur_str}\n'
+            else:
+                content += '• Avg duration: n/a\n'
+            
+            if client_stats['latest_run']:
+                latest = client_stats['latest_run']
+                ago = formatter.format_relative_time(latest.get('created_at'))
+                content += f"• Latest: [{latest.get('conclusion', 'unknown')}]({latest.get('html_url')}) ({ago})\n"
+        else:
+            content += '• No runs in this period\n'
+        
+        content += '\n**Diagnose on Demand:**\n'
+        if diagnose_stats['total'] > 0:
+            content += f"• Runs: {diagnose_stats['total']} ({diagnose_stats['success']} ✅ / {diagnose_stats['failure']} ❌)\n"
+            if diagnose_stats['avg_duration']:
+                avg_dur_str = formatter.format_duration_seconds(int(diagnose_stats['avg_duration']))
+                content += f'• Avg duration: {avg_dur_str}\n'
+            else:
+                content += '• Avg duration: n/a\n'
+            
+            if diagnose_stats['latest_run']:
+                latest = diagnose_stats['latest_run']
+                ago = formatter.format_relative_time(latest.get('created_at'))
+                content += f"• Latest: [{latest.get('conclusion', 'unknown')}]({latest.get('html_url')}) ({ago})\n"
+        else:
+            content += '• No runs in this period\n'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_status_digest_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -643,6 +875,10 @@ def handler(event, context):
                 return handle_set_frontend_command(interaction)
             elif command_name == 'set-api-base':
                 return handle_set_api_base_command(interaction)
+            elif command_name == 'agents':
+                return handle_agents_command(interaction)
+            elif command_name == 'status-digest':
+                return handle_status_digest_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

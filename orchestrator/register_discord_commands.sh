@@ -217,6 +217,41 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /agents command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "agents",
+    "description": "List available orchestrator agents and their capabilities"
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
+echo "📝 Registering /status-digest command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "status-digest",
+    "description": "Show aggregated status digest for workflows over a time period",
+    "options": [{
+      "name": "period",
+      "description": "Time period for digest (daily or weekly)",
+      "type": 3,
+      "required": false,
+      "choices": [{
+        "name": "daily",
+        "value": "daily"
+      }, {
+        "name": "weekly",
+        "value": "weekly"
+      }]
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -230,6 +265,8 @@ echo "  • /diagnose - Trigger on-demand diagnose workflow"
 echo "  • /deploy-client - Trigger Client Deploy workflow with optional api_base override"
 echo "  • /set-frontend - Update FRONTEND_BASE_URL (admin only, feature-flagged)"
 echo "  • /set-api-base - Update VITE_API_BASE secret (admin only, feature-flagged)"
+echo "  • /agents - List available orchestrator agents"
+echo "  • /status-digest - Show aggregated status digest for workflows"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"

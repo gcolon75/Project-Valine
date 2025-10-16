@@ -529,7 +529,10 @@ class GitHubActionsDispatcher:
 
             payload = {
                 'ref': 'main',
-                'inputs': {}
+                'inputs': {
+                    'correlation_id': correlation_id,
+                    'requester': requester
+                }
             }
             
             # Add api_base input if provided
@@ -612,3 +615,120 @@ class GitHubActionsDispatcher:
         except GithubException as e:
             print(f'Error finding recent run: {str(e)}')
             return None
+
+    def find_run_by_correlation(self, correlation_id, workflow_name='Client Deploy', max_age_minutes=5):
+        """
+        Find a workflow run by correlation_id in the run name.
+
+        Args:
+            correlation_id: Correlation ID to search for
+            workflow_name: Name of the workflow (default: 'Client Deploy')
+            max_age_minutes: Maximum age of runs to search (default: 5)
+
+        Returns:
+            Workflow run object or None if not found
+        """
+        try:
+            workflow = self.get_workflow_by_name(workflow_name)
+            if not workflow:
+                print(f'Workflow "{workflow_name}" not found')
+                # Fallback to recent run on main
+                return self.find_recent_run_for_workflow(workflow_name, max_age_seconds=max_age_minutes*60)
+
+            cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=max_age_minutes)
+            runs = workflow.get_runs()
+
+            for run in runs:
+                # Ensure timezone-aware comparison
+                run_created = run.created_at
+                if run_created.tzinfo is None:
+                    run_created = run_created.replace(tzinfo=timezone.utc)
+                
+                # Check if run is recent enough
+                if run_created < cutoff_time:
+                    continue
+
+                # Check if correlation_id is in run name
+                if correlation_id in run.name:
+                    print(f'Found run {run.id} for correlation_id: {correlation_id}')
+                    return run
+
+            print(f'No run found for correlation_id: {correlation_id}, falling back to most recent')
+            # Fallback to most recent run on main
+            return self.find_recent_run_for_workflow(workflow_name, max_age_seconds=max_age_minutes*60)
+
+        except GithubException as e:
+            print(f'Error finding run by correlation_id: {str(e)}')
+            return None
+
+    def poll_run_conclusion(self, run_id, timeout_seconds=180, poll_interval=3):
+        """
+        Poll for run completion by run_id.
+
+        Args:
+            run_id: Run ID to track
+            timeout_seconds: Maximum time to wait (default: 180)
+            poll_interval: Seconds between polls (default: 3)
+
+        Returns:
+            dict with 'completed', 'conclusion', 'run', 'message', 'timed_out'
+        """
+        start_time = time.time()
+        retries = 0
+        max_retries = 2
+
+        print(f'Polling for run completion: {run_id}')
+
+        while time.time() - start_time < timeout_seconds:
+            try:
+                # Get the run
+                run = self.github_service.get_repository(self.repo_name).get_workflow_run(run_id)
+
+                if run.status == 'completed':
+                    print(f'Run {run.id} completed with conclusion: {run.conclusion}')
+                    return {
+                        'completed': True,
+                        'conclusion': run.conclusion,
+                        'run': run,
+                        'message': f'Run completed: {run.conclusion}',
+                        'timed_out': False
+                    }
+
+                # Still in progress, wait
+                print(f'Run {run.id} status: {run.status}')
+                time.sleep(poll_interval)
+
+            except GithubException as e:
+                if e.status == 403 or e.status == 429:
+                    # Rate limit, back off
+                    if retries < max_retries:
+                        retries += 1
+                        print(f'Rate limit hit (status {e.status}), retry {retries}/{max_retries}')
+                        time.sleep(poll_interval * 2)
+                    else:
+                        print(f'Rate limit exceeded after {max_retries} retries')
+                        return {
+                            'completed': False,
+                            'conclusion': None,
+                            'run': None,
+                            'message': 'Rate limit exceeded',
+                            'timed_out': False
+                        }
+                else:
+                    print(f'Error polling run: {str(e)}')
+                    time.sleep(poll_interval)
+
+        # Timed out
+        print(f'Polling timed out after {timeout_seconds} seconds')
+        try:
+            run = self.github_service.get_repository(self.repo_name).get_workflow_run(run_id)
+        except:
+            run = None
+        
+        return {
+            'completed': False,
+            'conclusion': None,
+            'run': run,
+            'message': f'Polling timed out after {timeout_seconds} seconds',
+            'timed_out': True
+        }
