@@ -707,6 +707,130 @@ For secret/variable updates, the GitHub token requires:
 - `repo` scope (for variable updates)
 - Repository administration permissions (for secret updates)
 
+## Owner Communication via Discord
+
+The orchestrator provides secure relay commands that allow authorized users (repository owner or admins) to communicate through Discord with full audit trail and secret redaction.
+
+### Relay Commands
+
+#### `/relay-send`
+Post a message to a Discord channel with admin authorization and audit trail.
+
+**Requirements:**
+- User must be in ADMIN_USER_IDS or have a role in ADMIN_ROLE_IDS
+- Must include `confirm:true` parameter (two-step confirmation)
+
+**Parameters:**
+- `channel_id` (required): Target Discord channel ID
+- `message` (required): Message to post
+- `ephemeral` (optional): Show confirmation as ephemeral (default: false)
+- `confirm` (optional): Confirmation flag (must be true)
+
+**Example:**
+```
+/relay-send channel_id:123456789 message:"Deployment complete" confirm:true
+/relay-send channel_id:123456789 message:"Status update" ephemeral:true confirm:true
+```
+
+**Response:**
+- ✅ Success: Shows channel ID, message ID, fingerprint, audit ID, and trace ID
+- ❌ Failure: Shows error message (not authorized, confirmation required, or post failed)
+
+**Security Features:**
+- Admin authorization enforcement
+- Two-step confirmation required
+- Message fingerprint recorded (never full message)
+- Automatic secret redaction before posting
+- Full audit trail in DynamoDB
+
+#### `/relay-dm`
+Post a message to a channel as the bot (owner-only).
+
+**Requirements:**
+- User must be in ADMIN_USER_IDS or have a role in ADMIN_ROLE_IDS
+
+**Parameters:**
+- `message` (required): Message to post
+- `target_channel_id` (required): Target Discord channel ID
+
+**Example:**
+```
+/relay-dm message:"Bot message" target_channel_id:123456789
+```
+
+**Response:**
+- Always ephemeral (only visible to user)
+- Shows target channel, message ID, fingerprint, and audit ID
+
+**Security Features:**
+- Owner/admin only authorization
+- Ephemeral confirmation (private)
+- Full audit trail with metadata
+
+### Audit Trail
+
+All relay operations create audit records in DynamoDB with:
+- **audit_id**: Unique UUID for the operation
+- **trace_id**: For correlation with logs and traces
+- **user_id**: Discord user who issued the command
+- **command**: Command name (`/relay-send` or `/relay-dm`)
+- **target_channel**: Target Discord channel ID
+- **message_fingerprint**: Last 4 chars of SHA256 hash (not full message)
+- **timestamp**: Unix timestamp of operation
+- **result**: Operation result (`posted`, `blocked`, `failed`)
+- **metadata**: Additional context (username, message_id, etc.)
+- **moderator_approval** (optional): For approval workflow
+
+### Investigating Relay Posts
+
+To investigate a relay post in DynamoDB:
+
+```bash
+# Query by audit ID (from command response)
+aws dynamodb get-item --table-name valine-orchestrator-audit-dev \
+  --key '{"audit_id": {"S": "audit-id-here"}}'
+
+# Scan for user's recent audits
+aws dynamodb scan --table-name valine-orchestrator-audit-dev \
+  --filter-expression "user_id = :uid" \
+  --expression-attribute-values '{":uid": {"S": "discord-user-id"}}'
+```
+
+To find logs by trace ID:
+
+```bash
+# CloudWatch Insights query
+aws logs start-query \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --start-time $(date -d '1 hour ago' +%s) \
+  --end-time $(date +%s) \
+  --query-string 'fields @timestamp, msg, user_id | filter trace_id = "trace-id-here" | sort @timestamp asc'
+```
+
+### Configuration
+
+Set up admin authorization:
+
+```bash
+# Required: Admin user IDs (comma-separated Discord user IDs)
+export ADMIN_USER_IDS=123456789012345,987654321098765
+
+# Optional: Admin role IDs (comma-separated Discord role IDs)
+export ADMIN_ROLE_IDS=111222333444555,666777888999000
+
+# Optional: Audit table name (defaults to valine-orchestrator-audit-dev)
+export AUDIT_TABLE_NAME=valine-orchestrator-audit-dev
+```
+
+### Future Enhancements
+
+The relay system is designed to support:
+- **Approval workflow**: Require moderator approval for production channels
+- **Rate limiting**: Limit posts per user per hour
+- **Rich preview**: Send ephemeral preview before posting
+- **Channel allowlist**: Restrict relay to specific channels
+- **Action keywords**: Require approval for messages with sensitive keywords (deploy, secret, rollback)
+
 ### Test GitHub Webhook
 
 1. Create a test issue in your repository with the `ready` label
