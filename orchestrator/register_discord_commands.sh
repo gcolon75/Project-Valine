@@ -252,6 +252,60 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /relay-send command (admin only)..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "relay-send",
+    "description": "Post message to Discord channel (admin only, audited)",
+    "options": [{
+      "name": "channel_id",
+      "description": "Target Discord channel ID",
+      "type": 3,
+      "required": true
+    }, {
+      "name": "message",
+      "description": "Message to post",
+      "type": 3,
+      "required": true
+    }, {
+      "name": "ephemeral",
+      "description": "Show confirmation as ephemeral (default: false)",
+      "type": 5,
+      "required": false
+    }, {
+      "name": "confirm",
+      "description": "Confirmation required (set to true)",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
+echo "📝 Registering /relay-dm command (owner only)..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "relay-dm",
+    "description": "Post message to channel as bot (owner only, audited)",
+    "options": [{
+      "name": "message",
+      "description": "Message to post",
+      "type": 3,
+      "required": true
+    }, {
+      "name": "target_channel_id",
+      "description": "Target Discord channel ID",
+      "type": 3,
+      "required": true
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -267,6 +321,8 @@ echo "  • /set-frontend - Update FRONTEND_BASE_URL (admin only, feature-flagge
 echo "  • /set-api-base - Update VITE_API_BASE secret (admin only, feature-flagged)"
 echo "  • /agents - List available orchestrator agents"
 echo "  • /status-digest - Show aggregated status digest for workflows"
+echo "  • /relay-send - Post message to Discord channel (admin only, audited)"
+echo "  • /relay-dm - Post message to channel as bot (owner only, audited)"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"

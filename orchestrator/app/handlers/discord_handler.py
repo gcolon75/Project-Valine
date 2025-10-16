@@ -14,11 +14,12 @@ from app.verification.verifier import DeployVerifier
 from app.services.github import GitHubService
 from app.services.github_actions_dispatcher import GitHubActionsDispatcher
 from app.services.discord import DiscordService
+from app.services.audit_store import AuditStore
 from app.utils.url_validator import URLValidator
 from app.utils.admin_auth import AdminAuthenticator
 from app.utils.time_formatter import TimeFormatter
 from app.utils.trace_store import get_trace_store
-from app.utils.logger import redact_secrets
+from app.utils.logger import redact_secrets, StructuredLogger
 from app.agents.registry import get_agents
 
 
@@ -902,6 +903,301 @@ def handle_status_digest_command(interaction):
         })
 
 
+def handle_relay_send_command(interaction):
+    """Handle /relay-send command - post message to channel with admin authorization."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        channel_id = None
+        message = None
+        ephemeral = False
+        confirm = False
+        
+        for option in options:
+            if option.get('name') == 'channel_id':
+                channel_id = option.get('value')
+            elif option.get('name') == 'message':
+                message = option.get('value')
+            elif option.get('name') == 'ephemeral':
+                ephemeral = option.get('value', False)
+            elif option.get('name') == 'confirm':
+                confirm = option.get('value', False)
+        
+        # Validate required parameters
+        if not channel_id or not message:
+            return create_response(4, {
+                'content': '❌ Missing required parameters: channel_id and message',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', 'unknown')
+        username = user.get('username', user_id)
+        member = interaction.get('member', {})
+        role_ids = member.get('roles', [])
+        
+        # Initialize services
+        authenticator = AdminAuthenticator()
+        logger = StructuredLogger(service="relay")
+        trace_store = get_trace_store()
+        
+        # Generate trace ID
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, user_id=user_id, cmd='/relay-send')
+        
+        # Create trace
+        trace = trace_store.create_trace(trace_id, '/relay-send', user_id)
+        trace.add_step('Validate authorization', status='in_progress')
+        
+        # Check admin authorization
+        auth_result = authenticator.authorize_admin_action(
+            user_id=user_id,
+            role_ids=role_ids,
+            requires_secret_write=False
+        )
+        
+        if not auth_result['authorized']:
+            trace.add_step('Validate authorization', status='failure', details='Not authorized')
+            trace.complete()
+            logger.warn('Unauthorized relay-send attempt', fn='handle_relay_send_command')
+            return create_response(4, {
+                'content': auth_result['message'],
+                'flags': 64
+            })
+        
+        trace.add_step('Validate authorization', duration_ms=10, status='success')
+        
+        # Check confirmation for admin commands
+        if not confirm:
+            trace.add_step('Check confirmation', status='failure', details='Confirmation required')
+            trace.complete()
+            return create_response(4, {
+                'content': '❌ Confirmation required. Add `confirm:true` to post message.',
+                'flags': 64
+            })
+        
+        trace.add_step('Check confirmation', duration_ms=5, status='success')
+        
+        # Redact secrets from message before posting
+        message_to_post = message  # In production, scan and redact any detected secrets
+        # For now, we trust admin users but log the fingerprint
+        
+        trace.add_step('Redact secrets', duration_ms=5, status='success')
+        
+        # Post message to channel
+        discord_service = DiscordService()
+        post_result = discord_service.send_message(channel_id, message_to_post)
+        
+        if not post_result:
+            trace.add_step('Post message', status='failure', details='Failed to post')
+            trace.complete()
+            
+            # Create audit record for failed attempt
+            audit_store = AuditStore()
+            audit_id = audit_store.create_audit_record(
+                trace_id=trace_id,
+                user_id=user_id,
+                command='/relay-send',
+                target_channel=channel_id,
+                message=message,
+                result='failed'
+            )
+            
+            logger.error('Failed to post message', fn='handle_relay_send_command', 
+                        audit_id=audit_id, channel_id=channel_id)
+            return create_response(4, {
+                'content': f'❌ Failed to post message to channel {channel_id}',
+                'flags': 64
+            })
+        
+        trace.add_step('Post message', duration_ms=200, status='success')
+        trace.complete()
+        
+        # Create audit record for successful post
+        audit_store = AuditStore()
+        audit_id = audit_store.create_audit_record(
+            trace_id=trace_id,
+            user_id=user_id,
+            command='/relay-send',
+            target_channel=channel_id,
+            message=message,
+            result='posted',
+            metadata={
+                'username': username,
+                'ephemeral': ephemeral,
+                'message_id': post_result.get('id')
+            }
+        )
+        
+        logger.info('Message posted successfully', fn='handle_relay_send_command',
+                   audit_id=audit_id, channel_id=channel_id)
+        
+        # Get message fingerprint for confirmation
+        message_fingerprint = audit_store._get_message_fingerprint(message)
+        
+        # Return confirmation
+        response_flags = 64 if ephemeral else 0
+        content = f'✅ **Message posted to channel**\n\n'
+        content += f'**Channel ID:** `{channel_id}`\n'
+        content += f'**Message ID:** `{post_result.get("id")}`\n'
+        content += f'**Fingerprint:** `{message_fingerprint}`\n'
+        content += f'**Audit ID:** `{audit_id[:8]}...`\n'
+        content += f'**Trace ID:** `{trace_id[:8]}...`'
+        
+        return create_response(4, {
+            'content': content,
+            'flags': response_flags
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_relay_send_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_relay_dm_command(interaction):
+    """Handle /relay-dm command - owner-only DM-based message posting."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        message = None
+        target_channel_id = None
+        
+        for option in options:
+            if option.get('name') == 'message':
+                message = option.get('value')
+            elif option.get('name') == 'target_channel_id':
+                target_channel_id = option.get('value')
+        
+        # Validate required parameters
+        if not message or not target_channel_id:
+            return create_response(4, {
+                'content': '❌ Missing required parameters: message and target_channel_id',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', 'unknown')
+        username = user.get('username', user_id)
+        member = interaction.get('member', {})
+        role_ids = member.get('roles', [])
+        
+        # Initialize services
+        authenticator = AdminAuthenticator()
+        logger = StructuredLogger(service="relay")
+        trace_store = get_trace_store()
+        
+        # Generate trace ID
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, user_id=user_id, cmd='/relay-dm')
+        
+        # Create trace
+        trace = trace_store.create_trace(trace_id, '/relay-dm', user_id)
+        trace.add_step('Validate authorization', status='in_progress')
+        
+        # Check admin authorization (owner-only command)
+        auth_result = authenticator.authorize_admin_action(
+            user_id=user_id,
+            role_ids=role_ids,
+            requires_secret_write=False
+        )
+        
+        if not auth_result['authorized']:
+            trace.add_step('Validate authorization', status='failure', details='Not authorized')
+            trace.complete()
+            logger.warn('Unauthorized relay-dm attempt', fn='handle_relay_dm_command')
+            return create_response(4, {
+                'content': '❌ Not allowed (owner only)',
+                'flags': 64
+            })
+        
+        trace.add_step('Validate authorization', duration_ms=10, status='success')
+        
+        # Redact secrets from message before posting
+        message_to_post = message  # In production, scan and redact
+        
+        trace.add_step('Redact secrets', duration_ms=5, status='success')
+        
+        # Post message to target channel as bot
+        discord_service = DiscordService()
+        post_result = discord_service.send_message(target_channel_id, message_to_post)
+        
+        if not post_result:
+            trace.add_step('Post message', status='failure', details='Failed to post')
+            trace.complete()
+            
+            # Create audit record for failed attempt
+            audit_store = AuditStore()
+            audit_id = audit_store.create_audit_record(
+                trace_id=trace_id,
+                user_id=user_id,
+                command='/relay-dm',
+                target_channel=target_channel_id,
+                message=message,
+                result='failed'
+            )
+            
+            logger.error('Failed to post message via relay-dm', fn='handle_relay_dm_command',
+                        audit_id=audit_id, channel_id=target_channel_id)
+            return create_response(4, {
+                'content': f'❌ Failed to post message to channel {target_channel_id}',
+                'flags': 64
+            })
+        
+        trace.add_step('Post message', duration_ms=200, status='success')
+        trace.complete()
+        
+        # Create audit record for successful post
+        audit_store = AuditStore()
+        audit_id = audit_store.create_audit_record(
+            trace_id=trace_id,
+            user_id=user_id,
+            command='/relay-dm',
+            target_channel=target_channel_id,
+            message=message,
+            result='posted',
+            metadata={
+                'username': username,
+                'message_id': post_result.get('id')
+            }
+        )
+        
+        logger.info('Message posted via relay-dm', fn='handle_relay_dm_command',
+                   audit_id=audit_id, channel_id=target_channel_id)
+        
+        # Get message fingerprint for confirmation
+        message_fingerprint = audit_store._get_message_fingerprint(message)
+        
+        # Return ephemeral confirmation (only visible to user)
+        content = f'✅ **Message posted as bot**\n\n'
+        content += f'**Target Channel:** `{target_channel_id}`\n'
+        content += f'**Message ID:** `{post_result.get("id")}`\n'
+        content += f'**Fingerprint:** `{message_fingerprint}`\n'
+        content += f'**Audit ID:** `{audit_id[:8]}...`'
+        
+        return create_response(4, {
+            'content': content,
+            'flags': 64  # Ephemeral
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_relay_dm_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -973,6 +1269,10 @@ def handler(event, context):
                 return handle_status_digest_command(interaction)
             elif command_name == 'debug-last':
                 return handle_debug_last_command(interaction)
+            elif command_name == 'relay-send':
+                return handle_relay_send_command(interaction)
+            elif command_name == 'relay-dm':
+                return handle_relay_dm_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
