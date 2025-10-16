@@ -254,6 +254,151 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         self.assertIn('content', result)
         self.assertIn('Failed to get run summary', result['content'])
 
+    @patch('app.services.github_actions_dispatcher.requests.post')
+    def test_trigger_client_deploy_with_correlation_id(self, mock_post):
+        """Test Client Deploy trigger includes correlation_id and requester."""
+        # Mock workflow lookup
+        mock_workflow = Mock()
+        mock_workflow.id = 12345
+        mock_workflow.name = 'Client Deploy'
+        
+        with patch.object(self.dispatcher, 'get_workflow_by_name', return_value=mock_workflow):
+            mock_response = Mock()
+            mock_response.status_code = 204
+            mock_post.return_value = mock_response
+            
+            correlation_id = 'test-correlation-123'
+            requester = 'testuser'
+            api_base = 'https://api.example.com'
+            
+            result = self.dispatcher.trigger_client_deploy(
+                correlation_id=correlation_id,
+                requester=requester,
+                api_base=api_base
+            )
+            
+            self.assertTrue(result['success'])
+            
+            # Verify the dispatch payload includes correlation_id and requester
+            call_args = mock_post.call_args
+            payload = call_args[1]['json']
+            
+            self.assertIn('inputs', payload)
+            self.assertEqual(payload['inputs']['correlation_id'], correlation_id)
+            self.assertEqual(payload['inputs']['requester'], requester)
+            self.assertEqual(payload['inputs']['VITE_API_BASE'], api_base)
+
+    def test_find_run_by_correlation(self):
+        """Test finding a run by correlation_id in run name."""
+        correlation_id = 'abc-123-def'
+        
+        # Mock workflow and runs
+        mock_workflow = Mock()
+        mock_workflow.name = 'Client Deploy'
+        
+        mock_run_1 = Mock()
+        mock_run_1.id = 111
+        mock_run_1.name = f'Client Deploy — {correlation_id} by testuser'
+        mock_run_1.created_at = datetime.now(timezone.utc)
+        
+        mock_run_2 = Mock()
+        mock_run_2.id = 222
+        mock_run_2.name = 'Client Deploy — other-id by otheruser'
+        mock_run_2.created_at = datetime.now(timezone.utc) - timedelta(minutes=2)
+        
+        mock_workflow.get_runs.return_value = [mock_run_1, mock_run_2]
+        
+        with patch.object(self.dispatcher, 'get_workflow_by_name', return_value=mock_workflow):
+            run = self.dispatcher.find_run_by_correlation(correlation_id, 'Client Deploy')
+            
+            self.assertIsNotNone(run)
+            self.assertEqual(run.id, 111)
+            self.assertIn(correlation_id, run.name)
+
+    def test_find_run_by_correlation_fallback(self):
+        """Test fallback to most recent run when correlation_id not found."""
+        correlation_id = 'not-found-123'
+        
+        # Mock workflow and runs
+        mock_workflow = Mock()
+        mock_workflow.name = 'Client Deploy'
+        
+        mock_run = Mock()
+        mock_run.id = 999
+        mock_run.name = 'Client Deploy — other-id by testuser'
+        mock_run.created_at = datetime.now(timezone.utc)
+        
+        mock_workflow.get_runs.return_value = [mock_run]
+        
+        with patch.object(self.dispatcher, 'get_workflow_by_name', return_value=mock_workflow):
+            with patch.object(self.dispatcher, 'find_recent_run_for_workflow', return_value=mock_run):
+                run = self.dispatcher.find_run_by_correlation(correlation_id, 'Client Deploy')
+                
+                # Should fallback to recent run
+                self.assertIsNotNone(run)
+                self.assertEqual(run.id, 999)
+
+    def test_poll_run_conclusion_success(self):
+        """Test polling run until successful completion."""
+        run_id = 12345
+        
+        # Mock completed run
+        mock_run = Mock()
+        mock_run.id = run_id
+        mock_run.status = 'completed'
+        mock_run.conclusion = 'success'
+        
+        mock_repo = Mock()
+        mock_repo.get_workflow_run.return_value = mock_run
+        self.mock_github_service.get_repository.return_value = mock_repo
+        
+        result = self.dispatcher.poll_run_conclusion(run_id, timeout_seconds=10, poll_interval=1)
+        
+        self.assertTrue(result['completed'])
+        self.assertEqual(result['conclusion'], 'success')
+        self.assertFalse(result['timed_out'])
+        self.assertIsNotNone(result['run'])
+
+    def test_poll_run_conclusion_failure(self):
+        """Test polling run until failed completion."""
+        run_id = 12345
+        
+        # Mock failed run
+        mock_run = Mock()
+        mock_run.id = run_id
+        mock_run.status = 'completed'
+        mock_run.conclusion = 'failure'
+        
+        mock_repo = Mock()
+        mock_repo.get_workflow_run.return_value = mock_run
+        self.mock_github_service.get_repository.return_value = mock_repo
+        
+        result = self.dispatcher.poll_run_conclusion(run_id, timeout_seconds=10, poll_interval=1)
+        
+        self.assertTrue(result['completed'])
+        self.assertEqual(result['conclusion'], 'failure')
+        self.assertFalse(result['timed_out'])
+
+    def test_poll_run_conclusion_timeout(self):
+        """Test polling run that times out."""
+        run_id = 12345
+        
+        # Mock in-progress run that never completes
+        mock_run = Mock()
+        mock_run.id = run_id
+        mock_run.status = 'in_progress'
+        mock_run.conclusion = None
+        
+        mock_repo = Mock()
+        mock_repo.get_workflow_run.return_value = mock_run
+        self.mock_github_service.get_repository.return_value = mock_repo
+        
+        result = self.dispatcher.poll_run_conclusion(run_id, timeout_seconds=2, poll_interval=1)
+        
+        self.assertFalse(result['completed'])
+        self.assertIsNone(result['conclusion'])
+        self.assertTrue(result['timed_out'])
+
 
 if __name__ == '__main__':
     unittest.main()

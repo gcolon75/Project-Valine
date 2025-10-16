@@ -289,7 +289,7 @@ Diagnose on Demand:
 ```
 
 #### `/deploy-client [api_base] [wait]`
-Triggers the "Client Deploy" workflow via workflow_dispatch.
+Triggers the "Client Deploy" workflow via workflow_dispatch with correlation tracking.
 
 **Parameters:**
 - `api_base` (optional): Override API base URL (must be https). If omitted, uses the VITE_API_BASE secret.
@@ -302,15 +302,31 @@ Triggers the "Client Deploy" workflow via workflow_dispatch.
 /deploy-client api_base:https://api.example.com wait:true
 ```
 
-**Response:**
-- 🟡 Initial acknowledgment with run link
-- ⏳ Tracking run status (if wait enabled)
-- 🟢 Success or 🔴 Failure (if wait enabled and completes within 3 minutes)
+**Behavior:**
+
+*With `wait:false` (default):*
+- Returns immediate acknowledgment with correlation ID
+- Use `/status` to check progress later
+
+*With `wait:true`:*
+- Sends a deferred response immediately
+- Posts a follow-up "Starting..." message with correlation ID and run link once discovered
+- Polls for up to 3 minutes and posts final outcome:
+  - 🟢 Success: Deployment completed successfully
+  - 🔴 Failure: Deployment failed with link to run
+  - ⏱️ Timeout: Still running after 3 minutes with link to check status
+
+**Correlation Tracking:**
+- Each deployment receives a unique correlation ID (UUID)
+- Correlation ID is included in the workflow run name for easy identification
+- Format: `Client Deploy — <correlation_id> by <requester>`
+- Enables precise tracking and discovery of runs
 
 **Guardrails:**
 - URL validation enforces https scheme
 - Private IPs and localhost rejected by default (unless SAFE_LOCAL flag is set)
 - Optional domain allowlist support via ALLOWED_DOMAINS
+- Respects GitHub API rate limits with automatic retry (up to 2 retries)
 
 #### Admin Commands (Feature-Flagged)
 
