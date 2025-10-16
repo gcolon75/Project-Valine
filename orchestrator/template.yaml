@@ -4,7 +4,7 @@ Description: Project Valine AI Orchestrator
 
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 60
     Runtime: python3.11
     MemorySize: 512
     Environment:
@@ -40,6 +40,16 @@ Parameters:
     Type: String
     NoEcho: true
     Description: GitHub webhook secret for signature verification
+  
+  FrontendBaseUrl:
+    Type: String
+    Default: ""
+    Description: Frontend base URL for verification checks
+  
+  ViteApiBase:
+    Type: String
+    Default: ""
+    Description: API base URL for verification checks
 
 Resources:
   # DynamoDB table for storing orchestrator run state
@@ -76,6 +86,9 @@ Resources:
           DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
           DISCORD_BOT_TOKEN: !Ref DiscordBotToken
           GITHUB_TOKEN: !Ref GitHubToken
+          FRONTEND_BASE_URL: !Ref FrontendBaseUrl
+          VITE_API_BASE: !Ref ViteApiBase
+          GITHUB_REPO: gcolon75/Project-Valine
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
