@@ -7,3 +7,8 @@ dist
 orchestrator/samconfig.toml
 !orchestrator/samconfig.toml.example
 orchestrator/.aws-sam/
+
+# Phase 5 validator artifacts
+orchestrator/scripts/validation_evidence/
+orchestrator/scripts/staging_config.json
+!orchestrator/scripts/staging_config.example.json
