@@ -100,6 +100,11 @@ curl -X POST "${BASE_URL}" \
       "description": "Optional: specific run URL to verify instead of latest",
       "type": 3,
       "required": false
+    }, {
+      "name": "diagnose",
+      "description": "Optional: also trigger on-demand diagnose workflow",
+      "type": 5,
+      "required": false
     }]
   }' \
   --silent -o /dev/null -w "Status: %{http_code}\n"
@@ -122,7 +127,40 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /diagnose command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "diagnose",
+    "description": "Trigger on-demand diagnose workflow",
+    "options": [{
+      "name": "frontend_url",
+      "description": "Optional: override frontend URL for checks",
+      "type": 3,
+      "required": false
+    }, {
+      "name": "api_base",
+      "description": "Optional: override API base URL for checks",
+      "type": 3,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
+echo ""
+echo "✅ Commands registered successfully!"
+echo ""
+echo "📋 Registered Commands:"
+echo "  • /plan - Create a daily plan from ready GitHub issues"
+echo "  • /approve - Approve and execute a plan"
+echo "  • /status - Check orchestrator status"
+echo "  • /ship - Finalize and ship a completed run"
+echo "  • /verify-latest - Verify the latest Client Deploy workflow run"
+echo "  • /verify-run - Verify a specific workflow run by ID"
+echo "  • /diagnose - Trigger on-demand diagnose workflow"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"

@@ -1,12 +1,15 @@
 """
 Discord slash command handler for Project Valine orchestrator.
-Handles /plan, /approve, /status, /ship, /verify-latest, and /verify-run commands.
+Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, and /diagnose commands.
 """
 import json
 import os
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
 from app.verification.verifier import DeployVerifier
+from app.services.github import GitHubService
+from app.services.github_actions_dispatcher import GitHubActionsDispatcher
+from app.services.discord import DiscordService
 
 
 def verify_discord_signature(signature, timestamp, body, public_key):
@@ -70,12 +73,15 @@ def handle_ship_command(interaction):
 def handle_verify_latest_command(interaction):
     """Handle /verify-latest command - verify latest Client Deploy run."""
     try:
-        # Extract optional run_url parameter
+        # Extract optional parameters
         options = interaction.get('data', {}).get('options', [])
         run_url = None
+        diagnose = False
         for option in options:
             if option.get('name') == 'run_url':
                 run_url = option.get('value')
+            elif option.get('name') == 'diagnose':
+                diagnose = option.get('value', False)
 
         # Perform verification
         verifier = DeployVerifier()
@@ -85,6 +91,36 @@ def handle_verify_latest_command(interaction):
         message = result.get('message', {})
         content = message.get('content', '❌ Verification failed')
         embed = message.get('embed')
+
+        # If diagnose option is enabled, trigger diagnose workflow
+        if diagnose:
+            try:
+                github_service = GitHubService()
+                dispatcher = GitHubActionsDispatcher(github_service)
+                
+                # Generate correlation ID
+                correlation_id = dispatcher.generate_correlation_id()
+                
+                # Get user info
+                user = interaction.get('member', {}).get('user', {})
+                requester = user.get('username', user.get('id', 'unknown'))
+                
+                # Trigger diagnose
+                dispatch_result = dispatcher.trigger_diagnose_dispatch(
+                    correlation_id=correlation_id,
+                    requester=requester
+                )
+                
+                if dispatch_result.get('success'):
+                    # Add diagnose info to response
+                    content += f'\n\n🔧 **Diagnose triggered** (correlation: `{correlation_id[:8]}...`)'
+                    content += '\n⏳ Checking for run...'
+                else:
+                    content += f'\n\n⚠️ Failed to trigger diagnose: {dispatch_result.get("message")}'
+                    
+            except Exception as diag_error:
+                print(f'Error triggering diagnose: {str(diag_error)}')
+                content += f'\n\n⚠️ Failed to trigger diagnose: {str(diag_error)}'
 
         # Return response with embed
         response_data = {'content': content}
@@ -154,6 +190,69 @@ def handle_verify_run_command(interaction):
         })
 
 
+def handle_diagnose_command(interaction):
+    """Handle /diagnose command - trigger on-demand diagnose workflow."""
+    try:
+        # Extract optional parameters
+        options = interaction.get('data', {}).get('options', [])
+        frontend_url = ''
+        api_base = ''
+        for option in options:
+            if option.get('name') == 'frontend_url':
+                frontend_url = option.get('value', '')
+            elif option.get('name') == 'api_base':
+                api_base = option.get('value', '')
+
+        # Initialize services
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        
+        # Generate correlation ID
+        correlation_id = dispatcher.generate_correlation_id()
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Get channel/thread info
+        channel_id = interaction.get('channel_id', '')
+        
+        # Trigger diagnose workflow
+        dispatch_result = dispatcher.trigger_diagnose_dispatch(
+            correlation_id=correlation_id,
+            requester=requester,
+            channel_id=channel_id,
+            frontend_url=frontend_url,
+            api_base=api_base
+        )
+        
+        if not dispatch_result.get('success'):
+            return create_response(4, {
+                'content': f'❌ Failed to trigger diagnose: {dispatch_result.get("message")}',
+                'flags': 64
+            })
+        
+        # Return initial response
+        short_id = correlation_id[:8]
+        content = f'🟡 **Starting Diagnose...**\n\n'
+        content += f'**Correlation ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n\n'
+        content += '⏳ Workflow is being triggered. Searching for run...'
+        
+        return create_response(4, {
+            'content': content
+        })
+
+    except Exception as e:
+        print(f'Error in handle_diagnose_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -211,6 +310,8 @@ def handler(event, context):
                 return handle_verify_latest_command(interaction)
             elif command_name == 'verify-run':
                 return handle_verify_run_command(interaction)
+            elif command_name == 'diagnose':
+                return handle_diagnose_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
