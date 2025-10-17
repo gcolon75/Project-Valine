@@ -67,12 +67,16 @@ def redact_secrets(data: Union[str, Dict, List, Any], secret_keys: Optional[List
     else:
         all_secret_keys = default_secret_keys
     
-    def _redact_value(value: str) -> str:
+    def _redact_value(value: str, force: bool = False) -> str:
         """Redact a single string value, showing last 4 chars"""
         if not isinstance(value, str) or len(value) <= 4:
             return value
         
-        # Check if this looks like a token (contains alphanumeric)
+        # If force is True, redact regardless of pattern
+        if force:
+            return f"***{value[-4:]}"
+        
+        # Check if this looks like a token (contains alphanumeric sequence)
         if re.search(r'[a-zA-Z0-9]{8,}', value):
             # Show last 4 chars
             return f"***{value[-4:]}"
@@ -86,7 +90,7 @@ def redact_secrets(data: Union[str, Dict, List, Any], secret_keys: Optional[List
     # Handle different data types
     if isinstance(data, dict):
         return {
-            key: _redact_value(val) if isinstance(val, str) and _should_redact(key)
+            key: _redact_value(val, force=True) if isinstance(val, str) and _should_redact(key)
             else redact_secrets(val, secret_keys)
             for key, val in data.items()
         }

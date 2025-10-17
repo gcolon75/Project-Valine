@@ -2,6 +2,15 @@
 
 This guide helps you quickly get started with Phase 5 staging validation.
 
+## What's New
+
+**Latest enhancements:**
+- ✅ Multiple deployment methods (Lambda, SSM Parameter Store, SAM deploy)
+- ✅ Automatic secret redaction in all evidence
+- ✅ Executive summary generation
+- ✅ Enhanced safety checks
+- ✅ 33 unit tests (all passing)
+
 ## Prerequisites
 
 - AWS CLI installed and configured
@@ -20,9 +29,15 @@ python phase5_staging_validator.py generate-config --output staging_config.json
 ```
 
 Edit `staging_config.json` with your staging values:
+- `staging_deploy_method`: Choose deployment method
+  - `aws_parameter_store`: Lambda environment variables (default, fastest)
+  - `ssm_parameter_store`: SSM Parameter Store (centralized config)
+  - `sam_deploy`: SAM config file (infrastructure-as-code)
 - `staging_lambda_discord`: Your staging Lambda function name (e.g., `valine-orchestrator-discord-staging`)
 - `test_channel_id`: Your staging Discord channel ID
 - `log_group_discord`: CloudWatch log group name (e.g., `/aws/lambda/valine-orchestrator-discord-staging`)
+
+**Security Note:** All sensitive data in evidence will be automatically redacted.
 
 ### Step 2: Run Preflight Checks (1 minute)
 
@@ -76,9 +91,17 @@ Verify:
 ### Step 5: Review Evidence (30 seconds)
 
 ```bash
-# View the validation report
+# View the validation report (with automatic redaction)
 cat validation_evidence/validation_report_*.md
+
+# View the executive summary
+cat validation_evidence/executive_summary_*.md
 ```
+
+**All sensitive information is automatically redacted:**
+- Tokens show only last 4 characters
+- Channel IDs are redacted
+- Trace IDs preserved for debugging
 
 ## Full Validation (Automated)
 
