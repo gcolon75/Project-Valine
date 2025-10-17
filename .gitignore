@@ -12,3 +12,14 @@ orchestrator/.aws-sam/
 orchestrator/scripts/validation_evidence/
 orchestrator/scripts/staging_config.json
 !orchestrator/scripts/staging_config.example.json
+
+# UX Design temporary files
+*.psd
+*.sketch
+*.fig
+*.xd
+**/design-drafts/
+**/wireframes-tmp/
+**/mockups-tmp/
+.lighthouse/
+lighthouse-reports/

@@ -99,5 +99,11 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed 
 - [Deployment Verification](DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
 - [Verification Guide](scripts/VERIFICATION_GUIDE.md) - Detailed verification usage and troubleshooting
 
+### AI Agents
+- [UX Designer Agent](.github/agents/ux-designer.md) - User experience improvements and implementation
+- [Quick Start Guide](.github/agents/QUICK_START.md) - Quick reference for using the UX Designer agent
+- [Agent Templates](.github/agents/templates/) - Reusable templates for PRs, RFCs, and documentation
+
 ### Other Documentation
 - [Sanity Setup](SANITY_SETUP.md) - CMS configuration
+- [UX Changes](CHANGES.md) - Log of user experience improvements and design changes
