@@ -1,0 +1,14 @@
+{
+  "repo": "gcolon75/Project-Valine",
+  "base_ref": "main",
+  "staging_urls": [
+    "https://api.staging.valine.example.com"
+  ],
+  "aws_region": "us-west-2",
+  "log_group": "/aws/lambda/pv-api-prod-api",
+  "github_token": "ENV:STAGING_GITHUB_TOKEN",
+  "aws_access_key": "ENV:AWS_ACCESS_KEY_ID",
+  "output_dir": "./doublecheck_evidence",
+  "read_only": true,
+  "redact_secrets": true
+}
