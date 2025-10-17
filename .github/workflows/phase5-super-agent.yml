@@ -1,0 +1,233 @@
+name: Phase 5 Staging Super-Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (no modifications)'
+        required: false
+        default: false
+        type: boolean
+      
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: true
+        type: boolean
+  
+  schedule:
+    # Run weekly validation on Mondays at 10 AM UTC
+    - cron: '0 10 * * 1'
+
+env:
+  AWS_REGION: us-west-2
+
+jobs:
+  super-agent-validation:
+    name: Phase 5 Super-Agent Validation
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write       # For AWS OIDC
+      contents: write       # For creating PR
+      pull-requests: write  # For PR operations
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests boto3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Phase5-SuperAgent
+      
+      - name: Verify AWS access
+        run: |
+          aws --version
+          aws sts get-caller-identity
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+      
+      - name: Generate Super-Agent configuration
+        env:
+          STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
+          STAGING_DISCORD_APPLICATION_ID: ${{ vars.STAGING_DISCORD_APPLICATION_ID }}
+          STAGING_DISCORD_GUILD_ID_STAGING: ${{ secrets.STAGING_DISCORD_GUILD_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: orchestrator/scripts
+        run: |
+          cat > super_agent_config.json <<'EOFCONFIG'
+          {
+            "repo": "gcolon75/Project-Valine",
+            "base_ref": "main",
+            "staging": {
+              "urls": [
+                "https://staging.example.com",
+                "https://staging.example.com/api/health"
+              ],
+              "region": "us-west-2"
+            },
+            "github": {
+              "token": "ENV:GITHUB_TOKEN",
+              "workflows": []
+            },
+            "discord": {
+              "bot_token": "ENV:STAGING_DISCORD_BOT_TOKEN",
+              "app_id": "ENV:STAGING_DISCORD_APPLICATION_ID",
+              "guild_id": "ENV:STAGING_DISCORD_GUILD_ID_STAGING"
+            },
+            "aws": {
+              "region": "us-west-2",
+              "ssm_prefix": "/valine/staging/",
+              "log_group": "/aws/lambda/pv-api-prod-api",
+              "lambda_function": "pv-api-prod-api"
+            },
+            "timeouts": {
+              "action_dispatch": 600000,
+              "http": 15000,
+              "discord_propagation": 60000
+            },
+            "flags": {
+              "dry_run": ${{ inputs.dry_run || false }},
+              "verbose": ${{ inputs.verbose || true }},
+              "redaction_enabled": true
+            },
+            "evidence_output_dir": "./validation_evidence",
+            "correlation_id_prefix": "SUPER-AGENT-CI"
+          }
+          EOFCONFIG
+          
+          echo "Configuration generated:"
+          cat super_agent_config.json | python -m json.tool
+      
+      - name: Run Phase 5 Super-Agent
+        working-directory: orchestrator/scripts
+        run: |
+          echo "Starting Phase 5 Super-Agent validation..."
+          python phase5_super_agent.py run --config super_agent_config.json
+      
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: super-agent-validation-evidence-${{ github.run_number }}
+          path: |
+            orchestrator/scripts/validation_evidence/**/*
+            orchestrator/scripts/super_agent_*.json
+          retention-days: 90
+      
+      - name: Generate workflow summary
+        if: always()
+        working-directory: orchestrator/scripts
+        run: |
+          echo "# Phase 5 Super-Agent Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**AWS Account:** ${{ env.AWS_ACCOUNT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Dry Run:** ${{ inputs.dry_run || false }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Find and include the latest Markdown report
+          LATEST_REPORT=$(ls -t validation_evidence/super_agent_report_*.md 2>/dev/null | head -1)
+          
+          if [ -n "$LATEST_REPORT" ] && [ -f "$LATEST_REPORT" ]; then
+            echo "## Validation Report" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat "$LATEST_REPORT" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No validation report generated" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Create evidence PR
+        if: success() && !inputs.dry_run
+        run: |
+          # Configure git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Create new branch for evidence
+          BRANCH_NAME="super-agent/phase5-validation-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Add validation evidence
+          git add orchestrator/scripts/validation_evidence/
+          
+          # Commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Phase 5 Super-Agent validation evidence - Run ${{ github.run_number }}"
+            git push origin "$BRANCH_NAME"
+            
+            # Create PR body
+            cat > /tmp/pr-body.md <<'EOFPR'
+          # Phase 5 Super-Agent Validation Evidence
+          
+          Automated validation from Phase 5 Super-Agent workflow.
+          
+          ## Workflow Details
+          
+          - **Run ID:** ${{ github.run_id }}
+          - **Run Number:** ${{ github.run_number }}
+          - **Triggered by:** ${{ github.actor }}
+          - **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ## What This Validates
+          
+          The Phase 5 Super-Agent performs comprehensive validation including:
+          
+          1. **Prep + Discovery** - Repository, tokens, URL reachability
+          2. **Steps 3-8** - Build, deployment, health, smoke tests, E2E, observability
+          3. **Double-Check Framework** - Dual verification of all checks
+          4. **Discord Commands** - Slash command registration and visibility
+          
+          ## Evidence Collected
+          
+          See `orchestrator/scripts/validation_evidence/` for:
+          - Complete validation report (Markdown & JSON)
+          - Double-check consistency matrix
+          - Discord command verification results
+          - Remediation playbook (if issues found)
+          - Detailed logs for all checks
+          
+          ## Next Steps
+          
+          - Review the validation report
+          - Address any issues in the remediation playbook
+          - Verify all checks passed or have acceptable warnings
+          - Merge this PR to preserve the validation evidence
+          EOFPR
+            
+            # Create PR
+            gh pr create \
+              --title "Phase 5 Super-Agent Validation - Run ${{ github.run_number }}" \
+              --body-file /tmp/pr-body.md \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --label "validation" \
+              --label "phase5"
+          else
+            echo "No changes to commit"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Phase 5 Super-Agent validation failed!"
+          echo "Check the workflow logs and validation evidence for details."
+          exit 1
