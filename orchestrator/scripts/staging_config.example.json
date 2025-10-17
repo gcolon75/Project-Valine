@@ -1,0 +1,20 @@
+{
+  "staging_deploy_method": "aws_parameter_store",
+  "aws_region": "us-west-2",
+  "staging_lambda_discord": "valine-orchestrator-discord-staging",
+  "staging_lambda_github": "valine-orchestrator-github-staging",
+  "staging_api_endpoint": "https://api.staging.example.com",
+  "test_channel_id": "STAGING_CHANNEL_ID",
+  "test_user_id": "TEST_USER_ID",
+  "discord_bot_token": "ENV:DISCORD_BOT_TOKEN",
+  "github_repo": "gcolon75/Project-Valine",
+  "github_token": "ENV:GITHUB_TOKEN",
+  "enable_debug_cmd": true,
+  "enable_alerts": false,
+  "alert_channel_id": "STAGING_ALERT_CHANNEL_ID",
+  "alert_allowlist_users": null,
+  "log_group_discord": "/aws/lambda/valine-orchestrator-discord-staging",
+  "log_group_github": "/aws/lambda/valine-orchestrator-github-staging",
+  "correlation_id_prefix": "STG",
+  "evidence_output_dir": "./validation_evidence"
+}
