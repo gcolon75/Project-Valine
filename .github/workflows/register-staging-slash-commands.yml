@@ -1,0 +1,88 @@
+name: Register Staging Slash Commands
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_register:
+        description: 'Force re-registration of all commands'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  register-commands:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          cd orchestrator/scripts
+          pip install requests pynacl
+      
+      - name: Discover staging guild ID
+        id: discover-guild
+        env:
+          STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
+        shell: bash
+        run: |
+          # Try to discover guild ID if not explicitly set
+          GUILD_ID="${{ vars.STAGING_DISCORD_GUILD_ID }}"
+          
+          if [ -z "$GUILD_ID" ]; then
+            echo "Attempting to discover guild ID from bot's guilds..."
+            cd orchestrator/scripts
+            GUILD_ID=$(./discover_guild_id.sh 2>&1 | grep -oP 'Guild ID: \K[0-9]+' | head -1)
+            
+            if [ -z "$GUILD_ID" ]; then
+              echo "❌ Could not discover guild ID"
+              echo "Please set STAGING_DISCORD_GUILD_ID as a repository variable"
+              exit 1
+            fi
+            
+            echo "Discovered guild ID: $GUILD_ID"
+          else
+            echo "Using configured guild ID: $GUILD_ID"
+          fi
+          
+          echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
+      
+      - name: Register slash commands
+        env:
+          STAGING_DISCORD_APPLICATION_ID: ${{ vars.STAGING_DISCORD_APPLICATION_ID }}
+          STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
+          STAGING_DISCORD_GUILD_ID: ${{ steps.discover-guild.outputs.guild_id }}
+        run: |
+          cd orchestrator/scripts
+          ./register_staging_slash_commands.sh
+      
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slash-commands-registration-evidence-${{ github.run_number }}
+          path: orchestrator/scripts/validation_evidence/
+          retention-days: 30
+      
+      - name: Post summary
+        if: always()
+        run: |
+          cd orchestrator/scripts
+          
+          # Find the latest validation report
+          REPORT_FILE=$(ls -t validation_evidence/discord_commands_validation_*.md 2>/dev/null | head -1)
+          
+          if [ -n "$REPORT_FILE" ]; then
+            echo "## Slash Commands Registration Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat "$REPORT_FILE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No validation report found" >> $GITHUB_STEP_SUMMARY
+          fi
