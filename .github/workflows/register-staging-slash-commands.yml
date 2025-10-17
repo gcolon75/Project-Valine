@@ -31,44 +31,28 @@ jobs:
         id: discover-guild
         env:
           STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
+        shell: bash
         run: |
           # Try to discover guild ID if not explicitly set
           GUILD_ID="${{ vars.STAGING_DISCORD_GUILD_ID }}"
           
           if [ -z "$GUILD_ID" ]; then
             echo "Attempting to discover guild ID from bot's guilds..."
+            cd orchestrator/scripts
+            GUILD_ID=$(./discover_guild_id.sh 2>&1 | grep -oP 'Guild ID: \K[0-9]+' | head -1)
             
-            # Use Python to call Discord API
-            GUILD_ID=$(python3 -c "
-import requests
-import sys
-
-token = '$STAGING_DISCORD_BOT_TOKEN'
-headers = {'Authorization': f'Bot {token}'}
-response = requests.get('https://discord.com/api/v10/users/@me/guilds', headers=headers)
-
-if response.status_code == 200:
-    guilds = response.json()
-    if guilds:
-        # Take the first guild (assuming staging bot is only in staging guild)
-        print(guilds[0]['id'])
-    else:
-        sys.exit(1)
-else:
-    sys.exit(1)
-            ")
-            
-            if [ $? -eq 0 ] && [ -n "$GUILD_ID" ]; then
-              echo "Discovered guild ID: $GUILD_ID"
-            else
+            if [ -z "$GUILD_ID" ]; then
               echo "❌ Could not discover guild ID"
               echo "Please set STAGING_DISCORD_GUILD_ID as a repository variable"
               exit 1
             fi
+            
+            echo "Discovered guild ID: $GUILD_ID"
+          else
+            echo "Using configured guild ID: $GUILD_ID"
           fi
           
           echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
-          echo "Using guild ID: $GUILD_ID"
       
       - name: Register slash commands
         env:
