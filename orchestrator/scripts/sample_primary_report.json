@@ -1,0 +1,64 @@
+{
+  "run_id": "STG-PHASE5-20251017-120000-sample",
+  "timestamp": "2025-10-17T12:00:00Z",
+  "correlation_id": "STG-PHASE5-20251017-120000",
+  "evidence": [
+    {
+      "test_name": "health_api_check",
+      "status": "pass",
+      "details": {
+        "url": "https://api.staging.valine.example.com/health",
+        "status_code": 200,
+        "response_time_ms": 125
+      },
+      "timestamp": "2025-10-17T12:00:01Z"
+    },
+    {
+      "test_name": "version_endpoint_check",
+      "status": "pass",
+      "details": {
+        "url": "https://api.staging.valine.example.com/version",
+        "version": "1.5.2",
+        "build_id": "abc123def456"
+      },
+      "timestamp": "2025-10-17T12:00:02Z"
+    },
+    {
+      "test_name": "github_actions_artifact_check",
+      "status": "pass",
+      "details": {
+        "run_id": 1234567890,
+        "artifact_count": 3,
+        "artifacts": ["logs", "test-results", "coverage"]
+      },
+      "timestamp": "2025-10-17T12:00:03Z"
+    },
+    {
+      "test_name": "cloudwatch_logs_ingestion",
+      "status": "pass",
+      "details": {
+        "trace_id": "trace-abc123-def456",
+        "log_group": "/aws/lambda/pv-api-prod-api",
+        "event_count": 15
+      },
+      "timestamp": "2025-10-17T12:00:04Z"
+    },
+    {
+      "test_name": "discord_alert_test",
+      "status": "pass",
+      "details": {
+        "alert_id": "msg-987654321",
+        "channel_id": "1428102811832553554",
+        "severity": "warning",
+        "posted": true,
+        "dedupe_working": true
+      },
+      "timestamp": "2025-10-17T12:00:05Z"
+    }
+  ],
+  "test_results": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  }
+}

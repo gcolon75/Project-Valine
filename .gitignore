@@ -15,6 +15,11 @@ orchestrator/scripts/staging_config.json
 validation_evidence/
 !orchestrator/scripts/validation_config.example.json
 
+# Phase 5 double-check evidence
+orchestrator/scripts/doublecheck_evidence/
+orchestrator/scripts/doublecheck_config.json
+!orchestrator/scripts/doublecheck_config.example.json
+
 # UX Design temporary files
 *.psd
 *.sketch
