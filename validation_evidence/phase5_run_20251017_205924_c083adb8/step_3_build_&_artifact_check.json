@@ -1,0 +1,12 @@
+{
+  "step_number": 3,
+  "step_name": "Build & Artifact Check",
+  "status": "SKIP",
+  "duration_ms": 0.0019073486328125,
+  "error": null,
+  "details": {
+    "reason": "No GitHub token ***able"
+  },
+  "artifacts": [],
+  "timestamp": "2025-10-17T20:59:26.231629+00:00"
+}

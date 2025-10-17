@@ -1,0 +1,31 @@
+{
+  "step_number": 6,
+  "step_name": "Smoke Tests",
+  "status": "FAIL",
+  "duration_ms": 2083.2910537719727,
+  "error": null,
+  "details": {
+    "smoke_tests": [
+      {
+        "endpoint": "/",
+        "description": "Root page",
+        "status": "ERROR",
+        "error": "HTTPSConnectionPool(host='staging.valine.app', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f06d3621fa0>: Failed to resolve 'staging.valine.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      {
+        "endpoint": "/api/health",
+        "description": "Health check",
+        "status": "ERROR",
+        "error": "HTTPSConnectionPool(host='staging.valine.app', port=443): Max retries exceeded with url: /api/health (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f06d3621100>: Failed to resolve 'staging.valine.app' ([Errno -5] No address associated with hostname)\"))"
+      },
+      {
+        "endpoint": "/api/version",
+        "description": "Version info",
+        "status": "ERROR",
+        "error": "HTTPSConnectionPool(host='staging.valine.app', port=443): Max retries exceeded with url: /api/version (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f06d3620830>: Failed to resolve 'staging.valine.app' ([Errno -5] No address associated with hostname)\"))"
+      }
+    ]
+  },
+  "artifacts": [],
+  "timestamp": "2025-10-17T20:59:29.369503+00:00"
+}

@@ -1,0 +1,26 @@
+{
+  "repo": "gcolon75/Project-Valine",
+  "base_ref": "main",
+  "staging": {
+    "urls": [
+      "https://staging.valine.app",
+      "https://staging.valine.app/api/health"
+    ],
+    "region": "us-west-2"
+  },
+  "github": {
+    "token": "ENV:GITHUB_TOKEN"
+  },
+  "aws": {
+    "role_arn": null,
+    "access_key_id": "ENV:AWS_ACCESS_KEY_ID",
+    "secret_access_key": "ENV:AWS_SECRET_ACCESS_KEY",
+    "region": "us-west-2"
+  },
+  "timeouts": {
+    "action_dispatch_ms": 600000,
+    "http_ms": 15000
+  },
+  "evidence_dir": "./validation_evidence",
+  "report_file": "phase5_staging_validation_report.md"
+}
