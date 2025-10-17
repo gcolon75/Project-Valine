@@ -172,44 +172,37 @@ jobs:
             git commit -m "Phase 5 staging validation evidence - Run ${{ github.run_number }}"
             git push origin "$BRANCH_NAME"
             
+            # Create PR body file
+            cat > /tmp/pr-body.md <<'EOFPR'
+          Automated Phase 5 staging validation evidence from workflow run ${{ github.run_number }}.
+          
+          ## Workflow Run
+          
+          - Run ID: ${{ github.run_id }}
+          - Run Number: ${{ github.run_number }}  
+          - Triggered by: ${{ github.actor }}
+          
+          ## Evidence Collected
+          
+          See `orchestrator/scripts/validation_evidence/` directory for:
+          - CloudWatch log snippets (filtered by trace_id)
+          - Alert messages (redacted)
+          - Debug command transcripts (redacted)
+          - Validation reports
+          - Executive summary
+          
+          ## Next Steps
+          
+          - Review evidence for completeness
+          - Verify all acceptance criteria are met
+          - Sign off on staging validation  
+          - Proceed with production rollout if approved
+          EOFPR
+            
             # Create PR using GitHub CLI
             gh pr create \
               --title "Phase 5 Staging Validation Evidence - Run ${{ github.run_number }}" \
-              --body "Automated Phase 5 staging validation evidence from workflow run ${{ github.run_number }}.
-
-## Summary
-
-This PR contains validation evidence for Phase 5 observability features in staging:
-
-- IAM permissions verification
-- SSM parameter baseline checks
-- /debug-last command validation
-- Alerts validation with dedupe testing
-- CloudWatch logs collection (redacted)
-- Feature flags reverted to safe defaults
-
-## Evidence
-
-See \`orchestrator/scripts/validation_evidence/\` directory for:
-- CloudWatch log snippets (filtered by trace_id)
-- Alert messages (redacted)
-- /debug-last transcripts (redacted)
-- Validation reports
-- Executive summary
-
-## Workflow Run
-
-- Run ID: ${{ github.run_id }}
-- Run Number: ${{ github.run_number }}
-- Triggered by: ${{ github.actor }}
-- Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
-
-## Next Steps
-
-1. Review evidence for completeness
-2. Verify all acceptance criteria are met
-3. Sign off on staging validation
-4. Proceed with production rollout if approved" \
+              --body-file /tmp/pr-body.md \
               --base main \
               --head "$BRANCH_NAME"
           fi
