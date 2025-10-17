@@ -104,6 +104,25 @@ sam build && sam deploy
 
 ## Step 3: Configure Discord Slash Commands
 
+### Quick Setup for Staging
+
+If you're setting up a **staging environment**, use the automated setup script:
+
+```bash
+cd orchestrator
+./setup_staging_bot.sh
+```
+
+This script will:
+- Validate bot credentials and guild membership
+- Check current command registration status
+- Optionally register staging commands (instant visibility using guild commands)
+- Verify AWS SSM parameters for feature flags
+
+For detailed staging setup instructions, see [DISCORD_STAGING_SETUP.md](DISCORD_STAGING_SETUP.md).
+
+### Manual Setup
+
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Select your application
 3. Go to "OAuth2" > "URL Generator":
@@ -111,7 +130,21 @@ sam build && sam deploy
    - Select bot permissions: `Send Messages`, `Create Public Threads`, `Send Messages in Threads`
    - Copy the generated URL and use it to invite the bot to your server
 
-4. Register slash commands using Discord API:
+4. Register slash commands using the provided scripts:
+
+**For Production (Global Commands):**
+```bash
+cd orchestrator
+./register_discord_commands.sh
+```
+
+**For Staging (Guild Commands - Instant Visibility):**
+```bash
+cd orchestrator
+./register_discord_commands_staging.sh
+```
+
+Or manually register using Discord API:
 
 ```bash
 # Set your application ID and bot token
@@ -1049,6 +1082,60 @@ See [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md) for:
 - Configure CloudWatch alarms and dashboards
 - Implement issue labeling automation
 - Add support for custom workflows and rules
+
+## Troubleshooting
+
+### Discord Commands Not Showing Up
+
+If slash commands aren't appearing in your Discord server:
+
+1. **Run the diagnostic script:**
+   ```bash
+   cd orchestrator
+   ./diagnose_discord_commands.sh
+   ```
+
+2. **Check bot scopes:**
+   - Bot must be invited with `bot` + `applications.commands` scopes
+   - Re-invite using: `https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&scope=bot%20applications.commands&permissions=0`
+
+3. **Use guild commands for staging:**
+   - Guild commands appear instantly (no 1-hour delay)
+   - Global commands can take up to 1 hour to propagate
+   - Use `register_discord_commands_staging.sh` for staging environments
+
+4. **Verify public key:**
+   - Check that `DISCORD_PUBLIC_KEY` (or `STAGING_DISCORD_PUBLIC_KEY`) matches the Discord Developer Portal
+   - Mismatches cause signature verification failures
+
+5. **Check CloudWatch Logs:**
+   - Look for errors in `/aws/lambda/pv-api-prod-api`
+   - Common issues: signature verification failures, missing environment variables
+
+For detailed troubleshooting, see [DISCORD_STAGING_SETUP.md](DISCORD_STAGING_SETUP.md).
+
+### /debug-last Returns "Disabled"
+
+The `/debug-last` command is feature-flagged for security:
+
+```bash
+# Enable via AWS SSM Parameter Store
+aws ssm put-parameter \
+  --name "/valine/staging/ENABLE_DEBUG_CMD" \
+  --value "true" \
+  --type String \
+  --overwrite \
+  --region us-west-2
+```
+
+After 30 seconds (Lambda environment variable refresh), the command will work.
+
+### Commands Execute But Don't Respond
+
+Check the Interactions Endpoint URL in Discord Developer Portal:
+1. Go to General Information
+2. Verify the URL matches your Lambda endpoint (from `sam deploy` outputs)
+3. Test the endpoint - Discord should show a green checkmark
 
 ## Support
 
