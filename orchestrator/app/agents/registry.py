@@ -46,6 +46,12 @@ def get_agents() -> List[AgentInfo]:
             name='Client Deploy',
             description='Triggers Client Deploy workflow with optional API base override and completion tracking.',
             command='/deploy-client'
+        ),
+        AgentInfo(
+            id='discord_slash_cmd',
+            name='Discord Slash Command Agent',
+            description='Registers and validates Discord slash commands for staging. Ensures commands are visible, provides remediation playbook, and verifies handler health.',
+            command='/register-slash-commands'
         )
     ]
 
