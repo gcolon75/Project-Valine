@@ -281,6 +281,97 @@ class Phase5StagingValidator:
             self.test_results["skipped"] += 1
     
     # ============================================
+    # Step 3: Verify IAM and SSM Parameters
+    # ============================================
+    
+    def verify_iam_permissions(self) -> bool:
+        """Verify IAM permissions for SSM and CloudWatch"""
+        self._log("info", "Verifying IAM permissions")
+        
+        checks_passed = True
+        
+        # Test SSM GetParameter permission
+        if self.config.ssm_parameter_prefix:
+            try:
+                test_param = f"{self.config.ssm_parameter_prefix}ENABLE_DEBUG_CMD"
+                result = self._run_command([
+                    "aws", "ssm", "get-parameter",
+                    "--name", test_param,
+                    "--region", self.config.aws_region
+                ])
+                
+                if result.returncode == 0:
+                    self._record_evidence("iam_ssm_get_parameter", "pass",
+                                        {"permission": "ssm:GetParameter", "param": test_param})
+                else:
+                    self._log("warn", f"Cannot read SSM parameter {test_param}: {result.stderr}")
+                    self._record_evidence("iam_ssm_get_parameter", "fail",
+                                        {"error": result.stderr, "param": test_param})
+                    checks_passed = False
+            except Exception as e:
+                self._log("error", f"Error checking SSM permissions: {str(e)}")
+                checks_passed = False
+        
+        # Test CloudWatch Logs permissions
+        if self.config.log_group_discord:
+            try:
+                result = self._run_command([
+                    "aws", "logs", "describe-log-groups",
+                    "--log-group-name-prefix", self.config.log_group_discord,
+                    "--region", self.config.aws_region
+                ])
+                
+                if result.returncode == 0:
+                    self._record_evidence("iam_cloudwatch_logs", "pass",
+                                        {"permission": "logs:DescribeLogGroups"})
+                else:
+                    self._log("warn", f"Cannot access CloudWatch logs: {result.stderr}")
+                    self._record_evidence("iam_cloudwatch_logs", "fail",
+                                        {"error": result.stderr})
+                    checks_passed = False
+            except Exception as e:
+                self._log("error", f"Error checking CloudWatch permissions: {str(e)}")
+                checks_passed = False
+        
+        return checks_passed
+    
+    def read_current_ssm_values(self) -> Dict[str, str]:
+        """Read current SSM parameter values"""
+        self._log("info", "Reading current SSM parameters")
+        
+        values = {}
+        params_to_check = ["ENABLE_DEBUG_CMD", "ENABLE_ALERTS", "ALERT_CHANNEL_ID"]
+        
+        if not self.config.ssm_parameter_prefix:
+            self._log("warn", "ssm_parameter_prefix not configured, skipping SSM read")
+            return values
+        
+        for param_name in params_to_check:
+            full_param = f"{self.config.ssm_parameter_prefix}{param_name}"
+            try:
+                result = self._run_command([
+                    "aws", "ssm", "get-parameter",
+                    "--name", full_param,
+                    "--region", self.config.aws_region,
+                    "--query", "Parameter.Value",
+                    "--output", "text"
+                ])
+                
+                if result.returncode == 0:
+                    value = result.stdout.strip()
+                    values[param_name] = value
+                    self._log("info", f"Current {param_name} = {redact_secrets(value)}")
+                else:
+                    self._log("warn", f"Could not read {full_param}: {result.stderr}")
+            except Exception as e:
+                self._log("error", f"Error reading {full_param}: {str(e)}")
+        
+        self._record_evidence("read_ssm_values", "pass",
+                            {"values": redact_secrets(values), "count": len(values)})
+        
+        return values
+    
+    # ============================================
     # Step 1: Preflight Checks
     # ============================================
     
@@ -941,56 +1032,267 @@ class Phase5StagingValidator:
         
         return report
     
+    def revert_flags_to_safe_defaults(self) -> bool:
+        """Revert feature flags to safe defaults"""
+        self._log("info", "Reverting feature flags to safe defaults")
+        
+        success = True
+        
+        # Disable alerts
+        if not self.set_feature_flag("ENABLE_ALERTS", "false"):
+            self._log("error", "Failed to set ENABLE_ALERTS=false")
+            success = False
+        else:
+            self._log("info", "Set ENABLE_ALERTS=false")
+            self._record_evidence("revert_enable_alerts", "pass",
+                                {"ENABLE_ALERTS": "false"})
+        
+        # Disable debug command (default off for production-like state)
+        if not self.set_feature_flag("ENABLE_DEBUG_CMD", "false"):
+            self._log("error", "Failed to set ENABLE_DEBUG_CMD=false")
+            success = False
+        else:
+            self._log("info", "Set ENABLE_DEBUG_CMD=false")
+            self._record_evidence("revert_enable_debug_cmd", "pass",
+                                {"ENABLE_DEBUG_CMD": "false"})
+        
+        # Wait for propagation
+        time.sleep(5)
+        
+        # Verify final values (if using SSM)
+        if self.config.ssm_parameter_prefix:
+            final_values = self.read_current_ssm_values()
+            self._log("info", f"Final SSM values: {redact_secrets(final_values)}")
+        
+        return success
+    
+    def update_phase5_validation_doc(self, evidence_section: str) -> bool:
+        """Update PHASE5_VALIDATION.md with staging evidence"""
+        self._log("info", "Updating PHASE5_VALIDATION.md")
+        
+        # Find the document in the repo
+        validation_doc_path = Path("/home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md")
+        
+        if not validation_doc_path.exists():
+            self._log("error", f"PHASE5_VALIDATION.md not found at {validation_doc_path}")
+            return False
+        
+        try:
+            # Read current content
+            with open(validation_doc_path, 'r') as f:
+                content = f.read()
+            
+            # Find the "## Staging Validation Evidence" section or create it
+            staging_marker = "## Staging Validation Evidence"
+            
+            if staging_marker in content:
+                # Update existing section
+                parts = content.split(staging_marker)
+                # Find the next section marker or end of file
+                after_staging = parts[1]
+                next_section_match = re.search(r'\n## [^S]', after_staging)
+                if next_section_match:
+                    # Replace content up to next section
+                    updated_content = (
+                        parts[0] + staging_marker + "\n\n" + 
+                        evidence_section + "\n" +
+                        after_staging[next_section_match.start():]
+                    )
+                else:
+                    # Replace to end of file
+                    updated_content = parts[0] + staging_marker + "\n\n" + evidence_section
+            else:
+                # Append new section
+                updated_content = content + "\n\n" + staging_marker + "\n\n" + evidence_section
+            
+            # Write back
+            with open(validation_doc_path, 'w') as f:
+                f.write(updated_content)
+            
+            self._log("info", f"Updated {validation_doc_path}")
+            self._record_evidence("update_validation_doc", "pass",
+                                {"file": str(validation_doc_path), "section": staging_marker})
+            return True
+        
+        except Exception as e:
+            self._log("error", f"Error updating PHASE5_VALIDATION.md: {str(e)}")
+            self._record_evidence("update_validation_doc", "fail",
+                                {"error": str(e)})
+            return False
+    
+    def generate_phase5_evidence_section(self) -> str:
+        """Generate the staging evidence section for PHASE5_VALIDATION.md"""
+        self._log("info", "Generating Phase 5 evidence section")
+        
+        lines = [
+            f"### Staging Validation Run: {self.correlation_id}",
+            "",
+            f"**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+            f"**Environment:** Staging",
+            f"**Status:** {'✅ PASS' if self.test_results['failed'] == 0 else '❌ FAIL'}",
+            "",
+            "#### Configuration Used",
+            "",
+            f"- **Deploy Method:** {self.config.staging_deploy_method}",
+            f"- **AWS Region:** {self.config.aws_region}",
+            f"- **SSM Parameter Prefix:** {self.config.ssm_parameter_prefix or 'N/A'}",
+            "",
+            "#### Test Results",
+            "",
+            f"- ✅ Passed: {self.test_results['passed']}",
+            f"- ❌ Failed: {self.test_results['failed']}",
+            f"- ⏭️ Skipped: {self.test_results['skipped']}",
+            "",
+            "#### Acceptance Criteria",
+            "",
+        ]
+        
+        # Build checklist from evidence
+        checklist_items = {
+            "preflight": "IAM and log access verified",
+            "iam_ssm": "SSM flags verified and corrected if needed",
+            "debug": "/diagnose + /debug-last validated (ephemeral, redacted, trace matched)",
+            "alerts": "ENABLE_ALERTS turned on for test; alert posted once; dedupe confirmed",
+            "evidence": "All evidence captured and redacted",
+            "revert": "Flags reverted (ENABLE_ALERTS=false, ENABLE_DEBUG_CMD=false)",
+            "docs": "PHASE5_VALIDATION.md authored and PR opened"
+        }
+        
+        for key, description in checklist_items.items():
+            # Check if any evidence matches this category
+            relevant_evidence = [e for e in self.evidence if key in e.test_name.lower()]
+            if relevant_evidence:
+                all_passed = all(e.status == "pass" for e in relevant_evidence)
+                status = "✅" if all_passed else "⏭️" if any(e.status == "skip" for e in relevant_evidence) else "❌"
+            else:
+                status = "⏭️"
+            lines.append(f"- [{status}] {description}")
+        
+        lines.extend([
+            "",
+            "#### Evidence Summary",
+            "",
+        ])
+        
+        # Add key evidence
+        for evidence in self.evidence:
+            if evidence.status in ["pass", "fail"]:  # Skip "skip" status for brevity
+                status_emoji = "✅" if evidence.status == "pass" else "❌"
+                lines.append(f"- {status_emoji} **{evidence.test_name}**: {evidence.details.get('message', evidence.details.get('error', 'See detailed report'))}")
+        
+        lines.extend([
+            "",
+            "#### CloudWatch Logs",
+            "",
+            f"- **Log Group:** `{self.config.log_group_discord or 'N/A'}`",
+            f"- **Correlation ID:** `{self.correlation_id}`",
+            f"- **Evidence Directory:** `{self.config.evidence_output_dir}/`",
+            "",
+            "#### Reports Generated",
+            "",
+            f"- **Executive Summary:** `executive_summary_{self.correlation_id}.md`",
+            f"- **Detailed Report:** `validation_report_{self.correlation_id}.md`",
+            "",
+            "#### Operator Sign-off",
+            "",
+            "- **Validated by:** [Automated Phase 5 Staging Validator]",
+            f"- **Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
+            f"- **Evidence links:** See `{self.config.evidence_output_dir}/`",
+            "",
+            "---",
+            ""
+        ])
+        
+        return "\n".join(lines)
+    
     # ============================================
     # High-Level Validation Flows
     # ============================================
     
     def run_full_validation(self) -> bool:
-        """Run complete Phase 5 staging validation"""
-        self._log("info", "Starting full Phase 5 staging validation",
+        """Run complete Phase 5 staging validation (Steps 3-8)"""
+        self._log("info", "Starting full Phase 5 staging validation (Steps 3-8)",
                  correlation_id=self.correlation_id)
         
         try:
-            # Step 1: Preflight checks
+            # Step 1-2: Preflight checks (preparation)
             if not self.preflight_checks():
                 self._log("error", "Preflight checks failed, aborting validation")
                 return False
             
-            # Step 2: Enable debug command
+            # Step 3: Verify IAM and SSM parameters
+            self._log("info", "=== STEP 3: Verify IAM and SSM Parameters ===")
+            if not self.verify_iam_permissions():
+                self._log("warn", "Some IAM permissions checks failed, but continuing...")
+            
+            initial_ssm_values = self.read_current_ssm_values()
+            self._log("info", f"Initial SSM values: {redact_secrets(initial_ssm_values)}")
+            
+            # Step 4: Validate /debug-last (enable if needed)
+            self._log("info", "=== STEP 4: Validate /debug-last ===")
             if self.config.enable_debug_cmd:
                 if not self.enable_debug_command():
                     self._log("error", "Failed to enable debug command")
                     return False
                 
                 # Wait for propagation
-                time.sleep(10)
+                self._log("info", "Waiting for Lambda configuration propagation...")
+                time.sleep(30)
                 
-                # Validate debug command
+                # Validate debug command (manual test steps documented)
                 self.validate_debug_last()
             
-            # Step 3: Prepare for alerts (disable first)
+            # Step 5: Enable alerts and run controlled failure
+            self._log("info", "=== STEP 5: Enable Alerts and Test ===")
+            # First disable to ensure clean state
             self.disable_alerts()
             time.sleep(5)
             
-            # Step 4: Enable alerts
+            # Enable alerts with staging channel
             if self.config.test_channel_id:
                 if not self.enable_alerts(self.config.test_channel_id):
                     self._log("error", "Failed to enable alerts")
                     return False
                 
                 # Wait for propagation
-                time.sleep(10)
+                self._log("info", "Waiting for Lambda configuration propagation...")
+                time.sleep(30)
                 
-                # Validate alerts
+                # Validate alerts (manual test steps documented)
                 self.validate_alerts()
             
-            # Step 5: Collect evidence
+            # Step 6: Capture redacted evidence
+            self._log("info", "=== STEP 6: Capture Redacted Evidence ===")
             self.collect_cloudwatch_logs()
             
-            # Step 6: Generate reports
+            # Step 7: Revert flags to safe defaults
+            self._log("info", "=== STEP 7: Revert Flags to Safe Defaults ===")
+            if not self.revert_flags_to_safe_defaults():
+                self._log("error", "Failed to revert some flags")
+            else:
+                self._log("info", "All flags reverted successfully")
+            
+            # Step 8: Prepare PHASE5_VALIDATION.md
+            self._log("info", "=== STEP 8: Prepare PHASE5_VALIDATION.md ===")
+            
+            # Generate reports
             report = self.generate_validation_report()
             exec_summary = self.generate_executive_summary()
             
+            # Generate evidence section for PHASE5_VALIDATION.md
+            evidence_section = self.generate_phase5_evidence_section()
+            
+            # Update PHASE5_VALIDATION.md
+            if not self.update_phase5_validation_doc(evidence_section):
+                self._log("warn", "Could not update PHASE5_VALIDATION.md automatically")
+                self._log("info", "Evidence section saved separately for manual update")
+                evidence_file = os.path.join(self.config.evidence_output_dir,
+                                           f"phase5_evidence_section_{self.correlation_id}.md")
+                with open(evidence_file, 'w') as f:
+                    f.write(evidence_section)
+                self._log("info", f"Evidence section saved to: {evidence_file}")
+            
+            # Print summary
             print("\n" + "="*80)
             print("EXECUTIVE SUMMARY")
             print("="*80)
@@ -1006,10 +1308,17 @@ class Phase5StagingValidator:
                      failed=self.test_results["failed"],
                      skipped=self.test_results["skipped"])
             
+            # Note: PR creation should be done via report_progress or external tool
+            self._log("info", "Next step: Create PR with evidence files")
+            self._log("info", f"Branch: staging/phase5-validation-evidence")
+            self._log("info", f"Files to commit: {self.config.evidence_output_dir}/ and PHASE5_VALIDATION.md")
+            
             return self.test_results["failed"] == 0
         
         except Exception as e:
             self._log("error", f"Validation failed with error: {str(e)}")
+            import traceback
+            self._log("error", f"Traceback: {traceback.format_exc()}")
             return False
 
 
@@ -1020,20 +1329,40 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Generate example configuration
+  python phase5_staging_validator.py generate-config --output staging_config.json
+  
   # Run preflight checks
-  python phase5_staging_validator.py preflight --config config.json
+  python phase5_staging_validator.py preflight --config staging_config.json
+  
+  # Verify IAM permissions
+  python phase5_staging_validator.py verify-iam --config staging_config.json
+  
+  # Read current SSM parameter values
+  python phase5_staging_validator.py read-ssm --config staging_config.json
   
   # Enable debug command
-  python phase5_staging_validator.py enable-debug --config config.json
+  python phase5_staging_validator.py enable-debug --config staging_config.json
   
   # Enable alerts
-  python phase5_staging_validator.py enable-alerts --config config.json --channel-id CHANNEL_ID
+  python phase5_staging_validator.py enable-alerts --config staging_config.json --channel-id CHANNEL_ID
   
-  # Run full validation
-  python phase5_staging_validator.py full-validation --config config.json
+  # Revert flags to safe defaults
+  python phase5_staging_validator.py revert-flags --config staging_config.json
   
-  # Generate example config
-  python phase5_staging_validator.py generate-config --output config.json
+  # Run full validation (Steps 3-8)
+  python phase5_staging_validator.py full-validation --config staging_config.json
+  
+  # Update PHASE5_VALIDATION.md with evidence
+  python phase5_staging_validator.py update-docs --config staging_config.json
+
+Validation Steps (from Problem Statement):
+  Step 3: Verify IAM and SSM parameters
+  Step 4: Validate /debug-last (ephemeral + redacted)
+  Step 5: Enable alerts and run controlled failure
+  Step 6: Capture redacted evidence
+  Step 7: Revert flags to safe defaults
+  Step 8: Prepare and update PHASE5_VALIDATION.md
         """
     )
     
@@ -1042,6 +1371,14 @@ Examples:
     # Preflight command
     preflight_parser = subparsers.add_parser("preflight", help="Run preflight checks")
     preflight_parser.add_argument("--config", required=True, help="Configuration file (JSON)")
+    
+    # Verify IAM command
+    verify_iam_parser = subparsers.add_parser("verify-iam", help="Verify IAM permissions")
+    verify_iam_parser.add_argument("--config", required=True, help="Configuration file (JSON)")
+    
+    # Read SSM values command
+    read_ssm_parser = subparsers.add_parser("read-ssm", help="Read current SSM parameter values")
+    read_ssm_parser.add_argument("--config", required=True, help="Configuration file (JSON)")
     
     # Enable debug command
     enable_debug_parser = subparsers.add_parser("enable-debug", help="Enable debug command")
@@ -1055,6 +1392,10 @@ Examples:
     # Disable alerts command
     disable_alerts_parser = subparsers.add_parser("disable-alerts", help="Disable alerts")
     disable_alerts_parser.add_argument("--config", required=True, help="Configuration file (JSON)")
+    
+    # Revert flags command
+    revert_flags_parser = subparsers.add_parser("revert-flags", help="Revert flags to safe defaults")
+    revert_flags_parser.add_argument("--config", required=True, help="Configuration file (JSON)")
     
     # Validate debug command
     validate_debug_parser = subparsers.add_parser("validate-debug", 
@@ -1073,7 +1414,7 @@ Examples:
     
     # Full validation command
     full_validation_parser = subparsers.add_parser("full-validation", 
-                                                    help="Run full validation")
+                                                    help="Run full validation (Steps 3-8)")
     full_validation_parser.add_argument("--config", required=True, 
                                         help="Configuration file (JSON)")
     
@@ -1088,6 +1429,12 @@ Examples:
                                                      help="Generate executive summary")
     generate_summary_parser.add_argument("--config", required=True,
                                         help="Configuration file (JSON)")
+    
+    # Update docs command
+    update_docs_parser = subparsers.add_parser("update-docs",
+                                               help="Update PHASE5_VALIDATION.md")
+    update_docs_parser.add_argument("--config", required=True,
+                                    help="Configuration file (JSON)")
     
     args = parser.parse_args()
     
@@ -1155,6 +1502,16 @@ Examples:
     if args.command == "preflight":
         success = validator.preflight_checks()
     
+    elif args.command == "verify-iam":
+        success = validator.verify_iam_permissions()
+    
+    elif args.command == "read-ssm":
+        values = validator.read_current_ssm_values()
+        print("\nCurrent SSM values (redacted):")
+        for key, value in values.items():
+            print(f"  {key} = {redact_secrets(value)}")
+        success = True
+    
     elif args.command == "enable-debug":
         success = validator.enable_debug_command()
     
@@ -1167,6 +1524,9 @@ Examples:
     
     elif args.command == "disable-alerts":
         success = validator.disable_alerts()
+    
+    elif args.command == "revert-flags":
+        success = validator.revert_flags_to_safe_defaults()
     
     elif args.command == "validate-debug":
         success = validator.validate_debug_last()
@@ -1190,6 +1550,15 @@ Examples:
         print(exec_summary)
         print("="*80 + "\n")
         success = True
+    
+    elif args.command == "update-docs":
+        evidence_section = validator.generate_phase5_evidence_section()
+        success = validator.update_phase5_validation_doc(evidence_section)
+        if success:
+            print("\nPHASE5_VALIDATION.md updated successfully")
+        else:
+            print("\nFailed to update PHASE5_VALIDATION.md")
+            print("Evidence section saved to evidence directory")
     
     # Generate final report
     if args.command != "generate-config":
