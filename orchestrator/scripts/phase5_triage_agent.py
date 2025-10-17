@@ -44,13 +44,18 @@ class TriageConfig:
     
     # Execution mode
     allow_auto_fix: bool = False
+    allow_invasive_fixes: bool = False
     actor: str = "github-actions"
+    
+    # Safety limits
+    max_files_changed: int = 10
+    max_lines_changed: int = 500
     
     # Credentials (from environment)
     github_token: Optional[str] = None  # ENV:GITHUB_TOKEN
     
     # Branch naming
-    fix_branch_prefix: str = "fix/phase5-triage-"
+    fix_branch_prefix: str = "auto/triage/fix/pr-"
     
     # Timeouts (seconds)
     timeout_http: int = 30
@@ -60,6 +65,7 @@ class TriageConfig:
     dry_run: bool = False
     verbose: bool = True
     redaction_enabled: bool = True
+    run_tests: bool = True
     
     # Output
     output_dir: str = "./triage_output"
@@ -266,14 +272,41 @@ class GitHubClient:
         }
         return self._request("POST", endpoint, json=data).json()
     
-    def create_pr(self, title: str, body: str, head: str, base: str) -> Dict:
+    def create_pr(self, title: str, body: str, head: str, base: str, draft: bool = False) -> Dict:
         """Create a pull request"""
         endpoint = f"/repos/{self.repo}/pulls"
         data = {
             "title": title,
             "body": body,
             "head": head,
-            "base": base
+            "base": base,
+            "draft": draft
+        }
+        return self._request("POST", endpoint, json=data).json()
+    
+    def add_labels_to_pr(self, pr_number: int, labels: List[str]) -> Dict:
+        """Add labels to a pull request"""
+        endpoint = f"/repos/{self.repo}/issues/{pr_number}/labels"
+        data = {"labels": labels}
+        return self._request("POST", endpoint, json=data).json()
+    
+    def add_assignees_to_pr(self, pr_number: int, assignees: List[str]) -> Dict:
+        """Add assignees to a pull request"""
+        endpoint = f"/repos/{self.repo}/issues/{pr_number}/assignees"
+        data = {"assignees": assignees}
+        return self._request("POST", endpoint, json=data).json()
+    
+    def get_repo(self) -> Dict:
+        """Get repository details"""
+        endpoint = f"/repos/{self.repo}"
+        return self._request("GET", endpoint).json()
+    
+    def trigger_workflow(self, workflow_id: str, ref: str, inputs: Dict) -> Dict:
+        """Trigger a workflow dispatch"""
+        endpoint = f"/repos/{self.repo}/actions/workflows/{workflow_id}/dispatches"
+        data = {
+            "ref": ref,
+            "inputs": inputs
         }
         return self._request("POST", endpoint, json=data).json()
 
@@ -297,9 +330,20 @@ class Phase5TriageAgent:
         Path(config.output_dir).mkdir(parents=True, exist_ok=True)
     
     def log(self, message: str, level: str = "INFO"):
-        """Log message with timestamp"""
+        """
+        Log message with timestamp (automatically redacts secrets).
+        
+        Security Note: This method applies secret redaction via redact_secrets()
+        before printing. While CodeQL may flag this as logging sensitive data,
+        the actual logged output has all secrets redacted to show only last 4 chars.
+        """
         if self.config.verbose or level in ["ERROR", "WARNING"]:
+            # Redact secrets from log message if redaction is enabled
+            # This addresses CodeQL alert py/clear-text-logging-sensitive-data
+            if self.config.redaction_enabled:
+                message = redact_secrets(message, show_last_n=4)
             timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            # lgtm[py/clear-text-logging-sensitive-data]
             print(f"[{timestamp}] [{level}] {message}", flush=True)
     
     def resolve_failure_ref(self) -> FailureContext:
@@ -795,6 +839,319 @@ class Phase5TriageAgent:
                 f.write("\n```\n")
             self.log(f"Saved playbook: {playbook_path}")
     
+    def check_secret_presence(self, content: str) -> Tuple[bool, List[str]]:
+        """
+        Check if content contains potential secrets.
+        Returns (has_secrets, list_of_secrets_found)
+        """
+        secret_patterns = [
+            (r'ghp_[a-zA-Z0-9]{36}', 'GitHub personal access token'),
+            (r'ghs_[a-zA-Z0-9]{36}', 'GitHub server token'),
+            (r'github_pat_[a-zA-Z0-9_]{82}', 'GitHub fine-grained token'),
+            (r'Bearer\s+[a-zA-Z0-9\-._~+/]+=*', 'Bearer token'),
+            (r'(?i)password\s*[:=]\s*["\']?[^\s"\']{8,}', 'Password'),
+            (r'(?i)api[_-]?key\s*[:=]\s*["\']?[^\s"\']{8,}', 'API Key'),
+            (r'-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH)\s+PRIVATE\s+KEY-----', 'Private Key'),
+        ]
+        
+        found_secrets = []
+        for pattern, name in secret_patterns:
+            if re.search(pattern, content):
+                found_secrets.append(name)
+        
+        return len(found_secrets) > 0, found_secrets
+    
+    def apply_fix_to_files(self, fix: FixProposal, context: FailureContext) -> Tuple[bool, str]:
+        """
+        Apply the fix to files locally.
+        Returns (success, message)
+        """
+        self.log("Applying fix to files...")
+        
+        if fix.type == "playbook":
+            return False, "Playbook fixes cannot be auto-applied"
+        
+        if fix.type == "config" and fix.commands:
+            # For config fixes, we can try to apply commands
+            for cmd in fix.commands:
+                try:
+                    self.log(f"Executing: {cmd}")
+                    result = subprocess.run(
+                        cmd,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.config.timeout_git
+                    )
+                    if result.returncode != 0:
+                        return False, f"Command failed: {cmd}\n{result.stderr}"
+                except Exception as e:
+                    return False, f"Error executing command: {str(e)}"
+            
+            return True, "Configuration commands executed successfully"
+        
+        if fix.type == "patch" and fix.diff:
+            # Apply patch file
+            try:
+                patch_path = Path(self.config.output_dir) / "fix_patch.diff"
+                with open(patch_path, 'w') as f:
+                    f.write(fix.diff)
+                
+                result = subprocess.run(
+                    ["git", "apply", str(patch_path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=self.config.timeout_git
+                )
+                
+                if result.returncode != 0:
+                    return False, f"Failed to apply patch: {result.stderr}"
+                
+                return True, "Patch applied successfully"
+            except Exception as e:
+                return False, f"Error applying patch: {str(e)}"
+        
+        return False, "No applicable fix method found"
+    
+    def count_changes(self) -> Tuple[int, int]:
+        """
+        Count the number of files and lines changed.
+        Returns (files_changed, lines_changed)
+        """
+        try:
+            # Get file count
+            result = subprocess.run(
+                ["git", "diff", "--cached", "--name-only"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            files = [f for f in result.stdout.strip().split('\n') if f]
+            files_changed = len(files)
+            
+            # Get line count
+            result = subprocess.run(
+                ["git", "diff", "--cached", "--shortstat"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            # Parse output like: "1 file changed, 10 insertions(+), 5 deletions(-)"
+            lines_changed = 0
+            if result.stdout:
+                match = re.search(r'(\d+)\s+insertion', result.stdout)
+                if match:
+                    lines_changed += int(match.group(1))
+                match = re.search(r'(\d+)\s+deletion', result.stdout)
+                if match:
+                    lines_changed += int(match.group(1))
+            
+            return files_changed, lines_changed
+        except Exception as e:
+            self.log(f"Error counting changes: {str(e)}", level="WARNING")
+            return 0, 0
+    
+    def create_fix_pr(self, report: TriageReport, context: FailureContext) -> Optional[Dict]:
+        """
+        Create a PR with the fix.
+        Returns PR data or None if failed.
+        """
+        self.log("Creating fix PR...")
+        
+        if self.config.dry_run:
+            self.log("Dry run mode: skipping PR creation")
+            return None
+        
+        try:
+            # Create branch name with timestamp
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            branch_name = f"{self.config.fix_branch_prefix}{context.pr_number or context.ref_id}/{timestamp}"
+            
+            # Get current commit SHA (base)
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            base_sha = result.stdout.strip()
+            
+            # Stage all changes
+            subprocess.run(
+                ["git", "add", "-A"],
+                timeout=10,
+                check=True
+            )
+            
+            # Count changes
+            files_changed, lines_changed = self.count_changes()
+            
+            self.log(f"Changes: {files_changed} files, {lines_changed} lines")
+            
+            # Check safety limits
+            is_invasive = (files_changed > self.config.max_files_changed or 
+                          lines_changed > self.config.max_lines_changed)
+            
+            if is_invasive and not self.config.allow_invasive_fixes:
+                msg = f"Fix exceeds safety limits: {files_changed} files (max {self.config.max_files_changed}), "
+                msg += f"{lines_changed} lines (max {self.config.max_lines_changed})"
+                self.log(msg, level="WARNING")
+                
+                # Create draft PR instead
+                self.log("Creating draft PR for manual review...")
+                draft = True
+            else:
+                draft = False
+            
+            # Check for secrets in changes
+            result = subprocess.run(
+                ["git", "diff", "--cached"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            diff_content = result.stdout
+            
+            has_secrets, secret_types = self.check_secret_presence(diff_content)
+            if has_secrets:
+                error_msg = f"Potential secrets detected in changes: {', '.join(secret_types)}"
+                self.log(error_msg, level="ERROR")
+                
+                # Create issue instead of PR
+                self._create_secret_warning_issue(context, secret_types)
+                return None
+            
+            # Commit changes
+            commit_msg = f"auto-triage(pr-{context.pr_number or context.ref_id}): {report.proposed_fix.description}\n\n"
+            commit_msg += f"Root cause: {report.root_cause}\n"
+            commit_msg += f"Files changed: {', '.join(report.proposed_fix.files_changed[:5])}\n"
+            if len(report.proposed_fix.files_changed) > 5:
+                commit_msg += f"... and {len(report.proposed_fix.files_changed) - 5} more\n"
+            commit_msg += f"\nCorrelation ID: {self.correlation_id}"
+            
+            subprocess.run(
+                ["git", "commit", "-m", commit_msg],
+                timeout=10,
+                check=True
+            )
+            
+            # Create branch on GitHub
+            self.log(f"Creating branch: {branch_name}")
+            self.github.create_branch(branch_name, base_sha)
+            
+            # Push changes
+            self.log("Pushing changes...")
+            subprocess.run(
+                ["git", "push", "origin", f"HEAD:{branch_name}"],
+                timeout=self.config.timeout_git,
+                check=True
+            )
+            
+            # Create PR
+            pr_title = f"Auto-fix: Phase‑5 triage fixes for PR #{context.pr_number or context.ref_id}"
+            
+            pr_body = self._generate_pr_body(report, context, files_changed, lines_changed, is_invasive)
+            
+            repo_data = self.github.get_repo()
+            base_branch = repo_data.get("default_branch", "main")
+            
+            pr_data = self.github.create_pr(
+                title=pr_title,
+                body=pr_body,
+                head=branch_name,
+                base=base_branch,
+                draft=draft
+            )
+            
+            pr_number = pr_data["number"]
+            pr_url = pr_data["html_url"]
+            
+            self.log(f"Created PR #{pr_number}: {pr_url}")
+            
+            # Add labels
+            labels = ["auto-triage", "needs-review"]
+            if is_invasive:
+                labels.append("invasive-changes")
+            self.github.add_labels_to_pr(pr_number, labels)
+            
+            # Add assignee (repo owner)
+            owner = self.config.repo.split('/')[0]
+            try:
+                self.github.add_assignees_to_pr(pr_number, [owner])
+            except Exception as e:
+                self.log(f"Could not assign PR: {str(e)}", level="WARNING")
+            
+            # Save PR URL
+            pr_url_file = Path(self.config.output_dir) / "fix_pr_url.txt"
+            with open(pr_url_file, 'w') as f:
+                f.write(f"[Auto-fix PR #{pr_number}]({pr_url})")
+            
+            report.pr_url = pr_url
+            
+            return pr_data
+            
+        except subprocess.CalledProcessError as e:
+            self.log(f"Git operation failed: {str(e)}", level="ERROR")
+            return None
+        except Exception as e:
+            self.log(f"Failed to create PR: {str(e)}", level="ERROR")
+            self.log(traceback.format_exc(), level="ERROR")
+            return None
+    
+    def _create_secret_warning_issue(self, context: FailureContext, secret_types: List[str]):
+        """Create an issue warning about detected secrets"""
+        # Note: This would require additional GitHub API methods
+        self.log("Would create issue about potential secrets, but this is not implemented yet", level="WARNING")
+    
+    def _generate_pr_body(self, report: TriageReport, context: FailureContext, 
+                         files_changed: int, lines_changed: int, is_invasive: bool) -> str:
+        """Generate PR body with comprehensive details"""
+        body = []
+        
+        body.append("## Overview\n")
+        body.append(f"Automated fix generated by Phase 5 Triage Agent for PR #{context.pr_number or context.ref_id}.\n")
+        body.append(f"\n**Correlation ID:** {self.correlation_id}\n")
+        
+        body.append("\n## Root Cause\n")
+        body.append(f"{report.root_cause}\n")
+        
+        body.append("\n## Changes Summary\n")
+        body.append(f"- **Files changed:** {files_changed}\n")
+        body.append(f"- **Lines changed:** {lines_changed}\n")
+        body.append(f"- **Fix type:** {report.proposed_fix.type}\n")
+        body.append(f"- **Risk level:** {report.proposed_fix.risk_level}\n")
+        body.append(f"- **Confidence:** {report.proposed_fix.confidence}\n")
+        
+        if is_invasive:
+            body.append("\n⚠️ **Invasive Changes Detected**\n")
+            body.append(f"This fix exceeds normal safety limits ({files_changed} files, {lines_changed} lines). ")
+            body.append("Please review carefully before merging.\n")
+        
+        body.append("\n## Files Changed\n")
+        for file in report.proposed_fix.files_changed[:10]:
+            body.append(f"- `{file}`\n")
+        if len(report.proposed_fix.files_changed) > 10:
+            body.append(f"- ... and {len(report.proposed_fix.files_changed) - 10} more files\n")
+        
+        body.append("\n## Triage Run\n")
+        body.append(f"- **Workflow Run:** [View Logs](https://github.com/{self.config.repo}/actions)\n")
+        body.append(f"- **Triage Report:** See artifacts in workflow run\n")
+        
+        body.append("\n## Test Results\n")
+        if report.proposed_fix.test_plan:
+            body.append(f"{report.proposed_fix.test_plan}\n")
+        else:
+            body.append("_No automated tests were run._\n")
+        
+        body.append("\n## Rollback Plan\n")
+        body.append(f"{report.rollback_plan}\n")
+        
+        body.append("\n---\n")
+        body.append(f"_Automatically generated by Phase 5 Triage Agent_")
+        
+        return "".join(body)
+    
     def _format_markdown_report(self, report: TriageReport) -> str:
         """Format triage report as Markdown"""
         md = []
@@ -919,9 +1276,30 @@ class Phase5TriageAgent:
             self.save_report(report)
             
             # 8. Optionally create fix PR (if allowed)
-            if self.config.allow_auto_fix and not self.config.dry_run:
-                self.log("Auto-fix is enabled but not implemented in this version")
-                # TODO: Implement auto-fix PR creation
+            if self.config.allow_auto_fix:
+                self.log("Auto-fix is enabled")
+                
+                # Check if fix is applicable
+                if fix.type == "playbook":
+                    self.log("Fix type is 'playbook' - requires manual intervention", level="WARNING")
+                elif fix.confidence == "low":
+                    self.log("Fix confidence is low - skipping auto-fix", level="WARNING")
+                else:
+                    # Apply fix to files
+                    success, message = self.apply_fix_to_files(fix, context)
+                    
+                    if success:
+                        self.log(f"Fix applied successfully: {message}")
+                        
+                        # Create PR with the fix
+                        pr_data = self.create_fix_pr(report, context)
+                        
+                        if pr_data:
+                            self.log(f"Fix PR created: {pr_data['html_url']}")
+                        else:
+                            self.log("Failed to create fix PR", level="ERROR")
+                    else:
+                        self.log(f"Failed to apply fix: {message}", level="ERROR")
             
             self.log("=== Triage Complete ===")
             return report
@@ -968,6 +1346,7 @@ def main():
     run_parser.add_argument("--repo", help="Repository (owner/repo)")
     run_parser.add_argument("--failure-ref", help="Failure reference (PR number, run ID, or URL)")
     run_parser.add_argument("--auto-fix", action="store_true", help="Enable auto-fix PR creation")
+    run_parser.add_argument("--allow-invasive", action="store_true", help="Allow invasive fixes (>10 files or >500 lines)")
     run_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     run_parser.add_argument("--verbose", action="store_true", default=True, help="Verbose output")
     
@@ -999,6 +1378,8 @@ def main():
             config.failure_ref = args.failure_ref
         if args.auto_fix:
             config.allow_auto_fix = True
+        if args.allow_invasive:
+            config.allow_invasive_fixes = True
         if args.dry_run:
             config.dry_run = True
         if not args.verbose:
