@@ -1,0 +1,38 @@
+{
+  "repo": "gcolon75/Project-Valine",
+  "base_ref": "main",
+  "staging": {
+    "urls": [
+      "https://staging.example.com",
+      "https://staging.example.com/api/health"
+    ],
+    "region": "us-west-2"
+  },
+  "github": {
+    "token": "ENV:GITHUB_TOKEN",
+    "workflows": []
+  },
+  "discord": {
+    "bot_token": "ENV:DISCORD_BOT_TOKEN",
+    "app_id": "ENV:DISCORD_APP_ID",
+    "guild_id": "ENV:DISCORD_GUILD_ID_STAGING"
+  },
+  "aws": {
+    "region": "us-west-2",
+    "ssm_prefix": "/valine/staging/",
+    "log_group": "/aws/lambda/pv-api-prod-api",
+    "lambda_function": "pv-api-prod-api"
+  },
+  "timeouts": {
+    "action_dispatch": 600000,
+    "http": 15000,
+    "discord_propagation": 60000
+  },
+  "flags": {
+    "dry_run": false,
+    "verbose": true,
+    "redaction_enabled": true
+  },
+  "evidence_output_dir": "./validation_evidence",
+  "correlation_id_prefix": "SUPER-AGENT"
+}
