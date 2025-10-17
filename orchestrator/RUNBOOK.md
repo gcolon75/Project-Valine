@@ -24,6 +24,7 @@ This runbook provides guidance for handling failures, finding logs, diagnosing i
 | `ADMIN_USER_IDS` | None | Comma-separated Discord user IDs with admin access |
 | `ADMIN_ROLE_IDS` | None | Comma-separated Discord role IDs with admin access |
 | `ALLOW_SECRET_WRITES` | `false` | Allow updating repository secrets/variables |
+| `AUDIT_TABLE_NAME` | `valine-orchestrator-audit-dev` | DynamoDB table for relay command audit trail |
 
 ### Quick Commands
 
@@ -36,6 +37,9 @@ aws logs tail /aws/lambda/valine-orchestrator-github-dev --follow
 
 # Query DynamoDB for runs
 aws dynamodb scan --table-name valine-orchestrator-runs-dev
+
+# Query relay audit trail
+aws dynamodb scan --table-name valine-orchestrator-audit-dev
 
 # Check recent workflow runs
 gh run list --repo gcolon75/Project-Valine --limit 10
@@ -101,6 +105,107 @@ All logs follow this JSON structure:
 - CloudWatch logs are retained for 30 days by default
 - Configure longer retention in CloudWatch Logs console if needed
 - Consider exporting to S3 for long-term storage
+
+### Investigating Relay Operations
+
+The orchestrator provides `/relay-send` and `/relay-dm` commands for owner communication via Discord. All relay operations create audit records for non-repudiation.
+
+#### Query Audit Trail by Audit ID
+
+When a relay command succeeds, it returns an audit ID. Use this to find the audit record:
+
+```bash
+# Get specific audit record
+aws dynamodb get-item --table-name valine-orchestrator-audit-dev \
+  --key '{"audit_id": {"S": "audit-id-from-command"}}'
+```
+
+#### Query User's Relay History
+
+Find all relay operations by a specific user:
+
+```bash
+# Scan for user's audits (note: less efficient, consider adding GSI in production)
+aws dynamodb scan --table-name valine-orchestrator-audit-dev \
+  --filter-expression "user_id = :uid" \
+  --expression-attribute-values '{":uid": {"S": "discord-user-id"}}' \
+  --limit 20
+```
+
+#### Find Logs by Trace ID
+
+Each relay operation has a trace_id for correlation with CloudWatch logs:
+
+```bash
+# CloudWatch Insights query
+aws logs start-query \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --start-time $(date -d '1 hour ago' +%s) \
+  --end-time $(date +%s) \
+  --query-string 'fields @timestamp, level, msg, user_id, audit_id | filter trace_id = "trace-id-here" | sort @timestamp asc'
+
+# Get query results (use query ID from above)
+aws logs get-query-results --query-id <query-id>
+```
+
+#### Audit Record Structure
+
+Each audit record contains:
+
+| Field | Description |
+|-------|-------------|
+| `audit_id` | Unique UUID for the operation |
+| `trace_id` | Trace ID for log correlation |
+| `user_id` | Discord user ID who issued command |
+| `command` | Command name (`/relay-send` or `/relay-dm`) |
+| `target_channel` | Target Discord channel ID |
+| `message_fingerprint` | Last 4 chars of SHA256 hash (e.g., `…abcd`) |
+| `timestamp` | Unix timestamp of operation |
+| `result` | Operation result (`posted`, `blocked`, `failed`) |
+| `metadata` | Additional context (username, message_id, etc.) |
+| `moderator_approval` | (Optional) Moderator approval ID |
+
+#### Example: Investigating Unauthorized Attempt
+
+```bash
+# 1. Find unauthorized attempts in logs
+aws logs filter-log-events \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --filter-pattern '"Unauthorized relay"' \
+  --start-time $(date -d '24 hours ago' +%s000)
+
+# 2. Extract trace_id from log entry
+# Look for: "trace_id": "abc123..."
+
+# 3. Get full trace details
+aws logs start-query \
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+  --start-time $(date -d '24 hours ago' +%s) \
+  --end-time $(date +%s) \
+  --query-string 'fields @timestamp, level, msg, user_id, cmd | filter trace_id = "abc123..." | sort @timestamp asc'
+```
+
+#### Example: Verify Message Posted Successfully
+
+```bash
+# 1. Get audit record
+AUDIT_ID="audit-id-from-command"
+aws dynamodb get-item --table-name valine-orchestrator-audit-dev \
+  --key "{\"audit_id\": {\"S\": \"$AUDIT_ID\"}}" \
+  --query 'Item.{user:user_id.S,channel:target_channel.S,result:result.S,fingerprint:message_fingerprint.S,time:timestamp.N}'
+
+# 2. Verify result is "posted"
+# 3. Check message_id in metadata
+# 4. Verify fingerprint matches expected value
+```
+
+#### Security Notes
+
+- Audit records **never** store the full message text
+- Only message fingerprint (last 4 chars of SHA256 hash) is recorded
+- Audit records are immutable once created
+- Consider adding DynamoDB TTL for automatic cleanup after retention period
+- For high-security environments, consider adding a GSI on user_id for efficient queries
 
 ## Common Failures
 
@@ -168,7 +273,94 @@ gh api repos/gcolon75/Project-Valine/actions/workflows \
 - Validate workflow YAML syntax
 - Check repository workflow permissions
 
-### 3. Alert Not Sent
+### 3. Relay Command Blocked (Not Authorized)
+
+**Symptom:** `/relay-send` or `/relay-dm` returns "Not allowed (admin only)" or "owner only"
+
+**Possible Causes:**
+- User not in ADMIN_USER_IDS
+- User doesn't have a role in ADMIN_ROLE_IDS
+- Environment variables not configured
+
+**Diagnosis:**
+1. Check user ID from Discord (right-click user > Copy ID)
+2. Verify admin configuration:
+   ```bash
+   aws lambda get-function-configuration \
+     --function-name valine-orchestrator-discord-dev \
+     --query 'Environment.Variables.{ADMIN_USER_IDS:ADMIN_USER_IDS,ADMIN_ROLE_IDS:ADMIN_ROLE_IDS}'
+   ```
+3. Check logs for "Unauthorized relay" message with user_id
+
+**Resolution:**
+```bash
+# Add user to admin list
+aws lambda update-function-configuration \
+  --function-name valine-orchestrator-discord-dev \
+  --environment "Variables={ADMIN_USER_IDS=existing_ids,new_user_id,...}"
+
+# Or add admin role
+aws lambda update-function-configuration \
+  --function-name valine-orchestrator-discord-dev \
+  --environment "Variables={ADMIN_ROLE_IDS=role_id_1,role_id_2,...}"
+```
+
+**Fix:**
+- Add user ID to ADMIN_USER_IDS in Lambda environment variables
+- Or grant user an admin role from ADMIN_ROLE_IDS
+- Verify user has the role in Discord (Server Settings > Roles)
+
+### 4. Relay Command Requires Confirmation
+
+**Symptom:** `/relay-send` returns "Confirmation required. Add confirm:true"
+
+**Cause:**
+- Two-step confirmation is required for all relay operations
+
+**Resolution:**
+- Re-run command with `confirm:true` parameter:
+  ```
+  /relay-send channel_id:123 message:"text" confirm:true
+  ```
+
+**Note:** This is a security feature, not a bug. Confirmation prevents accidental posts.
+
+### 5. Relay Post Failed (Message Not Sent)
+
+**Symptom:** Command returns "Failed to post message to channel"
+
+**Possible Causes:**
+- Bot doesn't have permission in target channel
+- Invalid channel ID
+- Discord API error
+
+**Diagnosis:**
+1. Get audit record to verify target channel:
+   ```bash
+   aws dynamodb get-item --table-name valine-orchestrator-audit-dev \
+     --key '{"audit_id": {"S": "audit-id-here"}}'
+   ```
+2. Check audit record result field (should be "failed")
+3. Check logs for Discord API error
+
+**Resolution:**
+```bash
+# Verify bot has access to channel
+# (In Discord: Server Settings > Integrations > Bots)
+
+# Check bot permissions in channel
+# (Channel Settings > Permissions > Bot Role)
+
+# Test with known-good channel first
+/relay-send channel_id:test-channel-id message:"test" confirm:true
+```
+
+**Fix:**
+- Grant bot "Send Messages" permission in target channel
+- Verify channel ID is correct (right-click channel > Copy ID)
+- Check bot is not blocked or rate-limited by Discord
+
+### 6. Alert Not Sent
 
 **Symptom:** Critical failure but no Discord alert
 
