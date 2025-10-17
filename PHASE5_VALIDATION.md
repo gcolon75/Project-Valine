@@ -1033,3 +1033,284 @@ Trace ID: def456gh-789i-012j-klm3-nopqrstuvwxy
 - Date: [YYYY-MM-DD]
 - Approved by: [NAME]
 - Deployment link: [SAM_DEPLOY_LOG]
+
+---
+
+## Phase 5 Staging Validation Double-Check (Post-PR #49)
+
+**Status:** ⏳ In Progress  
+**Date:** 2025-10-17  
+**Validator:** Phase 5 Staging Validation Double-Check Agent  
+**PR Reviewed:** #49 - Phase 5 Staging Validation Runner Implementation
+
+### Overview
+
+This section documents the double-check validation performed after PR #49 was merged. The validation confirms that the Phase 5 staging validator and all observability features work end-to-end in the actual staging environment.
+
+### Validation Configuration
+
+- **AWS Region:** us-west-2
+- **SSM Parameter Path:** `/valine/staging/`
+- **CloudWatch Log Group:** `/aws/lambda/pv-api-prod-api`
+- **Staging Alert Channel:** `1428102811832553554`
+- **Correlation ID Prefix:** `STG-PHASE5`
+
+### Acceptance Criteria Checklist
+
+#### 1. IAM/Permissions ⏳
+- [ ] Can Get/Put SSM under `/valine/staging/*`
+- [ ] Can read logs from `/aws/lambda/pv-api-prod-api`
+- [ ] IAM verification tests passed
+- **Status:** Pending validation
+- **Evidence:** To be collected
+
+#### 2. Flags Baseline Match ⏳
+- [ ] `ENABLE_DEBUG_CMD = true` (verified)
+- [ ] `ENABLE_ALERTS = false` (verified)
+- [ ] `ALERT_CHANNEL_ID = 1428102811832553554` (verified)
+- **Status:** Pending validation
+- **Before Values:**
+  ```json
+  {
+    "ENABLE_DEBUG_CMD": "???",
+    "ENABLE_ALERTS": "???",
+    "ALERT_CHANNEL_ID": "???"
+  }
+  ```
+- **After Values:**
+  ```json
+  {
+    "ENABLE_DEBUG_CMD": "true",
+    "ENABLE_ALERTS": "false",
+    "ALERT_CHANNEL_ID": "1428102811832553554"
+  }
+  ```
+
+#### 3. /debug-last Works in Staging ⏳
+- [ ] Response is ephemeral (only visible to invoker)
+- [ ] Secrets are redacted (***last4 format)
+- [ ] Contains trace_id for correlation
+- [ ] Shows step timings
+- [ ] Output within Discord limits
+- **Status:** Pending validation
+- **Test Procedure:**
+  1. Execute `/diagnose` command in staging
+  2. Immediately run `/debug-last`
+  3. Verify ephemeral response
+  4. Confirm secret redaction
+  5. Capture trace_id
+- **Evidence:** See transcript below
+
+**Sample /debug-last Output (Redacted):**
+```
+To be collected during validation...
+```
+
+#### 4. Alerts Test ⏳
+- [ ] Single controlled failure posts exactly one alert
+- [ ] Alert contains severity emoji
+- [ ] Alert includes brief cause message
+- [ ] Alert shows trace_id
+- [ ] Alert has links (run, logs)
+- [ ] Dedupe prevents repeats within 5-minute window
+- [ ] Alert posted to staging channel only (1428102811832553554)
+- **Status:** Pending validation
+- **Test Procedure:**
+  1. Enable alerts: `ENABLE_ALERTS=true`
+  2. Trigger controlled failure
+  3. Verify single alert posted
+  4. Record alert details
+  5. Trigger same failure again
+  6. Confirm dedupe suppression
+- **Evidence:** See alert text below
+
+**Sample Alert (Redacted):**
+```
+To be collected during validation...
+```
+
+**Dedupe Test Results:**
+- First alert: Posted at `[TIMESTAMP]`
+- Second alert: Suppressed (within 5-min window) ✅
+- Third alert: Posted at `[TIMESTAMP]` (after 6+ minutes) ✅
+
+#### 5. Evidence Captured with Redaction ⏳
+- [ ] Discord alert text captured (secrets redacted)
+- [ ] CloudWatch logs collected (filtered by trace_id)
+- [ ] /debug-last transcript saved (secrets redacted)
+- [ ] All evidence shows only last 4 chars of secrets (***abcd)
+- **Status:** Pending validation
+- **Evidence Location:** `orchestrator/scripts/validation_evidence/`
+
+**CloudWatch Log Sample (Redacted):**
+```json
+To be collected during validation...
+```
+
+#### 6. Flags Reverted to Safe Defaults ⏳
+- [ ] `ENABLE_ALERTS = false` (verified)
+- [ ] `ENABLE_DEBUG_CMD = false` (optional, or left at true for staging)
+- [ ] Verified via SSM GetParameter
+- **Status:** Pending validation
+- **Final Values:**
+  ```json
+  {
+    "ENABLE_DEBUG_CMD": "???",
+    "ENABLE_ALERTS": "false"
+  }
+  ```
+
+#### 7. PHASE5_VALIDATION.md Updated ⏳
+- [ ] Evidence section added
+- [ ] Acceptance checklist included
+- [ ] Documentation PR opened
+- **Status:** This document is being updated now
+- **PR Branch:** `staging/phase5-validation-evidence`
+
+### Validation Execution
+
+**Execution Method:** 
+- [ ] GitHub Actions workflow
+- [ ] Local execution with AWS credentials
+- [ ] Manual validation
+
+**Workflow Run:** (if using GitHub Actions)
+- Run ID: `___________`
+- Run Number: `___________`
+- Triggered by: `___________`
+- Date: `YYYY-MM-DD HH:MM:SS UTC`
+
+**Manual Execution Notes:**
+```
+To be filled in during validation...
+```
+
+### Evidence Summary
+
+#### CloudWatch Logs Evidence
+
+**Trace ID:** `___________`
+**Correlation ID:** `___________`
+**Log Group:** `/aws/lambda/pv-api-prod-api`
+
+**Query Used:**
+```sql
+fields @timestamp, level, fn, msg, trace_id
+| filter trace_id = "TRACE_ID_HERE"
+| sort @timestamp asc
+```
+
+**Sample Logs (Redacted):**
+```json
+To be collected during validation...
+```
+
+#### Discord Alert Evidence
+
+**Channel:** 1428102811832553554 (Staging)
+**Alert Count:** `___`
+**Timestamps:**
+- Alert 1: `YYYY-MM-DD HH:MM:SS UTC`
+- Alert 2: Suppressed (dedupe)
+- Alert 3: `YYYY-MM-DD HH:MM:SS UTC`
+
+**Alert Text (Redacted):**
+```
+To be collected during validation...
+```
+
+#### /debug-last Evidence
+
+**Command Executed:** `/diagnose`
+**Debug Command:** `/debug-last`
+**Trace ID:** `___________`
+**User ID (Redacted):** `***____`
+
+**Transcript (Redacted):**
+```
+To be collected during validation...
+```
+
+### Issues and Resolutions
+
+**Issues Encountered:**
+- None yet
+
+**Resolutions Applied:**
+- N/A
+
+### Recommendations
+
+Based on the validation results:
+
+1. **IAM Permissions:**
+   - Recommendation: TBD
+
+2. **Feature Flag Configuration:**
+   - Recommendation: TBD
+
+3. **Redaction Patterns:**
+   - Recommendation: TBD
+
+4. **Dedupe Timing:**
+   - Recommendation: TBD
+
+### TL;DR Summary
+
+**Status:** ⏳ Validation in progress
+
+**Quick Summary:**
+- PR #49 implementation review: ✅ Complete
+- Validation setup: ✅ Complete
+- IAM/permissions check: ⏳ Pending
+- /debug-last validation: ⏳ Pending
+- Alerts validation: ⏳ Pending
+- Evidence collection: ⏳ Pending
+- Flags reverted: ⏳ Pending
+- Documentation updated: 🔄 In progress
+
+**Pass/Fail Checklist:**
+- [ ] ✅ IAM and permissions verified
+- [ ] ✅ Baseline flags match specification
+- [ ] ✅ /debug-last works (ephemeral + redacted)
+- [ ] ✅ Alerts work with dedupe
+- [ ] ✅ Evidence collected with redaction
+- [ ] ✅ Flags reverted safely
+- [ ] ✅ Documentation updated
+
+**Overall Status:** ⏳ PENDING - Awaiting AWS credentials to execute validation
+
+### Operator Sign-off
+
+**Validation Completed By:**
+- Name: `___________`
+- Role: `___________`
+- Date: `YYYY-MM-DD`
+
+**Signature:**
+```
+I certify that:
+- All acceptance criteria have been verified
+- Evidence has been collected and reviewed
+- All secrets are properly redacted
+- Staging flags have been reverted to safe defaults
+- No production channels were affected
+- Validation followed the specified procedure
+
+Signed: ___________
+Date: ___________
+```
+
+**Approvals Required:**
+- [ ] Technical Lead
+- [ ] SRE/Operations
+- [ ] Security Review
+
+### Next Steps
+
+1. Execute validation using GitHub Actions workflow or local runner
+2. Collect and review all evidence
+3. Complete acceptance checklist
+4. Sign off on validation
+5. Merge documentation PR
+6. Plan production rollout based on results

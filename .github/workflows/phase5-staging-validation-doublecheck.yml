@@ -1,0 +1,238 @@
+name: Phase 5 Staging Validation Double-Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      validation_type:
+        description: 'Type of validation to run'
+        required: true
+        default: 'full-validation'
+        type: choice
+        options:
+          - preflight
+          - verify-iam
+          - read-ssm
+          - enable-debug
+          - validate-debug
+          - enable-alerts
+          - validate-alerts
+          - collect-logs
+          - revert-flags
+          - full-validation
+          - update-docs
+      skip_revert:
+        description: 'Skip reverting flags to safe defaults'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AWS_REGION: us-west-2
+  CONFIG_FILE: orchestrator/scripts/staging_config_phase5.json
+
+jobs:
+  validate-phase5-staging:
+    name: Validate Phase 5 in Staging
+    runs-on: ubuntu-latest
+    
+    # Only allow running on main branch or staging branches
+    # if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/staging/')
+    
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: orchestrator
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Phase5-Validation
+      
+      - name: Verify AWS access
+        run: |
+          aws sts get-caller-identity
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+      
+      - name: Set environment variables from secrets
+        run: |
+          echo "STAGING_DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "STAGING_GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "STAGING_DISCORD_PUBLIC_KEY=${{ vars.STAGING_DISCORD_PUBLIC_KEY }}" >> $GITHUB_ENV
+          echo "STAGING_DISCORD_APPLICATION_ID=${{ vars.STAGING_DISCORD_APPLICATION_ID }}" >> $GITHUB_ENV
+      
+      - name: Run preflight checks
+        if: inputs.validation_type == 'preflight' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py preflight --config staging_config_phase5.json
+      
+      - name: Verify IAM permissions
+        if: inputs.validation_type == 'verify-iam' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py verify-iam --config staging_config_phase5.json
+      
+      - name: Read current SSM values
+        if: inputs.validation_type == 'read-ssm' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py read-ssm --config staging_config_phase5.json
+      
+      - name: Enable debug command
+        if: inputs.validation_type == 'enable-debug' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py enable-debug --config staging_config_phase5.json
+      
+      - name: Validate /debug-last command
+        if: inputs.validation_type == 'validate-debug' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py validate-debug --config staging_config_phase5.json
+      
+      - name: Enable alerts
+        if: inputs.validation_type == 'enable-alerts' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py enable-alerts --config staging_config_phase5.json \
+            --channel-id 1428102811832553554
+      
+      - name: Validate alerts
+        if: inputs.validation_type == 'validate-alerts' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py validate-alerts --config staging_config_phase5.json
+      
+      - name: Collect CloudWatch logs
+        if: inputs.validation_type == 'collect-logs' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py collect-logs --config staging_config_phase5.json
+      
+      - name: Revert flags to safe defaults
+        if: (inputs.validation_type == 'revert-flags' || inputs.validation_type == 'full-validation') && !inputs.skip_revert
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py revert-flags --config staging_config_phase5.json
+      
+      - name: Update PHASE5_VALIDATION.md
+        if: inputs.validation_type == 'update-docs' || inputs.validation_type == 'full-validation'
+        working-directory: orchestrator/scripts
+        run: |
+          python phase5_staging_validator.py update-docs --config staging_config_phase5.json
+      
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-validation-evidence-${{ github.run_number }}
+          path: |
+            orchestrator/scripts/validation_evidence/**/*
+            orchestrator/scripts/*.log
+            orchestrator/scripts/validation_report_*.md
+            orchestrator/scripts/executive_summary_*.md
+          retention-days: 90
+      
+      - name: Create evidence branch and PR
+        if: inputs.validation_type == 'full-validation' && success()
+        run: |
+          # Configure git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Create new branch for evidence
+          BRANCH_NAME="staging/phase5-validation-evidence-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Add validation evidence
+          git add orchestrator/scripts/validation_evidence/
+          git add PHASE5_VALIDATION.md || true
+          
+          # Commit changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Phase 5 staging validation evidence - Run ${{ github.run_number }}"
+            git push origin "$BRANCH_NAME"
+            
+            # Create PR using GitHub CLI
+            gh pr create \
+              --title "Phase 5 Staging Validation Evidence - Run ${{ github.run_number }}" \
+              --body "Automated Phase 5 staging validation evidence from workflow run ${{ github.run_number }}.
+
+## Summary
+
+This PR contains validation evidence for Phase 5 observability features in staging:
+
+- IAM permissions verification
+- SSM parameter baseline checks
+- /debug-last command validation
+- Alerts validation with dedupe testing
+- CloudWatch logs collection (redacted)
+- Feature flags reverted to safe defaults
+
+## Evidence
+
+See \`orchestrator/scripts/validation_evidence/\` directory for:
+- CloudWatch log snippets (filtered by trace_id)
+- Alert messages (redacted)
+- /debug-last transcripts (redacted)
+- Validation reports
+- Executive summary
+
+## Workflow Run
+
+- Run ID: ${{ github.run_id }}
+- Run Number: ${{ github.run_number }}
+- Triggered by: ${{ github.actor }}
+- Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+## Next Steps
+
+1. Review evidence for completeness
+2. Verify all acceptance criteria are met
+3. Sign off on staging validation
+4. Proceed with production rollout if approved" \
+              --base main \
+              --head "$BRANCH_NAME"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Generate workflow summary
+        if: always()
+        run: |
+          echo "# Phase 5 Staging Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Validation Type:** ${{ inputs.validation_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**AWS Account:** ${{ env.AWS_ACCOUNT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Add evidence summary if available
+          if [ -f "orchestrator/scripts/executive_summary_*.md" ]; then
+            echo "## Executive Summary" >> $GITHUB_STEP_SUMMARY
+            cat orchestrator/scripts/executive_summary_*.md >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Validation evidence has been uploaded as workflow artifacts." >> $GITHUB_STEP_SUMMARY

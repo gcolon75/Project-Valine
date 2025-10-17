@@ -1,0 +1,28 @@
+{
+  "staging_deploy_method": "ssm_parameter_store",
+  "aws_region": "us-west-2",
+  "staging_lambda_discord": "pv-api-prod-api",
+  "staging_lambda_github": "pv-api-prod-api",
+  "staging_api_endpoint": "https://api.staging.valine.example.com",
+  "ssm_parameter_prefix": "/valine/staging/",
+  "sam_config_file": null,
+  "sam_stack_name": null,
+  "test_channel_id": "1428102811832553554",
+  "test_user_id": "STAGING_TEST_USER",
+  "discord_bot_token": "ENV:STAGING_DISCORD_BOT_TOKEN",
+  "github_repo": "gcolon75/Project-Valine",
+  "github_token": "ENV:STAGING_GITHUB_TOKEN",
+  "enable_debug_cmd": true,
+  "enable_alerts": false,
+  "alert_channel_id": "1428102811832553554",
+  "log_group_discord": "/aws/lambda/pv-api-prod-api",
+  "log_group_github": "/aws/lambda/pv-api-prod-api",
+  "correlation_id_prefix": "STG-PHASE5",
+  "evidence_output_dir": "./validation_evidence",
+  "require_confirmation_for_production": true,
+  "production_channel_patterns": [
+    "prod",
+    "production",
+    "live"
+  ]
+}
