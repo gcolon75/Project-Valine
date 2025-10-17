@@ -734,6 +734,14 @@ A comprehensive Phase 5 Staging Validator agent has been created to safely valid
 
 **Location:** `orchestrator/scripts/phase5_staging_validator.py`
 
+**Enhancements (Latest Version):**
+- ✅ Multiple deployment methods (Lambda env vars, SSM Parameter Store, SAM deploy)
+- ✅ Automatic secret redaction in all evidence
+- ✅ Executive summary generation for stakeholders
+- ✅ Enhanced production channel safety checks
+- ✅ Support for custom secret key patterns
+- ✅ 33 unit tests covering all functionality
+
 **Quick Start:**
 ```bash
 cd orchestrator/scripts
@@ -760,10 +768,43 @@ python phase5_staging_validator.py full-validation --config staging_config.json
 - ✅ Feature flag management (ENABLE_DEBUG_CMD, ENABLE_ALERTS, ALERT_CHANNEL_ID)
 - ✅ Debug command validation (/debug-last)
 - ✅ Alerts validation with rate-limiting
-- ✅ CloudWatch logs collection
+- ✅ CloudWatch logs collection with automatic redaction
 - ✅ Validation report generation
-- ✅ Safety: Production channel detection
-- ✅ 26 unit tests (all passing)
+- ✅ Executive summary for stakeholders
+- ✅ Safety: Production channel detection and abort behavior
+- ✅ 33 unit tests (all passing)
+
+**Deployment Methods Supported:**
+1. **AWS Lambda Environment Variables** (default)
+   - Direct updates to Lambda function configuration
+   - Fast propagation (~5-10 seconds)
+   - Best for quick testing
+
+2. **AWS Systems Manager Parameter Store**
+   - Centralized configuration management
+   - Audit trail and versioning
+   - Best for compliance requirements
+
+3. **SAM Configuration File**
+   - Updates samconfig.toml
+   - Requires `sam deploy` after changes
+   - Best for infrastructure-as-code workflows
+
+**Secret Redaction:**
+The validator automatically redacts sensitive information in all output:
+- Shows only last 4 characters of secrets
+- Handles GitHub tokens (ghp_, gho_, etc.)
+- Preserves trace IDs for debugging
+- Supports custom secret key patterns
+
+Example:
+```json
+// Before redaction
+{"api_token": "secret12345678", "trace_id": "abc123"}
+
+// After redaction
+{"api_token": "***5678", "trace_id": "abc123"}
+```
 
 ### Running Staging Validation
 

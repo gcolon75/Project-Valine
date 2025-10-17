@@ -4,6 +4,9 @@
   "staging_lambda_discord": "valine-orchestrator-discord-staging",
   "staging_lambda_github": "valine-orchestrator-github-staging",
   "staging_api_endpoint": "https://api.staging.example.com",
+  "ssm_parameter_prefix": null,
+  "sam_config_file": null,
+  "sam_stack_name": null,
   "test_channel_id": "STAGING_CHANNEL_ID",
   "test_user_id": "TEST_USER_ID",
   "discord_bot_token": "ENV:DISCORD_BOT_TOKEN",
@@ -16,5 +19,7 @@
   "log_group_discord": "/aws/lambda/valine-orchestrator-discord-staging",
   "log_group_github": "/aws/lambda/valine-orchestrator-github-staging",
   "correlation_id_prefix": "STG",
-  "evidence_output_dir": "./validation_evidence"
+  "evidence_output_dir": "./validation_evidence",
+  "require_confirmation_for_production": true,
+  "production_channel_patterns": ["prod", "production", "live"]
 }

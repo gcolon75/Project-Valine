@@ -18,25 +18,38 @@ The Phase 5 Staging Validator is a comprehensive agent script that validates Pha
    - Enable/disable debug commands (`ENABLE_DEBUG_CMD`)
    - Enable/disable alerts (`ENABLE_ALERTS`)
    - Configure alert channels (`ALERT_CHANNEL_ID`)
-   - Support for AWS Lambda environment variables
+   - Multiple deployment method support:
+     - AWS Lambda environment variables (default)
+     - AWS Systems Manager Parameter Store
+     - SAM configuration file updates
+     - GitHub repository variables (planned)
 
 2. **Validation Testing**
    - Preflight checks (AWS CLI, configurations, safety checks)
    - Debug command validation (`/debug-last`)
    - Alerts validation with rate-limiting
-   - CloudWatch logs collection
+   - CloudWatch logs collection with automatic redaction
 
 3. **Evidence Collection**
    - Structured JSON logging
    - Test result tracking
-   - CloudWatch log aggregation
+   - CloudWatch log aggregation with redaction
    - Validation report generation
+   - Executive summary for stakeholders
 
 4. **Safety Features**
    - Production channel detection and blocking
    - Required configuration verification
    - Correlation ID tracking for test runs
-   - Redacted evidence in reports
+   - Automatic secret redaction in all evidence
+   - Abort behavior on safety violations
+
+5. **Secret Redaction**
+   - Automatic redaction of tokens, passwords, API keys
+   - Shows only last 4 characters of secrets
+   - Handles nested data structures (dicts, lists, tuples)
+   - Supports custom secret key patterns
+   - Redacts GitHub tokens (ghp_, gho_, etc.)
 
 ### Installation
 
@@ -65,14 +78,50 @@ Edit `staging_config.json` with your actual values:
   "staging_lambda_discord": "valine-orchestrator-discord-staging",
   "staging_lambda_github": "valine-orchestrator-github-staging",
   "staging_api_endpoint": "https://api.staging.example.com",
+  "ssm_parameter_prefix": null,
+  "sam_config_file": null,
+  "sam_stack_name": null,
   "test_channel_id": "STAGING_CHANNEL_ID",
   "test_user_id": "TEST_USER_ID",
   "log_group_discord": "/aws/lambda/valine-orchestrator-discord-staging",
   "log_group_github": "/aws/lambda/valine-orchestrator-github-staging",
   "correlation_id_prefix": "STG",
-  "evidence_output_dir": "./validation_evidence"
+  "evidence_output_dir": "./validation_evidence",
+  "require_confirmation_for_production": true,
+  "production_channel_patterns": ["prod", "production", "live"]
 }
 ```
+
+### Deployment Methods
+
+The validator supports multiple deployment methods for managing feature flags:
+
+#### 1. AWS Lambda Environment Variables (Default)
+Direct updates to Lambda function configuration.
+- **Method:** `aws_parameter_store` or `lambda`
+- **Requirements:** `staging_lambda_discord` configured
+- **Propagation:** ~5-10 seconds
+- **Best for:** Quick testing, small deployments
+
+#### 2. AWS Systems Manager Parameter Store
+Store configuration in SSM Parameter Store.
+- **Method:** `ssm_parameter_store` or `ssm`
+- **Requirements:** `ssm_parameter_prefix` configured
+- **Propagation:** Depends on application polling
+- **Best for:** Centralized configuration, compliance requirements
+
+#### 3. SAM Configuration File
+Update samconfig.toml and trigger deployment.
+- **Method:** `sam_deploy`
+- **Requirements:** `sam_config_file` and `sam_stack_name` configured
+- **Propagation:** Requires `sam deploy` after update
+- **Best for:** Infrastructure-as-code workflows, audit trails
+
+#### 4. GitHub Repository Variables (Planned)
+Manage flags via GitHub Actions variables.
+- **Method:** `github_repo_var`
+- **Requirements:** `github_token` with repo scope
+- **Status:** Not yet implemented
 
 ### Usage
 
@@ -161,8 +210,59 @@ This will:
 4. Disable alerts (safety)
 5. Enable alerts with staging channel
 6. Validate alerts (manual)
-7. Collect CloudWatch logs
+7. Collect CloudWatch logs (with automatic redaction)
 8. Generate validation report
+9. Generate executive summary
+
+#### Generate Executive Summary
+
+Generate an executive summary for stakeholders:
+
+```bash
+python phase5_staging_validator.py generate-summary --config staging_config.json
+```
+
+The executive summary includes:
+- Overall validation status (PASS/FAIL)
+- Test results breakdown
+- Safety check results
+- Next steps and recommendations
+- Links to detailed evidence
+
+### Secret Redaction
+
+The validator automatically redacts sensitive information in all output:
+
+**Automatic Redaction:**
+- Tokens, passwords, API keys, secrets
+- Shows only last 4 characters: `"token12345678"` → `"***5678"`
+- GitHub tokens: `"ghp_1234567890abcdef"` → `"ghp_***"`
+- Discord channel IDs and user IDs
+- Any field with "token", "secret", "password", "key" in the name
+
+**Preserved Information:**
+- Trace IDs (needed for debugging)
+- Correlation IDs (needed for tracking)
+- Usernames and email addresses (non-sensitive)
+- Timestamps and log levels
+
+**Example:**
+```json
+{
+  "username": "john",
+  "api_token": "secret12345678",
+  "trace_id": "abc123de-456f-789g"
+}
+```
+
+Becomes:
+```json
+{
+  "username": "john",
+  "api_token": "***5678",
+  "trace_id": "abc123de-456f-789g"
+}
+```
 
 ### Validation Workflow
 

@@ -15,8 +15,82 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from phase5_staging_validator import (
     ValidationConfig,
     ValidationEvidence,
-    Phase5StagingValidator
+    Phase5StagingValidator,
+    redact_secrets
 )
+
+
+class TestRedactSecrets(unittest.TestCase):
+    """Test redact_secrets function"""
+    
+    def test_redact_dict_with_token(self):
+        """Test redacting dictionary with token"""
+        data = {"username": "john", "api_token": "secret12345678"}
+        result = redact_secrets(data)
+        
+        self.assertEqual(result["username"], "john")
+        self.assertEqual(result["api_token"], "***5678")
+    
+    def test_redact_nested_dict(self):
+        """Test redacting nested dictionary"""
+        data = {
+            "config": {
+                "user": "john",
+                "password": "mypassword123"
+            }
+        }
+        result = redact_secrets(data)
+        
+        self.assertEqual(result["config"]["user"], "john")
+        self.assertEqual(result["config"]["password"], "***d123")
+    
+    def test_redact_list(self):
+        """Test redacting list of items"""
+        data = [
+            {"token": "token1234567890"},
+            {"token": "token0987654321"}
+        ]
+        result = redact_secrets(data)
+        
+        # Each token should be redacted showing last 4 chars
+        self.assertEqual(result[0]["token"], "***7890")
+        self.assertEqual(result[1]["token"], "***4321")
+    
+    def test_redact_github_token_pattern(self):
+        """Test redacting GitHub token pattern"""
+        data = "Authorization: Bearer ghp_1234567890abcdefghijklmnopqrstuv"
+        result = redact_secrets(data)
+        
+        # GitHub token should be redacted
+        self.assertIn("***", result)
+        self.assertNotIn("1234567890abcdefghijklmnopqrstuv", result)
+    
+    def test_redact_short_value_unchanged(self):
+        """Test that short values are not redacted"""
+        data = {"token": "abc"}
+        result = redact_secrets(data)
+        
+        self.assertEqual(result["token"], "abc")
+    
+    def test_redact_custom_keys(self):
+        """Test redacting with custom secret keys"""
+        data = {"custom_secret": "mysecret12345678"}
+        result = redact_secrets(data, secret_keys=["custom_secret"])
+        
+        self.assertEqual(result["custom_secret"], "***5678")
+    
+    def test_redact_preserves_non_secrets(self):
+        """Test that non-secret values are preserved"""
+        data = {
+            "username": "john_doe",
+            "email": "john@example.com",
+            "token": "secret12345678"
+        }
+        result = redact_secrets(data)
+        
+        self.assertEqual(result["username"], "john_doe")
+        self.assertEqual(result["email"], "john@example.com")
+        self.assertEqual(result["token"], "***5678")
 
 
 class TestValidationConfig(unittest.TestCase):
