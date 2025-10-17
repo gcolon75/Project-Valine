@@ -2,6 +2,163 @@
 
 This directory contains utility scripts for managing and validating the Project Valine orchestrator.
 
+## Phase 5 Triage Agent (Auto-Fix)
+
+### Overview
+
+The Phase 5 Triage Agent is an automated triage and fix agent that analyzes failed PRs, workflow runs, and CI jobs, identifies root causes, and can automatically apply fixes and create PRs. It includes comprehensive safety guardrails including secret detection, change limits, and rollback capabilities.
+
+**Script:** `phase5_triage_agent.py`
+
+**Role:** Automated DevOps Triage & Fix Agent
+
+### Key Features
+
+1. **Automatic Failure Detection**
+   - Pytest failures with stack traces
+   - Python runtime errors (ValueError, ImportError, etc.)
+   - Missing dependencies (ModuleNotFoundError)
+   - Job/workflow failures
+   - Environment configuration issues
+
+2. **Root Cause Analysis**
+   - Categorizes failures into 6+ types
+   - Extracts relevant log excerpts
+   - Identifies affected files and code locations
+   - Provides confidence ratings
+
+3. **Automatic Fix Application**
+   - Missing dependency installation
+   - Configuration file updates
+   - Code patches via unified diffs
+   - Multi-step remediation playbooks
+
+4. **Safety Guardrails**
+   - **File limit**: Max 10 files changed (configurable)
+   - **Line limit**: Max 500 lines changed (configurable)
+   - **Secret detection**: Blocks PRs with potential secrets
+   - **Draft PRs**: Creates draft for invasive changes
+   - **No force push**: Never modifies commit history
+   - **Manual approval**: All PRs require human review
+
+5. **Automatic PR Creation**
+   - Timestamped branches: `auto/triage/fix/pr-{num}/{timestamp}`
+   - Comprehensive PR descriptions with metadata
+   - Auto-labels: `auto-triage`, `needs-review`, `invasive-changes`
+   - Auto-assigns to repository owner
+   - Links to workflow logs and triage reports
+
+### Quick Start
+
+**Via GitHub Actions:**
+```bash
+# Navigate to Actions → Phase 5 Triage Agent → Run workflow
+# Input: pr_number=58, mode=apply-fixes, allow_invasive_fixes=true
+```
+
+**Via CLI:**
+```bash
+export GITHUB_TOKEN="your_token"
+cd orchestrator/scripts
+
+# Triage only (no modifications)
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 58
+
+# Auto-fix mode
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 58 --auto-fix
+
+# Allow invasive fixes (>10 files or >500 lines)
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 58 --auto-fix --allow-invasive
+```
+
+**Via GitHub API:**
+```bash
+gh workflow run phase5-triage-agent.yml \
+  --ref main \
+  --field pr_number=58 \
+  --field mode=apply-fixes \
+  --field allow_invasive_fixes=true
+```
+
+### Operation Modes
+
+- **triage-only** (default): Analyzes and reports, no modifications
+- **apply-fixes**: Applies fixes and creates PRs automatically
+
+### Safety Features
+
+1. **Secret Detection**: Scans for GitHub tokens, API keys, passwords, private keys
+2. **Change Limits**: Enforces max files and lines changed
+3. **Draft PRs**: Creates drafts for invasive changes when `--allow-invasive` not set
+4. **Dry Run**: Preview changes without applying (`--dry-run`)
+5. **Redaction**: All reports have secrets redacted automatically
+
+### Example Scenarios
+
+**Scenario 1: Missing Dependency**
+```bash
+# PR #58 failed: ModuleNotFoundError: No module named 'requests'
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 58 --auto-fix
+
+# Agent will:
+# 1. Detect missing 'requests' module
+# 2. Add to requirements.txt
+# 3. Create PR with changes
+# 4. Label: auto-triage, needs-review
+```
+
+**Scenario 2: Invasive Test Fixes**
+```bash
+# PR #60 has 15 failing tests across 12 files (exceeds 10 file limit)
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 60 --auto-fix
+
+# Agent will:
+# 1. Analyze all 15 test failures
+# 2. Detect change exceeds limits (12 files)
+# 3. Create DRAFT PR for manual review
+# 4. Label: auto-triage, needs-review, invasive-changes
+```
+
+**Scenario 3: With Invasive Fixes Allowed**
+```bash
+python phase5_triage_agent.py run --repo gcolon75/Project-Valine --failure-ref 60 --auto-fix --allow-invasive
+
+# Agent will:
+# 1. Apply all fixes (even if >10 files)
+# 2. Create regular (non-draft) PR
+# 3. Include warning in PR description
+```
+
+### Output Artifacts
+
+All runs generate artifacts (90-day retention):
+```
+triage_output/
+├── phase5_triage_report.md       # Human-readable report
+├── phase5_triage_report.json     # Machine-readable (redacted)
+├── fix_patch.diff                # Git patch (if applicable)
+├── quick_playbook.txt            # Shell commands (if applicable)
+└── fix_pr_url.txt                # PR URL (if created)
+```
+
+### Documentation
+
+- **Complete Guide**: `../PHASE5_TRIAGE_AUTOMATION_GUIDE.md` (9KB)
+- **Example Usage**: `example_auto_triage_usage.sh`
+- **Original Guide**: `PHASE5_TRIAGE_AGENT_GUIDE.md`
+- **Quick Reference**: `PHASE5_TRIAGE_QUICK_REF.md`
+
+### Testing
+
+All functionality is backed by comprehensive tests:
+```bash
+cd orchestrator
+python -m pytest tests/test_phase5_triage_agent.py -v
+# 31 tests, 100% pass rate
+```
+
+---
+
 ## Phase 5 Staging Validator
 
 ### Overview
