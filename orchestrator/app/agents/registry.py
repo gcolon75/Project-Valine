@@ -52,6 +52,12 @@ def get_agents() -> List[AgentInfo]:
             name='Discord Slash Command Agent',
             description='Registers and validates Discord slash commands for staging. Ensures commands are visible, provides remediation playbook, and verifies handler health.',
             command='/register-slash-commands'
+        ),
+        AgentInfo(
+            id='phase5_triage',
+            name='Phase 5 Triage Agent',
+            description='Triages failing Phase 5 jobs/PR runs (CI, agent runs, or registration scripts). Produces actionable triage report with root cause, failing test/log excerpts, and minimal fix proposals.',
+            command='/triage-failure'
         )
     ]
 
