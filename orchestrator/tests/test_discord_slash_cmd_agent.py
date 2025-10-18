@@ -214,7 +214,8 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
         existing = [
             {"name": "debug-last", "description": "Show last run debug info (redacted, ephemeral)"},
             {"name": "diagnose", "description": "Run a quick staging diagnostic"},
-            {"name": "status", "description": "Show last 1-3 runs for workflows"}
+            {"name": "status", "description": "Show last 1-3 runs for workflows"},
+            {"name": "triage", "description": "Auto-diagnose and fix failed PR/workflow runs"}
         ]
         expected = self.agent.expected_commands
         
@@ -236,6 +237,7 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
         self.assertGreater(len(comparison["missing"]), 0)
         self.assertIn("diagnose", comparison["missing"])
         self.assertIn("status", comparison["missing"])
+        self.assertIn("triage", comparison["missing"])
     
     def test_compare_commands_extra(self):
         """Test command comparison with extra commands."""
@@ -243,6 +245,7 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
             {"name": "debug-last", "description": "Show last run debug info (redacted, ephemeral)"},
             {"name": "diagnose", "description": "Run a quick staging diagnostic"},
             {"name": "status", "description": "Show last 1-3 runs for workflows"},
+            {"name": "triage", "description": "Auto-diagnose and fix failed PR/workflow runs"},
             {"name": "extra-cmd", "description": "Extra command"}
         ]
         expected = self.agent.expected_commands
