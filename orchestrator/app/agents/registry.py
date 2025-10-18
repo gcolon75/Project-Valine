@@ -3,7 +3,7 @@ Agent registry for Project Valine orchestrator.
 Defines available agents and their capabilities for multi-agent orchestration.
 """
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -62,7 +62,7 @@ def get_agents() -> List[AgentInfo]:
     ]
 
 
-def get_agent_by_id(agent_id: str) -> AgentInfo:
+def get_agent_by_id(agent_id: str) -> Optional[AgentInfo]:
     """
     Get agent information by ID.
     
