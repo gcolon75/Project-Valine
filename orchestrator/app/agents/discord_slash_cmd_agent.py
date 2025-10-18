@@ -29,7 +29,7 @@ import os
 import json
 import time
 import requests
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -109,7 +109,7 @@ class DiscordSlashCommandAgent:
         }
         
         # Evidence collection
-        self.evidence = {
+        self.evidence: Dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "app_id": app_id,
             "guild_id": guild_id,
@@ -142,7 +142,7 @@ class DiscordSlashCommandAgent:
         }.get(level, "  ")
         print(f"[{timestamp}] {emoji} {message}")
     
-    def _add_step(self, name: str, status: str, details: Any = None, error: str = None):
+    def _add_step(self, name: str, status: str, details: Any = None, error: Optional[str] = None):
         """Add a step to evidence."""
         step = {
             "name": name,
@@ -175,7 +175,7 @@ class DiscordSlashCommandAgent:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict] = None,
+        data: Optional[Union[Dict, List]] = None,
         retry_on_429: bool = True
     ) -> Tuple[Optional[Any], Optional[str]]:
         """
@@ -236,9 +236,9 @@ class DiscordSlashCommandAgent:
         
         bot_info, error = self._make_request("GET", "/users/@me")
         
-        if error:
-            self._add_error(f"Bot authentication failed: {error}")
-            self._add_step("Preflight - Bot Authentication", "FAIL", error=error)
+        if error or bot_info is None:
+            self._add_error(f"Bot authentication failed: {error or 'No response'}")
+            self._add_step("Preflight - Bot Authentication", "FAIL", error=error or "No response")
             return False
         
         self.bot_info = bot_info
@@ -274,9 +274,9 @@ class DiscordSlashCommandAgent:
         # Discover guilds
         guilds, error = self._make_request("GET", "/users/@me/guilds")
         
-        if error:
-            self._add_error(f"Failed to fetch guilds: {error}")
-            self._add_step("Preflight - Guild Discovery", "FAIL", error=error)
+        if error or guilds is None:
+            self._add_error(f"Failed to fetch guilds: {error or 'No response'}")
+            self._add_step("Preflight - Guild Discovery", "FAIL", error=error or "No response")
             return False
         
         if not guilds:
@@ -323,9 +323,9 @@ class DiscordSlashCommandAgent:
         """Verify bot is member of specified guild."""
         guilds, error = self._make_request("GET", "/users/@me/guilds")
         
-        if error:
-            self._add_error(f"Failed to verify guild membership: {error}")
-            self._add_step("Preflight - Guild Verification", "FAIL", error=error)
+        if error or guilds is None:
+            self._add_error(f"Failed to verify guild membership: {error or 'No response'}")
+            self._add_step("Preflight - Guild Verification", "FAIL", error=error or "No response")
             return False
         
         guild_ids = [g.get("id") for g in guilds]
@@ -426,17 +426,18 @@ class DiscordSlashCommandAgent:
         """
         self._log("Step 4: Comparing existing vs expected commands...")
         
-        existing_names = {cmd.get("name") for cmd in existing}
-        expected_names = {cmd.get("name") for cmd in expected}
+        # Filter out None values and create sets of command names
+        existing_names: set[str] = {name for cmd in existing if (name := cmd.get("name"))}
+        expected_names: set[str] = {name for cmd in expected if (name := cmd.get("name"))}
         
         missing = expected_names - existing_names
         extra = existing_names - expected_names
         
         # Check for outdated commands (same name but different description/options)
-        outdated = []
+        outdated: List[str] = []
         for exp_cmd in expected:
             exp_name = exp_cmd.get("name")
-            if exp_name in existing_names:
+            if exp_name and exp_name in existing_names:
                 exist_cmd = next(c for c in existing if c.get("name") == exp_name)
                 # Simple comparison - description only
                 if exp_cmd.get("description") != exist_cmd.get("description"):
@@ -483,9 +484,9 @@ class DiscordSlashCommandAgent:
             data=commands_to_register
         )
         
-        if error:
-            self._add_error(f"Failed to register commands: {error}")
-            self._add_step("Register Commands", "FAIL", error=error)
+        if error or commands is None:
+            self._add_error(f"Failed to register commands: {error or 'No response'}")
+            self._add_step("Register Commands", "FAIL", error=error or "No response")
             return 0, [cmd.get("name", "unknown") for cmd in commands_to_register]
         
         success_count = len(commands)
@@ -647,8 +648,9 @@ class DiscordSlashCommandAgent:
             status = "✅" if name not in comparison['missing'] else "⚠️ MISSING"
             lines.append(f"### `/{name}` {status}")
             lines.append(f"- **Description:** {desc}")
-            if cmd.get("options"):
-                lines.append(f"- **Options:** {len(cmd['options'])}")
+            options = cmd.get("options")
+            if options and isinstance(options, list):
+                lines.append(f"- **Options:** {len(options)}")
             lines.append("")
         
         lines.extend([
@@ -826,7 +828,7 @@ class DiscordSlashCommandAgent:
         self._log("=" * 70, "INFO")
         self._log("", "INFO")
         
-        result = {
+        result: Dict[str, Any] = {
             "status": "SUCCESS",
             "errors": [],
             "warnings": [],
@@ -883,7 +885,8 @@ class DiscordSlashCommandAgent:
                 # Re-list commands after registration
                 self._log("Re-checking commands after registration...", "INFO")
                 existing_commands = self.list_existing_commands()
-                comparison = self.compare_commands(existing_commands, self.expected_commands)
+                if existing_commands is not None:
+                    comparison = self.compare_commands(existing_commands, self.expected_commands)
             else:
                 self._log("No command updates needed", "SUCCESS")
         else:
@@ -900,8 +903,9 @@ class DiscordSlashCommandAgent:
             self._log("", "INFO")
         
         # Step 7: Generate deliverables
-        deliverables = self.generate_deliverables(existing_commands, comparison)
-        result["deliverables"] = deliverables
+        if existing_commands is not None:
+            deliverables = self.generate_deliverables(existing_commands, comparison)
+            result["deliverables"] = deliverables
         
         # Copy warnings and errors
         result["warnings"].extend([w["message"] for w in self.evidence["warnings"]])

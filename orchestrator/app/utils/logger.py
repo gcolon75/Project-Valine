@@ -22,7 +22,7 @@ class StructuredLogger:
             service: Service name for the logs (default: "orchestrator")
         """
         self.service = service
-        self._context = {}
+        self._context: Dict[str, Any] = {}
     
     def set_context(self, **kwargs):
         """

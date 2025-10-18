@@ -75,10 +75,10 @@ class TestAlertsManager:
         )
         
         assert result is True
-        mock_service.post_message.assert_called_once()
+        mock_service.send_message.assert_called_once()
         
         # Check that the content includes expected elements
-        call_args = mock_service.post_message.call_args
+        call_args = mock_service.send_message.call_args
         content = call_args[0][1]
         assert "🔴" in content  # Critical emoji
         assert "CRITICAL ALERT" in content
@@ -100,7 +100,7 @@ class TestAlertsManager:
             )
         
         assert result is True
-        call_args = mock_service.post_message.call_args
+        call_args = mock_service.send_message.call_args
         content = call_args[0][1]
         assert "https://github.com/run/123" in content
         assert "https://logs.example.com" in content
@@ -113,17 +113,17 @@ class TestAlertsManager:
         with patch.dict('os.environ', {'ALERT_CHANNEL_ID': '12345'}):
             # Critical
             manager.send_alert("critical", "Critical alert")
-            content = mock_service.post_message.call_args[0][1]
+            content = mock_service.send_message.call_args[0][1]
             assert "🔴" in content
             
             # Error
             manager.send_alert("error", "Error alert")
-            content = mock_service.post_message.call_args[0][1]
+            content = mock_service.send_message.call_args[0][1]
             assert "⚠️" in content
             
             # Warning
             manager.send_alert("warning", "Warning alert")
-            content = mock_service.post_message.call_args[0][1]
+            content = mock_service.send_message.call_args[0][1]
             assert "🟡" in content
     
     def test_rate_limiting(self):
@@ -141,7 +141,7 @@ class TestAlertsManager:
             assert result2 is False
             
             # Only called once
-            assert mock_service.post_message.call_count == 1
+            assert mock_service.send_message.call_count == 1
     
     def test_rate_limiting_different_alerts(self):
         """Test that different alerts are not rate-limited."""
@@ -158,7 +158,7 @@ class TestAlertsManager:
             assert result2 is True
             
             # Called twice
-            assert mock_service.post_message.call_count == 2
+            assert mock_service.send_message.call_count == 2
     
     def test_rate_limiting_window_expiry(self):
         """Test that rate limit expires after window."""
@@ -183,7 +183,7 @@ class TestAlertsManager:
                 assert result2 is True
                 
                 # Called twice
-                assert mock_service.post_message.call_count == 2
+                assert mock_service.send_message.call_count == 2
         finally:
             AlertsManager.RATE_LIMIT_WINDOW = original_window
     
@@ -196,7 +196,7 @@ class TestAlertsManager:
             result = manager.send_critical_alert("Critical message")
         
         assert result is True
-        content = mock_service.post_message.call_args[0][1]
+        content = mock_service.send_message.call_args[0][1]
         assert "CRITICAL" in content
     
     def test_send_error_alert(self):
@@ -208,7 +208,7 @@ class TestAlertsManager:
             result = manager.send_error_alert("Error message")
         
         assert result is True
-        content = mock_service.post_message.call_args[0][1]
+        content = mock_service.send_message.call_args[0][1]
         assert "ERROR" in content
     
     def test_send_warning_alert(self):
@@ -220,13 +220,13 @@ class TestAlertsManager:
             result = manager.send_warning_alert("Warning message")
         
         assert result is True
-        content = mock_service.post_message.call_args[0][1]
+        content = mock_service.send_message.call_args[0][1]
         assert "WARNING" in content
     
     def test_alert_exception_handling(self):
         """Test that exceptions in alert sending are handled."""
         mock_service = Mock()
-        mock_service.post_message.side_effect = Exception("Network error")
+        mock_service.send_message.side_effect = Exception("Network error")
         manager = AlertsManager(enable_alerts=True, discord_service=mock_service)
         
         with patch.dict('os.environ', {'ALERT_CHANNEL_ID': '12345'}):
@@ -243,4 +243,4 @@ class TestAlertsManager:
             result = manager.send_alert("critical", "Test alert")
         
         assert result is False
-        mock_service.post_message.assert_not_called()
+        mock_service.send_message.assert_not_called()
