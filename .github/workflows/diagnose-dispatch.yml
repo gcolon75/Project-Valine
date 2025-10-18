@@ -257,9 +257,16 @@ jobs:
           # Calculate overall duration
           TOTAL_DURATION=$(($(date +%s) - ${{ steps.init.outputs.start_time }}))
           
-          # Determine conclusion
+          # Determine conclusion - only mark as failure if triggered by correct event types
           CONCLUSION="success"
-          if [ "${{ steps.aws_config.outcome }}" != "success" ] || [ "${{ steps.aws_identity.outcome }}" != "success" ]; then
+          EVENT_NAME="${{ github.event_name }}"
+          
+          # Skip failure logic if not triggered by workflow_dispatch or repository_dispatch
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] && [ "$EVENT_NAME" != "repository_dispatch" ]; then
+            CONCLUSION="skipped"
+            echo "⚠️ **Warning:** Workflow triggered by unsupported event type: $EVENT_NAME" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.aws_config.outcome }}" != "success" ] || [ "${{ steps.aws_identity.outcome }}" != "success" ]; then
             CONCLUSION="failure"
           fi
           
@@ -273,7 +280,9 @@ jobs:
           AWS_ASSUME="✅"
           if [ "${{ steps.aws_config.outcome }}" != "success" ] || [ "${{ steps.aws_identity.outcome }}" != "success" ]; then
             AWS_ASSUME="❌"
-            CONCLUSION="failure"
+            if [ "$CONCLUSION" != "skipped" ]; then
+              CONCLUSION="failure"
+            fi
           fi
           
           # S3 access check
@@ -283,7 +292,9 @@ jobs:
             if [ "${{ steps.s3_list.outcome }}" != "success" ]; then
               S3_ACCESS="❌"
               S3_DETAILS="Failed to list S3 bucket"
-              CONCLUSION="failure"
+              if [ "$CONCLUSION" != "skipped" ]; then
+                CONCLUSION="failure"
+              fi
             fi
           else
             S3_ACCESS="⚠️"
@@ -297,7 +308,9 @@ jobs:
             if [ "${{ steps.cf_distribution.outcome }}" != "success" ]; then
               CF_ACCESS="❌"
               CF_DETAILS="Failed to get CloudFront distribution"
-              CONCLUSION="failure"
+              if [ "$CONCLUSION" != "skipped" ]; then
+                CONCLUSION="failure"
+              fi
             fi
           else
             CF_ACCESS="⚠️"
@@ -313,7 +326,9 @@ jobs:
             if [ "$API_HEALTH_STATUS" != "200" ] && [ "$API_HELLO_STATUS" != "200" ]; then
               API_HEALTH="❌"
               API_DETAILS="API endpoints not responding (health: $API_HEALTH_STATUS, hello: $API_HELLO_STATUS)"
-              CONCLUSION="failure"
+              if [ "$CONCLUSION" != "skipped" ]; then
+                CONCLUSION="failure"
+              fi
             elif [ "$API_HEALTH_STATUS" != "200" ] || [ "$API_HELLO_STATUS" != "200" ]; then
               API_HEALTH="⚠️"
               API_DETAILS="Some API endpoints failing (health: $API_HEALTH_STATUS, hello: $API_HELLO_STATUS)"
