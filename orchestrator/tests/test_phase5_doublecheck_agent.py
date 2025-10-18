@@ -281,10 +281,12 @@ class TestPhase5DoubleCheckAgent(unittest.TestCase):
         self.assertEqual(secondary.check_id, 'health_check')
         self.assertIn('head_status', secondary.details)
     
+    @patch('phase5_doublecheck_agent.requests.get')
     @patch('phase5_doublecheck_agent.requests.head')
-    def test_run_secondary_health_check_failure(self, mock_head):
+    def test_run_secondary_health_check_failure(self, mock_head, mock_get):
         """Test failed secondary health check"""
         mock_head.return_value = Mock(status_code=503)
+        mock_get.return_value = Mock(status_code=503)
         
         primary = PrimaryCheckResult(
             check_id='health_check',
