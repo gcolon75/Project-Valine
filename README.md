@@ -104,6 +104,11 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed 
 - [Quick Start Guide](.github/agents/QUICK_START.md) - Quick reference for using the UX Designer agent
 - [Agent Templates](.github/agents/templates/) - Reusable templates for PRs, RFCs, and documentation
 
+### Phase 6: Discord Triage Bot
+- [Discord Triage Command Guide](PHASE6_DISCORD_TRIAGE_COMMAND.md) - Complete implementation guide for `/triage` command
+- [Quick Start](PHASE6_DISCORD_TRIAGE_QUICKSTART.md) - Get started with Discord triage in 3 steps
+- [Triage Automation Guide](orchestrator/PHASE5_TRIAGE_AUTOMATION_GUIDE.md) - Phase 5 triage agent details
+
 ### Other Documentation
 - [Sanity Setup](SANITY_SETUP.md) - CMS configuration
 - [UX Changes](CHANGES.md) - Log of user experience improvements and design changes
