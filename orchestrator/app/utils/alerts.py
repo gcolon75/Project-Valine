@@ -28,7 +28,7 @@ class AlertsManager:
     }
     
     def __init__(self, discord_service: Optional[DiscordService] = None,
-                 enable_alerts: bool = None, logger: Optional[StructuredLogger] = None):
+                 enable_alerts: Optional[bool] = None, logger: Optional[StructuredLogger] = None):
         """
         Initialize alerts manager.
         
@@ -168,7 +168,7 @@ class AlertsManager:
                 # Get channel ID (check env var again for dynamic updates in tests)
                 channel_id = self.alert_channel_id or os.environ.get("ALERT_CHANNEL_ID")
                 if channel_id:
-                    self.discord_service.post_message(channel_id, content)
+                    self.discord_service.send_message(channel_id, content)
                 else:
                     # Fall back to default mechanism
                     self.logger.warn("ALERT_CHANNEL_ID not set, alert not sent",
