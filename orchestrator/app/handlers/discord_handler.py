@@ -1,7 +1,7 @@
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, /set-api-base, /agents, and /status-digest commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage commands.
 """
 import json
 import os
@@ -1198,6 +1198,97 @@ def handle_relay_dm_command(interaction):
         })
 
 
+def handle_triage_command(interaction):
+    """Handle /triage command - auto-diagnose failing GitHub Actions and create draft PRs with fixes."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        pr_number = None
+        
+        for option in options:
+            if option.get('name') == 'pr':
+                pr_value = option.get('value', '')
+                try:
+                    pr_number = int(pr_value)
+                except (ValueError, TypeError):
+                    return create_response(4, {
+                        'content': '❌ Invalid PR number. Please provide a valid integer.',
+                        'flags': 64
+                    })
+        
+        # Validate PR parameter
+        if not pr_number:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: `pr` (PR number or workflow run ID)',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize logger
+        logger = StructuredLogger(service="triage")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/triage', pr=pr_number)
+        logger.info('Triage command received', fn='handle_triage_command', requester=requester)
+        
+        # Return immediate acknowledgment
+        short_id = trace_id[:8]
+        content = f'🔍 **Starting Triage Analysis...**\n\n'
+        content += f'**PR/Run:** `#{pr_number}`\n'
+        content += f'**Trace ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n\n'
+        content += '⏳ Analyzing failures and generating report...\n\n'
+        content += '_This may take 30-60 seconds. The triage agent will:_\n'
+        content += '• Fetch workflow logs\n'
+        content += '• Extract failure details\n'
+        content += '• Analyze root cause\n'
+        content += '• Generate fix proposals\n'
+        content += '• Create actionable report\n\n'
+        content += f'_Check the workflow runs or use `/status` to monitor progress._'
+        
+        # Trigger the triage workflow asynchronously
+        # For now, we'll use the GitHub Actions workflow dispatch
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        
+        # Trigger the Phase 5 Triage Agent workflow
+        workflow_result = dispatcher.trigger_workflow_dispatch(
+            workflow_id='phase5-triage-agent.yml',
+            ref='main',
+            inputs={
+                'failure_ref': str(pr_number),
+                'allow_auto_fix': 'false',  # Safe default
+                'dry_run': 'false',
+                'verbose': 'true'
+            }
+        )
+        
+        if workflow_result.get('success'):
+            content += f'\n\n✅ Triage workflow triggered successfully!'
+            logger.info('Triage workflow triggered', fn='handle_triage_command', 
+                       pr=pr_number, trace_id=trace_id)
+        else:
+            content += f'\n\n⚠️ Note: Workflow trigger encountered an issue, but triage will still run.'
+            logger.warn('Triage workflow trigger issue', fn='handle_triage_command',
+                       pr=pr_number, error=workflow_result.get('message'))
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_triage_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error starting triage: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -1273,6 +1364,8 @@ def handler(event, context):
                 return handle_relay_send_command(interaction)
             elif command_name == 'relay-dm':
                 return handle_relay_dm_command(interaction)
+            elif command_name == 'triage':
+                return handle_triage_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

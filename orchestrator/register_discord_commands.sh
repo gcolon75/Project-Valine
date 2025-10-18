@@ -306,6 +306,23 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /triage command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "triage",
+    "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes",
+    "options": [{
+      "name": "pr",
+      "description": "PR number or workflow run ID to triage",
+      "type": 4,
+      "required": true
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "📝 Registering /debug-last command (feature-flagged)..."
 curl -X POST "${BASE_URL}" \
   -H "Authorization: Bot ${BOT_TOKEN}" \
@@ -334,6 +351,7 @@ echo "  • /agents - List available orchestrator agents"
 echo "  • /status-digest - Show aggregated status digest for workflows"
 echo "  • /relay-send - Post message to Discord channel (admin only, audited)"
 echo "  • /relay-dm - Post message to channel as bot (owner only, audited)"
+echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
 echo "  • /debug-last - Show last run debug info (redacted, ephemeral, feature-flagged)"
 echo ""
 echo "📋 Next Steps:"

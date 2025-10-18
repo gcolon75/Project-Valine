@@ -131,6 +131,24 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /triage command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "triage",
+    "type": 1,
+    "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes",
+    "options": [{
+      "name": "pr",
+      "description": "PR number or workflow run ID to triage",
+      "type": 4,
+      "required": true
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Staging commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -139,6 +157,7 @@ echo "  • /diagnose - Run a quick staging diagnostic"
 echo "  • /status - Show last 1-3 runs for workflows"
 echo "  • /verify-latest - Verify the latest Client Deploy workflow run"
 echo "  • /deploy-client - Trigger Client Deploy workflow"
+echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Commands should appear IMMEDIATELY in your Discord staging server"
