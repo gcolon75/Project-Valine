@@ -914,11 +914,26 @@ aws dynamodb get-item --table-name valine-orchestrator-runs-dev \
 
 ## Troubleshooting
 
+### Quick Fix: "The application did not respond"
+
+If Discord slash commands don't respond when executed:
+
+1. **Run the validation script:**
+   ```bash
+   cd orchestrator
+   python scripts/validate_deployment.py --stage dev
+   ```
+
+2. **Quick fix guide:** [DISCORD_NO_RESPONSE_QUICKFIX.md](./DISCORD_NO_RESPONSE_QUICKFIX.md)
+
+3. **Detailed troubleshooting:** [DISCORD_DEPLOYMENT_TROUBLESHOOTING.md](./DISCORD_DEPLOYMENT_TROUBLESHOOTING.md)
+
 ### Discord interaction verification fails
 
 - Verify the Public Key is correct in samconfig.toml
 - Check CloudWatch Logs for signature verification errors
 - Ensure the Lambda function has been deployed before setting the interactions endpoint
+- Use the validation script to diagnose: `python scripts/validate_deployment.py`
 
 ### GitHub webhook signature verification fails
 
