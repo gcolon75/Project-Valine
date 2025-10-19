@@ -1198,6 +1198,61 @@ def handle_relay_dm_command(interaction):
         })
 
 
+def handle_triage_command(interaction):
+    """Handle /triage command - auto-triage a failing PR."""
+    try:
+        # Extract PR number parameter
+        options = interaction.get('data', {}).get('options', [])
+        pr_number = None
+        mode = 'triage-only'
+        
+        for option in options:
+            if option.get('name') == 'pr':
+                pr_number = option.get('value')
+            elif option.get('name') == 'create_pr':
+                if option.get('value'):
+                    mode = 'apply-fixes'
+        
+        # Validate required parameters
+        if not pr_number:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: pr',
+                'flags': 64
+            })
+        
+        # Validate PR number is numeric
+        try:
+            pr_number = int(pr_number)
+        except ValueError:
+            return create_response(4, {
+                'content': '❌ Invalid PR number: must be a number',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Send initial response
+        content = f'🔍 **Starting triage for PR #{pr_number}...**\n\n'
+        content += f'**Requested by:** {requester}\n'
+        content += f'**Mode:** {mode}\n\n'
+        content += '⏳ Analyzing workflow runs and logs...'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_triage_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -1273,6 +1328,8 @@ def handler(event, context):
                 return handle_relay_send_command(interaction)
             elif command_name == 'relay-dm':
                 return handle_relay_dm_command(interaction)
+            elif command_name == 'triage':
+                return handle_triage_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
