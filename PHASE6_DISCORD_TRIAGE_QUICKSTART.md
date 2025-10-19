@@ -161,6 +161,25 @@ Ensure `GITHUB_TOKEN` has proper permissions:
 
 ## Troubleshooting
 
+### "The application did not respond" Error
+
+If commands are registered but don't respond:
+
+1. **Quick fix guide:** See [orchestrator/DISCORD_NO_RESPONSE_QUICKFIX.md](./orchestrator/DISCORD_NO_RESPONSE_QUICKFIX.md)
+
+2. **Run validation:**
+   ```bash
+   cd orchestrator
+   python scripts/validate_deployment.py --stage dev
+   ```
+
+3. **Detailed guide:** [orchestrator/DISCORD_DEPLOYMENT_TROUBLESHOOTING.md](./orchestrator/DISCORD_DEPLOYMENT_TROUBLESHOOTING.md)
+
+Most common causes:
+- Lambda not deployed (`sam build && sam deploy`)
+- Interactions Endpoint URL not set in Discord Portal
+- Discord Public Key mismatch
+
 ### Command Not Showing in Discord
 - Wait 60 seconds after registration
 - Refresh Discord (Ctrl+R)
@@ -171,8 +190,8 @@ Ensure `GITHUB_TOKEN` has proper permissions:
 ```bash
 # Set token in Lambda environment
 aws lambda update-function-configuration \
-  --function-name your-discord-handler \
-  --environment Variables={GITHUB_TOKEN=your_token}
+  --function-name valine-orchestrator-discord-dev \
+  --environment Variables={GITHUB_TOKEN=your_token,GITHUB_REPO=gcolon75/Project-Valine}
 ```
 
 ### "Invalid PR Parameter" Error

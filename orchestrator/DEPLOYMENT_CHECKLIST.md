@@ -2,6 +2,20 @@
 
 Use this checklist to ensure proper deployment and integration of the Project Valine orchestrator.
 
+## Quick Start
+
+**New to deployment?** Start here:
+
+1. **Run the validation script** to check your current state:
+   ```bash
+   cd orchestrator
+   python scripts/validate_deployment.py --stage dev
+   ```
+
+2. **Having issues?** See [DISCORD_DEPLOYMENT_TROUBLESHOOTING.md](./DISCORD_DEPLOYMENT_TROUBLESHOOTING.md) for detailed troubleshooting.
+
+3. **First time deployment?** Follow the checklist below step by step.
+
 ## Pre-Deployment Preparation
 
 ### Gather Required Credentials
@@ -153,8 +167,16 @@ Use this checklist to ensure proper deployment and integration of the Project Va
 
 ### Test Discord Commands
 
-- [ ] In Discord server, type `/plan`
-- [ ] Verify bot responds (may be ephemeral)
+- [ ] In Discord server, type `/status`
+- [ ] Verify bot responds (should respond within 3 seconds)
+- [ ] If you get "The application did not respond" error:
+  ```bash
+  # Run the validation script
+  python scripts/validate_deployment.py --stage dev
+  
+  # See detailed troubleshooting
+  # Read DISCORD_DEPLOYMENT_TROUBLESHOOTING.md
+  ```
 - [ ] Check CloudWatch Logs:
   ```bash
   aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
@@ -322,3 +344,23 @@ sam delete
 - AWS CloudFormation Console: https://console.aws.amazon.com/cloudformation
 - AWS Lambda Console: https://console.aws.amazon.com/lambda
 - CloudWatch Logs: https://console.aws.amazon.com/cloudwatch/home#logsV2:log-groups
+
+### Troubleshooting Resources
+
+If Discord commands are not responding:
+
+1. **Run the validation script:**
+   ```bash
+   cd orchestrator
+   python scripts/validate_deployment.py --stage dev
+   ```
+
+2. **Read the troubleshooting guide:**
+   - [DISCORD_DEPLOYMENT_TROUBLESHOOTING.md](./DISCORD_DEPLOYMENT_TROUBLESHOOTING.md)
+
+3. **Check CloudWatch Logs:**
+   ```bash
+   aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
+   ```
+
+Common issues and solutions are documented in the troubleshooting guide above.
