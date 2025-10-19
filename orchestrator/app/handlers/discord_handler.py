@@ -1,7 +1,7 @@
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, and /triage commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage commands.
 """
 import json
 import os
@@ -1313,33 +1313,27 @@ def handle_relay_dm_command(interaction):
 
 
 def handle_triage_command(interaction):
-    """Handle /triage command - auto-triage a failing PR."""
+    """Handle /triage command - auto-diagnose failing GitHub Actions and create draft PRs with fixes."""
     try:
-        # Extract PR number parameter
+        # Extract parameters
         options = interaction.get('data', {}).get('options', [])
         pr_number = None
-        mode = 'triage-only'
         
         for option in options:
             if option.get('name') == 'pr':
-                pr_number = option.get('value')
-            elif option.get('name') == 'create_pr':
-                if option.get('value'):
-                    mode = 'apply-fixes'
+                pr_value = option.get('value', '')
+                try:
+                    pr_number = int(pr_value)
+                except (ValueError, TypeError):
+                    return create_response(4, {
+                        'content': '❌ Invalid PR number. Please provide a valid integer.',
+                        'flags': 64
+                    })
         
-        # Validate required parameters
+        # Validate PR parameter
         if not pr_number:
             return create_response(4, {
-                'content': '❌ Missing required parameter: pr',
-                'flags': 64
-            })
-        
-        # Validate PR number is numeric
-        try:
-            pr_number = int(pr_number)
-        except ValueError:
-            return create_response(4, {
-                'content': '❌ Invalid PR number: must be a number',
+                'content': '❌ Missing required parameter: `pr` (PR number or workflow run ID)',
                 'flags': 64
             })
         
@@ -1347,11 +1341,53 @@ def handle_triage_command(interaction):
         user = interaction.get('member', {}).get('user', {})
         requester = user.get('username', user.get('id', 'unknown'))
         
-        # Send initial response
-        content = f'🔍 **Starting triage for PR #{pr_number}...**\n\n'
-        content += f'**Requested by:** {requester}\n'
-        content += f'**Mode:** {mode}\n\n'
-        content += '⏳ Analyzing workflow runs and logs...'
+        # Initialize logger
+        logger = StructuredLogger(service="triage")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/triage', pr=pr_number)
+        logger.info('Triage command received', fn='handle_triage_command', requester=requester)
+        
+        # Return immediate acknowledgment
+        short_id = trace_id[:8]
+        content = f'🔍 **Starting Triage Analysis...**\n\n'
+        content += f'**PR/Run:** `#{pr_number}`\n'
+        content += f'**Trace ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n\n'
+        content += '⏳ Analyzing failures and generating report...\n\n'
+        content += '_This may take 30-60 seconds. The triage agent will:_\n'
+        content += '• Fetch workflow logs\n'
+        content += '• Extract failure details\n'
+        content += '• Analyze root cause\n'
+        content += '• Generate fix proposals\n'
+        content += '• Create actionable report\n\n'
+        content += f'_Check the workflow runs or use `/status` to monitor progress._'
+        
+        # Trigger the triage workflow asynchronously
+        # For now, we'll use the GitHub Actions workflow dispatch
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        
+        # Trigger the Phase 5 Triage Agent workflow
+        workflow_result = dispatcher.trigger_workflow_dispatch(
+            workflow_id='phase5-triage-agent.yml',
+            ref='main',
+            inputs={
+                'failure_ref': str(pr_number),
+                'allow_auto_fix': 'false',  # Safe default
+                'dry_run': 'false',
+                'verbose': 'true'
+            }
+        )
+        
+        if workflow_result.get('success'):
+            content += f'\n\n✅ Triage workflow triggered successfully!'
+            logger.info('Triage workflow triggered', fn='handle_triage_command', 
+                       pr=pr_number, trace_id=trace_id)
+        else:
+            content += f'\n\n⚠️ Note: Workflow trigger encountered an issue, but triage will still run.'
+            logger.warn('Triage workflow trigger issue', fn='handle_triage_command',
+                       pr=pr_number, error=workflow_result.get('message'))
         
         return create_response(4, {
             'content': content
@@ -1362,7 +1398,7 @@ def handle_triage_command(interaction):
         import traceback
         traceback.print_exc()
         return create_response(4, {
-            'content': f'❌ Error: {str(e)}',
+            'content': f'❌ Error starting triage: {str(e)}',
             'flags': 64
         })
 
