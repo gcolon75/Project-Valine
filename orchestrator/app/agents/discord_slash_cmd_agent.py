@@ -73,6 +73,31 @@ class DiscordSlashCommandAgent:
                     "max_value": 3
                 }
             ]
+        },
+        {
+            "name": "triage",
+            "type": 1,
+            "description": "Auto-diagnose and fix failed PR/workflow runs",
+            "options": [
+                {
+                    "name": "pr",
+                    "description": "PR number or workflow run ID",
+                    "type": 4,
+                    "required": True
+                },
+                {
+                    "name": "auto_fix",
+                    "description": "Automatically create fix PR",
+                    "type": 5,
+                    "required": False
+                },
+                {
+                    "name": "allow_invasive",
+                    "description": "Allow changes >10 files or >500 lines",
+                    "type": 5,
+                    "required": False
+                }
+            ]
         }
     ]
     
