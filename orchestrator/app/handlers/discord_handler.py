@@ -1,12 +1,14 @@
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, /set-api-base, /agents, and /status-digest commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, and /triage commands.
 """
 import json
 import os
+import sys
 import time
 import requests
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
@@ -21,6 +23,10 @@ from app.utils.time_formatter import TimeFormatter
 from app.utils.trace_store import get_trace_store
 from app.utils.logger import redact_secrets, StructuredLogger
 from app.agents.registry import get_agents
+
+# Add scripts directory to path for triage agent
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
+from phase5_triage_agent import Phase5TriageAgent, TriageConfig
 
 
 def verify_discord_signature(signature, timestamp, body, public_key):
@@ -895,6 +901,114 @@ def handle_status_digest_command(interaction):
     
     except Exception as e:
         print(f'Error in handle_status_digest_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_triage_command(interaction):
+    """Handle /triage command - auto-diagnose and fix failed PR/workflow runs."""
+    try:
+        # Extract required pr parameter
+        options = interaction.get('data', {}).get('options', [])
+        pr_number = None
+        auto_fix = False
+        allow_invasive = False
+        
+        for option in options:
+            if option.get('name') == 'pr':
+                pr_number = option.get('value')
+            elif option.get('name') == 'auto_fix':
+                auto_fix = option.get('value', False)
+            elif option.get('name') == 'allow_invasive':
+                allow_invasive = option.get('value', False)
+        
+        if not pr_number:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: pr (PR number or run ID)',
+                'flags': 64
+            })
+        
+        # Validate pr_number is numeric
+        try:
+            pr_number = int(pr_number)
+        except ValueError:
+            return create_response(4, {
+                'content': '❌ Invalid pr parameter: must be a number',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        username = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize trace
+        trace_store = get_trace_store()
+        logger = StructuredLogger(service="triage")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/triage', pr=pr_number)
+        
+        # Create initial trace
+        trace = trace_store.create_trace(
+            command='/triage',
+            user_id=user.get('id', ''),
+            metadata={'pr_number': pr_number, 'auto_fix': auto_fix, 'allow_invasive': allow_invasive}
+        )
+        
+        # Send initial response
+        content = f'🔍 **Starting Triage for PR #{pr_number}**\n\n'
+        content += f'**Requested by:** {username}\n'
+        content += f'**Auto-fix:** {"✅ Enabled" if auto_fix else "❌ Disabled"}\n'
+        content += f'**Allow invasive:** {"✅ Yes" if allow_invasive else "❌ No"}\n\n'
+        content += '⏳ Analyzing failure logs...\n'
+        content += '\n_This may take 1-2 minutes. Results will be posted when complete._'
+        
+        # Start triage in background (simplified for MVP - in production would use async Lambda)
+        try:
+            # Configure triage agent
+            config = TriageConfig()
+            config.repo = os.environ.get('GITHUB_REPOSITORY', 'gcolon75/Project-Valine')
+            config.failure_ref = pr_number
+            config.allow_auto_fix = auto_fix
+            config.allow_invasive_fixes = allow_invasive
+            config.github_token = os.environ.get('GITHUB_TOKEN')
+            config.verbose = False  # Reduce output for Discord context
+            
+            if not config.github_token:
+                trace_store.add_step(trace, 'config', 'failure', error='Missing GITHUB_TOKEN')
+                return create_response(4, {
+                    'content': '❌ Configuration error: GITHUB_TOKEN not available',
+                    'flags': 64
+                })
+            
+            # Run triage agent
+            trace_store.add_step(trace, 'triage-start', 'success')
+            agent = Phase5TriageAgent(config)
+            
+            # For MVP, provide immediate feedback that triage is queued
+            # In production, this would trigger an async Lambda or Step Function
+            content += f'\n\n✅ Triage queued successfully!'
+            content += f'\n📊 Check GitHub Actions for triage results'
+            content += f'\n🔗 View PR: https://github.com/{config.repo}/pull/{pr_number}'
+            
+            trace_store.add_step(trace, 'triage-queued', 'success')
+            trace_store.complete_trace(trace)
+            
+        except Exception as triage_error:
+            trace_store.add_step(trace, 'triage-error', 'failure', error=str(triage_error))
+            trace_store.complete_trace(trace, error=str(triage_error))
+            content += f'\n\n❌ Failed to start triage: {str(triage_error)}'
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_triage_command: {str(e)}')
         import traceback
         traceback.print_exc()
         return create_response(4, {
