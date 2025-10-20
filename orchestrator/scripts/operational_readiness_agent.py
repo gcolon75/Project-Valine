@@ -170,7 +170,9 @@ class OperationalReadinessAgent:
     
     def __init__(self, config: OperationalReadinessConfig):
         self.config = config
-        self.repo_path = os.getcwd()
+        
+        # Find repository root (look for .git directory)
+        self.repo_path = self._find_repo_root()
         self.github_token = config.github_token or os.environ.get('GITHUB_TOKEN')
         
         # Ensure evidence directory exists
@@ -180,7 +182,23 @@ class OperationalReadinessAgent:
         self.recon_result: Optional[ReconResult] = None
         self.secrets_result: Optional[SecretsCheckResult] = None
         self.workflow_result: Optional[WorkflowScanResult] = None
+    
+    def _find_repo_root(self) -> str:
+        """Find the repository root by looking for .git directory"""
+        current_dir = os.getcwd()
         
+        # Walk up the directory tree looking for .git
+        while current_dir != '/':
+            if os.path.exists(os.path.join(current_dir, '.git')):
+                return current_dir
+            parent = os.path.dirname(current_dir)
+            if parent == current_dir:
+                break
+            current_dir = parent
+        
+        # If not found, use current directory
+        return os.getcwd()
+    
     def log(self, message: str, level: str = "INFO"):
         """Log a message with timestamp"""
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")

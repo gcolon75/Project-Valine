@@ -1,0 +1,13 @@
+{
+  "repo": "gcolon75/Project-Valine",
+  "base_ref": "main",
+  "github_token": "ENV:GITHUB_TOKEN",
+  "test_pr_number": null,
+  "allow_run_registration": false,
+  "allow_create_draft_prs": false,
+  "dry_run": true,
+  "verbose": true,
+  "pr_scan_start": 50,
+  "pr_scan_end": 71,
+  "evidence_output_dir": "./readiness_evidence"
+}

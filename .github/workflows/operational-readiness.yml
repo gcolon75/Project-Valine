@@ -1,0 +1,100 @@
+name: Operational Readiness Check
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      test_pr_number:
+        description: 'Test PR number for E2E validation (optional)'
+        required: false
+        type: number
+
+jobs:
+  readiness-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run operational readiness agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd orchestrator/scripts
+          
+          # Build command with optional test PR
+          CMD="python3 operational_readiness_agent.py run --repo ${{ github.repository }}"
+          
+          if [ -n "${{ github.event.inputs.test_pr_number }}" ]; then
+            CMD="$CMD --test-pr ${{ github.event.inputs.test_pr_number }}"
+          fi
+          
+          echo "Running: $CMD"
+          $CMD
+      
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: operational-readiness-report
+          path: |
+            readiness_evidence/operational_readiness_report_*.json
+            readiness_evidence/operational_readiness_report_*.md
+          retention-days: 30
+      
+      - name: Generate job summary
+        if: always()
+        run: |
+          cd orchestrator/scripts
+          
+          echo "## 🚀 Operational Readiness Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Find latest markdown report
+          LATEST_REPORT=$(ls -t readiness_evidence/operational_readiness_report_*.md 2>/dev/null | head -1)
+          
+          if [ -n "$LATEST_REPORT" ]; then
+            echo "### Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Extract summary section
+            awk '/^## Summary/,/^## Findings/' "$LATEST_REPORT" | head -n -1 | tail -n +2 >> $GITHUB_STEP_SUMMARY
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Key Findings" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Extract first 10 findings
+            awk '/^## Findings/,/^## Action Plan/' "$LATEST_REPORT" | head -n -1 | tail -n +2 | head -10 >> $GITHUB_STEP_SUMMARY
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📥 Full report available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check for warnings
+        if: always()
+        run: |
+          cd orchestrator/scripts
+          
+          # Count warnings in latest report
+          LATEST_REPORT=$(ls -t readiness_evidence/operational_readiness_report_*.md 2>/dev/null | head -1)
+          
+          if [ -n "$LATEST_REPORT" ]; then
+            WARNING_COUNT=$(grep -c "⚠️" "$LATEST_REPORT" || echo "0")
+            
+            if [ "$WARNING_COUNT" -gt 0 ]; then
+              echo "::warning::Operational readiness check found $WARNING_COUNT warnings. Review the report."
+            else
+              echo "✅ No warnings found in operational readiness check"
+            fi
+          fi
