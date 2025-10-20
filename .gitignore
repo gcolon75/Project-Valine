@@ -20,6 +20,10 @@ orchestrator/scripts/doublecheck_evidence/
 orchestrator/scripts/doublecheck_config.json
 !orchestrator/scripts/doublecheck_config.example.json
 
+# Operational readiness agent evidence
+readiness_evidence/
+operational_readiness_config.json
+
 # UX Design temporary files
 *.psd
 *.sketch
