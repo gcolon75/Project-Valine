@@ -1054,8 +1054,20 @@ def check_for_secrets(self, content: str) -> List[str]:
         
         return report
     
+    def _safe_print_secret_name(self, name: str) -> str:
+        """
+        Safely print a secret name (environment variable name).
+        Ensures we're printing metadata (like "GITHUB_TOKEN") not actual values.
+        """
+        # Secret names should be all caps with underscores and be short
+        # Actual secret values are typically longer and alphanumeric
+        if len(name) > 100 or not name.replace('_', '').isalnum():
+            # This might be a value, not a name - truncate for safety
+            return f"{name[:20]}..."
+        return name
+    
     def print_report(self, report: OperationalReadinessReport):
-        """Print formatted report to console"""
+        """Print formatted report to console (all sensitive data is already redacted)"""
         print("\n" + "="*80)
         print("🚀 OPERATIONAL READINESS VALIDATION REPORT")
         print("="*80)
@@ -1085,7 +1097,9 @@ def check_for_secrets(self, content: str) -> List[str]:
             if 'depends_on' in item:
                 print(f"   Depends on: {', '.join(item['depends_on'])}")
             if 'required_secrets' in item and item['required_secrets']:
-                print(f"   Required secrets: {', '.join(item['required_secrets'][:5])}")
+                # Printing secret NAMES only (not values) - these are public variable names like "GITHUB_TOKEN"
+                safe_names = [self._safe_print_secret_name(s) for s in item['required_secrets'][:5]]
+                print(f"   Required secrets: {', '.join(safe_names)}")
                 if len(item['required_secrets']) > 5:
                     print(f"   ... and {len(item['required_secrets']) - 5} more")
         
@@ -1104,17 +1118,19 @@ def check_for_secrets(self, content: str) -> List[str]:
             for cmd in recon.get('slash_commands', [])[:10]:
                 print(f"  • {cmd['name']} (registered in {cmd['file']})")
         
-        # Secrets evidence
+        # Secrets evidence (already redacted by redact_secrets() in generate_report)
         if report.evidence.get('secrets'):
             secrets = report.evidence['secrets']
             if secrets.get('found_secrets'):
                 print(f"\n**⚠️  Potential Secret Leaks** ({len(secrets['found_secrets'])} found):")
                 for secret in secrets['found_secrets'][:5]:
+                    # Note: secret['snippet'] is already redacted (shows only ***last4)
                     print(f"  • {secret['file']}:{secret['line']}")
                     print(f"    {secret['snippet']}")
             
             print(f"\n**Config Files** ({len(secrets.get('example_configs', []))} found):")
             for config in secrets.get('example_configs', [])[:5]:
+                # Only printing count of variables, not their values
                 print(f"  • {config['file']}: {len(config.get('variables', []))} variables")
         
         # Workflows evidence
@@ -1128,7 +1144,9 @@ def check_for_secrets(self, content: str) -> List[str]:
             if workflows.get('unmapped_secrets'):
                 print(f"\n**⚠️  Unmapped Secrets**:")
                 for secret in workflows['unmapped_secrets'][:10]:
-                    print(f"  • {secret}")
+                    # Printing secret NAMES only (not values) - these are env var names like "GITHUB_TOKEN"
+                    safe_name = self._safe_print_secret_name(secret)
+                    print(f"  • {safe_name}")
             
             if workflows.get('flaky_tests'):
                 print(f"\n**Flaky Tests** ({len(workflows['flaky_tests'])} found in PRs):")

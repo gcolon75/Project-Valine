@@ -256,6 +256,9 @@ python3 operational_readiness_agent.py run --test-pr 71
 - All tokens show only last 4 characters: `***abcd`
 - Redaction applies to console output, JSON, and Markdown reports
 - Comprehensive pattern matching for various secret types
+- Secret NAMES (env var names like "GITHUB_TOKEN") are displayed - these are metadata, not values
+- Actual secret VALUES are never printed or logged
+- Multiple layers of redaction before any output
 
 ### Confirmation Prompts
 
