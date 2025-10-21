@@ -653,10 +653,16 @@ class OperationalReadinessAgent:
                     "notes": "Or use workflow_dispatch in GitHub UI"
                 },
                 {
-                    "description": "Trigger bot smoke tests via curl",
-                    "command": 'curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/bot-smoke.yml/dispatches -d \'{"ref":"main"}\'',
+                    "description": "Trigger bot smoke tests via curl (workflow_dispatch)",
+                    "command": (
+                        "curl -X POST "
+                        "-H \"Accept: application/vnd.github+json\" "
+                        "-H \"Authorization: token $GITHUB_TOKEN\" "
+                        "https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/bot-smoke.yml/dispatches "
+                        "-d '{\"ref\":\"main\"}'"
+                    ),
                     "required_env": ["GITHUB_TOKEN"],
-                    "notes": "Manual trigger via GitHub API"
+                    "notes": "Manual trigger via GitHub API; replace 'main' with the branch/ref you want to run against"
                 },
                 {
                     "description": "Run tests locally",
@@ -689,16 +695,26 @@ class OperationalReadinessAgent:
             self.log("Registration not authorized. Set --allow-run-registration to enable.", "WARNING")
             return
         
-        # Ask for confirmation
-        print("\n⚠️  About to run registration commands. Please confirm:")
-        print("1. STAGING_DISCORD_GUILD_ID is set correctly")
-        print("2. All required GitHub secrets exist in Settings → Secrets & variables")
-        print("3. You have reviewed the registration scripts")
-        response = input("\nType 'Yes' to proceed: ")
+        # Non-interactive override for CI: set AUTO_CONFIRM_REGISTRATION=1 in env
+        auto_confirm = os.environ.get("AUTO_CONFIRM_REGISTRATION") == "1"
         
-        if response != "Yes":
-            self.log("Registration cancelled by user", "INFO")
-            return
+        if not auto_confirm:
+            # Ask for confirmation
+            print("\n⚠️  About to run registration commands. Please confirm:")
+            print("1. STAGING_DISCORD_GUILD_ID is set correctly")
+            print("2. All required GitHub secrets exist in Settings → Secrets & variables")
+            print("3. You have reviewed the registration scripts")
+            try:
+                response = input("\nType 'Yes' to proceed: ")
+            except EOFError:
+                self.log("No interactive input available. Set AUTO_CONFIRM_REGISTRATION=1 to run non-interactively.", "ERROR")
+                return
+            
+            if response != "Yes":
+                self.log("Registration cancelled by user", "INFO")
+                return
+        else:
+            self.log("AUTO_CONFIRM_REGISTRATION=1 detected. Proceeding with registration non-interactively.", "INFO")
         
         self.log("Running registration commands...", "PROGRESS")
         
@@ -718,10 +734,12 @@ class OperationalReadinessAgent:
         
         if code == 0:
             self.log("Registration completed successfully", "SUCCESS")
-            print(stdout)
+            if stdout:
+                print(stdout)
         else:
             self.log(f"Registration failed with exit code {code}", "ERROR")
-            print(stderr)
+            if stderr:
+                print(stderr)
     
     # ============================================
     # Task 5: E2E /triage Dry-Run
