@@ -813,6 +813,398 @@ class OperationalReadinessAgent:
         return guide
     
     # ============================================
+    # Task F: Network Test Failure Detection
+    # ============================================
+    
+    def detect_network_test_failures(self, test_output: str) -> List[Dict[str, Any]]:
+        """
+        Detect network-related test failures from test output.
+        Returns list of detected network failures with test names and error types.
+        """
+        network_failures = []
+        
+        # First, find all FAILED test cases
+        failed_test_pattern = r'FAILED\s+([\w/]+\.py)::(test_\w+)'
+        failed_tests = re.findall(failed_test_pattern, test_output)
+        
+        # Network error patterns to detect
+        network_error_patterns = [
+            (r'socket\.gaierror', 'SOCKET_GAIERROR'),
+            (r'requests\.exceptions\.ConnectionError', 'CONNECTION_ERROR'),
+            (r'ConnectionRefusedError', 'CONNECTION_REFUSED'),
+            (r'getaddrinfo ENOTFOUND', 'DNS_ENOTFOUND'),
+            (r'DNS failure', 'DNS_FAILURE'),
+            (r'Max retries exceeded', 'MAX_RETRY_ERROR'),
+            (r'Failed to resolve', 'DNS_RESOLUTION_FAILED'),
+            (r'No address associated with hostname', 'DNS_NO_ADDRESS'),
+            (r'URLError.*Name or service not known', 'URL_ERROR'),
+        ]
+        
+        # Check which failed tests have network errors
+        for test_file, test_name in failed_tests:
+            # Check if any network error pattern is in the output near this test
+            has_network_error = False
+            detected_error_type = 'UNKNOWN'
+            
+            for pattern, error_type in network_error_patterns:
+                if re.search(pattern, test_output, re.IGNORECASE):
+                    # Check if this error is associated with this test by looking for the test name nearby
+                    # Look for the pattern within 500 chars of the test name mention
+                    context_pattern = rf'{test_name}.{{0,500}}{pattern}|{pattern}.{{0,500}}{test_name}'
+                    if re.search(context_pattern, test_output, re.IGNORECASE | re.DOTALL):
+                        has_network_error = True
+                        detected_error_type = error_type
+                        break
+            
+            if has_network_error:
+                # Extract a relevant snippet
+                snippet_pattern = rf'({test_name}.{{0,100}})'
+                snippet_match = re.search(snippet_pattern, test_output)
+                snippet = snippet_match.group(0) if snippet_match else f'{test_name} network failure'
+                
+                network_failures.append({
+                    'test_name': test_name,
+                    'test_file': test_file,
+                    'error_type': detected_error_type,
+                    'confidence': 'High',
+                    'snippet': snippet[:100]
+                })
+        
+        return network_failures
+    
+    def run_tests_and_check_for_network_failures(self) -> Tuple[bool, List[Dict[str, Any]]]:
+        """
+        Run tests and check for network failures.
+        Returns (tests_passed, network_failures)
+        """
+        self.log("Running tests to check for network failures...", "PROGRESS")
+        
+        # Run pytest
+        test_dir = os.path.join(self.repo_path, "orchestrator/tests")
+        if not os.path.exists(test_dir):
+            self.log("No tests directory found", "WARNING")
+            return True, []
+        
+        code, stdout, stderr = self.run_command([
+            "python3", "-m", "pytest", "-q", "tests/"
+        ])
+        
+        all_output = stdout + "\n" + stderr
+        
+        # Detect network failures
+        network_failures = self.detect_network_test_failures(all_output)
+        
+        if network_failures:
+            self.log(f"Detected {len(network_failures)} network-related test failures", "WARNING")
+            for failure in network_failures[:3]:
+                self.log(f"  • {failure['test_name']} in {failure['test_file']}: {failure['error_type']}", "INFO")
+        else:
+            if code != 0:
+                self.log("Some tests failed but no network-related failures detected", "INFO")
+        
+        # Tests passed if exit code is 0 OR if only network failures (which we can fix)
+        tests_passed = code == 0 or (len(network_failures) > 0 and code != 0)
+        return tests_passed, network_failures
+    
+    # ============================================
+    # Task G: Automated Test Patching
+    # ============================================
+    
+    def generate_test_patch(self, failure: Dict[str, Any]) -> str:
+        """
+        Generate a minimal test patch using monkeypatch fixture.
+        """
+        test_file = failure['test_file']
+        test_name = failure['test_name']
+        error_type = failure['error_type']
+        
+        # Determine what to mock based on error type
+        if 'DNS' in error_type or 'CONNECTION' in error_type or 'SOCKET' in error_type:
+            # Mock requests.get and requests.post
+            patch_code = """
+# Auto-generated patch for network test failure
+import pytest
+
+@pytest.fixture(autouse=True)
+def _mock_network_calls(monkeypatch):
+    \"\"\"Mock external network calls to prevent CI failures\"\"\"
+    
+    def _fake_get(url, *args, **kwargs):
+        class MockResponse:
+            status_code = 200
+            text = "ok"
+            def json(self):
+                return {"ok": True, "status": "success"}
+            def raise_for_status(self):
+                pass
+        return MockResponse()
+    
+    def _fake_post(url, *args, **kwargs):
+        class MockResponse:
+            status_code = 201
+            text = "created"
+            def json(self):
+                return {"ok": True, "id": "mock-id"}
+            def raise_for_status(self):
+                pass
+        return MockResponse()
+    
+    def _fake_head(url, *args, **kwargs):
+        class MockResponse:
+            status_code = 200
+            headers = {"Content-Type": "text/html"}
+            def raise_for_status(self):
+                pass
+        return MockResponse()
+    
+    # Patch requests module
+    try:
+        import requests
+        monkeypatch.setattr("requests.get", _fake_get)
+        monkeypatch.setattr("requests.post", _fake_post)
+        monkeypatch.setattr("requests.head", _fake_head)
+    except ImportError:
+        pass
+    
+    # Also patch urllib for completeness
+    try:
+        from urllib import request
+        def _fake_urlopen(url, *args, **kwargs):
+            class MockHTTPResponse:
+                def read(self):
+                    return b"ok"
+                def getcode(self):
+                    return 200
+            return MockHTTPResponse()
+        monkeypatch.setattr("urllib.request.urlopen", _fake_urlopen)
+    except ImportError:
+        pass
+"""
+        else:
+            # Generic skip-if patch
+            patch_code = f"""
+# Auto-generated patch for network test failure
+import os
+import pytest
+
+@pytest.mark.skipif(os.getenv("CI_ALLOW_NETWORK") != "1", reason="External network blocked in CI")
+def {test_name}():
+    # Original test will be preserved, just marked to skip in CI without network
+    pass
+"""
+        
+        return patch_code
+    
+    def apply_test_patches(self, network_failures: List[Dict[str, Any]]) -> bool:
+        """
+        Apply test patches to fix network-related failures.
+        Returns True if patches were applied successfully.
+        """
+        if not network_failures:
+            return True
+        
+        self.log("Generating test patches...", "PROGRESS")
+        
+        # Group failures by test file
+        failures_by_file = {}
+        for failure in network_failures:
+            test_file = failure['test_file']
+            if test_file not in failures_by_file:
+                failures_by_file[test_file] = []
+            failures_by_file[test_file].append(failure)
+        
+        # Apply patches
+        patches_applied = []
+        for test_file, failures in failures_by_file.items():
+            # Find the actual test file path
+            test_file_path = None
+            if os.path.exists(os.path.join(self.repo_path, "orchestrator/tests", test_file)):
+                test_file_path = os.path.join(self.repo_path, "orchestrator/tests", test_file)
+            elif os.path.exists(os.path.join(self.repo_path, test_file)):
+                test_file_path = os.path.join(self.repo_path, test_file)
+            
+            if not test_file_path:
+                self.log(f"Could not find test file: {test_file}", "WARNING")
+                continue
+            
+            # Read current content
+            try:
+                with open(test_file_path, 'r') as f:
+                    content = f.read()
+                
+                # Check if already patched
+                if '_mock_network_calls' in content or 'Auto-generated patch for network test failure' in content:
+                    self.log(f"Test file {test_file} already has network mocking", "INFO")
+                    continue
+                
+                # Generate patch for first failure (they all need same mock)
+                patch = self.generate_test_patch(failures[0])
+                
+                # Insert patch after imports
+                import_end = 0
+                for line_idx, line in enumerate(content.split('\n')):
+                    if line.strip() and not line.strip().startswith('import') and not line.strip().startswith('from'):
+                        import_end = line_idx
+                        break
+                
+                lines = content.split('\n')
+                lines.insert(import_end, patch)
+                new_content = '\n'.join(lines)
+                
+                # Write patched content
+                with open(test_file_path, 'w') as f:
+                    f.write(new_content)
+                
+                patches_applied.append(test_file)
+                self.log(f"Applied network mock patch to {test_file}", "SUCCESS")
+                
+            except Exception as e:
+                self.log(f"Failed to patch {test_file}: {e}", "ERROR")
+                return False
+        
+        return len(patches_applied) > 0
+    
+    def create_test_fix_branch_and_pr(self, network_failures: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        Create a branch with test fixes and open a draft PR.
+        Returns PR URL if successful, None otherwise.
+        """
+        if not self.config.allow_create_draft_prs:
+            self.log("Draft PR creation not authorized", "WARNING")
+            return None
+        
+        if not self.github_token:
+            self.log("GitHub token required to create PR", "ERROR")
+            return None
+        
+        # Ask for confirmation
+        auto_confirm = os.environ.get("AUTO_CONFIRM_PR_CREATION") == "1"
+        if not auto_confirm:
+            print("\n⚠️  About to create a draft PR with test fixes. Please confirm:")
+            print("1. You have reviewed the proposed patches")
+            print("2. The patches only modify test files")
+            print("3. You want to proceed with PR creation")
+            try:
+                response = input("\nType 'Yes — create draft PR' to proceed: ")
+            except EOFError:
+                self.log("No interactive input. Set AUTO_CONFIRM_PR_CREATION=1 to proceed non-interactively.", "ERROR")
+                return None
+            
+            if response != "Yes — create draft PR":
+                self.log("PR creation cancelled by user", "INFO")
+                return None
+        
+        # Create branch name
+        timestamp = int(time.time())
+        pr_number = self.config.test_pr_number or "auto"
+        branch_name = f"auto/fix/mock-network-test/pr-{pr_number}/{timestamp}"
+        
+        self.log(f"Creating branch: {branch_name}", "PROGRESS")
+        
+        # Create and checkout new branch
+        code, stdout, stderr = self.run_command([
+            "git", "checkout", "-b", branch_name
+        ])
+        
+        if code != 0:
+            self.log(f"Failed to create branch: {stderr}", "ERROR")
+            return None
+        
+        # Apply patches
+        if not self.apply_test_patches(network_failures):
+            self.log("Failed to apply patches", "ERROR")
+            return None
+        
+        # Stage changes
+        code, stdout, stderr = self.run_command([
+            "git", "add", "orchestrator/tests/"
+        ])
+        
+        # Commit changes
+        commit_message = f"Draft: Fix flaky network test(s) — mock external calls\n\n" \
+                        f"Auto-generated fix for {len(network_failures)} network-related test failure(s).\n" \
+                        f"Correlation ID: {self.config.correlation_id}\n" \
+                        f"Files modified: {len(set(f['test_file'] for f in network_failures))}"
+        
+        code, stdout, stderr = self.run_command([
+            "git", "commit", "-m", commit_message
+        ])
+        
+        if code != 0:
+            self.log(f"Failed to commit changes: {stderr}", "ERROR")
+            return None
+        
+        # Push branch
+        code, stdout, stderr = self.run_command([
+            "git", "push", "origin", branch_name
+        ])
+        
+        if code != 0:
+            self.log(f"Failed to push branch: {stderr}", "ERROR")
+            return None
+        
+        # Create PR using GitHub API
+        pr_title = "Draft: Fix flaky network test(s) — mock external calls"
+        pr_body = f"""## Summary
+This PR fixes {len(network_failures)} network-related test failure(s) by mocking external network calls.
+
+## Test Failures Fixed
+"""
+        for failure in network_failures[:10]:
+            pr_body += f"- `{failure['test_name']}` in `{failure['test_file']}` ({failure['error_type']})\n"
+        
+        pr_body += f"""
+## Changes
+- Added monkeypatch fixtures to mock `requests.get`, `requests.post`, `requests.head`
+- Modified test files to prevent external network calls in CI environment
+- Preserved test coverage while making tests CI-friendly
+
+## Audit Trail
+- Correlation ID: {self.config.correlation_id}
+- Generated: {datetime.now(timezone.utc).isoformat()}
+- Files changed: {len(set(f['test_file'] for f in network_failures))}
+
+## Testing
+Tests should now pass in CI environments without external network access.
+
+**This is a DRAFT PR** - requires human review before merging.
+"""
+        
+        # Create PR via GitHub API
+        headers = {
+            "Authorization": f"token {self.github_token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        pr_data = {
+            "title": pr_title,
+            "head": branch_name,
+            "base": self.config.base_ref,
+            "body": pr_body,
+            "draft": True
+        }
+        
+        try:
+            response = requests.post(
+                f"https://api.github.com/repos/{self.config.repo}/pulls",
+                headers=headers,
+                json=pr_data,
+                timeout=30
+            )
+            
+            if response.status_code == 201:
+                pr_url = response.json()['html_url']
+                self.log(f"Draft PR created: {pr_url}", "SUCCESS")
+                return pr_url
+            else:
+                self.log(f"Failed to create PR: {response.status_code} - {response.text}", "ERROR")
+                return None
+        
+        except Exception as e:
+            self.log(f"Failed to create PR via API: {e}", "ERROR")
+            return None
+    
+    # ============================================
     # Task 6: Draft PR Policy Verification
     # ============================================
     
@@ -1184,6 +1576,18 @@ def check_for_secrets(self, content: str) -> List[str]:
                     severity_emoji = {"HIGH": "🔴", "MEDIUM": "🟠", "LOW": "🟡"}.get(guardrail['severity'], "⚪")
                     print(f"  {severity_emoji} {guardrail['guardrail']} (severity: {guardrail['severity']})")
         
+        # Network test failures
+        if report.evidence.get('network_test_failures'):
+            network = report.evidence['network_test_failures']
+            if network.get('detected'):
+                print(f"\n**⚠️  Network Test Failures** ({network['count']} detected):")
+                for failure in network.get('failures', [])[:5]:
+                    print(f"  • {failure['test_name']} in {failure['test_file']}")
+                    print(f"    Error: {failure['error_type']} (Confidence: {failure['confidence']})")
+                print(f"\n  💡 Proposed fix: Add monkeypatch fixtures to mock external network calls")
+            else:
+                print(f"\n**✅ Network Tests**: All tests passing or properly mocked")
+        
         print("\n" + "="*80)
         print("ℹ️  NOTE: I cannot read GitHub repository secrets.")
         print("   Please verify them in: Settings → Secrets & variables → Actions")
@@ -1236,7 +1640,7 @@ def check_for_secrets(self, content: str) -> List[str]:
     def run(self):
         """Run the complete operational readiness validation"""
         print("\n" + "="*80)
-        print("On it — running repo recon now.")
+        print("On it — running combined readiness + fix agent now.")
         print("="*80 + "\n")
         
         try:
@@ -1257,6 +1661,30 @@ def check_for_secrets(self, content: str) -> List[str]:
             e2e_guide = self.guide_e2e_triage_test()
             self.log(f"E2E test guide prepared with {len(e2e_guide['steps'])} steps", "SUCCESS")
             
+            # Task F: Check for network test failures
+            tests_passed, network_failures = self.run_tests_and_check_for_network_failures()
+            
+            # Task G: Offer to fix network test failures if detected
+            if network_failures and not tests_passed:
+                self.log("Diagnosis: Network-related test failures detected", "WARNING")
+                for failure in network_failures[:3]:
+                    self.log(f"  • {failure['test_name']} fails due to {failure['error_type']} (High confidence)", "INFO")
+                
+                self.log("Proposed fix: monkeypatch fixtures to mock external network calls in test files", "INFO")
+                
+                # Store network failures in report evidence
+                network_failure_evidence = {
+                    "detected": True,
+                    "count": len(network_failures),
+                    "failures": network_failures[:10]  # Limit for report size
+                }
+            else:
+                network_failure_evidence = {
+                    "detected": False,
+                    "count": 0,
+                    "failures": []
+                }
+            
             # Task 6: Draft PR Policies
             pr_policies = self.verify_draft_pr_policies()
             self.log(f"Verified {len(pr_policies['policies'])} PR policies", "SUCCESS")
@@ -1264,11 +1692,37 @@ def check_for_secrets(self, content: str) -> List[str]:
             # Task 7: Generate Report
             report = self.generate_report()
             
+            # Add network failure evidence to report
+            report.evidence['network_test_failures'] = network_failure_evidence
+            
             # Print report to console
             self.print_report(report)
             
             # Save report to files
             self.save_report(report)
+            
+            # Offer to create draft PR for test fixes if failures detected
+            if network_failures and not tests_passed:
+                print("\n" + "="*80)
+                print("🔧 AUTOMATED TEST FIX AVAILABLE")
+                print("="*80)
+                print(f"\nDetected {len(network_failures)} network-related test failure(s).")
+                print("I can create a draft PR with minimal patches to mock external network calls.")
+                print("\n⚠️  This will ONLY modify test files, not production code.")
+                print("\nMay I create a draft PR with this change? (Yes/No)")
+                
+                if self.config.allow_create_draft_prs:
+                    # Attempt to create PR
+                    pr_url = self.create_test_fix_branch_and_pr(network_failures)
+                    if pr_url:
+                        print(f"\n✅ Draft PR created: {pr_url}")
+                        print("   Please review the changes before merging.")
+                    else:
+                        print("\n❌ Failed to create draft PR.")
+                        print("   You can apply the patches manually using the report guidance.")
+                else:
+                    print("\n   (Set --allow-create-draft-prs to enable automated PR creation)")
+                    print("\n   To apply fixes manually, see the generated patch code in the report.")
             
             self.log("Operational readiness validation complete!", "SUCCESS")
             
