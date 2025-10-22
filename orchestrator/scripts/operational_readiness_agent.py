@@ -377,6 +377,48 @@ class OperationalReadinessAgent:
     # Task 2: Secrets-in-Code Check
     # ============================================
     
+    def _search_files_for_pattern(self, pattern: str, file_extensions: List[str]) -> List[Tuple[str, int, str]]:
+        """
+        Portable Python-based search helper to find pattern in files.
+        
+        Args:
+            pattern: String pattern to search for
+            file_extensions: List of file extensions to search (e.g., ['.py', '.sh', '.yml'])
+        
+        Returns:
+            List of tuples (filepath, line_number, line_content)
+        """
+        results = []
+        
+        # Walk through directory tree
+        for root, dirs, files in os.walk(self.repo_path):
+            # Skip .git directory
+            if '.git' in root.split(os.sep):
+                continue
+            
+            for file in files:
+                # Check if file has one of the target extensions
+                if not any(file.endswith(ext) for ext in file_extensions):
+                    continue
+                
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                        for line_num, line in enumerate(f, start=1):
+                            if pattern in line:
+                                # Make path relative to repo root
+                                rel_path = os.path.relpath(filepath, self.repo_path)
+                                results.append((rel_path, line_num, line.rstrip('\n')))
+                                
+                                # Limit results per file to avoid overwhelming output
+                                if len([r for r in results if r[0] == rel_path]) >= 20:
+                                    break
+                except (IOError, OSError):
+                    # Skip files that can't be read
+                    continue
+        
+        return results
+    
     def perform_secrets_check(self) -> SecretsCheckResult:
         """Search for secrets in code and map example configs to expected secrets"""
         self.log("Performing secrets-in-code check...", "PROGRESS")
