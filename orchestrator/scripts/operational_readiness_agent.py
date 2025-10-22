@@ -199,6 +199,60 @@ class OperationalReadinessAgent:
         # If not found, use current directory
         return os.getcwd()
     
+    def _search_files_for_pattern(self, patterns: List[str], max_matches: int = 20) -> List[Dict[str, Any]]:
+        """
+        Search for patterns in code files using Python (portable alternative to grep).
+        
+        Args:
+            patterns: List of patterns to search for
+            max_matches: Maximum number of matches to return per pattern
+        
+        Returns:
+            List of matches with file, line number, and content
+        """
+        matches = []
+        file_extensions = ('.py', '.sh', '.yml', '.yaml')
+        
+        # Walk through repository looking for matching files
+        for root, dirs, files in os.walk(self.repo_path):
+            # Skip hidden directories and common ignore patterns
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'venv', 'env']]
+            
+            for filename in files:
+                if not filename.endswith(file_extensions):
+                    continue
+                
+                filepath = os.path.join(root, filename)
+                relative_path = os.path.relpath(filepath, self.repo_path)
+                
+                try:
+                    # Try to read as text, skip binary files
+                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                        lines = f.readlines()
+                    
+                    # Search for each pattern
+                    for pattern in patterns:
+                        pattern_match_count = 0
+                        for line_num, line in enumerate(lines, start=1):
+                            if pattern in line:
+                                matches.append({
+                                    "file": relative_path,
+                                    "line": str(line_num),
+                                    "content": line.rstrip(),
+                                    "pattern": pattern
+                                })
+                                pattern_match_count += 1
+                                
+                                # Limit matches per pattern
+                                if pattern_match_count >= max_matches:
+                                    break
+                
+                except (IOError, UnicodeDecodeError, PermissionError):
+                    # Skip files we can't read (binary, permission denied, etc.)
+                    continue
+        
+        return matches
+    
     def log(self, message: str, level: str = "INFO"):
         """Log a message with timestamp"""
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -388,28 +442,28 @@ class OperationalReadinessAgent:
         ]
         
         # Search for secret patterns in code using Python search helper
-        for secret_var in secret_env_vars:
-            # Use portable Python search instead of grep
-            search_results = self._search_files_for_pattern(
-                secret_var, 
-                ['.py', '.sh', '.yml', '.yaml']
-            )
+        search_results = self._search_files_for_pattern(secret_env_vars, max_matches=20)
+        
+        for match in search_results:
+            filepath = match["file"]
+            line_num = match["line"]
+            content = match["content"]
+            secret_var = match["pattern"]
             
-            for filepath, line_num, content in search_results[:20]:  # Limit to first 20 occurrences
-                # Check if this looks like a hardcoded secret (not just env var reference)
-                if re.search(r'=\s*["\'][a-zA-Z0-9_-]{20,}["\']', content):
-                    # Redact the value
-                    redacted_content = re.sub(
-                        r'(["\'])([a-zA-Z0-9_-]{20,})(["\'])',
-                        lambda m: f"{m.group(1)}***{m.group(2)[-4:]}{m.group(3)}",
-                        content
-                    )
-                    found_secrets.append({
-                        "file": filepath,
-                        "line": str(line_num),
-                        "snippet": redacted_content.strip(),
-                        "variable": secret_var
-                    })
+            # Check if this looks like a hardcoded secret (not just env var reference)
+            if re.search(r'=\s*["\'][a-zA-Z0-9_-]{20,}["\']', content):
+                # Redact the value
+                redacted_content = re.sub(
+                    r'(["\'])([a-zA-Z0-9_-]{20,})(["\'])',
+                    lambda m: f"{m.group(1)}***{m.group(2)[-4:]}{m.group(3)}",
+                    content
+                )
+                found_secrets.append({
+                    "file": filepath,
+                    "line": line_num,
+                    "snippet": redacted_content.strip(),
+                    "variable": secret_var
+                })
         
         # Find example config files
         example_files = [

@@ -1,135 +1,137 @@
+#!/usr/bin/env python3
 """
-Unit tests for operational readiness search helper.
+Unit tests for _search_files_for_pattern() helper in operational_readiness_agent.py
 """
-import unittest
-import tempfile
 import os
-from pathlib import Path
 import sys
+import tempfile
+import shutil
+import unittest
+from pathlib import Path
 
-# Add parent directory to path to import the agent module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+# Add scripts directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
-from operational_readiness_agent import OperationalReadinessAgent, OperationalReadinessConfig
+from operational_readiness_agent import (
+    OperationalReadinessAgent,
+    OperationalReadinessConfig
+)
 
 
-class TestReadinessSearch(unittest.TestCase):
-    """Test cases for operational readiness search functionality."""
-
+class TestSearchFilesForPattern(unittest.TestCase):
+    """Test _search_files_for_pattern helper function"""
+    
     def setUp(self):
-        """Set up test fixtures."""
-        # Create a temporary directory for testing
-        self.temp_dir = tempfile.mkdtemp()
+        """Set up test environment with temp directory"""
+        # Create temp directory inside the repo
+        self.test_dir = tempfile.mkdtemp(prefix='test_readiness_', dir=os.getcwd())
         
-        # Create a config that points to our temp directory
-        self.config = OperationalReadinessConfig(repo="test/repo")
-        self.agent = OperationalReadinessAgent(self.config)
+        # Create a config and agent instance
+        config = OperationalReadinessConfig()
+        config.repo = "gcolon75/Project-Valine"
+        self.agent = OperationalReadinessAgent(config)
         
-        # Override repo_path to use temp directory
-        self.agent.repo_path = self.temp_dir
-
+        # Override repo_path to use test directory
+        self.original_repo_path = self.agent.repo_path
+        self.agent.repo_path = self.test_dir
+    
     def tearDown(self):
-        """Clean up test fixtures."""
-        # Remove temporary directory
-        import shutil
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_search_files_for_pattern_finds_placeholder(self):
-        """Test that _search_files_for_pattern finds a sample placeholder variable."""
-        # Create a test file with a placeholder variable
-        test_file = os.path.join(self.temp_dir, 'test_config.py')
+        """Clean up temp directory"""
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir)
+        
+        # Restore original repo_path
+        self.agent.repo_path = self.original_repo_path
+    
+    def test_search_finds_placeholder_env_var(self):
+        """Test that _search_files_for_pattern finds a placeholder env var in a temp file"""
+        # Create a temp file with a placeholder env var
+        test_file = os.path.join(self.test_dir, 'test_config.py')
         with open(test_file, 'w') as f:
-            f.write('# Test configuration file\n')
-            f.write('STAGING_DISCORD_BOT_TOKEN=placeholder_value_12345\n')
-            f.write('OTHER_VAR=some_other_value\n')
+            f.write("# Test configuration\n")
+            f.write("STAGING_DISCORD_BOT_TOKEN=placeholder\n")
+            f.write("# End of config\n")
         
-        # Search for the placeholder variable
-        results = self.agent._search_files_for_pattern('STAGING_DISCORD_BOT_TOKEN', ['.py'])
+        # Search for the pattern
+        results = self.agent._search_files_for_pattern(['STAGING_DISCORD_BOT_TOKEN'])
         
-        # Assert that we found the variable
+        # Assert that we found at least one match
         self.assertGreater(len(results), 0, "Should find at least one match")
         
-        # Verify the result structure
-        filepath, line_num, content = results[0]
-        self.assertEqual(filepath, 'test_config.py')
-        self.assertEqual(line_num, 2)
-        self.assertIn('STAGING_DISCORD_BOT_TOKEN', content)
-        self.assertIn('placeholder', content)
-
-    def test_search_files_for_pattern_filters_by_extension(self):
-        """Test that search only looks at specified file extensions."""
-        # Create test files with different extensions
-        py_file = os.path.join(self.temp_dir, 'test.py')
-        txt_file = os.path.join(self.temp_dir, 'test.txt')
+        # Check that the match contains the expected pattern
+        found = False
+        for match in results:
+            if match['pattern'] == 'STAGING_DISCORD_BOT_TOKEN':
+                # Verify the file is correct (relative path)
+                self.assertIn('test_config.py', match['file'])
+                # Verify the content contains our placeholder
+                self.assertIn('STAGING_DISCORD_BOT_TOKEN', match['content'])
+                found = True
+                break
         
-        with open(py_file, 'w') as f:
-            f.write('STAGING_DISCORD_BOT_TOKEN=value1\n')
-        
-        with open(txt_file, 'w') as f:
-            f.write('STAGING_DISCORD_BOT_TOKEN=value2\n')
-        
-        # Search only .py files
-        results = self.agent._search_files_for_pattern('STAGING_DISCORD_BOT_TOKEN', ['.py'])
-        
-        # Should only find the .py file
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0][0], 'test.py')
-
-    def test_search_files_for_pattern_multiple_matches(self):
-        """Test that search finds multiple matches across files."""
-        # Create multiple test files
-        for i in range(3):
-            test_file = os.path.join(self.temp_dir, f'config{i}.yml')
-            with open(test_file, 'w') as f:
-                f.write(f'GITHUB_TOKEN: value{i}\n')
-        
-        # Search for GITHUB_TOKEN
-        results = self.agent._search_files_for_pattern('GITHUB_TOKEN', ['.yml'])
-        
-        # Should find all three files
-        self.assertEqual(len(results), 3)
-        
-        # Verify each result has the expected pattern
-        for filepath, line_num, content in results:
-            self.assertTrue(filepath.startswith('config'))
-            self.assertTrue(filepath.endswith('.yml'))
-            self.assertIn('GITHUB_TOKEN', content)
-
-    def test_search_files_for_pattern_skips_git_directory(self):
-        """Test that search skips .git directory."""
-        # Create a .git directory with a file
-        git_dir = os.path.join(self.temp_dir, '.git')
-        os.makedirs(git_dir)
-        git_file = os.path.join(git_dir, 'config')
-        with open(git_file, 'w') as f:
-            f.write('STAGING_DISCORD_BOT_TOKEN=should_not_find\n')
-        
-        # Create a regular file
-        regular_file = os.path.join(self.temp_dir, 'regular.py')
-        with open(regular_file, 'w') as f:
-            f.write('STAGING_DISCORD_BOT_TOKEN=should_find\n')
-        
-        # Search for the token
-        results = self.agent._search_files_for_pattern('STAGING_DISCORD_BOT_TOKEN', ['.py'])
-        
-        # Should only find the regular file, not the .git file
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0][0], 'regular.py')
-        self.assertNotIn('.git', results[0][0])
-
-    def test_search_files_for_pattern_empty_result(self):
-        """Test that search returns empty list when no matches found."""
-        # Create a test file without the search pattern
-        test_file = os.path.join(self.temp_dir, 'test.sh')
+        self.assertTrue(found, "Should find STAGING_DISCORD_BOT_TOKEN in results")
+    
+    def test_search_respects_max_matches(self):
+        """Test that _search_files_for_pattern respects max_matches parameter"""
+        # Create a temp file with multiple occurrences
+        test_file = os.path.join(self.test_dir, 'multi_match.py')
         with open(test_file, 'w') as f:
-            f.write('#!/bin/bash\n')
-            f.write('echo "Hello World"\n')
+            for i in range(30):
+                f.write(f"GITHUB_TOKEN_{i} = 'token'\n")
         
-        # Search for a pattern that doesn't exist
-        results = self.agent._search_files_for_pattern('NONEXISTENT_PATTERN', ['.sh'])
+        # Search with a low max_matches
+        results = self.agent._search_files_for_pattern(['GITHUB_TOKEN'], max_matches=5)
         
-        # Should return empty list
-        self.assertEqual(len(results), 0)
+        # Count how many matches for this pattern
+        pattern_matches = [r for r in results if r['pattern'] == 'GITHUB_TOKEN']
+        self.assertLessEqual(len(pattern_matches), 5, "Should respect max_matches limit")
+    
+    def test_search_skips_non_text_extensions(self):
+        """Test that _search_files_for_pattern only searches text files"""
+        # Create files with various extensions
+        test_py = os.path.join(self.test_dir, 'test.py')
+        test_txt = os.path.join(self.test_dir, 'test.txt')
+        test_yml = os.path.join(self.test_dir, 'test.yml')
+        
+        with open(test_py, 'w') as f:
+            f.write("SECRET_KEY = 'value'\n")
+        
+        with open(test_txt, 'w') as f:
+            f.write("SECRET_KEY = 'value'\n")
+        
+        with open(test_yml, 'w') as f:
+            f.write("SECRET_KEY: value\n")
+        
+        # Search for pattern
+        results = self.agent._search_files_for_pattern(['SECRET_KEY'])
+        
+        # Should find in .py and .yml but not .txt
+        found_files = [r['file'] for r in results]
+        
+        # Check we found it in expected files
+        py_found = any('test.py' in f for f in found_files)
+        yml_found = any('test.yml' in f for f in found_files)
+        txt_found = any('test.txt' in f for f in found_files)
+        
+        self.assertTrue(py_found, "Should find pattern in .py files")
+        self.assertTrue(yml_found, "Should find pattern in .yml files")
+        self.assertFalse(txt_found, "Should not find pattern in .txt files")
+    
+    def test_search_skips_hidden_directories(self):
+        """Test that _search_files_for_pattern skips hidden directories"""
+        # Create a hidden directory
+        hidden_dir = os.path.join(self.test_dir, '.hidden')
+        os.makedirs(hidden_dir)
+        
+        test_file = os.path.join(hidden_dir, 'test.py')
+        with open(test_file, 'w') as f:
+            f.write("HIDDEN_SECRET = 'value'\n")
+        
+        # Search for pattern
+        results = self.agent._search_files_for_pattern(['HIDDEN_SECRET'])
+        
+        # Should not find anything in hidden directory
+        self.assertEqual(len(results), 0, "Should skip hidden directories")
 
 
 if __name__ == '__main__':
