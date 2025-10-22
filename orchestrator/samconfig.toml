@@ -1,0 +1,24 @@
+version = 0.1
+
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "valine-orchestrator-staging"
+s3_bucket = "sam-artifacts-valine-us-west-2"
+s3_prefix = "valine-orchestrator-staging"
+region = "us-west-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+    "Stage=dev",
+    "DiscordPublicKey=ENV:STAGING_DISCORD_PUBLIC_KEY",
+    "DiscordBotToken=ENV:STAGING_DISCORD_BOT_TOKEN",
+    "GitHubToken=ENV:STAGING_GITHUB_TOKEN",
+    "GitHubWebhookSecret=ENV:STAGING_GITHUB_WEBHOOK_SECRET",
+    "FrontendBaseUrl=ENV:FRONTEND_BASE_URL",
+    "ViteApiBase=ENV:VITE_API_BASE"
+]
+
+[default.build]
+[default.build.parameters]
+use_container = false
