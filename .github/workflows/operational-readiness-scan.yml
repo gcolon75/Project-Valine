@@ -1,0 +1,50 @@
+name: Operational Readiness Scan
+
+on:
+  schedule:
+    # Run daily at 09:00 UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  readiness-scan:
+    name: Run Operational Readiness Agent
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          # Install orchestrator dependencies if they exist
+          if [ -f orchestrator/requirements.txt ]; then
+            pip install -r orchestrator/requirements.txt
+          fi
+      
+      - name: Run operational readiness agent
+        run: |
+          # Generate a default config if not exists
+          if [ ! -f operational_readiness_config.json ]; then
+            python3 orchestrator/scripts/operational_readiness_agent.py generate-config
+          fi
+          python3 orchestrator/scripts/operational_readiness_agent.py run --config operational_readiness_config.json
+        continue-on-error: true
+      
+      - name: Upload readiness evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: readiness-evidence
+          path: |
+            readiness_evidence/*.json
+            readiness_evidence/*.md
+          if-no-files-found: warn
