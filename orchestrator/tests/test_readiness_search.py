@@ -52,20 +52,24 @@ class TestSearchFilesForPattern(unittest.TestCase):
             f.write("STAGING_DISCORD_BOT_TOKEN=placeholder\n")
             f.write("# End of config\n")
         
-        # Search for the pattern
-        results = self.agent._search_files_for_pattern(['STAGING_DISCORD_BOT_TOKEN'])
+        # Search for the pattern - returns List[Tuple[str, int, str]]
+        results = self.agent._search_files_for_pattern(
+            ['STAGING_DISCORD_BOT_TOKEN'],
+            include_exts=['.py', '.sh', '.yml', '.yaml', '.json', '.toml']
+        )
         
         # Assert that we found at least one match
         self.assertGreater(len(results), 0, "Should find at least one match")
         
         # Check that the match contains the expected pattern
+        # Results are tuples: (relative_path, line_number, line_text)
         found = False
-        for match in results:
-            if match['pattern'] == 'STAGING_DISCORD_BOT_TOKEN':
+        for filepath, line_num, line_text in results:
+            if 'STAGING_DISCORD_BOT_TOKEN' in line_text:
                 # Verify the file is correct (relative path)
-                self.assertIn('test_config.py', match['file'])
+                self.assertIn('test_config.py', filepath)
                 # Verify the content contains our placeholder
-                self.assertIn('STAGING_DISCORD_BOT_TOKEN', match['content'])
+                self.assertIn('placeholder', line_text)
                 found = True
                 break
         
@@ -80,14 +84,17 @@ class TestSearchFilesForPattern(unittest.TestCase):
                 f.write(f"GITHUB_TOKEN_{i} = 'token'\n")
         
         # Search with a low max_matches
-        results = self.agent._search_files_for_pattern(['GITHUB_TOKEN'], max_matches=5)
+        results = self.agent._search_files_for_pattern(
+            ['GITHUB_TOKEN'],
+            include_exts=['.py'],
+            max_matches=5
+        )
         
-        # Count how many matches for this pattern
-        pattern_matches = [r for r in results if r['pattern'] == 'GITHUB_TOKEN']
-        self.assertLessEqual(len(pattern_matches), 5, "Should respect max_matches limit")
+        # Should return at most 5 results
+        self.assertLessEqual(len(results), 5, "Should respect max_matches limit")
     
     def test_search_skips_non_text_extensions(self):
-        """Test that _search_files_for_pattern only searches text files"""
+        """Test that _search_files_for_pattern only searches specified extensions"""
         # Create files with various extensions
         test_py = os.path.join(self.test_dir, 'test.py')
         test_txt = os.path.join(self.test_dir, 'test.txt')
@@ -102,11 +109,14 @@ class TestSearchFilesForPattern(unittest.TestCase):
         with open(test_yml, 'w') as f:
             f.write("SECRET_KEY: value\n")
         
-        # Search for pattern
-        results = self.agent._search_files_for_pattern(['SECRET_KEY'])
+        # Search for pattern with specific extensions
+        results = self.agent._search_files_for_pattern(
+            ['SECRET_KEY'],
+            include_exts=['.py', '.yml']
+        )
         
         # Should find in .py and .yml but not .txt
-        found_files = [r['file'] for r in results]
+        found_files = [filepath for filepath, _, _ in results]
         
         # Check we found it in expected files
         py_found = any('test.py' in f for f in found_files)
@@ -115,7 +125,7 @@ class TestSearchFilesForPattern(unittest.TestCase):
         
         self.assertTrue(py_found, "Should find pattern in .py files")
         self.assertTrue(yml_found, "Should find pattern in .yml files")
-        self.assertFalse(txt_found, "Should not find pattern in .txt files")
+        self.assertFalse(txt_found, "Should not find pattern in .txt files (not in include_exts)")
     
     def test_search_skips_hidden_directories(self):
         """Test that _search_files_for_pattern skips hidden directories"""
@@ -128,7 +138,10 @@ class TestSearchFilesForPattern(unittest.TestCase):
             f.write("HIDDEN_SECRET = 'value'\n")
         
         # Search for pattern
-        results = self.agent._search_files_for_pattern(['HIDDEN_SECRET'])
+        results = self.agent._search_files_for_pattern(
+            ['HIDDEN_SECRET'],
+            include_exts=['.py']
+        )
         
         # Should not find anything in hidden directory
         self.assertEqual(len(results), 0, "Should skip hidden directories")

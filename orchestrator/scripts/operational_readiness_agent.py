@@ -199,27 +199,36 @@ class OperationalReadinessAgent:
         # If not found, use current directory
         return os.getcwd()
     
-    def _search_files_for_pattern(self, patterns: List[str], max_matches: int = 20) -> List[Dict[str, Any]]:
+    def _search_files_for_pattern(
+        self, 
+        patterns: List[str], 
+        include_exts: List[str] = None, 
+        max_matches: int = 200
+    ) -> List[Tuple[str, int, str]]:
         """
-        Search for patterns in code files using Python (portable alternative to grep).
+        Portable Python-based search helper to find patterns in files.
         
         Args:
-            patterns: List of patterns to search for
-            max_matches: Maximum number of matches to return per pattern
+            patterns: List of string patterns to search for
+            include_exts: List of file extensions to search (default: ['.py', '.sh', '.yml', '.yaml', '.json', '.toml'])
+            max_matches: Maximum total number of matches to return
         
         Returns:
-            List of matches with file, line number, and content
+            List of tuples (relative_path, line_number, line_text)
         """
-        matches = []
-        file_extensions = ('.py', '.sh', '.yml', '.yaml')
+        if include_exts is None:
+            include_exts = ['.py', '.sh', '.yml', '.yaml', '.json', '.toml']
+        
+        results = []
         
         # Walk through repository looking for matching files
         for root, dirs, files in os.walk(self.repo_path):
             # Skip hidden directories and common ignore patterns
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'venv', 'env']]
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'venv', 'env', 'dist', 'build']]
             
             for filename in files:
-                if not filename.endswith(file_extensions):
+                # Check if file has one of the target extensions
+                if not any(filename.endswith(ext) for ext in include_exts):
                     continue
                 
                 filepath = os.path.join(root, filename)
@@ -228,30 +237,22 @@ class OperationalReadinessAgent:
                 try:
                     # Try to read as text, skip binary files
                     with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                        lines = f.readlines()
-                    
-                    # Search for each pattern
-                    for pattern in patterns:
-                        pattern_match_count = 0
-                        for line_num, line in enumerate(lines, start=1):
-                            if pattern in line:
-                                matches.append({
-                                    "file": relative_path,
-                                    "line": str(line_num),
-                                    "content": line.rstrip(),
-                                    "pattern": pattern
-                                })
-                                pattern_match_count += 1
-                                
-                                # Limit matches per pattern
-                                if pattern_match_count >= max_matches:
-                                    break
+                        for line_num, line in enumerate(f, start=1):
+                            # Check if any pattern matches this line
+                            for pattern in patterns:
+                                if pattern in line:
+                                    results.append((relative_path, line_num, line.rstrip('\n')))
+                                    
+                                    # Stop early if max_matches reached
+                                    if len(results) >= max_matches:
+                                        return results
+                                    break  # Only count once per line even if multiple patterns match
                 
-                except (IOError, UnicodeDecodeError, PermissionError):
+                except (IOError, UnicodeDecodeError, PermissionError, OSError):
                     # Skip files we can't read (binary, permission denied, etc.)
                     continue
         
-        return matches
+        return results
     
     def log(self, message: str, level: str = "INFO"):
         """Log a message with timestamp"""
@@ -376,49 +377,7 @@ class OperationalReadinessAgent:
     # ============================================
     # Task 2: Secrets-in-Code Check
     # ============================================
-    
-    def _search_files_for_pattern(self, pattern: str, file_extensions: List[str]) -> List[Tuple[str, int, str]]:
-        """
-        Portable Python-based search helper to find pattern in files.
-        
-        Args:
-            pattern: String pattern to search for
-            file_extensions: List of file extensions to search (e.g., ['.py', '.sh', '.yml'])
-        
-        Returns:
-            List of tuples (filepath, line_number, line_content)
-        """
-        results = []
-        
-        # Walk through directory tree
-        for root, dirs, files in os.walk(self.repo_path):
-            # Skip .git directory
-            if '.git' in root.split(os.sep):
-                continue
-            
-            for file in files:
-                # Check if file has one of the target extensions
-                if not any(file.endswith(ext) for ext in file_extensions):
-                    continue
-                
-                filepath = os.path.join(root, file)
-                try:
-                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                        for line_num, line in enumerate(f, start=1):
-                            if pattern in line:
-                                # Make path relative to repo root
-                                rel_path = os.path.relpath(filepath, self.repo_path)
-                                results.append((rel_path, line_num, line.rstrip('\n')))
-                                
-                                # Limit results per file to avoid overwhelming output
-                                if len([r for r in results if r[0] == rel_path]) >= 20:
-                                    break
-                except (IOError, OSError):
-                    # Skip files that can't be read
-                    continue
-        
-        return results
-    
+
     def perform_secrets_check(self) -> SecretsCheckResult:
         """Search for secrets in code and map example configs to expected secrets"""
         self.log("Performing secrets-in-code check...", "PROGRESS")
@@ -442,13 +401,23 @@ class OperationalReadinessAgent:
         ]
         
         # Search for secret patterns in code using Python search helper
-        search_results = self._search_files_for_pattern(secret_env_vars, max_matches=20)
+        search_results = self._search_files_for_pattern(
+            secret_env_vars, 
+            include_exts=['.py', '.sh', '.yml', '.yaml', '.json', '.toml'],
+            max_matches=200
+        )
         
-        for match in search_results:
-            filepath = match["file"]
-            line_num = match["line"]
-            content = match["content"]
-            secret_var = match["pattern"]
+        # Process results - search_results is now List[Tuple[str, int, str]]
+        for filepath, line_num, content in search_results:
+            # Determine which pattern matched
+            secret_var = None
+            for pattern in secret_env_vars:
+                if pattern in content:
+                    secret_var = pattern
+                    break
+            
+            if secret_var is None:
+                continue
             
             # Check if this looks like a hardcoded secret (not just env var reference)
             if re.search(r'=\s*["\'][a-zA-Z0-9_-]{20,}["\']', content):
@@ -460,7 +429,7 @@ class OperationalReadinessAgent:
                 )
                 found_secrets.append({
                     "file": filepath,
-                    "line": line_num,
+                    "line": str(line_num),
                     "snippet": redacted_content.strip(),
                     "variable": secret_var
                 })
