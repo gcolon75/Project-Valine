@@ -1,0 +1,52 @@
+name: Operational Readiness Scan
+
+on:
+  schedule:
+    # Run daily at 9:00 UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  readiness-scan:
+    name: Run Operational Readiness Agent
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          if [ -f orchestrator/requirements.txt ]; then
+            pip install -r orchestrator/requirements.txt
+          fi
+          pip install requests
+      
+      - name: Run operational readiness agent (dry-run)
+        run: |
+          cd orchestrator/scripts
+          python3 operational_readiness_agent.py run --repo gcolon75/Project-Valine
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload readiness evidence (JSON)
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: readiness-evidence-json
+          path: orchestrator/scripts/readiness_evidence/*.json
+          if-no-files-found: warn
+      
+      - name: Upload readiness evidence (Markdown)
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: readiness-evidence-markdown
+          path: orchestrator/scripts/readiness_evidence/*.md
+          if-no-files-found: warn
