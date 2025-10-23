@@ -39,6 +39,10 @@ jobs:
           echo "FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" >> $GITHUB_ENV
           echo "VITE_API_BASE=${{ secrets.VITE_API_BASE }}" >> $GITHUB_ENV
       
+      - name: Generate deployment stamp
+        working-directory: orchestrator
+        run: ./scripts/generate-deploy-stamp.sh
+      
       - name: SAM Build
         working-directory: orchestrator
         run: sam build
@@ -58,6 +62,32 @@ jobs:
               "GitHubWebhookSecret=${STAGING_GITHUB_WEBHOOK_SECRET}" \
               "FrontendBaseUrl=${FRONTEND_BASE_URL}" \
               "ViteApiBase=${VITE_API_BASE}"
+      
+      - name: Verify Lambda deployment
+        run: |
+          echo "### Lambda Deployment Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get Discord handler function info
+          echo "**Discord Handler Function:**" >> $GITHUB_STEP_SUMMARY
+          DISCORD_INFO=$(aws lambda get-function --function-name valine-orchestrator-discord-dev --query 'Configuration.[LastModified,CodeSize]' --output text)
+          DISCORD_S3=$(aws lambda get-function --function-name valine-orchestrator-discord-dev --query 'Code.Location' --output text)
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Last Modified: $(echo $DISCORD_INFO | awk '{print $1}')" >> $GITHUB_STEP_SUMMARY
+          echo "Code Size: $(echo $DISCORD_INFO | awk '{print $2}') bytes" >> $GITHUB_STEP_SUMMARY
+          echo "S3 Location: $DISCORD_S3" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get GitHub handler function info
+          echo "**GitHub Handler Function:**" >> $GITHUB_STEP_SUMMARY
+          GITHUB_INFO=$(aws lambda get-function --function-name valine-orchestrator-github-dev --query 'Configuration.[LastModified,CodeSize]' --output text)
+          GITHUB_S3=$(aws lambda get-function --function-name valine-orchestrator-github-dev --query 'Code.Location' --output text)
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Last Modified: $(echo $GITHUB_INFO | awk '{print $1}')" >> $GITHUB_STEP_SUMMARY
+          echo "Code Size: $(echo $GITHUB_INFO | awk '{print $2}') bytes" >> $GITHUB_STEP_SUMMARY
+          echo "S3 Location: $GITHUB_S3" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
       
       - name: Get Discord webhook URL
         id: get-url
