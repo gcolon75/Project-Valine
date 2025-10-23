@@ -1,24 +1,43 @@
 version = 0.1
 
 [default]
-[default.deploy]
+[default.global.parameters]
+stack_name = "valine-orchestrator"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
 [default.deploy.parameters]
-stack_name = "valine-orchestrator-staging"
-s3_bucket = "sam-artifacts-valine-us-west-2"
-s3_prefix = "valine-orchestrator-staging"
-region = "us-west-2"
-confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-west-2"
 parameter_overrides = [
-    "Stage=dev",
-    "DiscordPublicKey=ENV:STAGING_DISCORD_PUBLIC_KEY",
-    "DiscordBotToken=ENV:STAGING_DISCORD_BOT_TOKEN",
-    "GitHubToken=ENV:STAGING_GITHUB_TOKEN",
-    "GitHubWebhookSecret=ENV:STAGING_GITHUB_WEBHOOK_SECRET",
-    "FrontendBaseUrl=ENV:FRONTEND_BASE_URL",
-    "ViteApiBase=ENV:VITE_API_BASE"
+  "Stage=\"dev\"",
+  "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
+  "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
+  "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
+  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
+  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
+  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
 ]
 
-[default.build]
-[default.build.parameters]
-use_container = false
+[prod]
+[prod.global.parameters]
+stack_name = "valine-orchestrator-prod"
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-west-2"
+parameter_overrides = [
+  "Stage=\"prod\"",
+  "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
+  "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
+  "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
+  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
+  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
+  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
+]
