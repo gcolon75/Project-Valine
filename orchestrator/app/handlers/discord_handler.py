@@ -1405,6 +1405,98 @@ def handle_triage_command(interaction):
         })
 
 
+def handle_ux_update_command(interaction):
+    """Handle /ux-update command - automate UI/UX changes to the web app."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        section = None
+        updates = {}
+        
+        for option in options:
+            name = option.get('name')
+            value = option.get('value')
+            
+            if name == 'section':
+                section = value
+            else:
+                updates[name] = value
+        
+        # Validate section parameter
+        if not section:
+            return create_response(4, {
+                'content': '❌ Missing required parameter: `section`\n\n'
+                          'Try: `/ux-update section:header text:"Welcome to Project Valine!"`',
+                'flags': 64
+            })
+        
+        # Validate at least one update
+        if not updates:
+            return create_response(4, {
+                'content': '❌ No updates specified.\n\n'
+                          'Examples:\n'
+                          '• `/ux-update section:header text:"Welcome Home!"`\n'
+                          '• `/ux-update section:footer color:"#FF0080"`\n'
+                          '• `/ux-update section:navbar add-link:"/about"`',
+                'flags': 64
+            })
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize UX Agent
+        from agents.ux_agent import UXAgent
+        github_service = GitHubService()
+        ux_agent = UXAgent(github_service=github_service)
+        
+        # Process the update
+        result = ux_agent.process_update(
+            section=section,
+            updates=updates,
+            requester=requester
+        )
+        
+        if result['success']:
+            # Build success response
+            update_list = '\n'.join([f'• `{k}`: {v}' for k, v in updates.items()])
+            content = f'🎨 **UX Update Queued!**\n\n'
+            content += f'**Section:** `{section}`\n'
+            content += f'**Updates:**\n{update_list}\n\n'
+            content += f'**Requested by:** {requester}\n'
+            content += f'**Draft PR:** {result["pr_url"]}\n\n'
+            content += '✅ A draft PR has been created for review. Check it out and merge when ready!'
+            
+            return create_response(4, {
+                'content': content
+            })
+        else:
+            # Build error response
+            return create_response(4, {
+                'content': result['message'],
+                'flags': 64
+            })
+    
+    except Exception as e:
+        print(f'Error in handle_ux_update_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        
+        # Provide helpful error message
+        content = '❌ Could not process your request.\n\n'
+        content += 'Try these examples:\n'
+        content += '• `/ux-update section:header text:"Welcome to Project Valine!"`\n'
+        content += '• `/ux-update section:footer color:"#FF0080"`\n'
+        content += '• `/ux-update section:navbar brand:"Joint"`\n'
+        content += '• `/ux-update section:home hero-text:"Your Creative Hub"`\n\n'
+        content += f'Error details: {str(e)}'
+        
+        return create_response(4, {
+            'content': content,
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -1482,6 +1574,8 @@ def handler(event, context):
                 return handle_relay_dm_command(interaction)
             elif command_name == 'triage':
                 return handle_triage_command(interaction)
+            elif command_name == 'ux-update':
+                return handle_ux_update_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
