@@ -1,3 +1,4 @@
+# Updated: 10/23/2025 11:52:22
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
