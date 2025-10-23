@@ -196,7 +196,7 @@ main() {
   fi
   
   # Step 8: Update documentation
-  run_step "Step 8: Update PHASE5_VALIDATION.md" \
+  run_step "Step 8: Update docs/diagnostics/PHASE5_VALIDATION.md" \
     "python3 '$VALIDATOR_SCRIPT' update-docs --config '$CONFIG_FILE'"
   
   # Generate executive summary
@@ -213,7 +213,7 @@ main() {
   log_info "Next steps:"
   log_info "  1. Review validation evidence and reports"
   log_info "  2. Create docs branch: git checkout -b staging/phase5-validation-evidence"
-  log_info "  3. Add evidence: git add orchestrator/scripts/validation_evidence PHASE5_VALIDATION.md"
+  log_info "  3. Add evidence: git add orchestrator/scripts/validation_evidence docs/diagnostics/PHASE5_VALIDATION.md"
   log_info "  4. Commit: git commit -m 'Phase 5 staging validation evidence'"
   log_info "  5. Push: git push origin staging/phase5-validation-evidence"
   log_info "  6. Create PR: gh pr create --title 'Phase 5 Staging Validation Evidence'"

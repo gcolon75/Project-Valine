@@ -205,9 +205,9 @@ The validator implements the complete Phase 5 staging validation workflow:
    - Verify final values via GetParameter
    - Log all configuration changes
 
-6. **Step 8: Prepare and update PHASE5_VALIDATION.md**
+6. **Step 8: Prepare and update docs/diagnostics/PHASE5_VALIDATION.md**
    - Generate staging evidence section
-   - Update PHASE5_VALIDATION.md automatically
+   - Update docs/diagnostics/PHASE5_VALIDATION.md automatically
    - Include acceptance criteria checklist
    - Provide operator sign-off block
    - Note: PR creation should be done separately via git/GitHub
@@ -243,7 +243,7 @@ The validator implements the complete Phase 5 staging validation workflow:
    - CloudWatch log aggregation with redaction
    - Validation report generation
    - Executive summary for stakeholders
-   - PHASE5_VALIDATION.md automatic updates
+   - docs/diagnostics/PHASE5_VALIDATION.md automatic updates
 
 5. **Safety Features**
    - Production channel detection and blocking
@@ -356,7 +356,7 @@ This will:
 - Enable and validate alerts (Step 5)
 - Capture all evidence with redaction (Step 6)
 - Revert flags to safe defaults (Step 7)
-- Update PHASE5_VALIDATION.md (Step 8)
+- Update docs/diagnostics/PHASE5_VALIDATION.md (Step 8)
 
 #### Individual Commands
 
@@ -410,7 +410,7 @@ python phase5_staging_validator.py revert-flags --config staging_config.json
 **Step 8: Update Documentation**
 
 ```bash
-# Update PHASE5_VALIDATION.md with evidence
+# Update docs/diagnostics/PHASE5_VALIDATION.md with evidence
 python phase5_staging_validator.py update-docs --config staging_config.json
 
 # Generate executive summary
@@ -433,10 +433,10 @@ The validator generates the following files in the `evidence_output_dir` (defaul
 
 - `validation_report_{CORRELATION_ID}.md` - Detailed validation report with all evidence
 - `executive_summary_{CORRELATION_ID}.md` - Executive summary for stakeholders
-- `phase5_evidence_section_{CORRELATION_ID}.md` - Evidence section for PHASE5_VALIDATION.md (if auto-update fails)
+- `phase5_evidence_section_{CORRELATION_ID}.md` - Evidence section for docs/diagnostics/PHASE5_VALIDATION.md (if auto-update fails)
 
 The validator also updates:
-- `/home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md` - Adds staging validation evidence section
+- `/home/runner/work/Project-Valine/Project-Valine/docs/diagnostics/PHASE5_VALIDATION.md` - Adds staging validation evidence section
 
 ### Example Workflow
 
@@ -466,7 +466,7 @@ cat validation_evidence/executive_summary_*.md
 # 6. Commit and create PR
 cd /home/runner/work/Project-Valine/Project-Valine
 git checkout -b staging/phase5-validation-evidence
-git add PHASE5_VALIDATION.md orchestrator/scripts/validation_evidence/
+git add docs/diagnostics/PHASE5_VALIDATION.md orchestrator/scripts/validation_evidence/
 git commit -m "docs: Add Phase 5 staging validation evidence"
 git push origin staging/phase5-validation-evidence
 # Create PR via GitHub UI or gh CLI
@@ -548,11 +548,11 @@ The validator includes multiple safety features:
 **Manual testing steps unclear**
 - See validation_report_{CORRELATION_ID}.md for detailed steps
 - Check RUNBOOK.md for operational procedures
-- Review PHASE5_VALIDATION.md for examples
+- Review docs/diagnostics/PHASE5_VALIDATION.md for examples
 
 ### Additional Resources
 
-- **Phase 5 Validation Document:** `PHASE5_VALIDATION.md`
+- **Phase 5 Validation Document:** `docs/diagnostics/PHASE5_VALIDATION.md`
 - **Runbook:** `orchestrator/RUNBOOK.md`
 - **Quick Start Guide:** `orchestrator/scripts/QUICKSTART.md`
 - **CI/CD Workflow:** `.github/workflows/phase5-staging-validation.yml`
