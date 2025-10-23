@@ -13,7 +13,7 @@ Key Features:
 - Comprehensive deliverables (diff, playbook, evidence)
 
 Usage:
-    from app.agents.discord_slash_cmd_agent import DiscordSlashCommandAgent
+    from agents.discord_slash_cmd_agent import DiscordSlashCommandAgent
     
     agent = DiscordSlashCommandAgent(
         app_id="DISCORD_APPLICATION_ID",
