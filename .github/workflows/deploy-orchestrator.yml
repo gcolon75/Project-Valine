@@ -102,3 +102,9 @@ jobs:
           echo "$URL" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "**Next step:** Paste this URL into Discord Developer Portal → Interactions Endpoint URL" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Health Check - Test Discord Endpoint
+        working-directory: orchestrator
+        run: |
+          echo "Testing deployed Lambda endpoint..."
+          ./scripts/test-discord-endpoint.sh
