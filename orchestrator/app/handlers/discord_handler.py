@@ -12,17 +12,17 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
-from app.verification.verifier import DeployVerifier
-from app.services.github import GitHubService
-from app.services.github_actions_dispatcher import GitHubActionsDispatcher
-from app.services.discord import DiscordService
-from app.services.audit_store import AuditStore
-from app.utils.url_validator import URLValidator
-from app.utils.admin_auth import AdminAuthenticator
-from app.utils.time_formatter import TimeFormatter
-from app.utils.trace_store import get_trace_store
-from app.utils.logger import redact_secrets, StructuredLogger
-from app.agents.registry import get_agents
+from verification.verifier import DeployVerifier
+from services.github import GitHubService
+from services.github_actions_dispatcher import GitHubActionsDispatcher
+from services.discord import DiscordService
+from services.audit_store import AuditStore
+from utils.url_validator import URLValidator
+from utils.admin_auth import AdminAuthenticator
+from utils.time_formatter import TimeFormatter
+from utils.trace_store import get_trace_store
+from utils.logger import redact_secrets, StructuredLogger
+from agents.registry import get_agents
 
 # Note: Phase5TriageAgent is only used for local testing
 # The Discord bot triggers the triage workflow via GitHub Actions instead
