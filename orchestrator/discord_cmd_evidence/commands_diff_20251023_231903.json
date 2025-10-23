@@ -1,0 +1,136 @@
+{
+  "timestamp": "2025-10-23T23:18:00.343155+00:00",
+  "guild_id": "1407810581532250233",
+  "comparison": {
+    "missing": [],
+    "extra": [],
+    "outdated": [],
+    "total_expected": 4,
+    "total_existing": 4
+  },
+  "existing_commands": [
+    {
+      "id": "1431059121477648485",
+      "application_id": "1428568840958251109",
+      "version": "1431059121477648489",
+      "default_member_permissions": null,
+      "type": 1,
+      "name": "debug-last",
+      "description": "Show last run debug info (redacted, ephemeral)",
+      "guild_id": "1407810581532250233",
+      "nsfw": false
+    },
+    {
+      "id": "1431059121477648486",
+      "application_id": "1428568840958251109",
+      "version": "1431059121477648490",
+      "default_member_permissions": null,
+      "type": 1,
+      "name": "diagnose",
+      "description": "Run a quick staging diagnostic",
+      "guild_id": "1407810581532250233",
+      "nsfw": false
+    },
+    {
+      "id": "1431059121477648487",
+      "application_id": "1428568840958251109",
+      "version": "1431059121477648491",
+      "default_member_permissions": null,
+      "type": 1,
+      "name": "status",
+      "description": "Show last 1-3 runs for workflows",
+      "guild_id": "1407810581532250233",
+      "options": [
+        {
+          "type": 4,
+          "name": "count",
+          "description": "Number of runs (1-3)",
+          "min_value": 1,
+          "max_value": 3
+        }
+      ],
+      "nsfw": false
+    },
+    {
+      "id": "1431059121477648488",
+      "application_id": "1428568840958251109",
+      "version": "1431059121477648492",
+      "default_member_permissions": null,
+      "type": 1,
+      "name": "triage",
+      "description": "Auto-diagnose and fix failed PR/workflow runs",
+      "guild_id": "1407810581532250233",
+      "options": [
+        {
+          "type": 4,
+          "name": "pr",
+          "description": "PR number or workflow run ID",
+          "required": true
+        },
+        {
+          "type": 5,
+          "name": "auto_fix",
+          "description": "Automatically create fix PR"
+        },
+        {
+          "type": 5,
+          "name": "allow_invasive",
+          "description": "Allow changes >10 files or >500 lines"
+        }
+      ],
+      "nsfw": false
+    }
+  ],
+  "expected_commands": [
+    {
+      "name": "debug-last",
+      "type": 1,
+      "description": "Show last run debug info (redacted, ephemeral)"
+    },
+    {
+      "name": "diagnose",
+      "type": 1,
+      "description": "Run a quick staging diagnostic"
+    },
+    {
+      "name": "status",
+      "type": 1,
+      "description": "Show last 1-3 runs for workflows",
+      "options": [
+        {
+          "name": "count",
+          "description": "Number of runs (1-3)",
+          "type": 4,
+          "required": false,
+          "min_value": 1,
+          "max_value": 3
+        }
+      ]
+    },
+    {
+      "name": "triage",
+      "type": 1,
+      "description": "Auto-diagnose and fix failed PR/workflow runs",
+      "options": [
+        {
+          "name": "pr",
+          "description": "PR number or workflow run ID",
+          "type": 4,
+          "required": true
+        },
+        {
+          "name": "auto_fix",
+          "description": "Automatically create fix PR",
+          "type": 5,
+          "required": false
+        },
+        {
+          "name": "allow_invasive",
+          "description": "Allow changes >10 files or >500 lines",
+          "type": 5,
+          "required": false
+        }
+      ]
+    }
+  ]
+}
