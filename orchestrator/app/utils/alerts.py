@@ -7,8 +7,8 @@ import time
 import hashlib
 from typing import Optional, Dict
 from datetime import datetime, timezone
-from app.services.discord import DiscordService
-from app.utils.logger import StructuredLogger, redact_secrets
+from services.discord import DiscordService
+from utils.logger import StructuredLogger, redact_secrets
 
 
 class AlertsManager:

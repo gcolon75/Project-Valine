@@ -3,10 +3,10 @@ Main verification orchestrator.
 Coordinates GitHub Actions checks, HTTP checks, and message composition.
 """
 import os
-from app.services.github import GitHubService
-from app.verification.github_actions import GitHubActionsVerifier
-from app.verification.http_checker import HTTPChecker
-from app.verification.message_composer import MessageComposer
+from services.github import GitHubService
+from verification.github_actions import GitHubActionsVerifier
+from verification.http_checker import HTTPChecker
+from verification.message_composer import MessageComposer
 
 
 class DeployVerifier:

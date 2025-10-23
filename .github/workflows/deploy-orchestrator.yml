@@ -49,6 +49,7 @@ jobs:
           sam deploy \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
+            --force-upload \
             --parameter-overrides \
               "Stage=dev" \
               "DiscordPublicKey=${STAGING_DISCORD_PUBLIC_KEY}" \

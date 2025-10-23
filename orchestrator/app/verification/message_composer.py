@@ -2,7 +2,7 @@
 Message composer for Discord verification results.
 Creates formatted one-liner summaries and detailed checklists.
 """
-from app.config.verification_config import COLOR_SUCCESS, COLOR_FAILURE
+from config.verification_config import COLOR_SUCCESS, COLOR_FAILURE
 
 
 class MessageComposer:
