@@ -5,7 +5,7 @@ Performs HTTP checks with timeouts and retries.
 import re
 import time
 import requests
-from app.config.verification_config import (
+from config.verification_config import (
     HTTP_TIMEOUT_SECONDS,
     HTTP_MAX_RETRIES,
     HTTP_RETRY_DELAY_SECONDS,

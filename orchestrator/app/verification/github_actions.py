@@ -6,7 +6,7 @@ import re
 import os
 from datetime import datetime
 from github import GithubException
-from app.config.verification_config import WORKFLOW_NAME, TARGET_BRANCH, STEP_PATTERNS
+from config.verification_config import WORKFLOW_NAME, TARGET_BRANCH, STEP_PATTERNS
 
 
 class GitHubActionsVerifier:
