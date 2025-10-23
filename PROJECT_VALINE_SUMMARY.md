@@ -882,13 +882,13 @@ Project-Valine/
 - `README.md` - Main project overview
 - `orchestrator/README.md` - Orchestrator setup and usage
 - `orchestrator/QUICK_START_STAGING.md` - Staging setup
-- `AUTO_TRIAGE_QUICKSTART.md` - Triage automation quick start
-- `PHASE6_DISCORD_TRIAGE_QUICKSTART.md` - Phase 6 quick start
+- `docs/archive/AUTO_TRIAGE_QUICKSTART.md` - Triage automation quick start
+- `docs/diagnostics/PHASE6_DISCORD_TRIAGE_QUICKSTART.md` - Phase 6 quick start
 
 ### Implementation Summaries
-- `IMPLEMENTATION_COMPLETE.md` - Discord slash commands
-- `PHASE6_IMPLEMENTATION_SUMMARY.md` - Phase 6 triage integration
-- `IMPLEMENTATION_SUMMARY_PHASE5.md` - Phase 5 triage agent
+- `docs/diagnostics/IMPLEMENTATION_COMPLETE.md` - Discord slash commands
+- `docs/diagnostics/PHASE6_IMPLEMENTATION_SUMMARY.md` - Phase 6 triage integration
+- `docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE5.md` - Phase 5 triage agent
 
 ### Technical Guides
 - `orchestrator/INTEGRATION_GUIDE.md` - Discord/GitHub integration

@@ -453,7 +453,7 @@ If you're still having issues after following this guide:
 
 - [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - Full deployment checklist
 - [QUICK_START_STAGING.md](./QUICK_START_STAGING.md) - Staging environment setup
-- [PHASE6_DISCORD_TRIAGE_QUICKSTART.md](../PHASE6_DISCORD_TRIAGE_QUICKSTART.md) - Triage command usage
+- [PHASE6_DISCORD_TRIAGE_QUICKSTART.md](../docs/diagnostics/PHASE6_DISCORD_TRIAGE_QUICKSTART.md) - Triage command usage
 - [AWS SAM Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html)
 - [Discord Developer Portal](https://discord.com/developers/applications)
 - [Discord Interactions Documentation](https://discord.com/developers/docs/interactions/receiving-and-responding)

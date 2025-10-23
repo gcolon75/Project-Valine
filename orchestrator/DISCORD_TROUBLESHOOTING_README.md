@@ -74,7 +74,7 @@ Comprehensive guide covering:
 
 | Document | Use When | Time Required |
 |----------|----------|---------------|
-| [../PHASE6_DISCORD_TRIAGE_QUICKSTART.md](../PHASE6_DISCORD_TRIAGE_QUICKSTART.md) | Using /triage command | 5 minutes |
+| [../docs/diagnostics/PHASE6_DISCORD_TRIAGE_QUICKSTART.md](../docs/diagnostics/PHASE6_DISCORD_TRIAGE_QUICKSTART.md) | Using /triage command | 5 minutes |
 | [TRIAGE_COMMAND_REFERENCE.md](./TRIAGE_COMMAND_REFERENCE.md) | Triage command details | 10 minutes |
 | [DISCORD_SLASH_CMD_QUICK_REF.md](./DISCORD_SLASH_CMD_QUICK_REF.md) | All slash commands | 5 minutes |
 
