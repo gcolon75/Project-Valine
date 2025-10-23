@@ -4,6 +4,30 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 > 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps. Perfect for onboarding new team members or AI agents!
 
+## 🔥 Recent Updates (Oct 2025)
+
+### Discord Bot Endpoint - OPERATIONAL ✅
+The bot respawned successfully after defeating the S3 Cache Boss 💀
+
+**What was broken:**
+- Lambda kept loading stale code from S3 (skill issue from AWS caching)
+- Discord endpoint validation failing with `Runtime.ImportModuleError: No module named 'app'`
+- Manual cache clearing required every deploy (pain)
+
+**What we fixed:**
+- 🎯 **Timestamp cache-buster** forces fresh artifacts on every deploy ([PR #88](https://github.com/gcolon75/Project-Valine/pull/88))
+- 🔍 **Automated health checks** catch broken deploys in CI ([PR #90](https://github.com/gcolon75/Project-Valine/pull/90))
+- 📚 **Recovery playbook** for manual troubleshooting ([PR #89](https://github.com/gcolon75/Project-Valine/pull/89))
+
+**Current status:** Bot is live, endpoint validated, ready for slash commands 🎮
+
+**Technical details:**
+- `scripts/generate-deploy-stamp.sh` injects timestamp into every build
+- `scripts/test-discord-endpoint.sh` validates Lambda health post-deploy
+- [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md) has emergency commands
+
+See [CHANGELOG.md](CHANGELOG.md) for the full story.
+
 ## Features
 
 - **Client Application**: React + Vite client with authentication and role-based access
