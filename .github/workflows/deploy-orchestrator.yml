@@ -45,7 +45,18 @@ jobs:
       
       - name: SAM Deploy
         working-directory: orchestrator
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              "Stage=dev" \
+              "DiscordPublicKey=${STAGING_DISCORD_PUBLIC_KEY}" \
+              "DiscordBotToken=${STAGING_DISCORD_BOT_TOKEN}" \
+              "GitHubToken=${STAGING_GITHUB_TOKEN}" \
+              "GitHubWebhookSecret=${STAGING_GITHUB_WEBHOOK_SECRET}" \
+              "FrontendBaseUrl=${FRONTEND_BASE_URL}" \
+              "ViteApiBase=${VITE_API_BASE}"
       
       - name: Get Discord webhook URL
         id: get-url
