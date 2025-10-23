@@ -51,3 +51,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Deploy stamp file (generated during CI/CD)
+app/.deploy-stamp
