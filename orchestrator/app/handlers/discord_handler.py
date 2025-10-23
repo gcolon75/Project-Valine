@@ -24,9 +24,10 @@ from app.utils.trace_store import get_trace_store
 from app.utils.logger import redact_secrets, StructuredLogger
 from app.agents.registry import get_agents
 
-# Add scripts directory to path for triage agent
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
-from phase5_triage_agent import Phase5TriageAgent, TriageConfig
+# Note: Phase5TriageAgent is only used for local testing
+# The Discord bot triggers the triage workflow via GitHub Actions instead
+# sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
+# from phase5_triage_agent import Phase5TriageAgent, TriageConfig
 
 
 def verify_discord_signature(signature, timestamp, body, public_key):

@@ -2,7 +2,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "valine-orchestrator"
+stack_name = "valine-orchestrator-staging"
 
 [default.build.parameters]
 cached = true
@@ -13,31 +13,34 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 region = "us-west-2"
-parameter_overrides = [
-  "Stage=\"dev\"",
-  "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
-  "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
-  "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
-  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
-  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
-  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
-]
+s3_prefix = "valine-orchestrator-staging"
+
+[staging]
+[staging.global.parameters]
+stack_name = "valine-orchestrator-staging"
+
+[staging.build.parameters]
+cached = true
+parallel = true
+
+[staging.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-west-2"
+s3_prefix = "valine-orchestrator-staging"
 
 [prod]
 [prod.global.parameters]
 stack_name = "valine-orchestrator-prod"
+
+[prod.build.parameters]
+cached = true
+parallel = true
 
 [prod.deploy.parameters]
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 region = "us-west-2"
-parameter_overrides = [
-  "Stage=\"prod\"",
-  "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\"",
-  "DiscordBotToken=\"REPLACE_WITH_DISCORD_BOT_TOKEN\"",
-  "GitHubToken=\"REPLACE_WITH_GITHUB_TOKEN\"",
-  "GitHubWebhookSecret=\"REPLACE_WITH_GITHUB_WEBHOOK_SECRET\"",
-  "FrontendBaseUrl=\"REPLACE_WITH_FRONTEND_BASE_URL\"",
-  "ViteApiBase=\"REPLACE_WITH_VITE_API_BASE\""
-]
+s3_prefix = "valine-orchestrator-prod"
