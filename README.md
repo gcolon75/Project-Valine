@@ -2,6 +2,8 @@
 
 A collaborative platform for voice actors, writers, and artists to create and share scripts, auditions, and creative content.
 
+> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps. Perfect for onboarding new team members or AI agents!
+
 ## Features
 
 - **Client Application**: React + Vite client with authentication and role-based access
@@ -85,6 +87,9 @@ This script checks:
 See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed usage instructions.
 
 ## Documentation
+
+### Getting Started
+- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview of Project Valine: architecture, current status, goals, and next steps
 
 ### Orchestrator Consolidation
 - [Orchestrator Consolidation Plan](ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
