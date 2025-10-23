@@ -1067,14 +1067,14 @@ class Phase5StagingValidator:
         return success
     
     def update_phase5_validation_doc(self, evidence_section: str) -> bool:
-        """Update PHASE5_VALIDATION.md with staging evidence"""
-        self._log("info", "Updating PHASE5_VALIDATION.md")
+        """Update docs/diagnostics/PHASE5_VALIDATION.md with staging evidence"""
+        self._log("info", "Updating docs/diagnostics/PHASE5_VALIDATION.md")
         
         # Find the document in the repo
-        validation_doc_path = Path("/home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md")
+        validation_doc_path = Path("/home/runner/work/Project-Valine/Project-Valine/docs/diagnostics/PHASE5_VALIDATION.md")
         
         if not validation_doc_path.exists():
-            self._log("error", f"PHASE5_VALIDATION.md not found at {validation_doc_path}")
+            self._log("error", f"docs/diagnostics/PHASE5_VALIDATION.md not found at {validation_doc_path}")
             return False
         
         try:
@@ -1115,13 +1115,13 @@ class Phase5StagingValidator:
             return True
         
         except Exception as e:
-            self._log("error", f"Error updating PHASE5_VALIDATION.md: {str(e)}")
+            self._log("error", f"Error updating docs/diagnostics/PHASE5_VALIDATION.md: {str(e)}")
             self._record_evidence("update_validation_doc", "fail",
                                 {"error": str(e)})
             return False
     
     def generate_phase5_evidence_section(self) -> str:
-        """Generate the staging evidence section for PHASE5_VALIDATION.md"""
+        """Generate the staging evidence section for docs/diagnostics/PHASE5_VALIDATION.md"""
         self._log("info", "Generating Phase 5 evidence section")
         
         lines = [

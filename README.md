@@ -26,7 +26,7 @@ See `serverless/` and `infra/` directories for serverless function deployment.
 
 ### AI Orchestrator
 
-⚠️ **Note**: The orchestrator code is currently in this repository but is planned to be migrated to its canonical location at `ghawk75-ai-agent/orchestrator` for better separation of concerns. See [ORCHESTRATOR_CONSOLIDATION.md](ORCHESTRATOR_CONSOLIDATION.md) for the migration plan.
+⚠️ **Note**: The orchestrator code is currently in this repository but is planned to be migrated to its canonical location at `ghawk75-ai-agent/orchestrator` for better separation of concerns. See [docs/archive/ORCHESTRATOR_CONSOLIDATION.md](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) for the migration plan.
 
 The orchestrator manages automated workflows between Discord and GitHub:
 
@@ -88,31 +88,35 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed 
 
 ## Documentation
 
+> 📁 **Organized Documentation**: Most documentation has been moved to the `/docs` directory for better organization. See [docs/README.md](docs/README.md) for the complete structure.
+
 ### Getting Started
 - **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview of Project Valine: architecture, current status, goals, and next steps
 
-### Orchestrator Consolidation
-- [Orchestrator Consolidation Plan](ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
-- [Consolidation Status Report](CONSOLIDATION_STATUS_REPORT.md) - Current status and blockers
+### Troubleshooting
+- [Discord Issues](docs/troubleshooting/discord/) - Discord bot debugging, slash command fixes, and endpoint diagnostics
+
+### Diagnostics & Reports  
+- [Phase Reports](docs/diagnostics/) - Phase 5/6 validation, implementation summaries, and verification reports
+- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
+
+### Archive
+- [Historical Documentation](docs/archive/) - Completed phases, old summaries, and deprecated guides
 
 ### Orchestrator (Current Location - To Be Migrated)
 - [Orchestrator Documentation](orchestrator/README.md) - AI workflow automation
 - [Integration Guide](orchestrator/INTEGRATION_GUIDE.md) - Discord and GitHub setup
 - [Testing Guide](orchestrator/TESTING_GUIDE.md) - End-to-end testing
+- [Orchestrator Consolidation Plan](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
 
-### Deployment
-- [Deployment Verification](DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
+### Deployment & Verification
+- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
 - [Verification Guide](scripts/VERIFICATION_GUIDE.md) - Detailed verification usage and troubleshooting
 
 ### AI Agents
 - [UX Designer Agent](.github/agents/ux-designer.md) - User experience improvements and implementation
 - [Quick Start Guide](.github/agents/QUICK_START.md) - Quick reference for using the UX Designer agent
 - [Agent Templates](.github/agents/templates/) - Reusable templates for PRs, RFCs, and documentation
-
-### Phase 6: Discord Triage Bot
-- [Discord Triage Command Guide](PHASE6_DISCORD_TRIAGE_COMMAND.md) - Complete implementation guide for `/triage` command
-- [Quick Start](PHASE6_DISCORD_TRIAGE_QUICKSTART.md) - Get started with Discord triage in 3 steps
-- [Triage Automation Guide](orchestrator/PHASE5_TRIAGE_AUTOMATION_GUIDE.md) - Phase 5 triage agent details
 
 ### Other Documentation
 - [Sanity Setup](SANITY_SETUP.md) - CMS configuration

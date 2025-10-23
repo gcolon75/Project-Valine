@@ -165,7 +165,7 @@ jobs:
           
           # Add validation evidence
           git add orchestrator/scripts/validation_evidence/
-          git add PHASE5_VALIDATION.md || true
+          git add docs/diagnostics/PHASE5_VALIDATION.md || true
           
           # Commit changes
           if ! git diff --staged --quiet; then
