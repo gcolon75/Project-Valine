@@ -55,7 +55,7 @@ jobs:
             --query 'Stacks[0].Outputs[?OutputKey==`DiscordWebhookUrl`].OutputValue' \
             --output text)
           echo "discord_url=$URL" >> $GITHUB_OUTPUT
-          echo "### í¾® Discord Webhook URL" >> $GITHUB_STEP_SUMMARY
+          echo "### Discord Webhook URL" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$URL" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
