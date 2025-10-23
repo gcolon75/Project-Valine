@@ -1,8 +1,9 @@
-# Updated: 10/23/2025 11:52:22
+# Updated: 10/23/2025 23:40:00
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage,
+/update-summary commands.
 """
 import json
 import os
@@ -1405,6 +1406,110 @@ def handle_triage_command(interaction):
         })
 
 
+def handle_update_summary_command(interaction):
+    """Handle /update-summary command - generate and update project summary."""
+    try:
+        # Extract optional parameters
+        options = interaction.get('data', {}).get('options', [])
+        custom_notes = None
+        dry_run = False
+        
+        for option in options:
+            if option.get('name') == 'notes':
+                custom_notes = option.get('value')
+            elif option.get('name') == 'dry_run':
+                dry_run = option.get('value', False)
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize logger
+        logger = StructuredLogger(service="summary")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/update-summary', requester=requester)
+        logger.info('Update summary command received', fn='handle_update_summary_command')
+        
+        # Return immediate acknowledgment
+        short_id = trace_id[:8]
+        content = f'📝 **Generating Project Summary...**\n\n'
+        content += f'**Trace ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n'
+        
+        if custom_notes:
+            content += f'**Custom notes:** {custom_notes[:100]}{"..." if len(custom_notes) > 100 else ""}\n'
+        
+        if dry_run:
+            content += f'**Mode:** Dry run (preview only)\n'
+        
+        content += '\n⏳ Fetching recent PRs and workflow status...\n'
+        
+        try:
+            # Import and initialize SummaryAgent
+            from agents.summary_agent import SummaryAgent
+            
+            # Get GitHub token from environment
+            github_token = os.environ.get('GITHUB_TOKEN')
+            repo = os.environ.get('GITHUB_REPOSITORY', 'gcolon75/Project-Valine')
+            
+            # Initialize agent
+            agent = SummaryAgent(
+                repo=repo,
+                github_token=github_token
+            )
+            
+            # Run agent
+            result = agent.run(
+                custom_notes=custom_notes,
+                include_prs=True,
+                include_workflows=True,
+                dry_run=dry_run
+            )
+            
+            if result.get('success'):
+                if dry_run:
+                    # Show preview of summary
+                    summary_preview = result.get('summary', '')[:1000]
+                    content += f'\n\n✅ **Summary generated (preview):**\n\n'
+                    content += f'```markdown\n{summary_preview}\n```\n\n'
+                    content += f'_Run without `dry_run` to save to PROJECT_VALINE_SUMMARY.md_'
+                else:
+                    # Confirm update
+                    file_path = result.get('file_path', 'PROJECT_VALINE_SUMMARY.md')
+                    content += f'\n\n✅ **Summary updated successfully!**\n'
+                    content += f'**File:** `{file_path}`\n'
+                    content += f'\n📊 Check the repository to view the updated summary.'
+                
+                logger.info('Summary updated successfully', fn='handle_update_summary_command',
+                           dry_run=dry_run, trace_id=trace_id)
+            else:
+                error_msg = result.get('message', 'Unknown error')
+                content += f'\n\n❌ **Failed to update summary:** {error_msg}'
+                logger.error('Summary update failed', fn='handle_update_summary_command',
+                            error=error_msg, trace_id=trace_id)
+        
+        except Exception as agent_error:
+            content += f'\n\n❌ **Error running SummaryAgent:** {str(agent_error)}'
+            logger.error('SummaryAgent error', fn='handle_update_summary_command',
+                        error=str(agent_error), trace_id=trace_id)
+            import traceback
+            traceback.print_exc()
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_update_summary_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -1482,6 +1587,8 @@ def handler(event, context):
                 return handle_relay_dm_command(interaction)
             elif command_name == 'triage':
                 return handle_triage_command(interaction)
+            elif command_name == 'update-summary':
+                return handle_update_summary_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

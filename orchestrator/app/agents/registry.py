@@ -58,6 +58,12 @@ def get_agents() -> List[AgentInfo]:
             name='Phase 5 Triage Agent',
             description='Triages failing Phase 5 jobs/PR runs (CI, agent runs, or registration scripts). Produces actionable triage report with root cause, failing test/log excerpts, and minimal fix proposals.',
             command='/triage'
+        ),
+        AgentInfo(
+            id='summary_agent',
+            name='Summary Agent',
+            description='Generates and updates project summaries with latest status, recent changes, and next steps in a Gen Z/gamer-themed style. Updates PROJECT_VALINE_SUMMARY.md at the top with emojis and bullet points.',
+            command='/update-summary'
         )
     ]
 
