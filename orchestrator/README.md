@@ -15,6 +15,71 @@ The orchestrator consists of:
 - **Multi-Agent Registry**: Agent definitions and capabilities for orchestration and routing
 - **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md))
 
+## 🚀 Deployment System
+
+### Cache-Buster Mechanism
+
+Every deployment forces fresh Lambda artifacts to S3 using a timestamp-based cache-buster:
+
+**How it works:**
+1. `scripts/generate-deploy-stamp.sh` runs before `sam build`
+2. Injects a `.deploy-stamp` file with current timestamp, build ID, and commit SHA into `app/`
+3. This changes the build artifact hash, forcing S3 to accept the upload (no more "upload skipped")
+4. Lambda always gets fresh code, eliminating stale package issues
+
+**Why we need this:**
+- AWS SAM compares local build hash to S3 artifact hash
+- If they match, SAM skips upload (optimization to save time/bandwidth)
+- Problem: sometimes code structure changes but SAM thinks artifact is identical
+- Result: Lambda crashes with `ImportModuleError` because it loaded stale code
+
+**Implemented in:**
+- `.github/workflows/deploy-orchestrator.yml` (line 42-44)
+- Runs automatically on every GitHub Actions deploy
+- Zero manual intervention required
+
+### Health Check System
+
+Post-deploy health check validates Lambda is operational:
+
+**What it does:**
+- Sends Discord PING request (type: 1) to deployed Lambda endpoint
+- Expects 200/401 response (healthy Lambda that rejects invalid signature)
+- Fails on 500/502/503 (Lambda crashed, possibly ImportModuleError)
+- Provides CloudWatch logs link if check fails
+
+**Script:** `scripts/test-discord-endpoint.sh`
+
+**Implemented in:**
+- `.github/workflows/deploy-orchestrator.yml` (line 106-110)
+- Runs as final step after `sam deploy`
+- CI fails fast if Lambda is broken, before Discord registration
+
+### Troubleshooting Deployments
+
+If Lambda deployment fails or bot isn't responding:
+
+**Quick diagnosis (5 minutes):**
+```bash
+cd orchestrator
+# Check what's actually deployed
+python scripts/validate_deployment.py --stage dev
+```
+
+**Emergency fix (when Lambda is on fire 🔥):**
+```bash
+cd orchestrator
+rm -rf .aws-sam/
+sam build --use-container --force
+sam deploy --force-upload
+```
+
+**Full recovery playbook:**
+- [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](docs/LAMBDA_DEPLOY_RECOVERY.md) - Complete troubleshooting guide with 3 recovery options
+- Option 1: Force Fresh Deploy (non-destructive)
+- Option 2: Check IAM Permissions
+- Option 3: Nuclear Reset (last resort)
+
 ## Prerequisites
 
 - AWS Account with appropriate permissions
@@ -103,6 +168,12 @@ sam build && sam deploy
 ```
 
 ## Step 3: Configure Discord Slash Commands
+
+> 🎮 **Ready to respawn?** After deploying the Lambda, you need to register slash commands so Discord knows they exist.
+
+### Quick Start for Slash Commands
+
+The bot endpoint is now operational ✅ and ready for command registration!
 
 ### Quick Setup for Staging
 
