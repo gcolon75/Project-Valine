@@ -1,0 +1,62 @@
+name: Deploy Orchestrator (Discord Bot)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'orchestrator/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
+          aws-region: us-west-2
+      
+      - name: Set environment variables from secrets
+        run: |
+          echo "STAGING_DISCORD_PUBLIC_KEY=${{ secrets.STAGING_DISCORD_PUBLIC_KEY }}" >> $GITHUB_ENV
+          echo "STAGING_DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "STAGING_GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "STAGING_GITHUB_WEBHOOK_SECRET=${{ secrets.STAGING_GITHUB_WEBHOOK_SECRET }}" >> $GITHUB_ENV
+          echo "FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" >> $GITHUB_ENV
+          echo "VITE_API_BASE=${{ secrets.VITE_API_BASE }}" >> $GITHUB_ENV
+      
+      - name: SAM Build
+        working-directory: orchestrator
+        run: sam build
+      
+      - name: SAM Deploy
+        working-directory: orchestrator
+        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+      
+      - name: Get Discord webhook URL
+        id: get-url
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name valine-orchestrator-staging \
+            --query 'Stacks[0].Outputs[?OutputKey==`DiscordWebhookUrl`].OutputValue' \
+            --output text)
+          echo "discord_url=$URL" >> $GITHUB_OUTPUT
+          echo "### í¾® Discord Webhook URL" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$URL" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Next step:** Paste this URL into Discord Developer Portal â†’ Interactions Endpoint URL" >> $GITHUB_STEP_SUMMARY
