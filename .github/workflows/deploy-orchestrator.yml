@@ -78,9 +78,12 @@ jobs:
       - name: SAM Deploy
         id: deploy
         working-directory: orchestrator
+        continue-on-error: true
         run: |
           echo "🚀 Deploying to AWS Lambda (repeating last successful config)..."
-          sam deploy \
+          
+          # Attempt deploy
+          if sam deploy \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --force-upload \
@@ -91,8 +94,34 @@ jobs:
               "GitHubToken=${STAGING_GITHUB_TOKEN}" \
               "GitHubWebhookSecret=${STAGING_GITHUB_WEBHOOK_SECRET}" \
               "FrontendBaseUrl=${FRONTEND_BASE_URL}" \
-              "ViteApiBase=${VITE_API_BASE}"
-          echo "✅ Deploy completed successfully!"
+              "ViteApiBase=${VITE_API_BASE}" 2>&1 | tee /tmp/deploy-output.log; then
+            echo "✅ Deploy completed successfully!"
+            echo "deploy_result=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Deploy failed!"
+            echo "deploy_result=failure" >> $GITHUB_OUTPUT
+            
+            # Capture error for analysis
+            if grep -q "S3 bucket" /tmp/deploy-output.log; then
+              echo "error_type=s3_bucket" >> $GITHUB_OUTPUT
+            elif grep -q "AccessDenied\|Forbidden" /tmp/deploy-output.log; then
+              echo "error_type=iam_permissions" >> $GITHUB_OUTPUT
+            elif grep -q "ResponseParserError\|Invalid JSON" /tmp/deploy-output.log; then
+              echo "error_type=parser_error" >> $GITHUB_OUTPUT
+            elif grep -q "StackSet.*does not exist" /tmp/deploy-output.log; then
+              echo "error_type=stack_missing" >> $GITHUB_OUTPUT
+            else
+              echo "error_type=unknown" >> $GITHUB_OUTPUT
+            fi
+            
+            exit 1
+          fi
+      
+      - name: Check deploy result
+        if: steps.deploy.outputs.deploy_result == 'failure'
+        run: |
+          echo "Deploy failed with error type: ${{ steps.deploy.outputs.error_type }}"
+          exit 1
       
       - name: Verify Lambda deployment
         id: verify
@@ -165,7 +194,63 @@ jobs:
         run: |
           echo "### ❌ Deployment Failed - Troubleshooting Guide" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Error detected during deployment. Here's what to check:**" >> $GITHUB_STEP_SUMMARY
+          
+          ERROR_TYPE="${{ steps.deploy.outputs.error_type }}"
+          
+          # Specific error handling based on type
+          case "$ERROR_TYPE" in
+            "s3_bucket")
+              echo "**Error:** S3 bucket not found or inaccessible" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Quick Fix:**" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+              echo "# SAM will auto-create a managed bucket on first deploy" >> $GITHUB_STEP_SUMMARY
+              echo "cd orchestrator" >> $GITHUB_STEP_SUMMARY
+              echo "sam deploy --guided --resolve-s3" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              ;;
+            "iam_permissions")
+              echo "**Error:** IAM permissions denied (AccessDenied/Forbidden)" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Required Permissions:**" >> $GITHUB_STEP_SUMMARY
+              echo "- CloudFormation: CreateStack, UpdateStack, DescribeStacks" >> $GITHUB_STEP_SUMMARY
+              echo "- S3: PutObject, GetObject, ListBucket" >> $GITHUB_STEP_SUMMARY
+              echo "- Lambda: CreateFunction, UpdateFunctionCode, GetFunction" >> $GITHUB_STEP_SUMMARY
+              echo "- IAM: CreateRole, AttachRolePolicy (for Lambda execution role)" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Fix:** Update \`ProjectValine-GitHubDeployRole\` with required permissions" >> $GITHUB_STEP_SUMMARY
+              ;;
+            "parser_error")
+              echo "**Error:** CloudFormation response parser error" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**This usually means stale cache or corrupted artifact**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Quick Fix:**" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+              echo "cd orchestrator" >> $GITHUB_STEP_SUMMARY
+              echo "rm -rf .aws-sam/" >> $GITHUB_STEP_SUMMARY
+              echo "sam build --use-container --force" >> $GITHUB_STEP_SUMMARY
+              echo "sam deploy --force-upload" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              ;;
+            "stack_missing")
+              echo "**Error:** CloudFormation stack does not exist" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**This is a first-time deploy or stack was deleted**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Quick Fix:**" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+              echo "cd orchestrator" >> $GITHUB_STEP_SUMMARY
+              echo "sam deploy --guided" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              ;;
+            *)
+              echo "**Error:** Unknown deployment failure" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Check the logs above for specific error details**" >> $GITHUB_STEP_SUMMARY
+              ;;
+          esac
+          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### 🔍 Quick Diagnostics" >> $GITHUB_STEP_SUMMARY
           echo "1. **S3 Bucket Missing?** Check if your S3 bucket exists: \`aws-sam-cli-managed-default-samclisourcebucket-*\`" >> $GITHUB_STEP_SUMMARY
@@ -211,21 +296,35 @@ jobs:
           REGION=$(grep -A10 "^\[default\.deploy\.parameters\]" orchestrator/samconfig.toml | grep "region" | awk -F'"' '{print $2}' || echo "us-west-2")
           S3_PREFIX=$(grep -A10 "^\[default\.deploy\.parameters\]" orchestrator/samconfig.toml | grep "s3_prefix" | awk -F'"' '{print $2}' || echo "valine-orchestrator-staging")
           
+          # Get error info if failed
+          ERROR_TYPE="${{ steps.deploy.outputs.error_type }}"
+          if [ -z "$ERROR_TYPE" ]; then
+            ERROR_TYPE="none"
+          fi
+          
           cat > /tmp/deploy-audit/deploy-report.json <<EOF
           {
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "commit_sha": "${{ github.sha }}",
-            "commit_short": "${{ github.sha }}".substring(0, 7),
+            "commit_short": "${GITHUB_SHA:0:7}",
             "workflow_run_id": "${{ github.run_id }}",
             "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             "result": "${RESULT}",
+            "error_type": "${ERROR_TYPE}",
             "stack_name": "${STACK_NAME}",
             "region": "${REGION}",
             "s3_prefix": "${S3_PREFIX}",
             "actor": "${{ github.actor }}",
-            "ref": "${{ github.ref }}"
+            "ref": "${{ github.ref }}",
+            "validation_passed": "${{ steps.validate.outputs.validation_result }}",
+            "deploy_result": "${{ steps.deploy.outputs.deploy_result }}"
           }
           EOF
+          
+          # Copy deploy output if it exists
+          if [ -f /tmp/deploy-output.log ]; then
+            cp /tmp/deploy-output.log /tmp/deploy-audit/deploy-output.log
+          fi
           
           echo "📝 Deploy audit report created"
       
@@ -241,14 +340,39 @@ jobs:
         if: failure() && (env.DISCORD_DEPLOY_WEBHOOK != '' || (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''))
         working-directory: orchestrator
         run: |
+          ERROR_TYPE="${{ steps.deploy.outputs.error_type }}"
+          
+          # Build error-specific message
+          case "$ERROR_TYPE" in
+            "s3_bucket")
+              ERROR_MSG="S3 bucket not found → Run \`sam deploy --guided --resolve-s3\`"
+              ;;
+            "iam_permissions")
+              ERROR_MSG="IAM permissions denied → Check ProjectValine-GitHubDeployRole has CloudFormation, Lambda, S3 access"
+              ;;
+            "parser_error")
+              ERROR_MSG="Parser error (likely stale cache) → Run \`rm -rf .aws-sam/ && sam build --use-container --force && sam deploy --force-upload\`"
+              ;;
+            "stack_missing")
+              ERROR_MSG="CloudFormation stack missing → Run \`sam deploy --guided\` for first-time setup"
+              ;;
+            *)
+              ERROR_MSG="Unknown error → Check logs above for details"
+              ;;
+          esac
+          
           ./scripts/notify-deploy-status.sh "failure" "💀 **Deploy FAILED!** Lambda deployment encountered an error.
 
-          **Common issues:**
-          • 🗑️ S3 bucket missing → Create one in AWS Console
+          **Error Type:** ${ERROR_TYPE}
+          **Issue:** ${ERROR_MSG}
+
+          **Common fixes:**
+          • 🗑️ S3 bucket missing → SAM will create one on guided deploy
           • 🔐 IAM permissions → Check GitHub deploy role
           • 🔑 Secrets not set → Verify GitHub repository secrets
+          • 💾 Stale cache → Force fresh build with \`--use-container --force\`
 
-          **Quick fix:**
+          **Quick recovery:**
           \`\`\`bash
           cd orchestrator && sam deploy --guided
           \`\`\`
