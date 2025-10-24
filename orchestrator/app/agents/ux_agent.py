@@ -2,15 +2,23 @@
 UX Agent for Discord-Orchestrated Webpage Updates
 
 This agent receives structured update commands via Discord slash commands (`/ux-update`) and
-automates changes to the web app's UI/UX (text, colors, layout, etc). It opens draft GitHub PRs
-with proposed changes, notifies the user in Discord, and includes a summary of what was changed.
+automates changes to the web app's UI/UX (text, colors, layout, etc). It features an interactive
+conversation flow that:
+- Parses user intent from commands, plain English, and images/screenshots
+- Asks clarifying questions if anything is vague or missing
+- Proposes example changes with markdown/code snippets and visual previews
+- Provides a summary preview of planned changes and awaits user confirmation
+- Only makes changes (creates PR, updates file, etc) after user confirms
 
 Key Features:
 - Parse Discord command payload to extract section and property updates
+- Analyze uploaded images for layout, color, text, or style cues
+- Interactive conversation flow with confirmation steps
 - Update relevant files in the codebase (React components, CSS, etc)
 - Open draft PR on GitHub with changes and descriptive commit message
 - Reply in Discord with summary and PR link
 - Error handling with helpful examples
+- Gen Z, meme/gamer friendly tone
 
 Usage:
     from agents.ux_agent import UXAgent
@@ -20,16 +28,23 @@ Usage:
         repo="gcolon75/Project-Valine"
     )
     
-    result = agent.process_update(
-        section="header",
-        property="text",
-        value="Welcome to Project Valine!"
+    # Start conversation
+    result = agent.start_conversation(
+        command_text='section:header text:"Welcome to Project Valine!"',
+        user_id='user123'
+    )
+    
+    # After user confirms
+    result = agent.confirm_and_execute(
+        conversation_id='conv123',
+        user_response='yes'
     )
 
 Examples:
     - `/ux-update section:header text:"Welcome to Project Valine!"`
     - `/ux-update section:footer color:"#FF0080"`
     - `/ux-update section:navbar add-link:"/about"`
+    - `/ux-update Make the navbar blue like in this screenshot` [image]
 """
 
 import os
@@ -38,6 +53,40 @@ import re
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
+import uuid
+
+
+class ConversationState:
+    """Represents the state of a UX Agent conversation."""
+    
+    def __init__(self, conversation_id: str, user_id: str):
+        self.conversation_id = conversation_id
+        self.user_id = user_id
+        self.section = None
+        self.updates = {}
+        self.images = []
+        self.parsed_intent = {}
+        self.preview_message = None
+        self.created_at = datetime.now(timezone.utc)
+        self.confirmed = False
+        self.needs_clarification = False
+        self.clarification_questions = []
+        
+    def to_dict(self):
+        """Convert to dictionary for storage."""
+        return {
+            'conversation_id': self.conversation_id,
+            'user_id': self.user_id,
+            'section': self.section,
+            'updates': self.updates,
+            'images': self.images,
+            'parsed_intent': self.parsed_intent,
+            'preview_message': self.preview_message,
+            'created_at': self.created_at.isoformat(),
+            'confirmed': self.confirmed,
+            'needs_clarification': self.needs_clarification,
+            'clarification_questions': self.clarification_questions
+        }
 
 
 class UXAgent:
@@ -45,7 +94,8 @@ class UXAgent:
     UX Agent for automating UI/UX changes via Discord commands.
     
     This agent processes structured update commands and creates draft PRs
-    with the requested changes to React components and styling.
+    with the requested changes to React components and styling. It features
+    an interactive conversation flow that confirms changes before execution.
     """
     
     # Supported sections and their component mappings
@@ -83,6 +133,417 @@ class UXAgent:
         self.github_service = github_service
         self.repo = repo
         self.owner, self.repo_name = repo.split('/')
+        # In-memory conversation store (in production, use persistent storage)
+        self.conversations: Dict[str, ConversationState] = {}
+    
+    def start_conversation(
+        self,
+        command_text: str = None,
+        user_id: str = "unknown",
+        images: List[Dict] = None,
+        plain_text: str = None
+    ) -> Dict[str, Any]:
+        """
+        Start a new conversation with the UX Agent.
+        
+        This is the entry point for user interactions. It parses the user's intent,
+        analyzes any images, and generates a preview of the proposed changes.
+        
+        Args:
+            command_text: Structured command text (e.g., 'section:header text:"Welcome"')
+            user_id: Discord user ID
+            images: List of image data (URLs or base64)
+            plain_text: Plain English description of desired changes
+            
+        Returns:
+            Dictionary with conversation_id, preview, and clarifying questions
+        """
+        # Create new conversation
+        conversation_id = str(uuid.uuid4())
+        conversation = ConversationState(conversation_id, user_id)
+        
+        # Parse input
+        if command_text:
+            parsed = self.parse_command(command_text)
+            if parsed.get('success'):
+                conversation.section = parsed['section']
+                conversation.updates = parsed['updates']
+            else:
+                return {
+                    'success': False,
+                    'message': parsed.get('message', '❌ Could not parse command'),
+                    'examples': self._get_command_examples()
+                }
+        
+        # Analyze images if provided
+        if images:
+            conversation.images = images
+            image_analysis = self._analyze_images(images)
+            conversation.parsed_intent.update(image_analysis)
+        
+        # Parse plain text if provided
+        if plain_text:
+            text_intent = self._parse_plain_text(plain_text)
+            conversation.parsed_intent.update(text_intent)
+        
+        # Check if we need clarification
+        clarifications = self._check_for_clarifications(conversation)
+        if clarifications:
+            conversation.needs_clarification = True
+            conversation.clarification_questions = clarifications
+            self.conversations[conversation_id] = conversation
+            
+            return {
+                'success': True,
+                'conversation_id': conversation_id,
+                'needs_clarification': True,
+                'questions': clarifications,
+                'message': self._format_clarification_message(clarifications)
+            }
+        
+        # Generate preview
+        preview = self._generate_preview(conversation)
+        conversation.preview_message = preview['message']
+        self.conversations[conversation_id] = conversation
+        
+        return {
+            'success': True,
+            'conversation_id': conversation_id,
+            'preview': preview,
+            'message': preview['message'],
+            'needs_confirmation': True
+        }
+    
+    def confirm_and_execute(
+        self,
+        conversation_id: str,
+        user_response: str
+    ) -> Dict[str, Any]:
+        """
+        Handle user confirmation and execute the changes.
+        
+        Args:
+            conversation_id: The conversation ID
+            user_response: User's response ('yes', 'no', or clarification text)
+            
+        Returns:
+            Dictionary with execution result or updated preview
+        """
+        conversation = self.conversations.get(conversation_id)
+        if not conversation:
+            return {
+                'success': False,
+                'message': '❌ Conversation not found or expired. Please start a new request.'
+            }
+        
+        # Check if user is confirming
+        response_lower = user_response.lower().strip()
+        if response_lower in ['yes', 'y', 'confirm', 'go', 'do it', 'proceed', 'make it happen']:
+            # User confirmed, execute changes
+            conversation.confirmed = True
+            return self.process_update(
+                section=conversation.section,
+                updates=conversation.updates,
+                requester=conversation.user_id
+            )
+        
+        elif response_lower in ['no', 'n', 'cancel', 'stop', 'nope']:
+            # User cancelled
+            del self.conversations[conversation_id]
+            return {
+                'success': True,
+                'cancelled': True,
+                'message': '🚫 No problem! Request cancelled. Hit me up if you want to try something else! 🎮'
+            }
+        
+        else:
+            # User is providing clarification or modification
+            # Try to extract section and updates from their response
+            text_intent = self._parse_plain_text(user_response)
+            
+            # Try parsing as command
+            command_parse = self.parse_command(user_response)
+            if command_parse.get('success'):
+                conversation.section = command_parse['section']
+                conversation.updates = command_parse['updates']
+            else:
+                # Update with text intent
+                conversation.parsed_intent.update(text_intent)
+                
+                # Try to extract quoted text as update value
+                if text_intent.get('quoted_text'):
+                    # Assume it's updating the same property type
+                    if conversation.updates:
+                        # Get the first property being updated
+                        first_prop = list(conversation.updates.keys())[0]
+                        conversation.updates[first_prop] = text_intent['quoted_text'][0]
+            
+            # Regenerate preview
+            preview = self._generate_preview(conversation)
+            
+            if not preview.get('success'):
+                # Still not enough info, ask for more details
+                return {
+                    'success': False,
+                    'conversation_id': conversation_id,
+                    'message': preview.get('message', '❌ Could not understand the modification. Please be more specific.')
+                }
+            
+            conversation.preview_message = preview['message']
+            
+            return {
+                'success': True,
+                'conversation_id': conversation_id,
+                'preview': preview,
+                'message': preview['message'],
+                'needs_confirmation': True
+            }
+    
+    def _analyze_images(self, images: List[Dict]) -> Dict[str, Any]:
+        """
+        Analyze uploaded images for UX/UI cues.
+        
+        Args:
+            images: List of image data
+            
+        Returns:
+            Dictionary with parsed intent from images
+        """
+        # For MVP, we'll provide basic image handling
+        # In production, this would use image recognition APIs
+        intent = {
+            'has_images': True,
+            'image_count': len(images),
+            'image_references': []
+        }
+        
+        for i, img in enumerate(images, 1):
+            intent['image_references'].append({
+                'number': i,
+                'url': img.get('url'),
+                'description': f'Image {i}'
+            })
+        
+        return intent
+    
+    def _parse_plain_text(self, text: str) -> Dict[str, Any]:
+        """
+        Parse plain English text to extract user intent.
+        
+        Args:
+            text: Plain English description
+            
+        Returns:
+            Dictionary with parsed intent
+        """
+        intent = {'plain_text': text}
+        
+        # Extract section mentions
+        text_lower = text.lower()
+        for section in self.SECTION_MAPPINGS.keys():
+            if section in text_lower:
+                intent['mentioned_section'] = section
+                break
+        
+        # Extract color mentions (hex codes or color names)
+        hex_match = re.search(r'#[0-9A-Fa-f]{6}', text)
+        if hex_match:
+            intent['color'] = hex_match.group(0)
+        
+        # Look for common color names
+        color_names = ['blue', 'red', 'green', 'yellow', 'purple', 'orange', 'black', 'white', 'gray']
+        for color in color_names:
+            if color in text_lower:
+                intent['color_name'] = color
+        
+        # Look for text in quotes
+        quoted_text = re.findall(r'"([^"]+)"', text)
+        if quoted_text:
+            intent['quoted_text'] = quoted_text
+        
+        return intent
+    
+    def _check_for_clarifications(self, conversation: ConversationState) -> List[str]:
+        """
+        Check if we need clarifying questions.
+        
+        Args:
+            conversation: Current conversation state
+            
+        Returns:
+            List of clarifying questions, empty if none needed
+        """
+        questions = []
+        
+        # Check if section is clear
+        if not conversation.section:
+            if conversation.parsed_intent.get('mentioned_section'):
+                conversation.section = conversation.parsed_intent['mentioned_section']
+            else:
+                questions.append(
+                    "Which section do you want to update? Choose from: **header**, **navbar**, **footer**, or **home** page"
+                )
+        
+        # Check if updates are clear
+        if not conversation.updates and not conversation.parsed_intent.get('color'):
+            if conversation.images:
+                questions.append(
+                    f"I see you uploaded {len(conversation.images)} image(s). What specifically do you want to change? "
+                    "The color, text, layout, or something else?"
+                )
+            else:
+                questions.append(
+                    "What exactly do you want to change? (e.g., text, color, add a link)"
+                )
+        
+        return questions
+    
+    def _format_clarification_message(self, questions: List[str]) -> str:
+        """
+        Format clarification questions into a friendly message.
+        
+        Args:
+            questions: List of questions
+            
+        Returns:
+            Formatted message string
+        """
+        msg = "🤔 **I need a bit more info to help you out!**\n\n"
+        
+        for i, q in enumerate(questions, 1):
+            msg += f"{i}. {q}\n"
+        
+        msg += "\n💡 **Examples of what you can tell me:**\n"
+        msg += "• \"Update the header text to 'Level Up!'\"\n"
+        msg += "• \"Make the navbar background blue\"\n"
+        msg += "• \"Change the footer text to 'Valine'\"\n"
+        msg += "• \"Add an About link to the navbar\"\n"
+        
+        return msg
+    
+    def _generate_preview(self, conversation: ConversationState) -> Dict[str, Any]:
+        """
+        Generate a preview of the proposed changes.
+        
+        Args:
+            conversation: Current conversation state
+            
+        Returns:
+            Dictionary with preview message and code snippets
+        """
+        section = conversation.section
+        updates = conversation.updates
+        
+        if not section or not updates:
+            return {
+                'success': False,
+                'message': '❌ Not enough information to generate preview'
+            }
+        
+        # Get section info
+        section_info = self.SECTION_MAPPINGS.get(section)
+        if not section_info:
+            return {
+                'success': False,
+                'message': f'❌ Unknown section: {section}'
+            }
+        
+        # Build preview message
+        msg = f"🎨 **Got it! Here's what I'm about to do:**\n\n"
+        msg += f"**Section:** `{section}`\n"
+        msg += f"**File:** `{section_info['file']}`\n\n"
+        msg += "**Changes:**\n"
+        
+        code_snippets = []
+        
+        for prop, value in updates.items():
+            if prop == 'text':
+                msg += f"• Update text to: **\"{value}\"**\n"
+                code_snippets.append(self._generate_text_preview(section, value))
+            elif prop == 'color':
+                msg += f"• Update color to: **{value}**\n"
+                code_snippets.append(self._generate_color_preview(section, value))
+            elif prop == 'brand':
+                msg += f"• Update brand name to: **\"{value}\"**\n"
+                code_snippets.append(self._generate_brand_preview(section, value))
+            elif prop in ['hero-text', 'description', 'cta-text']:
+                label = prop.replace('-', ' ').title()
+                msg += f"• Update {label} to: **\"{value}\"**\n"
+                code_snippets.append(self._generate_home_preview(prop, value))
+            elif 'link' in prop:
+                msg += f"• Add link: **{value}**\n"
+                code_snippets.append(self._generate_link_preview(section, value))
+        
+        # Add code preview
+        if code_snippets:
+            msg += "\n**Preview:**\n"
+            for snippet in code_snippets[:2]:  # Limit to 2 snippets to avoid message bloat
+                msg += f"```{snippet['language']}\n{snippet['code']}\n```\n"
+        
+        # Add confirmation prompt
+        msg += "\n✅ **Ready to make this change?** Type **'yes'** to confirm or **'no'** to cancel!\n"
+        msg += "💬 Or tell me what to tweak if this isn't quite right!"
+        
+        return {
+            'success': True,
+            'message': msg,
+            'code_snippets': code_snippets
+        }
+    
+    def _generate_text_preview(self, section: str, value: str) -> Dict[str, str]:
+        """Generate code preview for text change."""
+        if section == 'header':
+            code = f'<Link className="text-xl font-semibold">\n  {value}\n</Link>'
+        elif section == 'footer':
+            code = f'&copy; {{new Date().getFullYear()}} {value}. All rights reserved.'
+        elif section == 'navbar':
+            code = f'<span>{value}</span>'
+        else:
+            code = f'<h1>{value}</h1>'
+        
+        return {'language': 'jsx', 'code': code}
+    
+    def _generate_color_preview(self, section: str, value: str) -> Dict[str, str]:
+        """Generate code preview for color change."""
+        code = f'.{section} {{\n  background: {value};\n}}'
+        return {'language': 'css', 'code': code}
+    
+    def _generate_brand_preview(self, section: str, value: str) -> Dict[str, str]:
+        """Generate code preview for brand change."""
+        code = f'<span>{value}</span>'
+        return {'language': 'jsx', 'code': code}
+    
+    def _generate_home_preview(self, prop: str, value: str) -> Dict[str, str]:
+        """Generate code preview for home page changes."""
+        if prop == 'hero-text':
+            code = f'<h1 className="text-4xl font-bold">\n  {value}\n</h1>'
+        elif prop == 'description':
+            code = f'<p className="mt-4 text-lg">\n  {value}\n</p>'
+        else:  # cta-text
+            code = f'<Link className="rounded-full bg-brand">\n  {value}\n</Link>'
+        
+        return {'language': 'jsx', 'code': code}
+    
+    def _generate_link_preview(self, section: str, value: str) -> Dict[str, str]:
+        """Generate code preview for link addition."""
+        if ':' in value:
+            label, path = value.split(':', 1)
+        else:
+            path = value
+            label = path.strip('/').capitalize()
+        
+        code = f'<Link to="{path}">{label}</Link>'
+        return {'language': 'jsx', 'code': code}
+    
+    def _get_command_examples(self) -> List[str]:
+        """Get example commands for help messages."""
+        return [
+            '`/ux-update section:header text:"Welcome Home!"`',
+            '`/ux-update section:footer color:"#00FF00"`',
+            '`/ux-update section:navbar brand:"Joint"`',
+            '`/ux-update section:home hero-text:"Level Up!"`',
+            'Or just describe what you want: "Make the navbar blue"'
+        ]
     
     def process_update(
         self,

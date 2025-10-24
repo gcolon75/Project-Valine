@@ -2,17 +2,101 @@
 
 ## Overview
 
-The UX Agent enables automated UI/UX changes to the Project Valine web app through Discord slash commands. Users can update text, colors, and layout elements by issuing simple commands, which automatically create draft GitHub PRs for review.
+The UX Agent enables automated UI/UX changes to the Project Valine web app through Discord slash commands. It features an **interactive conversation flow** that ensures clarity and confirmation before making any changes. Users can update text, colors, and layout elements by issuing simple commands or plain English descriptions, optionally with screenshots, which automatically create draft GitHub PRs for review.
 
-## Features
+## Key Features
 
 - 🎨 **Text Updates**: Change header, footer, navbar, and home page text
 - 🌈 **Color Updates**: Update component colors with hex codes
 - 🔗 **Link Management**: Add navigation links
 - 🏷️ **Brand Updates**: Change brand name across components
+- 🖼️ **Image Analysis**: Upload screenshots to guide style changes
+- 💬 **Conversational Flow**: Interactive confirmation before changes
 - 📝 **Draft PRs**: Automatically creates draft PRs for all changes
 - 🔒 **Safety**: Never auto-merges; all changes require review
 - 📊 **Audit Trail**: Logs all actions for compliance
+- 🎮 **Gen Z Friendly**: Meme/gamer friendly tone and examples
+
+## Interaction Flow
+
+The UX Agent follows a conversation-based approach that ensures you always know exactly what's happening:
+
+### 1. User Sends Request
+
+Send a command or description, optionally with images:
+
+```
+/ux-update section:header text:"Welcome to Project Valine!"
+```
+
+Or use plain English:
+
+```
+/ux-update Can you make the navbar blue like in this screenshot?
+```
+
+### 2. Agent Restates and Previews
+
+The agent will:
+- Restate what you want in clear terms
+- Show a code preview of the proposed change
+- Ask for confirmation
+
+Example response:
+```
+🎨 Got it! Here's what I'm about to do:
+
+Section: header
+File: src/components/Header.jsx
+
+Changes:
+• Update text to: "Welcome to Project Valine!"
+
+Preview:
+```jsx
+<Link className="text-xl font-semibold">
+  Welcome to Project Valine!
+</Link>
+```
+
+✅ Ready to make this change? Type 'yes' to confirm or 'no' to cancel!
+💬 Or tell me what to tweak if this isn't quite right!
+```
+
+### 3. Clarifying Questions (if needed)
+
+If something is unclear, the agent will ask:
+
+```
+🤔 I need a bit more info to help you out!
+
+1. Which section do you want to update? Choose from: header, navbar, footer, or home page
+2. What exactly do you want to change? (e.g., text, color, add a link)
+
+💡 Examples of what you can tell me:
+• "Update the header text to 'Level Up!'"
+• "Make the navbar background blue"
+• "Change the footer text to 'Valine'"
+• "Add an About link to the navbar"
+```
+
+### 4. User Confirms or Modifies
+
+Respond with:
+- `yes` / `confirm` / `go` → Executes the changes
+- `no` / `cancel` / `stop` → Cancels the request
+- Any other text → Updates the request based on your feedback
+
+### 5. Agent Executes (After Confirmation)
+
+Once confirmed, the agent:
+- Creates a branch with the changes
+- Opens a draft PR on GitHub
+- Posts the PR link in Discord
+
+```
+🎨 Header updated! Draft PR: https://github.com/gcolon75/Project-Valine/pull/125
+```
 
 ## Supported Sections
 
@@ -21,6 +105,7 @@ The UX Agent enables automated UI/UX changes to the Project Valine web app throu
 - **File**: `src/components/Header.jsx`
 - **Examples**:
   - `/ux-update section:header text:"Welcome to Project Valine!"`
+  - "Make the header say 'Level Up!'"
 
 ### Footer (`footer`)
 - **Properties**: `text`, `color`
@@ -28,6 +113,7 @@ The UX Agent enables automated UI/UX changes to the Project Valine web app throu
 - **Examples**:
   - `/ux-update section:footer text:"Valine"`
   - `/ux-update section:footer color:"#FF0080"`
+  - "Change the footer color to blue"
 
 ### Navbar (`navbar`)
 - **Properties**: `text`, `color`, `links`, `brand`
@@ -35,6 +121,7 @@ The UX Agent enables automated UI/UX changes to the Project Valine web app throu
 - **Examples**:
   - `/ux-update section:navbar brand:"Joint"`
   - `/ux-update section:navbar add-link:"About:/about"`
+  - "Make the navbar blue like in the screenshot" [with image]
 
 ### Home (`home`)
 - **Properties**: `hero-text`, `description`, `cta-text`
@@ -43,90 +130,428 @@ The UX Agent enables automated UI/UX changes to the Project Valine web app throu
   - `/ux-update section:home hero-text:"Your Creative Hub"`
   - `/ux-update section:home description:"Connect with creators worldwide"`
   - `/ux-update section:home cta-text:"Get Started"`
+  - "Update the home page headline to 'Artists Connecting to Seekers 24/7'"
+
+## Image Handling
+
+The UX Agent can analyze uploaded images to understand your design intent:
+
+### How to Use Images
+
+1. **Upload screenshot with command:**
+   ```
+   /ux-update Make the navbar look like this
+   [Attach screenshot]
+   ```
+
+2. **The agent will analyze the image and ask:**
+   ```
+   📸 I see you uploaded 1 image. 
+   Looking at image 1, what specifically do you want me to change?
+   • The background color?
+   • The text style?
+   • The layout/spacing?
+   ```
+
+3. **Reference images by number:**
+   ```
+   "Use the color from image 1 for the navbar background"
+   "Match the text style in image 2"
+   ```
+
+### What the Agent Looks For
+
+- **Colors**: Hex codes and dominant colors
+- **Text Content**: Any visible text in quotes
+- **Layout Cues**: Spacing, alignment hints
+- **Style References**: Overall aesthetic direction
+
+**Note:** In the current version, image analysis is basic. The agent will ask clarifying questions to understand your intent. Future versions will include AI-powered visual analysis.
+
 
 ## Usage
 
-### Basic Command Structure
+### Command Formats
 
+#### Structured Command (Recommended for Precision)
 ```
 /ux-update section:<section> <property>:"<value>"
 ```
 
+#### Plain English (Natural Language)
+```
+/ux-update <description of what you want>
+```
+
+#### With Image Reference
+```
+/ux-update <description>
+[Attach image(s)]
+```
+
 ### Examples
 
-#### Update Header Text
+#### Update Header Text (Structured)
 ```
 /ux-update section:header text:"Welcome Home!"
 ```
-**Bot Response:**
+
+**Agent Response:**
 ```
-🎨 UX update for header queued! https://github.com/gcolon75/Project-Valine/pull/123
+🎨 Got it! Here's what I'm about to do:
+
+Section: header
+File: src/components/Header.jsx
+
+Changes:
+• Update text to: "Welcome Home!"
+
+Preview:
+```jsx
+<Link className="text-xl font-semibold">
+  Welcome Home!
+</Link>
+```
+
+✅ Ready to make this change? Type 'yes' to confirm or 'no' to cancel!
+```
+
+**User Confirms:**
+```
+yes
+```
+
+**Agent Executes:**
+```
+🎨 Header updated! Draft PR: https://github.com/gcolon75/Project-Valine/pull/123
+```
+
+#### Update with Plain English
+```
+/ux-update Make the footer text say "Valine"
+```
+
+**Agent Response:**
+```
+🎨 Got it! Here's what I'm about to do:
+
+Section: footer
+File: src/components/Footer.jsx
+
+Changes:
+• Update text to: "Valine"
+
+Preview:
+```jsx
+&copy; {new Date().getFullYear()} Valine. All rights reserved.
+```
+
+✅ Ready to make this change? Type 'yes' to confirm!
+```
+
+#### Needs Clarification Example
+```
+/ux-update Make it blue
+```
+
+**Agent Response:**
+```
+🤔 I need a bit more info to help you out!
+
+1. Which section do you want to update? Choose from: header, navbar, footer, or home page
+2. What exactly do you want to make blue? The background, text, or something else?
+
+💡 Examples of what you can tell me:
+• "Update the header text to 'Level Up!'"
+• "Make the navbar background blue"
+```
+
+**User Clarifies:**
+```
+The navbar background
+```
+
+**Agent Response:**
+```
+🎨 Got it! Here's what I'm about to do:
+
+Section: navbar
+File: src/components/NavBar.jsx
+
+Changes:
+• Update color to: blue
+
+Preview:
+```css
+.navbar {
+  background: blue;
+}
+```
+
+✅ Ready to make this change? Type 'yes' to confirm!
+```
+
+#### With Image Upload
+```
+/ux-update Can you make the navbar match this design?
+[Screenshot attached]
+```
+
+**Agent Response:**
+```
+🤔 I see you uploaded 1 image!
+
+Looking at image 1, what specifically should I match?
+• The color scheme?
+• The text/font style?
+• The layout/spacing?
+
+💡 Try being specific like:
+• "Use the blue color from image 1"
+• "Match the font size in the screenshot"
 ```
 
 #### Update Footer Color
 ```
 /ux-update section:footer color:"#00FF00"
 ```
-**Bot Response:**
+
+**Agent Response:**
 ```
-🌈 Footer color updated to #00FF00 — see your PR: https://github.com/gcolon75/Project-Valine/pull/124
+🎨 Got it! Here's what I'm about to do:
+
+Section: footer
+File: src/components/Footer.jsx
+
+Changes:
+• Update color to: #00FF00
+
+Preview:
+```css
+.footer {
+  background: #00FF00;
+}
 ```
 
-#### Update Navbar Brand
-```
-/ux-update section:navbar brand:"Joint"
-```
-**Bot Response:**
-```
-🎨 Navbar updated! Draft PR: https://github.com/gcolon75/Project-Valine/pull/125
+✅ Ready to make this change? Type 'yes' to confirm or 'no' to cancel!
+💬 Or tell me what to tweak!
 ```
 
 #### Update Home Hero Text
 ```
 /ux-update section:home hero-text:"Artists Connecting to Seekers 24/7"
 ```
-**Bot Response:**
+
+**Agent Response:**
 ```
-🎨 Home updated! Draft PR: https://github.com/gcolon75/Project-Valine/pull/126
+🎨 Got it! Here's what I'm about to do:
+
+Section: home
+File: src/pages/Home.jsx
+
+Changes:
+• Update Hero Text to: "Artists Connecting to Seekers 24/7"
+
+Preview:
+```jsx
+<h1 className="text-4xl font-bold">
+  Artists Connecting to Seekers 24/7
+</h1>
 ```
 
-### Multiple Updates
+✅ Ready to make this change? Type 'yes' to confirm!
+```
 
-You can combine multiple property updates in one command:
+#### Multiple Updates
 ```
 /ux-update section:header text:"New Title" color:"#FF0080"
 ```
 
-### Add Navigation Links
+**Agent Response:**
+```
+🎨 Got it! Here's what I'm about to do:
 
-Add links with format `Label:/path` or just `/path`:
+Section: header
+File: src/components/Header.jsx
+
+Changes:
+• Update text to: "New Title"
+• Update color to: #FF0080
+
+Preview:
+```jsx
+<Link className="text-xl font-semibold">
+  New Title
+</Link>
 ```
-/ux-update section:navbar add-link:"About:/about"
-/ux-update section:navbar add-link:"/contact"
+
+```css
+.header {
+  background: #FF0080;
+}
 ```
+
+✅ Ready to make this change? Type 'yes' to confirm!
+```
+
+#### User Modifies During Confirmation
+```
+/ux-update section:header text:"Test Title"
+```
+
+**Agent:**
+```
+🎨 Got it! Here's what I'm about to do:
+...
+✅ Ready to make this change? Type 'yes' to confirm!
+```
+
+**User:**
+```
+Actually, make it "Better Title" instead
+```
+
+**Agent:**
+```
+🎨 Updated! Here's the new preview:
+
+Changes:
+• Update text to: "Better Title"
+
+Preview:
+```jsx
+<Link className="text-xl font-semibold">
+  Better Title
+</Link>
+```
+
+✅ Ready now? Type 'yes' to confirm!
+```
+
+## Tone & Style
+
+The UX Agent uses a **Gen Z-friendly, playful tone** that's efficient and direct:
+
+### Response Emojis
+- 🎨 Design/UX updates
+- 🤔 Clarification needed
+- ✅ Confirmation/success
+- 🚫 Cancellation
+- 📸 Image-related
+- 💡 Helpful examples
+- 💬 Conversation continues
+
+### Response Patterns
+
+**Confirmation Requests:**
+```
+✅ Ready to make this change? Type 'yes' to confirm or 'no' to cancel!
+💬 Or tell me what to tweak if this isn't quite right!
+```
+
+**Clarification Questions:**
+```
+🤔 I need a bit more info to help you out!
+```
+
+**Cancellation:**
+```
+🚫 No problem! Request cancelled. Hit me up if you want to try something else! 🎮
+```
+
+**Success:**
+```
+🎨 Header updated! Draft PR: https://github.com/...
+```
+
+**Examples Offered:**
+```
+💡 Examples of what you can tell me:
+• "Update the header text to 'Level Up!'"
+• "Make the navbar background blue"
+```
+
+### Conversation Philosophy
+
+1. **Always restate understanding** before acting
+2. **Always preview changes** with code snippets
+3. **Always confirm** before finalizing
+4. **Never assume** — ask when in doubt
+5. **Be helpful** with examples when users are stuck
+6. **Stay friendly** and gaming/meme references are okay
+
+### Helpful Phrases
+
+- "Got it! Here's what I'm about to do..."
+- "I need a bit more info..."
+- "Looking at image 1, what specifically..."
+- "Ready to make this change?"
+- "Or tell me what to tweak!"
+- "No problem! Request cancelled."
+- "Hit me up if you want to try something else! 🎮"
 
 ## Error Handling
 
-The UX Agent provides helpful error messages:
+The UX Agent provides helpful error messages and examples:
 
 ### Missing Section
 ```
-❌ Missing section. Try: `/ux-update section:header text:"New Title"`
+❌ Missing section. 
+
+💡 Examples:
+• `/ux-update section:header text:"New Title"`
+• "Make the navbar blue"
 ```
 
 ### Invalid Section
 ```
-❌ Unknown section: sidebar. Valid sections: header, footer, navbar, home
+❌ Unknown section: sidebar. 
+
+Valid sections: header, footer, navbar, home
+
+💡 Try:
+• `/ux-update section:header text:"Welcome!"`
 ```
 
 ### Invalid Property
 ```
-❌ Invalid properties for header: background. Valid: text, color, links
+❌ Invalid properties for header: background. 
+
+Valid properties for header: text, color, links
+
+💡 Try:
+• `/ux-update section:header text:"New Title"`
+• `/ux-update section:header color:"#FF0080"`
 ```
 
 ### Invalid Color Format
 ```
-❌ Invalid color format: red. Use hex format like #FF0080
+❌ Invalid color format: red. 
+
+Use hex format like #FF0080
+
+💡 Example:
+• `/ux-update section:footer color:"#FF0080"`
+```
+
+### Vague Request
+```
+🤔 I need a bit more info to help you out!
+
+1. Which section do you want to update? Choose from: header, navbar, footer, or home page
+
+💡 Examples of what you can tell me:
+• "Update the header text to 'Level Up!'"
+• "Make the navbar background blue"
+• "Change the footer text to 'Valine'"
+```
+
+### Conversation Expired
+```
+❌ Conversation not found or expired. Please start a new request.
+
+💡 Try:
+• `/ux-update section:header text:"Welcome!"`
 ```
 
 ## Implementation Details
@@ -235,43 +660,61 @@ Test with a simple command:
 ## Safety & Restrictions
 
 ### What UX Agent DOES
-- ✅ Creates draft PRs (never auto-merges)
-- ✅ Validates all inputs
-- ✅ Provides clear error messages
-- ✅ Logs all actions for audit
-- ✅ Assigns PRs to requester
+- ✅ **Asks for clarification** when requests are vague
+- ✅ **Shows previews** of all proposed changes
+- ✅ **Waits for confirmation** before executing
+- ✅ **Creates draft PRs** (never auto-merges)
+- ✅ **Validates all inputs** (colors, sections, properties)
+- ✅ **Provides clear error messages** with examples
+- ✅ **Logs all actions** for audit
+- ✅ **Assigns PRs to requester** for review
+- ✅ **Supports plain English** and structured commands
+- ✅ **Analyzes images** (basic support, asks clarifying questions)
 
 ### What UX Agent DOES NOT Do
-- ❌ Never auto-merges PRs
-- ❌ Never modifies files without PR review
-- ❌ Never updates unspecified sections
-- ❌ Never bypasses validation
+- ❌ **Never executes without confirmation**
+- ❌ **Never auto-merges PRs**
+- ❌ **Never modifies files without PR review**
+- ❌ **Never updates unspecified sections**
+- ❌ **Never bypasses validation**
+- ❌ **Never assumes vague requests** (asks questions instead)
+- ❌ **Never proceeds with unclear image intent** (asks what to change)
 
-## Tone & Style
+### Conversation Safety
 
-The UX Agent uses a Gen Z-friendly, playful tone:
-- 🎨 Visual emoji indicators
-- Direct, efficient responses
-- Helpful examples on errors
-- Gaming/meme references okay
+**Multi-Step Confirmation:**
+1. Parse user intent
+2. Generate preview with code snippets
+3. Ask for explicit confirmation
+4. Wait for 'yes'/'confirm'/'go' response
+5. Only then create PR
 
-Example responses:
-```
-🎨 Header text updated to 'Welcome Home!' — Draft PR created: [link]
-🌈 Footer color updated to #00FF00 — see your PR: [link]
-❌ Could not process your request — try `/ux-update section:header text:"New Title"`
-```
+**User Control:**
+- Cancel anytime with 'no'/'cancel'/'stop'
+- Modify request during confirmation
+- See exactly what will change before it happens
+
+**Audit Trail:**
+Every interaction includes:
+- User ID who requested
+- Timestamp of request
+- Conversation ID for tracking
+- All clarifications and modifications
+- Final confirmed changes
 
 ## Future Enhancements
 
 Potential future features:
-- 🖼️ Image updates (hero images, logos)
-- 📱 Responsive design tweaks
-- 🎭 Theme/style presets
-- 🔄 Batch updates
-- 📸 Preview screenshots in Discord
-- 🤖 AI-suggested improvements
-- 📊 Analytics integration
+- 🖼️ **AI-Powered Image Analysis**: Advanced computer vision to extract colors, fonts, layouts from screenshots
+- 📱 **Responsive Design Tweaks**: Preview changes across mobile/tablet/desktop
+- 🎭 **Theme/Style Presets**: Apply pre-defined design themes
+- 🔄 **Batch Updates**: Update multiple sections in one command
+- 📸 **Preview Screenshots**: Generate before/after screenshots in Discord
+- 🤖 **AI-Suggested Improvements**: Proactive UX recommendations
+- 📊 **Analytics Integration**: Track which UX changes improve engagement
+- 🎨 **Color Palette Generation**: Extract full color schemes from images
+- ✏️ **Font Detection**: Identify and apply fonts from screenshots
+- 🔍 **Component Discovery**: Auto-detect components in uploaded designs
 
 ## Troubleshooting
 
