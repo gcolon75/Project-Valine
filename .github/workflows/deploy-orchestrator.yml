@@ -42,9 +42,23 @@ jobs:
           # For Discord notifications (optional)
           echo "DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
           echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_DEPLOY_CHANNEL_ID }}" >> $GITHUB_ENV
+          echo "DISCORD_DEPLOY_WEBHOOK=${{ secrets.DISCORD_DEPLOY_WEBHOOK }}" >> $GITHUB_ENV
+      
+      - name: Preflight - Validate SAM template
+        id: validate
+        working-directory: orchestrator
+        run: |
+          echo "🔍 Validating SAM template before deploy..."
+          if sam validate --lint; then
+            echo "✅ Template validation passed!"
+          else
+            echo "❌ Template validation failed!"
+            echo "Fix template.yaml errors before deploying."
+            exit 1
+          fi
       
       - name: Notify deployment started
-        if: env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        if: env.DISCORD_DEPLOY_WEBHOOK != '' || (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != '')
         working-directory: orchestrator
         run: |
           ./scripts/notify-deploy-status.sh "started" "🎮 Speedrunning Lambda deploy to AWS... Just chill, no manual setup needed!"
@@ -132,7 +146,7 @@ jobs:
           echo "✅ Health check passed!"
       
       - name: Notify deployment success
-        if: success() && env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        if: success() && (env.DISCORD_DEPLOY_WEBHOOK != '' || (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''))
         working-directory: orchestrator
         run: |
           DISCORD_URL="${{ steps.get-url.outputs.discord_url }}"
@@ -179,8 +193,52 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📚 **Full recovery guide:** [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](https://github.com/gcolon75/Project-Valine/blob/main/orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md)" >> $GITHUB_STEP_SUMMARY
       
+      - name: Create audit artifact
+        if: always()
+        run: |
+          mkdir -p /tmp/deploy-audit
+          
+          # Determine deploy result
+          RESULT="unknown"
+          if [ "${{ job.status }}" = "success" ]; then
+            RESULT="success"
+          elif [ "${{ job.status }}" = "failure" ]; then
+            RESULT="failure"
+          fi
+          
+          # Get stack name from samconfig
+          STACK_NAME=$(grep -A5 "^\[default\.global\.parameters\]" orchestrator/samconfig.toml | grep "stack_name" | awk -F'"' '{print $2}' || echo "valine-orchestrator-staging")
+          REGION=$(grep -A10 "^\[default\.deploy\.parameters\]" orchestrator/samconfig.toml | grep "region" | awk -F'"' '{print $2}' || echo "us-west-2")
+          S3_PREFIX=$(grep -A10 "^\[default\.deploy\.parameters\]" orchestrator/samconfig.toml | grep "s3_prefix" | awk -F'"' '{print $2}' || echo "valine-orchestrator-staging")
+          
+          cat > /tmp/deploy-audit/deploy-report.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit_sha": "${{ github.sha }}",
+            "commit_short": "${{ github.sha }}".substring(0, 7),
+            "workflow_run_id": "${{ github.run_id }}",
+            "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "result": "${RESULT}",
+            "stack_name": "${STACK_NAME}",
+            "region": "${REGION}",
+            "s3_prefix": "${S3_PREFIX}",
+            "actor": "${{ github.actor }}",
+            "ref": "${{ github.ref }}"
+          }
+          EOF
+          
+          echo "📝 Deploy audit report created"
+      
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy-audit-${{ github.sha }}
+          path: /tmp/deploy-audit/
+          retention-days: 90
+      
       - name: Notify deployment failure
-        if: failure() && env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        if: failure() && (env.DISCORD_DEPLOY_WEBHOOK != '' || (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''))
         working-directory: orchestrator
         run: |
           ./scripts/notify-deploy-status.sh "failure" "💀 **Deploy FAILED!** Lambda deployment encountered an error.

@@ -1,0 +1,274 @@
+name: Preflight Orchestrator Deploy ✈️
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to validate'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+        default: 'staging'
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Set up AWS SAM
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
+          aws-region: us-west-2
+      
+      - name: Set environment variables
+        run: |
+          echo "DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_DEPLOY_CHANNEL_ID }}" >> $GITHUB_ENV
+          echo "DISCORD_DEPLOY_WEBHOOK=${{ secrets.DISCORD_DEPLOY_WEBHOOK }}" >> $GITHUB_ENV
+      
+      - name: Validate SAM template
+        id: validate
+        working-directory: orchestrator
+        run: |
+          echo "🔍 Running sam validate on template.yaml..."
+          if sam validate --lint; then
+            echo "✅ Template validation PASSED!"
+            echo "validation_result=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Template validation FAILED!"
+            echo "validation_result=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Test Discord notification (Webhook)
+        id: test_webhook
+        if: env.DISCORD_DEPLOY_WEBHOOK != ''
+        run: |
+          echo "🧪 Testing Discord webhook notification..."
+          
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🧪 Preflight Test - Webhook",
+              "description": "Testing Discord webhook for DeployBot notifications. If you see this, webhook is working! ✅",
+              "color": 3447003,
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "footer": {
+                "text": "DeployBot Preflight Check"
+              }
+            }]
+          }
+          EOF
+          )
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.DISCORD_DEPLOY_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Discord webhook test PASSED!"
+            echo "notification_method=webhook" >> $GITHUB_OUTPUT
+            echo "notification_result=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Discord webhook test FAILED (HTTP $HTTP_CODE)"
+            echo "Response: $BODY"
+            echo "notification_result=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Test Discord notification (Bot Token)
+        id: test_bot
+        if: env.DISCORD_DEPLOY_WEBHOOK == '' && env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        run: |
+          echo "🧪 Testing Discord bot token notification..."
+          
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🧪 Preflight Test - Bot Token",
+              "description": "Testing Discord bot token for DeployBot notifications. If you see this, bot notifications are working! ✅",
+              "color": 3447003,
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "footer": {
+                "text": "DeployBot Preflight Check"
+              }
+            }]
+          }
+          EOF
+          )
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Discord bot token test PASSED!"
+            echo "notification_method=bot" >> $GITHUB_OUTPUT
+            echo "notification_result=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Discord bot token test FAILED (HTTP $HTTP_CODE)"
+            echo "Response: $BODY"
+            echo "notification_result=failure" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: Warn if no notification configured
+        if: env.DISCORD_DEPLOY_WEBHOOK == '' && (env.DISCORD_BOT_TOKEN == '' || env.DISCORD_CHANNEL_ID == '')
+        run: |
+          echo "⚠️ No Discord notification secrets configured"
+          echo "Set one of:"
+          echo "  - DISCORD_DEPLOY_WEBHOOK"
+          echo "  - DISCORD_BOT_TOKEN + DISCORD_DEPLOY_CHANNEL_ID"
+          echo ""
+          echo "Deploys will proceed without notifications."
+      
+      - name: Read samconfig.toml
+        id: read_config
+        working-directory: orchestrator
+        run: |
+          echo "📖 Reading deployment configuration from samconfig.toml..."
+          
+          # Parse samconfig.toml for staging/default environment
+          ENV="${{ github.event.inputs.environment }}"
+          
+          # Extract values using grep and awk
+          STACK_NAME=$(grep -A10 "^\[$ENV\]" samconfig.toml | grep "stack_name" | head -1 | awk -F'"' '{print $2}')
+          REGION=$(grep -A10 "^\[$ENV\.deploy\.parameters\]" samconfig.toml | grep "region" | head -1 | awk -F'"' '{print $2}')
+          S3_PREFIX=$(grep -A10 "^\[$ENV\.deploy\.parameters\]" samconfig.toml | grep "s3_prefix" | head -1 | awk -F'"' '{print $2}')
+          CAPABILITIES=$(grep -A10 "^\[$ENV\.deploy\.parameters\]" samconfig.toml | grep "capabilities" | head -1 | awk -F'"' '{print $2}')
+          
+          # Fallback to default if env-specific not found
+          if [ -z "$STACK_NAME" ]; then
+            STACK_NAME=$(grep -A5 "^\[default\.global\.parameters\]" samconfig.toml | grep "stack_name" | awk -F'"' '{print $2}')
+          fi
+          if [ -z "$REGION" ]; then
+            REGION=$(grep -A10 "^\[default\.deploy\.parameters\]" samconfig.toml | grep "region" | awk -F'"' '{print $2}')
+          fi
+          
+          echo "Configuration for $ENV environment:"
+          echo "  Stack Name: $STACK_NAME"
+          echo "  Region: $REGION"
+          echo "  S3 Prefix: $S3_PREFIX"
+          echo "  Capabilities: $CAPABILITIES"
+          
+          echo "stack_name=$STACK_NAME" >> $GITHUB_OUTPUT
+          echo "region=$REGION" >> $GITHUB_OUTPUT
+          echo "s3_prefix=$S3_PREFIX" >> $GITHUB_OUTPUT
+          echo "capabilities=$CAPABILITIES" >> $GITHUB_OUTPUT
+      
+      - name: Check S3 bucket exists
+        id: check_s3
+        run: |
+          echo "🪣 Checking if S3 bucket exists..."
+          
+          # List SAM managed buckets
+          BUCKETS=$(aws s3 ls | grep "aws-sam-cli-managed-default-samclisourcebucket" || echo "")
+          
+          if [ -n "$BUCKETS" ]; then
+            echo "✅ Found SAM managed S3 bucket(s):"
+            echo "$BUCKETS"
+            echo "s3_check=success" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ No SAM managed S3 bucket found in ${{ steps.read_config.outputs.region }}"
+            echo "This is OK - SAM will create one on first deploy"
+            echo "s3_check=warning" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate preflight summary
+        run: |
+          echo "## 🎯 Preflight Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Environment: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAM Template Validation | ${{ steps.validate.outputs.validation_result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.test_webhook.outputs.notification_result }}" = "success" ]; then
+            echo "| Discord Notification (Webhook) | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.test_bot.outputs.notification_result }}" = "success" ]; then
+            echo "| Discord Notification (Bot Token) | ✅ Pass |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Discord Notification | ⚠️ Not Configured |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "| S3 Bucket | ${{ steps.check_s3.outputs.s3_check == 'success' && '✅ Ready' || '⚠️ Will Create' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 📋 Deployment Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Stack Name:** \`${{ steps.read_config.outputs.stack_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** \`${{ steps.read_config.outputs.region }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **S3 Prefix:** \`${{ steps.read_config.outputs.s3_prefix }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Capabilities:** \`${{ steps.read_config.outputs.capabilities }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.validate.outputs.validation_result }}" = "success" ] && \
+             ([ "${{ steps.test_webhook.outputs.notification_result }}" = "success" ] || \
+              [ "${{ steps.test_bot.outputs.notification_result }}" = "success" ] || \
+              [ "${{ env.DISCORD_DEPLOY_WEBHOOK }}" = "" ]); then
+            echo "### ✅ Preflight Complete - Ready to Deploy!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All checks passed! You can safely deploy with the automated workflow." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Preflight Issues Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Fix the issues above before deploying." >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Create audit artifact
+        if: always()
+        run: |
+          mkdir -p /tmp/preflight-audit
+          cat > /tmp/preflight-audit/preflight-report.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "environment": "${{ github.event.inputs.environment }}",
+            "commit_sha": "${{ github.sha }}",
+            "validation_result": "${{ steps.validate.outputs.validation_result }}",
+            "notification_method": "${{ steps.test_webhook.outputs.notification_method || steps.test_bot.outputs.notification_method || 'none' }}",
+            "notification_result": "${{ steps.test_webhook.outputs.notification_result || steps.test_bot.outputs.notification_result || 'not_configured' }}",
+            "s3_check": "${{ steps.check_s3.outputs.s3_check }}",
+            "stack_name": "${{ steps.read_config.outputs.stack_name }}",
+            "region": "${{ steps.read_config.outputs.region }}",
+            "s3_prefix": "${{ steps.read_config.outputs.s3_prefix }}"
+          }
+          EOF
+      
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: preflight-audit-${{ github.event.inputs.environment }}
+          path: /tmp/preflight-audit/
+          retention-days: 30

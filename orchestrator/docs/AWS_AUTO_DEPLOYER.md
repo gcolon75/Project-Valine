@@ -51,7 +51,12 @@ DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that
    FRONTEND_BASE_URL              # Your frontend URL
    VITE_API_BASE                  # Your API base URL
    DISCORD_DEPLOY_CHANNEL_ID      # (Optional) Discord channel for notifications
+   DISCORD_DEPLOY_WEBHOOK         # (Optional) Discord webhook URL for notifications
    ```
+
+> **Note**: For Discord notifications, you can use either:
+> - **Webhook** (Recommended): Set `DISCORD_DEPLOY_WEBHOOK`
+> - **Bot Token**: Set both `DISCORD_BOT_TOKEN` + `DISCORD_DEPLOY_CHANNEL_ID`
 
 2. **Configure AWS OIDC** (we already did this):
    - GitHub role: `arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole`
@@ -82,6 +87,16 @@ sam deploy --guided  # Follow prompts
 **Trigger Deploy Manually:**
 ```
 # Go to GitHub Actions → Deploy Orchestrator → Run workflow
+```
+
+**Run Preflight Check (Before Deploy):**
+```
+# Go to GitHub Actions → Preflight Orchestrator Deploy → Run workflow
+# Select environment (staging/prod)
+# ✅ Validates SAM template
+# ✅ Tests Discord notifications
+# ✅ Checks S3 bucket and config
+# ✅ Creates audit report
 ```
 
 ## 📊 Monitoring Deploys
@@ -192,12 +207,36 @@ Posts Discord embeds with:
 
 ## 🔄 Workflow Configuration
 
-The auto-deploy workflow is defined in:
+DeployBot includes two main workflows:
+
+### 1. Automated Deploy Workflow
 `.github/workflows/deploy-orchestrator.yml`
 
 **Triggers:**
 - Push to `main` branch (when `orchestrator/**` files change)
 - Manual workflow dispatch (from GitHub Actions UI)
+
+**Steps:**
+1. **Preflight Validation**: Runs `sam validate` on template.yaml
+2. **Discord Notification Test**: Tests webhook or bot token
+3. **SAM Build**: Builds Lambda package
+4. **SAM Deploy**: Deploys with non-interactive flags (--no-confirm-changeset)
+5. **Health Check**: Verifies Lambda endpoints are live
+6. **Discord Notification**: Posts success/failure to Discord
+7. **Audit Trail**: Creates artifact with deploy metadata
+
+### 2. Preflight Check Workflow
+`.github/workflows/preflight-orchestrator.yml`
+
+**Triggers:**
+- Manual workflow dispatch only (for validation before deploy)
+
+**Steps:**
+1. **SAM Template Validation**: Checks template.yaml syntax and resources
+2. **Discord Notification Test**: Validates webhook or bot token works
+3. **Configuration Check**: Reads samconfig.toml parameters
+4. **S3 Bucket Check**: Verifies S3 bucket exists or can be created
+5. **Audit Report**: Creates artifact summarizing preflight results
 
 **Repeatable Configuration:**
 All deploy parameters are stored in:
