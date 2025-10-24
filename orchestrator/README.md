@@ -18,8 +18,8 @@ An AWS Lambda-based orchestrator that integrates Discord slash commands with Git
 
 The orchestrator consists of:
 
-- **Discord Handler**: Lambda function that handles Discord slash commands via Rin bot (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`, `/deploy-client`, `/agents`, `/status-digest`)
-- **Agent Personalities**: Specialized messaging styles (Amadeus for deploys, StatusAgent for builds, etc.) powered by single bot
+- **Discord Handler**: Lambda function that handles Discord slash commands via Rin bot (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`, `/deploy-client`, `/agents`, `/status-digest`, `/triage`, `/triage-all`)
+- **Agent Personalities**: Specialized messaging styles (Amadeus for deploys, StatusAgent for builds, TriageAgent for issue analysis, etc.) powered by single bot
 - **GitHub Webhook Handler**: Lambda function that processes GitHub events (issues, PRs, check suites)
 - **Orchestrator Graph**: Core workflow logic that coordinates between services
 - **Services Layer**: Interfaces for GitHub API, Discord API, DynamoDB state storage, and GitHub Actions dispatching
@@ -27,6 +27,7 @@ The orchestrator consists of:
 - **Diagnose Dispatcher**: On-demand workflow triggering with correlation tracking and result parsing
 - **Multi-Agent Registry**: Agent definitions and capabilities for orchestration and routing
 - **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md))
+- **Issue Triage Agent**: Automated issue analysis and triage system (see [ISSUE_TRIAGE_AGENT_GUIDE.md](ISSUE_TRIAGE_AGENT_GUIDE.md))
 
 ## 🚀 Deployment System
 
@@ -326,6 +327,8 @@ GitHub will send a test ping event. Check the webhook delivery to verify it was 
    - `/plan` - Create a daily plan from ready GitHub issues
    - `/verify-latest` - Verify the latest Client Deploy workflow run
    - `/verify-run <run_id>` - Verify a specific workflow run
+   - `/triage <pr>` - Triage a failing PR or workflow run
+   - `/triage-all` - Triage all open issues in the repository
 2. Check CloudWatch Logs for the Lambda execution:
    ```bash
    aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
