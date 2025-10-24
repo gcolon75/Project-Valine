@@ -869,6 +869,123 @@ jobs:
           path: orchestrator/scripts/validation_evidence/
 ```
 
+## Issue Triage & Solver Agent
+
+### Overview
+
+The Issue Triage & Solver Agent (aka "Support Main") is an automated agent that triages all open issues in the repository. It analyzes issues, attempts auto-fixes, marks them as triaged, and reports results to Discord.
+
+**Script:** `issue_triage_agent.py`
+
+**Role:** Automated Issue Triage & Support Agent
+
+### Key Features
+
+1. **Issue Discovery**
+   - Fetches all open issues from GitHub
+   - Filters out pull requests
+   - Processes up to 100 issues per run
+
+2. **Smart Analysis**
+   - Categorizes by labels (bug, feature, docs, question)
+   - Detects issues needing more information
+   - Identifies auto-fixable issues (typos, simple bugs)
+
+3. **Auto-Fix Suggestions**
+   - Typos/spelling: Mark for auto-close
+   - Missing info: Request details from author
+   - Bugs: Suggest PR with bugfix
+   - Features: Suggest enhancement proposal
+   - Docs: Note documentation update needed
+   - Questions: Search codebase for answers
+
+4. **Triage Marking**
+   - Adds `triaged` label to all processed issues
+   - Skips issues already marked as triaged
+   - Provides status updates for each action
+
+5. **Discord Integration**
+   - Posts real-time updates to Discord
+   - Uses Gen Z/gamer vibes messaging
+   - Includes numbered emoji for each issue
+
+### Usage
+
+#### Via Discord (Recommended)
+```
+/triage-all
+```
+
+#### Via GitHub Actions
+1. Go to **Actions** → **Issue Triage Agent**
+2. Click **Run workflow**
+3. Optionally provide requester and trace_id
+4. Click **Run workflow**
+
+#### Via CLI
+```bash
+cd orchestrator/scripts
+
+# Set required environment variables
+export GITHUB_TOKEN="your_github_token"
+export DISCORD_WEBHOOK="https://discord.com/api/webhooks/..." # Optional
+
+# Run the agent
+python issue_triage_agent.py
+```
+
+### Configuration
+
+**Environment Variables:**
+- `GITHUB_TOKEN` (required): GitHub personal access token with `repo` scope
+- `DISCORD_WEBHOOK` (optional): Discord webhook URL for posting results
+
+**Repository Settings:**
+- Owner: `gcolon75`
+- Repository: `Project-Valine`
+- API Base: `https://api.github.com`
+
+### Output Example
+
+```
+🕵️‍♂️ Starting Issue Triage & Solver Agent...
+Found 3 open issues
+1. #42: Fix typo in README [documentation]
+   -> Auto-fixed typo. Closing issue. 📝
+   -> Marked as triaged ✅
+2. #43: Add user authentication [feature]
+   -> Drafting enhancement proposal... 🚀
+   -> Marked as triaged ✅
+3. #44: Bug in login flow [bug]
+   -> Drafting PR with attempted bugfix... 🛠️
+   -> Marked as triaged ✅
+
+All issues triaged! GG, squad! 🎮
+```
+
+### Discord Command Registration
+
+To register the `/triage-all` command with Discord:
+
+```bash
+cd orchestrator/scripts
+
+# Set environment variables
+export DISCORD_BOT_TOKEN="your_bot_token"
+export DISCORD_APPLICATION_ID="your_app_id"
+
+# Register globally (takes up to 1 hour)
+python register_triage_all_command.py
+
+# Register for specific guild (instant)
+python register_triage_all_command.py --guild-id YOUR_GUILD_ID
+```
+
+### Documentation
+
+- [Issue Triage Agent Guide](../ISSUE_TRIAGE_AGENT_GUIDE.md) - Complete guide
+- [Issue Triage Quick Reference](../ISSUE_TRIAGE_QUICK_REF.md) - Quick reference
+
 ### Related Documentation
 
 - [Phase 5 Validation](../../PHASE5_VALIDATION.md) - Complete validation documentation
