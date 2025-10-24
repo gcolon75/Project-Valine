@@ -1406,6 +1406,117 @@ def handle_triage_command(interaction):
         })
 
 
+def handle_ux_update_command(interaction):
+    """Handle /ux-update command - interactive UX/UI updates with confirmation."""
+    try:
+        # Extract parameters
+        options = interaction.get('data', {}).get('options', [])
+        command_text = None
+        plain_text = None
+        confirm = None
+        conversation_id = None
+        
+        for option in options:
+            if option.get('name') == 'command':
+                command_text = option.get('value')
+            elif option.get('name') == 'description':
+                plain_text = option.get('value')
+            elif option.get('name') == 'confirm':
+                confirm = option.get('value')
+            elif option.get('name') == 'conversation_id':
+                conversation_id = option.get('value')
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', 'unknown')
+        username = user.get('username', user_id)
+        
+        # Initialize UX Agent
+        from agents.ux_agent import UXAgent
+        from services.github import GitHubService
+        
+        github_service = GitHubService()
+        ux_agent = UXAgent(
+            github_service=github_service,
+            repo=os.environ.get('GITHUB_REPOSITORY', 'gcolon75/Project-Valine')
+        )
+        
+        # If conversation_id and confirm are provided, this is a confirmation
+        if conversation_id and confirm is not None:
+            result = ux_agent.confirm_and_execute(
+                conversation_id=conversation_id,
+                user_response=confirm
+            )
+            
+            if result.get('cancelled'):
+                return create_response(4, {
+                    'content': result['message']
+                })
+            
+            if result.get('success') and not result.get('needs_confirmation'):
+                # Changes executed
+                return create_response(4, {
+                    'content': result.get('message', '✅ Changes applied!')
+                })
+            
+            if result.get('needs_confirmation'):
+                # Still needs confirmation (user modified request)
+                return create_response(4, {
+                    'content': result['message']
+                })
+        
+        # Start new conversation
+        result = ux_agent.start_conversation(
+            command_text=command_text,
+            user_id=user_id,
+            plain_text=plain_text
+        )
+        
+        if not result.get('success'):
+            # Show examples on error
+            message = result.get('message', '❌ Could not process request')
+            if result.get('examples'):
+                message += '\n\n💡 **Examples:**\n'
+                for ex in result['examples'][:3]:
+                    message += f'• {ex}\n'
+            
+            return create_response(4, {
+                'content': message,
+                'flags': 64
+            })
+        
+        if result.get('needs_clarification'):
+            # Return clarification questions
+            return create_response(4, {
+                'content': result['message']
+            })
+        
+        if result.get('needs_confirmation'):
+            # Return preview and ask for confirmation
+            conv_id = result.get('conversation_id')
+            message = result['message']
+            message += f'\n\n_Conversation ID: `{conv_id[:8]}...`_'
+            
+            return create_response(4, {
+                'content': message
+            })
+        
+        # Should not reach here, but handle gracefully
+        return create_response(4, {
+            'content': '✅ Request processed!',
+            'flags': 64
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_ux_update_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
 def handle_update_summary_command(interaction):
     """Handle /update-summary command - generate and update project summary."""
     try:
@@ -1589,6 +1700,8 @@ def handler(event, context):
                 return handle_triage_command(interaction)
             elif command_name == 'update-summary':
                 return handle_update_summary_command(interaction)
+            elif command_name == 'ux-update':
+                return handle_ux_update_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
