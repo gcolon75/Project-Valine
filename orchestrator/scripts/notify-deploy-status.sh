@@ -2,22 +2,23 @@
 # Notify Discord channel about deployment status
 # Usage: ./notify-deploy-status.sh <status> <message>
 # Status: success, failure, started
-# Requires: DISCORD_BOT_TOKEN environment variable
+# Requires: DISCORD_DEPLOY_WEBHOOK or (DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID) environment variables
 
 set -e
 
 STATUS="${1:-unknown}"
 MESSAGE="${2:-Deployment status update}"
+DISCORD_DEPLOY_WEBHOOK="${DISCORD_DEPLOY_WEBHOOK:-}"
 DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN:-}"
 DISCORD_CHANNEL_ID="${DISCORD_CHANNEL_ID:-}"
 
-# Skip if no Discord token is configured
-if [ -z "$DISCORD_BOT_TOKEN" ]; then
-  echo "⚠️  DISCORD_BOT_TOKEN not set, skipping Discord notification"
+# Skip if no Discord configuration
+if [ -z "$DISCORD_DEPLOY_WEBHOOK" ] && [ -z "$DISCORD_BOT_TOKEN" ]; then
+  echo "⚠️  No Discord notification configured (set DISCORD_DEPLOY_WEBHOOK or DISCORD_BOT_TOKEN), skipping"
   exit 0
 fi
 
-if [ -z "$DISCORD_CHANNEL_ID" ]; then
+if [ -z "$DISCORD_DEPLOY_WEBHOOK" ] && [ -z "$DISCORD_CHANNEL_ID" ]; then
   echo "⚠️  DISCORD_CHANNEL_ID not set, skipping Discord notification"
   exit 0
 fi
@@ -80,17 +81,36 @@ EMBED_JSON=$(cat <<EOF
 EOF
 )
 
-# Send to Discord
-RESPONSE=$(curl -s -X POST \
-  "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" \
-  -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d "${EMBED_JSON}")
-
-# Check if successful
-if echo "$RESPONSE" | grep -q '"id"'; then
-  echo "✓ Discord notification sent successfully"
+# Send to Discord (prefer webhook, fall back to bot token)
+if [ -n "$DISCORD_DEPLOY_WEBHOOK" ]; then
+  echo "📤 Sending notification via webhook..."
+  RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+    "${DISCORD_DEPLOY_WEBHOOK}" \
+    -H "Content-Type: application/json" \
+    -d "${EMBED_JSON}")
+  
+  HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+  
+  if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "✓ Discord notification sent successfully via webhook"
+  else
+    echo "⚠️  Failed to send Discord notification via webhook (HTTP $HTTP_CODE)"
+    echo "Response: $(echo "$RESPONSE" | head -n-1)"
+  fi
 else
-  echo "⚠️  Failed to send Discord notification"
-  echo "Response: $RESPONSE"
+  echo "📤 Sending notification via bot token..."
+  RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+    "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" \
+    -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "${EMBED_JSON}")
+  
+  HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+  
+  if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "✓ Discord notification sent successfully via bot token"
+  else
+    echo "⚠️  Failed to send Discord notification via bot token (HTTP $HTTP_CODE)"
+    echo "Response: $(echo "$RESPONSE" | head -n-1)"
+  fi
 fi
