@@ -172,6 +172,18 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /uptime-check command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "uptime-check",
+    "type": 1,
+    "description": "Check uptime and health of Discord bot and critical services"
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Staging commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -182,6 +194,7 @@ echo "  • /verify-latest - Verify the latest Client Deploy workflow run"
 echo "  • /deploy-client - Trigger Client Deploy workflow"
 echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
 echo "  • /update-summary - Generate and update project summary with latest status"
+echo "  • /uptime-check - Check uptime and health of Discord bot and critical services"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Commands should appear IMMEDIATELY in your Discord staging server"
