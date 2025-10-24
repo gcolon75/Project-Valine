@@ -1,9 +1,9 @@
-# Updated: 10/23/2025 23:40:00
+# Updated: 10/24/2025 18:34:00
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
 /deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage,
-/update-summary commands.
+/update-summary, /uptime-check commands.
 """
 import json
 import os
@@ -25,6 +25,7 @@ from utils.time_formatter import TimeFormatter
 from utils.trace_store import get_trace_store
 from utils.logger import redact_secrets, StructuredLogger
 from agents.registry import get_agents
+from agents.uptime_guardian import UptimeGuardian
 
 # Note: Phase5TriageAgent is only used for local testing
 # The Discord bot triggers the triage workflow via GitHub Actions instead
@@ -1621,6 +1622,59 @@ def handle_update_summary_command(interaction):
         })
 
 
+def handle_uptime_check_command(interaction):
+    """Handle /uptime-check command - check uptime of Discord bot and critical services."""
+    try:
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize logger
+        logger = StructuredLogger(service="uptime")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/uptime-check', requester=requester)
+        logger.info('Uptime check command received', fn='handle_uptime_check_command')
+        
+        # Get service URLs from environment
+        discord_handler_url = os.environ.get('DISCORD_HANDLER_URL')
+        api_base_url = os.environ.get('API_BASE_URL')
+        frontend_url = os.environ.get('FRONTEND_URL')
+        
+        # Initialize UptimeGuardian
+        guardian = UptimeGuardian(
+            discord_handler_url=discord_handler_url,
+            api_base_url=api_base_url,
+            frontend_url=frontend_url
+        )
+        
+        # Run uptime check
+        result = guardian.run_uptime_check()
+        
+        # Return formatted message
+        content = result['message']
+        
+        # Add trace info
+        short_id = trace_id[:8]
+        content += f"\n\n🔍 **Trace ID:** `{short_id}...` | Checked by: {requester}"
+        
+        logger.info('Uptime check completed', fn='handle_uptime_check_command',
+                   all_online=result['all_online'], trace_id=trace_id)
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_uptime_check_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error checking uptime: {str(e)}',
+            'flags': 64
+        })
+
+
 def handler(event, context):
     """
     Main Lambda handler for Discord interactions.
@@ -1702,6 +1756,8 @@ def handler(event, context):
                 return handle_update_summary_command(interaction)
             elif command_name == 'ux-update':
                 return handle_ux_update_command(interaction)
+            elif command_name == 'uptime-check':
+                return handle_uptime_check_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
