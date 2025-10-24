@@ -889,7 +889,7 @@ The Issue Triage & Solver Agent (aka "Support Main") is an automated agent that 
 2. **Smart Analysis**
    - Categorizes by labels (bug, feature, docs, question)
    - Detects issues needing more information
-   - Identifies auto-fixable issues (typos, simple bugs)
+   - Identifies issues suitable for auto-fix suggestions (typos, simple bugs)
 
 3. **Auto-Fix Suggestions**
    - Typos/spelling: Mark for auto-close
@@ -937,7 +937,7 @@ python issue_triage_agent.py
 ### Configuration
 
 **Environment Variables:**
-- `GITHUB_TOKEN` (required): GitHub personal access token with `repo` scope
+- `GITHUB_TOKEN` (required): GitHub personal access token with `repo` scope (for private repos) or `public_repo` scope (for public repos). Requires read access to issues and write access to add labels.
 - `DISCORD_WEBHOOK` (optional): Discord webhook URL for posting results
 
 **Repository Settings:**
@@ -951,16 +951,19 @@ python issue_triage_agent.py
 🕵️‍♂️ Starting Issue Triage & Solver Agent...
 Found 3 open issues
 1. #42: Fix typo in README [documentation]
-   -> Auto-fixed typo. Closing issue. 📝
+   -> Auto-fixed typo. Closing issue. 📝 [SUGGESTION]
    -> Marked as triaged ✅
 2. #43: Add user authentication [feature]
-   -> Drafting enhancement proposal... 🚀
+   -> Drafting enhancement proposal... 🚀 [SUGGESTION]
    -> Marked as triaged ✅
 3. #44: Bug in login flow [bug]
-   -> Drafting PR with attempted bugfix... 🛠️
+   -> Drafting PR with attempted bugfix... 🛠️ [SUGGESTION]
    -> Marked as triaged ✅
 
 All issues triaged! GG, squad! 🎮
+
+Note: Auto-fix messages are suggestions for action, not automatic changes.
+The agent only adds the 'triaged' label to issues.
 ```
 
 ### Discord Command Registration

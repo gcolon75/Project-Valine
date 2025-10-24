@@ -65,18 +65,20 @@ For each issue, the agent analyzes:
 - **Author** - who created the issue
 - **Age** - how long the issue has been open
 
-### 3. Auto-Fix Attempts
+### 3. Auto-Fix Suggestions
 
-The agent attempts to auto-fix issues based on patterns:
+The agent provides suggestions for how to handle issues based on patterns:
 
-| Issue Type | Detection | Action |
-|------------|-----------|--------|
+| Issue Type | Detection | Suggested Action |
+|------------|-----------|------------------|
 | Typo/Spelling | "typo", "spelling", "fix" in title | Mark for auto-close with fix note |
 | Missing Info | "screenshot", "steps" in title OR body < 20 chars | Request more info from author |
 | Bug | `bug` label | Suggest drafting PR with bugfix |
 | Feature Request | `feature` or `enhancement` label | Suggest drafting enhancement proposal |
 | Documentation | `documentation` or `docs` label | Note documentation update needed |
 | Question | `question` label | Search codebase for answers |
+
+**Note:** The agent only provides suggestions and adds labels. It does not automatically close issues, create PRs, or modify issue content.
 
 ### 4. Triage Marking
 
@@ -97,16 +99,19 @@ Results are posted to Discord in real-time:
 🕵️‍♂️ Found 5 open issues. Prioritizing…
 
 1️⃣ #42: Fix typo in README [documentation]
-   Auto-fixed typo. Closing issue. 📝
+   Auto-fixed typo. Closing issue. 📝 [SUGGESTION]
    Status: Marked as triaged ✅
 
 2️⃣ #43: Add user authentication [feature]
-   Drafting enhancement proposal... 🚀
+   Drafting enhancement proposal... 🚀 [SUGGESTION]
    Status: Marked as triaged ✅
 
 ...
 
 All issues triaged! GG, squad! 🎮
+
+Note: Messages like "Auto-fixed typo" are suggestions for action.
+The agent only adds the 'triaged' label to issues.
 ```
 
 ## Discord Command
@@ -172,7 +177,7 @@ python register_triage_all_command.py --guild-id YOUR_GUILD_ID
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GITHUB_TOKEN` | ✅ Yes | GitHub personal access token with `repo` scope |
+| `GITHUB_TOKEN` | ✅ Yes | GitHub personal access token with `repo` scope (private repos) or `public_repo` scope (public repos). Needs read access to issues and write access to add labels. |
 | `DISCORD_WEBHOOK` | ❌ Optional | Discord webhook URL for posting results |
 
 ### Repository Configuration
@@ -197,16 +202,19 @@ REPO_NAME = "your-repo"
 🕵️‍♂️ Starting Issue Triage & Solver Agent...
 Found 3 open issues
 1. #42: Fix typo in README [documentation]
-   -> Auto-fixed typo. Closing issue. 📝
+   -> Auto-fixed typo. Closing issue. 📝 [SUGGESTION]
    -> Marked as triaged ✅
 2. #43: Add user authentication [feature]
-   -> Drafting enhancement proposal... 🚀
+   -> Drafting enhancement proposal... 🚀 [SUGGESTION]
    -> Marked as triaged ✅
 3. #44: Bug in login flow [bug]
-   -> Drafting PR with attempted bugfix... 🛠️
+   -> Drafting PR with attempted bugfix... 🛠️ [SUGGESTION]
    -> Marked as triaged ✅
 
 All issues triaged! GG, squad! 🎮
+
+Note: Messages like "Auto-fixed" are suggestions for action.
+The agent only adds the 'triaged' label to issues.
 ```
 
 ### Discord Output
