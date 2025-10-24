@@ -29,70 +29,61 @@ The orchestrator consists of:
 - **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md))
 - **Issue Triage Agent**: Automated issue analysis and triage system (see [ISSUE_TRIAGE_AGENT_GUIDE.md](ISSUE_TRIAGE_AGENT_GUIDE.md))
 
-## 🚀 Deployment System
+## 🚀 Deployment System - DeployBot
 
-### Cache-Buster Mechanism
+**TL;DR**: Push code → DeployBot speedruns to Lambda for you. Zero hassle, no AWS keys, just vibes. 💯
 
-Every deployment forces fresh Lambda artifacts to S3 using a timestamp-based cache-buster:
+👉 **Full deployment guide**: [docs/AWS_AUTO_DEPLOYER.md](docs/AWS_AUTO_DEPLOYER.md)
 
-**How it works:**
-1. `scripts/generate-deploy-stamp.sh` runs before `sam build`
-2. Injects a `.deploy-stamp` file with current timestamp, build ID, and commit SHA into `app/`
-3. This changes the build artifact hash, forcing S3 to accept the upload (no more "upload skipped")
-4. Lambda always gets fresh code, eliminating stale package issues
+### Auto-Deploy Features
 
-**Why we need this:**
-- AWS SAM compares local build hash to S3 artifact hash
-- If they match, SAM skips upload (optimization to save time/bandwidth)
-- Problem: sometimes code structure changes but SAM thinks artifact is identical
-- Result: Lambda crashes with `ImportModuleError` because it loaded stale code
+- ✅ **Fully Automated**: Push to main → Auto-deploys to AWS Lambda
+- ✅ **Zero Manual Setup**: Uses GitHub Actions secrets, never asks for AWS keys
+- ✅ **Repeatable Config**: Uses same settings as last successful deploy
+- ✅ **Health Checks**: Validates deployment before marking as complete
+- ✅ **Discord Notifications**: Posts deploy status to your Discord channel
+- ✅ **Gamer-Style Errors**: Clear, actionable error messages with next steps
 
-**Implemented in:**
-- `.github/workflows/deploy-orchestrator.yml` (line 42-44)
-- Runs automatically on every GitHub Actions deploy
-- Zero manual intervention required
+### Quick Start
 
-### Health Check System
-
-Post-deploy health check validates Lambda is operational:
-
-**What it does:**
-- Sends Discord PING request (type: 1) to deployed Lambda endpoint
-- Expects 200/401 response (healthy Lambda that rejects invalid signature)
-- Fails on 500/502/503 (Lambda crashed, possibly ImportModuleError)
-- Provides CloudWatch logs link if check fails
-
-**Script:** `scripts/test-discord-endpoint.sh`
-
-**Implemented in:**
-- `.github/workflows/deploy-orchestrator.yml` (line 106-110)
-- Runs as final step after `sam deploy`
-- CI fails fast if Lambda is broken, before Discord registration
-
-### Troubleshooting Deployments
-
-If Lambda deployment fails or bot isn't responding:
-
-**Quick diagnosis (5 minutes):**
+**Auto-Deploy (Recommended):**
 ```bash
-cd orchestrator
-# Check what's actually deployed
-python scripts/validate_deployment.py --stage dev
+# Just merge to main - DeployBot handles the rest
+git push origin main
+# ✅ Watch GitHub Actions for deploy progress
+# ✅ Get Discord notification when done
 ```
 
-**Emergency fix (when Lambda is on fire 🔥):**
+**Manual Deploy (If Needed):**
 ```bash
 cd orchestrator
-rm -rf .aws-sam/
-sam build --use-container --force
-sam deploy --force-upload
+sam deploy --guided  # Follow prompts
 ```
 
-**Full recovery playbook:**
-- [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](docs/LAMBDA_DEPLOY_RECOVERY.md) - Complete troubleshooting guide with 3 recovery options
-- Option 1: Force Fresh Deploy (non-destructive)
-- Option 2: Check IAM Permissions
-- Option 3: Nuclear Reset (last resort)
+### How It Works
+
+**Cache-Buster Mechanism:**
+- Every deploy generates `.deploy-stamp` with timestamp, build ID, and commit SHA
+- Forces S3 to accept fresh artifacts (no stale code issues)
+- Script: `scripts/generate-deploy-stamp.sh`
+
+**Health Check System:**
+- Sends Discord PING request to validate Lambda is operational
+- Expects 200/401 response (healthy Lambda)
+- Fails on 500/502/503 (Lambda crashed)
+- Script: `scripts/test-discord-endpoint.sh`
+
+**Notification System:**
+- Posts Discord embeds for deploy started/success/failure
+- Includes troubleshooting guidance for failures
+- Script: `scripts/notify-deploy-status.sh`
+
+### Troubleshooting
+
+If deployment fails, check the GitHub Actions summary for:
+- 🔍 Quick diagnostics (S3 bucket, IAM permissions, secrets)
+- 🛠️ Recovery options (force fresh deploy, manual deploy, CloudWatch logs)
+- 📚 Full recovery guide: [docs/LAMBDA_DEPLOY_RECOVERY.md](docs/LAMBDA_DEPLOY_RECOVERY.md)
 
 ## Prerequisites
 

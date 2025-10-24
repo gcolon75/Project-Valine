@@ -6,6 +6,24 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ## 🔥 Recent Updates (Oct 2025)
 
+### AWS Auto-Deployer - DeployBot Active 🚀
+Push code → Lambda deploys automatically. Zero manual AWS setup needed!
+
+**What's new:**
+- 🤖 **Auto-deploy on merge**: Push to main → DeployBot speedruns to AWS
+- 💬 **Discord notifications**: Get deploy status in your Discord channel
+- 🛠️ **Gamer-style errors**: Clear troubleshooting guidance when deploys fail
+- 🔄 **Repeatable config**: Uses same settings as last successful deploy
+
+**How to use:**
+```bash
+git push origin main  # DeployBot handles the rest!
+```
+
+**Documentation:** [orchestrator/docs/AWS_AUTO_DEPLOYER.md](orchestrator/docs/AWS_AUTO_DEPLOYER.md)
+
+---
+
 ### Discord Bot Endpoint - OPERATIONAL ✅
 The bot respawned successfully after defeating the S3 Cache Boss 💀
 
@@ -48,16 +66,27 @@ npm run dev   # opens on http://localhost:3000
 
 See `serverless/` and `infra/` directories for serverless function deployment.
 
-### AI Orchestrator
+### AI Orchestrator - DeployBot Enabled 🚀
 
 ⚠️ **Note**: The orchestrator code is currently in this repository but is planned to be migrated to its canonical location at `ghawk75-ai-agent/orchestrator` for better separation of concerns. See [docs/archive/ORCHESTRATOR_CONSOLIDATION.md](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) for the migration plan.
 
 The orchestrator manages automated workflows between Discord and GitHub:
 
+**Auto-Deploy (Zero Hassle):**
+```bash
+git push origin main  # DeployBot speedruns to AWS Lambda automatically!
+# ✅ No AWS keys needed
+# ✅ Discord notifications
+# ✅ Repeatable config
+```
+
+**Manual Deploy (If Needed):**
 ```bash
 cd orchestrator
-# See orchestrator/README.md for deployment instructions
+sam deploy --guided  # Follow prompts
 ```
+
+📚 **Full guide:** [orchestrator/docs/AWS_AUTO_DEPLOYER.md](orchestrator/docs/AWS_AUTO_DEPLOYER.md)
 
 ## Project Structure
 

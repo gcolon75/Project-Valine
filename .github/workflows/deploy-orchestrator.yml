@@ -1,4 +1,4 @@
-name: Deploy Orchestrator (Discord Bot)
+name: Deploy Orchestrator (Discord Bot) 🚀
 
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write  # For posting PR comments
     
     steps:
       - uses: actions/checkout@v4
@@ -38,18 +39,33 @@ jobs:
           echo "STAGING_GITHUB_WEBHOOK_SECRET=${{ secrets.STAGING_GITHUB_WEBHOOK_SECRET }}" >> $GITHUB_ENV
           echo "FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" >> $GITHUB_ENV
           echo "VITE_API_BASE=${{ secrets.VITE_API_BASE }}" >> $GITHUB_ENV
+          # For Discord notifications (optional)
+          echo "DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_DEPLOY_CHANNEL_ID }}" >> $GITHUB_ENV
+      
+      - name: Notify deployment started
+        if: env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        working-directory: orchestrator
+        run: |
+          ./scripts/notify-deploy-status.sh "started" "🎮 Speedrunning Lambda deploy to AWS... Just chill, no manual setup needed!"
       
       - name: Generate deployment stamp
         working-directory: orchestrator
         run: ./scripts/generate-deploy-stamp.sh
       
       - name: SAM Build
-        working-directory: orchestrator
-        run: sam build
-      
-      - name: SAM Deploy
+        id: build
         working-directory: orchestrator
         run: |
+          echo "🏗️ Building Lambda package with sam build..."
+          sam build
+          echo "✅ Build completed successfully!"
+      
+      - name: SAM Deploy
+        id: deploy
+        working-directory: orchestrator
+        run: |
+          echo "🚀 Deploying to AWS Lambda (repeating last successful config)..."
           sam deploy \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
@@ -62,10 +78,12 @@ jobs:
               "GitHubWebhookSecret=${STAGING_GITHUB_WEBHOOK_SECRET}" \
               "FrontendBaseUrl=${FRONTEND_BASE_URL}" \
               "ViteApiBase=${VITE_API_BASE}"
+          echo "✅ Deploy completed successfully!"
       
       - name: Verify Lambda deployment
+        id: verify
         run: |
-          echo "### Lambda Deployment Verification" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Lambda Deployment Verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Get Discord handler function info
@@ -88,6 +106,8 @@ jobs:
           echo "Code Size: $(echo $GITHUB_INFO | awk '{print $2}') bytes" >> $GITHUB_STEP_SUMMARY
           echo "S3 Location: $GITHUB_S3" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          echo "✅ Lambda functions are deployed and healthy!"
       
       - name: Get Discord webhook URL
         id: get-url
@@ -97,14 +117,83 @@ jobs:
             --query 'Stacks[0].Outputs[?OutputKey==`DiscordWebhookUrl`].OutputValue' \
             --output text)
           echo "discord_url=$URL" >> $GITHUB_OUTPUT
-          echo "### Discord Webhook URL" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Discord Webhook URL" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "$URL" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Next step:** Paste this URL into Discord Developer Portal → Interactions Endpoint URL" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** This URL is already configured in Discord Developer Portal" >> $GITHUB_STEP_SUMMARY
       
       - name: Health Check - Test Discord Endpoint
+        id: health-check
         working-directory: orchestrator
         run: |
-          echo "Testing deployed Lambda endpoint..."
+          echo "🏥 Testing deployed Lambda endpoint..."
           ./scripts/test-discord-endpoint.sh
+          echo "✅ Health check passed!"
+      
+      - name: Notify deployment success
+        if: success() && env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        working-directory: orchestrator
+        run: |
+          DISCORD_URL="${{ steps.get-url.outputs.discord_url }}"
+          ./scripts/notify-deploy-status.sh "success" "🎮 **Deploy COMPLETE!** Lambda is live and ready to raid! 🎯
+
+          **What's deployed:**
+          • Discord Handler: \`valine-orchestrator-discord-dev\`
+          • GitHub Handler: \`valine-orchestrator-github-dev\`
+          • Endpoint: ${DISCORD_URL}
+
+          **Status:** ✅ All systems operational. No manual setup needed. Just vibes! 💯"
+      
+      - name: Handle deployment failure
+        if: failure()
+        working-directory: orchestrator
+        run: |
+          echo "### ❌ Deployment Failed - Troubleshooting Guide" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Error detected during deployment. Here's what to check:**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### 🔍 Quick Diagnostics" >> $GITHUB_STEP_SUMMARY
+          echo "1. **S3 Bucket Missing?** Check if your S3 bucket exists: \`aws-sam-cli-managed-default-samclisourcebucket-*\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. **IAM Permissions?** Verify the GitHub deploy role has Lambda, CloudFormation, and S3 permissions" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Secrets Configured?** Check that all required GitHub secrets are set" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### 🛠️ Recovery Options" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 1: Force Fresh Deploy (Recommended)**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "cd orchestrator" >> $GITHUB_STEP_SUMMARY
+          echo "rm -rf .aws-sam/" >> $GITHUB_STEP_SUMMARY
+          echo "sam build --use-container --force" >> $GITHUB_STEP_SUMMARY
+          echo "sam deploy --force-upload" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 2: Manual Deploy with Guided Setup**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "cd orchestrator" >> $GITHUB_STEP_SUMMARY
+          echo "sam deploy --guided" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Option 3: Check CloudWatch Logs**" >> $GITHUB_STEP_SUMMARY
+          echo "View Lambda logs: [CloudWatch Console](https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#logsV2:log-groups)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📚 **Full recovery guide:** [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](https://github.com/gcolon75/Project-Valine/blob/main/orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Notify deployment failure
+        if: failure() && env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != ''
+        working-directory: orchestrator
+        run: |
+          ./scripts/notify-deploy-status.sh "failure" "💀 **Deploy FAILED!** Lambda deployment encountered an error.
+
+          **Common issues:**
+          • 🗑️ S3 bucket missing → Create one in AWS Console
+          • 🔐 IAM permissions → Check GitHub deploy role
+          • 🔑 Secrets not set → Verify GitHub repository secrets
+
+          **Quick fix:**
+          \`\`\`bash
+          cd orchestrator && sam deploy --guided
+          \`\`\`
+
+          📋 **View full logs:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          📚 **Recovery guide:** orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md"
