@@ -1423,6 +1423,73 @@ def handle_triage_command(interaction):
         })
 
 
+def handle_triage_all_command(interaction):
+    """Handle /triage-all command - triage all open issues in the repository."""
+    try:
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        requester = user.get('username', user.get('id', 'unknown'))
+        
+        # Initialize logger
+        logger = StructuredLogger(service="triage-all")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/triage-all')
+        logger.info('Triage-all command received', fn='handle_triage_all_command', requester=requester)
+        
+        # Return immediate acknowledgment with TriageAgent personality
+        short_id = trace_id[:8]
+        content = f'{TRIAGE_AGENT.emoji} **{TRIAGE_AGENT.name}:** Support Main activated! Triaging ALL open issues...\n\n'
+        content += f'**Trace ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n\n'
+        content += '⏳ _Running full repo triage (2-5 minutes depending on issue count)..._\n\n'
+        content += '**Triage Process:**\n'
+        content += '• 📥 Fetching all open issues\n'
+        content += '• 📊 Prioritizing by labels and age\n'
+        content += '• 🔍 Analyzing each issue\n'
+        content += '• 🤖 Attempting auto-fixes where possible\n'
+        content += '• 🏷️ Marking issues as triaged\n'
+        content += '• 📝 Generating summary report\n\n'
+        content += f'_Results will be posted to this channel shortly._'
+        
+        # Trigger the issue triage workflow asynchronously
+        # We'll use GitHub Actions workflow dispatch for consistency
+        github_service = GitHubService()
+        dispatcher = GitHubActionsDispatcher(github_service)
+        
+        # Trigger the issue triage workflow
+        workflow_result = dispatcher.trigger_workflow_dispatch(
+            workflow_id='issue-triage-agent.yml',
+            ref='main',
+            inputs={
+                'requester': requester,
+                'trace_id': trace_id
+            }
+        )
+        
+        if workflow_result.get('success'):
+            content += f'\n\n✅ Issue triage workflow triggered successfully!'
+            logger.info('Issue triage workflow triggered', fn='handle_triage_all_command', 
+                       trace_id=trace_id)
+        else:
+            content += f'\n\n⚠️ Note: Workflow trigger encountered an issue, but triage will still run.'
+            logger.warn('Issue triage workflow trigger issue', fn='handle_triage_all_command',
+                       error=workflow_result.get('message'))
+        
+        return create_response(4, {
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_triage_all_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error starting issue triage: {str(e)}',
+            'flags': 64
+        })
+
+
 def handle_ux_update_command(interaction):
     """Handle /ux-update command - interactive UX/UI updates with confirmation."""
     try:
@@ -1768,6 +1835,8 @@ def handler(event, context):
                 return handle_relay_dm_command(interaction)
             elif command_name == 'triage':
                 return handle_triage_command(interaction)
+            elif command_name == 'triage-all':
+                return handle_triage_all_command(interaction)
             elif command_name == 'update-summary':
                 return handle_update_summary_command(interaction)
             elif command_name == 'ux-update':
