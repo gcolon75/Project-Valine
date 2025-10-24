@@ -2,6 +2,11 @@
 
 > **TL;DR**: Push code → DeployBot speedruns to Lambda for you. Zero hassle, no AWS keys, just vibes. 💯
 
+**Quick Links:**
+- 📖 [Secrets Setup Guide](DEPLOYBOT_SECRETS_SETUP.md) - First-time setup (5 mins)
+- 🚨 [Recovery Playbook](LAMBDA_DEPLOY_RECOVERY.md) - When deploys fail
+- 🎯 [Preflight Workflow](#2-preflight-check-workflow) - Test before deploying
+
 ## What is DeployBot?
 
 DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that handles all the boring stuff so you don't have to. It's like having a pro speedrunner deploy your Discord bot to Lambda - fast, reliable, and fully automated.
@@ -12,9 +17,12 @@ DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that
 - 🔐 **Zero Manual Setup**: Uses GitHub Actions secrets, never asks for AWS keys
 - 🎯 **Repeatable Deploys**: Uses same config as last successful deploy
 - 🏥 **Health Checks**: Validates deployment before marking as complete
-- 💬 **Discord Notifications**: Posts deploy status to your Discord channel
+- 💬 **Discord Notifications**: Posts deploy status to your Discord channel (webhook or bot)
 - 🛠️ **Gamer-Style Errors**: Clear, actionable error messages with next steps
 - ⚡ **Cache-Busting**: Forces fresh Lambda artifacts every deploy (no stale code issues)
+- 🔍 **Preflight Validation**: Run `sam validate` and test notifications before deploying
+- 📊 **Smart Error Detection**: Identifies S3, IAM, parser, and stack errors with specific fixes
+- 📦 **Audit Trail**: Every deploy creates an artifact with metadata and logs
 
 ## 🎮 How It Works
 
@@ -40,18 +48,20 @@ DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that
 
 ### First-Time Setup (One-Time Only)
 
+**📖 Full setup guide:** [DEPLOYBOT_SECRETS_SETUP.md](DEPLOYBOT_SECRETS_SETUP.md)
+
+**Quick checklist:**
+
 1. **Set up GitHub secrets** (in repository settings):
    ```
-   AWS_ACCESS_KEY_ID              # Not needed if using OIDC (we use OIDC)
-   AWS_SECRET_ACCESS_KEY          # Not needed if using OIDC (we use OIDC)
    STAGING_DISCORD_PUBLIC_KEY     # From Discord Developer Portal
    STAGING_DISCORD_BOT_TOKEN      # From Discord Developer Portal
    STAGING_GITHUB_TOKEN           # GitHub PAT or app token
    STAGING_GITHUB_WEBHOOK_SECRET  # Random secure string
    FRONTEND_BASE_URL              # Your frontend URL
    VITE_API_BASE                  # Your API base URL
-   DISCORD_DEPLOY_CHANNEL_ID      # (Optional) Discord channel for notifications
    DISCORD_DEPLOY_WEBHOOK         # (Optional) Discord webhook URL for notifications
+   DISCORD_DEPLOY_CHANNEL_ID      # (Optional) Discord channel for notifications
    ```
 
 > **Note**: For Discord notifications, you can use either:
@@ -63,7 +73,20 @@ DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that
    - Region: `us-west-2`
    - Trust policy allows GitHub Actions to assume role
 
-3. **That's it!** 🎉 DeployBot is ready to raid.
+3. **Run preflight check** (optional but recommended):
+   ```
+   Go to GitHub Actions → Preflight Orchestrator Deploy → Run workflow
+   Select environment: staging
+   ```
+   This validates:
+   - ✅ SAM template syntax
+   - ✅ Discord notifications work
+   - ✅ Configuration is correct
+   - ✅ S3 bucket exists or can be created
+
+4. **That's it!** 🎉 DeployBot is ready to raid.
+
+> **Need detailed setup instructions?** See [DEPLOYBOT_SECRETS_SETUP.md](DEPLOYBOT_SECRETS_SETUP.md)
 
 ### Daily Usage
 
