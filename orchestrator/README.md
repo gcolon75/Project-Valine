@@ -1,12 +1,25 @@
-# Project Valine AI Orchestrator
+# Project Valine AI Orchestrator - Rin Bot 🎮
 
 An AWS Lambda-based orchestrator that integrates Discord slash commands with GitHub webhooks to manage automated workflows for the Project Valine repository.
+
+## Bot Unifier Architecture
+
+**Rin** is the unified orchestrator bot that handles all Discord interactions. Different agent personalities (Amadeus 🚀, BuildAgent 🏗️, StatusAgent 📊, etc.) provide specialized messaging styles through custom embeds and formatting, all using a **single bot token**.
+
+👉 **See [BOT_UNIFIER_GUIDE.md](BOT_UNIFIER_GUIDE.md) for complete details on the unified bot architecture.**
+
+### Key Benefits
+- ✅ Single `DISCORD_BOT_TOKEN` for all operations
+- ✅ Simplified permissions and deployment
+- ✅ Agent personalities through embeds (no multiple bots needed)
+- ✅ Consistent user experience with specialized contexts
 
 ## Architecture
 
 The orchestrator consists of:
 
-- **Discord Handler**: Lambda function that handles Discord slash commands (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`, `/deploy-client`, `/agents`, `/status-digest`)
+- **Discord Handler**: Lambda function that handles Discord slash commands via Rin bot (`/plan`, `/approve`, `/status`, `/ship`, `/verify-latest`, `/verify-run`, `/diagnose`, `/deploy-client`, `/agents`, `/status-digest`)
+- **Agent Personalities**: Specialized messaging styles (Amadeus for deploys, StatusAgent for builds, etc.) powered by single bot
 - **GitHub Webhook Handler**: Lambda function that processes GitHub events (issues, PRs, check suites)
 - **Orchestrator Graph**: Core workflow logic that coordinates between services
 - **Services Layer**: Interfaces for GitHub API, Discord API, DynamoDB state storage, and GitHub Actions dispatching
@@ -92,15 +105,19 @@ sam deploy --force-upload
 
 Before deploying, you need to gather the following credentials:
 
-### Discord Setup
+### Discord Setup (Rin Bot)
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create a new application (or use existing)
+2. Create a new application named "Rin" (or use existing)
 3. Go to "Bot" section:
-   - Copy the **Bot Token**
+   - Copy the **Bot Token** (this will be your `DISCORD_BOT_TOKEN`)
    - Enable necessary intents (Server Members Intent, Message Content Intent)
+   - Set bot username to "Rin" for consistency
 4. Go to "General Information":
-   - Copy the **Public Key**
+   - Copy the **Public Key** (this will be your `DISCORD_PUBLIC_KEY`)
+   - Copy the **Application ID**
+
+**Note**: This single bot token powers all agent personalities (Amadeus, BuildAgent, StatusAgent, etc.). See [BOT_UNIFIER_GUIDE.md](BOT_UNIFIER_GUIDE.md) for details.
 
 ### GitHub Setup
 

@@ -1,6 +1,11 @@
-# Updated: 10/23/2025 23:40:00
+# Updated: 10/24/2025 18:37:00
 """
-Discord slash command handler for Project Valine orchestrator.
+Discord slash command handler for Project Valine Rin bot.
+
+Rin is the unified bot that handles all Discord interactions. Different agents
+(Amadeus, BuildAgent, etc.) are represented through custom embeds and formatting
+while using a single bot token.
+
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
 /deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage,
 /update-summary commands.
@@ -24,6 +29,7 @@ from utils.admin_auth import AdminAuthenticator
 from utils.time_formatter import TimeFormatter
 from utils.trace_store import get_trace_store
 from utils.logger import redact_secrets, StructuredLogger
+from utils.agent_messenger import get_agent_messenger, AMADEUS, BUILD_AGENT, STATUS_AGENT, VERIFY_AGENT
 from agents.registry import get_agents
 
 # Note: Phase5TriageAgent is only used for local testing
@@ -73,7 +79,7 @@ def handle_approve_command(interaction):
 
 
 def handle_status_command(interaction):
-    """Handle /status command - show last 1-3 runs for Client Deploy and Diagnose workflows."""
+    """Handle /status command - show last 1-3 runs (via StatusAgent)."""
     try:
         # Extract optional count parameter (default: 2, min: 1, max: 3)
         options = interaction.get('data', {}).get('options', [])
@@ -92,8 +98,9 @@ def handle_status_command(interaction):
         client_deploy_runs = dispatcher.list_workflow_runs('Client Deploy', count=count)
         diagnose_runs = dispatcher.list_workflow_runs('Diagnose on Demand', count=count)
         
-        # Build status message
-        content = f'📊 **Status (last {count})**\n\n'
+        # Build status message with StatusAgent personality
+        content = f'{STATUS_AGENT.emoji} **{STATUS_AGENT.name}:** Workflow status report\n\n'
+        content += f'_Showing last {count} run(s) per workflow_\n\n'
         
         # Client Deploy section
         content += '**Client Deploy:**\n'
@@ -347,7 +354,7 @@ def handle_diagnose_command(interaction):
 
 
 def handle_deploy_client_command(interaction):
-    """Handle /deploy-client command - trigger Client Deploy workflow."""
+    """Handle /deploy-client command - trigger Client Deploy workflow (via Amadeus)."""
     try:
         # Extract optional parameters
         options = interaction.get('data', {}).get('options', [])
@@ -394,17 +401,18 @@ def handle_deploy_client_command(interaction):
                 'flags': 64
             })
         
-        # Build initial response
+        # Build initial response with Amadeus personality
         short_id = correlation_id[:8]
         
         # If wait=false, return immediate response (unchanged behavior)
         if not wait:
-            content = f'🟡 **Starting Client Deploy...**\n\n'
+            # Use Amadeus formatting for deployment messages
+            content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Client deployment initiated! 🚀\n\n'
             if api_base:
                 content += f'**API Base Override:** `{api_base}`\n'
             content += f'**Correlation ID:** `{short_id}...`\n'
             content += f'**Requested by:** {requester}\n\n'
-            content += '⏳ Workflow dispatched. Use `/status` to check progress.'
+            content += '⏳ Deployment in progress. Use `/status` to check progress.'
             
             return create_response(4, {
                 'content': content
@@ -425,14 +433,14 @@ def handle_deploy_client_command(interaction):
         run = dispatcher.find_run_by_correlation(correlation_id, 'Client Deploy')
         
         if run:
-            # Send follow-up with run link
-            follow_up_content = f'🟡 **Client Deploy Started**\n\n'
+            # Send follow-up with run link (Amadeus style)
+            follow_up_content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Deployment started!\n\n'
             if api_base:
                 follow_up_content += f'**API Base Override:** `{api_base}`\n'
             follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
             follow_up_content += f'**Requested by:** {requester}\n'
             follow_up_content += f'**Run:** {run.html_url}\n\n'
-            follow_up_content += '⏳ Waiting for completion (up to 3 minutes)...'
+            follow_up_content += '⏳ Monitoring deployment (up to 3 minutes)...'
             
             # Post follow-up via webhook/interaction token
             _post_followup_message(interaction, follow_up_content)
@@ -440,36 +448,36 @@ def handle_deploy_client_command(interaction):
             # Poll for completion (up to 180 seconds)
             poll_result = dispatcher.poll_run_conclusion(run.id, timeout_seconds=180, poll_interval=3)
             
-            # Send final outcome
+            # Send final outcome (Amadeus style)
             if poll_result.get('completed'):
                 conclusion = poll_result.get('conclusion')
                 if conclusion == 'success':
-                    final_content = f'🟢 **Client Deploy Successful**\n\n'
+                    final_content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Mission accomplished! 🎉\n\n'
                     final_content += f'**Correlation ID:** `{short_id}...`\n'
                     final_content += f'**Run:** {run.html_url}\n\n'
-                    final_content += '✅ Deployment completed successfully!'
+                    final_content += '✅ Client deployed successfully and ready for action!'
                 else:
-                    final_content = f'🔴 **Client Deploy Failed**\n\n'
+                    final_content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Deployment failed! 💥\n\n'
                     final_content += f'**Correlation ID:** `{short_id}...`\n'
                     final_content += f'**Run:** {run.html_url}\n'
-                    final_content += f'**Conclusion:** {conclusion}\n\n'
-                    final_content += '❌ Deployment failed. Check the run for details.'
+                    final_content += f'**Status:** {conclusion}\n\n'
+                    final_content += '❌ Check the run logs for details. Use `/triage` for auto-fix.'
             else:
                 # Timed out
-                final_content = f'⏱️ **Client Deploy Timeout**\n\n'
+                final_content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Still deploying...\n\n'
                 final_content += f'**Correlation ID:** `{short_id}...`\n'
                 final_content += f'**Run:** {run.html_url}\n\n'
-                final_content += '⚠️ Deployment is still running after 3 minutes. Check the run for current status.'
+                final_content += '⏱️ Deployment exceeded 3-minute timeout. Check GitHub Actions for current status.'
             
             _post_followup_message(interaction, final_content)
         else:
             # Run not found, post searching message
-            follow_up_content = f'🟡 **Client Deploy Triggered**\n\n'
+            follow_up_content = f'{AMADEUS.emoji} **{AMADEUS.name}:** Deployment triggered!\n\n'
             if api_base:
                 follow_up_content += f'**API Base Override:** `{api_base}`\n'
             follow_up_content += f'**Correlation ID:** `{short_id}...`\n'
             follow_up_content += f'**Requested by:** {requester}\n\n'
-            follow_up_content += '⏳ Searching for run... Check GitHub Actions if this takes too long.'
+            follow_up_content += '⏳ Looking for the workflow run... Check GitHub Actions if this persists.'
             
             _post_followup_message(interaction, follow_up_content)
         
