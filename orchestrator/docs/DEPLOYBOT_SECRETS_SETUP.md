@@ -213,8 +213,6 @@ Once secrets are configured:
 - **Test preflight first**: Don't waste time on broken deploys
 - **Keep AWS role minimal**: Only grant permissions DeployBot needs
 
----
-
 **Questions?** Check [AWS Auto-Deployer](AWS_AUTO_DEPLOYER.md) or [Lambda Deploy Recovery](LAMBDA_DEPLOY_RECOVERY.md)
 
 **Status:** Ready to raid! 🎯

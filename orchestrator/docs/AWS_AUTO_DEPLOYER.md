@@ -60,8 +60,8 @@ DeployBot (aka "Cloud Raid Leader") is your automated AWS deployment system that
    STAGING_GITHUB_WEBHOOK_SECRET  # Random secure string
    FRONTEND_BASE_URL              # Your frontend URL
    VITE_API_BASE                  # Your API base URL
-   DISCORD_DEPLOY_WEBHOOK         # (Optional) Discord webhook URL for notifications
-   DISCORD_DEPLOY_CHANNEL_ID      # (Optional) Discord channel for notifications
+   DISCORD_DEPLOY_WEBHOOK         # (Optional, Recommended) Discord webhook URL
+   DISCORD_DEPLOY_CHANNEL_ID      # (Optional) Discord channel ID (if not using webhook)
    ```
 
 > **Note**: For Discord notifications, you can use either:
