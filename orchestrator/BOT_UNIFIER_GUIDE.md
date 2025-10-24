@@ -223,6 +223,7 @@ Verify each command works with unified bot:
 - `/diagnose` (DiagnoseAgent)
 - `/verify-latest` (VerifyAgent)
 - `/triage` (TriageAgent)
+- `/triage-all` (TriageAgent)
 
 ## Customization
 
