@@ -258,12 +258,37 @@ class UXAgent:
         
         else:
             # User is providing clarification or modification
-            # Update conversation with new info
-            updated_intent = self._parse_plain_text(user_response)
-            conversation.parsed_intent.update(updated_intent)
+            # Try to extract section and updates from their response
+            text_intent = self._parse_plain_text(user_response)
+            
+            # Try parsing as command
+            command_parse = self.parse_command(user_response)
+            if command_parse.get('success'):
+                conversation.section = command_parse['section']
+                conversation.updates = command_parse['updates']
+            else:
+                # Update with text intent
+                conversation.parsed_intent.update(text_intent)
+                
+                # Try to extract quoted text as update value
+                if text_intent.get('quoted_text'):
+                    # Assume it's updating the same property type
+                    if conversation.updates:
+                        # Get the first property being updated
+                        first_prop = list(conversation.updates.keys())[0]
+                        conversation.updates[first_prop] = text_intent['quoted_text'][0]
             
             # Regenerate preview
             preview = self._generate_preview(conversation)
+            
+            if not preview.get('success'):
+                # Still not enough info, ask for more details
+                return {
+                    'success': False,
+                    'conversation_id': conversation_id,
+                    'message': preview.get('message', '❌ Could not understand the modification. Please be more specific.')
+                }
+            
             conversation.preview_message = preview['message']
             
             return {

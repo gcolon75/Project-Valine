@@ -41,63 +41,33 @@ def register_ux_update_command():
         print("   - DISCORD_GUILD_ID (optional, can be discovered)")
         sys.exit(1)
     
-    # Define the /ux-update command
+    # Define the /ux-update command with flexible options
     ux_update_command = {
         "name": "ux-update",
         "type": 1,
-        "description": "Update UI/UX elements (text, colors, links) via Discord",
+        "description": "Interactive UX/UI updates with confirmation (supports plain English + images)",
         "options": [
             {
-                "name": "section",
-                "description": "Section to update (header, footer, navbar, home)",
-                "type": 3,  # STRING
-                "required": True,
-                "choices": [
-                    {"name": "Header", "value": "header"},
-                    {"name": "Footer", "value": "footer"},
-                    {"name": "Navbar", "value": "navbar"},
-                    {"name": "Home", "value": "home"}
-                ]
-            },
-            {
-                "name": "text",
-                "description": "Update text content",
-                "type": 3,  # STRING
-                "required": False
-            },
-            {
-                "name": "color",
-                "description": "Update color (hex format like #FF0080)",
-                "type": 3,  # STRING
-                "required": False
-            },
-            {
-                "name": "brand",
-                "description": "Update brand name",
-                "type": 3,  # STRING
-                "required": False
-            },
-            {
-                "name": "hero-text",
-                "description": "Update home page hero text",
+                "name": "command",
+                "description": "Structured command like 'section:header text:\"Welcome!\"' (optional if using description)",
                 "type": 3,  # STRING
                 "required": False
             },
             {
                 "name": "description",
-                "description": "Update home page description",
+                "description": "Plain English description like 'Make the navbar blue' (can attach images)",
                 "type": 3,  # STRING
                 "required": False
             },
             {
-                "name": "cta-text",
-                "description": "Update home page CTA button text",
+                "name": "conversation_id",
+                "description": "Conversation ID for confirming/modifying previous request (internal use)",
                 "type": 3,  # STRING
                 "required": False
             },
             {
-                "name": "add-link",
-                "description": "Add navigation link (format: 'Label:/path' or '/path')",
+                "name": "confirm",
+                "description": "Confirmation response: 'yes' to proceed, 'no' to cancel, or modify text",
                 "type": 3,  # STRING
                 "required": False
             }
@@ -122,11 +92,28 @@ def register_ux_update_command():
     
     if result['status'] in ['SUCCESS', 'PARTIAL']:
         print("\n✅ Successfully registered /ux-update command!")
-        print("\nYou can now use it in Discord:")
-        print("  /ux-update section:header text:\"Welcome to Project Valine!\"")
-        print("  /ux-update section:footer color:\"#FF0080\"")
-        print("  /ux-update section:navbar brand:\"Joint\"")
-        print("  /ux-update section:home hero-text:\"Your Creative Hub\"")
+        print("\n🎨 **Interactive UX Agent** - Now supports conversation flow with confirmation!")
+        print("\n📝 **Usage Examples:**")
+        print("\n  **Structured Commands:**")
+        print('    /ux-update command:"section:header text:\\"Welcome to Project Valine!\\""')
+        print('    /ux-update command:"section:footer color:\\"#FF0080\\""')
+        print('    /ux-update command:"section:navbar brand:\\"Joint\\""')
+        print("\n  **Plain English (Natural Language):**")
+        print('    /ux-update description:"Make the navbar blue"')
+        print('    /ux-update description:"Change the header to say \'Level Up!\'"')
+        print('    /ux-update description:"Update footer text to \'Valine\'"')
+        print("\n  **With Image Attachments:**")
+        print('    /ux-update description:"Make the navbar match this design" [attach screenshot]')
+        print('    /ux-update description:"Use the color scheme from this image" [attach image]')
+        print("\n  **Confirmation Flow:**")
+        print("    1. Send your request (command or description)")
+        print("    2. Agent shows preview and asks for confirmation")
+        print("    3. Reply with 'yes' to confirm, 'no' to cancel, or modify your request")
+        print("\n💡 **The agent will:**")
+        print("  • Ask clarifying questions if needed")
+        print("  • Show code preview before changes")
+        print("  • Wait for your confirmation")
+        print("  • Only create PR after you approve")
         
         if result['deliverables']:
             print("\n📄 Deliverables:")
