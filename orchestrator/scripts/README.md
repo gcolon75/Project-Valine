@@ -889,7 +889,7 @@ The Issue Triage & Solver Agent (aka "Support Main") is an automated agent that 
 2. **Smart Analysis**
    - Categorizes by labels (bug, feature, docs, question)
    - Detects issues needing more information
-   - Identifies issues suitable for auto-fix suggestions (typos, simple bugs)
+   - Identifies issues suitable for suggested fixes (typos, simple bugs)
 
 3. **Auto-Fix Suggestions**
    - Typos/spelling: Mark for auto-close
@@ -937,7 +937,7 @@ python issue_triage_agent.py
 ### Configuration
 
 **Environment Variables:**
-- `GITHUB_TOKEN` (required): GitHub personal access token with `repo` scope (for private repos) or `public_repo` scope (for public repos). Requires read access to issues and write access to add labels.
+- `GITHUB_TOKEN` (required): GitHub personal access token with `repo` scope (for private repos) or `public_repo` scope (for public repos). Requires read access to issues and `Issues: Write` permission to add labels.
 - `DISCORD_WEBHOOK` (optional): Discord webhook URL for posting results
 
 **Repository Settings:**

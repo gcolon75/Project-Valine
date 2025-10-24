@@ -65,7 +65,7 @@ For each issue, the agent analyzes:
 - **Author** - who created the issue
 - **Age** - how long the issue has been open
 
-### 3. Auto-Fix Suggestions
+### 3. Issue Handling Suggestions
 
 The agent provides suggestions for how to handle issues based on patterns:
 
@@ -177,7 +177,7 @@ python register_triage_all_command.py --guild-id YOUR_GUILD_ID
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GITHUB_TOKEN` | ✅ Yes | GitHub personal access token with `repo` scope (private repos) or `public_repo` scope (public repos). Needs read access to issues and write access to add labels. |
+| `GITHUB_TOKEN` | ✅ Yes | GitHub personal access token with `repo` scope (private repos) or `public_repo` scope (public repos). Needs read access to issues and `Issues: Write` permission to add labels. |
 | `DISCORD_WEBHOOK` | ❌ Optional | Discord webhook URL for posting results |
 
 ### Repository Configuration
