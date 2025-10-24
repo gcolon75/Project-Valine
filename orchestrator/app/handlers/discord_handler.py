@@ -29,7 +29,15 @@ from utils.admin_auth import AdminAuthenticator
 from utils.time_formatter import TimeFormatter
 from utils.trace_store import get_trace_store
 from utils.logger import redact_secrets, StructuredLogger
-from utils.agent_messenger import get_agent_messenger, AMADEUS, BUILD_AGENT, STATUS_AGENT, VERIFY_AGENT
+from utils.agent_messenger import (
+    get_agent_messenger, 
+    AMADEUS, 
+    BUILD_AGENT, 
+    STATUS_AGENT, 
+    VERIFY_AGENT,
+    DIAGNOSE_AGENT,
+    TRIAGE_AGENT
+)
 from agents.registry import get_agents
 
 # Note: Phase5TriageAgent is only used for local testing
@@ -171,7 +179,7 @@ def handle_ship_command(interaction):
 
 
 def handle_verify_latest_command(interaction):
-    """Handle /verify-latest command - verify latest Client Deploy run."""
+    """Handle /verify-latest command - verify latest Client Deploy run (via VerifyAgent)."""
     try:
         # Extract optional parameters
         options = interaction.get('data', {}).get('options', [])
@@ -187,9 +195,10 @@ def handle_verify_latest_command(interaction):
         verifier = DeployVerifier()
         result = verifier.verify_latest_run(run_url)
 
-        # Get message from result
+        # Get message from result - add VerifyAgent branding
         message = result.get('message', {})
-        content = message.get('content', '❌ Verification failed')
+        base_content = message.get('content', '❌ Verification failed')
+        content = f'{VERIFY_AGENT.emoji} **{VERIFY_AGENT.name}:** {base_content.lstrip("✅ ").lstrip("❌ ")}'
         embed = message.get('embed')
 
         # If diagnose option is enabled, trigger diagnose workflow
@@ -291,7 +300,7 @@ def handle_verify_run_command(interaction):
 
 
 def handle_diagnose_command(interaction):
-    """Handle /diagnose command - trigger on-demand diagnose workflow."""
+    """Handle /diagnose command - trigger on-demand diagnose workflow (via DiagnoseAgent)."""
     try:
         # Extract optional parameters
         options = interaction.get('data', {}).get('options', [])
@@ -332,12 +341,12 @@ def handle_diagnose_command(interaction):
                 'flags': 64
             })
         
-        # Return initial response
+        # Return initial response with DiagnoseAgent personality
         short_id = correlation_id[:8]
-        content = f'🟡 **Starting Diagnose...**\n\n'
+        content = f'{DIAGNOSE_AGENT.emoji} **{DIAGNOSE_AGENT.name}:** Starting infrastructure diagnostics...\n\n'
         content += f'**Correlation ID:** `{short_id}...`\n'
         content += f'**Requested by:** {requester}\n\n'
-        content += '⏳ Workflow is being triggered. Searching for run...'
+        content += '⏳ Running comprehensive checks on AWS resources, endpoints, and deployments...'
         
         return create_response(4, {
             'content': content
@@ -1324,7 +1333,7 @@ def handle_relay_dm_command(interaction):
 
 
 def handle_triage_command(interaction):
-    """Handle /triage command - auto-diagnose failing GitHub Actions and create draft PRs with fixes."""
+    """Handle /triage command - auto-diagnose failing GitHub Actions (via TriageAgent)."""
     try:
         # Extract parameters
         options = interaction.get('data', {}).get('options', [])
@@ -1359,20 +1368,19 @@ def handle_triage_command(interaction):
         logger.set_context(trace_id=trace_id, cmd='/triage', pr=pr_number)
         logger.info('Triage command received', fn='handle_triage_command', requester=requester)
         
-        # Return immediate acknowledgment
+        # Return immediate acknowledgment with TriageAgent personality
         short_id = trace_id[:8]
-        content = f'🔍 **Starting Triage Analysis...**\n\n'
-        content += f'**PR/Run:** `#{pr_number}`\n'
+        content = f'{TRIAGE_AGENT.emoji} **{TRIAGE_AGENT.name}:** Analyzing failure for PR #{pr_number}...\n\n'
         content += f'**Trace ID:** `{short_id}...`\n'
         content += f'**Requested by:** {requester}\n\n'
-        content += '⏳ Analyzing failures and generating report...\n\n'
-        content += '_This may take 30-60 seconds. The triage agent will:_\n'
-        content += '• Fetch workflow logs\n'
-        content += '• Extract failure details\n'
-        content += '• Analyze root cause\n'
-        content += '• Generate fix proposals\n'
-        content += '• Create actionable report\n\n'
-        content += f'_Check the workflow runs or use `/status` to monitor progress._'
+        content += '⏳ _Running diagnostics (30-60 seconds)..._\n\n'
+        content += '**Analysis steps:**\n'
+        content += '• 📥 Fetching workflow logs\n'
+        content += '• 🔍 Extracting failure details\n'
+        content += '• 🧠 Analyzing root cause\n'
+        content += '• 💡 Generating fix proposals\n'
+        content += '• 📝 Creating actionable report\n\n'
+        content += f'_Use `/status` to monitor progress._'
         
         # Trigger the triage workflow asynchronously
         # For now, we'll use the GitHub Actions workflow dispatch
