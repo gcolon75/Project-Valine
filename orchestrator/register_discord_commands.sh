@@ -356,6 +356,17 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /uptime-check command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "uptime-check",
+    "description": "Check uptime and health of Discord bot and critical services"
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -376,6 +387,7 @@ echo "  • /relay-dm - Post message to channel as bot (owner only, audited)"
 echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
 echo "  • /debug-last - Show last run debug info (redacted, ephemeral, feature-flagged)"
 echo "  • /update-summary - Generate and update project summary with latest status"
+echo "  • /uptime-check - Check uptime and health of Discord bot and critical services"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"

@@ -64,6 +64,12 @@ def get_agents() -> List[AgentInfo]:
             name='Summary Agent',
             description='Generates and updates project summaries with latest status, recent changes, and next steps in a Gen Z/gamer-themed style. Updates PROJECT_VALINE_SUMMARY.md at the top with emojis and bullet points.',
             command='/update-summary'
+        ),
+        AgentInfo(
+            id='uptime_guardian',
+            name='Uptime Guardian',
+            description='Monitors Discord bot and critical services for 24/7 uptime. Detects downtime instantly, provides health checks with response times, and alerts the squad if services go offline. Auto-recovery capabilities coming soon!',
+            command='/uptime-check'
         )
     ]
 
