@@ -58,6 +58,12 @@ def get_agents() -> List[AgentInfo]:
             name='Phase 5 Triage Agent',
             description='Triages failing Phase 5 jobs/PR runs (CI, agent runs, or registration scripts). Produces actionable triage report with root cause, failing test/log excerpts, and minimal fix proposals.',
             command='/triage'
+        ),
+        AgentInfo(
+            id='ux_agent',
+            name='UX Agent',
+            description='Automates UI/UX changes via Discord commands. Updates text, colors, layout, and links in React components. Opens draft PRs with proposed changes for review.',
+            command='/ux-update'
         )
     ]
 
