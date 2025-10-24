@@ -1,5 +1,19 @@
-## 🆕 Project Valine Status (2025-10-23)
+## 🆕 Project Valine Status (2025-10-24)
 
+- 🎮 **Bot Unifier Architecture Implemented!** Rin is now the unified orchestrator bot
+- 🎭 **Agent Personalities Added:** Amadeus 🚀, BuildAgent 🏗️, StatusAgent 📊, and more
+- ✅ **20 tests passing** for AgentMessenger implementation
+- 📚 **Comprehensive documentation:** BOT_UNIFIER_GUIDE.md created
+- 🔧 **Commands updated** with agent-specific messaging styles
+- 🚀 **Single bot token** manages all Discord interactions
+
+**What's new:**
+- All Discord commands now use Rin bot with specialized agent personalities
+- Different agents (Amadeus, BuildAgent, etc.) represented through custom embeds
+- Simplified token management - only one DISCORD_BOT_TOKEN needed
+- Enhanced user experience with distinct visual identities per agent
+
+**Previous updates:**
 - 🤖 **SummaryAgent deployed!** New bot to auto-generate status updates
 - 🎮 **New slash command:** /update-summary now available in Discord
 - ✅ **15 tests passing** for SummaryAgent implementation
@@ -8,8 +22,9 @@
 - 🚀 **Ready for testing:** All code committed, awaiting Discord registration
 
 **Next quests:**
+- Test unified bot architecture in Discord
+- Monitor agent personality effectiveness
 - Continue development and testing
-- Monitor deployment health
 - Address any issues that arise
 
 ---
@@ -133,29 +148,53 @@ Authenticated:
 
 **The brain of Project Valine** - AWS Lambda-based orchestrator managing automated workflows through Discord and GitHub integration.
 
+#### Unified Bot Architecture - Rin 🎮
+
+Project Valine uses **Rin**, a unified Discord bot that handles all interactions. Different "agent personalities" provide specialized messaging styles through custom embeds and formatting, all using a **single bot token**.
+
+**Agent Personalities:**
+- 🚀 **Amadeus** - Deployment Specialist (handles `/deploy-client`)
+- 🏗️ **BuildAgent** - Build System Monitor (build notifications)
+- 📊 **StatusAgent** - Workflow Status Reporter (handles `/status`, `/status-digest`)
+- ✅ **VerifyAgent** - Deployment Verification (handles `/verify-latest`, `/verify-run`)
+- 🔍 **DiagnoseAgent** - Infrastructure Diagnostics (handles `/diagnose`)
+- 🔧 **TriageAgent** - Issue Diagnostics (handles `/triage`)
+- 🎮 **Rin** - Core Orchestrator (general commands)
+
+**Benefits of Unified Architecture:**
+- Single `DISCORD_BOT_TOKEN` for all operations
+- Simplified permissions and deployment
+- Consistent user experience with specialized contexts
+- Visual differentiation through emojis, colors, and embeds
+
+See [orchestrator/BOT_UNIFIER_GUIDE.md](orchestrator/BOT_UNIFIER_GUIDE.md) for complete details.
+
 #### Architecture
 - **Framework**: AWS SAM (Serverless Application Model)
 - **Runtime**: Python 3.11
 - **Components**:
-  - Discord Handler Lambda (slash commands)
+  - Discord Handler Lambda (slash commands via Rin bot)
   - GitHub Webhook Handler Lambda (events)
   - DynamoDB for state storage
   - API Gateway for HTTP endpoints
+  - Agent Messenger for personality-based messaging
 
 #### Discord Slash Commands
+
+All commands are handled by Rin bot with appropriate agent personalities.
 
 **Production Commands:**
 - `/plan` - Create daily plan from ready GitHub issues
 - `/approve <run_id>` - Approve and execute a plan
-- `/status [run_id]` - Check orchestrator status
+- `/status [run_id]` - Check orchestrator status (StatusAgent 📊)
 - `/ship <run_id>` - Finalize and ship completed run
-- `/verify-latest [diagnose]` - Verify latest deployment
-- `/verify-run <run_id>` - Verify specific workflow run
-- `/diagnose [frontend_url] [api_base]` - Run infrastructure diagnostics
-- `/deploy-client [api_base] [wait]` - Trigger client deployment
+- `/verify-latest [diagnose]` - Verify latest deployment (VerifyAgent ✅)
+- `/verify-run <run_id>` - Verify specific workflow run (VerifyAgent ✅)
+- `/diagnose [frontend_url] [api_base]` - Run infrastructure diagnostics (DiagnoseAgent 🔍)
+- `/deploy-client [api_base] [wait]` - Trigger client deployment (Amadeus 🚀)
 - `/agents` - List available orchestrator agents
-- `/status-digest [period]` - Aggregated workflow status
-- `/triage <pr>` - Auto-diagnose failing GitHub Actions and create fix PRs
+- `/status-digest [period]` - Aggregated workflow status (StatusAgent 📊)
+- `/triage <pr>` - Auto-diagnose failing GitHub Actions (TriageAgent 🔧)
 - `/debug-last` - Show last execution debug info (feature-flagged)
 
 **Admin Commands (Feature-Flagged):**
@@ -166,23 +205,26 @@ Authenticated:
 
 #### Multi-Agent System
 
-The orchestrator includes specialized agents:
+The orchestrator includes specialized agents with distinct personalities:
 
-1. **Deploy Verifier** (`deploy_verifier`)
+1. **Amadeus** 🚀 (`deploy_client`)
+   - Deployment specialist
+   - Handles client deployments
+   - Entry: `/deploy-client`
+
+2. **VerifyAgent** ✅ (`deploy_verifier`)
    - Verifies deployment health
    - Checks GitHub Actions, frontend, API endpoints
-   - Entry: `/verify-latest`
+   - Entry: `/verify-latest`, `/verify-run`
 
-2. **Diagnose Runner** (`diagnose_runner`)
+3. **DiagnoseAgent** 🔍 (`diagnose_runner`)
    - Infrastructure diagnostics
    - AWS credentials, S3, CloudFront, API checks
    - Entry: `/diagnose`
 
-3. **Status Reporter** (`status_reporter`)
+4. **StatusAgent** 📊 (`status_reporter`)
    - Recent workflow run status
-   - Entry: `/status`
-
-4. **Client Deploy** (`deploy_client`)
+   - Entry: `/status`, `/status-digest`
    - Triggers deployments with tracking
    - Entry: `/deploy-client`
 

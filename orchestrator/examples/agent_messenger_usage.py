@@ -76,13 +76,11 @@ def send_verification_results(channel_id, verification_results):
         status=status
     )
     
-    # Send with custom embed
-    return messenger.send_as_agent(
-        channel_id=channel_id,
-        content='',  # Empty content when using only embed
-        agent='verify',
-        as_embed=True,
-        extra_embeds=[]  # Main embed is already created
+    # Send with custom embed directly via Discord service
+    return discord.send_message(
+        channel_id=channel_id, 
+        content=f'{messenger.get_agent_header("verify")} Verification complete',
+        embeds=[embed]
     )
 
 
@@ -145,9 +143,8 @@ def send_triage_analysis(channel_id, pr_number, analysis):
     # Add footer with action items
     analysis_embed['footer']['text'] = f"{analysis_embed['footer']['text']} • Use /deploy-client to test fix"
     
-    # Send message with embed
-    discord_service = DiscordService()
-    return discord_service.send_message(
+    # Send message with embed using the same discord service
+    return discord.send_message(
         channel_id=channel_id,
         content=f"{messenger.get_agent_header('triage')} {content}",
         embeds=[analysis_embed]
