@@ -60,10 +60,10 @@ def get_agents() -> List[AgentInfo]:
             command='/triage'
         ),
         AgentInfo(
-            id='ux_agent',
-            name='UX Agent',
-            description='Automates UI/UX changes via Discord commands. Updates text, colors, layout, and links in React components. Opens draft PRs with proposed changes for review.',
-            command='/ux-update'
+            id='summary_agent',
+            name='Summary Agent',
+            description='Generates and updates project summaries with latest status, recent changes, and next steps in a Gen Z/gamer-themed style. Updates PROJECT_VALINE_SUMMARY.md at the top with emojis and bullet points.',
+            command='/update-summary'
         )
     ]
 

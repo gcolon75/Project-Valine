@@ -334,6 +334,28 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /update-summary command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "update-summary",
+    "description": "Generate and update project summary with latest status",
+    "options": [{
+      "name": "notes",
+      "description": "Optional: custom notes to include in summary",
+      "type": 3,
+      "required": false
+    }, {
+      "name": "dry_run",
+      "description": "Optional: preview without saving to file",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -353,6 +375,7 @@ echo "  • /relay-send - Post message to Discord channel (admin only, audited)"
 echo "  • /relay-dm - Post message to channel as bot (owner only, audited)"
 echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
 echo "  • /debug-last - Show last run debug info (redacted, ephemeral, feature-flagged)"
+echo "  • /update-summary - Generate and update project summary with latest status"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Verify commands appear in Discord (they may take a few minutes)"

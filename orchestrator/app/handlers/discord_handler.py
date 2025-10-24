@@ -1,8 +1,9 @@
-# Updated: 10/23/2025 11:52:22
+# Updated: 10/23/2025 23:40:00
 """
 Discord slash command handler for Project Valine orchestrator.
 Handles /plan, /approve, /status, /ship, /verify-latest, /verify-run, /diagnose,
-/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage commands.
+/deploy-client, /set-frontend, /set-api-base, /agents, /status-digest, /triage,
+/update-summary commands.
 """
 import json
 import os
@@ -1405,94 +1406,106 @@ def handle_triage_command(interaction):
         })
 
 
-def handle_ux_update_command(interaction):
-    """Handle /ux-update command - automate UI/UX changes to the web app."""
+def handle_update_summary_command(interaction):
+    """Handle /update-summary command - generate and update project summary."""
     try:
-        # Extract parameters
+        # Extract optional parameters
         options = interaction.get('data', {}).get('options', [])
-        section = None
-        updates = {}
+        custom_notes = None
+        dry_run = False
         
         for option in options:
-            name = option.get('name')
-            value = option.get('value')
-            
-            if name == 'section':
-                section = value
-            else:
-                updates[name] = value
-        
-        # Validate section parameter
-        if not section:
-            return create_response(4, {
-                'content': '❌ Missing required parameter: `section`\n\n'
-                          'Try: `/ux-update section:header text:"Welcome to Project Valine!"`',
-                'flags': 64
-            })
-        
-        # Validate at least one update
-        if not updates:
-            return create_response(4, {
-                'content': '❌ No updates specified.\n\n'
-                          'Examples:\n'
-                          '• `/ux-update section:header text:"Welcome Home!"`\n'
-                          '• `/ux-update section:footer color:"#FF0080"`\n'
-                          '• `/ux-update section:navbar add-link:"/about"`',
-                'flags': 64
-            })
+            if option.get('name') == 'notes':
+                custom_notes = option.get('value')
+            elif option.get('name') == 'dry_run':
+                dry_run = option.get('value', False)
         
         # Get user info
         user = interaction.get('member', {}).get('user', {})
         requester = user.get('username', user.get('id', 'unknown'))
         
-        # Initialize UX Agent
-        from agents.ux_agent import UXAgent
-        github_service = GitHubService()
-        ux_agent = UXAgent(github_service=github_service)
+        # Initialize logger
+        logger = StructuredLogger(service="summary")
+        import uuid
+        trace_id = str(uuid.uuid4())
+        logger.set_context(trace_id=trace_id, cmd='/update-summary', requester=requester)
+        logger.info('Update summary command received', fn='handle_update_summary_command')
         
-        # Process the update
-        result = ux_agent.process_update(
-            section=section,
-            updates=updates,
-            requester=requester
-        )
+        # Return immediate acknowledgment
+        short_id = trace_id[:8]
+        content = f'📝 **Generating Project Summary...**\n\n'
+        content += f'**Trace ID:** `{short_id}...`\n'
+        content += f'**Requested by:** {requester}\n'
         
-        if result['success']:
-            # Build success response
-            update_list = '\n'.join([f'• `{k}`: {v}' for k, v in updates.items()])
-            content = f'🎨 **UX Update Queued!**\n\n'
-            content += f'**Section:** `{section}`\n'
-            content += f'**Updates:**\n{update_list}\n\n'
-            content += f'**Requested by:** {requester}\n'
-            content += f'**Draft PR:** {result["pr_url"]}\n\n'
-            content += '✅ A draft PR has been created for review. Check it out and merge when ready!'
+        if custom_notes:
+            content += f'**Custom notes:** {custom_notes[:100]}{"..." if len(custom_notes) > 100 else ""}\n'
+        
+        if dry_run:
+            content += f'**Mode:** Dry run (preview only)\n'
+        
+        content += '\n⏳ Fetching recent PRs and workflow status...\n'
+        
+        try:
+            # Import and initialize SummaryAgent
+            from agents.summary_agent import SummaryAgent
             
-            return create_response(4, {
-                'content': content
-            })
-        else:
-            # Build error response
-            return create_response(4, {
-                'content': result['message'],
-                'flags': 64
-            })
-    
-    except Exception as e:
-        print(f'Error in handle_ux_update_command: {str(e)}')
-        import traceback
-        traceback.print_exc()
+            # Get GitHub token from environment
+            github_token = os.environ.get('GITHUB_TOKEN')
+            repo = os.environ.get('GITHUB_REPOSITORY', 'gcolon75/Project-Valine')
+            
+            # Initialize agent
+            agent = SummaryAgent(
+                repo=repo,
+                github_token=github_token
+            )
+            
+            # Run agent
+            result = agent.run(
+                custom_notes=custom_notes,
+                include_prs=True,
+                include_workflows=True,
+                dry_run=dry_run
+            )
+            
+            if result.get('success'):
+                if dry_run:
+                    # Show preview of summary
+                    summary_preview = result.get('summary', '')[:1000]
+                    content += f'\n\n✅ **Summary generated (preview):**\n\n'
+                    content += f'```markdown\n{summary_preview}\n```\n\n'
+                    content += f'_Run without `dry_run` to save to PROJECT_VALINE_SUMMARY.md_'
+                else:
+                    # Confirm update
+                    file_path = result.get('file_path', 'PROJECT_VALINE_SUMMARY.md')
+                    content += f'\n\n✅ **Summary updated successfully!**\n'
+                    content += f'**File:** `{file_path}`\n'
+                    content += f'\n📊 Check the repository to view the updated summary.'
+                
+                logger.info('Summary updated successfully', fn='handle_update_summary_command',
+                           dry_run=dry_run, trace_id=trace_id)
+            else:
+                error_msg = result.get('message', 'Unknown error')
+                content += f'\n\n❌ **Failed to update summary:** {error_msg}'
+                logger.error('Summary update failed', fn='handle_update_summary_command',
+                            error=error_msg, trace_id=trace_id)
         
-        # Provide helpful error message
-        content = '❌ Could not process your request.\n\n'
-        content += 'Try these examples:\n'
-        content += '• `/ux-update section:header text:"Welcome to Project Valine!"`\n'
-        content += '• `/ux-update section:footer color:"#FF0080"`\n'
-        content += '• `/ux-update section:navbar brand:"Joint"`\n'
-        content += '• `/ux-update section:home hero-text:"Your Creative Hub"`\n\n'
-        content += f'Error details: {str(e)}'
+        except Exception as agent_error:
+            content += f'\n\n❌ **Error running SummaryAgent:** {str(agent_error)}'
+            logger.error('SummaryAgent error', fn='handle_update_summary_command',
+                        error=str(agent_error), trace_id=trace_id)
+            import traceback
+            traceback.print_exc()
         
         return create_response(4, {
-            'content': content,
+            'content': content
+        })
+    
+    except Exception as e:
+        print(f'Error in handle_update_summary_command: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error: {str(e)}',
             'flags': 64
         })
 
@@ -1574,8 +1587,8 @@ def handler(event, context):
                 return handle_relay_dm_command(interaction)
             elif command_name == 'triage':
                 return handle_triage_command(interaction)
-            elif command_name == 'ux-update':
-                return handle_ux_update_command(interaction)
+            elif command_name == 'update-summary':
+                return handle_update_summary_command(interaction)
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',

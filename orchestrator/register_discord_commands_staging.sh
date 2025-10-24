@@ -149,6 +149,29 @@ curl -X POST "${BASE_URL}" \
   --silent -o /dev/null -w "Status: %{http_code}\n"
 
 echo ""
+echo "📝 Registering /update-summary command..."
+curl -X POST "${BASE_URL}" \
+  -H "Authorization: Bot ${BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "update-summary",
+    "type": 1,
+    "description": "Generate and update project summary with latest status",
+    "options": [{
+      "name": "notes",
+      "description": "Optional: custom notes to include in summary",
+      "type": 3,
+      "required": false
+    }, {
+      "name": "dry_run",
+      "description": "Optional: preview without saving to file",
+      "type": 5,
+      "required": false
+    }]
+  }' \
+  --silent -o /dev/null -w "Status: %{http_code}\n"
+
+echo ""
 echo "✅ Staging commands registered successfully!"
 echo ""
 echo "📋 Registered Commands:"
@@ -158,6 +181,7 @@ echo "  • /status - Show last 1-3 runs for workflows"
 echo "  • /verify-latest - Verify the latest Client Deploy workflow run"
 echo "  • /deploy-client - Trigger Client Deploy workflow"
 echo "  • /triage - Auto-diagnose failing GitHub Actions and create draft PRs with fixes"
+echo "  • /update-summary - Generate and update project summary with latest status"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Commands should appear IMMEDIATELY in your Discord staging server"
