@@ -221,33 +221,315 @@ class DiscordSlashCommandValidator:
             return []
     
     def register_staging_commands(self) -> bool:
-        """Register essential staging commands"""
+        """Register all staging commands"""
         self.log("Registering staging commands...")
         
-        # Define minimal staging commands
+        # Define all staging commands (19 total)
         commands_to_register = [
             {
-                "name": "debug-last",
+                "name": "plan",
                 "type": 1,
-                "description": "Show last run debug info (redacted, ephemeral)"
+                "description": "Create a daily plan from ready GitHub issues",
+                "options": [
+                    {
+                        "name": "channel_id",
+                        "description": "Discord channel ID to post plan to (optional, uses current channel)",
+                        "type": 3,
+                        "required": False
+                    }
+                ]
             },
             {
-                "name": "diagnose",
+                "name": "approve",
                 "type": 1,
-                "description": "Run a quick staging diagnostic"
+                "description": "Approve and execute a plan",
+                "options": [
+                    {
+                        "name": "run_id",
+                        "description": "Run ID to approve",
+                        "type": 3,
+                        "required": True
+                    }
+                ]
             },
             {
                 "name": "status",
                 "type": 1,
-                "description": "Show last 1-3 runs for workflows",
+                "description": "Show last 1-3 runs for Client Deploy and Diagnose workflows",
                 "options": [
                     {
                         "name": "count",
-                        "description": "Number of runs (1-3)",
+                        "description": "Number of runs to show (1-3, default: 2)",
                         "type": 4,
                         "required": False,
                         "min_value": 1,
                         "max_value": 3
+                    }
+                ]
+            },
+            {
+                "name": "ship",
+                "type": 1,
+                "description": "Finalize and ship a completed run",
+                "options": [
+                    {
+                        "name": "run_id",
+                        "description": "Run ID to ship",
+                        "type": 3,
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "name": "verify-latest",
+                "type": 1,
+                "description": "Verify the latest Client Deploy workflow run",
+                "options": [
+                    {
+                        "name": "run_url",
+                        "description": "Optional: specific run URL to verify instead of latest",
+                        "type": 3,
+                        "required": False
+                    },
+                    {
+                        "name": "diagnose",
+                        "description": "Optional: also trigger on-demand diagnose workflow",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "verify-run",
+                "type": 1,
+                "description": "Verify a specific workflow run by ID",
+                "options": [
+                    {
+                        "name": "run_id",
+                        "description": "GitHub Actions run ID to verify",
+                        "type": 3,
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "name": "diagnose",
+                "type": 1,
+                "description": "Trigger on-demand diagnose workflow",
+                "options": [
+                    {
+                        "name": "frontend_url",
+                        "description": "Optional: override frontend URL for checks",
+                        "type": 3,
+                        "required": False
+                    },
+                    {
+                        "name": "api_base",
+                        "description": "Optional: override API base URL for checks",
+                        "type": 3,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "deploy-client",
+                "type": 1,
+                "description": "Trigger Client Deploy workflow",
+                "options": [
+                    {
+                        "name": "api_base",
+                        "description": "Optional: override API base URL",
+                        "type": 3,
+                        "required": False
+                    },
+                    {
+                        "name": "wait",
+                        "description": "Optional: wait for deployment completion",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "set-frontend",
+                "type": 1,
+                "description": "Update FRONTEND_BASE_URL (admin only, feature-flagged)",
+                "options": [
+                    {
+                        "name": "url",
+                        "description": "New frontend URL (must be https)",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "confirm",
+                        "description": "Confirmation required (set to true)",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "set-api-base",
+                "type": 1,
+                "description": "Update VITE_API_BASE secret (admin only, feature-flagged)",
+                "options": [
+                    {
+                        "name": "url",
+                        "description": "New API base URL (must be https)",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "confirm",
+                        "description": "Confirmation required (set to true)",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "agents",
+                "type": 1,
+                "description": "List available orchestrator agents and their capabilities"
+            },
+            {
+                "name": "status-digest",
+                "type": 1,
+                "description": "Show aggregated status digest for workflows over a time period",
+                "options": [
+                    {
+                        "name": "period",
+                        "description": "Time period for digest (daily or weekly)",
+                        "type": 3,
+                        "required": False,
+                        "choices": [
+                            {"name": "daily", "value": "daily"},
+                            {"name": "weekly", "value": "weekly"}
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "relay-send",
+                "type": 1,
+                "description": "Post message to Discord channel (admin only, audited)",
+                "options": [
+                    {
+                        "name": "channel_id",
+                        "description": "Target Discord channel ID",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "message",
+                        "description": "Message to post",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "ephemeral",
+                        "description": "Show confirmation as ephemeral (default: false)",
+                        "type": 5,
+                        "required": False
+                    },
+                    {
+                        "name": "confirm",
+                        "description": "Confirmation required (set to true)",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "relay-dm",
+                "type": 1,
+                "description": "Post message to channel as bot (owner only, audited)",
+                "options": [
+                    {
+                        "name": "message",
+                        "description": "Message to post",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "target_channel_id",
+                        "description": "Target Discord channel ID",
+                        "type": 3,
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "name": "triage",
+                "type": 1,
+                "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes",
+                "options": [
+                    {
+                        "name": "pr",
+                        "description": "PR number or workflow run ID to triage",
+                        "type": 4,
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "name": "debug-last",
+                "type": 1,
+                "description": "Show last run debug info (redacted, ephemeral, feature-flagged)"
+            },
+            {
+                "name": "update-summary",
+                "type": 1,
+                "description": "Generate and update project summary with latest status",
+                "options": [
+                    {
+                        "name": "notes",
+                        "description": "Optional: custom notes to include in summary",
+                        "type": 3,
+                        "required": False
+                    },
+                    {
+                        "name": "dry_run",
+                        "description": "Optional: preview without saving to file",
+                        "type": 5,
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "uptime-check",
+                "type": 1,
+                "description": "Check uptime and health of Discord bot and critical services"
+            },
+            {
+                "name": "ux-update",
+                "type": 1,
+                "description": "Interactive UX/UI updates (admin only)",
+                "options": [
+                    {
+                        "name": "command",
+                        "description": "UX command",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "description",
+                        "description": "Optional description",
+                        "type": 3,
+                        "required": False
+                    },
+                    {
+                        "name": "confirm",
+                        "description": "Confirm action (true/false)",
+                        "type": 5,
+                        "required": False
+                    },
+                    {
+                        "name": "conversation_id",
+                        "description": "Conversation ID for continuation",
+                        "type": 3,
+                        "required": False
                     }
                 ]
             }
@@ -300,37 +582,56 @@ class DiscordSlashCommandValidator:
             return True
     
     def verify_debug_last_command(self) -> bool:
-        """Verify that debug-last command is registered"""
-        self.log("Verifying /debug-last command...")
+        """Verify that all expected commands are registered"""
+        self.log("Verifying registered commands...")
         commands = self.list_guild_commands()
         
         if not commands:
-            self.log("/debug-last command NOT found (no commands registered)", "WARNING")
+            self.log("No commands registered", "WARNING")
             self.add_check(
-                "Verify debug-last Command",
+                "Verify Commands",
                 "FAIL",
-                error="Command not registered"
+                error="No commands registered"
             )
             return False
         
         command_names = [cmd.get("name") for cmd in commands]
         
-        if "debug-last" in command_names:
-            self.log("/debug-last command is registered ✅", "SUCCESS")
+        # Expected commands (19 total: 18 + ux-update)
+        expected_commands = [
+            "plan", "approve", "status", "ship", "verify-latest", "verify-run",
+            "diagnose", "deploy-client", "set-frontend", "set-api-base",
+            "agents", "status-digest", "relay-send", "relay-dm", "triage",
+            "debug-last", "update-summary", "uptime-check", "ux-update"
+        ]
+        
+        missing_commands = [cmd for cmd in expected_commands if cmd not in command_names]
+        extra_commands = [cmd for cmd in command_names if cmd not in expected_commands]
+        
+        if missing_commands:
+            self.log(f"Missing commands: {', '.join(missing_commands)}", "WARNING")
             self.add_check(
-                "Verify debug-last Command",
-                "PASS",
-                details={"status": "registered"}
-            )
-            return True
-        else:
-            self.log("/debug-last command NOT found in registered commands", "WARNING")
-            self.add_check(
-                "Verify debug-last Command",
-                "FAIL",
-                error="Command not in registry"
+                "Verify Commands",
+                "PARTIAL",
+                details={
+                    "registered_count": len(command_names),
+                    "expected_count": len(expected_commands),
+                    "missing": missing_commands,
+                    "extra": extra_commands
+                }
             )
             return False
+        else:
+            self.log(f"All {len(expected_commands)} expected commands are registered ✅", "SUCCESS")
+            self.add_check(
+                "Verify Commands",
+                "PASS",
+                details={
+                    "registered_count": len(command_names),
+                    "extra": extra_commands if extra_commands else []
+                }
+            )
+            return True
     
     def generate_evidence_report(self) -> str:
         """Generate validation evidence report"""
@@ -461,9 +762,9 @@ class DiscordSlashCommandValidator:
             self.log("", "INFO")
             self.log("Next Steps:", "INFO")
             self.log("1. Go to your Discord staging server", "INFO")
-            self.log("2. Type /debug-last (should appear in autocomplete)", "INFO")
-            self.log("3. Execute the command to verify it works", "INFO")
-            self.log("4. Ensure ENABLE_DEBUG_CMD=true in AWS SSM", "INFO")
+            self.log("2. Type '/' to see all 18 registered commands", "INFO")
+            self.log("3. Test commands like /agents, /debug-last, /status", "INFO")
+            self.log("4. Ensure feature flags are enabled in AWS SSM if needed", "INFO")
             return True
         else:
             self.log("Validation FAILED ❌", "ERROR")
