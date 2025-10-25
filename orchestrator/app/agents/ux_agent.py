@@ -895,7 +895,7 @@ class UXAgent:
             '## Original Command',
             '',
             '```',
-            f'/ux-update section:{section} {" ".join([f"{k}:\"{v}\"" for k, v in updates.items()])}',
+            f'/ux-update section:{section} {" ".join([f"{k}:{v}" for k, v in updates.items()])}',
             '```',
             '',
             '## Review Checklist',
