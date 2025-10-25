@@ -188,11 +188,13 @@ The bot endpoint is now operational ✅ and ready for command registration!
 
 If you're setting up a **staging environment**, use the automated setup scripts:
 
+**⚠️ Security Note:** Never commit real tokens to version control. Use environment variables or secure secret management.
+
 **Windows (PowerShell):**
 ```powershell
-# Set environment variables
+# Set environment variables (replace with your actual values)
 $env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
-$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"
+$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"  # Keep this secret!
 $env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
 
 # Check only (verify auth and list commands)
@@ -204,9 +206,9 @@ $env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
 
 **Linux/macOS/WSL (Bash):**
 ```bash
-# Set environment variables
+# Set environment variables (replace with your actual values)
 export STAGING_DISCORD_APPLICATION_ID="1428568840958251109"
-export STAGING_DISCORD_BOT_TOKEN="<your_token>"
+export STAGING_DISCORD_BOT_TOKEN="<your_token>"  # Keep this secret!
 export STAGING_DISCORD_GUILD_ID="1428102811832553554"
 
 # Run registration
