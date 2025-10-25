@@ -399,6 +399,81 @@ class TestGitHubActionsDispatcher(unittest.TestCase):
         self.assertIsNone(result['conclusion'])
         self.assertTrue(result['timed_out'])
 
+    @patch('app.services.github_actions_dispatcher.requests.post')
+    def test_trigger_phase5_triage_success(self, mock_post):
+        """Test successful Phase 5 Triage trigger."""
+        mock_response = Mock()
+        mock_response.status_code = 204
+        mock_post.return_value = mock_response
+
+        result = self.dispatcher.trigger_phase5_triage(
+            failure_ref='49',
+            allow_auto_fix='false',
+            dry_run='false',
+            verbose='true'
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('49', result['message'])
+        
+        # Verify the correct payload was sent
+        call_args = mock_post.call_args
+        payload = call_args[1]['json']
+        self.assertEqual(payload['ref'], 'main')
+        self.assertEqual(payload['inputs']['failure_ref'], '49')
+        self.assertEqual(payload['inputs']['allow_auto_fix'], 'false')
+
+    @patch('app.services.github_actions_dispatcher.requests.post')
+    def test_trigger_phase5_triage_forbidden(self, mock_post):
+        """Test Phase 5 Triage trigger with 403 forbidden."""
+        mock_response = Mock()
+        mock_response.status_code = 403
+        mock_response.text = 'Forbidden'
+        mock_post.return_value = mock_response
+
+        result = self.dispatcher.trigger_phase5_triage(
+            failure_ref='49'
+        )
+
+        self.assertFalse(result['success'])
+        self.assertIn('Permission denied', result['message'])
+
+    @patch('app.services.github_actions_dispatcher.requests.post')
+    def test_trigger_issue_triage_success(self, mock_post):
+        """Test successful Issue Triage trigger."""
+        mock_response = Mock()
+        mock_response.status_code = 204
+        mock_post.return_value = mock_response
+
+        result = self.dispatcher.trigger_issue_triage(
+            requester='testuser',
+            trace_id='test-trace-123'
+        )
+
+        self.assertTrue(result['success'])
+        self.assertIn('triggered', result['message'])
+        
+        # Verify the correct payload was sent
+        call_args = mock_post.call_args
+        payload = call_args[1]['json']
+        self.assertEqual(payload['ref'], 'main')
+        self.assertEqual(payload['inputs']['requester'], 'testuser')
+        self.assertEqual(payload['inputs']['trace_id'], 'test-trace-123')
+
+    @patch('app.services.github_actions_dispatcher.requests.post')
+    def test_trigger_issue_triage_rate_limit(self, mock_post):
+        """Test Issue Triage trigger with rate limit."""
+        mock_response = Mock()
+        mock_response.status_code = 429
+        mock_post.return_value = mock_response
+
+        result = self.dispatcher.trigger_issue_triage(
+            requester='testuser'
+        )
+
+        self.assertFalse(result['success'])
+        self.assertIn('Rate limit', result['message'])
+
 
 if __name__ == '__main__':
     unittest.main()
