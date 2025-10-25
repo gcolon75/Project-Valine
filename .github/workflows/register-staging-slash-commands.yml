@@ -1,10 +1,10 @@
-name: Register Staging Slash Commands
+name: 🎮 Register Discord Slash Commands
 
 on:
   workflow_dispatch:
     inputs:
       force_register:
-        description: 'Force re-registration of all commands'
+        description: 'Force re-registration of all 18 commands'
         required: false
         type: boolean
         default: false
