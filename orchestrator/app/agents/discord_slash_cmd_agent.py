@@ -329,24 +329,31 @@ class DiscordSlashCommandAgent:
         {
             "name": "ux-update",
             "type": 1,
-            "description": "Trigger UX agent to improve user experience based on feedback",
+            "description": "Interactive UX/UI updates (admin only)",
             "options": [
                 {
-                    "name": "feedback",
-                    "description": "User feedback or issue description",
+                    "name": "command",
+                    "description": "UX command",
                     "type": 3,
                     "required": True
                 },
                 {
-                    "name": "priority",
-                    "description": "Priority level (low, medium, high)",
+                    "name": "description",
+                    "description": "Optional description",
                     "type": 3,
-                    "required": False,
-                    "choices": [
-                        {"name": "low", "value": "low"},
-                        {"name": "medium", "value": "medium"},
-                        {"name": "high", "value": "high"}
-                    ]
+                    "required": False
+                },
+                {
+                    "name": "confirm",
+                    "description": "Confirm action (true/false)",
+                    "type": 5,
+                    "required": False
+                },
+                {
+                    "name": "conversation_id",
+                    "description": "Conversation ID for continuation",
+                    "type": 3,
+                    "required": False
                 }
             ]
         }

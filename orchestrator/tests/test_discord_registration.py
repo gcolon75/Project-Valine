@@ -50,13 +50,25 @@ def test_ux_update_command():
     assert 'description' in ux_update, "ux-update must have description"
     assert 'options' in ux_update, "ux-update must have options"
     
-    # Check feedback option
+    # Check command option (required)
     options = ux_update['options']
-    feedback_opt = next((opt for opt in options if opt['name'] == 'feedback'), None)
-    assert feedback_opt is not None, "ux-update must have feedback option"
-    assert feedback_opt['required'] == True, "feedback option must be required"
+    command_opt = next((opt for opt in options if opt['name'] == 'command'), None)
+    assert command_opt is not None, "ux-update must have command option"
+    assert command_opt['required'] == True, "command option must be required"
     
-    print("✅ ux-update command test passed: Properly defined with feedback option")
+    # Check optional options exist
+    desc_opt = next((opt for opt in options if opt['name'] == 'description'), None)
+    assert desc_opt is not None, "ux-update must have description option"
+    assert desc_opt['required'] == False, "description option must be optional"
+    
+    confirm_opt = next((opt for opt in options if opt['name'] == 'confirm'), None)
+    assert confirm_opt is not None, "ux-update must have confirm option"
+    assert confirm_opt['type'] == 5, "confirm must be boolean type (5)"
+    
+    conv_id_opt = next((opt for opt in options if opt['name'] == 'conversation_id'), None)
+    assert conv_id_opt is not None, "ux-update must have conversation_id option"
+    
+    print("✅ ux-update command test passed: Properly defined with command/description/confirm/conversation_id options")
 
 
 def test_exponential_backoff_config():
