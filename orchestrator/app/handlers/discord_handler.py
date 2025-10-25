@@ -1389,15 +1389,13 @@ def handle_triage_command(interaction):
         dispatcher = GitHubActionsDispatcher(github_service)
         
         # Trigger the Phase 5 Triage Agent workflow
-        workflow_result = dispatcher.trigger_workflow_dispatch(
+        workflow_result = dispatcher.trigger_triage_workflow(
             workflow_id='phase5-triage-agent.yml',
-            ref='main',
-            inputs={
-                'failure_ref': str(pr_number),
-                'allow_auto_fix': 'false',  # Safe default
-                'dry_run': 'false',
-                'verbose': 'true'
-            }
+            failure_ref=pr_number,
+            requester=requester,
+            allow_auto_fix=False,  # Safe default
+            dry_run=False,
+            verbose=True
         )
         
         if workflow_result.get('success'):
@@ -1458,13 +1456,10 @@ def handle_triage_all_command(interaction):
         dispatcher = GitHubActionsDispatcher(github_service)
         
         # Trigger the issue triage workflow
-        workflow_result = dispatcher.trigger_workflow_dispatch(
+        workflow_result = dispatcher.trigger_issue_triage_workflow(
             workflow_id='issue-triage-agent.yml',
-            ref='main',
-            inputs={
-                'requester': requester,
-                'trace_id': trace_id
-            }
+            requester=requester,
+            trace_id=trace_id
         )
         
         if workflow_result.get('success'):
