@@ -304,7 +304,7 @@ class Phase5ValidationRunner:
         # Save step to evidence directory
         try:
             step_file = self.evidence_dir / f"step_{step.step_number}_{step.step_name.replace(' ', '_').lower()}.json"
-            with open(step_file, 'w') as f:
+            with open(step_file, 'w', encoding='utf-8') as f:
                 step_dict = asdict(step)
                 if self.config.enable_redaction:
                     step_dict = redact_dict(step_dict)
@@ -1205,7 +1205,7 @@ class Phase5ValidationRunner:
         
         # Save report
         report_path = self.evidence_dir / self.config.report_file
-        with open(report_path, 'w') as f:
+        with open(report_path, 'w', encoding='utf-8') as f:
             f.write(report_text)
         
         print(f"[Report] ✓ Report saved to: {report_path}")
@@ -1298,7 +1298,7 @@ def generate_example_config(output_file: str):
         "report_file": "phase5_staging_validation_report.md"
     }
     
-    with open(output_file, 'w') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(example, f, indent=2)
     
     print(f"Example configuration written to: {output_file}")

@@ -967,7 +967,7 @@ class Phase5SuperAgent:
         
         # Save full JSON report
         json_path = self.evidence_dir / f"super_agent_report_{timestamp_str}.json"
-        with open(json_path, 'w') as f:
+        with open(json_path, 'w', encoding='utf-8') as f:
             # Convert report to dict and apply redaction
             report_dict = {
                 "timestamp": report.timestamp,
@@ -993,7 +993,7 @@ class Phase5SuperAgent:
     
     def _generate_markdown_report(self, report: ValidationReport, output_path: Path):
         """Generate Markdown formatted report"""
-        with open(output_path, 'w') as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             f.write("# Phase 5 Staging Super-Agent Report\n\n")
             
             # Context
@@ -1200,7 +1200,7 @@ def generate_default_config() -> str:
     }
     
     output_path = Path("super_agent_config.json")
-    with open(output_path, 'w') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(config_dict, f, indent=2)
     
     return str(output_path)

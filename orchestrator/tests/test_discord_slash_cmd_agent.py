@@ -231,7 +231,7 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
             {"name": "debug-last", "description": "Show last run debug info (redacted, ephemeral, feature-flagged)"},
             {"name": "update-summary", "description": "Generate and update project summary with latest status"},
             {"name": "uptime-check", "description": "Check uptime and health of Discord bot and critical services"},
-            {"name": "ux-update", "description": "Trigger UX agent to improve user experience based on feedback"}
+            {"name": "ux-update", "description": "Interactive UX/UI updates (admin only)"}
         ]
         expected = self.agent.expected_commands
         
@@ -293,7 +293,7 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
             {"name": "debug-last", "description": "Old description"},  # This one is outdated
             {"name": "update-summary", "description": "Generate and update project summary with latest status"},
             {"name": "uptime-check", "description": "Check uptime and health of Discord bot and critical services"},
-            {"name": "ux-update", "description": "Trigger UX agent to improve user experience based on feedback"}
+            {"name": "ux-update", "description": "Interactive UX/UI updates (admin only)"}
         ]
         expected = self.agent.expected_commands
         
