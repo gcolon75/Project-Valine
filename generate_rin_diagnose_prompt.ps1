@@ -133,6 +133,7 @@ $prompt = [pscustomobject]@{
 }
 
 $outPath = Join-Path $OutDir "rin_scripts_diagnose_prompt.json"
+# Depth 6 handles nested structure: root -> problem_statement (text with multiline) -> embedded content
 $prompt | ConvertTo-Json -Depth 6 | Out-File -LiteralPath $outPath -Encoding utf8
 
 Write-Host ("Agent prompt written to: {0}" -f $outPath)
