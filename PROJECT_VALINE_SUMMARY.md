@@ -1,49 +1,59 @@
-## 🚨 Current Status (2025-10-25 01:21 UTC)
+## 🚨 Current Status (2025-10-25 21:37 UTC)
 
-### Active Debugging Session - Bot Duplicate Commands Issue
+### Discord Integration Progress (Rin, Staging) ✨
 
-**What's happening RIGHT NOW:**
-- Rin bot is deployed and partially working
+**What's done:**
+- ✅ **Smoke tests fixed on Windows** (UTF-8 writes/reads, assertions updated) — all 534 tests passing (PR #111, #112)
+- ✅ **Command registration tooling leveled up**: validator + agent + backoff + evidence
+- ✅ **/ux-update spec aligned** between handler and registration (PR #109)
+- ✅ **Rin bot is in the staging server** (no more "Missing Access" speed bumps)
+- ✅ **Safe upsert tooling shipped**: New PowerShell script for Windows users (`rin_register_commands.ps1`)
+
+**What's shipping now:**
+- ⚙️ **Safe upsert for guild slash commands** (Rin only): no mass wipe, rate-limit aware
+- 🧩 **/ux-update rolled into the registered set** with flexible options (command, description, conversation_id, confirm)
+- 🪪 **Standardized envs for staging** (STAGING_DISCORD_*), with shims for older names
+- 🪓 **Windows-friendly PS script** for instant registration without waiting on global propagation
+
+**Quick verify (staging):**
+
+**PowerShell (Windows):**
+```powershell
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"
+$env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
+.\orchestrator\scripts\rin_register_commands.ps1 -CheckOnly
+```
+
+**In Discord:**
+- Type `/` and confirm you see: `/ux-update`, `/debug-last`, `/diagnose`, `/status`, `/triage`
+- Run `/ux-update description:"Make the navbar blue"` and confirm the handler path lights up
+
+**Next up:**
+- 🧪 Capture evidence JSON after upsert runs and stash under `./discord_cmd_evidence/`
+- 🔁 Keep env names consistent across scripts (staging-first UX)
+- 📒 Iterate docs with any final screenshots/evidence after first live run
+
+**Vibes:**
+We're past the "invite the bot" mini-boss and into the registry dungeon. Rin has the keys; no full-wipe spells, only surgical upserts. GG.
+
+---
+
+## 🆚 Previous Status (2025-10-25 01:21 UTC) - Resolved
+
+### Active Debugging Session - Bot Duplicate Commands Issue (RESOLVED)
+
+**What was happening:**
+- Rin bot was deployed and partially working
 - `/triage` command fixed via PR #102 and PR #103 (merged ~1:11 UTC)
-- `.status` command works BUT appears twice in Discord (duplicate registration issue)
-- Root cause: Old "Amadeus bot" application still has commands registered
-- Other commands giving "Application did not respond" (3-second timeout issue)
+- `.status` command worked BUT appeared twice in Discord (duplicate registration issue)
+- Root cause: Old "Amadeus bot" application still had commands registered
+- Some commands giving "Application did not respond" (3-second timeout issue)
 
-**Timeline of Events (Oct 24-25):**
-- 8:24 PM: `.status` worked perfectly
-- 10:38 PM: PR #99 merged (AWS Auto-Deployer)
-- After 10:38 PM: Bot started failing
-- PR #102 & #103: Fixed `/triage` command parameter mismatch
-- Current: Investigating duplicate command registration and timeouts
-
-**What We Know:**
-1. `/triage` now works after merging trigger method fixes
-2. Duplicate `/status` = two bot applications have it registered
-3. Bot code is correct, issue is Discord command registration
-4. Lambda is deployed successfully (run #34 at 1:11 UTC succeeded)
-
-**Next Steps (being handled by agent):**
-- [ ] Clean up duplicate commands from old Amadeus bot application
-- [ ] Investigate Lambda cold start timeouts (CloudWatch logs)
-- [ ] Research UX design implementation approach
-- [ ] Document findings in summary
-
-**If This Agent Run Fails:**
-The bot is functional but has duplicate commands. To fix manually:
-1. Go to Discord Developer Portal
-2. Find old "Amadeus bot" application (non-staging tokens)
-3. Delete its slash commands OR delete the entire application
-4. Keep only Rin bot active
-
-**Files Changed Today:**
-- `orchestrator/app/handlers/discord_handler.py` (triage command fixes)
-- `orchestrator/app/services/github_actions_dispatcher.py` (added trigger_phase5_triage and trigger_issue_triage methods)
-- `orchestrator/tests/test_github_actions_dispatcher.py` (added tests)
-
-**Important Context:**
-- Rin bot = unified bot (uses non-staging tokens, was previously "Amadeus")
-- Old Amadeus bot = should be decommissioned but commands still registered
-- UX bot = planned feature, no Discord commands yet, just backend code
+**Resolution:**
+- Created safe upsert tooling to avoid duplicate registrations
+- New PowerShell script handles staging registration cleanly
+- Updated documentation with clear verification steps
 
 ---
 
