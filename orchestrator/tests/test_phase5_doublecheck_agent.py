@@ -581,7 +581,7 @@ class TestPhase5DoubleCheckAgent(unittest.TestCase):
         
         self.assertTrue(os.path.exists(output_file))
         
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
         self.assertIn('Inconsistent Checks Details', content)
