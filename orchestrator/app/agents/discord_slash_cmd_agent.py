@@ -44,29 +44,46 @@ class DiscordSlashCommandAgent:
     
     # Discord API configuration
     BASE_URL = "https://discord.com/api/v10"
-    RATE_LIMIT_BACKOFF_SECONDS = 60
+    RATE_LIMIT_INITIAL_BACKOFF = 1  # Start at 1 second
+    RATE_LIMIT_MAX_RETRIES = 5
     DISCORD_PROPAGATION_MS = 60000  # 60 seconds default
     
-    # Expected staging commands
+    # Expected staging commands (18 + ux-update = 19 total)
     DEFAULT_EXPECTED_COMMANDS = [
         {
-            "name": "debug-last",
+            "name": "plan",
             "type": 1,
-            "description": "Show last run debug info (redacted, ephemeral)"
+            "description": "Create a daily plan from ready GitHub issues",
+            "options": [
+                {
+                    "name": "channel_id",
+                    "description": "Discord channel ID to post plan to (optional, uses current channel)",
+                    "type": 3,
+                    "required": False
+                }
+            ]
         },
         {
-            "name": "diagnose",
+            "name": "approve",
             "type": 1,
-            "description": "Run a quick staging diagnostic"
+            "description": "Approve and execute a plan",
+            "options": [
+                {
+                    "name": "run_id",
+                    "description": "Run ID to approve",
+                    "type": 3,
+                    "required": True
+                }
+            ]
         },
         {
             "name": "status",
             "type": 1,
-            "description": "Show last 1-3 runs for workflows",
+            "description": "Show last 1-3 runs for Client Deploy and Diagnose workflows",
             "options": [
                 {
                     "name": "count",
-                    "description": "Number of runs (1-3)",
+                    "description": "Number of runs to show (1-3, default: 2)",
                     "type": 4,
                     "required": False,
                     "min_value": 1,
@@ -75,27 +92,261 @@ class DiscordSlashCommandAgent:
             ]
         },
         {
-            "name": "triage",
+            "name": "ship",
             "type": 1,
-            "description": "Auto-diagnose and fix failed PR/workflow runs",
+            "description": "Finalize and ship a completed run",
             "options": [
                 {
-                    "name": "pr",
-                    "description": "PR number or workflow run ID",
-                    "type": 4,
+                    "name": "run_id",
+                    "description": "Run ID to ship",
+                    "type": 3,
+                    "required": True
+                }
+            ]
+        },
+        {
+            "name": "verify-latest",
+            "type": 1,
+            "description": "Verify the latest Client Deploy workflow run",
+            "options": [
+                {
+                    "name": "run_url",
+                    "description": "Optional: specific run URL to verify instead of latest",
+                    "type": 3,
+                    "required": False
+                },
+                {
+                    "name": "diagnose",
+                    "description": "Optional: also trigger on-demand diagnose workflow",
+                    "type": 5,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "verify-run",
+            "type": 1,
+            "description": "Verify a specific workflow run by ID",
+            "options": [
+                {
+                    "name": "run_id",
+                    "description": "GitHub Actions run ID to verify",
+                    "type": 3,
+                    "required": True
+                }
+            ]
+        },
+        {
+            "name": "diagnose",
+            "type": 1,
+            "description": "Trigger on-demand diagnose workflow",
+            "options": [
+                {
+                    "name": "frontend_url",
+                    "description": "Optional: override frontend URL for checks",
+                    "type": 3,
+                    "required": False
+                },
+                {
+                    "name": "api_base",
+                    "description": "Optional: override API base URL for checks",
+                    "type": 3,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "deploy-client",
+            "type": 1,
+            "description": "Trigger Client Deploy workflow",
+            "options": [
+                {
+                    "name": "api_base",
+                    "description": "Optional: override API base URL",
+                    "type": 3,
+                    "required": False
+                },
+                {
+                    "name": "wait",
+                    "description": "Optional: wait for deployment completion",
+                    "type": 5,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "set-frontend",
+            "type": 1,
+            "description": "Update FRONTEND_BASE_URL (admin only, feature-flagged)",
+            "options": [
+                {
+                    "name": "url",
+                    "description": "New frontend URL (must be https)",
+                    "type": 3,
                     "required": True
                 },
                 {
-                    "name": "auto_fix",
-                    "description": "Automatically create fix PR",
+                    "name": "confirm",
+                    "description": "Confirmation required (set to true)",
+                    "type": 5,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "set-api-base",
+            "type": 1,
+            "description": "Update VITE_API_BASE secret (admin only, feature-flagged)",
+            "options": [
+                {
+                    "name": "url",
+                    "description": "New API base URL (must be https)",
+                    "type": 3,
+                    "required": True
+                },
+                {
+                    "name": "confirm",
+                    "description": "Confirmation required (set to true)",
+                    "type": 5,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "agents",
+            "type": 1,
+            "description": "List available orchestrator agents and their capabilities"
+        },
+        {
+            "name": "status-digest",
+            "type": 1,
+            "description": "Show aggregated status digest for workflows over a time period",
+            "options": [
+                {
+                    "name": "period",
+                    "description": "Time period for digest (daily or weekly)",
+                    "type": 3,
+                    "required": False,
+                    "choices": [
+                        {"name": "daily", "value": "daily"},
+                        {"name": "weekly", "value": "weekly"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "relay-send",
+            "type": 1,
+            "description": "Post message to Discord channel (admin only, audited)",
+            "options": [
+                {
+                    "name": "channel_id",
+                    "description": "Target Discord channel ID",
+                    "type": 3,
+                    "required": True
+                },
+                {
+                    "name": "message",
+                    "description": "Message to post",
+                    "type": 3,
+                    "required": True
+                },
+                {
+                    "name": "ephemeral",
+                    "description": "Show confirmation as ephemeral (default: false)",
                     "type": 5,
                     "required": False
                 },
                 {
-                    "name": "allow_invasive",
-                    "description": "Allow changes >10 files or >500 lines",
+                    "name": "confirm",
+                    "description": "Confirmation required (set to true)",
                     "type": 5,
                     "required": False
+                }
+            ]
+        },
+        {
+            "name": "relay-dm",
+            "type": 1,
+            "description": "Post message to channel as bot (owner only, audited)",
+            "options": [
+                {
+                    "name": "message",
+                    "description": "Message to post",
+                    "type": 3,
+                    "required": True
+                },
+                {
+                    "name": "target_channel_id",
+                    "description": "Target Discord channel ID",
+                    "type": 3,
+                    "required": True
+                }
+            ]
+        },
+        {
+            "name": "triage",
+            "type": 1,
+            "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes",
+            "options": [
+                {
+                    "name": "pr",
+                    "description": "PR number or workflow run ID to triage",
+                    "type": 4,
+                    "required": True
+                }
+            ]
+        },
+        {
+            "name": "debug-last",
+            "type": 1,
+            "description": "Show last run debug info (redacted, ephemeral, feature-flagged)"
+        },
+        {
+            "name": "update-summary",
+            "type": 1,
+            "description": "Generate and update project summary with latest status",
+            "options": [
+                {
+                    "name": "notes",
+                    "description": "Optional: custom notes to include in summary",
+                    "type": 3,
+                    "required": False
+                },
+                {
+                    "name": "dry_run",
+                    "description": "Optional: preview without saving to file",
+                    "type": 5,
+                    "required": False
+                }
+            ]
+        },
+        {
+            "name": "uptime-check",
+            "type": 1,
+            "description": "Check uptime and health of Discord bot and critical services"
+        },
+        {
+            "name": "ux-update",
+            "type": 1,
+            "description": "Trigger UX agent to improve user experience based on feedback",
+            "options": [
+                {
+                    "name": "feedback",
+                    "description": "User feedback or issue description",
+                    "type": 3,
+                    "required": True
+                },
+                {
+                    "name": "priority",
+                    "description": "Priority level (low, medium, high)",
+                    "type": 3,
+                    "required": False,
+                    "choices": [
+                        {"name": "low", "value": "low"},
+                        {"name": "medium", "value": "medium"},
+                        {"name": "high", "value": "high"}
+                    ]
                 }
             ]
         }
@@ -201,16 +452,16 @@ class DiscordSlashCommandAgent:
         method: str,
         endpoint: str,
         data: Optional[Union[Dict, List]] = None,
-        retry_on_429: bool = True
+        retry_count: int = 0
     ) -> Tuple[Optional[Any], Optional[str]]:
         """
-        Make an API request with rate limit handling.
+        Make an API request with exponential backoff for rate limit handling.
         
         Args:
             method: HTTP method (GET, POST, PUT, DELETE)
             endpoint: API endpoint (without base URL)
             data: Optional request data
-            retry_on_429: Whether to retry on rate limit
+            retry_count: Current retry attempt (for exponential backoff)
             
         Returns:
             Tuple of (response_data, error_message)
@@ -229,24 +480,53 @@ class DiscordSlashCommandAgent:
             else:
                 return None, f"Unsupported method: {method}"
             
-            # Handle rate limiting
-            if response.status_code == 429 and retry_on_429:
-                retry_after = int(response.headers.get('Retry-After', self.RATE_LIMIT_BACKOFF_SECONDS))
-                self._add_warning(f"Rate limited. Waiting {retry_after} seconds...")
-                time.sleep(retry_after)
-                return self._make_request(method, endpoint, data, retry_on_429=False)
+            # Handle rate limiting with exponential backoff
+            if response.status_code == 429:
+                if retry_count >= self.RATE_LIMIT_MAX_RETRIES:
+                    error_msg = f"Rate limit exceeded after {self.RATE_LIMIT_MAX_RETRIES} retries"
+                    return None, error_msg
+                
+                # Use Retry-After header if available, otherwise use exponential backoff
+                retry_after = response.headers.get('Retry-After')
+                if retry_after:
+                    wait_time = int(retry_after)
+                    self._add_warning(f"Rate limited (429). Retry-After header: {wait_time}s. Attempt {retry_count + 1}/{self.RATE_LIMIT_MAX_RETRIES}")
+                else:
+                    # Exponential backoff: 1s, 2s, 4s, 8s, 16s
+                    wait_time = self.RATE_LIMIT_INITIAL_BACKOFF * (2 ** retry_count)
+                    self._add_warning(f"Rate limited (429). Exponential backoff: {wait_time}s. Attempt {retry_count + 1}/{self.RATE_LIMIT_MAX_RETRIES}")
+                
+                time.sleep(wait_time)
+                return self._make_request(method, endpoint, data, retry_count + 1)
             
+            # Handle success
             if response.status_code in [200, 201, 204]:
                 return response.json() if response.content else {}, None
-            else:
-                error_msg = f"{method} {endpoint} failed with status {response.status_code}"
-                try:
-                    error_data = response.json()
-                    error_msg += f": {error_data}"
-                except:
-                    error_msg += f": {response.text[:200]}"
+            
+            # Handle authentication errors
+            if response.status_code == 401:
+                error_msg = "Authentication failed (401). Check that STAGING_DISCORD_BOT_TOKEN is valid."
                 return None, error_msg
+            
+            # Handle permission errors
+            if response.status_code == 403:
+                error_msg = f"Permission denied (403). Bot may lack required permissions or applications.commands scope. "
+                error_msg += f"Invite URL: {self._generate_invite_url()}"
+                return None, error_msg
+            
+            # Handle other errors
+            error_msg = f"{method} {endpoint} failed with status {response.status_code}"
+            try:
+                error_data = response.json()
+                error_msg += f": {error_data}"
+            except:
+                error_msg += f": {response.text[:200]}"
+            return None, error_msg
                 
+        except requests.exceptions.Timeout:
+            return None, f"Request timed out after 10 seconds"
+        except requests.exceptions.ConnectionError as e:
+            return None, f"Connection error: {str(e)}"
         except Exception as e:
             return None, f"Request failed: {str(e)}"
     

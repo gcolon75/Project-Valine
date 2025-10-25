@@ -501,6 +501,30 @@ class DiscordSlashCommandValidator:
                 "name": "uptime-check",
                 "type": 1,
                 "description": "Check uptime and health of Discord bot and critical services"
+            },
+            {
+                "name": "ux-update",
+                "type": 1,
+                "description": "Trigger UX agent to improve user experience based on feedback",
+                "options": [
+                    {
+                        "name": "feedback",
+                        "description": "User feedback or issue description",
+                        "type": 3,
+                        "required": True
+                    },
+                    {
+                        "name": "priority",
+                        "description": "Priority level (low, medium, high)",
+                        "type": 3,
+                        "required": False,
+                        "choices": [
+                            {"name": "low", "value": "low"},
+                            {"name": "medium", "value": "medium"},
+                            {"name": "high", "value": "high"}
+                        ]
+                    }
+                ]
             }
         ]
         
@@ -566,12 +590,12 @@ class DiscordSlashCommandValidator:
         
         command_names = [cmd.get("name") for cmd in commands]
         
-        # Expected commands (18 total)
+        # Expected commands (19 total: 18 + ux-update)
         expected_commands = [
             "plan", "approve", "status", "ship", "verify-latest", "verify-run",
             "diagnose", "deploy-client", "set-frontend", "set-api-base",
             "agents", "status-digest", "relay-send", "relay-dm", "triage",
-            "debug-last", "update-summary", "uptime-check"
+            "debug-last", "update-summary", "uptime-check", "ux-update"
         ]
         
         missing_commands = [cmd for cmd in expected_commands if cmd not in command_names]
