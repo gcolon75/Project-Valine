@@ -34,12 +34,12 @@
     # Register commands using environment variables
     $env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
     $env:STAGING_DISCORD_BOT_TOKEN = "your_token_here"
-    $env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
+    $env:STAGING_DISCORD_GUILD_ID = "1407810581532250233"
     .\rin_register_commands.ps1
 
 .EXAMPLE
     # Register commands with inline parameters
-    .\rin_register_commands.ps1 -AppId "1428568840958251109" -BotToken "token" -GuildId "1428102811832553554"
+    .\rin_register_commands.ps1 -AppId "1428568840958251109" -BotToken "token" -GuildId "1407810581532250233"
 
 .NOTES
     Environment Variables (in order of preference):

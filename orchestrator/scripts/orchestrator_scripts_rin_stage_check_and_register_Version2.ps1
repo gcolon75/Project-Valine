@@ -5,7 +5,7 @@
 param(
   [switch]$Register,                         # If set, upsert missing/updated commands
   [string]$AppId    = $env:STAGING_DISCORD_APPLICATION_ID,
-  [string]$GuildId  = $env:STAGING_GUILD_ID,
+  [string]$GuildId  = $env:STAGING_DISCORD_GUILD_ID,
   [string]$BotToken = $env:STAGING_DISCORD_BOT_TOKEN
 )
 
@@ -14,6 +14,7 @@ param(
 
 # Fallbacks for legacy names (staging-first)
 if (-not $AppId)    { $AppId    = $env:DISCORD_APPLICATION_ID }
+if (-not $GuildId)  { $GuildId  = $env:STAGING_GUILD_ID }
 if (-not $GuildId)  { $GuildId  = $env:DISCORD_GUILD_ID_STAGING }
 if (-not $BotToken) { $BotToken = $env:DISCORD_BOT_TOKEN }
 
@@ -34,7 +35,7 @@ if (-not $BotToken) {
 }
 
 if (-not $AppId -or -not $GuildId -or -not $BotToken) {
-  Write-Error "Missing env. Need STAGING_DISCORD_APPLICATION_ID, STAGING_GUILD_ID, STAGING_DISCORD_BOT_TOKEN (or DISCORD_* fallbacks)."
+  Write-Error "Missing env. Need STAGING_DISCORD_APPLICATION_ID, STAGING_DISCORD_GUILD_ID, STAGING_DISCORD_BOT_TOKEN (or STAGING_GUILD_ID, DISCORD_* fallbacks)."
   exit 1
 }
 
