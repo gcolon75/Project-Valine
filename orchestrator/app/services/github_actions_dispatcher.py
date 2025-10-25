@@ -580,14 +580,13 @@ class GitHubActionsDispatcher:
                 'message': f'Error: {str(e)}'
             }
 
-    def trigger_triage_workflow(self, workflow_id, failure_ref, requester, allow_auto_fix=False, dry_run=False, verbose=True):
+    def trigger_triage_workflow(self, workflow_id, failure_ref, allow_auto_fix=False, dry_run=False, verbose=True):
         """
         Trigger Phase 5 Triage Agent workflow via workflow_dispatch.
 
         Args:
             workflow_id: Workflow file name or ID (e.g., 'phase5-triage-agent.yml')
             failure_ref: PR number or workflow run ID to triage
-            requester: Username or ID of the requester
             allow_auto_fix: Allow automatic fix PR creation (default: False)
             dry_run: Dry run mode, no modifications (default: False)
             verbose: Enable verbose output (default: True)
@@ -612,7 +611,7 @@ class GitHubActionsDispatcher:
             response = requests.post(url, headers=self.headers, json=payload, timeout=10)
 
             if response.status_code == 204:
-                print(f'Triage workflow triggered for failure_ref: {failure_ref}, requester: {requester}')
+                print(f'Triage workflow triggered for failure_ref: {failure_ref}')
                 return {
                     'success': True,
                     'message': f'Triage workflow triggered for failure_ref: {failure_ref}'

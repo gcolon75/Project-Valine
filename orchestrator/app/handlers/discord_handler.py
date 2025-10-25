@@ -1392,7 +1392,6 @@ def handle_triage_command(interaction):
         workflow_result = dispatcher.trigger_triage_workflow(
             workflow_id='phase5-triage-agent.yml',
             failure_ref=pr_number,
-            requester=requester,
             allow_auto_fix=False,  # Safe default
             dry_run=False,
             verbose=True
