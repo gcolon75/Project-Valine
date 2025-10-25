@@ -267,7 +267,7 @@ jobs:
       
       - name: Upload audit artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: preflight-audit-${{ github.event.inputs.environment }}
           path: /tmp/preflight-audit/
