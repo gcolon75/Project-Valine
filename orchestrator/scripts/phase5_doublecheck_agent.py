@@ -817,7 +817,7 @@ class Phase5DoubleCheckAgent:
         if self.config.redact_secrets:
             matrix_data = redact_secrets(matrix_data)
         
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(matrix_data, f, indent=2)
         
         self._log("info", f"JSON matrix saved to {output_file}")
@@ -927,7 +927,7 @@ class Phase5DoubleCheckAgent:
         else:
             lines.append("**Status:** ❌ NEEDS REVIEW - Significant inconsistencies detected")
         
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines))
         
         self._log("info", f"Markdown report saved to {output_file}")

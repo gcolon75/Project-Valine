@@ -549,7 +549,7 @@ class Phase5StagingValidator:
                 config_content = '\n'.join(lines)
             
             # Write back
-            with open(sam_config_path, 'w') as f:
+            with open(sam_config_path, 'w', encoding='utf-8') as f:
                 f.write(config_content)
             
             self._log("info", f"Updated SAM config file: {self.config.sam_config_file}")
@@ -915,7 +915,7 @@ class Phase5StagingValidator:
         # Save executive summary
         summary_file = os.path.join(self.config.evidence_output_dir,
                                    f"executive_summary_{self.correlation_id}.md")
-        with open(summary_file, 'w') as f:
+        with open(summary_file, 'w', encoding='utf-8') as f:
             f.write(summary)
         
         self._log("info", f"Executive summary saved to {summary_file}")
@@ -1025,7 +1025,7 @@ class Phase5StagingValidator:
         # Save report to file
         report_file = os.path.join(self.config.evidence_output_dir, 
                                    f"validation_report_{self.correlation_id}.md")
-        with open(report_file, 'w') as f:
+        with open(report_file, 'w', encoding='utf-8') as f:
             f.write(report)
         
         self._log("info", f"Validation report saved to {report_file}")
@@ -1106,7 +1106,7 @@ class Phase5StagingValidator:
                 updated_content = content + "\n\n" + staging_marker + "\n\n" + evidence_section
             
             # Write back
-            with open(validation_doc_path, 'w') as f:
+            with open(validation_doc_path, 'w', encoding='utf-8') as f:
                 f.write(updated_content)
             
             self._log("info", f"Updated {validation_doc_path}")
@@ -1288,7 +1288,7 @@ class Phase5StagingValidator:
                 self._log("info", "Evidence section saved separately for manual update")
                 evidence_file = os.path.join(self.config.evidence_output_dir,
                                            f"phase5_evidence_section_{self.correlation_id}.md")
-                with open(evidence_file, 'w') as f:
+                with open(evidence_file, 'w', encoding='utf-8') as f:
                     f.write(evidence_section)
                 self._log("info", f"Evidence section saved to: {evidence_file}")
             
@@ -1469,7 +1469,7 @@ Validation Steps (from Problem Statement):
             "production_channel_patterns": ["prod", "production", "live"]
         }
         
-        with open(args.output, 'w') as f:
+        with open(args.output, 'w', encoding='utf-8') as f:
             json.dump(example_config, f, indent=2)
         
         print(f"Example configuration saved to {args.output}")

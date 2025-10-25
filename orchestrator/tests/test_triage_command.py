@@ -86,11 +86,10 @@ class TestTriageCommand(unittest.TestCase):
         self.assertIn('testuser', body['data']['content'])
         
         # Verify workflow was triggered
-        mock_dispatcher.trigger_workflow_dispatch.assert_called_once()
-        call_args = mock_dispatcher.trigger_workflow_dispatch.call_args
-        self.assertEqual(call_args[1]['workflow_id'], 'phase5-triage-agent.yml')
-        self.assertEqual(call_args[1]['inputs']['failure_ref'], '58')
-        self.assertEqual(call_args[1]['inputs']['allow_auto_fix'], 'false')
+        mock_dispatcher.trigger_phase5_triage.assert_called_once()
+        call_args = mock_dispatcher.trigger_phase5_triage.call_args
+        self.assertEqual(call_args[1]['failure_ref'], '58')
+        self.assertEqual(call_args[1]['allow_auto_fix'], 'false')
 
     @patch('app.handlers.discord_handler.GitHubService')
     @patch('app.handlers.discord_handler.GitHubActionsDispatcher')
@@ -103,7 +102,7 @@ class TestTriageCommand(unittest.TestCase):
         
         mock_dispatcher = Mock()
         mock_dispatcher_class.return_value = mock_dispatcher
-        mock_dispatcher.trigger_workflow_dispatch.return_value = {
+        mock_dispatcher.trigger_phase5_triage.return_value = {
             'success': False,
             'message': 'Workflow not found'
         }
@@ -122,7 +121,8 @@ class TestTriageCommand(unittest.TestCase):
         # Verify response still successful but with warning
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertIn('Starting Triage Analysis', body['data']['content'])
+        self.assertIn('TriageAgent', body['data']['content'])
+        self.assertIn('Analyzing failure', body['data']['content'])
         self.assertIn('Note: Workflow trigger encountered an issue', body['data']['content'])
 
     @patch('app.handlers.discord_handler.GitHubService')
@@ -136,7 +136,7 @@ class TestTriageCommand(unittest.TestCase):
         
         mock_dispatcher = Mock()
         mock_dispatcher_class.return_value = mock_dispatcher
-        mock_dispatcher.trigger_workflow_dispatch.return_value = {
+        mock_dispatcher.trigger_phase5_triage.return_value = {
             'success': True
         }
         
@@ -154,7 +154,8 @@ class TestTriageCommand(unittest.TestCase):
         # Verify response
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertIn('Starting Triage Analysis', body['data']['content'])
+        self.assertIn('TriageAgent', body['data']['content'])
+        self.assertIn('Analyzing failure', body['data']['content'])
         self.assertIn('#1234567890', body['data']['content'])
 
 

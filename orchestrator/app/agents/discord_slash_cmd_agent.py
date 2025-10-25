@@ -893,7 +893,7 @@ class DiscordSlashCommandAgent:
         
         # 1. Evidence JSON
         evidence_file = self.evidence_dir / f"evidence_{timestamp}.json"
-        with open(evidence_file, 'w') as f:
+        with open(evidence_file, 'w', encoding='utf-8') as f:
             json.dump(self.evidence, f, indent=2)
         self._log(f"  Generated: {evidence_file.name}", "SUCCESS")
         
@@ -906,21 +906,21 @@ class DiscordSlashCommandAgent:
             "existing_commands": existing_commands,
             "expected_commands": self.expected_commands
         }
-        with open(diff_file, 'w') as f:
+        with open(diff_file, 'w', encoding='utf-8') as f:
             json.dump(diff_data, f, indent=2)
         self._log(f"  Generated: {diff_file.name}", "SUCCESS")
         
         # 3. Before/After markdown
         md_file = self.evidence_dir / f"before_after_commands_{timestamp}.md"
         md_content = self._generate_before_after_md(existing_commands, comparison)
-        with open(md_file, 'w') as f:
+        with open(md_file, 'w', encoding='utf-8') as f:
             f.write(md_content)
         self._log(f"  Generated: {md_file.name}", "SUCCESS")
         
         # 4. Remediation playbook
         playbook_file = self.evidence_dir / f"remediation_playbook_{timestamp}.md"
         playbook_content = self._generate_remediation_playbook(comparison)
-        with open(playbook_file, 'w') as f:
+        with open(playbook_file, 'w', encoding='utf-8') as f:
             f.write(playbook_content)
         self._log(f"  Generated: {playbook_file.name}", "SUCCESS")
         
