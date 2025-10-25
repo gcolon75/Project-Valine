@@ -70,9 +70,9 @@ export STAGING_DISCORD_GUILD_ID="1407810581532250233"
 python3 register_staging_commands.py
 
 # Using command-line arguments
-python3 register_staging_commands.py \
-  --app-id YOUR_APP_ID \
-  --bot-token YOUR_BOT_TOKEN \
+python3 register_staging_commands.py \\
+  --app-id YOUR_APP_ID \\
+  --bot-token YOUR_BOT_TOKEN \\
   --guild-id 1407810581532250233
 
 # Check status without registering
