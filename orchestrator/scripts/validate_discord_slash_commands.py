@@ -521,7 +521,7 @@ class DiscordSlashCommandValidator:
                     },
                     {
                         "name": "confirm",
-                        "description": "Confirmation required",
+                        "description": "Confirm action (true/false)",
                         "type": 5,
                         "required": False
                     },
