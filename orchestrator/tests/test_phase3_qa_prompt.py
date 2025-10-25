@@ -22,7 +22,7 @@ class TestPhase3QAPrompt(unittest.TestCase):
             "agent-prompts",
             "phase3_qa_checker.md"
         )
-        with open(prompt_path, 'r') as f:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
             cls.content = f.read()
 
     def test_file_exists(self):

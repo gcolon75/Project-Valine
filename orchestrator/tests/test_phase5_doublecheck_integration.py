@@ -287,7 +287,7 @@ class TestReportFormats(unittest.TestCase):
         
         md_file = agent.generate_markdown_report()
         
-        with open(md_file, 'r') as f:
+        with open(md_file, 'r', encoding='utf-8') as f:
             content = f.read()
         
         # Verify required sections
