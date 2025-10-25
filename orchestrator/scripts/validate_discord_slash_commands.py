@@ -224,7 +224,7 @@ class DiscordSlashCommandValidator:
         """Register all staging commands"""
         self.log("Registering staging commands...")
         
-        # Define all staging commands (18 total)
+        # Define all staging commands (19 total: 18 original + ux-update)
         commands_to_register = [
             {
                 "name": "plan",
