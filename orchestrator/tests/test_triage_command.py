@@ -80,7 +80,8 @@ class TestTriageCommand(unittest.TestCase):
         # Verify response
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertIn('Starting Triage Analysis', body['data']['content'])
+        self.assertIn('TriageAgent', body['data']['content'])
+        self.assertIn('Analyzing failure', body['data']['content'])
         self.assertIn('#58', body['data']['content'])
         self.assertIn('testuser', body['data']['content'])
         
