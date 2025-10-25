@@ -34,3 +34,5 @@ operational_readiness_config.json
 **/mockups-tmp/
 .lighthouse/
 lighthouse-reports/
+# Discord command registration evidence
+discord_cmd_evidence/

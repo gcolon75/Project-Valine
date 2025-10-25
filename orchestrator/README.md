@@ -186,20 +186,52 @@ The bot endpoint is now operational ✅ and ready for command registration!
 
 ### Quick Setup for Staging
 
-If you're setting up a **staging environment**, use the automated setup script:
+If you're setting up a **staging environment**, use the automated setup scripts:
 
-```bash
-cd orchestrator
-./setup_staging_bot.sh
+**⚠️ Security Note:** Never commit real tokens to version control. Use environment variables or secure secret management.
+
+**Windows (PowerShell):**
+```powershell
+# Set environment variables (replace with your actual values)
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"  # Keep this secret!
+$env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
+
+# Check only (verify auth and list commands)
+.\orchestrator\scripts\rin_register_commands.ps1 -CheckOnly
+
+# Register all commands
+.\orchestrator\scripts\rin_register_commands.ps1
 ```
 
-This script will:
-- Validate bot credentials and guild membership
-- Check current command registration status
-- Optionally register staging commands (instant visibility using guild commands)
-- Verify AWS SSM parameters for feature flags
+**Linux/macOS/WSL (Bash):**
+```bash
+# Set environment variables (replace with your actual values)
+export STAGING_DISCORD_APPLICATION_ID="1428568840958251109"
+export STAGING_DISCORD_BOT_TOKEN="<your_token>"  # Keep this secret!
+export STAGING_DISCORD_GUILD_ID="1428102811832553554"
 
-For detailed staging setup instructions, see [DISCORD_STAGING_SETUP.md](DISCORD_STAGING_SETUP.md).
+# Run registration
+./orchestrator/scripts/register_staging_slash_commands.sh
+```
+
+**Features:**
+- ✅ Safe upsert (no mass wipe of existing commands)
+- ✅ Rate limit handling with exponential backoff
+- ✅ Bot auth and guild membership verification
+- ✅ Evidence JSON output for auditing
+- ✅ Registers all 19 commands including `/ux-update`
+
+**Environment Variables (in order of preference):**
+- **Primary (preferred for staging):**
+  - `STAGING_DISCORD_APPLICATION_ID` - Discord Application ID
+  - `STAGING_DISCORD_BOT_TOKEN` - Discord Bot Token  
+  - `STAGING_DISCORD_GUILD_ID` - Discord Guild (Server) ID
+
+- **Back-compat (fallback if STAGING_* not set):**
+  - `DISCORD_APPLICATION_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID_STAGING`
+
+For detailed staging setup instructions, see [DISCORD_STAGING_SETUP.md](DISCORD_STAGING_SETUP.md) or [scripts/README.md](scripts/README.md).
 
 ### Manual Setup
 

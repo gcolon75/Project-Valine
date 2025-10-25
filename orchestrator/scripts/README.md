@@ -2,6 +2,140 @@
 
 This directory contains utility scripts for managing and validating the Project Valine orchestrator.
 
+## Discord Command Registration (Staging)
+
+### Overview
+
+These scripts register Discord slash commands for the Rin bot in staging environments. They use **guild commands** (instant visibility) and implement safe upsert operations to avoid mass-wiping existing commands.
+
+### Rin Registration Script (PowerShell - Windows)
+
+**Script:** `rin_register_commands.ps1`
+
+**Platform:** Windows PowerShell 5.1+
+
+**Purpose:** Windows-friendly registration tool with safe upsert, rate-limit handling, and evidence generation.
+
+**Usage:**
+```powershell
+# Set environment variables (preferred)
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"
+$env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
+
+# Check only (verify auth, list commands)
+.\orchestrator\scripts\rin_register_commands.ps1 -CheckOnly
+
+# Register all commands
+.\orchestrator\scripts\rin_register_commands.ps1
+
+# Pass parameters inline
+.\orchestrator\scripts\rin_register_commands.ps1 -AppId "..." -BotToken "..." -GuildId "..."
+```
+
+**Environment Variables (in order of preference):**
+- **Primary (preferred for staging):**
+  - `STAGING_DISCORD_APPLICATION_ID` - Discord Application ID
+  - `STAGING_DISCORD_BOT_TOKEN` - Discord Bot Token
+  - `STAGING_DISCORD_GUILD_ID` - Discord Guild (Server) ID
+
+- **Back-compat (fallback if STAGING_* not set):**
+  - `DISCORD_APPLICATION_ID` - Discord Application ID
+  - `DISCORD_BOT_TOKEN` - Discord Bot Token
+  - `DISCORD_GUILD_ID_STAGING` - Discord Guild (Server) ID
+
+**Features:**
+- ✅ Safe upsert (updates existing, creates new - no mass wipe)
+- ✅ Rate limit handling (429 with exponential backoff)
+- ✅ Bot auth verification
+- ✅ Guild membership verification
+- ✅ Evidence JSON output (saved to `./discord_cmd_evidence/`)
+- ✅ Comprehensive error handling
+- ✅ UTF-8 encoding support
+
+**Commands Registered (19 total):**
+1. `plan` - Create daily plan from GitHub issues
+2. `approve` - Approve and execute a plan
+3. `status` - Show workflow status (with count option)
+4. `ship` - Finalize and ship a run
+5. `verify-latest` - Verify latest deployment
+6. `verify-run` - Verify specific run
+7. `diagnose` - Infrastructure diagnostics
+8. `deploy-client` - Trigger client deployment
+9. `set-frontend` - Update frontend URL (admin)
+10. `set-api-base` - Update API base URL (admin)
+11. `agents` - List available agents
+12. `status-digest` - Aggregated workflow status
+13. `relay-send` - Post message to channel (admin)
+14. `relay-dm` - Post as bot (admin)
+15. `triage` - Auto-diagnose CI/CD failures (with pr option)
+16. `debug-last` - Show debug info (feature-flagged)
+17. `update-summary` - Generate project summary
+18. `uptime-check` - Check service health
+19. `ux-update` - Interactive UX updates (with command, description, conversation_id, confirm options)
+
+### Bash Registration Script (Linux/macOS)
+
+**Script:** `register_staging_slash_commands.sh`
+
+**Platform:** Linux, macOS, WSL
+
+**Purpose:** Unix-friendly registration using Python validation script.
+
+**Usage:**
+```bash
+# Set environment variables (preferred)
+export STAGING_DISCORD_APPLICATION_ID="1428568840958251109"
+export STAGING_DISCORD_BOT_TOKEN="<your_token>"
+export STAGING_DISCORD_GUILD_ID="1428102811832553554"
+
+# Run registration
+./orchestrator/scripts/register_staging_slash_commands.sh
+
+# Or inline
+STAGING_DISCORD_APPLICATION_ID="..." \
+STAGING_DISCORD_BOT_TOKEN="..." \
+STAGING_DISCORD_GUILD_ID="..." \
+./orchestrator/scripts/register_staging_slash_commands.sh
+```
+
+**Same environment variable precedence as PowerShell script.**
+
+### Verification Steps
+
+After running either script:
+
+1. **Go to Discord staging server**
+2. **Type `/` in any channel**
+3. **Verify commands appear:** `/status`, `/triage`, `/ux-update`, `/debug-last`, etc.
+4. **Test a command:**
+   ```
+   /status count:2
+   /ux-update description:"Make the navbar blue"
+   ```
+
+### Troubleshooting
+
+**Error: Missing environment variables**
+- Set the required env vars (see Usage sections above)
+- Use STAGING_* prefix for staging environments
+
+**Error: Bot authentication failed (401)**
+- Check bot token is correct
+- Verify token has not expired
+- Ensure token starts with correct prefix
+
+**Error: Guild verification failed (403/404)**
+- Verify bot is invited to the staging server
+- Check guild ID is correct
+- Ensure bot has proper permissions (Send Messages, Use Slash Commands)
+
+**Error: Rate limited (429)**
+- Scripts handle this automatically with backoff
+- If persistent, wait a few minutes and retry
+
+---
+
 ## Phase 5 Triage Agent (Auto-Fix)
 
 ### Overview

@@ -6,16 +6,22 @@ set -e
 # This script registers slash commands (guild-level for instant visibility)
 # in the staging Discord server.
 #
-# Required Environment Variables:
-#   STAGING_DISCORD_APPLICATION_ID - Discord Application ID
-#   STAGING_DISCORD_BOT_TOKEN - Discord Bot Token
-#   STAGING_DISCORD_GUILD_ID - Discord Guild (Server) ID
+# Required Environment Variables (in order of preference):
+#   Primary (preferred for staging):
+#     STAGING_DISCORD_APPLICATION_ID - Discord Application ID
+#     STAGING_DISCORD_BOT_TOKEN - Discord Bot Token
+#     STAGING_DISCORD_GUILD_ID - Discord Guild (Server) ID
+#   
+#   Back-compat (will be used if STAGING_* vars not set):
+#     DISCORD_APPLICATION_ID - Discord Application ID
+#     DISCORD_BOT_TOKEN - Discord Bot Token
+#     DISCORD_GUILD_ID_STAGING - Discord Guild (Server) ID
 #
 # Optional Environment Variables:
 #   EVIDENCE_DIR - Directory to store validation evidence (default: ./validation_evidence)
 #
 # Usage:
-#   # Set environment variables
+#   # Set environment variables (preferred)
 #   export STAGING_DISCORD_APPLICATION_ID="your_app_id"
 #   export STAGING_DISCORD_BOT_TOKEN="your_bot_token"
 #   export STAGING_DISCORD_GUILD_ID="your_guild_id"
@@ -31,19 +37,43 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Resolve environment variables with fallbacks for back-compat
+# Primary: STAGING_DISCORD_* (preferred for staging)
+# Back-compat: DISCORD_APPLICATION_ID, DISCORD_BOT_TOKEN, DISCORD_GUILD_ID_STAGING
+if [ -z "$STAGING_DISCORD_APPLICATION_ID" ]; then
+    STAGING_DISCORD_APPLICATION_ID="${DISCORD_APPLICATION_ID}"
+fi
+
+if [ -z "$STAGING_DISCORD_BOT_TOKEN" ]; then
+    STAGING_DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN}"
+fi
+
+if [ -z "$STAGING_DISCORD_GUILD_ID" ]; then
+    STAGING_DISCORD_GUILD_ID="${DISCORD_GUILD_ID_STAGING}"
+fi
+
 # Validate required environment variables
 if [ -z "$STAGING_DISCORD_APPLICATION_ID" ]; then
     echo "❌ Error: STAGING_DISCORD_APPLICATION_ID is not set"
+    echo "   Set one of:"
+    echo "   - STAGING_DISCORD_APPLICATION_ID (preferred)"
+    echo "   - DISCORD_APPLICATION_ID (back-compat)"
     exit 1
 fi
 
 if [ -z "$STAGING_DISCORD_BOT_TOKEN" ]; then
     echo "❌ Error: STAGING_DISCORD_BOT_TOKEN is not set"
+    echo "   Set one of:"
+    echo "   - STAGING_DISCORD_BOT_TOKEN (preferred)"
+    echo "   - DISCORD_BOT_TOKEN (back-compat)"
     exit 1
 fi
 
 if [ -z "$STAGING_DISCORD_GUILD_ID" ]; then
     echo "❌ Error: STAGING_DISCORD_GUILD_ID is not set"
+    echo "   Set one of:"
+    echo "   - STAGING_DISCORD_GUILD_ID (preferred)"
+    echo "   - DISCORD_GUILD_ID_STAGING (back-compat)"
     exit 1
 fi
 
