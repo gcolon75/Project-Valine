@@ -77,8 +77,8 @@ if [ $EXIT_CODE -eq 0 ]; then
     echo "Next steps:"
     echo "1. Go to your Discord staging server"
     echo "2. Type '/' in the message box"
-    echo "3. Look for /debug-last, /diagnose, /status commands"
-    echo "4. Test /debug-last to verify it works"
+    echo "3. Look for all 18 commands (plan, approve, status, ship, verify-latest, etc.)"
+    echo "4. Test /agents and /debug-last to verify they work"
     echo ""
 else
     echo ""
