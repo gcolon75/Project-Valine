@@ -1,3 +1,52 @@
+## 🚨 Current Status (2025-10-25 01:21 UTC)
+
+### Active Debugging Session - Bot Duplicate Commands Issue
+
+**What's happening RIGHT NOW:**
+- Rin bot is deployed and partially working
+- `/triage` command fixed via PR #102 and PR #103 (merged ~1:11 UTC)
+- `.status` command works BUT appears twice in Discord (duplicate registration issue)
+- Root cause: Old "Amadeus bot" application still has commands registered
+- Other commands giving "Application did not respond" (3-second timeout issue)
+
+**Timeline of Events (Oct 24-25):**
+- 8:24 PM: `.status` worked perfectly
+- 10:38 PM: PR #99 merged (AWS Auto-Deployer)
+- After 10:38 PM: Bot started failing
+- PR #102 & #103: Fixed `/triage` command parameter mismatch
+- Current: Investigating duplicate command registration and timeouts
+
+**What We Know:**
+1. `/triage` now works after merging trigger method fixes
+2. Duplicate `/status` = two bot applications have it registered
+3. Bot code is correct, issue is Discord command registration
+4. Lambda is deployed successfully (run #34 at 1:11 UTC succeeded)
+
+**Next Steps (being handled by agent):**
+- [ ] Clean up duplicate commands from old Amadeus bot application
+- [ ] Investigate Lambda cold start timeouts (CloudWatch logs)
+- [ ] Research UX design implementation approach
+- [ ] Document findings in summary
+
+**If This Agent Run Fails:**
+The bot is functional but has duplicate commands. To fix manually:
+1. Go to Discord Developer Portal
+2. Find old "Amadeus bot" application (non-staging tokens)
+3. Delete its slash commands OR delete the entire application
+4. Keep only Rin bot active
+
+**Files Changed Today:**
+- `orchestrator/app/handlers/discord_handler.py` (triage command fixes)
+- `orchestrator/app/services/github_actions_dispatcher.py` (added trigger_phase5_triage and trigger_issue_triage methods)
+- `orchestrator/tests/test_github_actions_dispatcher.py` (added tests)
+
+**Important Context:**
+- Rin bot = unified bot (uses non-staging tokens, was previously "Amadeus")
+- Old Amadeus bot = should be decommissioned but commands still registered
+- UX bot = planned feature, no Discord commands yet, just backend code
+
+---
+
 ## 🆕 Project Valine Status (2025-10-24)
 
 - 🎮 **Bot Unifier Architecture Implemented!** Rin is now the unified orchestrator bot
@@ -166,6 +215,24 @@ Project Valine uses **Rin**, a unified Discord bot that handles all interactions
 - Simplified permissions and deployment
 - Consistent user experience with specialized contexts
 - Visual differentiation through emojis, colors, and embeds
+
+**Current Setup (Updated 2025-10-25):**
+- **Rin Bot**: Primary Discord bot handling all commands
+- **Bot Token**: Uses non-staging tokens (previously labeled "Amadeus")
+- **Lambda Function**: `ProjectValineDiscordHandler` deployed via GitHub Actions
+- **Command Registration**: `orchestrator/register_discord_commands.sh`
+- **Application ID**: Stored in GitHub Secrets as `DISCORD_APPLICATION_ID`
+
+**Bot Personas (UI/UX representations, same bot):**
+- Amadeus: Build/deploy operations
+- Status Agent: Workflow status reports
+- Verify Agent: Deployment verification
+- Diagnose Agent: Infrastructure diagnostics
+- Triage Agent: Failure analysis and auto-fix
+
+**Deprecated:**
+- Old staging bot (separate application) - should be removed
+- Old Amadeus bot application - commands need cleanup (causing duplicate command issue)
 
 See [orchestrator/BOT_UNIFIER_GUIDE.md](orchestrator/BOT_UNIFIER_GUIDE.md) for complete details.
 
@@ -526,6 +593,46 @@ The orchestrator includes specialized agents with distinct personalities:
 
 ### Recent Accomplishments
 
+### 2025-10-25: Discord Bot Duplicate Commands & Triage Fix
+
+**PRs Merged:**
+- **#102**: Fix Discord bot workflow dispatch parameter mismatch (added specialized triage methods)
+- **#103**: Fix /triage Discord command parameter mismatch (attempted same fix, superseded by #102)
+
+**Issue:** Duplicate slash commands appearing in Discord (specifically `/status`)
+
+**Cause:** Commands registered under multiple bot applications (old Amadeus + Rin)
+
+**Fix in progress:** Agent cleaning up old registrations
+
+**Technical Details:**
+- **Before**: `trigger_workflow_dispatch()` was being called with `ref='main'` as kwarg (not in signature)
+- **After**: Created `trigger_phase5_triage()` and `trigger_issue_triage()` that handle ref internally
+- Both PRs #102 and #103 tried to fix this but with slightly different approaches
+- PR #102's approach was used (removed workflow_id parameter, hardcoded it)
+
+**Key Changes in PR #102:**
+```python
+# New methods in github_actions_dispatcher.py:
+def trigger_phase5_triage(self, failure_ref, allow_auto_fix='false', dry_run='false', verbose='true'):
+    """Trigger Phase 5 Triage Agent workflow via workflow_dispatch."""
+    url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/phase5-triage-agent.yml/dispatches'
+    payload = {
+        'ref': 'main',  # Handled internally, not passed as parameter
+        'inputs': {...}
+    }
+
+def trigger_issue_triage(self, requester, trace_id=''):
+    """Trigger Issue Triage Agent workflow via workflow_dispatch."""
+    url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/issue-triage-agent.yml/dispatches'
+    payload = {
+        'ref': 'main',  # Handled internally
+        'inputs': {...}
+    }
+```
+
+**Impact:** `/triage` command now works correctly, but revealed duplicate command registration issue
+
 1. **Discord Slash Commands Fix** (Phase 5)
    - Created validation scripts for command registration
    - Implemented one-command fix script
@@ -556,6 +663,11 @@ The orchestrator includes specialized agents with distinct personalities:
    - Troubleshooting references
    - API documentation
    - Runbooks for operations
+
+### Known Issues (2025-10-25)
+
+- **Discord Command Duplicates**: Multiple bot applications have same commands registered. Need to clean up old "Amadeus bot" application.
+- **Lambda Timeouts**: Some commands timing out with "Application did not respond" - investigating cold start performance.
 
 ### Recent Challenges Solved
 
@@ -1049,6 +1161,291 @@ Project-Valine/
 - [ ] User analytics
 - [ ] Error rate tracking
 - [ ] SLA monitoring
+
+---
+
+## UX Design Implementation Research (2025-10-25)
+
+### Current State
+**Files found:**
+- `orchestrator/app/agents/ux_agent.py` - **Full implementation exists!** (966 lines)
+- `orchestrator/app/handlers/discord_handler.py` - Has `handle_ux_update_command()` handler
+- `.github/agents/ux-designer.md` - Complete UX Designer agent specification
+
+**Command registered:** ❌ **NOT YET** - `/ux-update` command is NOT in `register_discord_commands.sh`
+
+**Implementation status:** **Skeleton complete, needs Discord integration**
+
+### Architecture Pattern (based on other agents)
+
+**Standard Pattern:**
+1. User runs `/command` in Discord
+2. Lambda handler calls trigger method or agent directly
+3. For workflow-based: GitHub Actions workflow executes agent script
+4. For direct agents: Agent runs in Lambda and returns result
+5. Agent analyzes request and opens PR with changes
+
+**UX Agent Specifics:**
+The UX Agent follows a **direct execution pattern** (not workflow-based like Triage):
+- User runs `/ux-update section:header text:"Welcome!"` in Discord
+- Lambda handler calls `UXAgent.start_conversation()`
+- Agent parses intent and generates preview
+- **Interactive confirmation flow**: Agent asks user to confirm before making changes
+- User confirms with "yes" → Agent calls `confirm_and_execute()`
+- Agent creates draft PR with changes
+- Discord receives PR link
+
+**What makes UX agent different:**
+- **Interactive conversation flow** with confirmation steps
+- **In-memory conversation state** tracking (needs persistent storage for production)
+- **Direct PR creation** without GitHub Actions workflow
+- **Parses multiple input formats**: structured commands, plain text, images
+- **Supports 4 sections**: header, footer, navbar, home page
+- **Changes React/JSX files** directly in the repository
+
+### Current UX Agent Capabilities
+
+**Supported sections:**
+- `header` → `src/components/Header.jsx`
+- `footer` → `src/components/Footer.jsx`
+- `navbar` → `src/components/NavBar.jsx`
+- `home` → `src/pages/Home.jsx`
+
+**Supported properties:**
+- `text` - Update displayed text
+- `color` - Change background/foreground colors (hex format)
+- `brand` - Update brand name
+- `links` / `add-link` - Add navigation links
+- `hero-text`, `description`, `cta-text` - Home page specific
+
+**Example commands:**
+```
+/ux-update section:header text:"Welcome to Project Valine!"
+/ux-update section:footer color:"#FF0080"
+/ux-update section:navbar brand:"Joint"
+/ux-update section:home hero-text:"Level Up!"
+```
+
+**What's already implemented:**
+- ✅ Command parsing (structured + plain text)
+- ✅ Image analysis placeholder (needs API integration)
+- ✅ Intent extraction (sections, colors, quoted text)
+- ✅ Clarification question system
+- ✅ Change preview generation
+- ✅ Interactive confirmation flow
+- ✅ Code snippet generation for previews
+- ✅ File change generation (regex-based replacements)
+- ✅ PR body generation
+- ✅ Conversation state management
+
+**What's NOT fully implemented:**
+- ❌ Actual GitHub PR creation (returns mock PR #999)
+- ❌ File reading from repository
+- ❌ Branch creation and commits
+- ❌ Persistent conversation storage (uses in-memory dict)
+- ❌ Image analysis (placeholder only)
+- ❌ Discord command registration
+
+### Next Steps to Implement
+
+**Phase 1: Discord Command Registration** (Estimated: 30 minutes)
+1. Add `/ux-update` command to `orchestrator/register_discord_commands.sh`
+   ```bash
+   echo "📝 Registering /ux-update command..."
+   curl -X POST "${BASE_URL}" \
+     -H "Authorization: Bot ${BOT_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "ux-update",
+       "description": "Interactive UX/UI updates with confirmation",
+       "options": [{
+         "name": "request",
+         "description": "Your UX update request (e.g., section:header text:\"New Title\")",
+         "type": 3,
+         "required": true
+       }]
+     }'
+   ```
+2. Also add to `register_discord_commands_staging.sh`
+3. Re-run registration script to deploy
+
+**Phase 2: GitHub Integration** (Estimated: 2 hours)
+1. Implement `_create_draft_pr()` to actually create PRs:
+   - Use `github_service.create_branch()`
+   - Use `github_service.create_or_update_file()` for changes
+   - Use `github_service.create_pull_request(draft=True)`
+2. Implement file reading to get current content
+3. Apply regex replacements to actual file content
+4. Handle errors (file not found, regex no match, etc.)
+
+**Phase 3: Persistent Storage** (Estimated: 1 hour)
+1. Move conversation state from in-memory dict to DynamoDB
+2. Add TTL for auto-cleanup (e.g., 1 hour)
+3. Update `start_conversation()` and `confirm_and_execute()` to use DynamoDB
+
+**Phase 4: Testing & Polish** (Estimated: 1 hour)
+1. Test with real React component files
+2. Handle edge cases (malformed commands, missing sections)
+3. Add unit tests for UXAgent
+4. Update documentation with examples
+
+**Total Estimated Effort:** ~4-5 hours to full production-ready
+
+### Estimated Complexity
+**Medium** - Core logic exists, needs integration work
+
+**Why:**
+- ✅ Agent code is complete and well-structured
+- ✅ Discord handler integration exists
+- ❌ Needs GitHub PR creation wired up
+- ❌ Needs persistent storage for conversations
+- ❌ Needs Discord command registration
+
+### Blockers
+**None** - All dependencies are in place:
+- GitHub service available
+- Discord handler ready
+- No new libraries needed
+- Files to edit exist in repository
+
+### Recommended Approach
+
+**Option 1: Quick MVP (Register command only)** - 30 minutes
+- Just register `/ux-update` in Discord
+- Test the interactive flow (will get mock PR)
+- Validate conversation UX before building PR integration
+
+**Option 2: Full Implementation** - 4-5 hours
+- Register Discord command
+- Wire up GitHub PR creation
+- Add DynamoDB conversation storage
+- Full testing
+
+**Option 3: Hybrid (Recommended)** - 2 hours
+- Register Discord command
+- Implement real PR creation
+- Keep in-memory conversation state (document as known limitation)
+- Add TODO comments for DynamoDB migration
+
+**Recommendation:** Start with Option 1 to test UX, then do Option 3 if user likes it.
+
+---
+
+## Discord Bot Cleanup Plan (2025-10-25)
+
+### Problem
+Two bot applications exist with same commands registered:
+- **Rin Bot** (current, active) - The unified bot using non-staging tokens
+- **Old Amadeus Bot** (deprecated) - Previous separate application
+
+### Solution
+Delete all commands from old Amadeus bot application.
+
+### How to Identify the Old Bot
+
+**Check Discord Developer Portal:**
+1. Visit: https://discord.com/developers/applications
+2. Look for multiple applications
+3. The **old** one is likely:
+   - Named "Amadeus" or "Project Valine Amadeus"
+   - Has fewer OAuth2 redirects configured
+   - May have older creation date
+4. The **current** one (Rin) is:
+   - Named "Rin" or "Project Valine"
+   - Has the Application ID matching `DISCORD_APPLICATION_ID` in GitHub Secrets
+   - Should be the one with the newest updates
+
+**Check GitHub Secrets:**
+```
+DISCORD_APPLICATION_ID → Current Rin bot
+STAGING_DISCORD_APPLICATION_ID → Staging bot (different)
+```
+
+Any other Application ID found in Discord Developer Portal is likely the old bot.
+
+### Commands to Run (MANUAL - don't execute automatically)
+
+**Step 1: List commands from old bot**
+```bash
+# Replace OLD_APP_ID and OLD_BOT_TOKEN with values from old Amadeus bot
+curl -X GET "https://discord.com/api/v10/applications/OLD_APP_ID/commands" \
+  -H "Authorization: Bot OLD_BOT_TOKEN"
+```
+
+**Step 2: For each command ID returned, delete:**
+```bash
+# For EACH command returned from Step 1
+curl -X DELETE "https://discord.com/api/v10/applications/OLD_APP_ID/commands/COMMAND_ID" \
+  -H "Authorization: Bot OLD_BOT_TOKEN"
+```
+
+**Alternative: Delete entire old application via Discord Developer Portal**
+1. Navigate to: https://discord.com/developers/applications
+2. Select old Amadeus bot application
+3. Go to "General Information"
+4. Scroll to bottom → "Delete Application"
+5. Confirm deletion
+
+### Files to Check
+
+**Environment configuration:**
+- `orchestrator/.env.example` - Shows what env vars are used (no Application IDs stored here)
+- `orchestrator/template.yaml` - SAM template references `DISCORD_PUBLIC_KEY` parameter
+
+**GitHub Secrets to verify:**
+- `DISCORD_APPLICATION_ID` - Current Rin bot Application ID
+- `DISCORD_BOT_TOKEN` - Current Rin bot token
+- `DISCORD_PUBLIC_KEY` - Current Rin bot public key
+- `STAGING_DISCORD_*` variants - For staging environment (separate bot)
+
+**No code changes needed** - This is purely a Discord Developer Portal cleanup.
+
+### Post-Cleanup Verification
+
+1. Run `/status` in Discord - should only show **ONCE**
+2. Test other commands - should work without duplicates
+3. Check Discord Developer Portal - only Rin bot should exist (plus staging if used)
+4. Verify no "Application did not respond" errors (may need Lambda timeout investigation)
+
+### Risk Assessment
+**Low risk** - Only deleting unused command registrations. Lambda/code unchanged.
+
+**What could go wrong:**
+- Accidentally delete active Rin bot → Re-register commands using `register_discord_commands.sh`
+- Delete wrong commands → Re-run registration script to restore
+
+**Recovery:** If you accidentally break something, run:
+```bash
+cd orchestrator
+./register_discord_commands.sh
+```
+
+---
+
+## Action Items for User (gcolon75)
+
+### URGENT
+- [ ] Check Discord Developer Portal for bot applications
+- [ ] Identify which Application ID is old Amadeus vs Rin
+- [ ] Delete commands from old application (see cleanup plan above)
+- [ ] Verify `/status` only appears once after cleanup
+
+### INVESTIGATE
+- [ ] Check CloudWatch logs for Lambda timeouts
+- [ ] Look for errors around 01:15-01:21 UTC (recent command attempts)
+- [ ] Check cold start duration (should be < 2 seconds)
+- [ ] If timeouts persist, consider increasing Lambda timeout or optimizing imports
+
+### UX IMPLEMENTATION (after bot is stable)
+- [ ] Review UX agent research findings (see section above)
+- [ ] Decide on implementation approach (MVP vs Full)
+- [ ] Register `/ux-update` command in Discord (Quick win - 30 min)
+- [ ] Create GitHub issue for UX agent completion if desired
+
+### OPTIONAL
+- [ ] Test `/triage` command now that PR #102 is merged
+- [ ] Monitor for any other duplicate command issues
+- [ ] Review CloudWatch logs for any other Lambda errors
 
 ---
 
