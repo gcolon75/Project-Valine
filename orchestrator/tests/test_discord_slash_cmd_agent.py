@@ -211,11 +211,27 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
     
     def test_compare_commands_all_match(self):
         """Test command comparison when all commands match."""
+        # Use all 19 expected commands with exact matching descriptions
         existing = [
-            {"name": "debug-last", "description": "Show last run debug info (redacted, ephemeral)"},
-            {"name": "diagnose", "description": "Run a quick staging diagnostic"},
-            {"name": "status", "description": "Show last 1-3 runs for workflows"},
-            {"name": "triage", "description": "Auto-diagnose and fix failed PR/workflow runs"}
+            {"name": "plan", "description": "Create a daily plan from ready GitHub issues"},
+            {"name": "approve", "description": "Approve and execute a plan"},
+            {"name": "status", "description": "Show last 1-3 runs for Client Deploy and Diagnose workflows"},
+            {"name": "ship", "description": "Finalize and ship a completed run"},
+            {"name": "verify-latest", "description": "Verify the latest Client Deploy workflow run"},
+            {"name": "verify-run", "description": "Verify a specific workflow run by ID"},
+            {"name": "diagnose", "description": "Trigger on-demand diagnose workflow"},
+            {"name": "deploy-client", "description": "Trigger Client Deploy workflow"},
+            {"name": "set-frontend", "description": "Update FRONTEND_BASE_URL (admin only, feature-flagged)"},
+            {"name": "set-api-base", "description": "Update VITE_API_BASE secret (admin only, feature-flagged)"},
+            {"name": "agents", "description": "List available orchestrator agents and their capabilities"},
+            {"name": "status-digest", "description": "Show aggregated status digest for workflows over a time period"},
+            {"name": "relay-send", "description": "Post message to Discord channel (admin only, audited)"},
+            {"name": "relay-dm", "description": "Post message to channel as bot (owner only, audited)"},
+            {"name": "triage", "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes"},
+            {"name": "debug-last", "description": "Show last run debug info (redacted, ephemeral, feature-flagged)"},
+            {"name": "update-summary", "description": "Generate and update project summary with latest status"},
+            {"name": "uptime-check", "description": "Check uptime and health of Discord bot and critical services"},
+            {"name": "ux-update", "description": "Trigger UX agent to improve user experience based on feedback"}
         ]
         expected = self.agent.expected_commands
         
@@ -257,10 +273,27 @@ class TestDiscordSlashCommandAgent(unittest.TestCase):
     
     def test_compare_commands_outdated(self):
         """Test command comparison with outdated descriptions."""
+        # Use all 19 commands with only debug-last having an outdated description
         existing = [
-            {"name": "debug-last", "description": "Old description"},
-            {"name": "diagnose", "description": "Run a quick staging diagnostic"},
-            {"name": "status", "description": "Show last 1-3 runs for workflows"}
+            {"name": "plan", "description": "Create a daily plan from ready GitHub issues"},
+            {"name": "approve", "description": "Approve and execute a plan"},
+            {"name": "status", "description": "Show last 1-3 runs for Client Deploy and Diagnose workflows"},
+            {"name": "ship", "description": "Finalize and ship a completed run"},
+            {"name": "verify-latest", "description": "Verify the latest Client Deploy workflow run"},
+            {"name": "verify-run", "description": "Verify a specific workflow run by ID"},
+            {"name": "diagnose", "description": "Trigger on-demand diagnose workflow"},
+            {"name": "deploy-client", "description": "Trigger Client Deploy workflow"},
+            {"name": "set-frontend", "description": "Update FRONTEND_BASE_URL (admin only, feature-flagged)"},
+            {"name": "set-api-base", "description": "Update VITE_API_BASE secret (admin only, feature-flagged)"},
+            {"name": "agents", "description": "List available orchestrator agents and their capabilities"},
+            {"name": "status-digest", "description": "Show aggregated status digest for workflows over a time period"},
+            {"name": "relay-send", "description": "Post message to Discord channel (admin only, audited)"},
+            {"name": "relay-dm", "description": "Post message to channel as bot (owner only, audited)"},
+            {"name": "triage", "description": "Auto-diagnose failing GitHub Actions and create draft PRs with fixes"},
+            {"name": "debug-last", "description": "Old description"},  # This one is outdated
+            {"name": "update-summary", "description": "Generate and update project summary with latest status"},
+            {"name": "uptime-check", "description": "Check uptime and health of Discord bot and critical services"},
+            {"name": "ux-update", "description": "Trigger UX agent to improve user experience based on feedback"}
         ]
         expected = self.agent.expected_commands
         
