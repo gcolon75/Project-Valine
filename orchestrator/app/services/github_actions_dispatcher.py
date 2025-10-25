@@ -580,6 +580,136 @@ class GitHubActionsDispatcher:
                 'message': f'Error: {str(e)}'
             }
 
+    def trigger_phase5_triage(self, failure_ref, allow_auto_fix='false', dry_run='false', verbose='true'):
+        """
+        Trigger Phase 5 Triage Agent workflow via workflow_dispatch.
+
+        Args:
+            failure_ref: Failure reference (PR number, workflow run ID, or URL)
+            allow_auto_fix: Allow automatic fix PR creation (default: 'false')
+            dry_run: Dry run mode (default: 'false')
+            verbose: Enable verbose output (default: 'true')
+
+        Returns:
+            dict with 'success', 'message'
+        """
+        try:
+            owner, repo = self.repo_name.split('/')
+            url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/phase5-triage-agent.yml/dispatches'
+
+            payload = {
+                'ref': 'main',
+                'inputs': {
+                    'failure_ref': str(failure_ref),
+                    'allow_auto_fix': str(allow_auto_fix),
+                    'dry_run': str(dry_run),
+                    'verbose': str(verbose)
+                }
+            }
+
+            response = requests.post(url, headers=self.headers, json=payload, timeout=10)
+
+            if response.status_code == 204:
+                print(f'Phase 5 Triage Agent triggered for failure_ref: {failure_ref}')
+                return {
+                    'success': True,
+                    'message': f'Triage workflow triggered for failure_ref: {failure_ref}'
+                }
+            elif response.status_code == 403:
+                print(f'Phase 5 Triage dispatch forbidden (403): {response.text}')
+                return {
+                    'success': False,
+                    'message': 'Permission denied. Check GitHub token permissions.'
+                }
+            elif response.status_code == 429:
+                print('Rate limit exceeded (429)')
+                return {
+                    'success': False,
+                    'message': 'Rate limit exceeded. Please try again later.'
+                }
+            else:
+                print(f'Phase 5 Triage dispatch failed with status {response.status_code}: {response.text}')
+                return {
+                    'success': False,
+                    'message': f'Failed to trigger workflow (status {response.status_code})'
+                }
+
+        except requests.exceptions.Timeout:
+            print('Phase 5 Triage dispatch request timed out')
+            return {
+                'success': False,
+                'message': 'Request timed out'
+            }
+        except Exception as e:
+            print(f'Error triggering Phase 5 Triage: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}'
+            }
+
+    def trigger_issue_triage(self, requester, trace_id=''):
+        """
+        Trigger Issue Triage Agent workflow via workflow_dispatch.
+
+        Args:
+            requester: Username or ID of the requester
+            trace_id: Trace ID for tracking (optional)
+
+        Returns:
+            dict with 'success', 'message'
+        """
+        try:
+            owner, repo = self.repo_name.split('/')
+            url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/issue-triage-agent.yml/dispatches'
+
+            payload = {
+                'ref': 'main',
+                'inputs': {
+                    'requester': str(requester),
+                    'trace_id': str(trace_id)
+                }
+            }
+
+            response = requests.post(url, headers=self.headers, json=payload, timeout=10)
+
+            if response.status_code == 204:
+                print(f'Issue Triage Agent triggered by: {requester}')
+                return {
+                    'success': True,
+                    'message': f'Issue triage workflow triggered'
+                }
+            elif response.status_code == 403:
+                print(f'Issue Triage dispatch forbidden (403): {response.text}')
+                return {
+                    'success': False,
+                    'message': 'Permission denied. Check GitHub token permissions.'
+                }
+            elif response.status_code == 429:
+                print('Rate limit exceeded (429)')
+                return {
+                    'success': False,
+                    'message': 'Rate limit exceeded. Please try again later.'
+                }
+            else:
+                print(f'Issue Triage dispatch failed with status {response.status_code}: {response.text}')
+                return {
+                    'success': False,
+                    'message': f'Failed to trigger workflow (status {response.status_code})'
+                }
+
+        except requests.exceptions.Timeout:
+            print('Issue Triage dispatch request timed out')
+            return {
+                'success': False,
+                'message': 'Request timed out'
+            }
+        except Exception as e:
+            print(f'Error triggering Issue Triage: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}'
+            }
+
     def find_recent_run_for_workflow(self, workflow_name, max_age_seconds=30):
         """
         Find the most recent run for a workflow (within max_age_seconds).
