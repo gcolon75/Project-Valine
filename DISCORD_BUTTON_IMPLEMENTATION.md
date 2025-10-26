@@ -166,4 +166,4 @@ PYTHONPATH=app:$PYTHONPATH python -m unittest tests.test_ux_button_interactions 
 - [Discord API - Message Components](https://discord.com/developers/docs/interactions/message-components)
 - [Discord API - Interaction Types](https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type)
 - [Discord API - Response Types](https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type)
-- [Agent Prompt: discord_confirmation_flow_agent.md](orchestrator/agent-prompts/discord_confirmation_flow_agent.md)
+- [Agent Prompt: discord_confirmation_flow_agent.md](https://github.com/gcolon75/Project-Valine/blob/main/orchestrator/agent-prompts/discord_confirmation_flow_agent.md) (repository path: `orchestrator/agent-prompts/discord_confirmation_flow_agent.md`)

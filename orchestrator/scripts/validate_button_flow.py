@@ -31,11 +31,6 @@ def print_section(title):
     print("=" * 80 + "\n")
 
 
-def print_json(data, indent=2):
-    """Pretty print JSON data."""
-    print(json.dumps(data, indent=indent))
-
-
 def demonstrate_button_flow():
     """Demonstrate the complete button confirmation flow."""
     
