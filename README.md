@@ -4,6 +4,28 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 > 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps. Perfect for onboarding new team members or AI agents!
 
+## 🔥 Current Status
+
+### Rin Discord Bot - GLOBAL Registration Active 🌐
+**Rin** orchestrator bot now uses the **simplest registration flow**: GLOBAL commands with just `APP_ID + BOT_TOKEN`.
+
+**Quick Deploy:**
+```powershell
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
+.\orchestrator\scripts\min_register_global.ps1
+```
+
+**⏰ Note:** Global commands take up to ~1 hour to appear in Discord (tradeoff for simplicity).
+
+**Documentation:**
+- 📖 [Project Summary](docs/PROJECT_SUMMARY.md) - What Rin is and current setup
+- 🚀 [Minimal Flow Guide](docs/discord_min_flow.md) - Full setup instructions
+- 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues & fixes
+- 📋 [Next Steps](docs/NEXT_STEPS.md) - Future guild-based instant registration
+
+---
+
 ## 🔥 Recent Updates (Oct 2025)
 
 ### AWS Auto-Deployer - DeployBot Active 🚀

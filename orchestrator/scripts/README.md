@@ -2,7 +2,7 @@
 
 This directory contains utility scripts for managing and validating the Project Valine orchestrator.
 
-## Minimal Global Registration (Rin)
+## Minimal Global Registration (Rin) - Current Standard
 
 **Script:** `min_register_global.ps1`
 
@@ -10,7 +10,7 @@ This directory contains utility scripts for managing and validating the Project 
 
 **Purpose:** Simplest path to register `/ux-update` command globally using only APP_ID + BOT_TOKEN.
 
-**Usage:**
+**Quick Start:**
 
 ```powershell
 # Set environment variables
@@ -19,11 +19,22 @@ $env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
 
 # Run the script
 .\orchestrator\scripts\min_register_global.ps1
+
+# Expected output:
+# Bot OK: @RinBot (ID:1428568840958251109)
+# GLOBAL: Created /ux-update
+# Heads-up: Global commands can take up to ~1 hour to appear in Discord UI
 ```
 
-**Note:** Global commands can take up to ~1 hour to appear in Discord (tradeoff for simplicity).
+**Important Notes:**
+- ⏰ Global commands take up to ~1 hour to appear in Discord (tradeoff for simplicity)
+- 🔒 Use raw token only (no "Bot " prefix) - script adds it automatically
+- ✅ Only 2 env vars needed (no GUILD_ID required)
 
-**For detailed setup and troubleshooting:** See [docs/discord_min_flow.md](../../docs/discord_min_flow.md)
+**Full Documentation:**
+- [docs/discord_min_flow.md](../../docs/discord_min_flow.md) - Complete setup guide
+- [docs/TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) - Common errors and fixes
+- [docs/PROJECT_SUMMARY.md](../../docs/PROJECT_SUMMARY.md) - High-level overview
 
 ---
 
