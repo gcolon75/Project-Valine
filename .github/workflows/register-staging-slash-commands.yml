@@ -3,8 +3,28 @@ name: 🎮 Register Discord Slash Commands
 on:
   workflow_dispatch:
     inputs:
+      app_id:
+        description: 'Discord Application ID (leave empty to use repo var)'
+        required: false
+        type: string
+      bot_token:
+        description: 'Discord Bot Token (leave empty to use repo secret)'
+        required: false
+        type: string
+      guild_id:
+        description: 'Discord Guild ID (optional for global mode, leave empty for discovery)'
+        required: false
+        type: string
+      mode:
+        description: 'Registration mode'
+        required: false
+        type: choice
+        options:
+          - global
+          - guild
+        default: global
       force_register:
-        description: 'Force re-registration of all 18 commands'
+        description: 'Force re-registration of all commands'
         required: false
         type: boolean
         default: false
@@ -17,72 +37,343 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: |
-          cd orchestrator/scripts
-          pip install requests pynacl
-      
-      - name: Discover staging guild ID
-        id: discover-guild
+      - name: Resolve credentials and mode
+        id: resolve
         env:
-          STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
-        shell: bash
+          INPUT_APP_ID: ${{ inputs.app_id }}
+          INPUT_BOT_TOKEN: ${{ inputs.bot_token }}
+          INPUT_GUILD_ID: ${{ inputs.guild_id }}
+          INPUT_MODE: ${{ inputs.mode }}
+          REPO_APP_ID: ${{ vars.STAGING_DISCORD_APPLICATION_ID }}
+          REPO_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
+          REPO_GUILD_ID: ${{ vars.STAGING_DISCORD_GUILD_ID }}
         run: |
-          # Try to discover guild ID if not explicitly set
-          GUILD_ID="${{ vars.STAGING_DISCORD_GUILD_ID }}"
+          # Use inputs if provided, otherwise fall back to repo vars/secrets
+          APP_ID="${INPUT_APP_ID:-$REPO_APP_ID}"
+          BOT_TOKEN="${INPUT_BOT_TOKEN:-$REPO_BOT_TOKEN}"
+          GUILD_ID="${INPUT_GUILD_ID:-$REPO_GUILD_ID}"
+          MODE="${INPUT_MODE:-global}"
           
-          if [ -z "$GUILD_ID" ]; then
-            echo "Attempting to discover guild ID from bot's guilds..."
-            cd orchestrator/scripts
-            GUILD_ID=$(./discover_guild_id.sh 2>&1 | grep -oP 'Guild ID: \K[0-9]+' | head -1)
+          # Validate required credentials
+          if [ -z "$APP_ID" ]; then
+            echo "❌ Error: Discord Application ID not provided"
+            echo "Provide via workflow input or set STAGING_DISCORD_APPLICATION_ID repo variable"
+            exit 1
+          fi
+          
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "❌ Error: Discord Bot Token not provided"
+            echo "Provide via workflow input or set STAGING_DISCORD_BOT_TOKEN secret"
+            exit 1
+          fi
+          
+          # Validate mode requirements
+          if [ "$MODE" = "guild" ] && [ -z "$GUILD_ID" ]; then
+            echo "⚠️  Warning: Guild mode requires guild_id"
+            echo "Will attempt to discover guild ID from bot's guilds..."
+          fi
+          
+          # Export for next steps
+          echo "app_id=$APP_ID" >> $GITHUB_OUTPUT
+          echo "bot_token=$BOT_TOKEN" >> $GITHUB_OUTPUT
+          echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          
+          # Redacted logging (safe for short tokens)
+          REDACTED_APP_ID="***"
+          REDACTED_BOT_TOKEN="***"
+          if [ ${#APP_ID} -gt 4 ]; then
+            REDACTED_APP_ID="***${APP_ID: -4}"
+          fi
+          if [ ${#BOT_TOKEN} -gt 4 ]; then
+            REDACTED_BOT_TOKEN="***${BOT_TOKEN: -4}"
+          fi
+          
+          echo "✅ Configuration resolved:"
+          echo "  App ID: $REDACTED_APP_ID"
+          echo "  Bot Token: $REDACTED_BOT_TOKEN"
+          echo "  Guild ID: ${GUILD_ID:-<will discover>}"
+          echo "  Mode: $MODE"
+      
+      - name: Verify bot authentication
+        id: auth
+        env:
+          APP_ID: ${{ steps.resolve.outputs.app_id }}
+          BOT_TOKEN: ${{ steps.resolve.outputs.bot_token }}
+        run: |
+          echo "🔐 Verifying bot authentication..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bot $BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            https://discord.com/api/v10/oauth2/applications/@me)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            APP_INFO_ID=$(echo "$BODY" | jq -r '.id')
+            APP_NAME=$(echo "$BODY" | jq -r '.name')
             
-            if [ -z "$GUILD_ID" ]; then
-              echo "❌ Could not discover guild ID"
-              echo "Please set STAGING_DISCORD_GUILD_ID as a repository variable"
+            echo "✅ Bot authenticated: $APP_NAME (ID: $APP_INFO_ID)"
+            
+            # Verify token matches app_id
+            if [ "$APP_INFO_ID" != "$APP_ID" ]; then
+              echo "❌ Error: Token/App ID mismatch!"
+              echo "  Token belongs to app: $APP_INFO_ID"
+              echo "  Expected app ID: $APP_ID"
               exit 1
             fi
             
-            echo "Discovered guild ID: $GUILD_ID"
+            echo "✅ Token matches Application ID"
+            echo "bot_name=$APP_NAME" >> $GITHUB_OUTPUT
+          elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+            echo "❌ Authentication failed: Missing Access (HTTP $HTTP_CODE)"
+            echo ""
+            echo "**ACTION REQUIRED:** Bot needs proper scopes."
+            echo ""
+            echo "Use this invite URL to add the bot with required permissions:"
+            echo "https://discord.com/api/oauth2/authorize?client_id=${APP_ID}&scope=bot%20applications.commands&permissions=0"
+            echo ""
+            exit 1
           else
-            echo "Using configured guild ID: $GUILD_ID"
+            echo "❌ Authentication failed with HTTP $HTTP_CODE"
+            echo "Response: $BODY"
+            exit 1
           fi
+      
+      - name: Discover guild ID (if needed)
+        id: discover-guild
+        if: steps.resolve.outputs.mode == 'guild' && steps.resolve.outputs.guild_id == ''
+        env:
+          BOT_TOKEN: ${{ steps.resolve.outputs.bot_token }}
+        run: |
+          echo "🔍 Discovering guild ID from bot's guilds..."
           
-          echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bot $BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            https://discord.com/api/v10/users/@me/guilds)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            GUILD_COUNT=$(echo "$BODY" | jq '. | length')
+            
+            if [ "$GUILD_COUNT" = "0" ]; then
+              echo "❌ Bot is not a member of any guilds"
+              echo "Add the bot to a guild first"
+              exit 1
+            fi
+            
+            # Use first guild
+            GUILD_ID=$(echo "$BODY" | jq -r '.[0].id')
+            GUILD_NAME=$(echo "$BODY" | jq -r '.[0].name')
+            
+            echo "✅ Discovered guild: $GUILD_NAME (ID: $GUILD_ID)"
+            echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
+            echo "guild_name=$GUILD_NAME" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to discover guild ID (HTTP $HTTP_CODE)"
+            echo "Response: $BODY"
+            exit 1
+          fi
       
       - name: Register slash commands
+        id: register
         env:
-          STAGING_DISCORD_APPLICATION_ID: ${{ vars.STAGING_DISCORD_APPLICATION_ID }}
-          STAGING_DISCORD_BOT_TOKEN: ${{ secrets.STAGING_DISCORD_BOT_TOKEN }}
-          STAGING_DISCORD_GUILD_ID: ${{ steps.discover-guild.outputs.guild_id }}
+          APP_ID: ${{ steps.resolve.outputs.app_id }}
+          BOT_TOKEN: ${{ steps.resolve.outputs.bot_token }}
+          GUILD_ID: ${{ steps.resolve.outputs.guild_id || steps.discover-guild.outputs.guild_id }}
+          MODE: ${{ steps.resolve.outputs.mode }}
         run: |
-          cd orchestrator/scripts
-          ./register_staging_slash_commands.sh
+          echo "🚀 Registering Discord slash commands..."
+          echo "  Mode: $MODE"
+          
+          # Determine endpoint based on mode
+          if [ "$MODE" = "global" ]; then
+            ENDPOINT="https://discord.com/api/v10/applications/$APP_ID/commands"
+            echo "  Endpoint: Global (commands appear in ~1 hour)"
+          else
+            if [ -z "$GUILD_ID" ]; then
+              echo "❌ Guild mode requires guild_id"
+              exit 1
+            fi
+            ENDPOINT="https://discord.com/api/v10/applications/$APP_ID/guilds/$GUILD_ID/commands"
+            echo "  Endpoint: Guild $GUILD_ID (commands appear instantly)"
+          fi
+          
+          # Load command definitions from Python module
+          cd orchestrator
+          COMMANDS=$(python3 -c "
+          import sys
+          sys.path.insert(0, '.')
+          from app.agents.discord_slash_cmd_agent import DiscordSlashCommandAgent
+          import json
+          print(json.dumps(DiscordSlashCommandAgent.DEFAULT_EXPECTED_COMMANDS))
+          ")
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ Failed to load command definitions"
+            exit 1
+          fi
+          
+          CMD_COUNT=$(echo "$COMMANDS" | jq '. | length')
+          echo "  Commands to register: $CMD_COUNT"
+          
+          # Register commands with retry logic for rate limits
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          SUCCESS=false
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
+            if [ $RETRY_COUNT -gt 0 ]; then
+              # Use retry_after from previous response if available, otherwise exponential backoff
+              if [ -n "$RETRY_AFTER" ] && [ "$RETRY_AFTER" != "null" ]; then
+                BACKOFF=$RETRY_AFTER
+              else
+                # Exponential backoff with cap: 2, 4, 8 seconds max
+                BACKOFF=$((2 ** RETRY_COUNT))
+                if [ $BACKOFF -gt 8 ]; then
+                  BACKOFF=8
+                fi
+              fi
+              echo "⏳ Retry $RETRY_COUNT/$MAX_RETRIES after ${BACKOFF}s backoff..."
+              sleep $BACKOFF
+            fi
+            
+            RESPONSE=$(curl -s -w "\n%{http_code}" \
+              -X PUT \
+              -H "Authorization: Bot $BOT_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$COMMANDS" \
+              "$ENDPOINT")
+            
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              REGISTERED_COUNT=$(echo "$BODY" | jq '. | length')
+              echo "✅ Successfully registered $REGISTERED_COUNT commands"
+              
+              # Save response for evidence
+              mkdir -p /tmp/registration-evidence
+              echo "$BODY" | jq . > /tmp/registration-evidence/registered_commands.json
+              
+              SUCCESS=true
+            elif [ "$HTTP_CODE" = "429" ]; then
+              echo "⚠️  Rate limited (HTTP 429)"
+              RETRY_AFTER=$(echo "$BODY" | jq -r '.retry_after // 5')
+              echo "   Discord recommends retry after: ${RETRY_AFTER}s"
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            else
+              echo "❌ Registration failed (HTTP $HTTP_CODE)"
+              echo "Response: $BODY"
+              
+              # Save error for evidence
+              mkdir -p /tmp/registration-evidence
+              echo "$BODY" > /tmp/registration-evidence/error_response.json
+              
+              exit 1
+            fi
+          done
+          
+          if [ "$SUCCESS" = "false" ]; then
+            echo "❌ Failed after $MAX_RETRIES retries"
+            exit 1
+          fi
+          
+          # Output for summary
+          echo "registered_count=$REGISTERED_COUNT" >> $GITHUB_OUTPUT
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
       
-      - name: Upload validation evidence
+      - name: Generate summary
+        if: always()
+        env:
+          MODE: ${{ steps.resolve.outputs.mode }}
+          REGISTERED_COUNT: ${{ steps.register.outputs.registered_count }}
+          APP_ID: ${{ steps.resolve.outputs.app_id }}
+          GUILD_ID: ${{ steps.resolve.outputs.guild_id || steps.discover-guild.outputs.guild_id }}
+          BOT_NAME: ${{ steps.auth.outputs.bot_name }}
+        run: |
+          # Safe redaction for summary
+          REDACTED_APP_ID="***"
+          if [ ${#APP_ID} -gt 4 ]; then
+            REDACTED_APP_ID="***${APP_ID: -4}"
+          fi
+          
+          echo "## 🎮 Discord Slash Commands Registration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.register.outcome }}" = "success" ]; then
+            echo "### ✅ Registration Successful" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Bot:** $BOT_NAME" >> $GITHUB_STEP_SUMMARY
+            echo "**App ID:** $REDACTED_APP_ID" >> $GITHUB_STEP_SUMMARY
+            echo "**Mode:** $MODE" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$MODE" = "guild" ]; then
+              echo "**Guild ID:** $GUILD_ID" >> $GITHUB_STEP_SUMMARY
+              echo "**Visibility:** Commands are available **instantly** in the guild" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**Visibility:** Commands will propagate globally in **~1 hour**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "> ⏰ **Note:** Global commands have a propagation delay. For instant testing, use guild mode." >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Commands Registered:** $REGISTERED_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # List registered commands
+            if [ -f /tmp/registration-evidence/registered_commands.json ]; then
+              echo "**Registered Commands:**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              jq -r '.[] | "  • /\(.name) - \(.description)"' /tmp/registration-evidence/registered_commands.json >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$MODE" = "global" ]; then
+              echo "1. Wait ~1 hour for global propagation" >> $GITHUB_STEP_SUMMARY
+              echo "2. Open Discord and type \`/\` in any server with the bot" >> $GITHUB_STEP_SUMMARY
+              echo "3. Test commands like \`/agents\`, \`/status\`, \`/uptime-check\`" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "1. Open Discord server (Guild ID: $GUILD_ID)" >> $GITHUB_STEP_SUMMARY
+              echo "2. Type \`/\` in any channel" >> $GITHUB_STEP_SUMMARY
+              echo "3. Commands are available **immediately**" >> $GITHUB_STEP_SUMMARY
+              echo "4. Test with \`/agents\`, \`/status\`, \`/uptime-check\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ❌ Registration Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check the logs above for error details." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -f /tmp/registration-evidence/error_response.json ]; then
+              echo "**Error Response:**" >> $GITHUB_STEP_SUMMARY
+              echo '```json' >> $GITHUB_STEP_SUMMARY
+              cat /tmp/registration-evidence/error_response.json >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Troubleshooting" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **401/403 Error:** Bot token invalid or missing scopes" >> $GITHUB_STEP_SUMMARY
+            echo "  - Use invite URL: https://discord.com/api/oauth2/authorize?client_id=${APP_ID}&scope=bot%20applications.commands&permissions=0" >> $GITHUB_STEP_SUMMARY
+            echo "- **429 Rate Limit:** Too many requests, workflow will retry automatically" >> $GITHUB_STEP_SUMMARY
+            echo "- **Token/App Mismatch:** Verify bot token belongs to correct application" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Upload registration evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: slash-commands-registration-evidence-${{ github.run_number }}
-          path: orchestrator/scripts/validation_evidence/
+          name: registration-evidence-${{ github.run_number }}
+          path: /tmp/registration-evidence/
           retention-days: 30
-      
-      - name: Post summary
-        if: always()
-        run: |
-          cd orchestrator/scripts
-          
-          # Find the latest validation report
-          REPORT_FILE=$(ls -t validation_evidence/discord_commands_validation_*.md 2>/dev/null | head -1)
-          
-          if [ -n "$REPORT_FILE" ]; then
-            echo "## Slash Commands Registration Summary" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            cat "$REPORT_FILE" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No validation report found" >> $GITHUB_STEP_SUMMARY
-          fi
