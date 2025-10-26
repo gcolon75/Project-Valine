@@ -45,7 +45,9 @@ function Invoke-Discord {
       $code = $ex.Response.StatusCode.value__
       try { $body = (New-Object IO.StreamReader($ex.Response.GetResponseStream())).ReadToEnd() } catch {}
     }
-    Fail ("HTTP {0} :: {1}" -f ($code ? $code : "ERR"), ($body ? $body : $ex.Message))
+    $codeStr = if ($code) { $code } else { "ERR" }
+    $bodyStr = if ($body) { $body } else { $ex.Message }
+    Fail ("HTTP {0} :: {1}" -f $codeStr, $bodyStr)
   }
 }
 
