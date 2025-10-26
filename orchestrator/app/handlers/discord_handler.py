@@ -1568,13 +1568,32 @@ def handle_ux_update_command(interaction):
             })
         
         if result.get('needs_confirmation'):
-            # Return preview and ask for confirmation
+            # Return preview and ask for confirmation with Discord buttons
             conv_id = result.get('conversation_id')
             message = result['message']
             message += f'\n\n_Conversation ID: `{conv_id[:8]}...`_'
             
             return create_response(4, {
-                'content': message
+                'content': message,
+                'components': [
+                    {
+                        'type': 1,  # ACTION_ROW
+                        'components': [
+                            {
+                                'type': 2,  # BUTTON
+                                'style': 3,  # SUCCESS (green)
+                                'label': '✅ Confirm',
+                                'custom_id': f'ux_confirm_{conv_id}'
+                            },
+                            {
+                                'type': 2,  # BUTTON
+                                'style': 4,  # DANGER (red)
+                                'label': '❌ Cancel',
+                                'custom_id': f'ux_cancel_{conv_id}'
+                            }
+                        ]
+                    }
+                ]
             })
         
         # Should not reach here, but handle gracefully
@@ -1589,6 +1608,93 @@ def handle_ux_update_command(interaction):
         traceback.print_exc()
         return create_response(4, {
             'content': f'❌ Error: {str(e)}',
+            'flags': 64
+        })
+
+
+def handle_ux_button_interaction(interaction):
+    """Handle button interactions for UX update confirmations."""
+    try:
+        # Extract button custom_id
+        custom_id = interaction.get('data', {}).get('custom_id', '')
+        
+        # Parse custom_id: format is "ux_confirm_{conversation_id}" or "ux_cancel_{conversation_id}"
+        if not custom_id.startswith('ux_'):
+            return create_response(4, {
+                'content': '❌ Invalid button interaction',
+                'flags': 64
+            })
+        
+        parts = custom_id.split('_', 2)
+        if len(parts) != 3:
+            return create_response(4, {
+                'content': '❌ Invalid button format',
+                'flags': 64
+            })
+        
+        action = parts[1]  # 'confirm' or 'cancel'
+        conversation_id = parts[2]
+        
+        # Get user info
+        user = interaction.get('member', {}).get('user', {})
+        user_id = user.get('id', 'unknown')
+        username = user.get('username', user_id)
+        
+        # Initialize UX Agent
+        from agents.ux_agent import UXAgent
+        from services.github import GitHubService
+        
+        github_service = GitHubService()
+        ux_agent = UXAgent(
+            github_service=github_service,
+            repo=os.environ.get('GITHUB_REPOSITORY', 'gcolon75/Project-Valine')
+        )
+        
+        # Process based on action
+        if action == 'confirm':
+            # User confirmed, execute changes
+            result = ux_agent.confirm_and_execute(
+                conversation_id=conversation_id,
+                user_response='yes'
+            )
+            
+            if not result.get('success'):
+                return create_response(4, {
+                    'content': result.get('message', '❌ Failed to execute changes'),
+                    'flags': 64
+                })
+            
+            # Update the original message to show it was confirmed
+            return create_response(7, {  # UPDATE_MESSAGE
+                'content': result.get('message', '✅ Changes applied!'),
+                'components': []  # Remove buttons
+            })
+        
+        elif action == 'cancel':
+            # User cancelled
+            result = ux_agent.confirm_and_execute(
+                conversation_id=conversation_id,
+                user_response='no'
+            )
+            
+            # Update the original message to show it was cancelled
+            return create_response(7, {  # UPDATE_MESSAGE
+                'content': result.get('message', '🚫 Request cancelled'),
+                'components': []  # Remove buttons
+            })
+        
+        else:
+            return create_response(4, {
+                'content': f'❌ Unknown action: {action}',
+                'flags': 64
+            })
+    
+    except Exception as e:
+        print(f'Error in handle_ux_button_interaction: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        return create_response(4, {
+            'content': f'❌ Error processing button interaction: {str(e)}',
             'flags': 64
         })
 
@@ -1838,6 +1944,19 @@ def handler(event, context):
             else:
                 return create_response(4, {
                     'content': f'Unknown command: {command_name}',
+                    'flags': 64
+                })
+
+        # Handle MESSAGE_COMPONENT (button interactions)
+        if interaction_type == 3:
+            custom_id = interaction.get('data', {}).get('custom_id', '')
+            
+            # Route to appropriate handler based on custom_id prefix
+            if custom_id.startswith('ux_'):
+                return handle_ux_button_interaction(interaction)
+            else:
+                return create_response(4, {
+                    'content': 'Unknown button interaction',
                     'flags': 64
                 })
 
