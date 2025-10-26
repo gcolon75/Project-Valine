@@ -10,7 +10,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 **Easy mode activated!** Register Discord slash commands via GitHub Actions - no local scripts needed.
 
 **Quick Start: Trigger via GitHub UI**
-1. Go to [Register Discord Commands Workflow](.github/workflows/register-staging-slash-commands.yml)
+1. Navigate to Actions → "🎮 Register Discord Slash Commands" workflow
 2. Click "Run workflow"
 3. Enter your Discord App ID + Bot Token
 4. Choose mode: `global` (1h propagation) or `guild` (instant)

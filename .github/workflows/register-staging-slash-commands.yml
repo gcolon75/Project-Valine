@@ -79,10 +79,19 @@ jobs:
           echo "guild_id=$GUILD_ID" >> $GITHUB_OUTPUT
           echo "mode=$MODE" >> $GITHUB_OUTPUT
           
-          # Redacted logging
+          # Redacted logging (safe for short tokens)
+          REDACTED_APP_ID="***"
+          REDACTED_BOT_TOKEN="***"
+          if [ ${#APP_ID} -gt 4 ]; then
+            REDACTED_APP_ID="***${APP_ID: -4}"
+          fi
+          if [ ${#BOT_TOKEN} -gt 4 ]; then
+            REDACTED_BOT_TOKEN="***${BOT_TOKEN: -4}"
+          fi
+          
           echo "✅ Configuration resolved:"
-          echo "  App ID: ***${APP_ID: -4}"
-          echo "  Bot Token: ***${BOT_TOKEN: -4}"
+          echo "  App ID: $REDACTED_APP_ID"
+          echo "  Bot Token: $REDACTED_BOT_TOKEN"
           echo "  Guild ID: ${GUILD_ID:-<will discover>}"
           echo "  Mode: $MODE"
       
@@ -220,7 +229,16 @@ jobs:
           
           while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
             if [ $RETRY_COUNT -gt 0 ]; then
-              BACKOFF=$((2 ** RETRY_COUNT))
+              # Use retry_after from previous response if available, otherwise exponential backoff
+              if [ -n "$RETRY_AFTER" ] && [ "$RETRY_AFTER" != "null" ]; then
+                BACKOFF=$RETRY_AFTER
+              else
+                # Exponential backoff with cap: 2, 4, 8 seconds max
+                BACKOFF=$((2 ** RETRY_COUNT))
+                if [ $BACKOFF -gt 8 ]; then
+                  BACKOFF=8
+                fi
+              fi
               echo "⏳ Retry $RETRY_COUNT/$MAX_RETRIES after ${BACKOFF}s backoff..."
               sleep $BACKOFF
             fi
@@ -247,7 +265,7 @@ jobs:
             elif [ "$HTTP_CODE" = "429" ]; then
               echo "⚠️  Rate limited (HTTP 429)"
               RETRY_AFTER=$(echo "$BODY" | jq -r '.retry_after // 5')
-              echo "   Discord says retry after: ${RETRY_AFTER}s"
+              echo "   Discord recommends retry after: ${RETRY_AFTER}s"
               RETRY_COUNT=$((RETRY_COUNT + 1))
             else
               echo "❌ Registration failed (HTTP $HTTP_CODE)"
@@ -279,6 +297,12 @@ jobs:
           GUILD_ID: ${{ steps.resolve.outputs.guild_id || steps.discover-guild.outputs.guild_id }}
           BOT_NAME: ${{ steps.auth.outputs.bot_name }}
         run: |
+          # Safe redaction for summary
+          REDACTED_APP_ID="***"
+          if [ ${#APP_ID} -gt 4 ]; then
+            REDACTED_APP_ID="***${APP_ID: -4}"
+          fi
+          
           echo "## 🎮 Discord Slash Commands Registration" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
@@ -286,7 +310,7 @@ jobs:
             echo "### ✅ Registration Successful" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Bot:** $BOT_NAME" >> $GITHUB_STEP_SUMMARY
-            echo "**App ID:** ***${APP_ID: -4}" >> $GITHUB_STEP_SUMMARY
+            echo "**App ID:** $REDACTED_APP_ID" >> $GITHUB_STEP_SUMMARY
             echo "**Mode:** $MODE" >> $GITHUB_STEP_SUMMARY
             
             if [ "$MODE" = "guild" ]; then
