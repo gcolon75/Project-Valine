@@ -171,8 +171,9 @@ $prompt = [PSCustomObject]@{
   }
 }
 
-# Convert to JSON and write to file
+# Convert to JSON and write to file (UTF-8 without BOM for better compatibility)
 $outPath = Join-Path $OutDir "rin_full_review_prompt.json"
-$prompt | ConvertTo-Json -Depth 8 | Out-File -LiteralPath $outPath -Encoding utf8
+$jsonContent = $prompt | ConvertTo-Json -Depth 8
+[System.IO.File]::WriteAllText($outPath, $jsonContent, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host ("Agent prompt written to: {0}" -f $outPath)
