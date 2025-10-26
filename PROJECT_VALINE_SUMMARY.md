@@ -533,6 +533,13 @@ The orchestrator includes specialized agents with distinct personalities:
 - Feature flag management
 - User authorization checks
 
+**Multi-Turn Confirmation Flows:**
+- **Technical Limitation**: Plain text replies (e.g., "yes") in Discord **do NOT trigger follow-up command logic** after slash commands
+- **Solution Pattern 1 (Preferred)**: Use Discord buttons/components for interactive confirmation
+- **Solution Pattern 2 (Fallback)**: Require explicit `conversation_id` and `confirm:yes` parameters in re-run command
+- **State Management**: Conversation state tracked in DynamoDB with TTL for automatic cleanup
+- **See**: [Discord Confirmation Flow Agent Prompt](orchestrator/agent-prompts/discord_confirmation_flow_agent.md) for reusable implementation patterns
+
 ### Security Features
 
 **Secret Protection:**
@@ -552,6 +559,43 @@ The orchestrator includes specialized agents with distinct personalities:
 - Trace IDs for correlation
 - Full metadata capture
 - Forensic investigation support
+
+### Discord Interaction Model & Multi-Turn Workflows
+
+**Critical Technical Limitation:**
+
+Discord slash commands have a fundamental constraint that affects bot design:
+
+> **Plain text responses (e.g., typing "yes") do NOT trigger follow-up command logic.**
+
+When a Discord bot responds to a slash command and asks for confirmation, a user typing "yes" in chat will **not** be routed back to the bot as a structured interaction. This is a core limitation of Discord's interaction model.
+
+**Impact on Bot UX Design:**
+
+Commands requiring multi-turn interactions (like the `/ux-update` command that needs confirmation) must use one of these patterns:
+
+1. **Discord Buttons/Components (Recommended)**
+   - Use Discord's native button UI for yes/no confirmations
+   - Provides familiar, intuitive UX
+   - Handles confirmation in single interaction
+   - Requires button interaction handling in bot code
+
+2. **Explicit Confirmation Parameters (Fallback)**
+   - User must re-run the command with `conversation_id:<id>` and `confirm:yes` parameters
+   - Example: `/ux-update section:header text:"Title" conversation_id:abc123 confirm:yes`
+   - Works without additional Discord bot setup
+   - Less user-friendly but reliable fallback
+
+**State Management:**
+- Conversation state tracked in DynamoDB with TTL (typically 1 hour)
+- Validates conversation ownership before execution
+- Handles expired conversations gracefully
+- Provides clear error messages with examples
+
+**Documentation:**
+- Full implementation patterns: [Discord Confirmation Flow Agent Prompt](orchestrator/agent-prompts/discord_confirmation_flow_agent.md)
+- This reusable prompt helps future bot agents handle confirmation flows correctly
+- Includes code examples, security considerations, and testing checklists
 
 ---
 
