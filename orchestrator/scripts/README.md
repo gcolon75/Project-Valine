@@ -101,6 +101,54 @@ STAGING_DISCORD_GUILD_ID="..." \
 
 **Same environment variable precedence as PowerShell script.**
 
+### AI Agent Prompt Generator (PowerShell)
+
+**Script:** `rin_full_review_agent_prompt.ps1`
+
+**Platform:** Windows PowerShell 5.1+
+
+**Purpose:** Generate a comprehensive AI agent prompt to review Discord integration work and confirm the path to getting UX agent commands (/ux-update) registered and working for Rin (staging).
+
+**Usage:**
+```powershell
+# Generate prompt with default values
+.\orchestrator\scripts\rin_full_review_agent_prompt.ps1
+
+# Custom output directory
+.\orchestrator\scripts\rin_full_review_agent_prompt.ps1 -OutDir ".\.custom_agent"
+
+# Custom repository
+.\orchestrator\scripts\rin_full_review_agent_prompt.ps1 -Repo "owner/repo"
+```
+
+**Parameters:**
+- `Repo` - Repository identifier (default: "gcolon75/Project-Valine")
+- `OutDir` - Output directory (default: ".\.agent")
+- `RinAppId` - Rin Application ID (default: "1428568840958251109")
+- `StagingGuildId` - Staging Guild ID (default: "1407810581532250233")
+- `CommonlyMistakenChannelId` - Channel ID to not use as guild (default: "1428102811832553554")
+
+**Output:**
+- Generates `.agent/rin_full_review_prompt.json` with a structured AI agent prompt
+- The prompt includes context, mission, objectives, and acceptance criteria
+- Ready for use with AI agents to perform comprehensive Discord integration review
+
+**Features:**
+- ✅ PowerShell 5 compatible (no ternary operators)
+- ✅ ASCII-only output (no emojis in script code)
+- ✅ Staging-focused (emphasizes guild commands, not global)
+- ✅ Comprehensive review scope covering scripts, agents, and docs
+- ✅ Includes helpful constants and cross-check values
+
+**Review Scope:**
+The generated prompt covers:
+- Environment variable consistency checks
+- Registration correctness (guild vs global endpoints)
+- Windows PowerShell 5 compatibility validation
+- Command schema validation for /ux-update and other commands
+- Token handling verification (raw vs 'Bot ' prefix)
+- Recent PR alignment checks
+
 ### Verification Steps
 
 After running either script:

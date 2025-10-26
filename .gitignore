@@ -36,3 +36,6 @@ operational_readiness_config.json
 lighthouse-reports/
 # Discord command registration evidence
 discord_cmd_evidence/
+
+# AI agent prompts (generated)
+.agent/
