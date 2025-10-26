@@ -6,23 +6,49 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ## 🔥 Current Status
 
-### Rin Discord Bot - GLOBAL Registration Active 🌐
-**Rin** orchestrator bot now uses the **simplest registration flow**: GLOBAL commands with just `APP_ID + BOT_TOKEN`.
+### Discord Command Registration - GitHub Actions Workflow 🎮
+**Easy mode activated!** Register Discord slash commands via GitHub Actions - no local scripts needed.
 
-**Quick Deploy:**
-```powershell
-$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
-$env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
-.\orchestrator\scripts\min_register_global.ps1
+**Quick Start: Trigger via GitHub UI**
+1. Go to [Register Discord Commands Workflow](.github/workflows/register-staging-slash-commands.yml)
+2. Click "Run workflow"
+3. Enter your Discord App ID + Bot Token
+4. Choose mode: `global` (1h propagation) or `guild` (instant)
+5. Watch commands register! ✅
+
+**Trigger via GitHub CLI:**
+```bash
+# Global registration (commands appear in ~1 hour)
+gh workflow run register-staging-slash-commands.yml \
+  -f app_id="YOUR_APP_ID" \
+  -f bot_token="YOUR_BOT_TOKEN" \
+  -f mode="global"
+
+# Guild registration (commands appear instantly)
+gh workflow run register-staging-slash-commands.yml \
+  -f app_id="YOUR_APP_ID" \
+  -f bot_token="YOUR_BOT_TOKEN" \
+  -f guild_id="YOUR_GUILD_ID" \
+  -f mode="guild"
 ```
 
-**⏰ Note:** Global commands take up to ~1 hour to appear in Discord (tradeoff for simplicity).
+**Trigger via curl:**
+```bash
+curl -X POST \
+  -H "Authorization: token YOUR_GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/register-staging-slash-commands.yml/dispatches \
+  -d '{"ref":"main","inputs":{"app_id":"YOUR_APP_ID","bot_token":"YOUR_BOT_TOKEN","mode":"global"}}'
+```
 
-**Documentation:**
-- 📖 [Project Summary](docs/PROJECT_SUMMARY.md) - What Rin is and current setup
-- 🚀 [Minimal Flow Guide](docs/discord_min_flow.md) - Full setup instructions
-- 🔧 [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues & fixes
-- 📋 [Next Steps](docs/NEXT_STEPS.md) - Future guild-based instant registration
+**What it does:**
+- ✅ Validates bot token matches app ID
+- ✅ Registers all 19 Discord slash commands
+- ✅ Handles rate limits with automatic retry
+- ✅ Shows clear error messages with invite URLs on missing permissions
+- ✅ Generates summary with command counts and next steps
+
+**No local scripts required!** Everything runs in CI.
 
 ---
 
