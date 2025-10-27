@@ -1,9 +1,17 @@
 <#
 .SYNOPSIS
-    Deploy PR #125 - Natural Language UX Agent Enhancement
+    Deploy Natural Language UX Agent to AWS Lambda
 .DESCRIPTION
-    Safe deployment script for the agents-as-employees workflow with feature-flagged LLM parsing.
+    Deployment script for the Natural Language UX Agent with feature-flagged LLM parsing.
     Defaults to LLM OFF for safety.
+    
+    USAGE EXAMPLE:
+        cd orchestrator
+        .\deploy-natural-ux-agent.ps1 -Stage dev
+        
+    Or with LLM enabled:
+        .\deploy-natural-ux-agent.ps1 -Stage dev -EnableLLM $true
+        
 .PARAMETER Stage
     Deployment stage: dev or prod (default: dev)
 .PARAMETER EnableLLM
@@ -27,12 +35,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # Colors for output
-function Write-Success { Write-Host "✅ $args" -ForegroundColor Green }
-function Write-Info { Write-Host "ℹ️  $args" -ForegroundColor Cyan }
-function Write-Warning { Write-Host "⚠️  $args" -ForegroundColor Yellow }
-function Write-Failure { Write-Host "❌ $args" -ForegroundColor Red }
+function Write-Success { Write-Host "[SUCCESS] $args" -ForegroundColor Green }
+function Write-Info { Write-Host "[INFO] $args" -ForegroundColor Cyan }
+function Write-Warning { Write-Host "[WARNING] $args" -ForegroundColor Yellow }
+function Write-Failure { Write-Host "[ERROR] $args" -ForegroundColor Red }
 
-Write-Info "=== PR #125 Deployment Script ==="
+Write-Info "=== Natural Language UX Agent Deployment ==="
 Write-Info "Stage: $Stage"
 Write-Info "Stack: $StackName"
 Write-Info "LLM Parsing: $(if($EnableLLM){'ENABLED'}else{'DISABLED (safe)'})"
@@ -160,7 +168,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Success "Deployment completed successfully! 🎉"
+Write-Success "Deployment completed successfully!"
 Write-Host ""
 
 # Post-deployment verification
@@ -207,12 +215,12 @@ if (-not $EnableLLM) {
     Write-Info "=== Enable Natural Language (Optional) ==="
     Write-Host "To enable LLM natural language parsing later:" -ForegroundColor Yellow
     Write-Host "  1. Set OPENAI_API_KEY environment variable" -ForegroundColor Cyan
-    Write-Host "  2. Run: .\deploy-pr125.ps1 -Stage $Stage -EnableLLM `$true" -ForegroundColor Cyan
+    Write-Host "  2. Run: .\deploy-natural-ux-agent.ps1 -Stage $Stage -EnableLLM `$true" -ForegroundColor Cyan
     Write-Host ""
 }
 
 Write-Success "Deployment completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') UTC"
-Write-Info "PR #125 features are now live! 🚀"
+Write-Info "Natural Language UX Agent features are now live!"
 Write-Host ""
 
 # Optional: Open CloudWatch logs
