@@ -1,97 +1,8 @@
-## 🚨 Current Status (2025-10-25 21:37 UTC)
-
-### Discord Integration Progress (Rin, Staging) ✨
-
-**What's done:**
-- ✅ **Smoke tests fixed on Windows** (UTF-8 writes/reads, assertions updated) — all 534 tests passing (PR #111, #112)
-- ✅ **Command registration tooling leveled up**: validator + agent + backoff + evidence
-- ✅ **/ux-update spec aligned** between handler and registration (PR #109)
-- ✅ **Rin bot is in the staging server** (no more "Missing Access" speed bumps)
-- ✅ **Safe upsert tooling shipped**: New PowerShell script for Windows users (`rin_register_commands.ps1`)
-
-**What's shipping now:**
-- ⚙️ **Safe upsert for guild slash commands** (Rin only): no mass wipe, rate-limit aware
-- 🧩 **/ux-update rolled into the registered set** with flexible options (command, description, conversation_id, confirm)
-- 🪪 **Standardized envs for staging** (STAGING_DISCORD_*), with shims for older names
-- 🪓 **Windows-friendly PS script** for instant registration without waiting on global propagation
-
-**Quick verify (staging):**
-
-**PowerShell (Windows):**
-```powershell
-$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
-$env:STAGING_DISCORD_BOT_TOKEN = "<your_token>"
-$env:STAGING_DISCORD_GUILD_ID = "1428102811832553554"
-.\orchestrator\scripts\rin_register_commands.ps1 -CheckOnly
-```
-
-**In Discord:**
-- Type `/` and confirm you see: `/ux-update`, `/debug-last`, `/diagnose`, `/status`, `/triage`
-- Run `/ux-update description:"Make the navbar blue"` and confirm the handler path lights up
-
-**Next up:**
-- 🧪 Capture evidence JSON after upsert runs and stash under `./discord_cmd_evidence/`
-- 🔁 Keep env names consistent across scripts (staging-first UX)
-- 📒 Iterate docs with any final screenshots/evidence after first live run
-
-**Vibes:**
-We're past the "invite the bot" mini-boss and into the registry dungeon. Rin has the keys; no full-wipe spells, only surgical upserts. GG.
-
----
-
-## 🆚 Previous Status (2025-10-25 01:21 UTC) - Resolved
-
-### Active Debugging Session - Bot Duplicate Commands Issue (RESOLVED)
-
-**What was happening:**
-- Rin bot was deployed and partially working
-- `/triage` command fixed via PR #102 and PR #103 (merged ~1:11 UTC)
-- `.status` command worked BUT appeared twice in Discord (duplicate registration issue)
-- Root cause: Old "Amadeus bot" application still had commands registered
-- Some commands giving "Application did not respond" (3-second timeout issue)
-
-**Resolution:**
-- Created safe upsert tooling to avoid duplicate registrations
-- New PowerShell script handles staging registration cleanly
-- Updated documentation with clear verification steps
-
----
-
-## 🆕 Project Valine Status (2025-10-24)
-
-- 🎮 **Bot Unifier Architecture Implemented!** Rin is now the unified orchestrator bot
-- 🎭 **Agent Personalities Added:** Amadeus 🚀, BuildAgent 🏗️, StatusAgent 📊, and more
-- ✅ **20 tests passing** for AgentMessenger implementation
-- 📚 **Comprehensive documentation:** BOT_UNIFIER_GUIDE.md created
-- 🔧 **Commands updated** with agent-specific messaging styles
-- 🚀 **Single bot token** manages all Discord interactions
-
-**What's new:**
-- All Discord commands now use Rin bot with specialized agent personalities
-- Different agents (Amadeus, BuildAgent, etc.) represented through custom embeds
-- Simplified token management - only one DISCORD_BOT_TOKEN needed
-- Enhanced user experience with distinct visual identities per agent
-
-**Previous updates:**
-- 🤖 **SummaryAgent deployed!** New bot to auto-generate status updates
-- 🎮 **New slash command:** /update-summary now available in Discord
-- ✅ **15 tests passing** for SummaryAgent implementation
-- 🛠️ **Command registration scripts updated** for staging and production
-- 📚 **Documentation complete:** SUMMARY_AGENT_GUIDE.md created
-- 🚀 **Ready for testing:** All code committed, awaiting Discord registration
-
-**Next quests:**
-- Test unified bot architecture in Discord
-- Monitor agent personality effectiveness
-- Continue development and testing
-- Address any issues that arise
-
----
 # Project Valine - Comprehensive Summary
 
-**Generated:** October 23, 2025  
 **Repository:** gcolon75/Project-Valine  
-**Status:** Active Development - Phase 6 Complete
+**Status:** ✅ Active Development - Phase 6 Complete  
+**Last Updated:** October 2025
 
 ---
 
@@ -226,23 +137,11 @@ Project Valine uses **Rin**, a unified Discord bot that handles all interactions
 - Consistent user experience with specialized contexts
 - Visual differentiation through emojis, colors, and embeds
 
-**Current Setup (Updated 2025-10-25):**
+**Current Setup:**
 - **Rin Bot**: Primary Discord bot handling all commands
-- **Bot Token**: Uses non-staging tokens (previously labeled "Amadeus")
-- **Lambda Function**: `ProjectValineDiscordHandler` deployed via GitHub Actions
-- **Command Registration**: `orchestrator/register_discord_commands.sh`
-- **Application ID**: Stored in GitHub Secrets as `DISCORD_APPLICATION_ID`
-
-**Bot Personas (UI/UX representations, same bot):**
-- Amadeus: Build/deploy operations
-- Status Agent: Workflow status reports
-- Verify Agent: Deployment verification
-- Diagnose Agent: Infrastructure diagnostics
-- Triage Agent: Failure analysis and auto-fix
-
-**Deprecated:**
-- Old staging bot (separate application) - should be removed
-- Old Amadeus bot application - commands need cleanup (causing duplicate command issue)
+- **Lambda Function**: Deployed via GitHub Actions (`.github/workflows/deploy-orchestrator.yml`)
+- **Command Registration**: Use `orchestrator/scripts/register_staging_slash_commands.sh`
+- **Configuration**: Stored in GitHub Secrets and AWS SSM Parameter Store
 
 See [orchestrator/BOT_UNIFIER_GUIDE.md](orchestrator/BOT_UNIFIER_GUIDE.md) for complete details.
 
@@ -643,99 +542,39 @@ Commands requiring multi-turn interactions (like the `/ux-update` command that n
 
 ---
 
-## What We've Been Doing Recently
+## Recent Developments
 
-### Recent Accomplishments
+### Key Accomplishments
 
-### 2025-10-25: Discord Bot Duplicate Commands & Triage Fix
+1. **Unified Discord Bot Architecture**
+   - Implemented "Rin" bot with specialized agent personalities
+   - Single bot token manages all Discord interactions
+   - DynamoDB persistence with TTL auto-cleanup
 
-**PRs Merged:**
-- **#102**: Fix Discord bot workflow dispatch parameter mismatch (added specialized triage methods)
-- **#103**: Fix /triage Discord command parameter mismatch (attempted same fix, superseded by #102)
+2. **Automated Triage System**
+   - `/triage` command analyzes CI/CD failures
+   - Integrates with Phase 5 Triage Agent workflow
+   - Comprehensive test coverage
 
-**Issue:** Duplicate slash commands appearing in Discord (specifically `/status`)
-
-**Cause:** Commands registered under multiple bot applications (old Amadeus + Rin)
-
-**Fix in progress:** Agent cleaning up old registrations
-
-**Technical Details:**
-- **Before**: `trigger_workflow_dispatch()` was being called with `ref='main'` as kwarg (not in signature)
-- **After**: Created `trigger_phase5_triage()` and `trigger_issue_triage()` that handle ref internally
-- Both PRs #102 and #103 tried to fix this but with slightly different approaches
-- PR #102's approach was used (removed workflow_id parameter, hardcoded it)
-
-**Key Changes in PR #102:**
-```python
-# New methods in github_actions_dispatcher.py:
-def trigger_phase5_triage(self, failure_ref, allow_auto_fix='false', dry_run='false', verbose='true'):
-    """Trigger Phase 5 Triage Agent workflow via workflow_dispatch."""
-    url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/phase5-triage-agent.yml/dispatches'
-    payload = {
-        'ref': 'main',  # Handled internally, not passed as parameter
-        'inputs': {...}
-    }
-
-def trigger_issue_triage(self, requester, trace_id=''):
-    """Trigger Issue Triage Agent workflow via workflow_dispatch."""
-    url = f'{self.base_url}/repos/{owner}/{repo}/actions/workflows/issue-triage-agent.yml/dispatches'
-    payload = {
-        'ref': 'main',  # Handled internally
-        'inputs': {...}
-    }
-```
-
-**Impact:** `/triage` command now works correctly, but revealed duplicate command registration issue
-
-1. **Discord Slash Commands Fix** (Phase 5)
-   - Created validation scripts for command registration
-   - Implemented one-command fix script
-   - Documented troubleshooting procedures
-   - Added feature flags for debug commands
-
-2. **Triage Command Integration** (Phase 6)
-   - Built `/triage` command handler
-   - Integrated with Phase 5 Triage Agent
-   - Added comprehensive tests (5 new tests, all passing)
-   - Created usage documentation
-
-3. **Observability Enhancements**
-   - Structured logging system
-   - Distributed tracing with trace IDs
+3. **Enhanced Observability**
+   - Structured logging with trace IDs
+   - Distributed tracing across services
    - Alert management system
    - Debug commands for troubleshooting
 
-4. **Security Improvements**
-   - Automatic secret redaction
+4. **Security & Compliance**
+   - Automatic secret redaction in logs
    - Admin authorization framework
    - Audit trail for sensitive operations
-   - Feature flag system
+   - Feature flag system for controlled rollouts
 
-5. **Documentation**
-   - Created 50+ documentation files
-   - Quick start guides
-   - Troubleshooting references
-   - API documentation
-   - Runbooks for operations
+5. **Deployment Automation**
+   - GitHub Actions workflows for client and orchestrator
+   - Automated health checks post-deployment
+   - Discord notifications for deployment status
+   - Correlation tracking across services
 
-### Known Issues (2025-10-25)
-
-- **Discord Command Duplicates**: Multiple bot applications have same commands registered. Need to clean up old "Amadeus bot" application.
-- **Lambda Timeouts**: Some commands timing out with "Application did not respond" - investigating cold start performance.
-
-### Recent Challenges Solved
-
-**Problem**: Discord slash commands not appearing in staging  
-**Solution**: Created automated validation and registration scripts using guild commands for instant visibility
-
-**Problem**: No visibility into orchestrator execution  
-**Solution**: Implemented structured logging, tracing, and `/debug-last` command
-
-**Problem**: Manual triage of CI/CD failures time-consuming  
-**Solution**: Built `/triage` command with AI-powered failure analysis
-
-**Problem**: Too many manual deployment steps  
-**Solution**: Automated via Discord commands with correlation tracking
+For detailed changelog, see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -749,18 +588,11 @@ def trigger_issue_triage(self, requester, trace_id=''):
 **Runtime**: Python 3.11  
 **Handler**: `app.handlers.discord_handler.handler`
 
-**Environment Variables:**
-- `DISCORD_PUBLIC_KEY` - For signature verification
-- `DISCORD_BOT_TOKEN` - For API calls
-- `GITHUB_TOKEN` - For GitHub Actions dispatch
-- `FRONTEND_BASE_URL` - For deployment verification
-- `VITE_API_BASE` - For API health checks
-- `GITHUB_REPO` - Target repository (gcolon75/Project-Valine)
-- `RUN_TABLE_NAME` - DynamoDB table name
-- `STAGE` - Deployment stage (dev/prod)
-
-**Permissions:**
-- DynamoDB read/write (run state table)
+**Key Environment Variables:**
+- `DISCORD_PUBLIC_KEY` - Signature verification
+- `DISCORD_BOT_TOKEN` - API calls
+- `GITHUB_TOKEN` - GitHub Actions dispatch
+- `RUN_TABLE_NAME` - DynamoDB table
 
 **Trigger**: API Gateway POST `/discord`
 
@@ -770,85 +602,89 @@ def trigger_issue_triage(self, requester, trace_id=''):
 **Runtime**: Python 3.11  
 **Handler**: `app.handlers.github_handler.handler`
 
-**Environment Variables:**
-- `GITHUB_WEBHOOK_SECRET` - For signature verification
-- `GITHUB_TOKEN` - For GitHub API calls
-- `DISCORD_BOT_TOKEN` - For Discord notifications
-- `RUN_TABLE_NAME` - DynamoDB table name
-
-**Permissions:**
-- DynamoDB read/write (run state table)
-
 **Trigger**: API Gateway POST `/github/webhook`
 
 #### 3. Serverless API Lambda
 **Name**: `pv-api-{stage}-api`  
 **Purpose**: Backend API endpoints  
-**Runtime**: Node.js 20.x  
-**Handler**: `handler.router`
+**Runtime**: Node.js 20.x
 
-**Endpoints:**
-- Health check
-- Access request management
-- Hello world test
+**Endpoints**: Health check, access request management
 
 #### 4. Presign Lambda
-**Name**: Defined in infra/serverless.yml  
 **Purpose**: Generate presigned S3 URLs for file uploads  
 **Runtime**: Node.js 20.x
 
-### Lambda Functions to Create/Configure
+### Deployment
 
-Based on the problem statement, here's what needs to be set up:
+See [orchestrator/README.md](orchestrator/README.md) for deployment instructions.
 
-✅ **Discord Handler** - Already defined in `orchestrator/template.yaml`  
-✅ **GitHub Webhook Handler** - Already defined in `orchestrator/template.yaml`  
-⏳ **Deployment** - Need to run `sam deploy` in orchestrator directory  
-⏳ **Configuration** - Need to set up `samconfig.toml` with secrets  
-⏳ **Testing** - Need to validate endpoints and commands
-
-### Deployment Commands
-
-**To deploy the orchestrator Lambda functions:**
-
+**Quick Start:**
 ```bash
 cd orchestrator
-
-# First time setup - create samconfig.toml
 cp samconfig.toml.example samconfig.toml
-# Edit samconfig.toml with your credentials
-
-# Build the Lambda functions
+# Edit samconfig.toml with credentials
 sam build
-
-# Deploy (guided mode for first deployment)
 sam deploy --guided
-
-# Subsequent deployments
-sam deploy
 ```
-
-**Outputs from deployment:**
-- DiscordWebhookUrl - Use for Discord Interactions Endpoint
-- GitHubWebhookUrl - Use for GitHub webhook
-- RunStateTableName - DynamoDB table name
 
 ---
 
 ## Next Steps
 
-### Immediate Actions (You Need to Do)
+### Immediate Priorities
 
-1. **Configure Orchestrator Secrets**
-   ```bash
-   cd orchestrator
-   cp samconfig.toml.example samconfig.toml
-   # Edit with your Discord and GitHub credentials
-   ```
+1. **Complete Discord Bot Setup**
+   - Configure Interactions Endpoint in Discord Developer Portal
+   - Test all slash commands
+   - Verify webhook integration
 
-2. **Deploy Lambda Functions**
-   ```bash
-   cd orchestrator
+2. **Production Deployment**
+   - Deploy orchestrator to production stage
+   - Register global Discord commands
+   - Configure production webhooks
+
+3. **User Onboarding**
+   - Create user documentation
+   - Build authentication flow
+   - Set up landing page
+
+### Short-Term Goals
+
+1. **Feature Development**
+   - Complete script management UI
+   - Build audition submission flow
+   - Implement real-time messaging
+   - Add search functionality
+
+2. **Performance Optimization**
+   - Optimize Lambda cold starts
+   - Implement caching strategy
+   - CDN optimization
+
+3. **Monitoring & Observability**
+   - CloudWatch dashboards
+   - Custom metrics and alarms
+   - Log aggregation
+
+### Long-Term Vision
+
+1. **Platform Expansion**
+   - Mobile app (React Native)
+   - Desktop app (Electron)
+   - Third-party integrations
+
+2. **AI Capabilities**
+   - Content recommendations
+   - Smart matching (actors to roles)
+   - Voice analysis tools
+
+3. **Monetization**
+   - Premium features
+   - Subscription tiers
+   - Commission on bookings
+
+---
    sam build
    sam deploy --guided
    ```
@@ -1312,365 +1148,4 @@ The UX Agent follows a **direct execution pattern** (not workflow-based like Tri
      -d '{
        "name": "ux-update",
        "description": "Interactive UX/UI updates with confirmation",
-       "options": [{
-         "name": "request",
-         "description": "Your UX update request (e.g., section:header text:\"New Title\")",
-         "type": 3,
-         "required": true
-       }]
-     }'
-   ```
-2. Also add to `register_discord_commands_staging.sh`
-3. Re-run registration script to deploy
-
-**Phase 2: GitHub Integration** (Estimated: 2 hours)
-1. Implement `_create_draft_pr()` to actually create PRs:
-   - Use `github_service.create_branch()`
-   - Use `github_service.create_or_update_file()` for changes
-   - Use `github_service.create_pull_request(draft=True)`
-2. Implement file reading to get current content
-3. Apply regex replacements to actual file content
-4. Handle errors (file not found, regex no match, etc.)
-
-**Phase 3: Persistent Storage** (Estimated: 1 hour)
-1. Move conversation state from in-memory dict to DynamoDB
-2. Add TTL for auto-cleanup (e.g., 1 hour)
-3. Update `start_conversation()` and `confirm_and_execute()` to use DynamoDB
-
-**Phase 4: Testing & Polish** (Estimated: 1 hour)
-1. Test with real React component files
-2. Handle edge cases (malformed commands, missing sections)
-3. Add unit tests for UXAgent
-4. Update documentation with examples
-
-**Total Estimated Effort:** ~4-5 hours to full production-ready
-
-### Estimated Complexity
-**Medium** - Core logic exists, needs integration work
-
-**Why:**
-- ✅ Agent code is complete and well-structured
-- ✅ Discord handler integration exists
-- ❌ Needs GitHub PR creation wired up
-- ❌ Needs persistent storage for conversations
-- ❌ Needs Discord command registration
-
-### Blockers
-**None** - All dependencies are in place:
-- GitHub service available
-- Discord handler ready
-- No new libraries needed
-- Files to edit exist in repository
-
-### Recommended Approach
-
-**Option 1: Quick MVP (Register command only)** - 30 minutes
-- Just register `/ux-update` in Discord
-- Test the interactive flow (will get mock PR)
-- Validate conversation UX before building PR integration
-
-**Option 2: Full Implementation** - 4-5 hours
-- Register Discord command
-- Wire up GitHub PR creation
-- Add DynamoDB conversation storage
-- Full testing
-
-**Option 3: Hybrid (Recommended)** - 2 hours
-- Register Discord command
-- Implement real PR creation
-- Keep in-memory conversation state (document as known limitation)
-- Add TODO comments for DynamoDB migration
-
-**Recommendation:** Start with Option 1 to test UX, then do Option 3 if user likes it.
-
----
-
-## Discord Bot Cleanup Plan (2025-10-25)
-
-### Problem
-Two bot applications exist with same commands registered:
-- **Rin Bot** (current, active) - The unified bot using non-staging tokens
-- **Old Amadeus Bot** (deprecated) - Previous separate application
-
-### Solution
-Delete all commands from old Amadeus bot application.
-
-### How to Identify the Old Bot
-
-**Check Discord Developer Portal:**
-1. Visit: https://discord.com/developers/applications
-2. Look for multiple applications
-3. The **old** one is likely:
-   - Named "Amadeus" or "Project Valine Amadeus"
-   - Has fewer OAuth2 redirects configured
-   - May have older creation date
-4. The **current** one (Rin) is:
-   - Named "Rin" or "Project Valine"
-   - Has the Application ID matching `DISCORD_APPLICATION_ID` in GitHub Secrets
-   - Should be the one with the newest updates
-
-**Check GitHub Secrets:**
-```
-DISCORD_APPLICATION_ID → Current Rin bot
-STAGING_DISCORD_APPLICATION_ID → Staging bot (different)
-```
-
-Any other Application ID found in Discord Developer Portal is likely the old bot.
-
-### Commands to Run (MANUAL - don't execute automatically)
-
-**Step 1: List commands from old bot**
-```bash
-# Replace OLD_APP_ID and OLD_BOT_TOKEN with values from old Amadeus bot
-curl -X GET "https://discord.com/api/v10/applications/OLD_APP_ID/commands" \
-  -H "Authorization: Bot OLD_BOT_TOKEN"
-```
-
-**Step 2: For each command ID returned, delete:**
-```bash
-# For EACH command returned from Step 1
-curl -X DELETE "https://discord.com/api/v10/applications/OLD_APP_ID/commands/COMMAND_ID" \
-  -H "Authorization: Bot OLD_BOT_TOKEN"
-```
-
-**Alternative: Delete entire old application via Discord Developer Portal**
-1. Navigate to: https://discord.com/developers/applications
-2. Select old Amadeus bot application
-3. Go to "General Information"
-4. Scroll to bottom → "Delete Application"
-5. Confirm deletion
-
-### Files to Check
-
-**Environment configuration:**
-- `orchestrator/.env.example` - Shows what env vars are used (no Application IDs stored here)
-- `orchestrator/template.yaml` - SAM template references `DISCORD_PUBLIC_KEY` parameter
-
-**GitHub Secrets to verify:**
-- `DISCORD_APPLICATION_ID` - Current Rin bot Application ID
-- `DISCORD_BOT_TOKEN` - Current Rin bot token
-- `DISCORD_PUBLIC_KEY` - Current Rin bot public key
-- `STAGING_DISCORD_*` variants - For staging environment (separate bot)
-
-**No code changes needed** - This is purely a Discord Developer Portal cleanup.
-
-### Post-Cleanup Verification
-
-1. Run `/status` in Discord - should only show **ONCE**
-2. Test other commands - should work without duplicates
-3. Check Discord Developer Portal - only Rin bot should exist (plus staging if used)
-4. Verify no "Application did not respond" errors (may need Lambda timeout investigation)
-
-### Risk Assessment
-**Low risk** - Only deleting unused command registrations. Lambda/code unchanged.
-
-**What could go wrong:**
-- Accidentally delete active Rin bot → Re-register commands using `register_discord_commands.sh`
-- Delete wrong commands → Re-run registration script to restore
-
-**Recovery:** If you accidentally break something, run:
-```bash
-cd orchestrator
-./register_discord_commands.sh
-```
-
----
-
-## Action Items for User (gcolon75)
-
-### URGENT
-- [ ] Check Discord Developer Portal for bot applications
-- [ ] Identify which Application ID is old Amadeus vs Rin
-- [ ] Delete commands from old application (see cleanup plan above)
-- [ ] Verify `/status` only appears once after cleanup
-
-### INVESTIGATE
-- [ ] Check CloudWatch logs for Lambda timeouts
-- [ ] Look for errors around 01:15-01:21 UTC (recent command attempts)
-- [ ] Check cold start duration (should be < 2 seconds)
-- [ ] If timeouts persist, consider increasing Lambda timeout or optimizing imports
-
-### UX IMPLEMENTATION (after bot is stable)
-- [ ] Review UX agent research findings (see section above)
-- [ ] Decide on implementation approach (MVP vs Full)
-- [ ] Register `/ux-update` command in Discord (Quick win - 30 min)
-- [ ] Create GitHub issue for UX agent completion if desired
-
-### OPTIONAL
-- [ ] Test `/triage` command now that PR #102 is merged
-- [ ] Monitor for any other duplicate command issues
-- [ ] Review CloudWatch logs for any other Lambda errors
-
----
-
-## How to Brief New Agents/Chats
-
-### Quick Briefing (30 seconds)
-
-**Project Valine** is a LinkedIn-style platform for voice actors and creatives. We're building:
-- React frontend hosted on AWS S3/CloudFront
-- Serverless backend with AWS Lambda
-- Discord bots as AI "employees" for workflow automation
-- Full CI/CD via GitHub Actions
-
-**Current Status**: Infrastructure mostly built, Discord bot Lambda functions exist, need to complete command registration and testing.
-
-### Standard Briefing (2 minutes)
-
-**What**: LinkedIn-like platform for voice actors, writers, and artists to share scripts and auditions.
-
-**Tech Stack**: 
-- Frontend: React + Vite + Tailwind
-- Backend: AWS Lambda (Node.js + Python)
-- Infrastructure: S3, CloudFront, API Gateway, DynamoDB
-- Automation: Discord bots + GitHub Actions
-
-**Discord Bots**: Acting as automated "employees" that:
-- Trigger deployments (`/deploy-client`)
-- Monitor infrastructure (`/diagnose`, `/verify-latest`)
-- Triage CI/CD failures (`/triage`)
-- Report status (`/status`, `/status-digest`)
-- Manage workflows via Discord slash commands
-
-**Current Phase**: Have endpoint URL from AWS API Gateway, Lambda functions defined in code, need to finalize deployment and test Discord integration.
-
-**Next Steps**: Deploy orchestrator Lambdas, register slash commands, test end-to-end workflow.
-
-### Detailed Briefing (5 minutes)
-
-Read this document (PROJECT_VALINE_SUMMARY.md) in full. Key sections:
-1. **Overall Goal** - Understand the vision
-2. **Current Architecture** - See what's built
-3. **AWS Lambda Functions** - Understand the backend
-4. **Discord Bot Integration** - See how automation works
-5. **Next Steps** - Know what needs to be done
-
-**Key Files to Review**:
-- `README.md` - Project overview
-- `orchestrator/README.md` - Orchestrator documentation
-- `orchestrator/template.yaml` - Lambda function definitions
-- `.github/workflows/` - CI/CD automation
-
-**Pro Tips**:
-- Discord bots are how we interact with the system
-- Everything is serverless (no servers to manage)
-- GitHub Actions orchestrates deployments
-- Trace IDs connect logs across services
-- Documentation is extensive - check docs before asking
-
----
-
-## Glossary
-
-**Orchestrator**: The AWS Lambda-based system that coordinates Discord commands, GitHub webhooks, and workflow automation.
-
-**Slash Commands**: Discord commands starting with `/` that trigger bot actions (e.g., `/triage`, `/deploy-client`).
-
-**Triage Agent**: AI-powered system that analyzes CI/CD failures, determines root causes, and proposes fixes.
-
-**Trace ID**: Unique identifier (UUID) for tracking a single operation across multiple services and logs.
-
-**Correlation ID**: Unique identifier linking a Discord command to its corresponding GitHub Actions workflow run.
-
-**Feature Flag**: Configuration toggle (via environment variable or SSM) to enable/disable features without code changes.
-
-**Guild Commands**: Discord slash commands registered to a specific server (instant visibility).
-
-**Global Commands**: Discord slash commands available across all servers (1-hour propagation delay).
-
-**SAM**: AWS Serverless Application Model - framework for building serverless applications.
-
-**Serverless Framework**: Open-source framework for deploying serverless applications.
-
-**OIDC**: OpenID Connect - authentication protocol used for AWS access from GitHub Actions without long-lived credentials.
-
-**Presigned URL**: Time-limited URL for uploading files directly to S3 without exposing AWS credentials.
-
-**DynamoDB**: AWS NoSQL database service used for storing orchestrator state and audit logs.
-
-**CloudWatch**: AWS monitoring and logging service.
-
-**SSM Parameter Store**: AWS service for storing configuration and secrets.
-
----
-
-## Contact & Resources
-
-### Repository
-**URL**: https://github.com/gcolon75/Project-Valine  
-**Owner**: gcolon75  
-**Visibility**: Private (assumed)
-
-### Key Links
-- Discord Developer Portal: https://discord.com/developers/applications
-- AWS Console: https://console.aws.amazon.com
-- GitHub Actions: https://github.com/gcolon75/Project-Valine/actions
-
-### Support Channels
-- GitHub Issues: For bugs and feature requests
-- Discord Server: For real-time communication and bot interaction
-- GitHub Discussions: For questions and community support
-
----
-
-## Changelog
-
-### 2025-10-23
-- Created comprehensive PROJECT_VALINE_SUMMARY.md
-- Documented full architecture and current status
-- Outlined next steps for Lambda deployment
-- Added detailed briefing guide for new agents
-
-### 2025-10-18
-- Completed Phase 6: Discord Triage Integration
-- Implemented `/triage` command
-- Added comprehensive testing (5 new tests)
-
-### 2025-10-17
-- Fixed Discord slash commands not appearing
-- Created automated validation scripts
-- Documented troubleshooting procedures
-
-### 2025-10 (Earlier)
-- Completed Phase 5: Triage Automation
-- Implemented multi-agent system
-- Built observability features
-- Created extensive documentation
-
----
-
-## Summary for Quick Reference
-
-**What is Project Valine?**  
-A LinkedIn-style platform for voice actors and creatives with AWS serverless backend and Discord bot automation.
-
-**What's the goal?**  
-Build a scalable platform for professional networking, content sharing, and collaboration in the voice acting industry.
-
-**What's been done?**  
-- React frontend (complete)
-- Serverless backend structure (complete)
-- AWS infrastructure (S3, CloudFront, Lambda, DynamoDB)
-- Discord bot framework (complete)
-- GitHub Actions CI/CD (complete)
-- Phase 1-6 features (complete)
-
-**What's next?**  
-1. Deploy orchestrator Lambda functions (sam deploy)
-2. Register Discord slash commands
-3. Test end-to-end integration
-4. Complete production deployment
-
-**Current blocker?**  
-Need to create/deploy Lambda functions - codebase is ready, just needs deployment with proper configuration.
-
-**How long to complete?**  
-~30 minutes to deploy Lambdas, ~30 minutes to test = 1 hour to full Discord bot functionality.
-
----
-
-**This document is intended to be shared with new AI agents and team members to quickly understand Project Valine's current state, architecture, goals, and next steps.**
-
-**Last Updated**: October 23, 2025  
-**Document Version**: 1.0  
 **Status**: Active Development
