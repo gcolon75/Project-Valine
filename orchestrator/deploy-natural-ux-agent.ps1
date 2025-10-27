@@ -215,7 +215,7 @@ if (-not $EnableLLM) {
     Write-Info "=== Enable Natural Language (Optional) ==="
     Write-Host "To enable LLM natural language parsing later:" -ForegroundColor Yellow
     Write-Host "  1. Set OPENAI_API_KEY environment variable" -ForegroundColor Cyan
-    Write-Host "  2. Run: .\deploy-pr125.ps1 -Stage $Stage -EnableLLM `$true" -ForegroundColor Cyan
+    Write-Host "  2. Run: .\deploy-natural-ux-agent.ps1 -Stage $Stage -EnableLLM `$true" -ForegroundColor Cyan
     Write-Host ""
 }
 
