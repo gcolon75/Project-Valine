@@ -11,13 +11,16 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 - [Key Features](#key-features)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Client Development](#client-development)
+  - [Backend Deployment](#backend-deployment)
+  - [Orchestrator Setup](#orchestrator-setup)
 - [Project Structure](#project-structure)
 - [Available Routes](#available-routes)
 - [Deployment & Verification](#deployment--verification)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Development](#development)
-- [Technology Stack](#technology-stack)
 
 ## Overview
 
@@ -29,8 +32,6 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 2. **Creative Content Management** - Script creation, audition submissions, collaborative workflows
 3. **AI-Powered Automation** - Discord bot orchestration, automated deployments, intelligent triage
 4. **AWS Cloud Infrastructure** - Serverless backend with Lambda, API Gateway, DynamoDB, S3, and CloudFront
-
-## Current Status
 
 ✅ **Active Development** - Phase 6 Complete
 
@@ -215,12 +216,12 @@ Project-Valine/
 
 ## Available Routes
 
-### Public Routes
+### Public Pages
 - `/` - Home page
 - `/about` - About page
 - `/login` - Authentication
 
-### Authenticated Routes
+### Authenticated Pages
 - `/feed` - Main content feed
 - `/search` - Search functionality
 - `/messages` - Messaging system
@@ -232,130 +233,60 @@ Project-Valine/
 - `/auditions/*` - Audition management
 - `/requests` - Access requests
 
-## Deployment & Verification
+## Development
 
-### Automated Deployment
+- Both `npm run dev` and `npm start` work (they run Vite)
+- Build with `npm run build`, preview with `npm run preview`
+- Edit pages in `src/pages/` and routes in `src/App.jsx`
 
-**Client Deployment:**
-- Triggered automatically on push to `main` branch
-- Manual trigger via `/deploy-client` Discord command
-- Deploys to S3 + CloudFront
-- Workflow: `.github/workflows/client-deploy.yml`
+## Deployment Verification
 
-**Orchestrator Deployment:**
-- Triggered on changes to `orchestrator/` directory
-- Uses AWS SAM for Lambda deployment
-- Workflow: `.github/workflows/deploy-orchestrator.yml`
+The repository includes a comprehensive verification script to validate deployments:
 
-### Verification Tools
-
-**Automated Health Checks:**
 ```bash
-# Verify latest deployment
-cd scripts
-./verify-deployment.sh --help
+./scripts/verify-deployment.sh --help
 ```
 
-**Discord Commands:**
-- `/verify-latest` - Verify most recent deployment
-- `/diagnose` - Run infrastructure diagnostics
-- `/status` - Check GitHub Actions workflow status
+This script checks:
+- GitHub Actions workflows and configuration files
+- S3 and CloudFront deployment status
+- Frontend accessibility and API health endpoints
+- Discord bot and webhook integration
 
-**Manual Testing:**
-```bash
-cd orchestrator/scripts
-./test-discord-endpoint.sh  # Test Discord Lambda health
-```
-
-See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehensive verification procedures.
+See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed usage instructions.
 
 ## Documentation
 
+> 📁 **Organized Documentation**: Most documentation has been moved to the `/docs` directory for better organization. See [docs/README.md](docs/README.md) for the complete structure.
+
 ### Getting Started
-- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview, architecture, and current status
-- **[Changelog](CHANGELOG.md)** - Notable changes and version history
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
-
-### Orchestrator & Discord Bot
-- **[Orchestrator README](orchestrator/README.md)** - Setup and usage guide
-- **[Bot Unifier Guide](orchestrator/BOT_UNIFIER_GUIDE.md)** - Unified bot architecture
-- **[Discord Slash Commands](orchestrator/DISCORD_SLASH_CMD_QUICK_REF.md)** - Available commands reference
-
-### Deployment & Operations
-- **[Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md)** - Verification system overview
-- **[Verification Guide](scripts/VERIFICATION_GUIDE.md)** - Detailed verification procedures
+- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview of Project Valine: architecture, current status, goals, and next steps
 
 ### Troubleshooting
-- **[Discord Issues](docs/troubleshooting/discord/)** - Discord bot debugging and fixes
-- **[Start Here - Discord Issues](orchestrator/START_HERE_DISCORD_ISSUES.md)** - Quick troubleshooting guide
+- [Discord Issues](docs/troubleshooting/discord/) - Discord bot debugging, slash command fixes, and endpoint diagnostics
 
-### Development
-- **[UX Changes](CHANGES.md)** - User experience improvements log
-- **[Sanity Setup](SANITY_SETUP.md)** - CMS configuration guide
+### Diagnostics & Reports  
+- [Phase Reports](docs/diagnostics/) - Phase 5/6 validation, implementation summaries, and verification reports
+- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
 
 ### Archive
-- **[Historical Documentation](docs/archive/)** - Completed phases and deprecated guides
+- [Historical Documentation](docs/archive/) - Completed phases, old summaries, and deprecated guides
 
-## Contributing
+### Orchestrator (Current Location - To Be Migrated)
+- [Orchestrator Documentation](orchestrator/README.md) - AI workflow automation
+- [Integration Guide](orchestrator/INTEGRATION_GUIDE.md) - Discord and GitHub setup
+- [Testing Guide](orchestrator/TESTING_GUIDE.md) - End-to-end testing
+- [Orchestrator Consolidation Plan](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development workflow and best practices
-- Code style guidelines
-- Testing requirements
-- Pull request process
-- Folder structure overview
+### Deployment & Verification
+- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
+- [Verification Guide](scripts/VERIFICATION_GUIDE.md) - Detailed verification usage and troubleshooting
 
-## Development
+### AI Agents
+- [UX Designer Agent](.github/agents/ux-designer.md) - User experience improvements and implementation
+- [Quick Start Guide](.github/agents/QUICK_START.md) - Quick reference for using the UX Designer agent
+- [Agent Templates](.github/agents/templates/) - Reusable templates for PRs, RFCs, and documentation
 
-### Running Locally
-
-**Frontend:**
-```bash
-npm run dev  # Starts Vite dev server with hot reload (localhost:5173)
-```
-
-**Backend (Local Testing):**
-```bash
-cd serverless
-npx serverless invoke local -f api
-```
-
-### Testing
-
-**Orchestrator Tests:**
-```bash
-cd orchestrator
-python -m pytest tests/
-```
-
-### Code Quality
-
-- **Linting**: ESLint for JavaScript/React code
-- **Formatting**: Follow existing code style
-- **Security**: CodeQL scanning enabled in CI
-
-### Environment Variables
-
-See example configuration files:
-- `.env.example` - Client environment variables
-- `orchestrator/.env.example` - Orchestrator configuration
-- `serverless/.env.example` - Backend API configuration
-
-**Important**: Never commit actual `.env` files or credentials to the repository.
-
-## Technology Stack
-
-**Frontend**: React 18, Vite 5, Tailwind CSS 3, React Router v6  
-**Backend**: Node.js 20.x, Python 3.11, Serverless Framework v3, AWS SAM  
-**Database**: DynamoDB, Prisma ORM  
-**Infrastructure**: AWS (S3, CloudFront, Lambda, API Gateway, SSM)  
-**DevOps**: GitHub Actions, AWS OIDC  
-**Integrations**: Discord Bot API, GitHub API, Sanity CMS
-
----
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
-- **Discord**: Join our Discord server for real-time support
-- **Documentation**: See [docs/](docs/) for comprehensive guides
+### Other Documentation
+- [Sanity Setup](SANITY_SETUP.md) - CMS configuration
+- [UX Changes](CHANGES.md) - Log of user experience improvements and design changes
