@@ -1,0 +1,17 @@
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "task_type": "ux_update",
+  "requested_by": {
+    "user_id": "discord:123456789",
+    "role": "pm"
+  },
+  "parameters": {
+    "dry_run": true,
+    "target_section": "header",
+    "updates": {
+      "text": "Welcome to Project Valine!"
+    }
+  },
+  "status": "proposed",
+  "created_at": "2025-10-27T21:54:59.705Z"
+}
