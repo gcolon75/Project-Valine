@@ -2,158 +2,225 @@
 
 A collaborative platform for voice actors, writers, and artists to create and share scripts, auditions, and creative content.
 
-> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps. Perfect for onboarding new team members or AI agents!
+> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps.
 
-## 🔥 Current Status
+## Table of Contents
 
-### Discord Command Registration - GitHub Actions Workflow 🎮
-**Easy mode activated!** Register Discord slash commands via GitHub Actions - no local scripts needed.
+- [Overview](#overview)
+- [Current Status](#current-status)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Available Routes](#available-routes)
+- [Deployment & Verification](#deployment--verification)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Development](#development)
+- [Technology Stack](#technology-stack)
 
-**Quick Start: Trigger via GitHub UI**
-1. Navigate to Actions → "🎮 Register Discord Slash Commands" workflow
-2. Click "Run workflow"
-3. Enter your Discord App ID + Bot Token
-4. Choose mode: `global` (1h propagation) or `guild` (instant)
-5. Watch commands register! ✅
+## Overview
 
-**Trigger via GitHub CLI:**
-```bash
-# Global registration (commands appear in ~1 hour)
-gh workflow run register-staging-slash-commands.yml \
-  -f app_id="YOUR_APP_ID" \
-  -f bot_token="YOUR_BOT_TOKEN" \
-  -f mode="global"
+Project Valine is a **LinkedIn-style collaborative platform** specifically designed for voice actors, writers, and artists. The platform enables creative professionals to create and share scripts, auditions, and creative content while managing collaboration workflows through an AWS-hosted serverless infrastructure with AI-powered automation via Discord bots.
 
-# Guild registration (commands appear instantly)
-gh workflow run register-staging-slash-commands.yml \
-  -f app_id="YOUR_APP_ID" \
-  -f bot_token="YOUR_BOT_TOKEN" \
-  -f guild_id="YOUR_GUILD_ID" \
-  -f mode="guild"
-```
+### High-Level Goals
 
-**Trigger via curl:**
-```bash
-curl -X POST \
-  -H "Authorization: token YOUR_GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/register-staging-slash-commands.yml/dispatches \
-  -d '{"ref":"main","inputs":{"app_id":"YOUR_APP_ID","bot_token":"YOUR_BOT_TOKEN","mode":"global"}}'
-```
+1. **Professional Networking** - User profiles, connections, content feeds
+2. **Creative Content Management** - Script creation, audition submissions, collaborative workflows
+3. **AI-Powered Automation** - Discord bot orchestration, automated deployments, intelligent triage
+4. **AWS Cloud Infrastructure** - Serverless backend with Lambda, API Gateway, DynamoDB, S3, and CloudFront
 
-**What it does:**
-- ✅ Validates bot token matches app ID
-- ✅ Registers all 19 Discord slash commands
-- ✅ Handles rate limits with automatic retry
-- ✅ Shows clear error messages with invite URLs on missing permissions
-- ✅ Generates summary with command counts and next steps
+## Current Status
 
-**No local scripts required!** Everything runs in CI.
+✅ **Active Development** - Phase 6 Complete
 
----
+### Recent Achievements
 
-## 🔥 Recent Updates (Oct 2025)
+- **Discord Bot Integration**: Unified "Rin" bot with specialized agent personalities for deployment, triage, and monitoring
+- **DynamoDB Persistence**: Conversation state and audit logs stored in DynamoDB with TTL auto-cleanup
+- **Staged Deployment Flow**: GitHub Actions workflows for automated client and orchestrator deployments
+- **Automated Triage**: `/triage` command analyzes CI/CD failures and proposes fixes
+- **Deployment Verification**: Comprehensive health checks with `/verify-latest` and `/diagnose` commands
 
-### AWS Auto-Deployer - DeployBot Active 🚀
-Push code → Lambda deploys automatically. Zero manual AWS setup needed!
+### Quick Links
 
-**What's new:**
-- 🤖 **Auto-deploy on merge**: Push to main → DeployBot speedruns to AWS
-- 💬 **Discord notifications**: Get deploy status in your Discord channel
-- 🛠️ **Gamer-style errors**: Clear troubleshooting guidance when deploys fail
-- 🔄 **Repeatable config**: Uses same settings as last successful deploy
+- [Latest Changes](CHANGELOG.md)
+- [Setup Discord Bot](orchestrator/README.md)
+- [Deployment Guide](orchestrator/docs/)
+- [Troubleshooting](docs/troubleshooting/)
 
-**How to use:**
-```bash
-git push origin main  # DeployBot handles the rest!
-```
+## Key Features
 
-**Documentation:** [orchestrator/docs/AWS_AUTO_DEPLOYER.md](orchestrator/docs/AWS_AUTO_DEPLOYER.md)
-
----
-
-### Discord Bot Endpoint - OPERATIONAL ✅
-The bot respawned successfully after defeating the S3 Cache Boss 💀
-
-**What was broken:**
-- Lambda kept loading stale code from S3 (skill issue from AWS caching)
-- Discord endpoint validation failing with `Runtime.ImportModuleError: No module named 'app'`
-- Manual cache clearing required every deploy (pain)
-
-**What we fixed:**
-- 🎯 **Timestamp cache-buster** forces fresh artifacts on every deploy ([PR #88](https://github.com/gcolon75/Project-Valine/pull/88))
-- 🔍 **Automated health checks** catch broken deploys in CI ([PR #90](https://github.com/gcolon75/Project-Valine/pull/90))
-- 📚 **Recovery playbook** for manual troubleshooting ([PR #89](https://github.com/gcolon75/Project-Valine/pull/89))
-
-**Current status:** Bot is live, endpoint validated, ready for slash commands 🎮
-
-**Technical details:**
-- `scripts/generate-deploy-stamp.sh` injects timestamp into every build
-- `scripts/test-discord-endpoint.sh` validates Lambda health post-deploy
-- [orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md](orchestrator/docs/LAMBDA_DEPLOY_RECOVERY.md) has emergency commands
-
-See [CHANGELOG.md](CHANGELOG.md) for the full story.
-
-## Features
-
+### Platform Features
 - **Client Application**: React + Vite client with authentication and role-based access
-- **Serverless Backend**: AWS Lambda functions with API Gateway
-- **AI Orchestrator**: Automated workflow management via Discord and GitHub integration
+- **User Profiles**: Portfolio management, connections, and professional networking
 - **Content Management**: Sanity CMS for structured content
+- **Messaging System**: Real-time communication between users
+- **Script & Audition Management**: Create, share, and manage creative content
 
-## Quickstart
+### Infrastructure & Automation
+- **Serverless Backend**: AWS Lambda functions with API Gateway
+- **Discord Bot Orchestrator**: Unified "Rin" bot with specialized agent personalities
+  - Deployment automation (`/deploy-client`)
+  - Infrastructure diagnostics (`/diagnose`, `/verify-latest`)
+  - CI/CD triage (`/triage`)
+  - Status reporting (`/status`, `/status-digest`)
+- **DynamoDB Persistence**: State management with automatic TTL cleanup
+- **GitHub Actions Integration**: Automated workflows for CI/CD
+- **Staged Deployment**: Separate staging and production environments
+
+## Architecture
+
+### Frontend
+- **Technology**: React 18 + Vite 5
+- **Styling**: Tailwind CSS 3
+- **Routing**: React Router v6
+- **Deployment**: AWS S3 + CloudFront CDN
+
+### Backend
+- **API Framework**: Serverless Framework v3, AWS SAM
+- **Runtime**: Node.js 20.x (API), Python 3.11 (Orchestrator)
+- **Database**: DynamoDB (orchestrator state), Prisma ORM (API)
+- **File Storage**: S3 with presigned URLs
+
+### Orchestrator (Discord Bot)
+- **Framework**: AWS SAM
+- **Runtime**: Python 3.11
+- **State Storage**: DynamoDB with TTL
+- **Integrations**: Discord API, GitHub Actions API
+
+### Key AWS Resources
+- **S3**: Frontend hosting, file uploads, build artifacts
+- **CloudFront**: CDN for global distribution
+- **Lambda**: Serverless functions for API and orchestrator
+- **API Gateway**: REST APIs for orchestrator and backend
+- **DynamoDB**: State management and audit logs
+- **SSM Parameter Store**: Configuration and feature flags
+
+## Quick Start
+
+### Prerequisites
+- Node.js 20.x or later
+- Python 3.11 (for orchestrator)
+- AWS CLI configured (for deployment)
+- Discord bot token (for orchestrator)
+- GitHub personal access token (for orchestrator)
 
 ### Client Development
 
-```bash
-npm install
-npm run dev   # opens on http://localhost:3000
-```
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start development server:**
+   ```bash
+   npm run dev
+   # Opens on http://localhost:5173 (Vite default)
+   ```
+
+3. **Build for production:**
+   ```bash
+   npm run build
+   npm run preview  # Preview production build locally
+   ```
 
 ### Backend Deployment
 
-See `serverless/` and `infra/` directories for serverless function deployment.
-
-### AI Orchestrator - DeployBot Enabled 🚀
-
-⚠️ **Note**: The orchestrator code is currently in this repository but is planned to be migrated to its canonical location at `ghawk75-ai-agent/orchestrator` for better separation of concerns. See [docs/archive/ORCHESTRATOR_CONSOLIDATION.md](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) for the migration plan.
-
-The orchestrator manages automated workflows between Discord and GitHub:
-
-**Auto-Deploy (Zero Hassle):**
+**Serverless API** (`/serverless`):
 ```bash
-git push origin main  # DeployBot speedruns to AWS Lambda automatically!
-# ✅ No AWS keys needed
-# ✅ Discord notifications
-# ✅ Repeatable config
+cd serverless
+npm install
+npx serverless deploy --stage dev
 ```
 
-**Manual Deploy (If Needed):**
+**Infrastructure API** (`/infra`):
+```bash
+cd infra
+npx serverless deploy --stage dev
+```
+
+See [serverless/README.md](serverless/) and [infra/README.md](infra/) for detailed configuration.
+
+### Orchestrator Setup
+
+The orchestrator manages Discord bot interactions and GitHub Actions automation.
+
+**Quick Setup:**
 ```bash
 cd orchestrator
-sam deploy --guided  # Follow prompts
+
+# Configure credentials
+cp samconfig.toml.example samconfig.toml
+# Edit samconfig.toml with your Discord and GitHub credentials
+
+# Build and deploy
+sam build
+sam deploy --guided
 ```
 
-📚 **Full guide:** [orchestrator/docs/AWS_AUTO_DEPLOYER.md](orchestrator/docs/AWS_AUTO_DEPLOYER.md)
+**Register Discord Commands:**
+```bash
+# For staging (instant visibility)
+./scripts/register_staging_slash_commands.sh
+
+# Configure Discord Interactions Endpoint in Developer Portal
+# Use the DiscordWebhookUrl from deployment outputs
+```
+
+**Detailed Guide:** [orchestrator/README.md](orchestrator/README.md)
 
 ## Project Structure
 
-- `/src` - React client application
-- `/serverless` - API Lambda functions
-- `/infra` - Infrastructure as code
-- `/orchestrator` - AI workflow orchestrator (Discord + GitHub integration)
-- `/sanity` - Sanity CMS configuration
-- `/api` - API utilities and Prisma schema
-- `/.github` - GitHub workflows and templates
+```
+Project-Valine/
+├── src/                    # React client source
+│   ├── components/         # Reusable UI components
+│   ├── pages/             # Page components
+│   ├── routes/            # Route definitions
+│   └── services/          # API services
+│
+├── serverless/            # Serverless API
+│   ├── handler.js         # API router
+│   └── serverless.yml     # Configuration
+│
+├── infra/                 # Infrastructure code
+│   └── serverless.yml     # Presign function config
+│
+├── orchestrator/          # Discord bot & automation
+│   ├── app/              # Application code
+│   │   ├── handlers/     # Lambda handlers
+│   │   ├── agents/       # Agent implementations
+│   │   └── services/     # External service clients
+│   ├── tests/            # Test suite
+│   ├── scripts/          # Automation scripts
+│   └── template.yaml     # SAM template
+│
+├── api/                   # API utilities
+│   └── prisma/           # Database schema
+│
+├── docs/                  # Documentation
+│   ├── diagnostics/      # Reports and diagnostics
+│   ├── troubleshooting/  # Issue resolution guides
+│   └── archive/          # Historical documentation
+│
+├── .github/
+│   ├── workflows/        # CI/CD pipelines
+│   └── agents/           # AI agent configurations
+│
+├── scripts/              # Utility scripts
+├── public/               # Static assets
+└── sanity/               # Sanity CMS config
+```
 
-## Routes
+## Available Routes
 
-### Public Pages
+### Public Routes
 - `/` - Home page
 - `/about` - About page
 - `/login` - Authentication
 
-### Authenticated Pages
+### Authenticated Routes
 - `/feed` - Main content feed
 - `/search` - Search functionality
 - `/messages` - Messaging system
@@ -165,60 +232,130 @@ sam deploy --guided  # Follow prompts
 - `/auditions/*` - Audition management
 - `/requests` - Access requests
 
-## Development
+## Deployment & Verification
 
-- Both `npm run dev` and `npm start` work (they run Vite)
-- Build with `npm run build`, preview with `npm run preview`
-- Edit pages in `src/pages/` and routes in `src/App.jsx`
+### Automated Deployment
 
-## Deployment Verification
+**Client Deployment:**
+- Triggered automatically on push to `main` branch
+- Manual trigger via `/deploy-client` Discord command
+- Deploys to S3 + CloudFront
+- Workflow: `.github/workflows/client-deploy.yml`
 
-The repository includes a comprehensive verification script to validate deployments:
+**Orchestrator Deployment:**
+- Triggered on changes to `orchestrator/` directory
+- Uses AWS SAM for Lambda deployment
+- Workflow: `.github/workflows/deploy-orchestrator.yml`
 
+### Verification Tools
+
+**Automated Health Checks:**
 ```bash
-./scripts/verify-deployment.sh --help
+# Verify latest deployment
+cd scripts
+./verify-deployment.sh --help
 ```
 
-This script checks:
-- GitHub Actions workflows and configuration files
-- S3 and CloudFront deployment status
-- Frontend accessibility and API health endpoints
-- Discord bot and webhook integration
+**Discord Commands:**
+- `/verify-latest` - Verify most recent deployment
+- `/diagnose` - Run infrastructure diagnostics
+- `/status` - Check GitHub Actions workflow status
 
-See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for detailed usage instructions.
+**Manual Testing:**
+```bash
+cd orchestrator/scripts
+./test-discord-endpoint.sh  # Test Discord Lambda health
+```
+
+See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehensive verification procedures.
 
 ## Documentation
 
-> 📁 **Organized Documentation**: Most documentation has been moved to the `/docs` directory for better organization. See [docs/README.md](docs/README.md) for the complete structure.
-
 ### Getting Started
-- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview of Project Valine: architecture, current status, goals, and next steps
+- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview, architecture, and current status
+- **[Changelog](CHANGELOG.md)** - Notable changes and version history
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+
+### Orchestrator & Discord Bot
+- **[Orchestrator README](orchestrator/README.md)** - Setup and usage guide
+- **[Bot Unifier Guide](orchestrator/BOT_UNIFIER_GUIDE.md)** - Unified bot architecture
+- **[Discord Slash Commands](orchestrator/DISCORD_SLASH_CMD_QUICK_REF.md)** - Available commands reference
+
+### Deployment & Operations
+- **[Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md)** - Verification system overview
+- **[Verification Guide](scripts/VERIFICATION_GUIDE.md)** - Detailed verification procedures
 
 ### Troubleshooting
-- [Discord Issues](docs/troubleshooting/discord/) - Discord bot debugging, slash command fixes, and endpoint diagnostics
+- **[Discord Issues](docs/troubleshooting/discord/)** - Discord bot debugging and fixes
+- **[Start Here - Discord Issues](orchestrator/START_HERE_DISCORD_ISSUES.md)** - Quick troubleshooting guide
 
-### Diagnostics & Reports  
-- [Phase Reports](docs/diagnostics/) - Phase 5/6 validation, implementation summaries, and verification reports
-- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
+### Development
+- **[UX Changes](CHANGES.md)** - User experience improvements log
+- **[Sanity Setup](SANITY_SETUP.md)** - CMS configuration guide
 
 ### Archive
-- [Historical Documentation](docs/archive/) - Completed phases, old summaries, and deprecated guides
+- **[Historical Documentation](docs/archive/)** - Completed phases and deprecated guides
 
-### Orchestrator (Current Location - To Be Migrated)
-- [Orchestrator Documentation](orchestrator/README.md) - AI workflow automation
-- [Integration Guide](orchestrator/INTEGRATION_GUIDE.md) - Discord and GitHub setup
-- [Testing Guide](orchestrator/TESTING_GUIDE.md) - End-to-end testing
-- [Orchestrator Consolidation Plan](docs/archive/ORCHESTRATOR_CONSOLIDATION.md) - Migration plan to ghawk75-ai-agent
+## Contributing
 
-### Deployment & Verification
-- [Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md) - Comprehensive deployment verification system
-- [Verification Guide](scripts/VERIFICATION_GUIDE.md) - Detailed verification usage and troubleshooting
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development workflow and best practices
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Folder structure overview
 
-### AI Agents
-- [UX Designer Agent](.github/agents/ux-designer.md) - User experience improvements and implementation
-- [Quick Start Guide](.github/agents/QUICK_START.md) - Quick reference for using the UX Designer agent
-- [Agent Templates](.github/agents/templates/) - Reusable templates for PRs, RFCs, and documentation
+## Development
 
-### Other Documentation
-- [Sanity Setup](SANITY_SETUP.md) - CMS configuration
-- [UX Changes](CHANGES.md) - Log of user experience improvements and design changes
+### Running Locally
+
+**Frontend:**
+```bash
+npm run dev  # Starts Vite dev server with hot reload (localhost:5173)
+```
+
+**Backend (Local Testing):**
+```bash
+cd serverless
+npx serverless invoke local -f api
+```
+
+### Testing
+
+**Orchestrator Tests:**
+```bash
+cd orchestrator
+python -m pytest tests/
+```
+
+### Code Quality
+
+- **Linting**: ESLint for JavaScript/React code
+- **Formatting**: Follow existing code style
+- **Security**: CodeQL scanning enabled in CI
+
+### Environment Variables
+
+See example configuration files:
+- `.env.example` - Client environment variables
+- `orchestrator/.env.example` - Orchestrator configuration
+- `serverless/.env.example` - Backend API configuration
+
+**Important**: Never commit actual `.env` files or credentials to the repository.
+
+## Technology Stack
+
+**Frontend**: React 18, Vite 5, Tailwind CSS 3, React Router v6  
+**Backend**: Node.js 20.x, Python 3.11, Serverless Framework v3, AWS SAM  
+**Database**: DynamoDB, Prisma ORM  
+**Infrastructure**: AWS (S3, CloudFront, Lambda, API Gateway, SSM)  
+**DevOps**: GitHub Actions, AWS OIDC  
+**Integrations**: Discord Bot API, GitHub API, Sanity CMS
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
+- **Discord**: Join our Discord server for real-time support
+- **Documentation**: See [docs/](docs/) for comprehensive guides

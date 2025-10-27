@@ -3,6 +3,10 @@ dist
 .DS_Store
 .env
 
+# Backup files
+*.backup
+*~
+
 # Orchestrator secrets and build artifacts
 orchestrator/samconfig.toml
 !orchestrator/samconfig.toml.example
@@ -34,6 +38,7 @@ operational_readiness_config.json
 **/mockups-tmp/
 .lighthouse/
 lighthouse-reports/
+
 # Discord command registration evidence
 discord_cmd_evidence/
 
