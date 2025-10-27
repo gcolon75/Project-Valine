@@ -50,6 +50,20 @@ Parameters:
     Type: String
     Default: ""
     Description: API base URL for verification checks
+  
+  UseLLMParsing:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable LLM-based natural language parsing for UX updates (feature flag)
+  
+  OpenAIApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: OpenAI API key for LLM parsing (optional, only used if UseLLMParsing is true)
 
 Resources:
   # DynamoDB table for storing orchestrator run state
@@ -105,6 +119,8 @@ Resources:
           FRONTEND_BASE_URL: !Ref FrontendBaseUrl
           VITE_API_BASE: !Ref ViteApiBase
           GITHUB_REPO: gcolon75/Project-Valine
+          USE_LLM_PARSING: !Ref UseLLMParsing
+          OPENAI_API_KEY: !Ref OpenAIApiKey
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
