@@ -1,6 +1,10 @@
 #!/bin/bash
 # Comprehensive fix script for Discord slash commands in staging
 # This script orchestrates the complete fix process
+#
+# USAGE: Run this script from the orchestrator root directory:
+#   cd orchestrator
+#   ./scripts/deployment/fix_staging_slash_commands.sh
 
 set -e
 

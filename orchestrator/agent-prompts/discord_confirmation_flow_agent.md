@@ -465,7 +465,7 @@ Discord does **NOT** support plain text replies after slash commands. Text respo
 ## Related Documentation
 
 - [Discord Slash Command Agent](../DISCORD_SLASH_CMD_AGENT.md)
-- [UX Agent README](../UX_AGENT_README.md)
+- [UX Agent README](../docs/guides/agents/UX_AGENT_README.md)
 - [UX Agent Flow Diagram](../UX_AGENT_FLOW_DIAGRAM.md)
 - [Discord Developer Documentation - Interactions](https://discord.com/developers/docs/interactions/receiving-and-responding)
 - [Discord Developer Documentation - Message Components](https://discord.com/developers/docs/interactions/message-components)

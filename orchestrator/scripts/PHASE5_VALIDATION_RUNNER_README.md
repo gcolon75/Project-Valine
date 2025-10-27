@@ -523,7 +523,7 @@ Report issues at: https://github.com/gcolon75/Project-Valine/issues
 
 ### Runbook
 
-For operational procedures, see: `orchestrator/RUNBOOK.md`
+For operational procedures, see: `orchestrator/docs/guides/operations/RUNBOOK.md`
 
 ## License
 

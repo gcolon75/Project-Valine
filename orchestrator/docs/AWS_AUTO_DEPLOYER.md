@@ -272,7 +272,7 @@ This ensures every deploy uses the same config as the last successful deploy unl
 ## 📚 Additional Resources
 
 - [Orchestrator README](../README.md) - Bot architecture and features
-- [Integration Guide](../INTEGRATION_GUIDE.md) - Discord and GitHub setup
+- [Integration Guide](../getting-started/INTEGRATION_GUIDE.md) - Discord and GitHub setup
 - [Lambda Deploy Recovery](../docs/LAMBDA_DEPLOY_RECOVERY.md) - Troubleshooting guide
 - [SAM Documentation](https://docs.aws.amazon.com/serverless-application-model/) - AWS SAM reference
 

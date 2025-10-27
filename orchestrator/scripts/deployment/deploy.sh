@@ -1,5 +1,11 @@
 #!/bin/bash
 # Deployment script for Project Valine Orchestrator
+# 
+# USAGE: Run this script from the orchestrator root directory:
+#   cd orchestrator
+#   ./scripts/deployment/deploy.sh
+#
+# This script requires samconfig.toml and template.yaml in the orchestrator root.
 
 set -e
 

@@ -745,5 +745,5 @@ For issues or questions:
 
 - [Agent Registry](app/agents/registry.py)
 - [Discord Handler](app/handlers/discord_handler.py)
-- [Discord Slash Command Agent](DISCORD_SLASH_CMD_AGENT.md)
+- [Discord Slash Command Agent](../discord/DISCORD_SLASH_CMD_AGENT.md)
 - [Orchestrator README](README.md)

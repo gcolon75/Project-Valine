@@ -218,7 +218,7 @@ def main():
     print("=" * 80)
     print()
     print("For more information, see:")
-    print("  • QA_CHECKER_GUIDE.md - Comprehensive guide")
+    print("  • docs/guides/agents/QA_CHECKER_GUIDE.md - Comprehensive guide")
     print("  • run_qa_checker.py - CLI script")
     print("  • tests/test_qa_checker.py - Unit tests")
     print()

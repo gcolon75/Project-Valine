@@ -67,7 +67,7 @@ Comprehensive guide covering:
 | Document | Use When | Time Required |
 |----------|----------|---------------|
 | [DISCORD_STAGING_SETUP.md](./DISCORD_STAGING_SETUP.md) | Setting up staging environment | 15 minutes |
-| [QUICK_START_STAGING.md](./QUICK_START_STAGING.md) | Quick staging setup | 10 minutes |
+| [QUICK_START_STAGING.md](../getting-started/QUICK_START_STAGING.md) | Quick staging setup | 10 minutes |
 | [README.md](./README.md) | Understanding architecture | 10 minutes |
 
 ### For Command-Specific Issues

@@ -2,19 +2,23 @@
 """
 CLI script to run QA Checker agent for Phase 3 and Phase 4 PR validation.
 
+IMPORTANT: Run this script from the orchestrator root directory:
+    cd orchestrator
+    python scripts/validation/run_qa_checker.py <pr1_number> <pr2_number> [options]
+
 Usage:
-    python run_qa_checker.py <pr1_number> <pr2_number> [--repo REPO] [--post-reviews]
+    python scripts/validation/run_qa_checker.py <pr1_number> <pr2_number> [--repo REPO] [--post-reviews]
 
 Examples:
     # Validate PRs and print results
-    python run_qa_checker.py 27 28
+    python scripts/validation/run_qa_checker.py 27 28
 
     # Validate PRs with custom repo
-    python run_qa_checker.py 27 28 --repo gcolon75/Project-Valine
+    python scripts/validation/run_qa_checker.py 27 28 --repo gcolon75/Project-Valine
 
     # Validate and post reviews to GitHub
     export GITHUB_TOKEN=ghp_xxxxx
-    python run_qa_checker.py 27 28 --post-reviews
+    python scripts/validation/run_qa_checker.py 27 28 --post-reviews
 """
 import os
 import sys

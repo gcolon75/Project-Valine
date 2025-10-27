@@ -187,7 +187,7 @@ Found a bug or want to add a feature?
 ## 📚 See Also
 
 - [SUMMARY_AGENT_GUIDE.md](SUMMARY_AGENT_GUIDE.md) - Similar agent pattern
-- [DISCORD_SLASH_CMD_AGENT.md](DISCORD_SLASH_CMD_AGENT.md) - Discord command setup
+- [UPTIME_GUARDIAN_GUIDE.md](UPTIME_GUARDIAN_GUIDE.md) - Discord command setup
 - [OPERATIONAL_READINESS_AGENT_GUIDE.md](OPERATIONAL_READINESS_AGENT_GUIDE.md) - Related monitoring
 
 ---

@@ -2,6 +2,44 @@
 
 This directory contains utility scripts for managing and validating the Project Valine orchestrator.
 
+## 🚀 Important: How to Run Scripts
+
+**All scripts should be run from the orchestrator root directory**, not from within the scripts/ subdirectories:
+
+```bash
+cd orchestrator
+
+# Run deployment scripts
+./scripts/deployment/deploy.sh
+./scripts/deployment/validate_lambda_deployment.sh
+
+# Run setup scripts
+./scripts/setup/setup_staging_bot.sh
+
+# Run validation scripts
+python scripts/validation/run_qa_checker.py 27 28
+python scripts/validation/test_verification_local.py
+```
+
+This ensures the scripts can find required files (samconfig.toml, template.yaml) and import from the app/ directory correctly.
+
+## 📁 Directory Structure
+
+### deployment/
+Scripts for deploying and validating deployments:
+- `deploy.sh` - Main deployment script
+- `fix_staging_slash_commands.sh` - Fix slash commands in staging
+- `validate_lambda_deployment.sh` - Validate Lambda deployment
+
+### setup/
+Scripts for initial setup and configuration:
+- `setup_staging_bot.sh` - Set up staging bot environment
+
+### validation/
+Scripts for testing and validation:
+- `test_verification_local.py` - Local verification testing
+- `run_qa_checker.py` - Run QA checker validation
+
 ## Minimal Global Registration (Rin) - Current Standard
 
 **Script:** `min_register_global.ps1`

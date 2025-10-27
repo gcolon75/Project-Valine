@@ -1,6 +1,10 @@
 #!/bin/bash
 # Quick-start script for setting up Discord staging bot
 # This script automates the diagnostic and registration process
+#
+# USAGE: Run this script from the orchestrator root directory:
+#   cd orchestrator
+#   ./scripts/setup/setup_staging_bot.sh
 
 set -e
 

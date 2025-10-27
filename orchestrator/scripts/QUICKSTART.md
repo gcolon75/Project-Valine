@@ -327,7 +327,7 @@ After successful validation:
    - Recommend production rollout timeline
 
 3. **Production Rollout Planning**
-   - Review RUNBOOK.md operational procedures
+   - Review docs/guides/operations/RUNBOOK.md operational procedures
    - Plan phased rollout (logging → debug → alerts)
    - Set up production monitoring
    - Schedule training for operations team
@@ -341,6 +341,6 @@ After successful validation:
 ## Support
 
 - **Documentation**: See [README.md](README.md) for complete documentation
-- **Runbook**: See [RUNBOOK.md](../RUNBOOK.md) for operational procedures
+- **Runbook**: See [RUNBOOK.md](../docs/guides/operations/RUNBOOK.md) for operational procedures
 - **Issues**: https://github.com/gcolon75/Project-Valine/issues
 - **Phase 5 Validation**: See [PHASE5_VALIDATION.md](../../PHASE5_VALIDATION.md)

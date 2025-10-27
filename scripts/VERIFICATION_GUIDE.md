@@ -440,7 +440,7 @@ Run after successful deployment to ensure everything is working:
 For issues or questions:
 
 1. Check the [main README](../README.md)
-2. Review [INTEGRATION_GUIDE.md](../orchestrator/INTEGRATION_GUIDE.md) for Discord setup
+2. Review [INTEGRATION_GUIDE.md](../orchestrator/docs/getting-started/INTEGRATION_GUIDE.md) for Discord setup
 3. See [TESTING_GUIDE.md](../orchestrator/TESTING_GUIDE.md) for orchestrator testing
 4. Open an issue on GitHub: https://github.com/gcolon75/Project-Valine/issues
 

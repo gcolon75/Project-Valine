@@ -161,6 +161,6 @@ review = checker.format_review_comment(result, "Title")
 ## 🔗 Quick Links
 
 - GitHub Token: https://github.com/settings/tokens
-- Documentation: [orchestrator/QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md)
+- Documentation: [orchestrator/docs/guides/agents/QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md)
 - Tests: [orchestrator/tests/test_qa_checker.py](tests/test_qa_checker.py)
 - Issues: https://github.com/gcolon75/Project-Valine/issues
