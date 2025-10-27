@@ -2,8 +2,7 @@
 Tests for UX Agent functionality.
 """
 import unittest
-from unittest.mock import Mock, MagicMock
-from app.agents.ux_agent import UXAgent, ConversationState
+from unittest.mock import Mock, MagicMock, patch
 
 
 class TestUXAgent(unittest.TestCase):
@@ -12,10 +11,23 @@ class TestUXAgent(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_github_service = Mock()
+        
+        # Mock boto3 DynamoDB resource
+        self.mock_dynamodb_patcher = patch('boto3.resource')
+        self.mock_dynamodb = self.mock_dynamodb_patcher.start()
+        self.mock_table = MagicMock()
+        self.mock_dynamodb.return_value.Table.return_value = self.mock_table
+        
+        # Import after patching
+        from app.agents.ux_agent import UXAgent
         self.agent = UXAgent(
             github_service=self.mock_github_service,
             repo="gcolon75/Project-Valine"
         )
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        self.mock_dynamodb_patcher.stop()
 
     def test_parse_command_valid_header_text(self):
         """Test parsing valid header text update command."""
@@ -226,10 +238,23 @@ class TestConversationFlow(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_github_service = Mock()
+        
+        # Mock boto3 DynamoDB resource
+        self.mock_dynamodb_patcher = patch('boto3.resource')
+        self.mock_dynamodb = self.mock_dynamodb_patcher.start()
+        self.mock_table = MagicMock()
+        self.mock_dynamodb.return_value.Table.return_value = self.mock_table
+        
+        # Import after patching
+        from app.agents.ux_agent import UXAgent
         self.agent = UXAgent(
             github_service=self.mock_github_service,
             repo="gcolon75/Project-Valine"
         )
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        self.mock_dynamodb_patcher.stop()
 
     def test_start_conversation_with_valid_command(self):
         """Test starting conversation with valid command."""
@@ -283,6 +308,14 @@ class TestConversationFlow(unittest.TestCase):
         
         conv_id = conv_result['conversation_id']
         
+        # Mock DynamoDB get_item to return the stored conversation
+        # The put_item was called during start_conversation
+        # Now we need to mock what get_item returns
+        stored_item = self.mock_table.put_item.call_args[1]['Item']
+        self.mock_table.get_item.return_value = {
+            'Item': stored_item
+        }
+        
         # Confirm
         result = self.agent.confirm_and_execute(
             conversation_id=conv_id,
@@ -302,6 +335,12 @@ class TestConversationFlow(unittest.TestCase):
         
         conv_id = conv_result['conversation_id']
         
+        # Mock DynamoDB get_item to return the stored conversation
+        stored_item = self.mock_table.put_item.call_args[1]['Item']
+        self.mock_table.get_item.return_value = {
+            'Item': stored_item
+        }
+        
         # Cancel
         result = self.agent.confirm_and_execute(
             conversation_id=conv_id,
@@ -311,6 +350,8 @@ class TestConversationFlow(unittest.TestCase):
         self.assertTrue(result['success'])
         self.assertTrue(result.get('cancelled', False))
         self.assertIn('cancelled', result['message'].lower())
+        # Verify delete_item was called
+        self.mock_table.delete_item.assert_called()
 
     def test_confirm_and_execute_modification(self):
         """Test modifying request during confirmation."""
@@ -321,6 +362,12 @@ class TestConversationFlow(unittest.TestCase):
         )
         
         conv_id = conv_result['conversation_id']
+        
+        # Mock DynamoDB get_item to return the stored conversation
+        stored_item = self.mock_table.put_item.call_args[1]['Item']
+        self.mock_table.get_item.return_value = {
+            'Item': stored_item
+        }
         
         # Modify
         result = self.agent.confirm_and_execute(
@@ -353,6 +400,7 @@ class TestConversationFlow(unittest.TestCase):
 
     def test_generate_preview_with_text_update(self):
         """Test generating preview for text update."""
+        from app.agents.ux_agent import ConversationState
         conversation = ConversationState('conv123', 'user123')
         conversation.section = 'header'
         conversation.updates = {'text': 'Level Up!'}
@@ -365,6 +413,7 @@ class TestConversationFlow(unittest.TestCase):
 
     def test_generate_preview_with_color_update(self):
         """Test generating preview for color update."""
+        from app.agents.ux_agent import ConversationState
         conversation = ConversationState('conv123', 'user123')
         conversation.section = 'footer'
         conversation.updates = {'color': '#FF0080'}
@@ -377,6 +426,7 @@ class TestConversationFlow(unittest.TestCase):
 
     def test_conversation_state_to_dict(self):
         """Test converting conversation state to dictionary."""
+        from app.agents.ux_agent import ConversationState
         conversation = ConversationState('conv123', 'user123')
         conversation.section = 'header'
         conversation.updates = {'text': 'Test'}
@@ -396,6 +446,92 @@ class TestConversationFlow(unittest.TestCase):
         self.assertGreater(len(examples), 0)
         self.assertTrue(any('header' in ex for ex in examples))
         self.assertTrue(any('footer' in ex for ex in examples))
+
+    def test_dynamodb_persistence_stores_conversation(self):
+        """Test that conversation is stored in DynamoDB with TTL."""
+        result = self.agent.start_conversation(
+            command_text='section:header text:"Test Title"',
+            user_id='user123'
+        )
+        
+        self.assertTrue(result['success'])
+        
+        # Verify put_item was called
+        self.mock_table.put_item.assert_called()
+        
+        # Verify TTL was set
+        call_args = self.mock_table.put_item.call_args[1]
+        self.assertIn('Item', call_args)
+        item = call_args['Item']
+        self.assertIn('ttl', item)
+        self.assertIsInstance(item['ttl'], int)
+        self.assertIn('conversation_id', item)
+        
+    def test_dynamodb_persistence_retrieves_conversation(self):
+        """Test that conversation is retrieved from DynamoDB."""
+        # Start conversation
+        conv_result = self.agent.start_conversation(
+            command_text='section:header text:"Test Title"',
+            user_id='user123'
+        )
+        conv_id = conv_result['conversation_id']
+        
+        # Mock DynamoDB get_item
+        stored_item = self.mock_table.put_item.call_args[1]['Item']
+        self.mock_table.get_item.return_value = {
+            'Item': stored_item
+        }
+        
+        # Confirm and execute
+        result = self.agent.confirm_and_execute(
+            conversation_id=conv_id,
+            user_response='yes'
+        )
+        
+        # Verify get_item was called
+        self.mock_table.get_item.assert_called_with(
+            Key={'conversation_id': conv_id}
+        )
+        
+    def test_dynamodb_persistence_deletes_on_cancel(self):
+        """Test that conversation is deleted from DynamoDB on cancel."""
+        # Start conversation
+        conv_result = self.agent.start_conversation(
+            command_text='section:header text:"Test Title"',
+            user_id='user123'
+        )
+        conv_id = conv_result['conversation_id']
+        
+        # Mock DynamoDB get_item
+        stored_item = self.mock_table.put_item.call_args[1]['Item']
+        self.mock_table.get_item.return_value = {
+            'Item': stored_item
+        }
+        
+        # Cancel
+        result = self.agent.confirm_and_execute(
+            conversation_id=conv_id,
+            user_response='no'
+        )
+        
+        # Verify delete_item was called
+        self.mock_table.delete_item.assert_called_with(
+            Key={'conversation_id': conv_id}
+        )
+        
+    def test_dynamodb_persistence_conversation_not_found(self):
+        """Test handling of missing conversation in DynamoDB."""
+        # Mock empty response from DynamoDB
+        self.mock_table.get_item.return_value = {}
+        
+        # Try to confirm non-existent conversation
+        result = self.agent.confirm_and_execute(
+            conversation_id='nonexistent-id',
+            user_response='yes'
+        )
+        
+        self.assertFalse(result['success'])
+        self.assertIn('not found or expired', result['message'].lower())
 
 
 # Command handler tests are integration tests that require full environment

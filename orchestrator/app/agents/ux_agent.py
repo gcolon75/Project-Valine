@@ -133,8 +133,12 @@ class UXAgent:
         self.github_service = github_service
         self.repo = repo
         self.owner, self.repo_name = repo.split('/')
-        # In-memory conversation store (in production, use persistent storage)
-        self.conversations: Dict[str, ConversationState] = {}
+        
+        # Use DynamoDB for conversation persistence
+        import boto3
+        from datetime import timedelta
+        dynamodb = boto3.resource('dynamodb')
+        self.conversations_table = dynamodb.Table('ux-agent-conversations')
     
     def start_conversation(
         self,
@@ -191,7 +195,16 @@ class UXAgent:
         if clarifications:
             conversation.needs_clarification = True
             conversation.clarification_questions = clarifications
-            self.conversations[conversation_id] = conversation
+            
+            # Store in DynamoDB with 1-hour TTL
+            from datetime import timedelta
+            ttl = int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            self.conversations_table.put_item(
+                Item={
+                    **conversation.to_dict(),
+                    'ttl': ttl
+                }
+            )
             
             return {
                 'success': True,
@@ -204,7 +217,16 @@ class UXAgent:
         # Generate preview
         preview = self._generate_preview(conversation)
         conversation.preview_message = preview['message']
-        self.conversations[conversation_id] = conversation
+        
+        # Store in DynamoDB with 1-hour TTL
+        from datetime import timedelta
+        ttl = int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+        self.conversations_table.put_item(
+            Item={
+                **conversation.to_dict(),
+                'ttl': ttl
+            }
+        )
         
         return {
             'success': True,
@@ -229,12 +251,27 @@ class UXAgent:
         Returns:
             Dictionary with execution result or updated preview
         """
-        conversation = self.conversations.get(conversation_id)
-        if not conversation:
+        # Retrieve from DynamoDB
+        response = self.conversations_table.get_item(
+            Key={'conversation_id': conversation_id}
+        )
+        item = response.get('Item')
+        if not item:
             return {
                 'success': False,
                 'message': '❌ Conversation not found or expired. Please start a new request.'
             }
+        
+        # Reconstruct ConversationState from dict
+        conversation = ConversationState(item['conversation_id'], item['user_id'])
+        conversation.section = item.get('section')
+        conversation.updates = item.get('updates', {})
+        conversation.images = item.get('images', [])
+        conversation.parsed_intent = item.get('parsed_intent', {})
+        conversation.preview_message = item.get('preview_message')
+        conversation.confirmed = item.get('confirmed', False)
+        conversation.needs_clarification = item.get('needs_clarification', False)
+        conversation.clarification_questions = item.get('clarification_questions', [])
         
         # Check if user is confirming
         response_lower = user_response.lower().strip()
@@ -249,7 +286,10 @@ class UXAgent:
         
         elif response_lower in ['no', 'n', 'cancel', 'stop', 'nope']:
             # User cancelled
-            del self.conversations[conversation_id]
+            # Delete from DynamoDB
+            self.conversations_table.delete_item(
+                Key={'conversation_id': conversation_id}
+            )
             return {
                 'success': True,
                 'cancelled': True,
@@ -290,6 +330,16 @@ class UXAgent:
                 }
             
             conversation.preview_message = preview['message']
+            
+            # Update conversation in DynamoDB with refreshed TTL
+            from datetime import timedelta
+            ttl = int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp())
+            self.conversations_table.put_item(
+                Item={
+                    **conversation.to_dict(),
+                    'ttl': ttl
+                }
+            )
             
             return {
                 'success': True,
