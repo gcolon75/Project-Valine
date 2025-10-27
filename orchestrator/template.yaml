@@ -74,6 +74,22 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  # DynamoDB table for UX Agent conversations
+  UXConversationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ux-agent-conversations
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: conversation_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: conversation_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
   # Lambda function for Discord interactions (slash commands)
   DiscordHandlerFunction:
     Type: AWS::Serverless::Function
@@ -92,6 +108,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RunStateTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UXConversationsTable
       Events:
         DiscordWebhook:
           Type: Api
