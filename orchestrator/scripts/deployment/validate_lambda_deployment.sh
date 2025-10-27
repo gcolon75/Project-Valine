@@ -3,6 +3,10 @@ set -e
 
 # Lambda Import and Deployment Validation Script
 # This script validates that the Lambda package is correctly built and deployed
+#
+# USAGE: Run this script from the orchestrator root directory:
+#   cd orchestrator
+#   ./scripts/deployment/validate_lambda_deployment.sh
 
 echo "================================"
 echo "Lambda Deployment Validation"
@@ -11,7 +15,6 @@ echo ""
 
 # Step 1: Validate imports locally
 echo "Step 1: Validating Python imports..."
-cd "$(dirname "$0")"
 python3 tests/test_lambda_imports.py
 if [ $? -eq 0 ]; then
     echo "✅ Local import tests passed"

@@ -3,12 +3,16 @@
 Local testing script for deploy verification.
 Run this to test the verification logic without deploying to Lambda.
 
+IMPORTANT: Run this script from the orchestrator root directory:
+    cd orchestrator
+    python scripts/validation/test_verification_local.py [run_id]
+
 Usage:
-    python test_verification_local.py [run_id]
+    python scripts/validation/test_verification_local.py [run_id]
 
 Examples:
-    python test_verification_local.py              # Test with latest run
-    python test_verification_local.py 12345678     # Test with specific run ID
+    python scripts/validation/test_verification_local.py              # Test with latest run
+    python scripts/validation/test_verification_local.py 12345678     # Test with specific run ID
 """
 import os
 import sys
