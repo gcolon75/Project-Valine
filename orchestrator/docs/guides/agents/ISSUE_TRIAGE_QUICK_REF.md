@@ -94,7 +94,7 @@ All issues triaged! GG, squad! 🎮
 - Handler: `orchestrator/app/handlers/discord_handler.py`
 - Workflow: `.github/workflows/issue-triage-agent.yml`
 - Register: `orchestrator/scripts/register_triage_all_command.py`
-- Guide: `orchestrator/ISSUE_TRIAGE_AGENT_GUIDE.md`
+- Guide: `orchestrator/docs/guides/agents/ISSUE_TRIAGE_AGENT_GUIDE.md`
 
 ## Tips
 

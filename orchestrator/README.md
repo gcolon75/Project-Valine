@@ -6,7 +6,7 @@ An AWS Lambda-based orchestrator that integrates Discord slash commands with Git
 
 **Rin** is the unified orchestrator bot that handles all Discord interactions. Different agent personalities (Amadeus 🚀, BuildAgent 🏗️, StatusAgent 📊, etc.) provide specialized messaging styles through custom embeds and formatting, all using a **single bot token**.
 
-👉 **See [BOT_UNIFIER_GUIDE.md](BOT_UNIFIER_GUIDE.md) for complete details on the unified bot architecture.**
+👉 **See [docs/guides/discord/BOT_UNIFIER_GUIDE.md](docs/guides/discord/BOT_UNIFIER_GUIDE.md) for complete details on the unified bot architecture.**
 
 ### Key Benefits
 - ✅ Single `DISCORD_BOT_TOKEN` for all operations
@@ -26,8 +26,8 @@ The orchestrator consists of:
 - **Verification Module**: Deploy verification system for GitHub Actions workflow runs
 - **Diagnose Dispatcher**: On-demand workflow triggering with correlation tracking and result parsing
 - **Multi-Agent Registry**: Agent definitions and capabilities for orchestration and routing
-- **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md))
-- **Issue Triage Agent**: Automated issue analysis and triage system (see [ISSUE_TRIAGE_AGENT_GUIDE.md](ISSUE_TRIAGE_AGENT_GUIDE.md))
+- **QA Checker Agent**: Automated PR validation for Phase 3 and Phase 4 implementations (see [docs/guides/agents/QA_CHECKER_GUIDE.md](docs/guides/agents/QA_CHECKER_GUIDE.md))
+- **Issue Triage Agent**: Automated issue analysis and triage system (see [docs/guides/agents/ISSUE_TRIAGE_AGENT_GUIDE.md](docs/guides/agents/ISSUE_TRIAGE_AGENT_GUIDE.md))
 
 ## 🚀 Deployment System - DeployBot
 
@@ -109,7 +109,7 @@ Before deploying, you need to gather the following credentials:
    - Copy the **Public Key** (this will be your `DISCORD_PUBLIC_KEY`)
    - Copy the **Application ID**
 
-**Note**: This single bot token powers all agent personalities (Amadeus, BuildAgent, StatusAgent, etc.). See [BOT_UNIFIER_GUIDE.md](BOT_UNIFIER_GUIDE.md) for details.
+**Note**: This single bot token powers all agent personalities (Amadeus, BuildAgent, StatusAgent, etc.). See [docs/guides/discord/BOT_UNIFIER_GUIDE.md](docs/guides/discord/BOT_UNIFIER_GUIDE.md) for details.
 
 ### GitHub Setup
 
@@ -729,7 +729,7 @@ Recommended CloudWatch dashboard panels:
 
 ### Runbook
 
-See [RUNBOOK.md](RUNBOOK.md) for detailed operational procedures:
+See [docs/guides/operations/RUNBOOK.md](docs/guides/operations/RUNBOOK.md) for detailed operational procedures:
 - Finding logs by trace ID
 - Handling common failures
 - Diagnostic commands
@@ -1171,7 +1171,7 @@ python run_qa_checker.py 27 28 --post-reviews
 
 ### Documentation
 
-See [QA_CHECKER_GUIDE.md](QA_CHECKER_GUIDE.md) for:
+See [docs/guides/agents/QA_CHECKER_GUIDE.md](docs/guides/agents/QA_CHECKER_GUIDE.md) for:
 - Detailed usage instructions
 - Acceptance criteria for Phase 3 and Phase 4
 - Command-line options

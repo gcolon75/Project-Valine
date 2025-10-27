@@ -309,6 +309,6 @@ export GITHUB_TOKEN="ghp_your_token_here"
 ## See Also
 
 - [Phase 5 Triage Agent](PHASE5_TRIAGE_AGENT_GUIDE.md) - For PR/workflow failure triage
-- [Discord Integration Guide](INTEGRATION_GUIDE.md) - Setting up Discord bot
+- [Discord Integration Guide](../../getting-started/INTEGRATION_GUIDE.md) - Setting up Discord bot
 - [GitHub Actions](../../.github/workflows/issue-triage-agent.yml) - Workflow definition
 - [Orchestrator README](README.md) - Main orchestrator documentation

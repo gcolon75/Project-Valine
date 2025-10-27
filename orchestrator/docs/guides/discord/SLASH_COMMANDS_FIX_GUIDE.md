@@ -377,8 +377,8 @@ graph TD
 - **PHASE5_VALIDATION.md** - Phase 5 acceptance criteria and validation
 - **orchestrator/README.md** - Orchestrator setup and usage
 - **orchestrator/DISCORD_STAGING_SETUP.md** - Detailed staging setup guide
-- **orchestrator/QUICK_START_STAGING.md** - Quick reference for staging
-- **orchestrator/RUNBOOK.md** - Operations runbook
+- **orchestrator/docs/getting-started/QUICK_START_STAGING.md** - Quick reference for staging
+- **orchestrator/docs/guides/operations/RUNBOOK.md** - Operations runbook
 
 ---
 

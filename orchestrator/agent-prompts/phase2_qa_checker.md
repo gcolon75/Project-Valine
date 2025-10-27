@@ -503,7 +503,7 @@ Tasks:
 
 ### Documentation
 - `orchestrator/README.md` - Main orchestrator documentation
-- `orchestrator/INTEGRATION_GUIDE.md` - Setup and integration guide
+- `orchestrator/docs/getting-started/INTEGRATION_GUIDE.md` - Setup and integration guide
 - `orchestrator/TESTING_GUIDE.md` - Testing procedures
 
 ## Maintenance

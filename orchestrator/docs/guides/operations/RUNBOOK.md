@@ -744,8 +744,8 @@ fields @timestamp, fn, msg, trace_id
 
 - [Orchestrator README](README.md) - Architecture and deployment
 - [Testing Guide](TESTING_GUIDE.md) - End-to-end testing procedures
-- [Integration Guide](INTEGRATION_GUIDE.md) - Discord and GitHub setup
-- [QA Checker Guide](QA_CHECKER_GUIDE.md) - Automated validation
+- [Integration Guide](../../getting-started/INTEGRATION_GUIDE.md) - Discord and GitHub setup
+- [QA Checker Guide](../agents/QA_CHECKER_GUIDE.md) - Automated validation
 - [AWS Lambda Docs](https://docs.aws.amazon.com/lambda/)
 - [Discord API Docs](https://discord.com/developers/docs/intro)
 - [GitHub Actions Docs](https://docs.github.com/en/actions)

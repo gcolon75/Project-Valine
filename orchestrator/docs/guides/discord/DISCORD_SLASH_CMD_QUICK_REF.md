@@ -158,7 +158,7 @@ if result["status"] == "SUCCESS":
 | CLI Interface | `orchestrator/register_slash_commands_agent.py` |
 | Shell Wrapper | `orchestrator/register_slash_commands.sh` |
 | Tests | `orchestrator/tests/test_discord_slash_cmd_agent.py` |
-| Documentation | `orchestrator/DISCORD_SLASH_CMD_AGENT.md` |
+| Documentation | `orchestrator/docs/guides/discord/DISCORD_SLASH_CMD_AGENT.md` |
 | Examples | `orchestrator/examples/discord_slash_cmd_example.py` |
 
 ## SSM Parameters
@@ -199,7 +199,7 @@ After registration:
 
 ## Support
 
-- **User Guide**: `orchestrator/DISCORD_SLASH_CMD_AGENT.md`
+- **User Guide**: `orchestrator/docs/guides/discord/DISCORD_SLASH_CMD_AGENT.md`
 - **Technical Details**: `orchestrator/DISCORD_SLASH_CMD_AGENT_IMPLEMENTATION.md`
 - **Quick Reference**: `orchestrator/DISCORD_SLASH_CMD_QUICK_REF.md` (this file)
 - **Summary**: `DISCORD_SLASH_CMD_AGENT_SUMMARY.md`
