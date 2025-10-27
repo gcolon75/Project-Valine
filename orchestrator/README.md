@@ -2,6 +2,38 @@
 
 An AWS Lambda-based orchestrator that integrates Discord slash commands with GitHub webhooks to manage automated workflows for the Project Valine repository.
 
+## 📚 Documentation Navigation
+
+### Quick Links
+- 📖 [**Complete Documentation Index**](docs/README.md) - Browse all documentation
+- 🚀 [**Getting Started**](docs/getting-started/INTEGRATION_GUIDE.md) - First-time setup
+- 🏗️ [**Deployment Guide**](docs/AWS_AUTO_DEPLOYER.md) - Automated deployment system
+- 🤖 [**Bot Architecture**](docs/guides/discord/BOT_UNIFIER_GUIDE.md) - Unified bot design
+- 📋 [**Operations Runbook**](docs/guides/operations/RUNBOOK.md) - Operational procedures
+- 🔧 [**Troubleshooting**](docs/troubleshooting/DISCORD_TROUBLESHOOTING.md) - Common issues and fixes
+- 💻 [**Scripts**](scripts/README.md) - Available utility scripts
+- 📝 [**Examples**](examples/) - Example usage scripts
+
+### Documentation Structure
+```
+docs/
+├── getting-started/          # Initial setup and integration
+├── guides/
+│   ├── agents/              # All agent-specific guides (UX, QA, Triage, etc.)
+│   ├── discord/             # Discord bot and slash commands
+│   └── operations/          # Operational procedures and runbooks
+├── reference/
+│   └── commands/            # Command reference documentation
+└── troubleshooting/         # Debugging and issue resolution
+
+scripts/
+├── deployment/              # Deployment and validation scripts
+├── setup/                   # Setup and configuration scripts
+└── validation/              # Testing and validation scripts
+
+examples/                    # Example Python usage scripts
+```
+
 ## Bot Unifier Architecture
 
 **Rin** is the unified orchestrator bot that handles all Discord interactions. Different agent personalities (Amadeus 🚀, BuildAgent 🏗️, StatusAgent 📊, etc.) provide specialized messaging styles through custom embeds and formatting, all using a **single bot token**.
