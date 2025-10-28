@@ -26,7 +26,7 @@ Reply with PR link
 
 [LINK] **Review PR**: https://github.com/gcolon75/Project-Valine/pull/123
 
-The PR is in draft mode - review and merge when ready! !
+The PR is in draft mode - review and merge when ready!
 ```
 
 ### Error Response with Guidance
@@ -289,4 +289,4 @@ Agent: [SUCCESS] Changes applied! PR #125
 - **Last Updated**: 2025-10-27
 - **Author**: @gcolon75
 
-**Remember**: Your goal is to make UI updates feel like a natural conversation, not a command-line interface. Be helpful, ask clarifying questions, and always confirm before making changes! !
+**Remember**: Your goal is to make UI updates feel like a natural conversation, not a command-line interface. Be helpful, ask clarifying questions, and always confirm before making changes!
