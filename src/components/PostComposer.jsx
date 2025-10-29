@@ -29,19 +29,19 @@ export default function PostComposer() {
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4 md:p-5"
+      className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 p-4 md:p-5"
     >
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full bg-transparent text-base md:text-lg font-semibold outline-none placeholder:text-neutral-500"
+        className="w-full bg-transparent text-base md:text-lg font-semibold text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500"
         placeholder="Share a script, audition, reading, or reel..."
       />
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={3}
-        className="mt-2 w-full bg-transparent text-sm outline-none placeholder:text-neutral-500"
+        className="mt-2 w-full bg-transparent text-sm text-neutral-700 dark:text-neutral-300 outline-none placeholder:text-neutral-500"
         placeholder="Add a short description (optional)"
       />
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -50,7 +50,7 @@ export default function PostComposer() {
             type="button"
             key={t}
             onClick={() => removeTag(t)}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300"
             title="Remove tag"
           >
             {t} ✕
@@ -60,20 +60,20 @@ export default function PostComposer() {
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" ? (e.preventDefault(), addTag()) : null}
-          className="bg-white/5 border border-white/10 rounded-full px-3 py-1 text-xs outline-none placeholder:text-neutral-500"
+          className="bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 rounded-full px-3 py-1 text-xs text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500"
           placeholder="Add tag"
         />
         <button
           type="button"
           onClick={addTag}
-          className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs hover:bg-white/10"
+          className="rounded-full border border-neutral-300 dark:border-white/15 bg-neutral-100 dark:bg-white/5 px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
         >
           Add tag
         </button>
         <div className="ml-auto">
           <button
             type="submit"
-            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-neutral-900 hover:bg-brand-hover"
+            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover"
           >
             Post
           </button>
