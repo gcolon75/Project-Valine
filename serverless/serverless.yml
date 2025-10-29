@@ -10,6 +10,7 @@ provider:
     cors: true
   environment:
     STAGE: ${env:STAGE, "prod"}
+    DATABASE_URL: ${env:DATABASE_URL}
 
 functions:
   api:
