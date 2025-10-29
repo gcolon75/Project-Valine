@@ -127,6 +127,27 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 
 ### Backend Deployment
 
+📚 **New:** [Complete Deployment Guide](DEPLOYMENT.md) | [Quick Start](QUICK_START.md)
+
+**Automated Deployment (Recommended):**
+```bash
+# 1. Setup database
+export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+./scripts/deployment/setup-database.sh
+
+# 2. Deploy backend
+./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
+
+# 3. Test API
+export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+./scripts/deployment/test-endpoints.sh
+
+# 4. Configure frontend
+./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
+```
+
+**Manual Deployment:**
+
 **Serverless API** (`/serverless`):
 ```bash
 cd serverless
@@ -140,7 +161,10 @@ cd infra
 npx serverless deploy --stage dev
 ```
 
-See [serverless/README.md](serverless/) and [infra/README.md](infra/) for detailed configuration.
+See:
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete deployment guide with troubleshooting
+- [QUICK_START.md](QUICK_START.md) - 5-minute deployment guide
+- [scripts/deployment/README.md](scripts/deployment/README.md) - Deployment scripts documentation
 
 ### Orchestrator Setup
 
