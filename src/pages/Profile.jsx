@@ -46,7 +46,7 @@ export default function Profile() {
 
   return (
     <div className="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
+      <aside className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 p-4">
         <div className="flex items-center gap-3">
           {displayData.avatar ? (
             <img 
@@ -64,7 +64,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid gap-2 text-sm">
+        <div className="mt-4 grid gap-2 text-sm text-neutral-700 dark:text-neutral-300">
           <a href="/settings" className="hover:underline">Edit Profile</a>
           <a href="/bookmarks" className="hover:underline">Bookmarks</a>
           <a href="/requests" className="hover:underline">Requests</a>
@@ -81,8 +81,8 @@ export default function Profile() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
-          <div className="text-sm font-semibold">Work</div>
+        <div className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 p-4">
+          <div className="text-sm font-semibold text-neutral-900 dark:text-white">Work</div>
           <div className="mt-3 grid gap-4 md:grid-cols-2">
             {displayData.posts && displayData.posts.length > 0 ? (
               displayData.posts.slice(0, 4).map(post => (

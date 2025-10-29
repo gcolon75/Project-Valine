@@ -38,7 +38,7 @@ export default function Requests() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
+      <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
         Requests
       </h1>
       

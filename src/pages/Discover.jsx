@@ -10,12 +10,12 @@ export default function Discover() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">Discover</h1>
+      <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Discover</h1>
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search tags & keywords (e.g., #Drama #Audition pacing)"
-        className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none placeholder:text-neutral-500"
+        className="w-full rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 px-3 py-2 text-sm text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500"
       />
       <div className="grid gap-4 md:grid-cols-2">
         {results.map((p) => (
@@ -23,7 +23,7 @@ export default function Discover() {
         ))}
       </div>
 
-      <div className="text-xs text-neutral-500">
+      <div className="text-xs text-neutral-600 dark:text-neutral-500">
         Showing {results.length} of {rawPosts.length} posts
       </div>
     </div>

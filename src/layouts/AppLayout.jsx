@@ -1,22 +1,26 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, Link } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
       {/* App header (subnav) */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-neutral-900/75 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-neutral-200 dark:border-white/10 bg-white/75 dark:bg-neutral-900/75 backdrop-blur">
         <div className="mx-auto max-w-7xl h-14 px-4 lg:px-6 flex items-center justify-between">
-          <Link to="/dashboard" className="text-white font-extrabold tracking-tight">
+          <Link to="/dashboard" className="text-neutral-900 dark:text-white font-extrabold tracking-tight">
             Joint
           </Link>
-          <nav className="flex items-center gap-2">
-            <Tab to="/dashboard">Feed</Tab>
-            <Tab to="/discover">Discover</Tab>
-            <Tab to="/post">Post</Tab>
-            <Tab to="/inbox">Inbox</Tab>
-            <Tab to="/profile">Profile</Tab>
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-2">
+              <Tab to="/dashboard">Feed</Tab>
+              <Tab to="/discover">Discover</Tab>
+              <Tab to="/post">Post</Tab>
+              <Tab to="/inbox">Inbox</Tab>
+              <Tab to="/profile">Profile</Tab>
+            </nav>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -36,8 +40,8 @@ function Tab({ to, children }) {
         [
           "px-3 py-1.5 rounded-full text-sm transition",
           isActive
-            ? "bg-white/10 text-white border border-white/10"
-            : "text-neutral-300 hover:bg-white/5 border border-transparent",
+            ? "bg-neutral-200 dark:bg-white/10 text-neutral-900 dark:text-white border border-neutral-300 dark:border-white/10"
+            : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/5 border border-transparent",
         ].join(" ")
       }
     >
