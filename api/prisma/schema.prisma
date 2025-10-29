@@ -6,13 +6,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("artist") // 'artist' | 'observer'
-  createdAt DateTime @default(now())
-  scripts   Script[]
-  auditions Audition[]
+  id          String   @id @default(uuid())
+  username    String   @unique
+  email       String   @unique
+  displayName String
+  bio         String?
+  avatar      String?
+  name        String?
+  role        String   @default("artist") // 'artist' | 'observer'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scripts            Script[]
+  auditions          Audition[]
+  posts              Post[]
+  sentRequests       ConnectionRequest[] @relation("sender")
+  receivedRequests   ConnectionRequest[] @relation("receiver")
+
+  @@map("users")
 }
 model Script {
   id        String   @id @default(cuid())
@@ -29,4 +40,30 @@ model Audition {
   hostId    String
   host      User     @relation(fields: [hostId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  media     String[]
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("posts")
+  @@index([authorId])
+}
+
+model ConnectionRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("sender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
+  status     String   @default("pending")
+  message    String?
+  createdAt  DateTime @default(now())
+
+  @@map("connection_requests")
+  @@unique([senderId, receiverId])
 }

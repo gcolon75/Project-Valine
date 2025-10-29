@@ -1,13 +1,51 @@
 // src/pages/Dashboard.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import { useFeed } from "../context/FeedContext";
+import { getFeedPosts } from "../services/postService";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { posts } = useFeed();
+  const [apiPosts, setApiPosts] = useState([]);
+  const [loadingApi, setLoadingApi] = useState(false);
+
+  // Try to fetch posts from API, fallback to context posts
+  useEffect(() => {
+    setLoadingApi(true);
+    getFeedPosts()
+      .then(data => {
+        if (data && data.length > 0) {
+          // Transform API posts to match the expected format
+          const transformed = data.map(post => ({
+            id: post.id,
+            author: {
+              name: post.author.displayName,
+              role: post.author.username,
+              avatar: post.author.avatar || ''
+            },
+            title: '',
+            body: post.content,
+            tags: [],
+            createdAt: new Date(post.createdAt).getTime(),
+            mediaUrl: post.media?.[0] || '',
+            likes: 0,
+            saved: false,
+            comments: 0
+          }));
+          setApiPosts(transformed);
+        }
+      })
+      .catch(err => {
+        console.log('API not available, using local data:', err.message);
+      })
+      .finally(() => setLoadingApi(false));
+  }, []);
+
+  // Use API posts if available, otherwise fall back to context posts
+  const displayPosts = apiPosts.length > 0 ? apiPosts : posts;
 
   const [savedTags, setSavedTags] = useState([
     "#SciFi",
@@ -20,12 +58,12 @@ export default function Dashboard() {
   const [activeTag, setActiveTag] = useState("");
 
   const results = useMemo(() => {
-    if (!activeTag) return posts;
+    if (!activeTag) return displayPosts;
     const needle = activeTag.toLowerCase();
-    return posts.filter((p) =>
+    return displayPosts.filter((p) =>
       (p.tags || []).some((t) => t.toLowerCase() === needle)
     );
-  }, [posts, activeTag]);
+  }, [displayPosts, activeTag]);
 
   const addSavedTag = () => {
     const raw = newTag.trim();

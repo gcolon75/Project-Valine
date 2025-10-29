@@ -10,6 +10,7 @@ provider:
     cors: true
   environment:
     STAGE: ${env:STAGE, "prod"}
+    DATABASE_URL: ${env:DATABASE_URL}
 
 functions:
   api:
@@ -32,4 +33,70 @@ functions:
           method: post
       - httpApi:
           path: /requests/{id}/reject
+          method: post
+
+  # User endpoints
+  createUser:
+    handler: src/handlers/users.createUser
+    events:
+      - httpApi:
+          path: /users
+          method: post
+  
+  getUser:
+    handler: src/handlers/users.getUser
+    events:
+      - httpApi:
+          path: /users/{username}
+          method: get
+  
+  updateUser:
+    handler: src/handlers/users.updateUser
+    events:
+      - httpApi:
+          path: /users/{id}
+          method: put
+  
+  # Post endpoints
+  createPost:
+    handler: src/handlers/posts.createPost
+    events:
+      - httpApi:
+          path: /posts
+          method: post
+  
+  listPosts:
+    handler: src/handlers/posts.listPosts
+    events:
+      - httpApi:
+          path: /posts
+          method: get
+  
+  # Connection endpoints
+  sendConnectionRequest:
+    handler: src/handlers/connections.sendRequest
+    events:
+      - httpApi:
+          path: /connections/request
+          method: post
+  
+  listConnectionRequests:
+    handler: src/handlers/connections.listRequests
+    events:
+      - httpApi:
+          path: /connections/requests
+          method: get
+  
+  approveConnectionRequest:
+    handler: src/handlers/connections.approveRequest
+    events:
+      - httpApi:
+          path: /connections/requests/{id}/approve
+          method: post
+  
+  rejectConnectionRequest:
+    handler: src/handlers/connections.rejectRequest
+    events:
+      - httpApi:
+          path: /connections/requests/{id}/reject
           method: post
