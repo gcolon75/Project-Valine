@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import { useFeed } from "../context/FeedContext";
@@ -36,18 +36,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-neutral-950 text-neutral-100">
-      <section className="mx-auto max-w-7xl px-4 lg:px-6 py-5">
-        {/* TOP SHORTCUTS — centered */}
-        <nav className="mb-5 flex flex-wrap items-center justify-center gap-2">
-          <TopLink to="/dashboard">Feed</TopLink>
-          <TopLink to="/discover">Discover</TopLink>
-          <TopLink to="/post">Post</TopLink>
-          <TopLink to="/inbox">Inbox</TopLink>
-          <TopLink to="/profile">Profile</TopLink>
-        </nav>
-
-        <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+    <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
           {/* LEFT COLUMN */}
           <aside className="space-y-4">
             <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-4">
@@ -202,26 +191,5 @@ export default function Dashboard() {
             </div>
           </aside>
         </div>
-      </section>
-    </div>
-  );
-}
-
-/* ——— tiny helpers ——— */
-function TopLink({ to, children }) {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        [
-          "rounded-full px-3 py-1.5 text-sm border transition",
-          isActive
-            ? "bg-white/10 text-white border-white/10"
-            : "bg-white/5 text-neutral-300 border-white/10 hover:bg-white/10",
-        ].join(" ")
-      }
-    >
-      {children}
-    </NavLink>
   );
 }

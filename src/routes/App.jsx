@@ -50,19 +50,19 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
         </Route>
 
-        {/* Dashboard (no side menu) */}
-        <Route
-          path="dashboard"
-          element={
-            <Protected>
-              <DashboardPage />
-            </Protected>
-          }
-        />
-
         {/* Authenticated app shell */}
         <Route element={<AppLayout />}>
           <Route path="setup" element={<ProfileSetupPage />} />
+
+          {/* Dashboard */}
+          <Route
+            path="dashboard"
+            element={
+              <Protected>
+                <DashboardPage />
+              </Protected>
+            }
+          />
 
           {/* Legacy mappings */}
           <Route
