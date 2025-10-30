@@ -11,6 +11,17 @@
   --ink: #e8f0f2;
   --muted: #9fb0b8;
   --brand: #ff3b30;
+  
+  /* Toast notifications */
+  --toast-bg: #ffffff;
+  --toast-color: #171717;
+  --toast-border: #e5e5e5;
+}
+
+.dark {
+  --toast-bg: #262626;
+  --toast-color: #fafafa;
+  --toast-border: #404040;
 }
 
 * { box-sizing: border-box; }

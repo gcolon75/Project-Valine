@@ -1,5 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import CommentList from "./CommentList";
 
@@ -63,6 +64,15 @@ export default function PostCard({ post }) {
             ].join(" ")}
           >
             {post.saved ? "Saved" : "Save"}
+          </button>
+          <button
+            onClick={() => {
+              toast.success('Access request sent!');
+              console.log('Request access for post:', post.id);
+            }}
+            className="ml-auto rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors"
+          >
+            Request
           </button>
         </div>
       </div>

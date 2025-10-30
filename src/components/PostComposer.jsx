@@ -1,5 +1,6 @@
 // src/components/PostComposer.jsx
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 
 export default function PostComposer() {
@@ -21,9 +22,17 @@ export default function PostComposer() {
 
   const submit = (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
-    createPost({ title: title.trim(), body: body.trim(), tags });
-    setTitle(""); setBody(""); setTags([]); setTagInput("");
+    if (!title.trim()) {
+      toast.error("Please add a title to your post");
+      return;
+    }
+    try {
+      createPost({ title: title.trim(), body: body.trim(), tags });
+      toast.success("Post created successfully!");
+      setTitle(""); setBody(""); setTags([]); setTagInput("");
+    } catch (error) {
+      toast.error("Failed to create post. Please try again.");
+    }
   };
 
   return (
