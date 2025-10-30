@@ -46,15 +46,17 @@ echo -e "${GREEN}✓${NC} Prisma Client generated"
 echo ""
 
 # Step 3: Run migrations
-echo "🚀 Running database migrations..."
+echo "🚀 Setting up database schema..."
 if [[ "$DATABASE_URL" == file:* ]]; then
   echo -e "${YELLOW}⚠${NC}  Using SQLite - running development migration"
-  npx prisma migrate dev --name add_social_features
+  npx prisma migrate dev --name initial_schema
 else
-  echo "Running production migration..."
-  npx prisma migrate deploy
+  echo "Syncing schema to database..."
+  # For initial setup, use db push to sync the schema
+  # This is simpler than migrations for getting started
+  npx prisma db push --accept-data-loss
 fi
-echo -e "${GREEN}✓${NC} Migrations completed"
+echo -e "${GREEN}✓${NC} Database schema synced"
 echo ""
 
 # Step 4: Verify setup

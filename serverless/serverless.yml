@@ -72,6 +72,13 @@ functions:
           path: /posts
           method: get
   
+  getPost:
+    handler: src/handlers/posts.getPost
+    events:
+      - httpApi:
+          path: /posts/{id}
+          method: get
+  
   # Connection endpoints
   sendConnectionRequest:
     handler: src/handlers/connections.sendRequest

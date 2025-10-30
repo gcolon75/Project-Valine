@@ -50,3 +50,32 @@ export const listPosts = async (event) => {
     return error('Server error: ' + e.message, 500);
   }
 };
+
+export const getPost = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: { 
+        author: { 
+          select: { id: true, username: true, displayName: true, avatar: true } 
+        } 
+      },
+    });
+    
+    if (!post) {
+      return error('Post not found', 404);
+    }
+    
+    return json(post);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
