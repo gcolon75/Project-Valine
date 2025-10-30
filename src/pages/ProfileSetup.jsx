@@ -24,6 +24,8 @@ export default function ProfileSetup() {
     budgetRange: user.budgetRange || '',
     showreel: user.showreel || '',
   }));
+  
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -206,10 +208,59 @@ export default function ProfileSetup() {
             <label className="block text-sm font-medium mb-1">Identity Verification</label>
             <p className="text-xs text-neutral-500">Identity verification will be available soon. Stay tuned!</p>
           </div>
+          
+          {/* Terms of Use */}
+          <div className="border border-neutral-700 dark:border-neutral-600 rounded-lg p-4 bg-neutral-900/50">
+            <div className="flex items-start gap-3 mb-3">
+              <img 
+                src="/terms-icon.png" 
+                alt="Terms of Use" 
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold mb-1 text-neutral-100">Terms of Use</h3>
+                <p className="text-xs text-neutral-400 mb-2">
+                  Please review and accept our terms of use to continue using Joint.
+                </p>
+                <a 
+                  href="/terms" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-emerald-500 hover:text-emerald-400 underline"
+                >
+                  Read full Terms of Use
+                </a>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-600 bg-neutral-800 text-emerald-600 focus:ring-emerald-600 focus:ring-offset-neutral-900"
+              />
+              <span className="text-sm text-neutral-300">
+                I have read and accept the Terms of Use
+              </span>
+            </label>
+          </div>
+          
           <div className="pt-2">
-            <button type="submit" className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 transition">
+            <button 
+              type="submit" 
+              disabled={!acceptedTerms}
+              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold hover:bg-emerald-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Save & Continue
             </button>
+            {!acceptedTerms && (
+              <p className="text-xs text-neutral-500 mt-2">
+                You must accept the Terms of Use to continue
+              </p>
+            )}
           </div>
         </form>
       </div>

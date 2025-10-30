@@ -1,5 +1,7 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
+import { Heart, MessageCircle, Bookmark } from "lucide-react";
+import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import CommentList from "./CommentList";
 
@@ -8,7 +10,7 @@ export default function PostCard({ post }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden">
+    <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
@@ -43,26 +45,38 @@ export default function PostCard({ post }) {
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={() => likePost(post.id)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
           >
-            Like • {post.likes}
+            <Heart className="w-4 h-4" />
+            <span>{post.likes}</span>
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
           >
-            Comment • {post.comments}
+            <MessageCircle className="w-4 h-4" />
+            <span>{post.comments}</span>
           </button>
           <button
             onClick={() => toggleSave(post.id)}
             className={[
-              "rounded-full px-3 py-1.5 text-sm border",
+              "rounded-full px-3 py-1.5 text-sm border transition-colors flex items-center gap-1.5",
               post.saved
                 ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                 : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
             ].join(" ")}
           >
-            {post.saved ? "Saved" : "Save"}
+            <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} />
+            <span>{post.saved ? "Saved" : "Save"}</span>
+          </button>
+          <button
+            onClick={() => {
+              toast.success('Access request sent!');
+              console.log('Request access for post:', post.id);
+            }}
+            className="ml-auto rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors"
+          >
+            Request
           </button>
         </div>
       </div>

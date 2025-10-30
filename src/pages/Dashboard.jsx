@@ -1,8 +1,11 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FileText } from "lucide-react";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
+import SkeletonCard from "../components/skeletons/SkeletonCard";
+import EmptyState from "../components/EmptyState";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
 
@@ -74,7 +77,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+    <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px] animate-fade-in">
           {/* LEFT COLUMN */}
           <aside className="space-y-4">
             <div className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 p-4">
@@ -177,9 +180,29 @@ export default function Dashboard() {
             )}
 
             <div className="space-y-4">
-              {results.map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
+              {loadingApi ? (
+                <>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </>
+              ) : results.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title="No posts yet"
+                  description="Be the first to share something! Create a post and start connecting with other artists."
+                  actionText="Create Post"
+                  onAction={() => document.querySelector('input[placeholder*="Share"]')?.focus()}
+                />
+              ) : (
+                results.map((p, i) => (
+                  <PostCard 
+                    key={p.id} 
+                    post={p}
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  />
+                ))
+              )}
             </div>
           </section>
 
