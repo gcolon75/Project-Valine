@@ -1,242 +1,81 @@
-import patternImg from "/assets/pattern.jpg";
+import { Link } from 'react-router-dom';
+import { Sparkles, Target, Users, Zap, ArrowRight } from 'lucide-react';
 
-export default function About() {
+const About = () => {
   return (
-    <div className="bg-neutral-950 text-neutral-100">
-      {/* HERO */}
-      <section
-        className="relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(8,8,8,.65), rgba(8,8,8,.65)), url(${patternImg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="max-w-8xl mx-auto px-4 lg:px-6 py-16 text-center">
-          {/* ⬇️ Increased from text-3xl md:text-5xl */}
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight tracking-tight">
-            About Joint
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+      
+      {/* Hero */}
+      <section className="px-4 py-20 md:py-32 animate-fade-in">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center space-x-2 bg-emerald-100 dark:bg-emerald-900/30 px-4 py-2 rounded-full mb-8">
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              About Project Valine
+            </span>
+          </div>
+          
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-neutral-900 dark:text-white">
+            Empowering voice actors and creative artists
           </h1>
-          <p className="mt-4 text-neutral-300">
-            A creative network where emerging artists connect with supporters, collaborators, and opportunities—online and off.
+          
+          <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8">
+            Project Valine is a professional networking platform designed specifically for the voice acting community. We bring together artists, writers, and creators to collaborate, share, and grow together.
           </p>
         </div>
       </section>
 
-      {/* MISSION / WHO / WHAT */}
-      <section className="max-w-8xl mx-auto px-4 lg:px-6 py-12">
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card
+      {/* Mission */}
+      <section className="px-4 py-20 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+          <ValueCard
+            icon={Target}
             title="Our Mission"
-            body={
-              <>
-                <p className="text-neutral-300">
-                  We champion growth and visibility for aspiring talent while giving artists autonomy over their work and identity.
-                </p>
-                <p className="text-neutral-400 mt-3">
-                  Joint brings the network to the artist based on interests, experience, and creative style.
-                </p>
-              </>
-            }
+            description="To create the premier platform where voice actors can connect, collaborate, and find opportunities."
           />
-          <Card
-            title="Who It’s For"
-            body={
-              <>
-                <ul className="list-disc ps-5 space-y-2 text-neutral-300">
-                  <li>Actors seeking exposure, relationships, and new work</li>
-                  <li>Writers ready for honest feedback—personal or anonymous</li>
-                  <li>Producers, directors, technicians &amp; multi-hyphenates</li>
-                </ul>
-                <p className="text-neutral-400 mt-3">All backgrounds and experience levels welcome.</p>
-              </>
-            }
+          <ValueCard
+            icon={Users}
+            title="Our Community"
+            description="A diverse network of talented artists, from beginners to industry veterans, all supporting each other."
           />
-          <Card
-            title="What You’ll Do"
-            body={
-              <ul className="list-disc ps-5 space-y-2 text-neutral-300">
-                <li>Publish scripts, auditions, reels, and readings</li>
-                <li>Get notes, save work, and build your audience</li>
-                <li>Discover collaborators and investors</li>
-              </ul>
-            }
+          <ValueCard
+            icon={Zap}
+            title="Our Promise"
+            description="To provide the tools and connections you need to take your voice acting career to the next level."
           />
         </div>
       </section>
 
-      {/* HOW IT WORKS — bigger vertical steps (left) + visual (right) */}
-      <section className="max-w-8xl mx-auto px-4 lg:px-6 pb-12">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6">How it works</h2>
-
-        <div className="grid lg:grid-cols-2 gap-10 items-start">
-          <ol className="space-y-5">
-            <StepRow
-              n="1"
-              title="Create your profile"
-              desc="Set up your presence, publish work, and connect with collaborators and supporters."
-            />
-            <StepRow
-              n="2"
-              title="Share work & collect feedback"
-              desc="Upload scripts, auditions, and reels; gather notes and iterate quickly."
-            />
-            <StepRow
-              n="3"
-              title="Discover & connect"
-              desc="Use tags and search to find talent, request access, and build relationships."
-            />
-          </ol>
-          <RightVisual />
+      {/* CTA */}
+      <section className="px-4 py-20">
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-blue-600 to-emerald-600 rounded-3xl p-12 shadow-2xl animate-slide-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            Ready to get started?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Join thousands of voice actors already on Project Valine
+          </p>
+          <Link
+            to="/join"
+            className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl"
+          >
+            <span>Create Free Account</span>
+            <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
       </section>
-
-      {/* OFFLINE EVENTS / SHOWCASES */}
-      <section className="max-w-8xl mx-auto px-4 lg:px-6 pb-12">
-        <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-6">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-3">From Online to Onstage</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3 text-neutral-300">
-              <p>
-                Beyond connecting artists on the web, Joint Theatrical Ventures aims to host recurring in-person socials
-                followed by a live showcase premiering new talent and material.
-              </p>
-              <p>
-                Many emerging artists gain online followings but lack opportunities to perform live and meet industry
-                professionals. Our showcases in hubs like Los Angeles and New York provide a structured, supportive
-                environment to present new work, gain exposure, receive real-time feedback, and build community.
-              </p>
-            </div>
-            <div className="space-y-3 text-neutral-300">
-              <p>
-                Audiences get early access to exclusive talent; industry folks get curated scouting opportunities—turning
-                online momentum into sustainable live performance careers.
-              </p>
-              <ul className="list-disc ps-5 space-y-2 text-neutral-300">
-                <li>Artist socials &amp; showcase nights</li>
-                <li>Curated invitations for industry professionals</li>
-                <li>Actionable feedback loops</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CONTACT — centered */}
-      <section className="max-w-8xl mx-auto px-4 lg:px-6 pb-16 text-center">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-3">Have Questions?</h2>
-        <p className="text-neutral-300">Feel free to reach out. We’re here to support you on your creative journey.</p>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            alert("Thanks for reaching out! We will respond soon.");
-            e.currentTarget.reset();
-          }}
-          className="mt-6 max-w-xl mx-auto grid gap-3 text-left"
-        >
-          <input
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 outline-none placeholder:text-neutral-500 focus:border-brand w-full"
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            required
-          />
-          <input
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 outline-none placeholder:text-neutral-500 focus:border-brand w-full"
-            type="email"
-            name="email"
-            placeholder="Your Email"
-            required
-          />
-          <textarea
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 outline-none placeholder:text-neutral-500 focus:border-brand w-full"
-            name="message"
-            rows={5}
-            placeholder="Your Message"
-            required
-          />
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              className="mt-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold hover:bg-brand-hover transition"
-            >
-              Send Message
-            </button>
-          </div>
-        </form>
-      </section>
     </div>
   );
-}
+};
 
-/* ---------- helpers ---------- */
-
-function Card({ title, body }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/40 p-6">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <div className="mt-3 text-sm">{body}</div>
+const ValueCard = ({ icon: Icon, title, description }) => (
+  <div className="bg-white dark:bg-neutral-800 p-8 rounded-2xl border border-neutral-200 dark:border-neutral-700 hover:shadow-xl hover:-translate-y-2 transition-all duration-200 text-center">
+    <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+      <Icon className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
     </div>
-  );
-}
+    <h3 className="text-xl font-bold mb-3 text-neutral-900 dark:text-white">{title}</h3>
+    <p className="text-neutral-600 dark:text-neutral-400">{description}</p>
+  </div>
+);
 
-function StepRow({ n, title, desc }) {
-  return (
-    <li className="rounded-2xl border border-white/10 bg-neutral-900/40 p-6 md:p-7 flex gap-5">
-      <span className="inline-flex h-11 w-11 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm md:text-base">
-        {n}
-      </span>
-      <div>
-        <div className="text-lg font-semibold">{title}</div>
-        <div className="text-sm text-neutral-400 mt-1">{desc}</div>
-      </div>
-    </li>
-  );
-}
-
-function RightVisual() {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden min-h-[320px] aspect-[4/3]">
-      <svg viewBox="0 0 800 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"  stopColor="#064e3b" />
-            <stop offset="100%" stopColor="#10b981" />
-          </linearGradient>
-          <radialGradient id="rGlow" cx="70%" cy="35%" r="35%">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <rect width="800" height="600" fill="#0a0a0a" />
-        <rect width="800" height="600" fill="url(#gBg)" opacity=".25" />
-
-        <g stroke="#ffffff" strokeOpacity=".12" strokeWidth="6">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <rect key={i} x={40 + i * 110} y="60" width="60" height="30" rx="6" fill="none" />
-          ))}
-          {Array.from({ length: 7 }).map((_, i) => (
-            <rect key={"b"+i} x={40 + i * 110} y="510" width="60" height="30" rx="6" fill="none" />
-          ))}
-        </g>
-
-        <g transform="translate(140,150)">
-          <rect x="0" y="60" width="420" height="260" rx="16" fill="none" stroke="#ffffff" strokeOpacity=".14" strokeWidth="8" />
-          <rect x="0" y="0" width="420" height="70" rx="12" fill="#ffffff" fillOpacity=".06" />
-          <g fill="#ffffff" fillOpacity=".12">
-            <rect x="14" y="16" width="48" height="38" rx="6" />
-            <rect x="74" y="16" width="48" height="38" rx="6" />
-            <rect x="134" y="16" width="48" height="38" rx="6" />
-            <rect x="194" y="16" width="48" height="38" rx="6" />
-          </g>
-        </g>
-
-        <circle cx="610" cy="240" r="120" fill="url(#rGlow)" />
-        <circle cx="610" cy="240" r="80"  fill="none" stroke="#10b981" strokeOpacity=".25" strokeWidth="8" />
-        <circle cx="610" cy="240" r="48"  fill="none" stroke="#10b981" strokeOpacity=".35" strokeWidth="6" />
-      </svg>
-    </div>
-  );
-}
+export default About;

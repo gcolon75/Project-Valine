@@ -1,228 +1,201 @@
-// src/pages/Home.jsx
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import heroImg from "/assets/hero.jpg";
+import { Sparkles, ArrowRight, Mic, Users, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const TAGS = [
-  "#Monologue", "#SciFi", "#ShortFilm", "#Casting", "#Reading",
-  "#ColdRead", "#Comedy", "#Drama", "#Pilot", "#Showcase",
-  "#Indie", "#VoiceOver",
-];
-
-export default function Home() {
-  const featRef = useRef(null);
-  const [activeTag, setActiveTag] = useState(TAGS[0]);
-
-  const scrollFeat = (dir) => {
-    if (!featRef.current) return;
-    const amount = 400 * (dir === "left" ? -1 : 1);
-    featRef.current.scrollBy({ left: amount, behavior: "smooth" });
-  };
-
+const Home = () => {
   return (
-    <div className="bg-neutral-950 text-neutral-100">
-      {/* HERO (full bleed, dark) */}
-      <section
-        className="relative"
-        style={{
-          backgroundImage: `linear-gradient(rgba(8,8,8,.65), rgba(8,8,8,.65)), url(${heroImg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="max-w-8xl mx-auto px-4 lg:px-6 py-16 text-center">
-          {/* SIMPLE WORDMARK (not a button/pill) */}
-          <div className="heading-display text-emerald-200/90 uppercase tracking-[0.2em] text-xs md:text-sm font-semibold select-none">
-            Joint
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+      
+      {/* Hero Section */}
+      <section className="relative px-4 py-20 md:py-32 animate-fade-in">
+        <div className="max-w-6xl mx-auto text-center">
+          
+          {/* Badge */}
+          <div className="inline-flex items-center space-x-2 bg-emerald-100 dark:bg-emerald-900/30 px-4 py-2 rounded-full mb-8 animate-slide-up">
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              The Professional Network for Voice Actors
+            </span>
           </div>
-
-          {/* Bigger headline */}
-          <h1 className=" heading-display mt-3 text-4xl md:text-7xl font-extrabold leading-tight">
-            Artists Connecting to Seekers 24/7
+          
+          {/* Main Headline */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-emerald-600 to-blue-600 bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            Connect. Create. Collaborate.
           </h1>
-
-          {/* Clear description of what we are */}
-          <p className="mt-4 text-neutral-300 text-base md:text-lg">
-            A creator-first network where actors, writers, and artists showcase their work
-            and connect with casting, producers, and collaborators.
+          
+          {/* Subheadline */}
+          <p className="text-xl md:text-2xl text-neutral-600 dark:text-neutral-400 mb-12 max-w-3xl mx-auto animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
           </p>
-
-          <div className="mt-6 flex items-center justify-center gap-3">
+          
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <Link
               to="/join"
-              className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold hover:bg-brand-hover transition"
+              className="group w-full sm:w-auto bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
             >
-              Create Your Profile
+              <span>Get Started Free</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a
-              href="#content"
-              className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm hover:bg-white/10"
+            <Link
+              to="/about"
+              className="w-full sm:w-auto bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 dark:border-neutral-700 transition-all duration-200 hover:scale-105"
             >
-              Explore
-            </a>
-          </div>
-
-          {/* optional mini metrics */}
-          <div className="mt-8 grid grid-cols-3 max-w-md mx-auto text-sm text-neutral-300">
-            <div>12k&nbsp;posts</div>
-            <div>3.2k&nbsp;creators</div>
-            <div>48k&nbsp;saves</div>
+              Learn More
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* FEATURED STRIP */}
-      <section className="max-w-8xl mx-auto px-4 lg:px-6 py-8">
-        {/* section title row */}
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg md:text-xl font-semibold">News</h2>
+      {/* Features Section */}
+      <section className="px-4 py-20 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900 dark:text-white animate-slide-up">
+            Everything you need to succeed
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <FeatureCard
+              icon={Users}
+              title="Connect with Artists"
+              description="Build your professional network and discover talented voice actors, writers, and artists in the community."
+              delay="0s"
+            />
+            <FeatureCard
+              icon={FileText}
+              title="Share Your Work"
+              description="Showcase your portfolio, share scripts, and collaborate on exciting projects with other creatives."
+              delay="0.1s"
+            />
+            <FeatureCard
+              icon={Mic}
+              title="Find Opportunities"
+              description="Discover auditions, casting calls, and collaborative opportunities tailored to your skills."
+              delay="0.2s"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section className="px-4 py-20">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900 dark:text-white">
+            Loved by artists everywhere
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <Testimonial
+              quote="Project Valine has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
+              author="Sarah Johnson"
+              role="Voice Actor"
+              avatar="https://i.pravatar.cc/150?img=1"
+              delay="0s"
+            />
+            <Testimonial
+              quote="Finally, a platform built specifically for our community. I've found amazing opportunities and made great connections."
+              author="Michael Chen"
+              role="Audio Engineer"
+              avatar="https://i.pravatar.cc/150?img=12"
+              delay="0.1s"
+            />
+            <Testimonial
+              quote="The best place to showcase my work and find talented artists to collaborate with. Highly recommended!"
+              author="Emily Rodriguez"
+              role="Script Writer"
+              avatar="https://i.pravatar.cc/150?img=5"
+              delay="0.2s"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="px-4 py-20 bg-gradient-to-r from-blue-600 via-emerald-600 to-blue-600 animate-slide-up">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+            Ready to join the community?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Sign up now and start connecting with talented artists.
+          </p>
           <Link
-            to="/news"
-            className="text-sm text-emerald-400 hover:text-emerald-300"
+            to="/join"
+            className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl"
           >
-            View all
+            <span>Create Free Account</span>
+            <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
-
-        <div className="relative featured-wrap">
-          {/* hover arrows (CSS in marketing/global.css) */}
-          <button
-            aria-label="Scroll featured left"
-            onClick={() => scrollFeat("left")}
-            className="featured-arrow left"
-          >
-            ‹
-          </button>
-          <button
-            aria-label="Scroll featured right"
-            onClick={() => scrollFeat("right")}
-            className="featured-arrow right"
-          >
-            ›
-          </button>
-
-          <div
-            ref={featRef}
-            id="feat"
-            className="featured-scroll featured-edges flex gap-4 overflow-x-auto pb-2 snap-x"
-          >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <article
-                key={i}
-                className="min-w-[300px] snap-start rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden"
-              >
-                <div className="aspect-[16/9] bg-neutral-800 ring-1 ring-inset ring-white/10 skel" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 w-3/4 bg-white/10 rounded skel" />
-                  <div className="h-3 w-1/2 bg-white/10 rounded skel" />
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
       </section>
 
-      {/* MAIN GRID + BIGGER TRENDING SIDEBAR */}
-      <section
-        id="content"
-        className="max-w-8xl mx-auto px-4 lg:px-6 py-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]"
-      >
-        {/* Content grid – larger cards */}
-        <div>
-          {/* section title row */}
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg md:text-xl font-semibold">Top Posts</h2>
-            <Link
-              to="/feed"
-              className="text-sm text-emerald-400 hover:text-emerald-300"
-            >
-              See more
-            </Link>
+      {/* Footer */}
+      <footer className="px-4 py-12 bg-neutral-900 dark:bg-black">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-8">
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4">Project Valine</h3>
+            <p className="text-neutral-400 text-sm">
+              The professional network for voice actors and creative artists.
+            </p>
           </div>
-
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <article
-                key={i}
-                className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden"
-              >
-                <div className="aspect-[16/10] bg-neutral-800 ring-1 ring-inset ring-white/10 skel" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 w-2/3 bg-white/10 rounded skel" />
-                  <div className="h-3 w-1/3 bg-white/10 rounded skel" />
-                  <div className="mt-3 h-3 w-1/2 bg-white/10 rounded skel" />
-                </div>
-              </article>
-            ))}
-
-            <div className="col-span-full flex justify-center">
-              <button className="rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm hover:bg-white/10">
-                Load more
-              </button>
-            </div>
+          <div>
+            <h4 className="text-white font-semibold mb-4">Product</h4>
+            <ul className="space-y-2 text-neutral-400 text-sm">
+              <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+              <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold mb-4">Resources</h4>
+            <ul className="space-y-2 text-neutral-400 text-sm">
+              <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link to="/community" className="hover:text-white transition-colors">Community</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold mb-4">Legal</h4>
+            <ul className="space-y-2 text-neutral-400 text-sm">
+              <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+            </ul>
           </div>
         </div>
-
-        {/* Right sidebar: BIG Trending tags (only) */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-24">
-            <section className="rounded-2xl border border-white/10 bg-neutral-900/40 overflow-hidden min-h-[420px]">
-              <header className="px-4 py-3 border-b border-white/10">
-                <h4 className="text-sm font-semibold">Trending tags</h4>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Popular this week — tap a tag to explore.
-                </p>
-              </header>
-              <div className="p-4">
-                <div className="grid grid-cols-2 gap-2">
-                  {TAGS.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setActiveTag(t)}
-                      className={`text-sm rounded-full border px-4 py-2 text-left transition
-                        ${
-                          activeTag === t
-                            ? "bg-brand border-brand hover:bg-brand-hover"
-                            : "bg-white/5 border-white/10 hover:bg-white/10"
-                        }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                {/* tiny helper text */}
-                <div className="text-[11px] text-neutral-400 mt-3">
-                  Selected: <span className="text-neutral-200">{activeTag}</span>
-                </div>
-              </div>
-            </section>
-          </div>
-        </aside>
-      </section>
-
-      {/* REVIEWS (centered) */}
-      <section className="max-w-3xl mx-auto px-4 lg:px-6 pb-16">
-        <h3 className="text-xl font-semibold text-center mb-6">What people say</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {[
-            "Found my lead actor in 48 hours.",
-            "Feedback iterations made my pilot sing.",
-            "A legit hub for emerging talent.",
-            "The tag filters helped me scout fast.",
-            "Loved the community notes on my cold open.",
-            "Easiest way to share reels with producers.",
-          ].map((q, i) => (
-            <blockquote
-              key={i}
-              className="rounded-2xl border border-white/10 bg-neutral-900/40 p-5 text-base leading-relaxed text-neutral-200"
-            >
-              “{q}”
-            </blockquote>
-          ))}
+        <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-neutral-800 text-center text-neutral-400 text-sm">
+          <p>&copy; 2025 Project Valine. All rights reserved.</p>
         </div>
-      </section>
-
-      {/* Footer is rendered by MarketingLayout */}
+      </footer>
     </div>
   );
-}
+};
+
+// Feature Card Component
+const FeatureCard = ({ icon: Icon, title, description, delay }) => (
+  <div 
+    className="bg-white dark:bg-neutral-800 p-8 rounded-2xl border border-neutral-200 dark:border-neutral-700 hover:shadow-xl hover:-translate-y-2 transition-all duration-200 animate-slide-up"
+    style={{ animationDelay: delay }}
+  >
+    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center mb-4">
+      <Icon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+    </div>
+    <h3 className="text-xl font-bold mb-3 text-neutral-900 dark:text-white">{title}</h3>
+    <p className="text-neutral-600 dark:text-neutral-400">{description}</p>
+  </div>
+);
+
+// Testimonial Component
+const Testimonial = ({ quote, author, role, avatar, delay }) => (
+  <div 
+    className="bg-white dark:bg-neutral-800 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all duration-200 animate-slide-up"
+    style={{ animationDelay: delay }}
+  >
+    <p className="text-neutral-700 dark:text-neutral-300 mb-4 italic">"{quote}"</p>
+    <div className="flex items-center space-x-3">
+      <img src={avatar} alt={author} className="w-12 h-12 rounded-full" />
+      <div>
+        <p className="font-semibold text-neutral-900 dark:text-white">{author}</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">{role}</p>
+      </div>
+    </div>
+  </div>
+);
+
+export default Home;
