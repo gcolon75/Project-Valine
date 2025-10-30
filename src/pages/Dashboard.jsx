@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { FileText, Video } from "lucide-react";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
@@ -133,7 +133,7 @@ export default function Dashboard() {
                     className={[
                       "rounded-full border px-3 py-1 text-xs",
                       activeTag === t
-                        ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
+                        ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B] dark:text-[#0CCE6B]"
                         : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
                     ].join(" ")}
                   >
@@ -165,9 +165,26 @@ export default function Dashboard() {
           <section className="space-y-4">
             <PostComposer />
 
+            {/* Reels CTA Banner */}
+            <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-8 text-white animate-slide-up">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Check out Reels</h3>
+                  <p className="text-white/90">Short-form videos from artists in the community</p>
+                </div>
+                <Link
+                  to="/reels"
+                  className="bg-white hover:bg-neutral-100 text-[#474747] px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 flex items-center space-x-2"
+                >
+                  <Video className="w-5 h-5" />
+                  <span>Watch Reels</span>
+                </Link>
+              </div>
+            </div>
+
             {activeTag && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="rounded-full border border-emerald-500 bg-emerald-100 dark:bg-emerald-600/20 px-3 py-1 text-emerald-700 dark:text-emerald-300">
+                <span className="rounded-full border border-[#0CCE6B] bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-3 py-1 text-[#0CCE6B] dark:text-[#0CCE6B]">
                   {activeTag}
                 </span>
                 <button

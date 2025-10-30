@@ -20,6 +20,8 @@ const ProfilePage = lazy(() => import("../pages/Profile"));
 const BookmarksPage = lazy(() => import("../pages/Bookmarks"));
 const RequestsPage = lazy(() => import("../pages/Requests"));
 const SettingsPage = lazy(() => import("../pages/Settings"));
+const ReelsPage = lazy(() => import("../pages/Reels"));
+const NotificationsPage = lazy(() => import("../pages/Notifications"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
@@ -94,6 +96,14 @@ export default function App() {
             }
           />
           <Route
+            path="reels"
+            element={
+              <Protected>
+                <ReelsPage />
+              </Protected>
+            }
+          />
+          <Route
             path="post"
             element={
               <Protected>
@@ -138,6 +148,14 @@ export default function App() {
             element={
               <Protected>
                 <SettingsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="notifications"
+            element={
+              <Protected>
+                <NotificationsPage />
               </Protected>
             }
           />
