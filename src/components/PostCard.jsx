@@ -10,7 +10,7 @@ export default function PostCard({ post }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden">
+    <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
