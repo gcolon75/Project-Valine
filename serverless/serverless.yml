@@ -12,6 +12,14 @@ provider:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
 
+package:
+  patterns:
+    - '!.git/**'
+    - '!.github/**'
+    - '!*.md'
+    - '!test/**'
+    - '!tests/**'
+
 functions:
   api:
     handler: handler.router

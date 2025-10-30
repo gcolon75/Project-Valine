@@ -7,6 +7,10 @@ dist
 *.backup
 *~
 
+# Serverless artifacts
+.serverless/
+serverless/.serverless/
+
 # Orchestrator secrets and build artifacts
 orchestrator/samconfig.toml
 !orchestrator/samconfig.toml.example
