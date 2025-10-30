@@ -127,18 +127,23 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 
 ### Backend Deployment
 
-📚 **New:** [Complete Deployment Guide](DEPLOYMENT.md) | [Quick Start](QUICK_START.md)
+📚 **New AWS Deployment Guides:**
+- **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute fast-track deployment guide
+- **[Complete AWS Deployment Guide](DEPLOYMENT_GUIDE_AWS.md)** - Comprehensive guide with all curl tests
+- **[Database Provider Comparison](docs/DATABASE_PROVIDER_COMPARISON.md)** - Choose between Supabase and AWS RDS
+- **[Original Deployment Guide](DEPLOYMENT.md)** - Complete deployment documentation
+- **[Quick Start](QUICK_START.md)** - 5-minute deployment overview
 
 **Automated Deployment (Recommended):**
 ```bash
-# 1. Setup database
+# 1. Setup database (Supabase free tier recommended for dev)
 export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
 ./scripts/deployment/setup-database.sh
 
-# 2. Deploy backend
+# 2. Deploy backend to AWS
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
-# 3. Test API
+# 3. Test all API endpoints
 export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 
@@ -306,8 +311,13 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 - **[Discord Slash Commands](orchestrator/DISCORD_SLASH_CMD_QUICK_REF.md)** - Available commands reference
 
 ### Deployment & Operations
+- **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute deployment guide (NEW)
+- **[Complete AWS Deployment Guide](DEPLOYMENT_GUIDE_AWS.md)** - Step-by-step with curl tests (NEW)
+- **[Database Provider Comparison](docs/DATABASE_PROVIDER_COMPARISON.md)** - Supabase vs AWS RDS (NEW)
+- **[Deployment Scripts Documentation](scripts/deployment/README.md)** - Automated deployment scripts
 - **[Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md)** - Verification system overview
 - **[Verification Guide](scripts/VERIFICATION_GUIDE.md)** - Detailed verification procedures
+- **[Original Deployment Guide](DEPLOYMENT.md)** - Complete deployment documentation
 
 ### Troubleshooting
 - **[Discord Issues](docs/troubleshooting/discord/)** - Discord bot debugging and fixes
