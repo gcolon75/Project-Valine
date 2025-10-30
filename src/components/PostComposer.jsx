@@ -1,5 +1,6 @@
 // src/components/PostComposer.jsx
 import { useState } from "react";
+import { Send, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 
@@ -59,10 +60,11 @@ export default function PostComposer() {
             type="button"
             key={t}
             onClick={() => removeTag(t)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
             title="Remove tag"
           >
-            {t} ✕
+            {t}
+            <X className="w-3 h-3" />
           </button>
         ))}
         <input
@@ -82,9 +84,10 @@ export default function PostComposer() {
         <div className="ml-auto">
           <button
             type="submit"
-            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover"
+            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover transition-colors flex items-center gap-1.5"
           >
-            Post
+            <Send className="w-4 h-4" />
+            <span>Post</span>
           </button>
         </div>
       </div>

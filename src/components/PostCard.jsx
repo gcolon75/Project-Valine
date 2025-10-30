@@ -1,5 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
+import { Heart, MessageCircle, Bookmark } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import CommentList from "./CommentList";
@@ -44,26 +45,29 @@ export default function PostCard({ post }) {
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={() => likePost(post.id)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
           >
-            Like • {post.likes}
+            <Heart className="w-4 h-4" />
+            <span>{post.likes}</span>
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
           >
-            Comment • {post.comments}
+            <MessageCircle className="w-4 h-4" />
+            <span>{post.comments}</span>
           </button>
           <button
             onClick={() => toggleSave(post.id)}
             className={[
-              "rounded-full px-3 py-1.5 text-sm border",
+              "rounded-full px-3 py-1.5 text-sm border transition-colors flex items-center gap-1.5",
               post.saved
                 ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                 : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
             ].join(" ")}
           >
-            {post.saved ? "Saved" : "Save"}
+            <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} />
+            <span>{post.saved ? "Saved" : "Save"}</span>
           </button>
           <button
             onClick={() => {
