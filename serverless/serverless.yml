@@ -12,6 +12,14 @@ provider:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
 
+package:
+  patterns:
+    - '!.git/**'
+    - '!.github/**'
+    - '!*.md'
+    - '!test/**'
+    - '!tests/**'
+
 functions:
   api:
     handler: handler.router
@@ -70,6 +78,13 @@ functions:
     events:
       - httpApi:
           path: /posts
+          method: get
+  
+  getPost:
+    handler: src/handlers/posts.getPost
+    events:
+      - httpApi:
+          path: /posts/{id}
           method: get
   
   # Connection endpoints

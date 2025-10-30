@@ -17,7 +17,7 @@ export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
 **What it does:**
 - Installs Prisma dependencies in `/api`
 - Generates Prisma Client
-- Runs database migrations (dev or production mode based on DATABASE_URL)
+- Syncs database schema using `prisma db push` (for PostgreSQL) or migrations (for SQLite)
 - Verifies schema setup
 
 **Requirements:**
@@ -257,7 +257,7 @@ If you prefer not to use the scripts:
 cd api
 npm install
 npx prisma generate
-npx prisma migrate deploy
+npx prisma db push --accept-data-loss
 ```
 
 ### Manual Backend Deploy

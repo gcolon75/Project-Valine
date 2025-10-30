@@ -5,7 +5,7 @@ const headers = { 'Access-Control-Allow-Origin': '*' };
 
 export const createUser = async (event) => {
   try {
-    const { username, email, displayName, bio, avatar } = JSON.parse(event.body || '{}');
+    const { username, email, displayName, bio, avatar, role } = JSON.parse(event.body || '{}');
     
     if (!username || !email || !displayName) {
       return error('username, email, and displayName are required', 400);
@@ -13,7 +13,7 @@ export const createUser = async (event) => {
 
     const prisma = getPrisma();
     const user = await prisma.user.create({
-      data: { username, email, displayName, bio, avatar },
+      data: { username, email, displayName, bio, avatar, role },
     });
     
     return json(user, 201);
