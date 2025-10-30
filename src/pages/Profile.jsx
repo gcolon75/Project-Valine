@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
+import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 
 export default function Profile() {
   const { username } = useParams();
@@ -24,7 +25,7 @@ export default function Profile() {
     }
   }, [username]);
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  if (loading) return <SkeletonProfile />;
   
   if (error || (!profile && username)) {
     return (

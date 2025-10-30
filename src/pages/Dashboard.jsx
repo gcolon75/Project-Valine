@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
+import SkeletonCard from "../components/skeletons/SkeletonCard";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
 
@@ -177,9 +178,17 @@ export default function Dashboard() {
             )}
 
             <div className="space-y-4">
-              {results.map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
+              {loadingApi ? (
+                <>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </>
+              ) : (
+                results.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))
+              )}
             </div>
           </section>
 

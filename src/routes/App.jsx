@@ -23,6 +23,7 @@ const SettingsPage = lazy(() => import("../pages/Settings"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
+const SkeletonTestPage = lazy(() => import("../pages/SkeletonTest"));
 
 function Protected({ children }) {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="about-us" element={<AboutPage />} />
           <Route path="join" element={<JoinPage />} />
           <Route path="login" element={<LoginPage />} />
+          <Route path="skeleton-test" element={<SkeletonTestPage />} />
         </Route>
 
         {/* Authenticated app shell */}
