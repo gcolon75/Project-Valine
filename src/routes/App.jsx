@@ -9,6 +9,7 @@ import AppLayout from "../layouts/AppLayout";
 /* Lazy pages */
 const HomePage = lazy(() => import("../pages/Home"));
 const AboutPage = lazy(() => import("../pages/About"));
+const FeaturesPage = lazy(() => import("../pages/Features"));
 const JoinPage = lazy(() => import("../pages/Join"));
 const LoginPage = lazy(() => import("../pages/Login"));
 
@@ -49,6 +50,7 @@ export default function App() {
         <Route element={<MarketingLayout />}>
           <Route index element={<HomePage />} />
           <Route path="about-us" element={<AboutPage />} />
+          <Route path="features" element={<FeaturesPage />} />
           <Route path="join" element={<JoinPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />

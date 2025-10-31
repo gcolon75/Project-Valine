@@ -1,7 +1,6 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Home, Search, PlusCircle, Bell, User, Video, Settings, LogOut } from "lucide-react";
-import ThemeToggle from "../components/ThemeToggle";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -40,7 +39,6 @@ export default function AppLayout() {
 
             {/* Right Actions */}
             <div className="flex items-center space-x-3">
-              <ThemeToggle />
               <NavLink
                 to="/settings"
                 className="hidden md:flex items-center space-x-2 text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors"

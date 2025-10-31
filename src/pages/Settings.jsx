@@ -2,8 +2,11 @@
 import { useState } from 'react';
 import { User, Bell, Lock, Palette, Globe, HelpCircle } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Settings() {
+  const { theme } = useTheme();
+  
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
       <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">
@@ -51,7 +54,12 @@ export default function Settings() {
           description="Customize how Project Valine looks"
         >
           <div className="flex items-center justify-between py-4">
-            <span className="text-neutral-900 dark:text-white">Theme</span>
+            <div>
+              <p className="font-medium text-neutral-900 dark:text-white">Theme</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+              </p>
+            </div>
             <ThemeToggle />
           </div>
         </SettingsSection>

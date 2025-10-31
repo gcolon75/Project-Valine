@@ -61,13 +61,12 @@ const Login = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/about-us" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 About
               </Link>
               <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
-              {/* Theme Toggle */}
               <ThemeToggle />
             </nav>
 
@@ -77,7 +76,7 @@ const Login = () => {
                 to="/join"
                 className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
               >
-                Get Started
+                Create Account
               </Link>
             </div>
           </div>
