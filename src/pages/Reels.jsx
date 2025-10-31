@@ -1,11 +1,13 @@
 // src/pages/Reels.jsx
 import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX, MoreVertical } from 'lucide-react';
+import ReelsCommentModal from '../components/ReelsCommentModal';
 
 export default function Reels() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef(null);
+  const videoRef = useRef(null);
 
   // Mock reels data (replace with API later)
   const reels = [
@@ -57,11 +59,15 @@ export default function Reels() {
   ];
 
   const [reelsState, setReelsState] = useState(reels);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   // Navigate to next/previous reel
   const goToNext = () => {
     if (currentIndex < reels.length - 1) {
+      setIsLoading(true);
       setCurrentIndex(prev => prev + 1);
+      setTimeout(() => setIsLoading(false), 300);
     }
   };
 
@@ -79,6 +85,14 @@ export default function Reels() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex]);
+
+  // Video playback control
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(err => console.log('Video play failed:', err));
+    }
   }, [currentIndex]);
 
   // Touch swipe detection
@@ -134,14 +148,18 @@ export default function Reels() {
       >
         {/* Video Background */}
         <div className="absolute inset-0 flex items-center justify-center bg-black">
-          {/* Video Placeholder (replace with actual video element) */}
-          <div 
-            className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${currentReel.thumbnail})` }}
-          >
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
-          </div>
+          <video
+            ref={videoRef}
+            src={currentReel.videoUrl}
+            poster={currentReel.thumbnail}
+            className="w-full h-full object-cover"
+            loop
+            muted={isMuted}
+            autoPlay
+            playsInline
+          />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
         </div>
 
         {/* Content Overlay */}
@@ -200,7 +218,10 @@ export default function Reels() {
                   </button>
 
                   {/* Comment */}
-                  <button className="flex flex-col items-center space-y-1">
+                  <button 
+                    onClick={() => setShowComments(true)}
+                    className="flex flex-col items-center space-y-1"
+                  >
                     <div className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
                       <MessageCircle className="w-6 h-6 text-white" />
                     </div>
@@ -300,6 +321,20 @@ export default function Reels() {
           </div>
         </div>
       )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Comment Modal */}
+      <ReelsCommentModal 
+        isOpen={showComments} 
+        onClose={() => setShowComments(false)} 
+        reel={currentReel} 
+      />
     </div>
   );
 }

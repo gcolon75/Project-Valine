@@ -3,13 +3,32 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
-import { Share2 } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
+import { Share2, FileText, Video, User } from 'lucide-react';
+
+const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-colors ${
+      active
+        ? 'border-[#0CCE6B] text-[#0CCE6B]'
+        : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+    }`}
+  >
+    <Icon className="w-5 h-5" />
+    <span className="font-medium">{label}</span>
+    {count !== undefined && (
+      <span className="text-sm">({count})</span>
+    )}
+  </button>
+);
 
 export default function Profile() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('posts');
 
   useEffect(() => {
     if (id) {
@@ -46,6 +65,8 @@ export default function Profile() {
     postsCount: 12,
     followersCount: 342,
     followingCount: 156,
+    reelsCount: 5,
+    scriptsCount: 3,
     posts: []
   };
 
@@ -116,22 +137,90 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Work Section */}
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Work</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {displayData.posts && displayData.posts.length > 0 ? (
-            displayData.posts.slice(0, 6).map(post => (
-              <div key={post.id} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-3">
-                <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{post.content}</p>
-              </div>
-            ))
-          ) : (
-            [1,2,3,4,5,6].map(i => (
-              <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 aspect-video" />
-            ))
-          )}
+      {/* Profile Tabs */}
+      <div className="bg-white dark:bg-[#1a1a1a] border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center space-x-1 px-6">
+          <ProfileTab
+            active={activeTab === 'posts'}
+            onClick={() => setActiveTab('posts')}
+            icon={FileText}
+            label="Posts"
+            count={displayData.postsCount}
+          />
+          <ProfileTab
+            active={activeTab === 'reels'}
+            onClick={() => setActiveTab('reels')}
+            icon={Video}
+            label="Reels"
+            count={displayData.reelsCount || 0}
+          />
+          <ProfileTab
+            active={activeTab === 'scripts'}
+            onClick={() => setActiveTab('scripts')}
+            icon={FileText}
+            label="Scripts"
+            count={displayData.scriptsCount || 0}
+          />
+          <ProfileTab
+            active={activeTab === 'about'}
+            onClick={() => setActiveTab('about')}
+            icon={User}
+            label="About"
+          />
         </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === 'posts' && (
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Posts</h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {displayData.posts && displayData.posts.length > 0 ? (
+                displayData.posts.slice(0, 6).map(post => (
+                  <div key={post.id} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-3">
+                    <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{post.content}</p>
+                  </div>
+                ))
+              ) : (
+                [1,2,3,4,5,6].map(i => (
+                  <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 aspect-video" />
+                ))
+              )}
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'reels' && (
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Reels</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {/* Reels thumbnails */}
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'scripts' && (
+          <EmptyState
+            icon={FileText}
+            title="No scripts yet"
+            description="Scripts shared by this user will appear here"
+          />
+        )}
+        
+        {activeTab === 'about' && (
+          <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+              About
+            </h3>
+            <p className="text-neutral-700 dark:text-neutral-300">
+              {displayData.bio || 'No bio available'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
