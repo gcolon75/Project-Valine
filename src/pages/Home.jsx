@@ -22,13 +22,12 @@ const Home = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/about-us" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 About
               </Link>
               <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
-              {/* Theme Toggle */}
               <ThemeToggle />
             </nav>
 
@@ -36,15 +35,9 @@ const Home = () => {
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="hidden sm:block text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
+                className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
               >
                 Sign In
-              </Link>
-              <Link
-                to="/join"
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
-              >
-                Get Started
               </Link>
             </div>
           </div>
@@ -257,7 +250,7 @@ const Home = () => {
             <div>
               <h4 className="text-white font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/about" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">About</Link></li>
+                <li><Link to="/about-us" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">About</Link></li>
                 <li><Link to="/features" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Pricing</Link></li>
                 <li><Link to="/changelog" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Changelog</Link></li>

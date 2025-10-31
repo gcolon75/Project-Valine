@@ -22,13 +22,12 @@ const About = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/about-us" className="text-[#0CCE6B] font-medium">
                 About
               </Link>
               <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
-              {/* Theme Toggle */}
               <ThemeToggle />
             </nav>
 
@@ -151,7 +150,7 @@ const About = () => {
             <div>
               <h4 className="text-white font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/about" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">About</Link></li>
+                <li><Link to="/about-us" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">About</Link></li>
                 <li><Link to="/features" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Pricing</Link></li>
                 <li><Link to="/changelog" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Changelog</Link></li>

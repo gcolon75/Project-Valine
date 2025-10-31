@@ -62,13 +62,12 @@ const Join = () => {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/about-us" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 About
               </Link>
               <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
-              {/* Theme Toggle */}
               <ThemeToggle />
             </nav>
 
@@ -76,7 +75,7 @@ const Join = () => {
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="hidden sm:block text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
+                className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
               >
                 Sign In
               </Link>
