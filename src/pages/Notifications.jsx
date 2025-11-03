@@ -1,110 +1,143 @@
 import { useState } from 'react';
 import { Heart, MessageCircle, UserPlus, Video, FileText, Bell } from 'lucide-react';
+import { useApiFallback } from '../hooks/useApiFallback';
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
+
+// Mock/fallback notifications data
+const FALLBACK_NOTIFICATIONS = [
+  {
+    id: 1,
+    type: 'like',
+    icon: Heart,
+    user: {
+      name: 'Sarah Johnson',
+      username: 'voiceactor_sarah',
+      avatar: 'https://i.pravatar.cc/150?img=1',
+    },
+    action: 'liked your post',
+    content: '"Just finished recording for my latest project..."',
+    timestamp: '5m ago',
+    read: false,
+  },
+  {
+    id: 2,
+    type: 'comment',
+    icon: MessageCircle,
+    user: {
+      name: 'Michael Chen',
+      username: 'audio_engineer_mike',
+      avatar: 'https://i.pravatar.cc/150?img=12',
+    },
+    action: 'commented on your post',
+    content: 'Great work! Love the energy in this performance.',
+    timestamp: '15m ago',
+    read: false,
+  },
+  {
+    id: 3,
+    type: 'follow',
+    icon: UserPlus,
+    user: {
+      name: 'Emily Rodriguez',
+      username: 'writer_emily',
+      avatar: 'https://i.pravatar.cc/150?img=5',
+    },
+    action: 'started following you',
+    content: null,
+    timestamp: '1h ago',
+    read: true,
+  },
+  {
+    id: 4,
+    type: 'reel',
+    icon: Video,
+    user: {
+      name: 'James Wilson',
+      username: 'director_james',
+      avatar: 'https://i.pravatar.cc/150?img=8',
+    },
+    action: 'mentioned you in a reel',
+    content: null,
+    timestamp: '2h ago',
+    read: true,
+  },
+  {
+    id: 5,
+    type: 'script',
+    icon: FileText,
+    user: {
+      name: 'Alex Thompson',
+      username: 'scriptwriter_alex',
+      avatar: 'https://i.pravatar.cc/150?img=15',
+    },
+    action: 'shared a script with you',
+    content: '"Sci-Fi Short Film - Draft 2"',
+    timestamp: '3h ago',
+    read: true,
+  },
+  {
+    id: 6,
+    type: 'like',
+    icon: Heart,
+    user: {
+      name: 'Olivia Martinez',
+      username: 'actress_olivia',
+      avatar: 'https://i.pravatar.cc/150?img=20',
+    },
+    action: 'liked your reel',
+    content: null,
+    timestamp: '5h ago',
+    read: true,
+  },
+  {
+    id: 7,
+    type: 'comment',
+    icon: MessageCircle,
+    user: {
+      name: 'David Lee',
+      username: 'producer_david',
+      avatar: 'https://i.pravatar.cc/150?img=25',
+    },
+    action: 'replied to your comment',
+    content: 'I totally agree with your perspective on this.',
+    timestamp: '1d ago',
+    read: true,
+  },
+];
 
 export default function Notifications() {
   const [filter, setFilter] = useState('all');
 
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'like',
-      icon: Heart,
-      user: {
-        name: 'Sarah Johnson',
-        username: 'voiceactor_sarah',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-      },
-      action: 'liked your post',
-      content: '"Just finished recording for my latest project..."',
-      timestamp: '5m ago',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'comment',
-      icon: MessageCircle,
-      user: {
-        name: 'Michael Chen',
-        username: 'audio_engineer_mike',
-        avatar: 'https://i.pravatar.cc/150?img=12',
-      },
-      action: 'commented on your post',
-      content: 'Great work! Love the energy in this performance.',
-      timestamp: '15m ago',
-      read: false,
-    },
-    {
-      id: 3,
-      type: 'follow',
-      icon: UserPlus,
-      user: {
-        name: 'Emily Rodriguez',
-        username: 'writer_emily',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-      },
-      action: 'started following you',
-      content: null,
-      timestamp: '1h ago',
-      read: true,
-    },
-    {
-      id: 4,
-      type: 'reel',
-      icon: Video,
-      user: {
-        name: 'James Wilson',
-        username: 'director_james',
-        avatar: 'https://i.pravatar.cc/150?img=8',
-      },
-      action: 'mentioned you in a reel',
-      content: null,
-      timestamp: '2h ago',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'script',
-      icon: FileText,
-      user: {
-        name: 'Alex Thompson',
-        username: 'scriptwriter_alex',
-        avatar: 'https://i.pravatar.cc/150?img=15',
-      },
-      action: 'shared a script with you',
-      content: '"Sci-Fi Short Film - Draft 2"',
-      timestamp: '3h ago',
-      read: true,
-    },
-    {
-      id: 6,
-      type: 'like',
-      icon: Heart,
-      user: {
-        name: 'Olivia Martinez',
-        username: 'actress_olivia',
-        avatar: 'https://i.pravatar.cc/150?img=20',
-      },
-      action: 'liked your reel',
-      content: null,
-      timestamp: '5h ago',
-      read: true,
-    },
-    {
-      id: 7,
-      type: 'comment',
-      icon: MessageCircle,
-      user: {
-        name: 'David Lee',
-        username: 'producer_david',
-        avatar: 'https://i.pravatar.cc/150?img=25',
-      },
-      action: 'replied to your comment',
-      content: 'I totally agree with your perspective on this.',
-      timestamp: '1d ago',
-      read: true,
-    },
-  ];
+  // Fetch notifications from API with fallback
+  const { data: notifications, loading, usingFallback, refetch } = useApiFallback(
+    () => getNotifications({ unreadOnly: filter === 'unread' }),
+    FALLBACK_NOTIFICATIONS,
+    { diagnosticContext: 'Notifications.getNotifications' }
+  );
+
+  // Handle marking all notifications as read
+  const handleMarkAllRead = async () => {
+    if (!usingFallback) {
+      try {
+        await markAllNotificationsRead();
+        refetch(); // Refresh notifications
+      } catch (err) {
+        console.error('Failed to mark all as read:', err);
+      }
+    }
+  };
+
+  // Handle marking a single notification as read
+  const handleNotificationClick = async (notificationId) => {
+    if (!usingFallback) {
+      try {
+        await markNotificationRead(notificationId);
+        refetch(); // Refresh notifications
+      } catch (err) {
+        console.error('Failed to mark notification as read:', err);
+      }
+    }
+  };
 
   const getIconColor = (type) => {
     switch (type) {
@@ -134,7 +167,10 @@ export default function Notifications() {
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
           Notifications
         </h1>
-        <button className="text-sm text-[#0CCE6B] hover:text-[#0BBE60] font-semibold transition-colors">
+        <button 
+          onClick={handleMarkAllRead}
+          className="text-sm text-[#0CCE6B] hover:text-[#0BBE60] font-semibold transition-colors"
+        >
           Mark all as read
         </button>
       </div>
@@ -188,10 +224,11 @@ export default function Notifications() {
             return (
               <div
                 key={notification.id}
+                onClick={() => !notification.read && handleNotificationClick(notification.id)}
                 className={`p-4 rounded-xl border transition-all hover:shadow-md ${
                   notification.read
                     ? 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700'
-                    : 'bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20'
+                    : 'bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20 cursor-pointer'
                 }`}
               >
                 <div className="flex items-start space-x-3">
