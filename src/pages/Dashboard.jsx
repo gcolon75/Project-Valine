@@ -1,13 +1,32 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Video } from "lucide-react";
+import { FileText, Video, Eye, TrendingUp, Image, Mic, Users, Heart } from "lucide-react";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
+
+const StatCard = ({ icon: Icon, label, value, trend, trendUp }) => (
+  <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 hover:shadow-lg transition-all">
+    <div className="flex items-center justify-between mb-2">
+      <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <span className={`text-sm font-semibold ${trendUp ? 'text-[#0CCE6B]' : 'text-red-500'}`}>
+        {trend}
+      </span>
+    </div>
+    <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
+      {value}
+    </p>
+    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+      {label}
+    </p>
+  </div>
+);
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -164,6 +183,38 @@ export default function Dashboard() {
           {/* CENTER COLUMN */}
           <section className="space-y-4">
             <PostComposer />
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon={Users}
+                label="Connections"
+                value="248"
+                trend="+12"
+                trendUp={true}
+              />
+              <StatCard
+                icon={Heart}
+                label="Total Likes"
+                value="1.2K"
+                trend="+45"
+                trendUp={true}
+              />
+              <StatCard
+                icon={Eye}
+                label="Profile Views"
+                value="3.4K"
+                trend="+8%"
+                trendUp={true}
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Engagement"
+                value="24.5%"
+                trend="+2.3%"
+                trendUp={true}
+              />
+            </div>
 
             {/* Reels CTA Banner */}
             <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-8 text-white animate-slide-up">
