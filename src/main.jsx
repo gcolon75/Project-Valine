@@ -13,6 +13,18 @@ import "./styles/theme.css"; // NEW: load AFTER index.css so colors win
 
 import App from "./routes/App";
 
+// Initialize performance monitoring
+import performanceMonitor from "./utils/performanceMonitor";
+
+// Initialize accessibility testing in development
+if (import.meta.env.DEV) {
+  import('@axe-core/react').then((axe) => {
+    axe.default(React, ReactDOM, 1000);
+  }).catch(() => {
+    console.log('Axe accessibility testing not available');
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ThemeProvider>

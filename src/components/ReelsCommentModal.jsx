@@ -9,7 +9,6 @@ const ReelsCommentModal = ({ isOpen, onClose, reel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // TODO: API call to post comment
-    console.log('Comment:', comment);
     setComment('');
     onClose();
   };

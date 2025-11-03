@@ -205,6 +205,36 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
    npm run preview  # Preview production build locally
    ```
 
+5. **Development Tools & Monitoring:**
+   
+   The application includes built-in monitoring and debugging tools:
+   
+   ```javascript
+   // Performance Monitoring (Core Web Vitals)
+   window.__performanceMonitor.getMetrics()
+   window.__performanceMonitor.reportMetrics()
+   
+   // API Diagnostics
+   window.__diagnostics.summary()
+   window.__diagnostics.getAll()
+   
+   // Analytics Tracking
+   window.__analytics.getEvents()
+   ```
+   
+   **Performance Audit:**
+   ```bash
+   npm run perf:audit         # Analyze build output
+   npm run build:analyze      # Build and analyze in one command
+   ```
+   
+   **Testing:**
+   ```bash
+   npm run test              # Run tests in watch mode
+   npm run test:run          # Run tests once
+   npm run test:coverage     # Run with coverage report
+   ```
+
 ### Backend Deployment
 
 📚 **New AWS Deployment Guides:**
