@@ -62,11 +62,21 @@ export function createMockUser(overrides = {}) {
 export function createMockPost(overrides = {}) {
   return {
     id: 'test-post-id',
+    title: 'Test Post Title',
+    body: 'Test post content',
     content: 'Test post content',
+    tags: ['test', 'demo'],
     media: [],
     authorId: 'test-user-id',
-    author: createMockUser(),
+    author: {
+      name: 'Test User',
+      role: 'Test Role',
+      avatar: '',
+    },
     createdAt: new Date().toISOString(),
+    likes: 10,
+    comments: 5,
+    saved: false,
     ...overrides,
   };
 }
