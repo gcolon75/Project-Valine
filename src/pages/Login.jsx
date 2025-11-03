@@ -2,44 +2,48 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Sparkles, Mic, Code, Twitter, Linkedin, Github } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, devLogin, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
     
     try {
-      // TODO: API call when backend is deployed
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const user = await login(formData.email, formData.password);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      
+      // Navigate based on profile completion
+      if (user.profileComplete) {
+        navigate('/dashboard');
+      } else {
+        navigate('/setup');
+      }
     } catch (error) {
-      toast.error('Invalid credentials. Please try again.');
-    } finally {
-      setIsLoading(false);
+      toast.error(error.message || 'Invalid credentials. Please try again.');
     }
   };
 
-  // DEV BYPASS
+  // DEV BYPASS - Only available in development mode
   const handleDevLogin = () => {
-    toast.success('Dev mode: Logged in!');
-    // Set mock user data in localStorage
-    localStorage.setItem('dev_user', JSON.stringify({
-      id: 'dev-user-123',
-      username: 'developer',
-      email: 'dev@valine.com',
-      displayName: 'Dev User',
-      avatar: 'https://i.pravatar.cc/150?img=68'
-    }));
-    navigate('/dashboard');
+    if (devLogin) {
+      devLogin();
+      toast.success('Dev mode: Logged in!');
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -143,10 +147,10 @@ const Login = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>

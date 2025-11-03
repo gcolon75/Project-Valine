@@ -2,45 +2,37 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Sparkles, Mic, Code, Twitter, Linkedin, Github } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 
 const Join = () => {
   const navigate = useNavigate();
+  const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     displayName: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Basic validation
+    if (!formData.username || !formData.email || !formData.password || !formData.displayName) {
+      toast.error('Please fill in all fields');
+      return;
+    }
     
     try {
-      // TODO: API call when backend is deployed
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const user = await register(formData);
       toast.success('Account created successfully!');
-      navigate('/dashboard');
+      
+      // Navigate to profile setup for new users
+      navigate('/setup');
     } catch (error) {
-      toast.error('Failed to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
+      toast.error(error.message || 'Failed to create account. Please try again.');
     }
-  };
-
-  // DEV BYPASS
-  const handleDevSignup = () => {
-    toast.success('Dev mode: Account created!');
-    localStorage.setItem('dev_user', JSON.stringify({
-      id: 'dev-user-' + Date.now(),
-      username: formData.username || 'devuser',
-      email: formData.email || 'dev@valine.com',
-      displayName: formData.displayName || 'Dev User',
-      avatar: 'https://i.pravatar.cc/150?img=68'
-    }));
-    navigate('/dashboard');
   };
 
   return (
@@ -163,10 +155,10 @@ const Join = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>

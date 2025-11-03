@@ -2,6 +2,58 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX, MoreVertical } from 'lucide-react';
 import ReelsCommentModal from '../components/ReelsCommentModal';
+import { useApiFallback } from '../hooks/useApiFallback';
+import { getReels, toggleReelLike, toggleReelBookmark } from '../services/reelsService';
+import { trackReelView, trackReelInteraction, trackVideoPlayback } from '../utils/analytics';
+
+// Mock/fallback reels data
+const FALLBACK_REELS = [
+  {
+    id: 1,
+    videoUrl: 'https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0fd273d2c6d9a064f3ae35579b2bbdf',
+    thumbnail: 'https://i.pravatar.cc/400?img=1',
+    author: {
+      username: 'voiceactor_sarah',
+      displayName: 'Sarah Johnson',
+      avatar: 'https://i.pravatar.cc/150?img=1',
+    },
+    caption: 'Behind the scenes of my latest voiceover project! 🎤 #VoiceActing #BTS',
+    likes: 1234,
+    comments: 89,
+    isLiked: false,
+    isBookmarked: false,
+  },
+  {
+    id: 2,
+    videoUrl: 'https://player.vimeo.com/external/413802934.sd.mp4?s=019c0a34d6e6a4a9e13c3f6be8e36e15356a4e0b',
+    thumbnail: 'https://i.pravatar.cc/400?img=12',
+    author: {
+      username: 'audio_engineer_mike',
+      displayName: 'Michael Chen',
+      avatar: 'https://i.pravatar.cc/150?img=12',
+    },
+    caption: 'Studio tour! Check out my setup 🎧 #AudioEngineering #Studio',
+    likes: 2456,
+    comments: 134,
+    isLiked: false,
+    isBookmarked: false,
+  },
+  {
+    id: 3,
+    videoUrl: 'https://player.vimeo.com/external/336879879.sd.mp4?s=15f1e8d0e3c8a9b6e5e6f0e5e3f8e4e5e3f8e4e5',
+    thumbnail: 'https://i.pravatar.cc/400?img=5',
+    author: {
+      username: 'writer_emily',
+      displayName: 'Emily Rodriguez',
+      avatar: 'https://i.pravatar.cc/150?img=5',
+    },
+    caption: 'Writing process for my new script! ✍️ #ScriptWriting #Creative',
+    likes: 987,
+    comments: 45,
+    isLiked: false,
+    isBookmarked: false,
+  },
+];
 
 export default function Reels() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -9,58 +61,22 @@ export default function Reels() {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Mock reels data (replace with API later)
-  const reels = [
-    {
-      id: 1,
-      videoUrl: 'https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0fd273d2c6d9a064f3ae35579b2bbdf',
-      thumbnail: 'https://i.pravatar.cc/400?img=1',
-      author: {
-        username: 'voiceactor_sarah',
-        displayName: 'Sarah Johnson',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-      },
-      caption: 'Behind the scenes of my latest voiceover project! 🎤 #VoiceActing #BTS',
-      likes: 1234,
-      comments: 89,
-      isLiked: false,
-      isBookmarked: false,
-    },
-    {
-      id: 2,
-      videoUrl: 'https://player.vimeo.com/external/413802934.sd.mp4?s=019c0a34d6e6a4a9e13c3f6be8e36e15356a4e0b',
-      thumbnail: 'https://i.pravatar.cc/400?img=12',
-      author: {
-        username: 'audio_engineer_mike',
-        displayName: 'Michael Chen',
-        avatar: 'https://i.pravatar.cc/150?img=12',
-      },
-      caption: 'Studio tour! Check out my setup 🎧 #AudioEngineering #Studio',
-      likes: 2456,
-      comments: 134,
-      isLiked: false,
-      isBookmarked: false,
-    },
-    {
-      id: 3,
-      videoUrl: 'https://player.vimeo.com/external/336879879.sd.mp4?s=15f1e8d0e3c8a9b6e5e6f0e5e3f8e4e5e3f8e4e5',
-      thumbnail: 'https://i.pravatar.cc/400?img=5',
-      author: {
-        username: 'writer_emily',
-        displayName: 'Emily Rodriguez',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-      },
-      caption: 'Writing process for my new script! ✍️ #ScriptWriting #Creative',
-      likes: 987,
-      comments: 45,
-      isLiked: false,
-      isBookmarked: false,
-    },
-  ];
+  // Fetch reels from API with fallback to mock data
+  const { data: reels, loading: isLoading, usingFallback } = useApiFallback(
+    () => getReels(20),
+    FALLBACK_REELS,
+    { diagnosticContext: 'Reels.getReels' }
+  );
 
   const [reelsState, setReelsState] = useState(reels);
-  const [isLoading, setIsLoading] = useState(false);
   const [showComments, setShowComments] = useState(false);
+
+  // Update reels state when API data arrives
+  useEffect(() => {
+    if (reels && reels.length > 0) {
+      setReelsState(reels);
+    }
+  }, [reels]);
 
   // Navigate to next/previous reel
   const goToNext = () => {
@@ -116,22 +132,54 @@ export default function Reels() {
     }
   };
 
-  // Toggle like
-  const toggleLike = (reelId) => {
+  // Toggle like with API
+  const toggleLike = async (reelId) => {
+    // Optimistic update
     setReelsState(prev => prev.map(reel => 
       reel.id === reelId 
         ? { ...reel, isLiked: !reel.isLiked, likes: reel.isLiked ? reel.likes - 1 : reel.likes + 1 }
         : reel
     ));
+
+    // Try to sync with API
+    if (!usingFallback) {
+      try {
+        await toggleReelLike(reelId);
+      } catch (err) {
+        // Rollback on error
+        console.error('Failed to toggle like:', err);
+        setReelsState(prev => prev.map(reel => 
+          reel.id === reelId 
+            ? { ...reel, isLiked: !reel.isLiked, likes: reel.isLiked ? reel.likes + 1 : reel.likes - 1 }
+            : reel
+        ));
+      }
+    }
   };
 
-  // Toggle bookmark
-  const toggleBookmark = (reelId) => {
+  // Toggle bookmark with API
+  const toggleBookmark = async (reelId) => {
+    // Optimistic update
     setReelsState(prev => prev.map(reel => 
       reel.id === reelId 
         ? { ...reel, isBookmarked: !reel.isBookmarked }
         : reel
     ));
+
+    // Try to sync with API
+    if (!usingFallback) {
+      try {
+        await toggleReelBookmark(reelId);
+      } catch (err) {
+        // Rollback on error
+        console.error('Failed to toggle bookmark:', err);
+        setReelsState(prev => prev.map(reel => 
+          reel.id === reelId 
+            ? { ...reel, isBookmarked: !reel.isBookmarked }
+            : reel
+        ));
+      }
+    }
   };
 
   const currentReel = reelsState[currentIndex];

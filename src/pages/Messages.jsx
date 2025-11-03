@@ -1,54 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile } from 'lucide-react';
+import { useApiFallback } from '../hooks/useApiFallback';
+import { getConversations, getMessages, sendMessage, searchConversations } from '../services/messagesService';
+
+// Mock/fallback conversations data
+const FALLBACK_CONVERSATIONS = [
+  {
+    id: 1,
+    name: 'Sarah Johnson',
+    username: 'voiceactor_sarah',
+    avatar: 'https://i.pravatar.cc/150?img=1',
+    lastMessage: 'Sounds great! Looking forward to it.',
+    timestamp: '2m ago',
+    unread: 2,
+    online: true,
+  },
+  {
+    id: 2,
+    name: 'Michael Chen',
+    username: 'audio_engineer_mike',
+    avatar: 'https://i.pravatar.cc/150?img=12',
+    lastMessage: 'Let me know when you're available.',
+    timestamp: '1h ago',
+    unread: 0,
+    online: true,
+  },
+  {
+    id: 3,
+    name: 'Emily Rodriguez',
+    username: 'writer_emily',
+    avatar: 'https://i.pravatar.cc/150?img=5',
+    lastMessage: 'Thanks for the feedback!',
+    timestamp: '3h ago',
+    unread: 0,
+    online: false,
+  },
+  {
+    id: 4,
+    name: 'James Wilson',
+    username: 'director_james',
+    avatar: 'https://i.pravatar.cc/150?img=8',
+    lastMessage: 'Can we schedule a call?',
+    timestamp: '1d ago',
+    unread: 1,
+    online: false,
+  },
+];
 
 export default function Messages() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock conversations data
-  const conversations = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      username: 'voiceactor_sarah',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      lastMessage: 'Sounds great! Looking forward to it.',
-      timestamp: '2m ago',
-      unread: 2,
-      online: true,
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      username: 'audio_engineer_mike',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-      lastMessage: 'Let me know when you're available.',
-      timestamp: '1h ago',
-      unread: 0,
-      online: true,
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      username: 'writer_emily',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-      lastMessage: 'Thanks for the feedback!',
-      timestamp: '3h ago',
-      unread: 0,
-      online: false,
-    },
-    {
-      id: 4,
-      name: 'James Wilson',
-      username: 'director_james',
-      avatar: 'https://i.pravatar.cc/150?img=8',
-      lastMessage: 'Can we schedule a call?',
-      timestamp: '1d ago',
-      unread: 1,
-      online: false,
-    },
-  ];
+  // Fetch conversations from API with fallback
+  const { data: conversations, loading, usingFallback, refetch } = useApiFallback(
+    () => searchQuery ? searchConversations(searchQuery) : getConversations(),
+    FALLBACK_CONVERSATIONS,
+    { 
+      diagnosticContext: 'Messages.getConversations',
+      immediate: true
+    }
+  );
+
+  // Refetch when search query changes
+  useEffect(() => {
+    if (searchQuery.length > 2 || searchQuery.length === 0) {
+      refetch();
+    }
+  }, [searchQuery, refetch]);
 
   // Mock messages for selected chat
   const mockMessages = selectedChat ? [
