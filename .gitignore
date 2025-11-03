@@ -48,3 +48,9 @@ discord_cmd_evidence/
 
 # AI agent prompts (generated)
 .agent/
+
+# Test coverage and artifacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
