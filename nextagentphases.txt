@@ -1,0 +1,225 @@
+# Project Valine — Autonomous Agent Build Plan
+**Generated:** 2025-11-03 02:04:31 UTC  
+**For:** Frontend Development Agent / Full-stack Agent  
+**Author:** gcolon75 (instructions for the agent)
+
+Purpose
+-------
+This file is a step-by-step, phase-by-phase actionable plan for an AI agent to continue work on Project Valine autonomously. The agent should run each phase in order, open PRs for code changes, run tests/builds, and only ask for human input when absolutely blocked (secrets, credentials, policy decisions). Commit and PR messages should be clear and follow the pattern: "feat(ui): <short description> — automated by agent".
+
+Agent responsibilities
+---------------------
+- Work in small, testable phases.
+- Create branches per phase: `automaton/phase-<NN>-<short-slug>`.
+- Run local build & test commands after each change.
+- Create a PR targeting `main` for each phase and include the phase checklist in the PR description.
+- When a PR CI fails, attempt automated fixes (lint, import fixes). If stuck, leave a detailed comment and create a GitHub issue.
+- Add unit tests or component tests for new behavior where feasible.
+- Persist progress to GitHub (commits + PRs). Never push directly to main.
+
+Conventions
+-----------
+- Branch naming: `automaton/phase-<NN>-<short-slug>`
+- PR title: `Phase <NN>: <short description>`
+- Commit message style: `feat/ui: <msg> (phase <NN>) — automated by agent`
+- Tests: Jest + React Testing Library unit tests for components, Playwright E2E for critical flows.
+- Checkpoint commit before each phase: `chore: checkpoint before phase <NN> — automated agent checkpoint`.
+
+Phases overview
+---------------
+- Phase 00 — Preflight & repo state snapshot
+- Phase 01 — Complete manual verification & fix regressions
+- Phase 02 — Connect frontend to backend dev API
+- Phase 03 — Authentication wiring (remove dev-bypass)
+- Phase 04 — Reels production hardening (video playback + analytics)
+- Phase 05 — Feature parity: likes, bookmarks, comments persistence
+- Phase 06 — Messaging + Notifications full integration
+- Phase 07 — Tests: unit + E2E coverage
+- Phase 08 — CI/CD: staging deploy + smoke tests
+- Phase 09 — Performance & accessibility sweep
+- Phase 10 — Production launch prep (cleanup, remove dev-only)
+- Phase 11 — Monitoring, observability, analytics
+- Phase 12 — Roadmap backlog & issues
+
+Detailed phase plan
+-------------------
+
+Phase 00 — Preflight & repo snapshot (10–20m)
+- Create branch: `automaton/phase-00-preflight`
+- Actions:
+  - Run `git status` and `npm ci`
+  - Run `npm run build` and `npm run dev` smoke
+  - Run `npm run lint`
+  - Create a snapshot commit: `chore: checkpoint before automation start (phase 00)`
+  - Open a PR titled "Phase 00: Preflight & snapshot" with the logs attached (or note).
+- Goal: ensure working dev build and record current state.
+
+Phase 01 — Manual verification & quick fixes (1–2 hours)
+- Branch: `automaton/phase-01-smoke-fixes`
+- Actions (autonomous):
+  1. Run automated smoke test script:
+     - Visit key routes: `/`, `/about`, `/features`, `/login`, `/join`, `/dashboard`, `/reels`, `/profile/developer`
+     - Programmatically check HTTP 200 and that the correct header is rendered (marketing vs app header).
+  2. Collect console errors from dev server (headless Chromium + console capture).
+  3. Fix:
+     - Any broken imports, missing assets, simple runtime errors.
+     - Ensure marketing header shows on public pages and app header in app pages.
+  4. Add unit tests for any fixed components.
+- Deliverables:
+  - PR with fixes and automated smoke report.
+- Goal: eliminate obvious runtime/console errors.
+
+Phase 02 — Connect frontend to backend dev API (2–4 hours)
+- Branch: `automaton/phase-02-api-integration`
+- Preconditions: Dev backend endpoint URL available in repository config / environment (ask if missing).
+- Actions:
+  1. Read `scripts/deployment/configure-frontend.sh` and existing `.env.example` to determine env vars (API_BASE).
+  2. Add `env.local.example` instructions or `README` update with how the agent will set API_BASE for local runs.
+  3. Replace mocked data sources (Reels, Posts, Profile, Notifications, Messages) with calls to API_BASE endpoints while keeping graceful fallbacks.
+  4. Implement a `useApiFallback` hook: when the API returns 5xx or network error, use seeded/mock data and log the error to console and a diagnostics file `logs/agent-diagnostics.json`.
+  5. Run local app with API_BASE pointing to dev backend; run endpoint smoke tests.
+- Tests: integration tests for API calls (mocked using msw for CI).
+- Deliverables: PR that wires frontend to API with fallback; example env file commit.
+
+Phase 03 — Authentication & remove dev bypass (3–6 hours)
+- Branch: `automaton/phase-03-auth`
+- Actions:
+  1. Inspect backend auth endpoints (POST /auth/login, POST /auth/register, GET /auth/me). If missing, create stubbed issue for backend agent.
+  2. Wire Login and Join forms to real API endpoints.
+     - On success, store token via recommended secure mechanism:
+       - Prefer HttpOnly cookie via backend; if not available, store in localStorage but mark as temporary.
+  3. Implement `AuthProvider` that:
+     - Reads token; fetches user from `/auth/me`.
+     - Exposes `login`, `logout`, `register` helpers.
+     - Protects app routes: redirect to `/login` if no auth.
+  4. Replace dev-bypass: leave a one-time dev-only script gated by NODE_ENV and document removal steps.
+  5. Add tests for AuthProvider (unit/mocked).
+- Deliverables: PR with fully integrated auth, protected routes, remove dev bypass except in dev feature-flag.
+- Goal: real user flows and secure auth integration.
+
+Phase 04 — Reels: playback, analytics, accessibility (2–4 hours)
+- Branch: `automaton/phase-04-reels`
+- Actions:
+  1. Ensure `<video>` element used with `muted`, `playsInline`, `preload="metadata"`.
+  2. Add logic to `videoRef` to `play()` and `pause()` when active/hidden.
+  3. Add analytics events for reel `view`, `play`, `mute`, `like`, `share`. Send events to API or mock analytics endpoint.
+  4. Add accessibility:
+     - Provide captions/subtitles support (if available) and alt text fallbacks.
+     - Ensure keyboard focus order and ARIA labels for actions.
+  5. Add E2E tests (Playwright) for autoplay/mute and navigation.
+- Deliverables: PR with playback hardening and analytics instrumentation.
+
+Phase 05 — Persist likes, bookmarks, comments (3–6 hours)
+- Branch: `automaton/phase-05-engagement`
+- Actions:
+  1. Implement API integration for:
+     - POST /posts/:id/like  (toggle)
+     - POST /posts/:id/bookmark
+     - POST /reels/:id/comments
+     - GET comments endpoints
+  2. Update UI optimistic updates with rollback on failure.
+  3. Add tests validating optimistic update behavior.
+- Deliverables: PR that persists interactions and displays counts from API.
+
+Phase 06 — Messaging & Notifications integration (4–8 hours)
+- Branch: `automaton/phase-06-conversations`
+- Actions:
+  1. Wire Messages UI to conversations API:
+     - GET /conversations
+     - GET /conversations/:id/messages
+     - POST /conversations/:id/messages
+  2. Wire Notifications UI to GET /notifications and PATCH to mark read.
+  3. Add WebSocket / server-sent events support if backend exposes it; if not, implement polling with exponential backoff.
+  4. Add tests for new endpoints (unit + mocked integration).
+- Deliverables: PR with messaging & notifications connected.
+
+Phase 07 — Tests: unit + E2E suite (4–8 hours)
+- Branch: `automaton/phase-07-tests`
+- Actions:
+  1. Add/expand unit tests (Jest + React Testing Library) for:
+     - Reels controls, PostCard, PostComposer, AuthProvider, ThemeToggle.
+  2. Add Playwright E2E tests for critical flows:
+     - Sign up → profile setup → create post
+     - Login → Reels view → like/comment
+  3. Configure tests in GH Actions; ensure fast smoke step runs on PRs.
+- Deliverables: PR adding tests and GH Action workflow update.
+
+Phase 08 — CI/CD: staging deploy + smoke tests (2–4 hours)
+- Branch: `automaton/phase-08-ci`
+- Actions:
+  1. Ensure GH Actions can build and run tests; add staging deploy job:
+     - Build frontend
+     - Upload to S3 + invalidate CloudFront OR deploy to Vercel (as configured)
+     - Deploy backend to dev/staging via serverless
+  2. After deploy, run automated smoke tests against staging URL (health, sample API calls, Reels navigation).
+- Deliverables: PR with GH Actions changes and staging pipeline.
+
+Phase 09 — Performance & accessibility sweep (4–8 hours)
+- Branch: `automaton/phase-09-opt`
+- Actions:
+  1. Run Lighthouse programmatically, capture reports.
+  2. Optimize images (use WebP), lazy-load heavy assets, code split routes.
+  3. Fix accessibility issues flagged by axe (color contrast, ARIA, semantic HTML).
+- Deliverables: PR fixes and generated Lighthouse and axe reports.
+
+Phase 10 — Production launch prep & cleanup (2–4 hours)
+- Branch: `automaton/phase-10-launch`
+- Actions:
+  1. Remove dev-only code and feature flags that expose dev bypass (ensure exact removal is gated by a final approvals file).
+  2. Ensure environment variables and secrets are set in production deployment pipeline.
+  3. Final PR checklist and release notes.
+- Deliverables: Release PR and draft release notes.
+
+Phase 11 — Observability & analytics (2–4 hours)
+- Branch: `automaton/phase-11-monitoring`
+- Actions:
+  1. Integrate Sentry (frontend/backend) for error tracking.
+  2. Configure CloudWatch alarms for high error rates / latency.
+  3. Add basic dashboards (errors, latency, invocation counts).
+  4. Ensure privacy: scrub PII from logs.
+- Deliverables: PR with Sentry integration and ops runbook.
+
+Phase 12 — Issues backlog & roadmap (ongoing)
+- Branch: `automaton/phase-12-backlog`
+- Actions:
+  1. Create GitHub issues for remaining features (comments, search, uploads, moderation).
+  2. Prioritize and label issues (priority/area/est).
+  3. Open milestone for next sprint.
+- Deliverables: curated backlog and milestone.
+
+Agent autonomy rules
+--------------------
+- The agent SHOULD:
+  - Commit & open a PR for each phase when changes are made.
+  - Run `npm ci`, `npm run build`, `npm run test` locally before PR.
+  - Add unit tests where changes alter behavior.
+  - Update `README.md` or docs when new envs or commands are required.
+  - Create GitHub issues for tasks it cannot complete (missing backend endpoints, secrets).
+- The agent MUST NOT:
+  - Push to `main` without human merge (PR is required).
+  - Store secrets in Git. Use SSM/ENV for runtime variables.
+  - Enable dev-bypass or debug features in production branch.
+- Failures & rollback:
+  - If CI fails, the agent attempts quick fixes (lint, missing imports). If unresolved, it attaches diagnostic logs to PR and creates an issue.
+  - For deployment failures, run `serverless remove`/rollback steps and notify maintainers.
+
+Reporting & artifact locations
+------------------------------
+- Agent stores diagnostic logs and test reports in `logs/agent/<phase>-report.json`.
+- PR descriptions must include:
+  - Summary of changes
+  - Test results
+  - Manual verification checklist items
+  - Rollback steps
+- Add a short release note to `RELEASE_NOTES.md` for each merged phase.
+
+Start instruction for the agent
+-------------------------------
+1. Start at Phase 00. Create branch `automaton/phase-00-preflight`.
+2. Run the preflight steps and open PR with the results and `agent/AI_AGENT_BUILD_PLAN.md` included as a file update (checkpoint).
+3. Proceed sequentially through phases, opening PRs and running the CI pipeline for each phase.
+4. If the agent cannot proceed due to missing credentials or backend endpoints, create clear GitHub issues and attach diagnostics.
+
+---
+
+End of plan — run autonomously, proceed phase-by-phase, and create PRs per phase until all tasks complete.
