@@ -104,7 +104,7 @@ class PerformanceMonitor {
         });
         clsObserver.observe({ entryTypes: ['layout-shift'] });
       } catch (e) {
-        console.warn('Performance Observer not fully supported:', e);
+        console.warn('Performance Observer not fully supported. Some metrics may be unavailable:', e.message);
       }
     }
   }

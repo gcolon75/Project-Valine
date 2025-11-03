@@ -11,6 +11,9 @@ import { useState, useEffect, useRef } from 'react';
  * @param {string} placeholder - Optional placeholder image (thumbnail/blur)
  * @param {function} onLoad - Optional callback when image loads
  */
+// Placeholder SVG for images that haven't loaded yet
+const PLACEHOLDER_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E';
+
 export default function LazyImage({ 
   src, 
   alt, 
@@ -26,6 +29,9 @@ export default function LazyImage({
   useEffect(() => {
     // Skip if image already loaded or no src provided
     if (imageLoaded || !src) return;
+
+    // Store ref value for cleanup
+    const currentRef = imgRef.current;
 
     // Use Intersection Observer for lazy loading
     const observer = new IntersectionObserver(
@@ -57,13 +63,13 @@ export default function LazyImage({
       }
     );
 
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
+    if (currentRef) {
+      observer.observe(currentRef);
     }
 
     return () => {
-      if (imgRef.current) {
-        observer.unobserve(imgRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
   }, [src, imageLoaded, onLoad]);
@@ -71,7 +77,7 @@ export default function LazyImage({
   return (
     <img
       ref={imgRef}
-      src={imageSrc || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E'}
+      src={imageSrc || PLACEHOLDER_SVG}
       alt={alt}
       className={`${className} ${!imageLoaded && imageSrc ? 'blur-sm' : ''} transition-all duration-300`}
       loading="lazy"

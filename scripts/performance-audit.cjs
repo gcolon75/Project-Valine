@@ -84,7 +84,7 @@ function analyzeAssets() {
   // Analyze JavaScript files
   const jsFiles = scanDirectory(path.join(distDir, 'assets'), ['.js']);
   const totalJS = jsFiles.reduce((sum, file) => sum + file.size, 0);
-  const largestJS = jsFiles.reduce((max, file) => file.size > max.size ? file : max, jsFiles[0] || { size: 0 });
+  const largestJS = jsFiles.reduce((max, file) => file.size > max.size ? file : max, jsFiles[0] || { size: 0, name: 'none' });
 
   log('JavaScript Analysis:', 'cyan');
   log(`  Total JS Size: ${totalJS.toFixed(2)} KB`, totalJS > BUDGETS.totalJS ? 'yellow' : 'green');
@@ -100,7 +100,7 @@ function analyzeAssets() {
   // Analyze CSS files
   const cssFiles = scanDirectory(path.join(distDir, 'assets'), ['.css']);
   const totalCSS = cssFiles.reduce((sum, file) => sum + file.size, 0);
-  const largestCSS = cssFiles.reduce((max, file) => file.size > max.size ? file : max, cssFiles[0] || { size: 0 });
+  const largestCSS = cssFiles.reduce((max, file) => file.size > max.size ? file : max, cssFiles[0] || { size: 0, name: 'none' });
 
   console.log();
   log('CSS Analysis:', 'cyan');
