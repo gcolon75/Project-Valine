@@ -193,6 +193,8 @@ export default function Reels() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        role="region"
+        aria-label="Reels video feed"
       >
         {/* Video Background */}
         <div className="absolute inset-0 flex items-center justify-center bg-black">
@@ -205,6 +207,7 @@ export default function Reels() {
             muted={isMuted}
             autoPlay
             playsInline
+            aria-label={`Video by ${currentReel.author.displayName}: ${currentReel.caption}`}
           />
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
@@ -229,7 +232,10 @@ export default function Reels() {
                       <p className="text-white font-semibold">{currentReel.author.displayName}</p>
                       <p className="text-white/80 text-sm">@{currentReel.author.username}</p>
                     </div>
-                    <button className="ml-2 bg-[#0CCE6B] hover:bg-[#0BBE60] text-white px-4 py-1 rounded-full text-sm font-semibold transition-colors">
+                    <button 
+                      className="ml-2 bg-[#0CCE6B] hover:bg-[#0BBE60] text-white px-4 py-1 rounded-full text-sm font-semibold transition-colors"
+                      aria-label={`Follow ${currentReel.author.displayName}`}
+                    >
                       Follow
                     </button>
                   </div>
@@ -246,6 +252,8 @@ export default function Reels() {
                   <button 
                     onClick={() => toggleLike(currentReel.id)}
                     className="flex flex-col items-center space-y-1 group"
+                    aria-label={currentReel.isLiked ? `Unlike reel, currently ${currentReel.likes} likes` : `Like reel, currently ${currentReel.likes} likes`}
+                    aria-pressed={currentReel.isLiked}
                   >
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
                       currentReel.isLiked 
@@ -258,9 +266,10 @@ export default function Reels() {
                             ? 'text-white fill-white' 
                             : 'text-white'
                         }`} 
+                        aria-hidden="true"
                       />
                     </div>
-                    <span className="text-white text-xs font-semibold">
+                    <span className="text-white text-xs font-semibold" aria-hidden="true">
                       {currentReel.likes.toLocaleString()}
                     </span>
                   </button>
@@ -269,19 +278,23 @@ export default function Reels() {
                   <button 
                     onClick={() => setShowComments(true)}
                     className="flex flex-col items-center space-y-1"
+                    aria-label={`View ${currentReel.comments} comments`}
                   >
                     <div className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-                      <MessageCircle className="w-6 h-6 text-white" />
+                      <MessageCircle className="w-6 h-6 text-white" aria-hidden="true" />
                     </div>
-                    <span className="text-white text-xs font-semibold">
+                    <span className="text-white text-xs font-semibold" aria-hidden="true">
                       {currentReel.comments}
                     </span>
                   </button>
 
                   {/* Share */}
-                  <button className="flex flex-col items-center space-y-1">
+                  <button 
+                    className="flex flex-col items-center space-y-1"
+                    aria-label="Share reel"
+                  >
                     <div className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-                      <Share2 className="w-6 h-6 text-white" />
+                      <Share2 className="w-6 h-6 text-white" aria-hidden="true" />
                     </div>
                   </button>
 
@@ -289,6 +302,8 @@ export default function Reels() {
                   <button 
                     onClick={() => toggleBookmark(currentReel.id)}
                     className="flex flex-col items-center space-y-1"
+                    aria-label={currentReel.isBookmarked ? 'Remove bookmark' : 'Bookmark reel'}
+                    aria-pressed={currentReel.isBookmarked}
                   >
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
                       currentReel.isBookmarked 
@@ -301,13 +316,17 @@ export default function Reels() {
                             ? 'text-white fill-white' 
                             : 'text-white'
                         }`}
+                        aria-hidden="true"
                       />
                     </div>
                   </button>
 
                   {/* More */}
-                  <button className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-                    <MoreVertical className="w-6 h-6 text-white" />
+                  <button 
+                    className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="w-6 h-6 text-white" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -320,8 +339,9 @@ export default function Reels() {
           <button
             onClick={goToPrevious}
             className="absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-colors pointer-events-auto"
+            aria-label="Previous reel"
           >
-            <ChevronUp className="w-6 h-6 text-white" />
+            <ChevronUp className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
 
@@ -329,8 +349,9 @@ export default function Reels() {
           <button
             onClick={goToNext}
             className="absolute bottom-32 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-colors pointer-events-auto md:left-4 md:top-1/2 md:-translate-y-1/2 md:bottom-auto"
+            aria-label="Next reel"
           >
-            <ChevronDown className="w-6 h-6 text-white" />
+            <ChevronDown className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
 
@@ -338,11 +359,13 @@ export default function Reels() {
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="absolute top-20 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-colors pointer-events-auto"
+          aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+          aria-pressed={!isMuted}
         >
           {isMuted ? (
-            <VolumeX className="w-5 h-5 text-white" />
+            <VolumeX className="w-5 h-5 text-white" aria-hidden="true" />
           ) : (
-            <Volume2 className="w-5 h-5 text-white" />
+            <Volume2 className="w-5 h-5 text-white" aria-hidden="true" />
           )}
         </button>
 
