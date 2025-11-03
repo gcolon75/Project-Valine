@@ -72,7 +72,7 @@ export default function PostCard({ post }) {
           <button
             onClick={() => {
               toast.success('Access request sent!');
-              console.log('Request access for post:', post.id);
+              // TODO: API call to request access
             }}
             className="ml-auto rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors"
           >

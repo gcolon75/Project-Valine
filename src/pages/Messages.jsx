@@ -105,7 +105,6 @@ export default function Messages() {
     e.preventDefault();
     if (!message.trim()) return;
     // TODO: API call to send message
-    console.log('Sending message:', message);
     setMessage('');
   };
 

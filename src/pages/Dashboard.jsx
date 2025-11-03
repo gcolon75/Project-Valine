@@ -61,7 +61,7 @@ export default function Dashboard() {
         }
       })
       .catch(err => {
-        console.log('API not available, using local data:', err.message);
+        // Silently fall back to local data
       })
       .finally(() => setLoadingApi(false));
   }, []);
