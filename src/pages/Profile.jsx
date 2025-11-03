@@ -1,10 +1,26 @@
 // src/pages/Profile.jsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
+import { useApiFallback } from '../hooks/useApiFallback';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import { Share2, FileText, Video, User } from 'lucide-react';
+
+// Mock/fallback profile data
+const FALLBACK_PROFILE = {
+  displayName: 'Your Name',
+  username: 'username',
+  bio: 'I write character-driven sci-fi and act in indie drama. Looking for collaborators on a short pilot.',
+  avatar: null,
+  role: 'Writer • Actor • Producer',
+  postsCount: 12,
+  followersCount: 342,
+  followingCount: 156,
+  reelsCount: 5,
+  scriptsCount: 3,
+  posts: []
+};
 
 const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
   <button
@@ -25,29 +41,21 @@ const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
 
 export default function Profile() {
   const { id } = useParams();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('posts');
 
-  useEffect(() => {
-    if (id) {
-      getUserProfile(id)
-        .then(setProfile)
-        .catch(err => {
-          console.error('Failed to load profile:', err);
-          setError(err.message);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      // Fallback to mock data if no id
-      setLoading(false);
+  // Fetch profile from API with fallback
+  const { data: profile, loading, error, usingFallback } = useApiFallback(
+    () => id ? getUserProfile(id) : Promise.resolve(FALLBACK_PROFILE),
+    FALLBACK_PROFILE,
+    { 
+      diagnosticContext: 'Profile.getUserProfile',
+      immediate: true
     }
-  }, [id]);
+  );
 
   if (loading) return <SkeletonProfile />;
   
-  if (error || (!profile && id)) {
+  if (error && !usingFallback) {
     return (
       <div className="text-center py-8 text-neutral-400">
         Profile not found
@@ -55,20 +63,8 @@ export default function Profile() {
     );
   }
 
-  // Use profile data if available, otherwise show mock data
-  const displayData = profile || {
-    displayName: 'Your Name',
-    username: 'username',
-    bio: 'I write character-driven sci-fi and act in indie drama. Looking for collaborators on a short pilot.',
-    avatar: null,
-    role: 'Writer • Actor • Producer',
-    postsCount: 12,
-    followersCount: 342,
-    followingCount: 156,
-    reelsCount: 5,
-    scriptsCount: 3,
-    posts: []
-  };
+  // Use profile data (either from API or fallback)
+  const displayData = profile;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">

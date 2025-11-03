@@ -113,13 +113,35 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
    npm install
    ```
 
-2. **Start development server:**
+2. **Configure API Connection:**
+   
+   Create a `.env` file (or `.env.local`) from the example:
    ```bash
-   npm run dev
-   # Opens on http://localhost:5173 (Vite default)
+   cp .env.local.example .env
+   ```
+   
+   Update `VITE_API_BASE` with your backend URL:
+   ```bash
+   # For local development with serverless offline:
+   VITE_API_BASE=http://localhost:3001
+   
+   # For deployed backend:
+   VITE_API_BASE=https://your-api-id.execute-api.us-west-2.amazonaws.com/dev
+   ```
+   
+   **Automatic Fallback:** If the API is unavailable, the frontend automatically falls back to mock data. Check diagnostics:
+   ```javascript
+   // In browser console:
+   window.__diagnostics.summary()  // View API failure stats
    ```
 
-3. **Build for production:**
+3. **Start development server:**
+   ```bash
+   npm run dev
+   # Opens on http://localhost:3000 (or http://localhost:5173)
+   ```
+
+4. **Build for production:**
    ```bash
    npm run build
    npm run preview  # Preview production build locally
