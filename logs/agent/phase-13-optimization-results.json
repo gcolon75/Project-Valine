@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-11-03T23:53:45.523Z",
+  "totalOriginalBytes": 12552494,
+  "totalOptimizedBytes": 270516,
+  "totalReductionPercent": 97.8,
+  "bytesSaved": 12281978,
+  "images": [
+    {
+      "name": "hero.jpg",
+      "originalSize": 2438040,
+      "optimizedSize": 60268,
+      "reduction": 97.5,
+      "meetsTarget": true,
+      "output": "hero.webp"
+    },
+    {
+      "name": "login-artist.png",
+      "originalSize": 2606360,
+      "optimizedSize": 62846,
+      "reduction": 97.6,
+      "meetsTarget": true,
+      "output": "login-artist.webp"
+    },
+    {
+      "name": "login-observer.png",
+      "originalSize": 2313029,
+      "optimizedSize": 73950,
+      "reduction": 96.8,
+      "meetsTarget": true,
+      "output": "login-observer.webp"
+    },
+    {
+      "name": "login-seeker.png",
+      "originalSize": 1983691,
+      "optimizedSize": 43284,
+      "reduction": 97.8,
+      "meetsTarget": true,
+      "output": "login-seeker.webp"
+    },
+    {
+      "name": "logo.png",
+      "originalSize": 1192709,
+      "optimizedSize": 8558,
+      "reduction": 99.3,
+      "meetsTarget": true,
+      "output": "logo.webp"
+    },
+    {
+      "name": "pattern.jpg",
+      "originalSize": 2018665,
+      "optimizedSize": 21610,
+      "reduction": 98.9,
+      "meetsTarget": true,
+      "output": "pattern.webp"
+    }
+  ],
+  "allTargetsMet": true
+}
