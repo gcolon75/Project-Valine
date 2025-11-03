@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Bookmark, Volume2
 import ReelsCommentModal from '../components/ReelsCommentModal';
 import { useApiFallback } from '../hooks/useApiFallback';
 import { getReels, toggleReelLike, toggleReelBookmark } from '../services/reelsService';
+import { trackReelView, trackReelInteraction, trackVideoPlayback } from '../utils/analytics';
 
 // Mock/fallback reels data
 const FALLBACK_REELS = [
