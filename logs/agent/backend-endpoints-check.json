@@ -1,0 +1,273 @@
+{
+  "verification_date": "2025-11-04T01:29:30.759Z",
+  "status": "blocked",
+  "blocker": "missing_dev_api_base",
+  "api_base": null,
+  "total_endpoints_expected": 28,
+  "total_endpoints_tested": 0,
+  "endpoints_passed": 0,
+  "endpoints_failed": 0,
+  "endpoints_blocked": 28,
+  "error": "Cannot verify endpoints without a deployed dev API. Backend deployment is failing due to missing DATABASE_URL environment variable.",
+  "deployment_status": {
+    "last_deployment_attempt": "2025-11-04T01:19:23Z",
+    "workflow_run_id": 19054613492,
+    "status": "failed",
+    "error": "Cannot resolve variable at 'provider.environment.DATABASE_URL': Value not found at 'env' source",
+    "workflow_url": "https://github.com/gcolon75/Project-Valine/actions/runs/19054613492"
+  },
+  "expected_endpoints": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "auth_required": false,
+      "category": "meta",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/meta",
+      "method": "GET",
+      "auth_required": false,
+      "category": "meta",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/auth/register",
+      "method": "POST",
+      "auth_required": false,
+      "category": "authentication",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/auth/login",
+      "method": "POST",
+      "auth_required": false,
+      "category": "authentication",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/auth/me",
+      "method": "GET",
+      "auth_required": true,
+      "category": "authentication",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels",
+      "method": "GET",
+      "auth_required": false,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels",
+      "method": "POST",
+      "auth_required": true,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels/:id/like",
+      "method": "POST",
+      "auth_required": true,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels/:id/bookmark",
+      "method": "POST",
+      "auth_required": true,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels/:id/comments",
+      "method": "GET",
+      "auth_required": false,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/reels/:id/comments",
+      "method": "POST",
+      "auth_required": true,
+      "category": "reels",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/posts",
+      "method": "GET",
+      "auth_required": false,
+      "category": "posts",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/posts",
+      "method": "POST",
+      "auth_required": false,
+      "category": "posts",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/posts/:id",
+      "method": "GET",
+      "auth_required": false,
+      "category": "posts",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/conversations",
+      "method": "GET",
+      "auth_required": true,
+      "category": "messaging",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/conversations",
+      "method": "POST",
+      "auth_required": true,
+      "category": "messaging",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/conversations/:id/messages",
+      "method": "GET",
+      "auth_required": true,
+      "category": "messaging",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/conversations/:id/messages",
+      "method": "POST",
+      "auth_required": true,
+      "category": "messaging",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/notifications",
+      "method": "GET",
+      "auth_required": true,
+      "category": "notifications",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/notifications/:id/read",
+      "method": "PATCH",
+      "auth_required": true,
+      "category": "notifications",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/notifications/mark-all",
+      "method": "PATCH",
+      "auth_required": true,
+      "category": "notifications",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/connections/request",
+      "method": "POST",
+      "auth_required": false,
+      "category": "connections",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/connections/requests",
+      "method": "GET",
+      "auth_required": false,
+      "category": "connections",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/connections/requests/:id/approve",
+      "method": "POST",
+      "auth_required": false,
+      "category": "connections",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/connections/requests/:id/reject",
+      "method": "POST",
+      "auth_required": false,
+      "category": "connections",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/users",
+      "method": "POST",
+      "auth_required": false,
+      "category": "users",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/users/:username",
+      "method": "GET",
+      "auth_required": false,
+      "category": "users",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    },
+    {
+      "path": "/users/:id",
+      "method": "PUT",
+      "auth_required": false,
+      "category": "users",
+      "status": "blocked",
+      "message": "Cannot test - no API_BASE available"
+    }
+  ],
+  "cors_check": {
+    "status": "blocked",
+    "message": "Cannot verify CORS without deployed API",
+    "expected_headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Credentials": "true"
+    }
+  },
+  "authentication_flow": {
+    "status": "blocked",
+    "message": "Cannot test authentication flow without deployed API",
+    "flow_steps": [
+      "1. Register test user via POST /auth/register",
+      "2. Extract JWT token from response",
+      "3. Test token via GET /auth/me",
+      "4. Use token for authenticated endpoints"
+    ]
+  },
+  "recommendations": [
+    "Configure DATABASE_URL in GitHub Secrets or AWS Parameter Store",
+    "Deploy backend to AWS Lambda via GitHub Actions workflow",
+    "Verify deployment succeeds and obtain API_BASE URL",
+    "Re-run this verification with the deployed API_BASE",
+    "Update frontend .env with VITE_API_BASE=<deployed-url>"
+  ],
+  "deployment_instructions_url": "https://github.com/gcolon75/Project-Valine/blob/main/DEPLOYMENT.md",
+  "backend_code_status": "complete",
+  "backend_code_pr": "https://github.com/gcolon75/Project-Valine/pull/146"
+}
