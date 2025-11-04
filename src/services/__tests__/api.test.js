@@ -126,7 +126,7 @@ describe('API Client', () => {
 
   describe('Timeout', () => {
     it('should have a default timeout configured', () => {
-      expect(apiClient.defaults.timeout).toBe(30000);
+      expect(apiClient.defaults.timeout).toBe(8000);
     });
   });
 

@@ -41,8 +41,8 @@ const shouldRetry = (error) => {
 export const apiClient = axios.create({
   baseURL: base,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000, // 30 second timeout
-  withCredentials: false // Set to true if using cookies for auth
+  timeout: 8000, // 8 second timeout (configurable)
+  withCredentials: import.meta.env.VITE_API_USE_CREDENTIALS === 'true' // Configurable via env
 });
 
 // Request interceptor - add auth token
@@ -59,6 +59,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
+    
+    // Handle 401 Unauthorized - notify auth system
+    if (error.response?.status === 401) {
+      // Dispatch custom event for AuthProvider to handle
+      window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
+      
+      // Don't retry 401 errors
+      if (import.meta.env.DEV) {
+        console.warn('[API Client] Unauthorized request (401):', config?.url);
+      }
+      return Promise.reject(error);
+    }
     
     // Initialize retry count
     if (!config._retryCount) {
