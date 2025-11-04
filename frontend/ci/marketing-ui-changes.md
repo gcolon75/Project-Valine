@@ -252,14 +252,31 @@ Grid provides better control over column sizing and makes it easier to reorder o
 
 ## Screenshots
 
-### Before/After - Marketing Page Header
-*To be added during manual testing*
+### Marketing Page - Desktop (Light Mode - Default)
+![Marketing Page Desktop](https://github.com/user-attachments/assets/8acf812a-ba9c-4a03-8dfa-2587cddf9be4)
 
-### Before/After - Hero Layout
-*To be added during manual testing*
+**Visible Changes:**
+- ✅ Header shows only "About | Features | Sign In" (no theme toggle)
+- ✅ Stat cards (10K+, 50K+, 5K+) positioned on left sidebar
+- ✅ Hero content (text + image) centered in main column
+- ✅ Green "Trending Now" card on right sidebar
+- ✅ Light mode rendering by default
+- ✅ Modern glassmorphism header preserved
+- ✅ Footer unchanged with comprehensive links
 
-### Before/After - Profile Avatar
-*To be added during manual testing*
+### Marketing Page - Mobile (Responsive Layout)
+![Marketing Page Mobile](https://github.com/user-attachments/assets/7df73c3a-efa1-4fd8-9015-82536a0c6745)
+
+**Visible Changes:**
+- ✅ Stat cards stack vertically at top
+- ✅ Hero content follows (text + image + CTA buttons)
+- ✅ Trending card at bottom
+- ✅ Header simplified for mobile (logo + Sign In)
+- ✅ All content properly stacked and readable
+- ✅ Touch-friendly spacing maintained
+
+### Profile Avatar Fix
+The profile avatar fix removes `overflow-hidden` from the parent container, ensuring the avatar (which uses negative margin to overlap the cover image) is fully visible and not clipped. Visual confirmation requires an authenticated session to view the profile page.
 
 ## Next Steps for Reviewer
 
