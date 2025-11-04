@@ -1,0 +1,400 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Profile",
+  "description": "Complete profile schema for Project Valine creators and observers",
+  "type": "object",
+  "properties": {
+    "profileId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the profile"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "User's full display name"
+    },
+    "username": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{3,30}$",
+      "description": "Unique username without @ symbol"
+    },
+    "vanityUrl": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{3,30}$",
+      "description": "Custom URL slug for profile"
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 100,
+      "description": "Professional tagline (e.g., 'Voice Actor - Classical & Contemporary')"
+    },
+    "pronouns": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "User's pronouns (e.g., 'they/them', 'she/her')"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string",
+          "description": "State or province"
+        },
+        "country": {
+          "type": "string"
+        }
+      },
+      "description": "Geographic location for local casting searches"
+    },
+    "availabilityStatus": {
+      "type": "string",
+      "enum": ["available", "not-available", "booking"],
+      "description": "Current availability for work"
+    },
+    "primaryRoles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Actor",
+          "Voice Actor",
+          "Playwright",
+          "Director",
+          "Producer",
+          "Composer",
+          "Designer",
+          "Technician"
+        ]
+      },
+      "description": "Primary professional roles"
+    },
+    "bio": {
+      "type": "string",
+      "minLength": 50,
+      "maxLength": 600,
+      "description": "Professional biography with rich text support"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["Native", "Fluent", "Conversational", "Basic"]
+          }
+        },
+        "required": ["name", "level"]
+      }
+    },
+    "avatar": {
+      "type": "string",
+      "format": "uri",
+      "description": "Profile picture URL (800x800 recommended)"
+    },
+    "banner": {
+      "type": "string",
+      "format": "uri",
+      "description": "Cover banner URL (1600x400 recommended)"
+    },
+    "agency": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "contact": {
+          "type": "string"
+        }
+      },
+      "description": "Representative agency information"
+    },
+    "contactPreferences": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "boolean"
+        },
+        "phone": {
+          "type": "boolean"
+        },
+        "platform": {
+          "type": "boolean"
+        }
+      },
+      "description": "Preferred contact methods"
+    },
+    "externalLinks": {
+      "type": "object",
+      "properties": {
+        "website": {
+          "type": "string",
+          "format": "uri"
+        },
+        "imdb": {
+          "type": "string",
+          "format": "uri"
+        },
+        "showreel": {
+          "type": "string",
+          "format": "uri"
+        },
+        "instagram": {
+          "type": "string",
+          "format": "uri"
+        },
+        "linkedin": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "primaryReel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "poster": {
+          "type": "string",
+          "format": "uri"
+        },
+        "privacy": {
+          "type": "string",
+          "enum": ["public", "on-request", "private"]
+        },
+        "subtitles": {
+          "type": "string",
+          "format": "uri"
+        },
+        "transcript": {
+          "type": "string"
+        }
+      }
+    },
+    "reelPrivacy": {
+      "type": "string",
+      "enum": ["public", "on-request", "private"],
+      "default": "on-request",
+      "description": "Default privacy setting for reels"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "credits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "year": {
+            "type": "number"
+          },
+          "director": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["film", "theater", "tv", "commercial", "voiceover", "video-game"]
+          }
+        },
+        "required": ["title", "role", "year"]
+      }
+    },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "institution": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "awards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Professional skills and specializations"
+    },
+    "privacy": {
+      "type": "object",
+      "properties": {
+        "profileVisibility": {
+          "type": "string",
+          "enum": ["public", "network", "private"],
+          "default": "public"
+        },
+        "reelDefault": {
+          "type": "string",
+          "enum": ["public", "on-request", "private"],
+          "default": "on-request"
+        },
+        "contactPermissions": {
+          "type": "string",
+          "enum": ["anyone", "verified", "connections"],
+          "default": "anyone"
+        },
+        "analyticsSharing": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "emailVerified": {
+          "type": "boolean"
+        },
+        "twoFactorEnabled": {
+          "type": "boolean"
+        },
+        "connectedAccounts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["google", "linkedin", "apple"]
+          }
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "postsCount": {
+          "type": "number"
+        },
+        "followersCount": {
+          "type": "number"
+        },
+        "followingCount": {
+          "type": "number"
+        },
+        "reelsCount": {
+          "type": "number"
+        },
+        "scriptsCount": {
+          "type": "number"
+        },
+        "profileViews": {
+          "type": "number"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["profileId", "displayName", "username", "headline", "bio"]
+}
