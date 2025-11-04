@@ -54,3 +54,8 @@ coverage/
 .nyc_output/
 playwright-report/
 test-results/
+
+# UX Audit generated reports (can be regenerated with npm run ux:audit)
+# UX_AUDIT_REPORT.md
+# UX_AUDIT_FINDINGS.csv
+# UX_AUDIT_SUMMARY.json

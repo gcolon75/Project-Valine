@@ -1,0 +1,115 @@
+Page,Category,Severity,Issue,Evidence,Recommendation,File
+About,Spacing,Low,Excessive spacing detected,Found 6 instances of very large spacing,Consider using a more consistent spacing scale,src/pages/About.jsx
+About,Color,Medium,Hardcoded color values detected,"Found 41 hardcoded hex color(s): #1a1a1a, #1a1a1a, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/About.jsx
+About,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/About.jsx
+AuditionDetail,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/AuditionDetail.jsx
+AuditionDetail,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/AuditionDetail.jsx
+AuditionDetail,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/AuditionDetail.jsx
+Index,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Auditions/Index.jsx
+Index,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Auditions/Index.jsx
+New,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Auditions/New.jsx
+Show,Spacing,Medium,Inline spacing styles detected,Found 1 inline style(s) with hardcoded spacing,Use Tailwind spacing utilities instead of inline styles for consistency,src/pages/Auditions/Show.jsx
+Show,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Auditions/Show.jsx
+Show,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Auditions/Show.jsx
+Auditions,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Auditions.jsx
+Auditions,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Auditions.jsx
+Auditions,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Auditions.jsx
+AuthCallback,Spacing,Medium,Inline spacing styles detected,Found 1 inline style(s) with hardcoded spacing,Use Tailwind spacing utilities instead of inline styles for consistency,src/pages/AuthCallback.jsx
+AuthCallback,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/AuthCallback.jsx
+AuthCallback,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/AuthCallback.jsx
+AuthCallback,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/AuthCallback.jsx
+Bookmarks,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Bookmarks.jsx
+Bookmarks,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Bookmarks.jsx
+Dashboard,Color,Medium,Hardcoded color values detected,"Found 17 hardcoded hex color(s): #1a1a1a, #474747, #0CCE6B...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Dashboard.jsx
+Dashboard,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Dashboard.jsx
+Dashboard,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Dashboard.jsx
+Discover,Color,Medium,Hardcoded color values detected,"Found 12 hardcoded hex color(s): #474747, #0CCE6B, #1a1a1a...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Discover.jsx
+Discover,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Discover.jsx
+Features,Color,Medium,Hardcoded color values detected,"Found 48 hardcoded hex color(s): #1a1a1a, #1a1a1a, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Features.jsx
+Features,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Features.jsx
+Features,Visual Hierarchy,Low,Too many different text sizes,Found 11 different text size classes,"Use a consistent typographic scale (e.g., text-sm, text-base, text-lg, text-xl, text-2xl, text-3xl)",src/pages/Features.jsx
+Feed,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Feed.jsx
+Feed,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Feed.jsx
+Feed,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Feed.jsx
+Forbidden,Spacing,Medium,Inline spacing styles detected,Found 3 inline style(s) with hardcoded spacing,Use Tailwind spacing utilities instead of inline styles for consistency,src/pages/Forbidden.jsx
+Forbidden,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Forbidden.jsx
+Forbidden,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Forbidden.jsx
+Home,Spacing,Low,Excessive spacing detected,Found 10 instances of very large spacing,Consider using a more consistent spacing scale,src/pages/Home.jsx
+Home,Color,Medium,Hardcoded color values detected,"Found 55 hardcoded hex color(s): #474747, #0CCE6B, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Home.jsx
+Home,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Home.jsx
+Home,Visual Hierarchy,Medium,Multiple competing CTAs,Found 4 CTA instances,Limit to 1-2 primary CTAs per section to avoid decision paralysis,src/pages/Home.jsx
+Home,Visual Hierarchy,Low,Too many different text sizes,Found 12 different text size classes,"Use a consistent typographic scale (e.g., text-sm, text-base, text-lg, text-xl, text-2xl, text-3xl)",src/pages/Home.jsx
+Inbox,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Inbox.jsx
+Inbox,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Inbox.jsx
+Join,Color,Medium,Hardcoded color values detected,"Found 36 hardcoded hex color(s): #1a1a1a, #1a1a1a, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Join.jsx
+Login,Color,Medium,Hardcoded color values detected,"Found 42 hardcoded hex color(s): #1a1a1a, #1a1a1a, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Login.jsx
+Messages,Color,Medium,Hardcoded color values detected,"Found 11 hardcoded hex color(s): #0CCE6B, #0CCE6B, #0CCE6B...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Messages.jsx
+Messages,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Messages.jsx
+NewAudition,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/NewAudition.jsx
+NewAudition,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/NewAudition.jsx
+NewAudition,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/NewAudition.jsx
+NewScript,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/NewScript.jsx
+NewScript,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/NewScript.jsx
+NewScript,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/NewScript.jsx
+NotFound,Color,Medium,Hardcoded color values detected,"Found 20 hardcoded hex color(s): #1a1a1a, #1a1a1a, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/NotFound.jsx
+NotFound,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/NotFound.jsx
+Notifications,Color,Medium,Hardcoded color values detected,"Found 9 hardcoded hex color(s): #0CCE6B, #0CCE6B, #0CCE6B...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Notifications.jsx
+Notifications,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Notifications.jsx
+Notifications,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Notifications.jsx
+Notifications,Visual Hierarchy,Low,Too many different text sizes,Found 11 different text size classes,"Use a consistent typographic scale (e.g., text-sm, text-base, text-lg, text-xl, text-2xl, text-3xl)",src/pages/Notifications.jsx
+Post,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Post.jsx
+PostScript,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/PostScript.jsx
+PostScript,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/PostScript.jsx
+PostScript,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/PostScript.jsx
+Profile,Color,Medium,Hardcoded color values detected,"Found 24 hardcoded hex color(s): #0CCE6B, #0CCE6B, #1a1a1a...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Profile.jsx
+Profile,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Profile.jsx
+ProfileEdit,Color,Medium,Hardcoded color values detected,"Found 9 hardcoded hex color(s): #474747, #0CCE6B, #363636...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/ProfileEdit.jsx
+Reels,Color,Medium,Hardcoded color values detected,"Found 3 hardcoded hex color(s): #0CCE6B, #0BBE60, #0CCE6B",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Reels.jsx
+Reels,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Reels.jsx
+Reels,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Reels.jsx
+Requests,Color,Medium,Hardcoded color values detected,"Found 13 hardcoded hex color(s): #1a1a1a, #1a1a1a, #0CCE6B...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Requests.jsx
+Requests,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Requests.jsx
+Requests,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Requests.jsx
+ScriptDetail,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/ScriptDetail.jsx
+ScriptDetail,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/ScriptDetail.jsx
+ScriptDetail,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/ScriptDetail.jsx
+Index,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Scripts/Index.jsx
+Index,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Scripts/Index.jsx
+New,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Scripts/New.jsx
+Show,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Scripts/Show.jsx
+Show,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Scripts/Show.jsx
+Scripts,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Scripts.jsx
+Scripts,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Scripts.jsx
+Scripts,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Scripts.jsx
+Settings,Color,Medium,Hardcoded color values detected,"Found 14 hardcoded hex color(s): #0CCE6B, #0BBE60, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/pages/Settings.jsx
+Settings,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Settings.jsx
+SkeletonTest,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/SkeletonTest.jsx
+SkeletonTest,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/SkeletonTest.jsx
+Trending,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/pages/Trending.jsx
+Trending,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/pages/Trending.jsx
+Trending,Responsive,High,No responsive breakpoints detected,Page does not use any Tailwind responsive modifiers,"Add responsive classes (sm:, md:, lg:) to ensure proper display on all devices",src/pages/Trending.jsx
+Card,Spacing,Medium,Inline spacing styles detected,Found 1 inline style(s) with hardcoded spacing,Use Tailwind spacing utilities instead of inline styles for consistency,src/components/Card.jsx
+Card,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/Card.jsx
+Card,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/Card.jsx
+ConfirmationModal,Color,Medium,Hardcoded color values detected,"Found 4 hardcoded hex color(s): #474747, #0CCE6B, #363636...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/components/ConfirmationModal.jsx
+ConfirmationModal,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/ConfirmationModal.jsx
+Footer,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/Footer.jsx
+Footer,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/Footer.jsx
+Header,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/Header.jsx
+Header,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/Header.jsx
+Modal,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/Modal.jsx
+Modal,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/Modal.jsx
+NavBar,Spacing,Medium,Inline spacing styles detected,Found 6 inline style(s) with hardcoded spacing,Use Tailwind spacing utilities instead of inline styles for consistency,src/components/NavBar.jsx
+NavBar,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/NavBar.jsx
+NavBar,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/NavBar.jsx
+PostCard,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/PostCard.jsx
+PostCard,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/PostCard.jsx
+ReelsCommentModal,Color,Medium,Hardcoded color values detected,"Found 6 hardcoded hex color(s): #1a1a1a, #0CCE6B, #474747...",Use design tokens or Tailwind color utilities instead of hardcoded values,src/components/ReelsCommentModal.jsx
+ReelsCommentModal,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/ReelsCommentModal.jsx
+Header.test,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/__tests__/Header.test.jsx
+Header.test,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/__tests__/Header.test.jsx
+Modal.test,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/__tests__/Modal.test.jsx
+PostCard.test,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/__tests__/PostCard.test.jsx
+PostCard.test,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/__tests__/PostCard.test.jsx
+SkeletonCard,Accessibility,Medium,Missing H1 heading,No H1 heading found on page,Add a descriptive H1 heading for proper semantic structure and SEO,src/components/skeletons/SkeletonCard.jsx
+SkeletonCard,Accessibility,Medium,Missing focus states,No focus: or focus-visible: classes found,Add focus states to interactive elements for keyboard navigation,src/components/skeletons/SkeletonCard.jsx

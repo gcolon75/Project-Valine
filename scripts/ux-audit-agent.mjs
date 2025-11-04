@@ -55,7 +55,25 @@ class UXAuditAgent {
     // Write report to file
     const reportPath = path.join(projectRoot, 'UX_AUDIT_REPORT.md');
     fs.writeFileSync(reportPath, report, 'utf-8');
-    console.log(`\n✅ Audit complete! Report saved to: ${reportPath}`);
+    console.log(`   ✓ Markdown report saved to: ${reportPath}`);
+    
+    // Generate CSV export for project management
+    const csv = await this.generateCSV();
+    const csvPath = path.join(projectRoot, 'UX_AUDIT_FINDINGS.csv');
+    fs.writeFileSync(csvPath, csv, 'utf-8');
+    console.log(`   ✓ CSV findings saved to: ${csvPath}`);
+    
+    // Generate summary JSON
+    const summary = await this.generateSummaryJSON();
+    const jsonPath = path.join(projectRoot, 'UX_AUDIT_SUMMARY.json');
+    fs.writeFileSync(jsonPath, JSON.stringify(summary, null, 2), 'utf-8');
+    console.log(`   ✓ JSON summary saved to: ${jsonPath}`);
+    
+    console.log(`\n✅ Audit complete!`);
+    console.log(`   📊 Total findings: ${this.findings.length}`);
+    console.log(`   🔴 High priority: ${this.findings.filter(f => f.severity === 'High').length}`);
+    console.log(`   🟡 Medium priority: ${this.findings.filter(f => f.severity === 'Medium').length}`);
+    console.log(`   🟢 Low priority: ${this.findings.filter(f => f.severity === 'Low').length}`);
     
     return report;
   }
@@ -992,6 +1010,122 @@ class UXAuditAgent {
     );
     
     return route || `/${name}`;
+  }
+
+  /**
+   * Generate CSV export for project management tools
+   */
+  async generateCSV() {
+    let csv = 'Page,Category,Severity,Issue,Evidence,Recommendation,File\n';
+    
+    for (const finding of this.findings) {
+      const page = finding.page || 'Global';
+      const category = finding.category || 'General';
+      const severity = finding.severity || 'Medium';
+      const issue = this.escapeCSV(finding.issue || '');
+      const evidence = this.escapeCSV(finding.evidence || '');
+      const recommendation = this.escapeCSV(finding.recommendation || '');
+      const file = finding.file || '';
+      
+      csv += `${page},${category},${severity},${issue},${evidence},${recommendation},${file}\n`;
+    }
+    
+    return csv;
+  }
+
+  /**
+   * Generate JSON summary for programmatic access
+   */
+  async generateSummaryJSON() {
+    const high = this.findings.filter(f => f.severity === 'High').length;
+    const medium = this.findings.filter(f => f.severity === 'Medium').length;
+    const low = this.findings.filter(f => f.severity === 'Low').length;
+    
+    const byCategory = {};
+    for (const finding of this.findings) {
+      const cat = finding.category || 'General';
+      if (!byCategory[cat]) {
+        byCategory[cat] = { High: 0, Medium: 0, Low: 0 };
+      }
+      byCategory[cat][finding.severity]++;
+    }
+    
+    const byPage = {};
+    for (const page of this.pages) {
+      byPage[page.name] = {
+        type: page.type,
+        route: this.guessRoute(page.name),
+        findings: page.findings?.length || 0,
+        file: page.path
+      };
+    }
+    
+    return {
+      metadata: {
+        date: new Date().toISOString(),
+        pagesAnalyzed: this.pages.length,
+        componentsAnalyzed: this.components.length,
+        totalFindings: this.findings.length
+      },
+      summary: {
+        high,
+        medium,
+        low
+      },
+      byCategory,
+      byPage,
+      prioritizedActions: [
+        {
+          priority: 'High',
+          name: 'Accessibility Audit Fixes',
+          branch: 'fix/accessibility-improvements',
+          effort: 'Medium',
+          impact: 'High',
+          tasks: [
+            'Add alt text to all images',
+            'Add ARIA labels to icon-only buttons',
+            'Ensure focus states on all interactive elements',
+            'Verify keyboard navigation works on all pages'
+          ]
+        },
+        {
+          priority: 'High',
+          name: 'Light Mode Polish',
+          branch: 'feat/light-mode-polish',
+          effort: 'Small',
+          impact: 'High',
+          tasks: [
+            'Replace remaining bg-white with surface tokens',
+            'Add subtle shadows to cards and elevated elements',
+            'Implement depth through layered surfaces',
+            'Test all marketing pages in light mode'
+          ]
+        },
+        {
+          priority: 'High',
+          name: 'Responsive Design Fixes',
+          branch: 'fix/responsive-improvements',
+          effort: 'Medium',
+          impact: 'High',
+          tasks: [
+            'Add responsive breakpoints to pages lacking them',
+            'Replace fixed widths with responsive utilities',
+            'Test on mobile (375px), tablet (768px), desktop (1280px)',
+            'Add bottom navigation for mobile app'
+          ]
+        }
+      ]
+    };
+  }
+
+  /**
+   * Helper: Escape CSV field
+   */
+  escapeCSV(str) {
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
   }
 }
 
