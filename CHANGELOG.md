@@ -93,4 +93,4 @@ The Discord bot Lambda function was experiencing critical deployment failures:
 
 ---
 
-**Note**: For UX-specific changes, see [CHANGES.md](CHANGES.md)
+**Note**: For UX-specific changes, see [CHANGES.md](docs/reference/changes.md)

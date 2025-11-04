@@ -145,7 +145,7 @@ iwr -Headers @{Authorization="Bot $env:STAGING_DISCORD_BOT_TOKEN"} `
 
 **Not a bug:** This is the tradeoff for using GLOBAL endpoint.
 
-**Future solution:** Switch to guild endpoint for instant visibility (see [NEXT_STEPS.md](NEXT_STEPS.md))
+**Future solution:** Switch to guild endpoint for instant visibility (see [NEXT_STEPS.md](guides/next-steps.md))
 
 ---
 

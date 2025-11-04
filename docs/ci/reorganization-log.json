@@ -1,0 +1,263 @@
+{
+  "timestamp": "2025-11-04T20:18:52.764170",
+  "moved": [
+    {
+      "from": "API_CONTRACT.md",
+      "to": "docs/api/contract.md"
+    },
+    {
+      "from": "API_REFERENCE.md",
+      "to": "docs/api/reference.md"
+    },
+    {
+      "from": "docs/API_INTEGRATION_GUIDE.md",
+      "to": "docs/api/integration-guide.md"
+    },
+    {
+      "from": "docs/api-dev.md",
+      "to": "docs/api/development.md"
+    },
+    {
+      "from": "logs/agent/ISSUE-blocked-missing-dev-api-base.md",
+      "to": "docs/api/dev-api-base-issue.md"
+    },
+    {
+      "from": ".github/agents/Project Valine Backend Agent.md",
+      "to": "docs/backend/agent-instructions.md"
+    },
+    {
+      "from": "BACKEND_PROFILE_IMPLEMENTATION_SUMMARY.md",
+      "to": "docs/backend/profile-implementation.md"
+    },
+    {
+      "from": ".github/agents/Project Valine Frontend Agentt.md",
+      "to": "docs/frontend/agent-instructions.md"
+    },
+    {
+      "from": "FRONTEND_REVIEW_AGENT_PROMPT.md",
+      "to": "docs/frontend/review-agent-prompt.md"
+    },
+    {
+      "from": "FRONTEND_REVIEW_REPORT.md",
+      "to": "docs/frontend/review-report.md"
+    },
+    {
+      "from": "logs/agent/FRONTEND_API_INTEGRATION_COMPLETE.md",
+      "to": "docs/frontend/api-integration-complete.md"
+    },
+    {
+      "from": "BACKEND_DEPLOYMENT_INSTRUCTIONS.md",
+      "to": "docs/deployment/backend-instructions.md"
+    },
+    {
+      "from": "DEPLOYMENT-GUIDE.md",
+      "to": "docs/deployment/deployment-guide.md"
+    },
+    {
+      "from": "DEPLOYMENT.md",
+      "to": "docs/deployment/overview.md"
+    },
+    {
+      "from": "DEPLOYMENT_CHECKLIST.md",
+      "to": "docs/deployment/checklist.md"
+    },
+    {
+      "from": "DEPLOYMENT_GUIDE_AWS.md",
+      "to": "docs/deployment/aws-guide.md"
+    },
+    {
+      "from": "QUICK_DEPLOY.md",
+      "to": "docs/deployment/quick-deploy.md"
+    },
+    {
+      "from": "QUICK_DEPLOY_BACKEND.md",
+      "to": "docs/deployment/quick-deploy-backend.md"
+    },
+    {
+      "from": "serverless/DEPLOYMENT_GUIDE.md",
+      "to": "docs/deployment/serverless-guide.md"
+    },
+    {
+      "from": "QUICK_START.md",
+      "to": "docs/quickstart/README.md"
+    },
+    {
+      "from": ".github/agents/QUICK_START.md",
+      "to": "docs/quickstart/agents.md"
+    },
+    {
+      "from": "orchestrator/scripts/QUICKSTART.md",
+      "to": "docs/quickstart/orchestrator.md"
+    },
+    {
+      "from": "orchestrator/scripts/OPERATIONAL_READINESS_QUICKSTART.md",
+      "to": "docs/quickstart/operational-readiness.md"
+    },
+    {
+      "from": "orchestrator/scripts/PHASE5_SUPER_AGENT_QUICKSTART.md",
+      "to": "docs/quickstart/phase5-super-agent.md"
+    },
+    {
+      "from": "TROUBLESHOOTING.md",
+      "to": "docs/troubleshooting/README.md"
+    },
+    {
+      "from": "BACKLOG.md",
+      "to": "docs/guides/backlog.md"
+    },
+    {
+      "from": "HANDOFF-GUIDE.md",
+      "to": "docs/guides/handoff.md"
+    },
+    {
+      "from": "NEXT_STEPS.md",
+      "to": "docs/guides/next-steps.md"
+    },
+    {
+      "from": "PROJECT_STATUS.md",
+      "to": "docs/reference/project-status.md"
+    },
+    {
+      "from": "PROJECT_VALINE_STATE_2025_10_29.md",
+      "to": "docs/reference/project-state-2025-10-29.md"
+    },
+    {
+      "from": "RELEASE_NOTES.md",
+      "to": "docs/reference/release-notes.md"
+    },
+    {
+      "from": "ROADMAP.md",
+      "to": "docs/reference/roadmap.md"
+    },
+    {
+      "from": "SANITY_SETUP.md",
+      "to": "docs/guides/sanity-setup.md"
+    },
+    {
+      "from": "SETTINGS_PROFILE_IMPLEMENTATION.md",
+      "to": "docs/guides/profile-settings.md"
+    },
+    {
+      "from": "SUPABASE_SETUP.md",
+      "to": "docs/guides/supabase-setup.md"
+    },
+    {
+      "from": "CHANGES.md",
+      "to": "docs/reference/changes.md"
+    }
+  ],
+  "archived": [
+    {
+      "original": ".github/agents/IMPLEMENTATION_SUMMARY.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "AGENT_WRAPUP.md",
+      "archived": "docs/archive/historical/AGENT_WRAPUP-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "AI_AGENT_BUILD_PLAN.md",
+      "archived": "docs/archive/historical/AI_AGENT_BUILD_PLAN-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "AI_AGENT_REMAINING_PHASES.md",
+      "archived": "docs/archive/historical/AI_AGENT_REMAINING_PHASES-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "AUTONOMOUS_AGENT_SUMMARY.md",
+      "archived": "docs/archive/historical/AUTONOMOUS_AGENT_SUMMARY-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "BACKEND_PHASE_02_SUMMARY.md",
+      "archived": "docs/archive/historical/BACKEND_PHASE_02_SUMMARY-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "IMPLEMENTATION_SUMMARY.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "PHASE_02B_COMPLETION_SUMMARY.md",
+      "archived": "docs/archive/historical/PHASE_02B_COMPLETION_SUMMARY-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "docs/PHASE_02_IMPLEMENTATION.md",
+      "archived": "docs/archive/historical/PHASE_02_IMPLEMENTATION-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "docs/diagnostics/IMPLEMENTATION_SUMMARY_OPERATIONAL_READINESS.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY_OPERATIONAL_READINESS-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE3_4.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY_PHASE3_4-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE5.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY_PHASE5-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE5_STAGING_RUNNER.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY_PHASE5_STAGING_RUNNER-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE5_VALIDATION_RUNNER.md",
+      "archived": "docs/archive/historical/IMPLEMENTATION_SUMMARY_PHASE5_VALIDATION_RUNNER-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/MASS_PHASE_VALIDATION_REPORT.md",
+      "archived": "docs/archive/historical/MASS_PHASE_VALIDATION_REPORT-20251104.md",
+      "reason": "Historical AI agent summary"
+    },
+    {
+      "original": "docs/diagnostics/PHASE5_DOUBLECHECK_IMPLEMENTATION_SUMMARY.md",
+      "archived": "docs/archive/historical/PHASE5_DOUBLECHECK_IMPLEMENTATION_SUMMARY-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/PHASE5_TRIAGE_IMPLEMENTATION_SUMMARY.md",
+      "archived": "docs/archive/historical/PHASE5_TRIAGE_IMPLEMENTATION_SUMMARY-20251104.md",
+      "reason": "Historical implementation summary"
+    },
+    {
+      "original": "docs/diagnostics/PHASE6_IMPLEMENTATION_SUMMARY.md",
+      "archived": "docs/archive/historical/PHASE6_IMPLEMENTATION_SUMMARY-20251104.md",
+      "reason": "Historical implementation summary"
+    }
+  ],
+  "merged": [
+    {
+      "source": "PROJECT-SUMMARY.md",
+      "archived": "docs/archive/merged/PROJECT-SUMMARY-merged-20251104.md",
+      "target": "docs/reference/project-summary.md"
+    },
+    {
+      "source": "PROJECT_SUMMARY.md",
+      "archived": "docs/archive/merged/PROJECT_SUMMARY-merged-20251104.md",
+      "target": "docs/reference/project-summary.md"
+    },
+    {
+      "source": "PROJECT_VALINE_SUMMARY.md",
+      "archived": "docs/archive/merged/PROJECT_VALINE_SUMMARY-merged-20251104.md",
+      "target": "docs/reference/project-summary.md"
+    },
+    {
+      "source": "docs/PROJECT_SUMMARY.md",
+      "archived": "docs/archive/merged/PROJECT_SUMMARY-merged-20251104.md",
+      "target": "docs/reference/project-summary.md"
+    }
+  ]
+}
