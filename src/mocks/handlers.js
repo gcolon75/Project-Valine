@@ -216,6 +216,29 @@ export const handlers = [
     }, { status: 201 });
   }),
 
+  http.post(`${API_BASE}/posts/:id/like`, ({ params }) => {
+    const post = mockPosts.find(p => p.id === params.id);
+    if (!post) {
+      return HttpResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+    return HttpResponse.json({
+      ...post,
+      isLiked: !post.isLiked,
+      likes: post.isLiked ? post.likes - 1 : post.likes + 1
+    }, { status: 200 });
+  }),
+
+  http.post(`${API_BASE}/posts/:id/bookmark`, ({ params }) => {
+    const post = mockPosts.find(p => p.id === params.id);
+    if (!post) {
+      return HttpResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+    return HttpResponse.json({
+      ...post,
+      isBookmarked: !post.isBookmarked
+    }, { status: 200 });
+  }),
+
   // Users endpoints
   http.get(`${API_BASE}/users/:username`, ({ params }) => {
     if (params.username === 'testuser') {
@@ -255,6 +278,14 @@ export const handlers = [
 
   http.patch(`${API_BASE}/notifications/:id/read`, ({ params }) => {
     return HttpResponse.json({ success: true }, { status: 200 });
+  }),
+
+  // Unread counts
+  http.get(`${API_BASE}/unread-counts`, () => {
+    return HttpResponse.json({
+      notifications: mockNotifications.filter(n => !n.read).length,
+      messages: mockMessages.filter(m => !m.read).length
+    }, { status: 200 });
   }),
 
   // Health check
