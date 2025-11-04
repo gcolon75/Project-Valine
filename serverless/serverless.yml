@@ -11,6 +11,8 @@ provider:
   environment:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
+    MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
+    AWS_REGION: ${env:AWS_REGION, "us-west-2"}
 
 package:
   patterns:
@@ -224,3 +226,177 @@ functions:
       - httpApi:
           path: /connections/requests/{id}/reject
           method: post
+
+  # Profile endpoints
+  getProfileByVanity:
+    handler: src/handlers/profiles.getProfileByVanity
+    events:
+      - httpApi:
+          path: /profiles/{vanityUrl}
+          method: get
+  
+  getProfileById:
+    handler: src/handlers/profiles.getProfileById
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: get
+  
+  createProfile:
+    handler: src/handlers/profiles.createProfile
+    events:
+      - httpApi:
+          path: /profiles
+          method: post
+  
+  updateProfile:
+    handler: src/handlers/profiles.updateProfile
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: put
+  
+  deleteProfile:
+    handler: src/handlers/profiles.deleteProfile
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: delete
+
+  # Media endpoints
+  getUploadUrl:
+    handler: src/handlers/media.getUploadUrl
+    events:
+      - httpApi:
+          path: /profiles/{id}/media/upload-url
+          method: post
+  
+  completeUpload:
+    handler: src/handlers/media.completeUpload
+    events:
+      - httpApi:
+          path: /profiles/{id}/media/complete
+          method: post
+  
+  updateMedia:
+    handler: src/handlers/media.updateMedia
+    events:
+      - httpApi:
+          path: /media/{id}
+          method: put
+  
+  deleteMedia:
+    handler: src/handlers/media.deleteMedia
+    events:
+      - httpApi:
+          path: /media/{id}
+          method: delete
+  
+  getAccessUrl:
+    handler: src/handlers/media.getAccessUrl
+    events:
+      - httpApi:
+          path: /media/{id}/access-url
+          method: get
+
+  # Credits endpoints
+  listCredits:
+    handler: src/handlers/credits.listCredits
+    events:
+      - httpApi:
+          path: /profiles/{id}/credits
+          method: get
+  
+  createCredit:
+    handler: src/handlers/credits.createCredit
+    events:
+      - httpApi:
+          path: /profiles/{id}/credits
+          method: post
+  
+  updateCredit:
+    handler: src/handlers/credits.updateCredit
+    events:
+      - httpApi:
+          path: /credits/{id}
+          method: put
+  
+  deleteCredit:
+    handler: src/handlers/credits.deleteCredit
+    events:
+      - httpApi:
+          path: /credits/{id}
+          method: delete
+
+  # Settings endpoints
+  getSettings:
+    handler: src/handlers/settings.getSettings
+    events:
+      - httpApi:
+          path: /settings
+          method: get
+  
+  updateSettings:
+    handler: src/handlers/settings.updateSettings
+    events:
+      - httpApi:
+          path: /settings
+          method: put
+  
+  exportAccountData:
+    handler: src/handlers/settings.exportAccountData
+    events:
+      - httpApi:
+          path: /account/export
+          method: post
+  
+  deleteAccount:
+    handler: src/handlers/settings.deleteAccount
+    events:
+      - httpApi:
+          path: /account
+          method: delete
+
+  # Reel Request endpoints
+  createReelRequest:
+    handler: src/handlers/reelRequests.createReelRequest
+    events:
+      - httpApi:
+          path: /reels/{id}/request
+          method: post
+  
+  listReelRequests:
+    handler: src/handlers/reelRequests.listReelRequests
+    events:
+      - httpApi:
+          path: /reel-requests
+          method: get
+  
+  approveReelRequest:
+    handler: src/handlers/reelRequests.approveReelRequest
+    events:
+      - httpApi:
+          path: /reel-requests/{id}/approve
+          method: post
+  
+  denyReelRequest:
+    handler: src/handlers/reelRequests.denyReelRequest
+    events:
+      - httpApi:
+          path: /reel-requests/{id}/deny
+          method: post
+
+  # Search endpoints
+  searchProfiles:
+    handler: src/handlers/search.searchProfiles
+    events:
+      - httpApi:
+          path: /search
+          method: get
+  
+  searchUsers:
+    handler: src/handlers/search.searchUsers
+    events:
+      - httpApi:
+          path: /search/users
+          method: get
