@@ -17,9 +17,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
-// Color constants for contrast ratio calculations
-const WCAG_AA_NORMAL = 4.5;
-const WCAG_AA_LARGE = 3.0;
+// Analysis thresholds
+const WCAG_AA_NORMAL = 4.5;  // For future contrast analysis
+const WCAG_AA_LARGE = 3.0;   // For future contrast analysis
+const PURE_WHITE_THRESHOLD = 5;  // Max bg-white instances for marketing pages
+const CTA_THRESHOLD = 3;  // Max CTA buttons per section
+const TEXT_SIZE_THRESHOLD = 10;  // Max different text size classes
+const DARK_MODE_CONFIG = "darkMode: 'class'";
 
 class UXAuditAgent {
   constructor() {
@@ -295,7 +299,7 @@ class UXAuditAgent {
     const pureWhite = content.match(/bg-white(?!\S)/g) || [];
     const pureBlack = content.match(/bg-black(?!\S)/g) || [];
     
-    if (pureWhite.length > 5 && page.type === 'marketing') {
+    if (pureWhite.length > PURE_WHITE_THRESHOLD && page.type === 'marketing') {
       findings.push({
         severity: 'High',
         category: 'Color',
@@ -447,7 +451,7 @@ class UXAuditAgent {
     
     // Check for duplicate CTAs
     const ctaButtons = content.match(/Get Started|Sign Up|Join Now|Learn More/gi) || [];
-    if (ctaButtons.length > 3 && page.type === 'marketing') {
+    if (ctaButtons.length > CTA_THRESHOLD && page.type === 'marketing') {
       findings.push({
         severity: 'Medium',
         category: 'Visual Hierarchy',
@@ -462,7 +466,7 @@ class UXAuditAgent {
     // Check for consistent heading sizes
     const textSizes = content.match(/text-\w+/g) || [];
     const uniqueSizes = [...new Set(textSizes)];
-    if (uniqueSizes.length > 10) {
+    if (uniqueSizes.length > TEXT_SIZE_THRESHOLD) {
       findings.push({
         severity: 'Low',
         category: 'Visual Hierarchy',
@@ -509,7 +513,7 @@ class UXAuditAgent {
     const findings = [];
     
     // Check if dark mode is configured
-    if (this.styles.tailwind && this.styles.tailwind.includes("darkMode: 'class'")) {
+    if (this.styles.tailwind && this.styles.tailwind.includes(DARK_MODE_CONFIG)) {
       console.log('   ✓ Dark mode configured');
     } else {
       findings.push({
