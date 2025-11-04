@@ -1,0 +1,54 @@
+name: Lighthouse CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Lighthouse and http-server
+        run: npm install -g lighthouse http-server
+
+      - name: Start local dev server (if applicable)
+        # If your site is static build, replace this step with build+serve commands.
+        # This step assumes a local dev server can be started with `npm run start` in repo root.
+        run: |
+          # Try to start dev server in background; edit as needed for your repo
+          if [ -f package.json ]; then
+            npm ci || true
+            (npm run start --silent &) || (npx http-server -p 3000 ./public &)
+            sleep 5
+          fi
+
+      - name: Run Lighthouse audits
+        run: |
+          mkdir -p lighthouse-reports
+          pages=(
+            "http://localhost:3000/"
+            "http://localhost:3000/features"
+            "http://localhost:3000/login"
+            "http://localhost:3000/dashboard"
+          )
+          for url in "${pages[@]}"; do
+            slug=$(echo "${url}" | sed -e 's|http://localhost:3000||' -e 's|/|home|g' -e 's|[^a-zA-Z0-9_-]||g')
+            out="./lighthouse-reports/$(echo $url | sed -e 's|http://localhost:3000/||' -e 's|/|_|g' -e 's|^$|home|g').json"
+            lighthouse "$url" --only-categories=performance,accessibility,best-practices,seo --output=json --output-path="$out" --chrome-flags="--headless" || true
+          done
+
+      - name: Upload Lighthouse artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: lighthouse-reports/
