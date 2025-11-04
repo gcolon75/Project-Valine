@@ -93,7 +93,10 @@ export default function Profile() {
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-3">
-              <button className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105">
+              <button 
+                onClick={() => window.location.href = '/profile-edit'}
+                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105"
+              >
                 Edit Profile
               </button>
               <button className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white p-2 rounded-lg transition-all">

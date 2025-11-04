@@ -18,6 +18,7 @@ const DiscoverPage = lazy(() => import("../pages/Discover"));
 const PostPage = lazy(() => import("../pages/Post"));
 const InboxPage = lazy(() => import("../pages/Inbox"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
+const ProfileEditPage = lazy(() => import("../pages/ProfileEdit"));
 const BookmarksPage = lazy(() => import("../pages/Bookmarks"));
 const RequestsPage = lazy(() => import("../pages/Requests"));
 const SettingsPage = lazy(() => import("../pages/Settings"));
@@ -126,6 +127,14 @@ export default function App() {
             element={
               <Protected>
                 <ProfilePage />
+              </Protected>
+            }
+          />
+          <Route
+            path="profile-edit"
+            element={
+              <Protected>
+                <ProfileEditPage />
               </Protected>
             }
           />

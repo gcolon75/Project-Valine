@@ -1,0 +1,520 @@
+// src/pages/ProfileEdit.jsx
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  User, MapPin, Briefcase, GraduationCap, Award, 
+  Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft
+} from 'lucide-react';
+import ImageCropper from '../components/ImageCropper';
+import MediaUploader from '../components/MediaUploader';
+import SkillsTags from '../components/SkillsTags';
+import { useAuth } from '../context/AuthContext';
+
+export default function ProfileEdit() {
+  const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    displayName: user?.displayName || '',
+    username: user?.username || '',
+    headline: user?.headline || '',
+    pronouns: user?.pronouns || '',
+    location: user?.location || '',
+    availabilityStatus: user?.availabilityStatus || 'available',
+    primaryRoles: user?.primaryRoles || [],
+    bio: user?.bio || '',
+    languages: user?.languages || [],
+    avatar: user?.avatar || null,
+    banner: user?.banner || null,
+    agency: user?.agency || { name: '', contact: '' },
+    contactPreferences: user?.contactPreferences || {
+      email: true,
+      phone: false,
+      platform: true
+    },
+    externalLinks: user?.externalLinks || {
+      website: '',
+      imdb: '',
+      showreel: '',
+      instagram: '',
+      linkedin: ''
+    },
+    primaryReel: user?.primaryReel || null,
+    reelPrivacy: user?.reelPrivacy || 'public',
+    credits: user?.credits || [],
+    experience: user?.experience || [],
+    education: user?.education || [],
+    skills: user?.skills || []
+  });
+
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [cropperType, setCropperType] = useState(null); // 'avatar' or 'banner'
+  const [activeSection, setActiveSection] = useState('basic');
+
+  // Skill suggestions for voice actors and theater professionals
+  const skillSuggestions = [
+    'Voice Acting', 'Stage Acting', 'Classical Theater', 'Contemporary',
+    'Musical Theater', 'Improvisation', 'Dialects', 'Voice Over',
+    'Character Voices', 'Narration', 'Audiobook', 'Commercial VO',
+    'Animation', 'Video Games', 'Singing', 'Dance', 'Combat/Stunts',
+    'Motion Capture', 'On-Camera', 'Directing', 'Playwriting'
+  ];
+
+  const roleOptions = [
+    'Actor', 'Voice Actor', 'Playwright', 'Director', 
+    'Producer', 'Composer', 'Designer', 'Technician'
+  ];
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleNestedChange = (parent, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [parent]: { ...prev[parent], [field]: value }
+    }));
+  };
+
+  const handleArrayAdd = (field, item) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], item]
+    }));
+  };
+
+  const handleArrayRemove = (field, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAvatarUpload = (imageUrl) => {
+    handleChange('avatar', imageUrl);
+    setShowImageCropper(false);
+  };
+
+  const handleSave = async () => {
+    try {
+      // TODO: Call API to update profile
+      await updateUser(formData);
+      navigate(`/profile/${user.username}`);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
+  };
+
+  const sections = [
+    { id: 'basic', label: 'Basic Info', icon: User },
+    { id: 'media', label: 'Media', icon: Film },
+    { id: 'experience', label: 'Experience', icon: Briefcase },
+    { id: 'education', label: 'Education', icon: GraduationCap }
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-6 h-6 text-neutral-600 dark:text-neutral-400" />
+          </button>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+            Edit Profile
+          </h1>
+        </div>
+        <button
+          onClick={handleSave}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Save Changes</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Section Navigation */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 sticky top-6">
+            <nav className="space-y-1">
+              {sections.map(section => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeSection === section.id
+                        ? 'bg-gradient-to-r from-[#474747]/10 to-[#0CCE6B]/10 text-[#0CCE6B]'
+                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{section.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Basic Info Section */}
+          {activeSection === 'basic' && (
+            <>
+              {/* Profile Images */}
+              <FormSection title="Profile Images" icon={User}>
+                <div className="space-y-4">
+                  {/* Banner */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Cover Banner (1600x400 recommended)
+                    </label>
+                    {formData.banner ? (
+                      <div className="relative aspect-[4/1] rounded-lg overflow-hidden">
+                        <img src={formData.banner} alt="Banner" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleChange('banner', null)}
+                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+                        >
+                          <X className="w-5 h-5 text-white" />
+                        </button>
+                      </div>
+                    ) : (
+                      <MediaUploader
+                        onUpload={(file) => {
+                          // TODO: Upload file and get URL
+                          const url = URL.createObjectURL(file);
+                          handleChange('banner', url);
+                        }}
+                        acceptedTypes="image/*"
+                        uploadType="image"
+                        maxSize={10}
+                      />
+                    )}
+                  </div>
+
+                  {/* Avatar */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                      Profile Picture (800x800 recommended)
+                    </label>
+                    <div className="flex items-center space-x-4">
+                      <div className="w-24 h-24 rounded-full border-2 border-neutral-200 dark:border-neutral-700 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                        {formData.avatar ? (
+                          <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="w-12 h-12 text-neutral-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => {
+                            setCropperType('avatar');
+                            setShowImageCropper(true);
+                          }}
+                          className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors text-sm font-medium"
+                        >
+                          {formData.avatar ? 'Change' : 'Upload'} Photo
+                        </button>
+                        {formData.avatar && (
+                          <button
+                            onClick={() => handleChange('avatar', null)}
+                            className="block text-sm text-red-600 dark:text-red-400 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </FormSection>
+
+              {/* Basic Information */}
+              <FormSection title="Basic Information" icon={User}>
+                <div className="space-y-4">
+                  <FormField label="Display Name" required>
+                    <input
+                      type="text"
+                      value={formData.displayName}
+                      onChange={(e) => handleChange('displayName', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Your full name"
+                    />
+                  </FormField>
+
+                  <FormField label="Username" required>
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 border border-r-0 border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => handleChange('username', e.target.value)}
+                        className="flex-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-r-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="username"
+                      />
+                    </div>
+                  </FormField>
+
+                  <FormField label="Headline" required>
+                    <input
+                      type="text"
+                      value={formData.headline}
+                      onChange={(e) => handleChange('headline', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Voice & stage actor — classical & contemporary"
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
+                      {formData.headline.length}/100 characters
+                    </p>
+                  </FormField>
+
+                  <FormField label="Pronouns">
+                    <input
+                      type="text"
+                      value={formData.pronouns}
+                      onChange={(e) => handleChange('pronouns', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="they/them"
+                    />
+                  </FormField>
+
+                  <FormField label="Location">
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) => handleChange('location', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Seattle, WA, USA"
+                    />
+                  </FormField>
+
+                  <FormField label="Availability Status">
+                    <select
+                      value={formData.availabilityStatus}
+                      onChange={(e) => handleChange('availabilityStatus', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="available">Available</option>
+                      <option value="not-available">Not Available</option>
+                      <option value="booking">Accepting Bookings</option>
+                    </select>
+                  </FormField>
+
+                  <FormField label="Primary Roles">
+                    <div className="space-y-2">
+                      {roleOptions.map(role => (
+                        <label key={role} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.primaryRoles.includes(role)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                handleChange('primaryRoles', [...formData.primaryRoles, role]);
+                              } else {
+                                handleChange('primaryRoles', formData.primaryRoles.filter(r => r !== role));
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700"
+                          />
+                          <span className="text-neutral-900 dark:text-white">{role}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </FormField>
+
+                  <FormField label="Bio">
+                    <textarea
+                      value={formData.bio}
+                      onChange={(e) => handleChange('bio', e.target.value)}
+                      rows={6}
+                      maxLength={600}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                      placeholder="Tell us about yourself..."
+                    />
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
+                      {formData.bio.length}/600 characters
+                    </p>
+                  </FormField>
+
+                  <FormField label="Skills & Specializations">
+                    <SkillsTags
+                      skills={formData.skills}
+                      onChange={(skills) => handleChange('skills', skills)}
+                      suggestions={skillSuggestions}
+                    />
+                  </FormField>
+                </div>
+              </FormSection>
+
+              {/* Contact & Links */}
+              <FormSection title="Contact & Links" icon={LinkIcon}>
+                <div className="space-y-4">
+                  <FormField label="External Links">
+                    <div className="space-y-3">
+                      <input
+                        type="url"
+                        value={formData.externalLinks.website}
+                        onChange={(e) => handleNestedChange('externalLinks', 'website', e.target.value)}
+                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Website URL"
+                      />
+                      <input
+                        type="url"
+                        value={formData.externalLinks.imdb}
+                        onChange={(e) => handleNestedChange('externalLinks', 'imdb', e.target.value)}
+                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="IMDb URL"
+                      />
+                      <input
+                        type="url"
+                        value={formData.externalLinks.linkedin}
+                        onChange={(e) => handleNestedChange('externalLinks', 'linkedin', e.target.value)}
+                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="LinkedIn URL"
+                      />
+                    </div>
+                  </FormField>
+
+                  <FormField label="Representative Agency">
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={formData.agency.name}
+                        onChange={(e) => handleNestedChange('agency', 'name', e.target.value)}
+                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Agency Name"
+                      />
+                      <input
+                        type="text"
+                        value={formData.agency.contact}
+                        onChange={(e) => handleNestedChange('agency', 'contact', e.target.value)}
+                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Agency Contact"
+                      />
+                    </div>
+                  </FormField>
+                </div>
+              </FormSection>
+            </>
+          )}
+
+          {/* Media Section */}
+          {activeSection === 'media' && (
+            <FormSection title="Media & Portfolio" icon={Film}>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Primary Reel
+                  </label>
+                  <MediaUploader
+                    onUpload={(file) => {
+                      // TODO: Upload file and get URL
+                      console.log('Uploading reel:', file);
+                    }}
+                    acceptedTypes="video/*"
+                    uploadType="video"
+                    maxSize={500}
+                  />
+                </div>
+
+                <FormField label="Reel Privacy">
+                  <select
+                    value={formData.reelPrivacy}
+                    onChange={(e) => handleChange('reelPrivacy', e.target.value)}
+                    className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="public">Public - Anyone can watch</option>
+                    <option value="on-request">On Request - Requires approval</option>
+                    <option value="private">Private - Only you</option>
+                  </select>
+                </FormField>
+              </div>
+            </FormSection>
+          )}
+
+          {/* Experience Section */}
+          {activeSection === 'experience' && (
+            <FormSection title="Experience & Credits" icon={Briefcase}>
+              <div className="space-y-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Add your professional experience, productions, and credits
+                </p>
+                <button className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors">
+                  <Plus className="w-5 h-5" />
+                  <span>Add Credit</span>
+                </button>
+              </div>
+            </FormSection>
+          )}
+
+          {/* Education Section */}
+          {activeSection === 'education' && (
+            <FormSection title="Education & Training" icon={GraduationCap}>
+              <div className="space-y-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Add your education, training programs, and certifications
+                </p>
+                <button className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors">
+                  <Plus className="w-5 h-5" />
+                  <span>Add Education</span>
+                </button>
+              </div>
+            </FormSection>
+          )}
+        </div>
+      </div>
+
+      {/* Image Cropper Modal */}
+      {showImageCropper && (
+        <ImageCropper
+          onSave={handleAvatarUpload}
+          onCancel={() => setShowImageCropper(false)}
+          aspectRatio={cropperType === 'avatar' ? 1 : 4}
+          title={cropperType === 'avatar' ? 'Crop Profile Picture' : 'Crop Banner'}
+        />
+      )}
+    </div>
+  );
+}
+
+// Helper Components
+function FormSection({ title, icon: Icon, children }) {
+  return (
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="p-2 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg">
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+          {title}
+        </h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FormField({ label, required, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
