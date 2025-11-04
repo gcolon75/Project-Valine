@@ -256,7 +256,7 @@ export default function Settings() {
             <div>
               <p className="font-medium text-neutral-900 dark:text-white">Theme</p>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}. Light mode is the default theme.
               </p>
             </div>
             <ThemeToggle />

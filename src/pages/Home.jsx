@@ -1,6 +1,5 @@
 import { Sparkles, ArrowRight, Mic, Users, FileText, Twitter, Linkedin, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import ThemeToggle from '../components/ThemeToggle';
 
 const Home = () => {
   return (
@@ -20,7 +19,7 @@ const Home = () => {
               </span>
             </Link>
 
-            {/* Navigation */}
+            {/* Navigation - marketing page: use modern header, theme toggle moved to Settings — see PR */}
             <nav className="hidden md:flex items-center space-x-8">
               <Link to="/about-us" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 About
@@ -28,7 +27,6 @@ const Home = () => {
               <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
-              <ThemeToggle />
             </nav>
 
             {/* CTA Buttons */}
@@ -47,7 +45,7 @@ const Home = () => {
       {/* Add padding to body so content doesn't hide under fixed header */}
       <div className="pt-20">
       
-      {/* Hero Section with Background */}
+      {/* Hero Section with Background - Updated layout: stat cards moved to sides */}
       <section className="relative px-4 py-20 md:py-32 animate-fade-in overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5 dark:from-neutral-950 dark:via-[#1a1a1a] dark:to-[#0CCE6B]/10" />
@@ -56,77 +54,84 @@ const Home = () => {
         <div className="absolute top-20 right-10 w-72 h-72 bg-[#0CCE6B]/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#474747]/5 rounded-full blur-3xl" />
         
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto relative z-10">
+          {/* Desktop: Three column layout with side cards. Mobile: Stack vertically */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Text Content */}
-            <div>
-              <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-4 py-2 rounded-full mb-8 animate-slide-up">
-                <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
-                <span className="text-sm font-medium text-[#0CCE6B]">
-                  The Professional Network for Voice Actors
-                </span>
-              </div>
-              
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                Connect. Create. Collaborate.
-              </h1>
-              
-              <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
-              </p>
-              
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                <Link
-                  to="/join"
-                  className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
-                >
-                  <span>Get Started Free</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link
-                  to="/about"
-                  className="bg-white dark:bg-[#1a1a1a] hover:bg-neutral-50 dark:hover:bg-neutral-900 text-neutral-900 dark:text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 dark:border-neutral-700 transition-all duration-200 hover:scale-105"
-                >
-                  Learn More
-                </Link>
+            {/* Left Sidebar: Stats Cards (Desktop) - Hidden on mobile, shown above content */}
+            <div className="lg:col-span-2 order-1 lg:order-1">
+              <div className="space-y-4 lg:sticky lg:top-24">
+                <StatCard number="10K+" label="Artists" delay="0s" />
+                <StatCard number="50K+" label="Posts" delay="0.1s" />
+                <StatCard number="5K+" label="Projects" delay="0.2s" />
               </div>
             </div>
 
-            {/* Hero Image */}
-            <div className="relative animate-slide-up" style={{ animationDelay: '0.4s' }}>
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 dark:border-neutral-800/50">
-                {/* Placeholder Hero Image */}
-                <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
-                  <Mic className="w-32 h-32 text-[#0CCE6B]/30" />
-                </div>
+            {/* Main Content: Text + Hero Image */}
+            <div className="lg:col-span-8 order-2 lg:order-2">
+              <div className="grid md:grid-cols-2 gap-12 items-center">
                 
-                {/* Overlay with stats */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-sm rounded-lg p-4 grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-[#0CCE6B]">10K+</p>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">Artists</p>
+                {/* Text Content */}
+                <div>
+                  <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-4 py-2 rounded-full mb-8 animate-slide-up">
+                    <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
+                    <span className="text-sm font-medium text-[#0CCE6B]">
+                      The Professional Network for Voice Actors
+                    </span>
                   </div>
-                  <div className="text-center border-x border-neutral-200 dark:border-neutral-700">
-                    <p className="text-2xl font-bold text-[#0CCE6B]">50K+</p>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">Posts</p>
+                  
+                  <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                    Connect. Create. Collaborate.
+                  </h1>
+                  
+                  <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                    Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
+                  </p>
+                  
+                  {/* CTA Buttons */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                    <Link
+                      to="/join"
+                      className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                    >
+                      <span>Get Started Free</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                    <Link
+                      to="/about"
+                      className="bg-white dark:bg-[#1a1a1a] hover:bg-neutral-50 dark:hover:bg-neutral-900 text-neutral-900 dark:text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 dark:border-neutral-700 transition-all duration-200 hover:scale-105"
+                    >
+                      Learn More
+                    </Link>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-[#0CCE6B]">5K+</p>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">Projects</p>
+                </div>
+
+                {/* Hero Image */}
+                <div className="relative animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 dark:border-neutral-800/50">
+                    {/* Placeholder Hero Image */}
+                    <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
+                      <Mic className="w-32 h-32 text-[#0CCE6B]/30" />
+                    </div>
+                  </div>
+                  
+                  {/* Floating "New!" badge */}
+                  <div className="absolute -top-6 -left-6 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-lg p-3 animate-pulse">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-neutral-900 dark:text-white">New!</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              {/* Floating badges */}
-              <div className="absolute -top-6 -left-6 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-lg p-3 animate-pulse">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-sm font-semibold text-neutral-900 dark:text-white">New!</span>
-                </div>
+            </div>
+
+            {/* Right Sidebar: Trending/Featured Content (Desktop) */}
+            <div className="lg:col-span-2 order-3 lg:order-3">
+              <div className="lg:sticky lg:top-24">
+                <TrendingCard delay="0.3s" />
               </div>
             </div>
           </div>
@@ -286,6 +291,40 @@ const Home = () => {
     </div>
   );
 };
+
+// Stat Card Component - Used in hero sidebar
+const StatCard = ({ number, label, delay }) => (
+  <div 
+    className="bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 text-center hover:shadow-lg transition-all duration-200 animate-slide-up"
+    style={{ animationDelay: delay }}
+  >
+    <p className="text-3xl font-bold text-[#0CCE6B] mb-1">{number}</p>
+    <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">{label}</p>
+  </div>
+);
+
+// Trending Card Component - Used in hero right sidebar
+const TrendingCard = ({ delay }) => (
+  <div 
+    className="bg-gradient-to-br from-[#0CCE6B] to-[#0BBE60] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 animate-slide-up"
+    style={{ animationDelay: delay }}
+  >
+    <div className="flex items-center space-x-2 mb-3">
+      <Sparkles className="w-5 h-5 text-white" />
+      <h3 className="text-white font-bold text-lg">Trending Now</h3>
+    </div>
+    <p className="text-white/90 text-sm mb-4">
+      Join thousands of voice actors sharing their latest projects and reels.
+    </p>
+    <Link 
+      to="/reels"
+      className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+    >
+      <span>Explore Reels</span>
+      <ArrowRight className="w-4 h-4" />
+    </Link>
+  </div>
+);
 
 // Feature Card Component
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
