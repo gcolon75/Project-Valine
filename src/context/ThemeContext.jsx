@@ -1,15 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext({ theme: 'dark', toggle: () => {} });
+const ThemeContext = createContext({ theme: 'light', toggle: () => {} });
 
 export function ThemeProvider({ children }) {
   const getInitial = () => {
     try {
       const saved = localStorage.getItem('theme');
+      // Respect user's saved preference if it exists, otherwise default to light
       if (saved === 'light' || saved === 'dark') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      // Changed: Default to light mode instead of system preference
+      return 'light';
     } catch {
-      return 'dark';
+      // Changed: Default to light mode on error
+      return 'light';
     }
   };
 

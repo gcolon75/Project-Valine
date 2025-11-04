@@ -68,18 +68,18 @@ export default function Profile() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      {/* Profile Header with Gradient Accent */}
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden animate-slide-up">
-        {/* Cover Image with Gradient */}
-        <div className="h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative">
+      {/* Profile Header with Gradient Accent - Fixed: removed overflow-hidden to prevent avatar clipping */}
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 animate-slide-up">
+        {/* Cover Image with Gradient - Fixed: rounded top corners to maintain border radius */}
+        <div className="h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative rounded-t-2xl overflow-hidden">
           <div className="absolute inset-0 bg-black/20" />
         </div>
 
         {/* Profile Info */}
         <div className="px-6 pb-6">
           <div className="flex items-end justify-between -mt-16 mb-4">
-            {/* Avatar with Gradient Border */}
-            <div className="p-1 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full">
+            {/* Avatar with Gradient Border - Fixed: added proper z-index and ensured full visibility */}
+            <div className="relative z-10 p-1 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full shadow-xl">
               {displayData.avatar ? (
                 <img 
                   src={displayData.avatar}

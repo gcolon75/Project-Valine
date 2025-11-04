@@ -1,0 +1,151 @@
+# Header/Footer Component Inventory
+# Created: 2025-11-04
+# Purpose: Document all header/footer implementations for marketing page modernization
+
+headers:
+  - name: "AppLayout Header"
+    path: "src/layouts/AppLayout.jsx"
+    type: "modern"
+    usage:
+      - "Authenticated app pages (dashboard, profile, discover, etc.)"
+    characteristics:
+      - "Modern glassmorphism design with backdrop blur"
+      - "Green brand color gradient (#474747 to #0CCE6B)"
+      - "Mic icon in gradient box as logo"
+      - "Uses lucide-react icons"
+      - "Fixed position with border-bottom"
+      - "Includes ThemeToggle (to be removed from header per requirements)"
+    notes: "This is the NEW MODERN HEADER - matches green brand and modern layout"
+    decision: "Use this design pattern for marketing page header"
+
+  - name: "Home.jsx Inline Header"
+    path: "src/pages/Home.jsx"
+    type: "marketing"
+    usage:
+      - "Landing page / marketing home page"
+    characteristics:
+      - "Inline header (lines 10-45)"
+      - "Similar modern design to AppLayout"
+      - "Green brand gradient logo"
+      - "Includes ThemeToggle in nav (line 31)"
+      - "Contains Sign In link"
+      - "Fixed position with glassmorphism"
+    notes: "Currently marketing page has its own inline header - should be extracted to reusable component"
+    decision: "Keep this modern header but remove ThemeToggle from it"
+
+  - name: "Header Component"
+    path: "src/components/Header.jsx"
+    type: "legacy"
+    usage:
+      - "Not currently used in main app"
+      - "May be legacy from earlier implementation"
+    characteristics:
+      - "Simple top border design"
+      - "Text-based 'Valine' branding (not gradient)"
+      - "NavLink based navigation"
+      - "No glassmorphism"
+    notes: "Legacy component - candidate for archive"
+    decision: "Mark as candidate-archive, do not use"
+
+  - name: "NavBar Component"
+    path: "src/components/NavBar.jsx"
+    type: "legacy"
+    usage:
+      - "Not currently used in main app"
+      - "References 'Joint' brand name (old brand)"
+    characteristics:
+      - "Uses old 'Joint' branding"
+      - "Inline styles instead of Tailwind classes"
+      - "Auth controls (login/logout)"
+      - "Keyboard shortcuts support"
+    notes: "Legacy component with old brand name - candidate for archive"
+    decision: "Mark as candidate-archive, do not use"
+
+footers:
+  - name: "Home.jsx Inline Footer"
+    path: "src/pages/Home.jsx"
+    type: "marketing-modern"
+    usage:
+      - "Landing page / marketing home page (lines 219-284)"
+    characteristics:
+      - "Dark theme footer (bg-[#1a1a1a])"
+      - "Multi-column layout with brand, product, resources"
+      - "Social media links (Twitter, LinkedIn, GitHub)"
+      - "Green hover states (#0CCE6B)"
+      - "Comprehensive link structure"
+    notes: "Modern, well-designed footer for marketing pages"
+    decision: "Keep this footer on marketing page - it's the NEW footer"
+
+  - name: "Footer Component"
+    path: "src/components/Footer.jsx"
+    type: "simple"
+    usage:
+      - "Not currently used in main app"
+      - "May be legacy or for other pages"
+    characteristics:
+      - "Very simple copyright footer"
+      - "Single line, centered text"
+      - "Minimal design"
+    notes: "Simple footer component - candidate for archive or use on simple pages"
+    decision: "Mark as legacy-simple, not needed for marketing page"
+
+  - name: "MarketingLayout Footer"
+    path: "src/layouts/MarketingLayout.jsx"
+    type: "legacy"
+    usage:
+      - "MarketingLayout component (line 18-20)"
+      - "Currently NOT used as Home.jsx has inline header/footer"
+    characteristics:
+      - "Very minimal: 'Joint — the creative collab network.'"
+      - "Uses old 'Joint' brand name"
+    notes: "Legacy footer in unused layout - candidate for archive"
+    decision: "Mark as candidate-archive, do not use"
+
+layouts:
+  - name: "MarketingLayout"
+    path: "src/layouts/MarketingLayout.jsx"
+    usage:
+      - "Defined in routes but Home.jsx doesn't use it (has inline header/footer)"
+    characteristics:
+      - "Simple nav with 'Joint' branding"
+      - "Basic footer"
+      - "Minimal styling"
+    notes: "This layout is defined in routes but Home.jsx overrides it with inline header/footer"
+    decision: "Consider deprecating or updating, but NOT using for this project"
+
+  - name: "AppLayout"
+    path: "src/layouts/AppLayout.jsx"
+    usage:
+      - "All authenticated app pages"
+    characteristics:
+      - "Modern glassmorphism header"
+      - "No footer (authenticated app doesn't need footer)"
+      - "Navigation with icons and badges"
+    notes: "This is the modern design pattern to follow"
+    decision: "Use this as design reference for marketing header"
+
+summary:
+  modern_header: "AppLayout.jsx header and Home.jsx inline header"
+  modern_footer: "Home.jsx inline footer"
+  legacy_components:
+    - "src/components/Header.jsx"
+    - "src/components/NavBar.jsx"
+    - "src/components/Footer.jsx"
+    - "src/layouts/MarketingLayout.jsx"
+  
+  action_plan:
+    - "Home.jsx: Remove ThemeToggle from inline header (line 31)"
+    - "Home.jsx: Keep modern inline footer as-is"
+    - "Do NOT import or use legacy Header, NavBar, Footer, or MarketingLayout"
+    - "MarketingLayout is technically in the route but Home.jsx has its own inline header/footer"
+    
+  theme_toggle_locations:
+    current:
+      - "src/pages/Home.jsx (line 31) - in header nav"
+      - "src/pages/Settings.jsx (line 262) - in Appearance section"
+      - "src/layouts/AppLayout.jsx (lines 5-8) - IMPORT but NOT rendered (commented out)"
+    required_action:
+      - "Remove ThemeToggle from Home.jsx header"
+      - "Remove ThemeToggle import if no longer needed"
+      - "Keep ThemeToggle in Settings.jsx only"
+      - "Verify AppLayout doesn't render ThemeToggle (it doesn't currently)"
