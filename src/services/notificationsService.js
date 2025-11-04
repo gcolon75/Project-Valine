@@ -64,3 +64,12 @@ export const getUnreadCount = async () => {
   const { data } = await apiClient.get('/notifications/unread-count');
   return data;
 };
+
+/**
+ * Get unread counts for notifications and messages
+ * @returns {Promise<{notifications: number, messages: number}>}
+ */
+export const getUnreadCounts = async () => {
+  const { data } = await apiClient.get('/unread-counts');
+  return data;
+};

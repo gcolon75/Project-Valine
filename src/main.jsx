@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { FeedProvider } from "./context/FeedContext";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { UnreadProvider } from "./context/UnreadContext";
 import ToastProvider from "./components/ToastProvider";
 
 import "./index.css";
@@ -31,9 +32,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <ToastProvider />
       <BrowserRouter>
         <AuthProvider>
-          <FeedProvider>
-            <App />
-          </FeedProvider>
+          <UnreadProvider>
+            <FeedProvider>
+              <App />
+            </FeedProvider>
+          </UnreadProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
