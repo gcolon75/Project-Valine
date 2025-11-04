@@ -1,9 +1,11 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Home, Search, PlusCircle, Bell, User, Video, Settings, LogOut } from "lucide-react";
+import { useUnread } from "../context/UnreadContext";
 
 export default function AppLayout() {
   const navigate = useNavigate();
+  const { unreadCounts } = useUnread();
 
   const handleLogout = () => {
     localStorage.removeItem('dev_user');
@@ -33,7 +35,7 @@ export default function AppLayout() {
               <NavItem to="/reels" icon={Video} label="Reels" />
               <NavItem to="/discover" icon={Search} label="Discover" />
               <NavItem to="/post" icon={PlusCircle} label="Create" />
-              <NavItem to="/notifications" icon={Bell} label="Notifications" />
+              <NavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
               <NavItem to="/profile" icon={User} label="Profile" />
             </nav>
 
@@ -65,19 +67,26 @@ export default function AppLayout() {
 }
 
 // Nav Item Component
-function NavItem({ to, icon: Icon, label }) {
+function NavItem({ to, icon: Icon, label, badge }) {
   return (
     <NavLink
       to={to}
       className={({ isActive }) => `
-        flex flex-col md:flex-row items-center space-x-0 md:space-x-2 px-3 py-2 rounded-lg transition-all
+        relative flex flex-col md:flex-row items-center space-x-0 md:space-x-2 px-3 py-2 rounded-lg transition-all
         ${isActive 
           ? 'text-[#0CCE6B] bg-[#0CCE6B]/10' 
           : 'text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/5'
         }
       `}
     >
-      <Icon className="w-5 h-5" />
+      <div className="relative">
+        <Icon className="w-5 h-5" />
+        {badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className="text-xs md:text-sm font-medium hidden md:inline">{label}</span>
     </NavLink>
   );

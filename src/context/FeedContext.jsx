@@ -1,6 +1,8 @@
 // src/context/FeedContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { rankForUser, searchPosts } from "../services/search";
+import { optimisticUpdate } from "../hooks/useOptimisticUpdate";
+import apiClient from "../services/api";
 
 // ---- Demo seed data ----
 const NOW = Date.now();
@@ -69,11 +71,47 @@ export function FeedProvider({ children }) {
     localStorage.setItem(LS_KEY, JSON.stringify({ posts, comments, prefs }));
   }, [posts, comments, prefs]);
 
-  const likePost = (id) =>
-    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, likes: p.likes + 1 } : p)));
+  const likePost = async (id) => {
+    const post = posts.find(p => p.id === id);
+    if (!post) return;
 
-  const toggleSave = (id) =>
-    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, saved: !p.saved } : p)));
+    await optimisticUpdate(
+      // Optimistic: increment likes
+      () => setPosts((prev) => prev.map((p) => 
+        p.id === id ? { ...p, likes: p.likes + 1, isLiked: true } : p
+      )),
+      // API call
+      () => apiClient.post(`/posts/${id}/like`),
+      // Rollback: decrement likes
+      () => setPosts((prev) => prev.map((p) => 
+        p.id === id ? { ...p, likes: p.likes - 1, isLiked: false } : p
+      )),
+      'FeedContext.likePost'
+    ).catch(() => {
+      // Error already handled by optimisticUpdate
+    });
+  };
+
+  const toggleSave = async (id) => {
+    const post = posts.find(p => p.id === id);
+    if (!post) return;
+
+    await optimisticUpdate(
+      // Optimistic: toggle saved
+      () => setPosts((prev) => prev.map((p) => 
+        p.id === id ? { ...p, saved: !p.saved } : p
+      )),
+      // API call
+      () => apiClient.post(`/posts/${id}/bookmark`),
+      // Rollback: toggle back
+      () => setPosts((prev) => prev.map((p) => 
+        p.id === id ? { ...p, saved: !p.saved } : p
+      )),
+      'FeedContext.toggleSave'
+    ).catch(() => {
+      // Error already handled by optimisticUpdate
+    });
+  };
 
   const addComment = (postId, text) => {
     const c = {

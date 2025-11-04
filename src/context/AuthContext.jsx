@@ -7,6 +7,7 @@ export const useAuth = () => useContext(AuthCtx);
 
 const LS_KEY = "valine-demo-user";
 const IS_DEV = import.meta.env.DEV;
+const AUTH_ENABLED = import.meta.env.VITE_ENABLE_AUTH === 'true';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -19,6 +20,14 @@ export function AuthProvider({ children }) {
   // Initialize auth state on mount
   useEffect(() => {
     const initAuth = async () => {
+      // If auth is not enforced and we're in dev mode, skip initialization
+      if (!AUTH_ENABLED && IS_DEV) {
+        console.log('[AuthContext] Auth enforcement disabled, using dev mode');
+        setIsInitialized(true);
+        return;
+      }
+
+      // If auth is enforced or in production, check for valid token
       if (authService.isAuthenticated()) {
         try {
           const userData = await authService.getCurrentUser();
@@ -109,6 +118,12 @@ export function AuthProvider({ children }) {
 
   // Dev-only bypass function
   const devLogin = () => {
+    // Only allow dev login if auth is not enforced and we're in dev mode
+    if (AUTH_ENABLED) {
+      console.warn('Dev login is disabled when VITE_ENABLE_AUTH is true');
+      return;
+    }
+    
     if (!IS_DEV) {
       console.warn('Dev login is only available in development mode');
       return;
@@ -139,8 +154,9 @@ export function AuthProvider({ children }) {
       register,
       logout, 
       updateUser,
-      devLogin: IS_DEV ? devLogin : undefined,
-      isAuthenticated: !!user
+      devLogin: (IS_DEV && !AUTH_ENABLED) ? devLogin : undefined,
+      isAuthenticated: !!user,
+      authEnabled: AUTH_ENABLED
     }}>
       {children}
     </AuthCtx.Provider>
