@@ -21,27 +21,42 @@ package:
     - '!tests/**'
 
 functions:
-  api:
-    handler: handler.router
+  # Health & Meta endpoints
+  health:
+    handler: src/handlers/health.handler
     events:
       - httpApi:
           path: /health
           method: get
+  
+  meta:
+    handler: src/handlers/meta.handler
+    events:
       - httpApi:
-          path: /hello
+          path: /meta
           method: get
+
+  # Authentication endpoints
+  register:
+    handler: src/handlers/auth.register
+    events:
       - httpApi:
-          path: /requests
+          path: /auth/register
+          method: post
+  
+  login:
+    handler: src/handlers/auth.login
+    events:
+      - httpApi:
+          path: /auth/login
+          method: post
+  
+  me:
+    handler: src/handlers/auth.me
+    events:
+      - httpApi:
+          path: /auth/me
           method: get
-      - httpApi:
-          path: /requests
-          method: post
-      - httpApi:
-          path: /requests/{id}/approve
-          method: post
-      - httpApi:
-          path: /requests/{id}/reject
-          method: post
 
   # User endpoints
   createUser:
@@ -65,7 +80,50 @@ functions:
           path: /users/{id}
           method: put
   
-  # Post endpoints
+  # Reels endpoints
+  listReels:
+    handler: src/handlers/reels.listReels
+    events:
+      - httpApi:
+          path: /reels
+          method: get
+  
+  createReel:
+    handler: src/handlers/reels.createReel
+    events:
+      - httpApi:
+          path: /reels
+          method: post
+  
+  toggleLike:
+    handler: src/handlers/reels.toggleLike
+    events:
+      - httpApi:
+          path: /reels/{id}/like
+          method: post
+  
+  toggleBookmark:
+    handler: src/handlers/reels.toggleBookmark
+    events:
+      - httpApi:
+          path: /reels/{id}/bookmark
+          method: post
+  
+  getReelComments:
+    handler: src/handlers/reels.getComments
+    events:
+      - httpApi:
+          path: /reels/{id}/comments
+          method: get
+  
+  createReelComment:
+    handler: src/handlers/reels.createComment
+    events:
+      - httpApi:
+          path: /reels/{id}/comments
+          method: post
+  
+  # Post endpoints (legacy)
   createPost:
     handler: src/handlers/posts.createPost
     events:
@@ -86,6 +144,57 @@ functions:
       - httpApi:
           path: /posts/{id}
           method: get
+  
+  # Conversation endpoints
+  listConversations:
+    handler: src/handlers/conversations.listConversations
+    events:
+      - httpApi:
+          path: /conversations
+          method: get
+  
+  createConversation:
+    handler: src/handlers/conversations.createConversation
+    events:
+      - httpApi:
+          path: /conversations
+          method: post
+  
+  getMessages:
+    handler: src/handlers/conversations.getMessages
+    events:
+      - httpApi:
+          path: /conversations/{id}/messages
+          method: get
+  
+  sendMessage:
+    handler: src/handlers/conversations.sendMessage
+    events:
+      - httpApi:
+          path: /conversations/{id}/messages
+          method: post
+  
+  # Notification endpoints
+  listNotifications:
+    handler: src/handlers/notifications.listNotifications
+    events:
+      - httpApi:
+          path: /notifications
+          method: get
+  
+  markNotificationRead:
+    handler: src/handlers/notifications.markAsRead
+    events:
+      - httpApi:
+          path: /notifications/{id}/read
+          method: patch
+  
+  markAllNotificationsRead:
+    handler: src/handlers/notifications.markAllAsRead
+    events:
+      - httpApi:
+          path: /notifications/mark-all
+          method: patch
   
   # Connection endpoints
   sendConnectionRequest:
