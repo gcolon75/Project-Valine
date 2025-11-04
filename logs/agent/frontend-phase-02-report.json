@@ -26,8 +26,20 @@
     "retry": {
       "maxRetries": 3,
       "strategy": "exponential backoff with jitter",
-      "retryableStatuses": [408, 429, 500, 502, 503, 504],
-      "retryableErrors": ["ECONNABORTED", "ECONNREFUSED", "ETIMEDOUT", "ERR_NETWORK"],
+      "retryableStatuses": [
+        408,
+        429,
+        500,
+        502,
+        503,
+        504
+      ],
+      "retryableErrors": [
+        "ECONNABORTED",
+        "ECONNREFUSED",
+        "ETIMEDOUT",
+        "ERR_NETWORK"
+      ],
       "maxDelay": 10000
     },
     "authentication": {
@@ -148,7 +160,14 @@
     },
     "logging": {
       "destination": "logs/agent/frontend-api-fallback.json (via diagnostics)",
-      "includes": ["timestamp", "context", "error", "errorCode", "fallbackUsed", "online"]
+      "includes": [
+        "timestamp",
+        "context",
+        "error",
+        "errorCode",
+        "fallbackUsed",
+        "online"
+      ]
     }
   },
   "pagesWired": {
@@ -156,31 +175,54 @@
       "endpoint": "GET /reels",
       "service": "reelsService.getReels()",
       "fallback": "FALLBACK_REELS constant",
-      "features": ["pagination", "like", "bookmark", "comments"]
+      "features": [
+        "pagination",
+        "like",
+        "bookmark",
+        "comments"
+      ]
     },
     "Dashboard": {
       "endpoint": "GET /posts",
       "service": "postService.getPosts()",
       "fallback": "Local mock posts",
-      "features": ["create", "like", "bookmark", "comments"]
+      "features": [
+        "create",
+        "like",
+        "bookmark",
+        "comments"
+      ]
     },
     "Profile": {
       "endpoint": "GET /users/:username",
       "service": "userService.getUserProfile()",
       "fallback": "Empty or cached profile",
-      "features": ["view profile", "edit profile"]
+      "features": [
+        "view profile",
+        "edit profile"
+      ]
     },
     "Messages": {
-      "endpoints": ["GET /conversations", "GET /conversations/:id/messages"],
+      "endpoints": [
+        "GET /conversations",
+        "GET /conversations/:id/messages"
+      ],
       "service": "messagesService",
       "fallback": "Empty conversations list",
-      "features": ["list conversations", "send messages"]
+      "features": [
+        "list conversations",
+        "send messages"
+      ]
     },
     "Notifications": {
       "endpoint": "GET /notifications",
       "service": "notificationsService.getNotifications()",
       "fallback": "Empty notifications list",
-      "features": ["list", "mark as read", "mark all as read"]
+      "features": [
+        "list",
+        "mark as read",
+        "mark all as read"
+      ]
     }
   },
   "testResults": {
@@ -265,15 +307,26 @@
         "url": "$VITE_API_BASE/health",
         "description": "Health check",
         "expectedStatus": 200,
-        "expectedResponse": {"ok": true, "status": "healthy"}
+        "expectedResponse": {
+          "ok": true,
+          "status": "healthy"
+        }
       },
       {
         "method": "POST",
         "url": "$VITE_API_BASE/auth/register",
         "description": "Register new user",
-        "body": {"email": "test@valine.com", "password": "pass123", "username": "testuser", "displayName": "Test User"},
+        "body": {
+          "email": "test@valine.com",
+          "password": "pass123",
+          "username": "testuser",
+          "displayName": "Test User"
+        },
         "expectedStatus": 201,
-        "expectedResponse": {"user": "...", "token": "jwt-token"}
+        "expectedResponse": {
+          "user": "...",
+          "token": "jwt-token"
+        }
       },
       {
         "method": "GET",
@@ -286,7 +339,9 @@
         "method": "POST",
         "url": "$VITE_API_BASE/reels/:id/like",
         "description": "Toggle like on reel",
-        "headers": {"Authorization": "Bearer $TOKEN"},
+        "headers": {
+          "Authorization": "Bearer $TOKEN"
+        },
         "expectedStatus": 200,
         "expectedResponse": "{...reel, isLiked: true/false, likes: updated_count}"
       }
@@ -295,12 +350,21 @@
   "diagnosticLogging": {
     "file": "logs/agent/frontend-api-fallback.json",
     "trigger": "API failure with network error or 5xx status",
-    "includes": ["timestamp", "context", "error", "errorCode", "fallbackUsed", "online"],
+    "includes": [
+      "timestamp",
+      "context",
+      "error",
+      "errorCode",
+      "fallbackUsed",
+      "online"
+    ],
     "purpose": "Track API failures and fallback usage for debugging"
   },
   "buildStatus": {
     "command": "npm run build",
-    "status": "not run yet - will verify in next step"
+    "status": "success",
+    "duration": "3.41s",
+    "outputSize": "242.16 kB (gzipped: 82.21 kB)"
   },
   "blockers": {
     "hasBlockers": false,
