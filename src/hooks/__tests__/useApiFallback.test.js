@@ -6,6 +6,8 @@ describe('useApiFallback', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Enable API integration for tests by default
+    import.meta.env.VITE_API_INTEGRATION = 'true';
   });
 
   it('should return data from successful API call', async () => {

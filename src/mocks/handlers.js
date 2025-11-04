@@ -94,6 +94,33 @@ const mockMessages = [
   }
 ];
 
+const mockConversations = [
+  {
+    id: 'conv-1',
+    participants: [
+      {
+        id: 'user-1',
+        username: 'testuser',
+        displayName: 'Test User',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+      },
+      {
+        id: 'user-2',
+        username: 'another_user',
+        displayName: 'Another User',
+        avatar: 'https://i.pravatar.cc/150?img=2',
+      }
+    ],
+    lastMessage: {
+      content: 'Hey, loved your recent reel!',
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      senderId: 'user-2'
+    },
+    unreadCount: 1,
+    updatedAt: new Date(Date.now() - 3600000).toISOString()
+  }
+];
+
 const mockNotifications = [
   {
     id: 'notif-1',
@@ -247,7 +274,42 @@ export const handlers = [
     return HttpResponse.json({ error: 'User not found' }, { status: 404 });
   }),
 
-  // Messages endpoints
+  // Conversations endpoints
+  http.get(`${API_BASE}/conversations`, () => {
+    return HttpResponse.json(mockConversations, { status: 200 });
+  }),
+
+  http.post(`${API_BASE}/conversations`, async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: 'conv-' + Date.now(),
+      participants: body.participants || [],
+      lastMessage: null,
+      unreadCount: 0,
+      updatedAt: new Date().toISOString()
+    }, { status: 201 });
+  }),
+
+  http.get(`${API_BASE}/conversations/:id/messages`, ({ params, request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const messages = mockMessages.filter(m => m.conversationId === params.id);
+    return HttpResponse.json(messages.slice(0, limit), { status: 200 });
+  }),
+
+  http.post(`${API_BASE}/conversations/:id/messages`, async ({ params, request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: 'msg-' + Date.now(),
+      conversationId: params.id,
+      senderId: mockUser.id,
+      content: body.content,
+      createdAt: new Date().toISOString(),
+      read: false
+    }, { status: 201 });
+  }),
+
+  // Messages endpoints (legacy)
   http.get(`${API_BASE}/messages`, ({ request }) => {
     const url = new URL(request.url);
     const conversationId = url.searchParams.get('conversationId');
@@ -278,6 +340,10 @@ export const handlers = [
 
   http.patch(`${API_BASE}/notifications/:id/read`, ({ params }) => {
     return HttpResponse.json({ success: true }, { status: 200 });
+  }),
+
+  http.patch(`${API_BASE}/notifications/mark-all`, () => {
+    return HttpResponse.json({ success: true, marked: mockNotifications.length }, { status: 200 });
   }),
 
   // Unread counts

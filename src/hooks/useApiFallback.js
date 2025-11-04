@@ -28,6 +28,22 @@ export function useApiFallback(apiCall, fallbackData, options = {}) {
     setLoading(true);
     setError(null);
     
+    // Check if API integration is disabled - use fallback immediately
+    const apiIntegrationEnabled = import.meta.env.VITE_API_INTEGRATION === 'true';
+    
+    if (!apiIntegrationEnabled) {
+      // API integration disabled - use fallback without attempting API call
+      setData(fallbackData);
+      setUsingFallback(true);
+      setLoading(false);
+      
+      if (import.meta.env.DEV) {
+        console.log(`[useApiFallback] API integration disabled for ${diagnosticContext}, using fallback data`);
+      }
+      
+      return fallbackData;
+    }
+    
     try {
       const result = await apiCall(...args);
       setData(result);
