@@ -1,13 +1,23 @@
 import { Sparkles, ArrowRight, Mic, Users, FileText, Twitter, Linkedin, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const Home = () => {
-  // Force light mode on marketing pages
+  const { theme, setTheme } = useTheme();
+  
+  // Force light mode on marketing pages and restore on unmount
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.setAttribute('data-theme', 'light');
-  }, []);
+    const previousTheme = theme;
+    setTheme('light');
+    
+    // Restore previous theme when leaving the page
+    return () => {
+      if (previousTheme !== 'light') {
+        setTheme(previousTheme);
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">

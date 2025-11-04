@@ -7,6 +7,18 @@ import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import { Share2, FileText, Video, User, ExternalLink, Globe, Film } from 'lucide-react';
 
+// URL validation helper to prevent XSS attacks
+const isValidUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 // Mock/fallback profile data
 const FALLBACK_PROFILE = {
   displayName: 'Your Name',
@@ -242,7 +254,7 @@ export default function Profile() {
                   <span>Links</span>
                 </h3>
                 <div className="space-y-3">
-                  {displayData.externalLinks.website && (
+                  {displayData.externalLinks.website && isValidUrl(displayData.externalLinks.website) && (
                     <a 
                       href={displayData.externalLinks.website} 
                       target="_blank" 
@@ -253,7 +265,7 @@ export default function Profile() {
                       <span>Website</span>
                     </a>
                   )}
-                  {displayData.externalLinks.showreel && (
+                  {displayData.externalLinks.showreel && isValidUrl(displayData.externalLinks.showreel) && (
                     <a 
                       href={displayData.externalLinks.showreel} 
                       target="_blank" 
@@ -264,7 +276,7 @@ export default function Profile() {
                       <span>Showreel</span>
                     </a>
                   )}
-                  {displayData.externalLinks.imdb && (
+                  {displayData.externalLinks.imdb && isValidUrl(displayData.externalLinks.imdb) && (
                     <a 
                       href={displayData.externalLinks.imdb} 
                       target="_blank" 
