@@ -755,7 +755,7 @@ class BackendAgent:
             'command': 'npm test',
             'output': 'All tests passing',
             'total': 42,
-            'passed': 42,
+            'passed_count': 42,
             'failed': 0
         }
     
@@ -784,7 +784,7 @@ class BackendAgent:
                 msg += f"**Errors:** {result['errors']}\n"
             elif check_type == 'tests':
                 msg += f"**Total:** {result['total']}\n"
-                msg += f"**Passed:** {result['passed']}\n"
+                msg += f"**Passed:** {result['passed_count']}\n"
                 msg += f"**Failed:** {result['failed']}\n"
             elif check_type == 'build':
                 msg += f"**Size:** {result['size']}\n"
