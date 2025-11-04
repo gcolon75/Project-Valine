@@ -2,17 +2,102 @@ import axios from 'axios';
 
 const base = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
 
-// Axios client with auth interceptor
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000, // Start with 1 second
+  retryableStatuses: [408, 429, 500, 502, 503, 504],
+  retryableErrors: ['ECONNABORTED', 'ECONNREFUSED', 'ETIMEDOUT', 'ERR_NETWORK']
+};
+
+/**
+ * Calculate exponential backoff delay
+ * @param {number} attempt - Current attempt number (0-indexed)
+ * @returns {number} Delay in milliseconds
+ */
+const getRetryDelay = (attempt) => {
+  const delay = RETRY_CONFIG.retryDelay * Math.pow(2, attempt);
+  // Add jitter to prevent thundering herd
+  const jitter = Math.random() * 1000;
+  return Math.min(delay + jitter, 10000); // Max 10 seconds
+};
+
+/**
+ * Check if error should be retried
+ * @param {Error} error - Axios error
+ * @returns {boolean}
+ */
+const shouldRetry = (error) => {
+  if (!error.response && error.code) {
+    return RETRY_CONFIG.retryableErrors.includes(error.code);
+  }
+  if (error.response) {
+    return RETRY_CONFIG.retryableStatuses.includes(error.response.status);
+  }
+  return false;
+};
+
+// Axios client with auth interceptor, timeouts, and retry logic
 export const apiClient = axios.create({
   baseURL: base,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000, // 30 second timeout
+  withCredentials: false // Set to true if using cookies for auth
 });
 
+// Request interceptor - add auth token
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
+
+// Response interceptor - handle retries and errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    
+    // Initialize retry count
+    if (!config._retryCount) {
+      config._retryCount = 0;
+    }
+    
+    // Check if we should retry
+    if (config._retryCount < RETRY_CONFIG.maxRetries && shouldRetry(error)) {
+      config._retryCount++;
+      
+      // Calculate delay with exponential backoff
+      const delay = getRetryDelay(config._retryCount - 1);
+      
+      console.warn(
+        `[API Client] Retrying request (${config._retryCount}/${RETRY_CONFIG.maxRetries}) ` +
+        `after ${delay}ms: ${config.method?.toUpperCase()} ${config.url}`
+      );
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Retry the request
+      return apiClient(config);
+    }
+    
+    // Log failed requests for debugging
+    if (import.meta.env.DEV) {
+      console.error('[API Client] Request failed:', {
+        method: config?.method,
+        url: config?.url,
+        status: error.response?.status,
+        message: error.message,
+        retries: config._retryCount
+      });
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Legacy fetch-based request function for backward compatibility
 async function req(p, o = {}) {
