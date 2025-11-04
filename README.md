@@ -73,11 +73,12 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 
 ### Quick Links
 
-- **[👉 NEXT STEPS - What to Do Now](NEXT_STEPS.md)** - Manual actions required for deployment
+- **[👉 Next Steps Guide](docs/guides/next-steps.md)** - Manual actions required for deployment
+- **[📚 Complete Documentation](docs/)** - All docs organized by category
 - [Latest Changes](CHANGELOG.md)
-- [Build Plan Status](AI_AGENT_BUILD_PLAN.md) - 13-phase autonomous build plan
+- [Quick Start Guide](docs/quickstart/README.md) - Get started in minutes
 - [CI/CD Setup Guide](docs/CI-CD-SETUP.md) - Configure automated deployments
-- [Test Implementation Guide](logs/agent/phase-07-test-implementation-guide.md)
+- [Deployment Guides](docs/deployment/) - Deploy to AWS and other platforms
 - [Setup Discord Bot](orchestrator/README.md)
 - [Troubleshooting](docs/troubleshooting/)
 
@@ -237,12 +238,12 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 
 ### Backend Deployment
 
-📚 **New AWS Deployment Guides:**
+📚 **AWS Deployment Guides:**
 - **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute fast-track deployment guide
-- **[Complete AWS Deployment Guide](DEPLOYMENT_GUIDE_AWS.md)** - Comprehensive guide with all curl tests
+- **[Complete AWS Deployment Guide](docs/deployment/aws-guide.md)** - Comprehensive guide with all curl tests
 - **[Database Provider Comparison](docs/DATABASE_PROVIDER_COMPARISON.md)** - Choose between Supabase and AWS RDS
-- **[Original Deployment Guide](DEPLOYMENT.md)** - Complete deployment documentation
-- **[Quick Start](QUICK_START.md)** - 5-minute deployment overview
+- **[Deployment Overview](docs/deployment/overview.md)** - Complete deployment documentation
+- **[Quick Deploy](docs/deployment/quick-deploy.md)** - 5-minute deployment overview
 
 **Automated Deployment (Recommended):**
 ```bash
@@ -410,35 +411,54 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 
 ## Documentation
 
-### Getting Started
-- **[Project Summary](PROJECT_VALINE_SUMMARY.md)** - Comprehensive overview, architecture, and current status
-- **[Changelog](CHANGELOG.md)** - Notable changes and version history
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+📚 **Complete Documentation**: See **[docs/](docs/)** for the full documentation index
 
-### Orchestrator & Discord Bot
-- **[Orchestrator README](orchestrator/README.md)** - Setup and usage guide
-- **[Bot Unifier Guide](orchestrator/BOT_UNIFIER_GUIDE.md)** - Unified bot architecture
-- **[Discord Slash Commands](orchestrator/DISCORD_SLASH_CMD_QUICK_REF.md)** - Available commands reference
+> 📖 **Documentation reorganized 2025-11-04** - All docs now organized in the `docs/` directory for better discoverability. See [docs/SUMMARY.md](docs/SUMMARY.md) for complete index.
 
-### Deployment & Operations
-- **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute deployment guide (NEW)
-- **[Complete AWS Deployment Guide](DEPLOYMENT_GUIDE_AWS.md)** - Step-by-step with curl tests (NEW)
-- **[Database Provider Comparison](docs/DATABASE_PROVIDER_COMPARISON.md)** - Supabase vs AWS RDS (NEW)
-- **[Deployment Scripts Documentation](scripts/deployment/README.md)** - Automated deployment scripts
-- **[Deployment Verification](docs/diagnostics/DEPLOYMENT_VERIFICATION.md)** - Verification system overview
-- **[Verification Guide](scripts/VERIFICATION_GUIDE.md)** - Detailed verification procedures
-- **[Original Deployment Guide](DEPLOYMENT.md)** - Complete deployment documentation
+### Quick Links
 
-### Troubleshooting
-- **[Discord Issues](docs/troubleshooting/discord/)** - Discord bot debugging and fixes
-- **[Start Here - Discord Issues](orchestrator/START_HERE_DISCORD_ISSUES.md)** - Quick troubleshooting guide
+**Getting Started:**
+- 🚀 [Quick Start Guide](docs/quickstart/README.md) - Get up and running quickly
+- 📖 [Project Summary](docs/reference/project-summary.md) - Comprehensive overview
+- 📋 [Contributing Guide](CONTRIBUTING.md) - How to contribute
 
-### Development
-- **[UX Changes](CHANGES.md)** - User experience improvements log
-- **[Sanity Setup](SANITY_SETUP.md)** - CMS configuration guide
+**Development:**
+- 🔌 [API Documentation](docs/api/) - API reference, contracts, and integration
+- 💻 [Backend Guide](docs/backend/) - Backend development guidelines
+- 🎨 [Frontend Guide](docs/frontend/) - Frontend development guidelines
 
-### Archive
-- **[Historical Documentation](docs/archive/)** - Completed phases and deprecated guides
+**Deployment & Operations:**
+- ☁️ [Deployment Guides](docs/deployment/) - AWS, serverless, and quick deploy
+- 🔧 [Troubleshooting](docs/troubleshooting/) - Fix common issues
+- 📊 [CloudWatch Setup](docs/CLOUDWATCH_SETUP.md) - Monitoring and logging
+
+**Orchestrator & Automation:**
+- 🤖 [Orchestrator Documentation](orchestrator/README.md) - Bot setup and agent management
+- 💬 [Discord Integration](orchestrator/docs/) - Discord bot guides
+
+**Reference:**
+- 🗺️ [Roadmap](docs/reference/roadmap.md) - Future plans
+- 📝 [Changelog](CHANGELOG.md) - Version history
+- 🏗️ [Architecture](docs/reference/project-summary.md#architecture) - System design
+
+### Documentation Structure
+
+All documentation is organized in the [`docs/`](docs/) directory:
+
+```
+docs/
+├── api/              # API documentation
+├── backend/          # Backend guides
+├── frontend/         # Frontend guides
+├── deployment/       # Deployment guides
+├── quickstart/       # Quick start guides
+├── troubleshooting/  # Troubleshooting guides
+├── guides/           # Development guides
+├── reference/        # Reference documentation
+└── archive/          # Historical documents
+```
+
+See **[docs/README.md](docs/README.md)** or **[docs/SUMMARY.md](docs/SUMMARY.md)** for the complete documentation index.
 
 ## Contributing
 

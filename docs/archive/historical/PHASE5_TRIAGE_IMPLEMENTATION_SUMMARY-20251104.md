@@ -1,3 +1,11 @@
+<!-- ARCHIVED DOCUMENT -->
+<!-- Original location: docs/diagnostics/PHASE5_TRIAGE_IMPLEMENTATION_SUMMARY.md -->
+<!-- Archived on: 2025-11-04 -->
+<!-- Reason: Historical implementation summary -->
+<!-- This document is kept for historical reference only -->
+
+---
+
 # Phase 5 Failed-Run Triage & Fix Agent - Implementation Summary
 
 ## Status: ✅ COMPLETE

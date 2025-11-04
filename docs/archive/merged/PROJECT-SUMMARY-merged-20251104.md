@@ -1,3 +1,11 @@
+<!-- ARCHIVED DOCUMENT -->
+<!-- Original location: PROJECT-SUMMARY.md -->
+<!-- Archived on: 2025-11-04 -->
+<!-- Reason: Merged into docs/reference/project-summary.md -->
+<!-- This document is kept for historical reference only -->
+
+---
+
 # Project Valine - Complete Project Summary
 
 ## 🎯 Project Overview

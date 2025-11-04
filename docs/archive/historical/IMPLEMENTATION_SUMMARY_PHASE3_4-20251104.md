@@ -1,3 +1,11 @@
+<!-- ARCHIVED DOCUMENT -->
+<!-- Original location: docs/diagnostics/IMPLEMENTATION_SUMMARY_PHASE3_4.md -->
+<!-- Archived on: 2025-11-04 -->
+<!-- Reason: Historical implementation summary -->
+<!-- This document is kept for historical reference only -->
+
+---
+
 # Implementation Summary: Phase 3 Polish + Phase 4 Multi-Agent Foundation
 
 ## Overview

@@ -1,3 +1,916 @@
+# Project Valine - Complete Summary
+
+<!-- This file consolidates multiple project summary documents -->
+<!-- Merged on: 2025-11-04 -->
+
+## Content from: PROJECT-SUMMARY.md
+
+<!-- merged-from: PROJECT-SUMMARY.md -->
+
+# Project Valine - Complete Project Summary
+
+## 🎯 Project Overview
+
+**Project Valine** is a social networking platform designed specifically for voice actors, audio engineers, writers, and creative professionals in the voice acting industry. It provides tools for networking, collaboration, portfolio sharing, and career growth.
+
+**Current Version:** v1.0.0-beta  
+**Status:** Production-ready with 83% completion  
+**Build:** Stable (0 errors, 0 warnings)  
+**Test Coverage:** 45% (107 tests passing)  
+
+---
+
+## 🌟 Key Features
+
+### Authentication & User Management
+- **Secure Login/Registration**: Email and password authentication
+- **Session Management**: Automatic token refresh and session restoration
+- **Profile Setup**: Multi-step onboarding for new users
+- **User Profiles**: Display name, bio, avatar, professional info
+- **Protected Routes**: Automatic redirect for unauthenticated users
+- **Dev Bypass**: Development-only authentication bypass (production-safe)
+
+### Social Features
+- **Posts**: Create text posts with tags and rich content
+- **Likes & Saves**: Optimistic updates with instant feedback
+- **Comments**: Threaded discussions (frontend ready, backend pending)
+- **Reels**: Short-form video content with TikTok-style interface
+- **Engagement**: Like, bookmark, and comment on reels
+- **Profile Discovery**: View other users' profiles and content
+
+### Communication
+- **Messages**: One-on-one conversations
+- **Conversation Search**: Find past conversations quickly
+- **Notifications**: Activity feed with mark-as-read
+- **Notification Filtering**: View unread or all notifications
+
+### Content Discovery
+- **Dashboard Feed**: Personalized content feed
+- **Reels Feed**: Vertical scrolling video content
+- **Navigation**: Keyboard (arrows) and touch (swipe) support
+- **Video Controls**: Play, pause, mute, unmute
+
+### User Experience
+- **Dark Mode**: Full theme support with system preference detection
+- **Responsive Design**: Mobile, tablet, and desktop optimized
+- **Fast Performance**: 236 KB bundle, 3.4s build time
+- **Offline Support**: Graceful fallback when API unavailable
+- **Optimistic UI**: Instant feedback on user actions
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Framework**: React 18.3.1
+- **Build Tool**: Vite 7.1.12
+- **Styling**: TailwindCSS 3.4.1
+- **Routing**: React Router 7.1.1
+- **State Management**: Context API + Hooks
+- **HTTP Client**: Axios 1.7.9
+- **Icons**: Lucide React 0.469.0
+- **Notifications**: React Hot Toast 2.5.0
+
+### Testing
+- **Framework**: Vitest 4.0.6
+- **Component Testing**: React Testing Library 16.3.0
+- **DOM Environment**: jsdom 25.0.1
+- **User Events**: @testing-library/user-event 14.5.2
+- **Test Matchers**: @testing-library/jest-dom 6.6.3
+
+### CI/CD
+- **Platform**: GitHub Actions
+- **Deployment**: AWS S3 + CloudFront
+- **Workflows**: Automated testing, building, and deployment
+
+### Backend (Separate - Not in this repo)
+- **Runtime**: Node.js 20.x
+- **Framework**: AWS Lambda (Serverless)
+- **ORM**: Prisma (PostgreSQL)
+- **API**: API Gateway HTTP API
+
+---
+
+## 📁 Project Structure
+
+```
+Project-Valine/
+├── .github/
+│   └── workflows/          # CI/CD pipelines
+│       ├── ci-cd-staging.yml
+│       └── ci-pr-check.yml
+├── docs/                   # Documentation
+│   └── CI-CD-SETUP.md
+├── logs/agent/            # Phase reports and guides
+├── src/
+│   ├── components/        # React components
+│   │   ├── Header.jsx
+│   │   ├── Modal.jsx
+│   │   ├── PostCard.jsx
+│   │   ├── PostComposer.jsx
+│   │   ├── ThemeToggle.jsx
+│   │   └── __tests__/     # Component tests
+│   ├── context/           # React context providers
+│   │   ├── AuthContext.jsx
+│   │   ├── ThemeContext.jsx
+│   │   └── __tests__/     # Context tests
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useApiFallback.js
+│   │   └── __tests__/     # Hook tests
+│   ├── pages/             # Page components
+│   │   ├── Dashboard.jsx
+│   │   ├── Login.jsx
+│   │   ├── Join.jsx
+│   │   ├── Reels.jsx
+│   │   ├── Messages.jsx
+│   │   ├── Notifications.jsx
+│   │   └── Profile.jsx
+│   ├── routes/            # Routing logic
+│   │   ├── App.jsx
+│   │   ├── Protected.jsx
+│   │   └── __tests__/     # Route tests
+│   ├── services/          # API services
+│   │   ├── api.js
+│   │   ├── authService.js
+│   │   ├── reelsService.js
+│   │   ├── notificationsService.js
+│   │   ├── messagesService.js
+│   │   └── __tests__/     # Service tests
+│   ├── utils/             # Utility functions
+│   │   ├── analytics.js
+│   │   └── diagnostics.js
+│   └── test/              # Test utilities
+│       ├── setup.js
+│       └── utils.jsx
+├── .env.local.example     # Environment variable template
+├── vitest.config.js       # Test configuration
+├── package.json           # Dependencies and scripts
+└── README.md             # Main documentation
+```
+
+---
+
+## 📊 Current Status
+
+### Completion Breakdown
+
+| Phase | Name | Status | Completion |
+|-------|------|--------|------------|
+| 00 | Preflight & Repo Snapshot | ✅ Complete | 100% |
+| 01 | Manual Verification | ✅ Complete | 100% |
+| 02 | API Integration | ✅ Complete | 100% |
+| 03 | Authentication | ✅ Complete | 100% |
+| 04 | Reels Enhancement | ✅ Substantial | 70% |
+| 05 | Engagement Persistence | ✅ Substantial | 85% |
+| 06 | Messaging & Notifications | ✅ Substantial | 60% |
+| 07 | Testing Suite | ✅ Substantial | 85% |
+| 08 | CI/CD Pipelines | ✅ Substantial | 70% |
+| 09 | Performance & Accessibility | 📋 Documented | 0% |
+| 10 | Production Launch Prep | 📋 Documented | 0% |
+
+**Overall:** 83% complete
+
+### Test Coverage
+
+| Category | Coverage | Tests |
+|----------|----------|-------|
+| Hooks | 100% | 7 |
+| Contexts | 80% | 9 |
+| Components | 40% | 49 |
+| Services | 50% | 39 |
+| Routes | 70% | 6 |
+| **Total** | **45%** | **107** |
+
+---
+
+## 🚀 Deployment
+
+### Development
+```bash
+npm install          # Install dependencies
+npm run dev         # Start dev server (port 3000)
+npm test            # Run tests in watch mode
+```
+
+### Production Build
+```bash
+npm run build       # Build for production
+npm run preview     # Preview production build
+```
+
+### Staging Deployment (Automated)
+```bash
+git push origin develop    # Triggers CI/CD pipeline
+# or
+# GitHub Actions → CI/CD Staging → Run workflow
+```
+
+### Testing
+```bash
+npm test              # Watch mode
+npm run test:ui       # Interactive UI
+npm run test:run      # CI mode
+npm run test:coverage # Generate coverage
+```
+
+---
+
+## 🎨 User Interface
+
+### Marketing Pages (Public)
+- **Home** (`/`): Hero section, features overview, CTAs
+- **About** (`/about-us`): Mission, team, values
+- **Features** (`/features`): Detailed feature descriptions
+- **Login** (`/login`): Sign in form with dev bypass (dev only)
+- **Join** (`/join`): Registration form with validation
+
+### Application Pages (Protected)
+- **Dashboard** (`/dashboard`): Personalized post feed
+- **Reels** (`/reels`): Vertical video feed
+- **Messages** (`/messages`): Conversations list
+- **Notifications** (`/notifications`): Activity feed
+- **Profile** (`/profile/:username`): User profiles
+- **Setup** (`/setup`): Profile completion flow
+
+### Design System
+- **Colors**: Green primary (#10b981), dark gray neutrals
+- **Typography**: Inter font family
+- **Components**: Shadcn-inspired design system
+- **Icons**: Lucide React icon library
+- **Animations**: Subtle transitions and hover effects
+
+---
+
+## 🔒 Security Features
+
+### Authentication Security
+- ✅ Token-based authentication (JWT)
+- ✅ Secure token storage (localStorage with httpOnly alternative)
+- ✅ Automatic token refresh
+- ✅ Session timeout handling
+- ✅ Dev bypass properly gated (production-safe)
+
+### API Security
+- ✅ CORS headers configured
+- ✅ Request interceptors for auth tokens
+- ✅ Input validation on forms
+- ✅ XSS protection via React
+- ✅ CSRF protection considerations
+
+### Development Security
+- ✅ Environment variables for sensitive data
+- ✅ No hardcoded secrets
+- ✅ Dev tools only in development mode
+- ✅ Production build removes debug code
+
+---
+
+## 📈 Performance Metrics
+
+### Build Performance
+- **Build Time**: 3.39 seconds
+- **Modules**: 1775
+- **Bundle Size**: 236.47 KB
+- **Gzipped**: 80.28 KB
+- **Optimization**: Tree-shaking, minification, code splitting
+
+### Runtime Performance
+- **First Contentful Paint**: <1 second
+- **Time to Interactive**: <2 seconds
+- **Lighthouse Score**: Not yet audited (Phase 09)
+
+### Test Performance
+- **Total Tests**: 107
+- **Execution Time**: 6.44 seconds
+- **Average per Test**: 60ms
+- **Pass Rate**: 100%
+
+---
+
+## 🐛 Known Issues & Limitations
+
+### Current Limitations
+1. **Comments**: Frontend ready, backend API pending
+2. **Real-time Updates**: No WebSocket/polling yet
+3. **File Uploads**: UI ready, backend processing pending
+4. **Email Notifications**: Not implemented
+5. **Push Notifications**: Not implemented
+
+### Minor Issues
+1. React Router v7 future flag warnings (non-blocking)
+2. Some optional accessibility improvements needed
+3. E2E tests not yet implemented
+4. Performance audit pending (Lighthouse)
+
+### Backend Dependencies
+- User authentication API
+- Post creation/retrieval API
+- Reel upload and processing
+- Message sending/receiving
+- Notification generation
+
+---
+
+## 📖 Documentation
+
+### Available Documentation (100+ KB)
+- ✅ `README.md` - Main project documentation
+- ✅ `DEPLOYMENT-GUIDE.md` - Deployment and next steps
+- ✅ `PROJECT-SUMMARY.md` - This document
+- ✅ `docs/CI-CD-SETUP.md` - CI/CD configuration guide
+- ✅ `.env.local.example` - Environment variables reference
+- ✅ `logs/agent/` - 10+ phase reports and implementation guides
+- ✅ `AI_AGENT_BUILD_PLAN.md` - Complete 13-phase roadmap
+
+### Code Documentation
+- Inline comments in complex functions
+- JSDoc comments on utility functions
+- Test descriptions for all test cases
+- README in each major directory
+
+---
+
+## 🎯 Roadmap
+
+### Immediate (Ready Now)
+- Deploy to AWS staging
+- Gather user feedback
+- Monitor performance
+
+### Short-term (1-2 weeks)
+- Complete Phase 09 (Performance & Accessibility)
+- Add E2E tests
+- Implement real-time features
+- Deploy to production
+
+### Medium-term (1-2 months)
+- File upload functionality
+- Comments system
+- Email notifications
+- Mobile app (React Native)
+
+### Long-term (3-6 months)
+- Video processing pipeline
+- Advanced search
+- Analytics dashboard
+- Premium features
+
+---
+
+## 👥 For Developers
+
+### Getting Started
+1. Clone repository
+2. Run `npm install`
+3. Copy `.env.local.example` to `.env.local`
+4. Configure `VITE_API_BASE` (or use mock data)
+5. Run `npm run dev`
+6. Visit `http://localhost:3000`
+
+### Development Workflow
+1. Create feature branch
+2. Make changes
+3. Write tests (maintain 45%+ coverage)
+4. Run tests locally
+5. Create PR
+6. CI runs automatically
+7. Merge when tests pass
+
+### Testing Guidelines
+- Write tests for new components
+- Maintain test coverage above 40%
+- Use `renderWithProviders` for components
+- Mock API calls in service tests
+- Follow existing test patterns
+
+### Code Style
+- Use ESLint (configured for React)
+- Use Prettier (configured)
+- Follow React best practices
+- Keep components small and focused
+- Use meaningful variable names
+
+---
+
+## 📞 Support & Contact
+
+### Issues
+- GitHub Issues for bug reports
+- GitHub Discussions for questions
+- Pull Requests for contributions
+
+### Resources
+- [React Documentation](https://react.dev)
+- [Vite Documentation](https://vitejs.dev)
+- [TailwindCSS Documentation](https://tailwindcss.com)
+- [Vitest Documentation](https://vitest.dev)
+
+---
+
+## 📄 License
+
+[Add your license here]
+
+---
+
+## 🙏 Acknowledgments
+
+**Built with assistance from:**
+- GitHub Copilot Agent (Backend Integration Agent)
+- Autonomous agent build plan execution
+- Comprehensive testing and CI/CD implementation
+
+**Technology Partners:**
+- React Team
+- Vite Team
+- TailwindCSS Team
+- Vitest Team
+
+---
+
+## 📝 Version History
+
+### v1.0.0-beta (Current)
+- Complete authentication system
+- Full API integration with fallback
+- 107 automated tests (45% coverage)
+- CI/CD pipelines implemented
+- Production-ready codebase
+
+### Planned v1.0.0 (Production)
+- Performance optimizations
+- Accessibility compliance
+- Full E2E test coverage
+- Real-time features
+- Production deployment
+
+---
+
+**Last Updated:** 2025-11-03  
+**Maintained By:** Project Valine Team  
+**Status:** Active Development  
+**Next Milestone:** Production Deployment  
+
+---
+
+## 🚀 Quick Start Commands
+
+```bash
+# Development
+npm run dev              # Start dev server
+
+# Testing
+npm test                 # Run tests
+npm run test:coverage    # Generate coverage
+
+# Building
+npm run build            # Production build
+npm run preview          # Preview build
+
+# Deployment
+git push origin develop  # Deploy to staging (automatic)
+```
+
+**Ready to deploy! See DEPLOYMENT-GUIDE.md for next steps.**
+
+
+---
+
+## Content from: PROJECT_SUMMARY.md
+
+<!-- merged-from: PROJECT_SUMMARY.md -->
+
+# Project Valine - Complete Project Summary
+
+## 🎤 What is Project Valine?
+
+Project Valine is a professional networking platform designed specifically for voice actors, audio engineers, writers, and creative professionals in the voice acting industry. It provides tools for collaboration, content sharing, and career growth.
+
+---
+
+## 🌟 Current Features (What Works Now)
+
+### Authentication & User Management
+- ✅ **User Registration**: Create account with username, display name, email, and password
+- ✅ **User Login**: Secure authentication with JWT tokens
+- ✅ **Session Management**: Automatic session restoration on page reload
+- ✅ **Profile Setup**: Complete profile information after registration
+- ✅ **Profile Editing**: Update display name, bio, and avatar
+- ✅ **Dev Bypass**: Development-only quick login (removed in production)
+
+### Content Sharing
+- ✅ **Text Posts**: Create posts with titles, content, and tags
+- ✅ **Post Feed**: Browse posts from your network
+- ✅ **Like Posts**: Like/unlike with optimistic updates
+- ✅ **Bookmark Posts**: Save posts for later
+- ✅ **Post Tags**: Categorize posts with hashtags
+- ✅ **User Profiles**: View other users' profiles and posts
+
+### Reels & Video Content
+- ✅ **Video Reels**: Short-form video content feed
+- ✅ **Video Playback**: Optimized video player with controls
+- ✅ **Keyboard Navigation**: Arrow keys to navigate between reels
+- ✅ **Touch Gestures**: Swipe up/down on mobile
+- ✅ **Auto-play**: Videos auto-play when scrolled into view
+- ✅ **Like Reels**: Engagement with optimistic updates
+- ✅ **Bookmark Reels**: Save reels for later viewing
+
+### Messaging & Communication
+- ✅ **Direct Messages**: One-on-one conversations
+- ✅ **Conversation List**: View all message threads
+- ✅ **Message Search**: Search conversations by name or content
+- ✅ **Real-time UI**: Instant message display
+- ✅ **Message Composition**: Rich text message input
+
+### Notifications
+- ✅ **Activity Notifications**: Get notified of likes, comments, follows
+- ✅ **Mark as Read**: Individual or bulk mark as read
+- ✅ **Notification Types**: Filter by type (all, likes, comments, follows)
+- ✅ **Unread Count**: Visual indicator of new notifications
+- ✅ **Notification Center**: Dedicated page for all notifications
+
+### Professional Networking
+- ✅ **Connection Requests**: Send/receive connection requests
+- ✅ **Network Feed**: See activity from your connections
+- ✅ **User Discovery**: Discover other voice actors
+- ✅ **Profile Views**: See who viewed your profile
+
+### User Experience
+- ✅ **Dark Mode**: Toggle between light and dark themes
+- ✅ **Responsive Design**: Works on mobile, tablet, and desktop
+- ✅ **Marketing Pages**: Home, About, Features pages
+- ✅ **Protected Routes**: Secure authenticated pages
+- ✅ **Loading States**: Visual feedback during operations
+- ✅ **Error Handling**: Graceful error messages
+
+### Developer Features
+- ✅ **API Fallback**: Works offline with mock data
+- ✅ **Diagnostics**: Debug API failures with `window.__diagnostics`
+- ✅ **Analytics**: Track user interactions with `window.__analytics`
+- ✅ **Hot Reload**: Instant updates during development
+- ✅ **Build Optimization**: Fast builds (3.39s) and small bundle (236 KB)
+
+---
+
+## 🧪 Quality Assurance
+
+### Testing Infrastructure
+- ✅ **107 Unit/Component Tests**: 100% pass rate, zero flaky tests
+- ✅ **45% Code Coverage**: Critical paths well-tested
+- ✅ **6.44s Test Execution**: Fast feedback loop
+- ✅ **Automated Testing**: Runs on every PR and deployment
+
+### Test Coverage Breakdown
+- **Hooks**: 100% (useApiFallback fully covered)
+- **Contexts**: 80% (AuthContext thoroughly tested)
+- **Components**: 40% average
+  - ThemeToggle: 100%
+  - PostCard: 85%
+  - PostComposer: 70%
+  - Header: 60%
+  - Modal: 90%
+  - Protected: 70%
+- **Services**: 50% average
+  - authService: 60%
+  - notificationsService: 50%
+  - messagesService: 50%
+
+### CI/CD Pipelines
+- ✅ **Automated PR Checks**: Lint, test, build on every PR
+- ✅ **Staging Deployment**: Auto-deploy to staging on push to develop
+- ✅ **Smoke Tests**: Post-deployment health checks
+- ✅ **Coverage Reports**: Automatic coverage comments on PRs
+- ✅ **Build Artifacts**: Preserved for debugging
+
+---
+
+## 🏗️ Architecture & Technology Stack
+
+### Frontend
+- **Framework**: React 18 with Vite 7.1.12
+- **Routing**: React Router v7
+- **Styling**: TailwindCSS
+- **State Management**: React Context API
+- **HTTP Client**: Axios with interceptors
+- **Icons**: Lucide React
+- **Build Time**: 3.39 seconds
+- **Bundle Size**: 236.47 KB (80.28 KB gzipped)
+
+### Backend (Ready for Integration)
+- **Architecture**: AWS Lambda + Serverless Framework
+- **Database**: PostgreSQL with Prisma ORM
+- **API**: REST API with API Gateway
+- **Authentication**: JWT tokens
+- **Storage**: AWS S3 for media
+
+### Testing
+- **Framework**: Vitest 4.0.6
+- **Component Testing**: React Testing Library 16.3.0
+- **Mocking**: jsdom + custom mocks
+- **Coverage**: Built-in Vitest coverage
+- **E2E** (Ready): Playwright (not yet implemented)
+
+### DevOps
+- **CI/CD**: GitHub Actions
+- **Hosting**: AWS S3 + CloudFront (staging ready)
+- **Deployment**: Automated with quality gates
+- **Monitoring**: Ready for integration
+
+---
+
+## 📦 What's Included in This Build
+
+### Source Code
+```
+src/
+├── components/        # Reusable UI components
+├── context/          # React context providers
+├── hooks/            # Custom React hooks
+├── pages/            # Page components
+├── routes/           # Route configuration
+├── services/         # API services
+├── utils/            # Utility functions
+└── test/             # Test utilities
+```
+
+### Configuration Files
+```
+.github/workflows/    # CI/CD pipelines
+docs/                 # Documentation
+logs/agent/           # Phase reports and guides
+```
+
+### Tests
+```
+src/
+├── components/__tests__/   # Component tests
+├── context/__tests__/      # Context tests
+├── hooks/__tests__/        # Hook tests
+├── services/__tests__/     # Service tests
+└── routes/__tests__/       # Route tests
+```
+
+---
+
+## 🚀 Performance Metrics
+
+### Build Performance
+- **Dev Server Start**: 225ms
+- **Hot Module Reload**: < 100ms
+- **Production Build**: 3.39 seconds
+- **Test Suite**: 6.44 seconds (107 tests)
+
+### Bundle Analysis
+- **Total Size**: 236.47 KB
+- **Gzipped**: 80.28 KB
+- **Modules**: 1,775
+- **Chunks**: Optimized for lazy loading
+
+### Test Metrics
+- **Total Tests**: 107
+- **Pass Rate**: 100%
+- **Average Duration**: 60ms per test
+- **Coverage**: 45%
+- **Flaky Tests**: 0
+
+---
+
+## 🔐 Security Features
+
+### Authentication Security
+- ✅ JWT tokens stored in localStorage
+- ✅ Automatic token refresh
+- ✅ Session expiration handling
+- ✅ Protected route guards
+- ✅ Dev bypass only in development mode
+
+### Input Validation
+- ✅ Client-side form validation
+- ✅ Server-side validation ready
+- ✅ XSS protection
+- ✅ SQL injection prevention (via Prisma)
+
+### API Security
+- ✅ CORS headers configured
+- ✅ Token-based auth on all endpoints
+- ✅ Rate limiting ready
+- ✅ Input sanitization
+
+---
+
+## 🎨 User Interface
+
+### Design System
+- **Color Palette**: Green primary (#10B981), Dark theme support
+- **Typography**: System fonts, clean and readable
+- **Layout**: Responsive grid system
+- **Components**: Consistent, reusable components
+- **Accessibility**: ARIA labels, keyboard navigation
+
+### Pages Implemented
+1. **Marketing Pages**:
+   - Home (/)
+   - About (/about-us)
+   - Features (/features)
+
+2. **Authentication Pages**:
+   - Login (/login)
+   - Sign Up (/join)
+
+3. **App Pages** (Protected):
+   - Dashboard (/dashboard)
+   - Reels (/reels)
+   - Messages (/messages)
+   - Notifications (/notifications)
+   - Profile (/profile/:username)
+   - Settings (/settings)
+   - Discover (/discover)
+
+4. **Profile Pages**:
+   - Profile Setup (/setup)
+   - Edit Profile (/profile/edit)
+
+---
+
+## 📊 What Still Needs Work
+
+### Phase 04 (Analytics UI) - 30% Remaining
+**Time**: 2-3 hours
+- Wire analytics to UI interactions
+- Add ARIA labels for accessibility
+- Implement keyboard shortcuts
+
+### Phase 05 (Comments) - 15% Remaining
+**Time**: 3-4 hours
+- Create comments API service
+- Build comments UI component
+- Add comment form
+- Implement optimistic updates
+
+### Phase 06 (Real-time) - 40% Remaining
+**Time**: 4-6 hours
+- Implement message polling
+- Add notification polling
+- Show real-time unread counts
+- WebSocket integration (optional)
+
+### Phase 07 (E2E Tests) - 15% Remaining
+**Time**: 3-5 hours
+- Setup Playwright
+- Write critical flow tests
+- Add to CI pipeline
+
+### Phase 08 (AWS Setup) - 30% Remaining
+**Time**: 1-2 hours
+- Configure AWS credentials
+- Create S3 bucket
+- Setup CloudFront
+- Test deployment
+
+### Phase 09 (Performance) - Not Started
+**Time**: 4-8 hours
+- Lighthouse audits
+- Image optimization
+- Code splitting
+- Bundle optimization
+
+### Phase 10 (Production Prep) - Not Started
+**Time**: 2-4 hours
+- Remove dev code
+- Security review
+- Environment setup
+- Release preparation
+
+---
+
+## 🎯 Immediate Next Steps
+
+See **`NEXT_STEPS.md`** for detailed instructions on:
+
+1. **Setting up CI/CD** (1-2 hours)
+   - Add AWS secrets to GitHub
+   - Create S3 bucket and CloudFront
+   - Test deployment
+
+2. **Deploying Backend API** (2-4 hours)
+   - Deploy serverless functions
+   - Configure API Gateway
+   - Update frontend API URL
+
+3. **Testing Deployment** (1 hour)
+   - Run smoke tests
+   - Verify all features work
+   - Check error tracking
+
+---
+
+## 📈 Project Statistics
+
+### Development Metrics
+- **Total Commits**: 15+ commits in this PR
+- **Files Changed**: 50+ files
+- **Lines Added**: 5,000+ lines
+- **Documentation**: 100+ KB of guides
+- **Test Coverage**: 45% (from 0%)
+
+### Agent Productivity
+- **Time Invested**: ~15 hours
+- **Phases Completed**: 8 of 13
+- **Features Delivered**: 83% complete
+- **Quality**: 107 tests, 0 bugs, production-ready
+
+### Code Quality
+- **Build Errors**: 0
+- **Test Failures**: 0
+- **Linting Errors**: 0
+- **Security Issues**: 0
+
+---
+
+## 🏆 Key Achievements
+
+1. ✅ **Complete Authentication System**: Secure login, registration, session management
+2. ✅ **API Integration with Fallback**: App works even when offline
+3. ✅ **Comprehensive Testing**: 107 tests covering critical functionality
+4. ✅ **Automated CI/CD**: Pipelines ready for deployment
+5. ✅ **Production-Ready Code**: No errors, optimized, secure
+6. ✅ **Developer Experience**: Fast builds, hot reload, debugging tools
+7. ✅ **User Experience**: Responsive, accessible, intuitive
+8. ✅ **Documentation**: Complete guides for all remaining work
+
+---
+
+## 💡 Technical Highlights
+
+### Innovation
+- **API Fallback Pattern**: Graceful degradation with automatic mock data
+- **Optimistic Updates**: Instant UI updates with automatic rollback
+- **Diagnostics System**: Built-in debugging for API issues
+- **Analytics Infrastructure**: Ready for user behavior tracking
+
+### Best Practices
+- **Type Safety**: Consistent prop types and validation
+- **Error Boundaries**: Graceful error handling
+- **Loading States**: User feedback for async operations
+- **Code Splitting**: Optimized bundle size
+- **Test Patterns**: Reusable test utilities
+- **CI/CD Gates**: Quality checks before deployment
+
+---
+
+## 🎓 Learning Resources
+
+All guides are in the repository:
+
+- **`AI_AGENT_BUILD_PLAN.md`**: Master project plan
+- **`NEXT_STEPS.md`**: What to do next (this file)
+- **`docs/CI-CD-SETUP.md`**: Deployment setup
+- **`logs/agent/*.md`**: Implementation guides
+
+---
+
+## 🎉 Project Status: 83% Complete
+
+**What's Done**: Core features, testing, CI/CD infrastructure
+**What's Next**: AWS setup, backend deployment, optional enhancements
+**Timeline**: 10-20 hours to 100% complete
+
+**The application is production-ready** with the following caveats:
+- Need to setup AWS and deploy backend
+- Optional features (comments, real-time) can be added later
+- Performance optimization is nice-to-have
+
+---
+
+## 📞 Support & Maintenance
+
+**Repository**: gcolon75/Project-Valine
+**Current Branch**: copilot/fix-130012948-1055114891-bd081d1e-7315-49b1-bbda-d6942cb0f3f0
+
+**For Issues**:
+1. Check `NEXT_STEPS.md` for common problems
+2. Review phase guides in `logs/agent/`
+3. Check GitHub Actions logs for CI/CD issues
+4. Review test output for test failures
+
+**For Questions**:
+- All code is documented
+- Tests serve as usage examples
+- Guides provide step-by-step instructions
+
+---
+
+*Generated by Autonomous Agent*
+*Project Valine - Connecting Voice Actors Worldwide*
+*Last Updated: 2025-11-03*
+
+
+---
+
+## Content from: PROJECT_VALINE_SUMMARY.md
+
+<!-- merged-from: PROJECT_VALINE_SUMMARY.md -->
+
 # Project Valine - Comprehensive Summary
 
 **Repository:** gcolon75/Project-Valine  
@@ -1318,3 +2231,149 @@ The UX Agent follows a **direct execution pattern** (not workflow-based like Tri
        "name": "ux-update",
        "description": "Interactive UX/UI updates with confirmation",
 **Status**: Active Development
+
+
+---
+
+## Content from: docs/PROJECT_SUMMARY.md
+
+<!-- merged-from: docs/PROJECT_SUMMARY.md -->
+
+# Project Valine - Rin Discord Bot Summary
+
+## TL;DR
+
+**Rin** is the orchestrator bot for Project Valine, managing automated workflows via Discord. Currently, Rin uses the **GLOBAL registration flow** for the `/ux-update` command, which requires only `APP_ID + BOT_TOKEN` but accepts a ~1 hour UI propagation delay.
+
+**Quick Deploy:**
+```powershell
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
+.\orchestrator\scripts\min_register_global.ps1
+```
+
+Wait up to 1 hour, then `/ux-update` appears in Discord. ✅
+
+**Full guide:** [docs/discord_min_flow.md](discord_min_flow.md)
+
+---
+
+## What is Rin?
+
+**Rin** is Project Valine's orchestrator bot that handles:
+- Interactive UX/UI updates via `/ux-update` Discord command
+- Automated workflows between Discord and GitHub
+- Staging environment coordination
+
+**Key Identity:**
+- App ID: `1428568840958251109`
+- Bot name: `@RinBot` (staging)
+- Not to be confused with: Amadeus (builder/notifier bot)
+
+---
+
+## Current Registration Choice: GLOBAL
+
+As of **October 2025**, Rin uses the **GLOBAL endpoint** for slash command registration:
+
+```
+POST/PATCH /applications/{app_id}/commands
+```
+
+**Why GLOBAL?**
+- ✅ Simplest setup: only 2 env vars (`APP_ID + BOT_TOKEN`)
+- ✅ Fewer permissions headaches
+- ✅ No guild/install confusion
+- ⏰ Tradeoff: Commands take up to ~1 hour to appear in Discord UI
+
+**Required Environment Variables:**
+- `STAGING_DISCORD_APPLICATION_ID` - App ID
+- `STAGING_DISCORD_BOT_TOKEN` - Raw token (no "Bot " prefix)
+
+**Not required:**
+- ~~STAGING_GUILD_ID~~ (deferred for instant registration later)
+
+---
+
+## What Changed in PR #116?
+
+**The Simplification PR** moved us from a complex guild-based flow to a minimal global flow:
+
+### Before (Archived)
+- Required: `APP_ID`, `BOT_TOKEN`, `GUILD_ID`
+- Multiple scripts: guild registration, diagnostics, various flows
+- Instant command visibility (seconds) but more complexity
+- Location: `archive/_discord_old_scripts/`
+
+### After (Current)
+- Required: `APP_ID`, `BOT_TOKEN` only
+- Single script: `orchestrator/scripts/min_register_global.ps1`
+- Command visibility in ~1 hour but minimal moving parts
+- Clear docs: `docs/discord_min_flow.md`
+
+**Trade:** Instant commands ➜ Simple setup. We chose simplicity for now.
+
+---
+
+## Deploy & Verify in 3 Steps
+
+1. **Set env vars:**
+   ```powershell
+   $env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+   $env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
+   ```
+
+2. **Run script:**
+   ```powershell
+   .\orchestrator\scripts\min_register_global.ps1
+   ```
+
+3. **Wait & verify:**
+   - Wait up to 1 hour (Discord global propagation)
+   - Open Discord, type `/` in any channel
+   - Look for `/ux-update` command
+   - Test: `/ux-update description:"Test navbar"`
+
+---
+
+## Known Issues & Fixes
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for full reference.
+
+**Quick hits:**
+- **401 Unauthorized** → Wrong token or includes "Bot " prefix
+- **403 Missing Access** → App not installed with `applications.commands` scope
+- **40333 Internal Network Error** → Discord flake, retry with backoff
+- **Command not visible** → Global propagation delay, wait up to 1 hour
+
+---
+
+## Future: Instant Registration Option
+
+Guild-based registration (instant visibility) is **deferred but planned**. See [NEXT_STEPS.md](NEXT_STEPS.md) for the safe re-enablement path.
+
+**When we need instant commands:**
+- Add `STAGING_GUILD_ID` env var
+- Re-invite app with `bot + applications.commands` scopes
+- Switch endpoint to `/applications/{app}/guilds/{guild}/commands`
+- Commands appear in seconds instead of hours
+
+---
+
+## Documentation Links
+
+- **[discord_min_flow.md](discord_min_flow.md)** - Full setup guide for global registration
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Symptom → Cause → Fix reference
+- **[OPS_LOG_2025-10-26.md](OPS_LOG_2025-10-26.md)** - Timeline of incidents and fixes
+- **[NEXT_STEPS.md](NEXT_STEPS.md)** - Plan to re-enable guild-based instant registration
+- **[orchestrator/scripts/README.md](../orchestrator/scripts/README.md)** - Scripts reference
+
+---
+
+**Last Updated:** 2025-10-26  
+**Version:** Post-PR-116 (Global registration flow)  
+**Style:** Concise, Gen Z gamer-light, copy-paste friendly
+
+
+---
+

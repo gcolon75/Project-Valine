@@ -1,3 +1,11 @@
+<!-- ARCHIVED DOCUMENT -->
+<!-- Original location: docs/diagnostics/PHASE6_IMPLEMENTATION_SUMMARY.md -->
+<!-- Archived on: 2025-11-04 -->
+<!-- Reason: Historical implementation summary -->
+<!-- This document is kept for historical reference only -->
+
+---
+
 # Phase 6: Discord /triage Command - Implementation Summary
 
 ## Mission Complete ✅

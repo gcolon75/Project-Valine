@@ -1,3 +1,11 @@
+<!-- ARCHIVED DOCUMENT -->
+<!-- Original location: FRONTEND_REVIEW_AGENT_PROMPT (1).md -->
+<!-- Archived on: 2025-11-04 -->
+<!-- Reason: Duplicate of FRONTEND_REVIEW_AGENT_PROMPT.md -->
+<!-- This document is kept for historical reference only -->
+
+---
+
 # Frontend Review & UX Research Agent Prompt — Project Valine
 
 Purpose
