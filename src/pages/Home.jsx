@@ -1,12 +1,19 @@
 import { Sparkles, ArrowRight, Mic, Users, FileText, Twitter, Linkedin, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Home = () => {
+  // Force light mode on marketing pages
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-[#1a1a1a] dark:to-neutral-950">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
       
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#1a1a1a]/80 backdrop-blur-lg border-b border-neutral-200/50 dark:border-neutral-700/50 shadow-sm">
+      {/* Header - Light mode only on marketing pages */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-neutral-200/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -19,23 +26,29 @@ const Home = () => {
               </span>
             </Link>
 
-            {/* Navigation - marketing page: use modern header, theme toggle moved to Settings — see PR */}
+            {/* Navigation - Light mode only, no theme toggle on marketing */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about-us" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/about-us" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors">
                 About
               </Link>
-              <Link to="/features" className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors">
+              <Link to="/features" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors">
                 Features
               </Link>
             </nav>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - Single primary CTA */}
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
+                className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors"
               >
                 Sign In
+              </Link>
+              <Link
+                to="/join"
+                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105"
+              >
+                Get Started
               </Link>
             </div>
           </div>
@@ -47,8 +60,8 @@ const Home = () => {
       
       {/* Hero Section with Background - Updated layout: stat cards moved to sides */}
       <section className="relative px-4 py-20 md:py-32 animate-fade-in overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5 dark:from-neutral-950 dark:via-[#1a1a1a] dark:to-[#0CCE6B]/10" />
+        {/* Background Pattern - Light mode only */}
+        <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5" />
         
         {/* Decorative Elements */}
         <div className="absolute top-20 right-10 w-72 h-72 bg-[#0CCE6B]/10 rounded-full blur-3xl" />
@@ -73,7 +86,7 @@ const Home = () => {
                 
                 {/* Text Content */}
                 <div>
-                  <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-4 py-2 rounded-full mb-8 animate-slide-up">
+                  <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-8 animate-slide-up">
                     <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
                     <span className="text-sm font-medium text-[#0CCE6B]">
                       The Professional Network for Voice Actors
@@ -84,7 +97,7 @@ const Home = () => {
                     Connect. Create. Collaborate.
                   </h1>
                   
-                  <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                  <p className="text-xl text-neutral-600 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
                     Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
                   </p>
                   
@@ -99,7 +112,7 @@ const Home = () => {
                     </Link>
                     <Link
                       to="/about"
-                      className="bg-white dark:bg-[#1a1a1a] hover:bg-neutral-50 dark:hover:bg-neutral-900 text-neutral-900 dark:text-white px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 dark:border-neutral-700 transition-all duration-200 hover:scale-105"
+                      className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
                     >
                       Learn More
                     </Link>
@@ -108,7 +121,7 @@ const Home = () => {
 
                 {/* Hero Image */}
                 <div className="relative animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50 dark:border-neutral-800/50">
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
                     {/* Placeholder Hero Image */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
                       <Mic className="w-32 h-32 text-[#0CCE6B]/30" />
@@ -116,12 +129,12 @@ const Home = () => {
                   </div>
                   
                   {/* Floating "New!" badge */}
-                  <div className="absolute -top-6 -left-6 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-lg p-3 animate-pulse">
+                  <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
                         <Sparkles className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-sm font-semibold text-neutral-900 dark:text-white">New!</span>
+                      <span className="text-sm font-semibold text-neutral-900">New!</span>
                     </div>
                   </div>
                 </div>
@@ -139,9 +152,9 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="px-4 py-20 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm">
+      <section className="px-4 py-20 bg-white/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900 dark:text-white animate-slide-up">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900 animate-slide-up">
             Everything you need to succeed
           </h2>
           
@@ -171,7 +184,7 @@ const Home = () => {
       {/* Social Proof */}
       <section className="px-4 py-20">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900 dark:text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-neutral-900">
             Loved by artists everywhere
           </h2>
           
@@ -220,8 +233,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#1a1a1a] dark:bg-black border-t border-neutral-800 mt-20">
+      {/* Footer - Dark background for contrast */}
+      <footer className="bg-[#1a1a1a] border-t border-neutral-800 mt-20">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             
@@ -295,11 +308,11 @@ const Home = () => {
 // Stat Card Component - Used in hero sidebar
 const StatCard = ({ number, label, delay }) => (
   <div 
-    className="bg-white/90 dark:bg-[#1a1a1a]/90 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 text-center hover:shadow-lg transition-all duration-200 animate-slide-up"
+    className="bg-white/90 backdrop-blur-sm border border-neutral-200 rounded-xl p-4 text-center hover:shadow-lg transition-all duration-200 animate-slide-up"
     style={{ animationDelay: delay }}
   >
     <p className="text-3xl font-bold text-[#0CCE6B] mb-1">{number}</p>
-    <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium">{label}</p>
+    <p className="text-xs text-neutral-600 font-medium">{label}</p>
   </div>
 );
 
@@ -326,32 +339,32 @@ const TrendingCard = ({ delay }) => (
   </div>
 );
 
-// Feature Card Component
+// Feature Card Component - with improved depth and separation
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
   <div 
-    className="bg-white dark:bg-neutral-800 p-8 rounded-2xl border border-neutral-200 dark:border-neutral-700 hover:shadow-xl hover:-translate-y-2 transition-all duration-200 animate-slide-up"
+    className="bg-white p-8 rounded-2xl border border-neutral-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-200 animate-slide-up shadow-sm"
     style={{ animationDelay: delay }}
   >
-    <div className="w-12 h-12 bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 rounded-lg flex items-center justify-center mb-4">
+    <div className="w-12 h-12 bg-[#0CCE6B]/10 rounded-lg flex items-center justify-center mb-4">
       <Icon className="w-6 h-6 text-[#0CCE6B]" />
     </div>
-    <h3 className="text-xl font-bold mb-3 text-neutral-900 dark:text-white">{title}</h3>
-    <p className="text-neutral-600 dark:text-neutral-400">{description}</p>
+    <h3 className="text-xl font-bold mb-3 text-neutral-900">{title}</h3>
+    <p className="text-neutral-600">{description}</p>
   </div>
 );
 
-// Testimonial Component
+// Testimonial Component - with improved depth
 const Testimonial = ({ quote, author, role, avatar, delay }) => (
   <div 
-    className="bg-white dark:bg-neutral-800 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-700 hover:shadow-lg transition-all duration-200 animate-slide-up"
+    className="bg-white p-6 rounded-2xl border border-neutral-200 hover:shadow-lg transition-all duration-200 animate-slide-up shadow-sm"
     style={{ animationDelay: delay }}
   >
-    <p className="text-neutral-700 dark:text-neutral-300 mb-4 italic">"{quote}"</p>
+    <p className="text-neutral-700 mb-4 italic">"{quote}"</p>
     <div className="flex items-center space-x-3">
       <img src={avatar} alt={author} className="w-12 h-12 rounded-full" />
       <div>
-        <p className="font-semibold text-neutral-900 dark:text-white">{author}</p>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">{role}</p>
+        <p className="font-semibold text-neutral-900">{author}</p>
+        <p className="text-sm text-neutral-600">{role}</p>
       </div>
     </div>
   </div>

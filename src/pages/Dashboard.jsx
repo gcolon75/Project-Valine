@@ -10,19 +10,19 @@ import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
 
 const StatCard = ({ icon: Icon, label, value, trend, trendUp }) => (
-  <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 hover:shadow-lg transition-all">
-    <div className="flex items-center justify-between mb-2">
-      <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
-        <Icon className="w-5 h-5 text-white" />
+  <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6 hover:shadow-lg transition-all shadow-sm">
+    <div className="flex items-center justify-between mb-3">
+      <div className="w-12 h-12 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center shadow-sm">
+        <Icon className="w-6 h-6 text-white" />
       </div>
       <span className={`text-sm font-semibold ${trendUp ? 'text-[#0CCE6B]' : 'text-red-500'}`}>
         {trend}
       </span>
     </div>
-    <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
+    <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
       {value}
     </p>
-    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+    <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
       {label}
     </p>
   </div>
@@ -184,8 +184,8 @@ export default function Dashboard() {
           <section className="space-y-4">
             <PostComposer />
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Stats Overview - Improved spacing and prominence */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <StatCard
                 icon={Users}
                 label="Connections"
