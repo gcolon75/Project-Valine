@@ -1,5 +1,10 @@
-export const handler = async () => ({
-  statusCode: 200,
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ ok: true, ts: Date.now() })
-});
+import { json } from '../utils/headers.js';
+
+export const handler = async () => {
+  return json({
+    status: 'ok',
+    timestamp: Date.now(),
+    service: 'Project Valine API',
+    version: '1.0.0'
+  });
+};
