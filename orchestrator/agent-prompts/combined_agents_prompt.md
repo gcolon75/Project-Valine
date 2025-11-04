@@ -11,6 +11,7 @@ Common repository rules for all agents
 - Conversation/state persistence: recommended to wire to DynamoDB or other durable storage for multi-step confirmation flows.
 - All generated code or patches should be linted and validated by CI before merging; agents should add a review checklist to PR bodies.
 - When in doubt or if input is ambiguous, ask clarifying questions rather than making assumptions.
+- Human confirmation: Agents must require explicit approval (e.g., confirmation command with "yes"/"confirm:true" parameter, signed request) before executing any write operations or state changes.
 
 ----------------------------------------------------------------------
 1) Frontend Agent
@@ -133,7 +134,7 @@ Primary responsibilities
 - Ask clarifying questions (layout size, target breakpoints, accessibility constraints).
 
 Public API
-- start_conversation(command_text: string, user_id: string, images?: [{url,string}], plain_text?: string) -> { success, conversation_id, preview | questions }
+- start_conversation(command_text: string, user_id: string, images?: Array<{url: string}>, plain_text?: string) -> { success, conversation_id, preview | questions }
 - confirm_and_execute(conversation_id: string, user_response: string) -> { success, pr | message }
 
 Inputs
@@ -265,7 +266,7 @@ Outputs
 - migration/backfill example, query samples, and draft PRs
 
 Constraints & Safety
-- Do not run exports or backfills automatically; require human confirmation.
+- Do not run exports or backfills automatically; require human confirmation (explicit approval command or signed request).
 - For PII, require explicit retention and masking guidance in PR body.
 
 Examples
