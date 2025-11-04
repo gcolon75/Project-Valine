@@ -5,12 +5,25 @@ import { getUserProfile } from '../services/userService';
 import { useApiFallback } from '../hooks/useApiFallback';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
-import { Share2, FileText, Video, User } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film } from 'lucide-react';
+
+// URL validation helper to prevent XSS attacks
+const isValidUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 // Mock/fallback profile data
 const FALLBACK_PROFILE = {
   displayName: 'Your Name',
   username: 'username',
+  headline: 'Voice Actor • Writer • Producer',
   bio: 'I write character-driven sci-fi and act in indie drama. Looking for collaborators on a short pilot.',
   avatar: null,
   role: 'Writer • Actor • Producer',
@@ -19,7 +32,14 @@ const FALLBACK_PROFILE = {
   followingCount: 156,
   reelsCount: 5,
   scriptsCount: 3,
-  posts: []
+  posts: [],
+  externalLinks: {
+    website: 'https://example.com',
+    imdb: '',
+    showreel: 'https://example.com/reel',
+    instagram: '',
+    linkedin: ''
+  }
 };
 
 const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
@@ -105,13 +125,18 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Name and Bio */}
+          {/* Name, Title and Bio */}
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
             {displayData.displayName}
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+          <p className="text-neutral-600 dark:text-neutral-400 mb-2">
             @{displayData.username}
           </p>
+          {displayData.headline && (
+            <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-4">
+              {displayData.headline}
+            </p>
+          )}
           {displayData.bio && (
             <p className="text-neutral-700 dark:text-neutral-300 mb-4">
               {displayData.bio}
@@ -211,13 +236,60 @@ export default function Profile() {
         )}
         
         {activeTab === 'about' && (
-          <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-              About
-            </h3>
-            <p className="text-neutral-700 dark:text-neutral-300">
-              {displayData.bio || 'No bio available'}
-            </p>
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+                About
+              </h3>
+              <p className="text-neutral-700 dark:text-neutral-300">
+                {displayData.bio || 'No bio available'}
+              </p>
+            </div>
+
+            {/* Links Section */}
+            {displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link) && (
+              <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center space-x-2">
+                  <ExternalLink className="w-5 h-5" />
+                  <span>Links</span>
+                </h3>
+                <div className="space-y-3">
+                  {displayData.externalLinks.website && isValidUrl(displayData.externalLinks.website) && (
+                    <a 
+                      href={displayData.externalLinks.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                    >
+                      <Globe className="w-5 h-5" />
+                      <span>Website</span>
+                    </a>
+                  )}
+                  {displayData.externalLinks.showreel && isValidUrl(displayData.externalLinks.showreel) && (
+                    <a 
+                      href={displayData.externalLinks.showreel} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                    >
+                      <Film className="w-5 h-5" />
+                      <span>Showreel</span>
+                    </a>
+                  )}
+                  {displayData.externalLinks.imdb && isValidUrl(displayData.externalLinks.imdb) && (
+                    <a 
+                      href={displayData.externalLinks.imdb} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span>IMDb</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -38,26 +38,26 @@
 }
 
 :root[data-theme="light"] {
-  /* -------- LIGHT -------- */
-  --bg: #f5f7f9;         /* soft, not pure white */
+  /* -------- LIGHT - Improved visual design with reduced glare and better depth -------- */
+  --bg: #fafbfc;         /* softer off-white, reduces glare */
   --text: #1f2937;       /* slate-ish */
-  --muted: #5b6b7c;
+  --muted: #6b7280;
 
-  --header-bg: rgba(255, 255, 255, 0.92);
-  --header-border: rgba(11, 20, 32, 0.12);
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --header-border: rgba(11, 20, 32, 0.08);  /* softer border */
 
   --card-bg: #ffffff;
-  --card-border: rgba(11, 20, 32, 0.10);
+  --card-border: rgba(11, 20, 32, 0.08);    /* softer border for better separation */
 
-  --chip-bg: #eef2f6;    /* subtle bluish gray */
-  --chip-border: rgba(11, 20, 32, 0.12);
+  --chip-bg: #f3f4f6;    /* subtle gray, less blue */
+  --chip-border: rgba(11, 20, 32, 0.10);
 
   /* hero still sits on dark image */
   --hero-text: #ffffff;
   --hero-subtext: #e5e7eb;
 
-  --scroll-thumb: rgba(11,20,32,.35);
-  --scroll-track: rgba(11,20,32,.08);
+  --scroll-thumb: rgba(11,20,32,.30);
+  --scroll-track: rgba(11,20,32,.05);
 
   /* Native control theming hint */
   color-scheme: light;
