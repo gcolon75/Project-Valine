@@ -1,8 +1,9 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import crypto from 'crypto';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || 'valine-media-uploads';
@@ -308,7 +309,7 @@ export const getAccessUrl = async (event) => {
     }
 
     // Generate signed viewing URL (valid for 1 hour)
-    const command = new PutObjectCommand({
+    const command = new GetObjectCommand({
       Bucket: MEDIA_BUCKET,
       Key: media.s3Key,
     });
@@ -318,7 +319,7 @@ export const getAccessUrl = async (event) => {
     // Also generate poster URL if exists
     let posterUrl = null;
     if (media.posterS3Key) {
-      const posterCommand = new PutObjectCommand({
+      const posterCommand = new GetObjectCommand({
         Bucket: MEDIA_BUCKET,
         Key: media.posterS3Key,
       });
