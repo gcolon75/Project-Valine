@@ -812,8 +812,8 @@ After following this guide, you should have:
 
 ## 📚 Additional Resources
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Original deployment documentation
-- [API_REFERENCE.md](./API_REFERENCE.md) - API endpoint documentation
+- [DEPLOYMENT.md](overview.md) - Original deployment documentation
+- [API_REFERENCE.md](../api/reference.md) - API endpoint documentation
 - [Serverless Framework Docs](https://www.serverless.com/framework/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs)

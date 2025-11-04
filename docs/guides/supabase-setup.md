@@ -569,7 +569,7 @@ Once all tests pass, you're ready to:
 If you encounter issues:
 1. Review the [Troubleshooting](#task-5-troubleshooting-if-needed) section
 2. Check [scripts/deployment/README.md](scripts/deployment/README.md) for detailed script documentation
-3. Review [DEPLOYMENT_GUIDE_AWS.md](DEPLOYMENT_GUIDE_AWS.md) for comprehensive AWS setup
+3. Review [DEPLOYMENT_GUIDE_AWS.md](../deployment/aws-guide.md) for comprehensive AWS setup
 4. Check [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
 
 ---

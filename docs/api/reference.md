@@ -629,8 +629,8 @@ See [CHANGELOG.md](CHANGELOG.md) for API changes and version history.
 
 ## Support
 
-- [Deployment Guide](DEPLOYMENT.md)
-- [Quick Start](QUICK_START.md)
+- [Deployment Guide](../deployment/overview.md)
+- [Quick Start](../quickstart/README.md)
 - [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
 - [Contributing Guidelines](CONTRIBUTING.md)
 

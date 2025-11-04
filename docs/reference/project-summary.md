@@ -2338,7 +2338,7 @@ POST/PATCH /applications/{app_id}/commands
 
 ## Known Issues & Fixes
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for full reference.
+See [TROUBLESHOOTING.md](../troubleshooting/README.md) for full reference.
 
 **Quick hits:**
 - **401 Unauthorized** → Wrong token or includes "Bot " prefix
@@ -2350,7 +2350,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for full reference.
 
 ## Future: Instant Registration Option
 
-Guild-based registration (instant visibility) is **deferred but planned**. See [NEXT_STEPS.md](NEXT_STEPS.md) for the safe re-enablement path.
+Guild-based registration (instant visibility) is **deferred but planned**. See [NEXT_STEPS.md](../guides/next-steps.md) for the safe re-enablement path.
 
 **When we need instant commands:**
 - Add `STAGING_GUILD_ID` env var
@@ -2363,9 +2363,9 @@ Guild-based registration (instant visibility) is **deferred but planned**. See [
 ## Documentation Links
 
 - **[discord_min_flow.md](discord_min_flow.md)** - Full setup guide for global registration
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Symptom → Cause → Fix reference
+- **[TROUBLESHOOTING.md](../troubleshooting/README.md)** - Symptom → Cause → Fix reference
 - **[OPS_LOG_2025-10-26.md](OPS_LOG_2025-10-26.md)** - Timeline of incidents and fixes
-- **[NEXT_STEPS.md](NEXT_STEPS.md)** - Plan to re-enable guild-based instant registration
+- **[NEXT_STEPS.md](../guides/next-steps.md)** - Plan to re-enable guild-based instant registration
 - **[orchestrator/scripts/README.md](../orchestrator/scripts/README.md)** - Scripts reference
 
 ---

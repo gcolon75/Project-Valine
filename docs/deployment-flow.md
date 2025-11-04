@@ -416,8 +416,8 @@ Issue Detected
 ---
 
 For detailed instructions, see:
-- [DEPLOYMENT.md](../DEPLOYMENT.md) - Complete guide
-- [QUICK_START.md](../QUICK_START.md) - 5-minute guide
-- [API_REFERENCE.md](../API_REFERENCE.md) - API documentation
+- [DEPLOYMENT.md](deployment/overview.md) - Complete guide
+- [QUICK_START.md](quickstart/README.md) - 5-minute guide
+- [API_REFERENCE.md](api/reference.md) - API documentation
 
 Last Updated: October 29, 2025

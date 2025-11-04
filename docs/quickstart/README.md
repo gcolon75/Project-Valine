@@ -121,9 +121,9 @@ npm run dev
 
 ## 📚 Full Documentation
 
-- [Complete Deployment Guide](./DEPLOYMENT.md) - Comprehensive instructions
+- [Complete Deployment Guide](../deployment/overview.md) - Comprehensive instructions
 - [Deployment Scripts README](./scripts/deployment/README.md) - Script documentation
-- [Troubleshooting](./DEPLOYMENT.md#troubleshooting) - Detailed problem solving
+- [Troubleshooting](../deployment/overview.md#troubleshooting) - Detailed problem solving
 
 ## 🎯 Testing Checklist
 
@@ -182,7 +182,7 @@ After deployment:
 
 ## 🆘 Need Help?
 
-- 📖 [Full Deployment Guide](./DEPLOYMENT.md)
+- 📖 [Full Deployment Guide](../deployment/overview.md)
 - 🐛 [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
 - 💬 [Contributing Guidelines](./CONTRIBUTING.md)
 

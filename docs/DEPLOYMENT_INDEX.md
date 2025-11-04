@@ -5,15 +5,15 @@ Complete guide to all deployment-related documentation for Project Valine.
 ## 📚 Quick Navigation
 
 ### For First-Time Deployers
-1. Start with [QUICK_START.md](../QUICK_START.md) - Get running in 5 minutes
-2. If you need more details, see [DEPLOYMENT.md](../DEPLOYMENT.md)
-3. Use [DEPLOYMENT_CHECKLIST.md](../DEPLOYMENT_CHECKLIST.md) to verify each step
+1. Start with [QUICK_START.md](quickstart/README.md) - Get running in 5 minutes
+2. If you need more details, see [DEPLOYMENT.md](deployment/overview.md)
+3. Use [DEPLOYMENT_CHECKLIST.md](deployment/checklist.md) to verify each step
 
 ### For Troubleshooting
-- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Solutions for common issues
+- [TROUBLESHOOTING.md](troubleshooting/README.md) - Solutions for common issues
 
 ### For API Development
-- [API_REFERENCE.md](../API_REFERENCE.md) - Complete endpoint documentation
+- [API_REFERENCE.md](api/reference.md) - Complete endpoint documentation
 
 ### For Understanding Architecture
 - [deployment-flow.md](./deployment-flow.md) - Visual deployment flow diagrams
@@ -285,19 +285,19 @@ All deployment scripts are located in `scripts/deployment/`:
 ## 🔍 Finding Information
 
 ### "How do I deploy quickly?"
-→ [QUICK_START.md](../QUICK_START.md)
+→ [QUICK_START.md](quickstart/README.md)
 
 ### "How do I deploy step-by-step?"
-→ [DEPLOYMENT.md](../DEPLOYMENT.md)
+→ [DEPLOYMENT.md](deployment/overview.md)
 
 ### "What are the API endpoints?"
-→ [API_REFERENCE.md](../API_REFERENCE.md)
+→ [API_REFERENCE.md](api/reference.md)
 
 ### "How do I verify my deployment?"
-→ [DEPLOYMENT_CHECKLIST.md](../DEPLOYMENT_CHECKLIST.md)
+→ [DEPLOYMENT_CHECKLIST.md](deployment/checklist.md)
 
 ### "Something isn't working!"
-→ [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+→ [TROUBLESHOOTING.md](troubleshooting/README.md)
 
 ### "How does deployment work?"
 → [deployment-flow.md](./deployment-flow.md)
@@ -306,13 +306,13 @@ All deployment scripts are located in `scripts/deployment/`:
 → [scripts/deployment/README.md](../scripts/deployment/README.md)
 
 ### "What's the database schema?"
-→ [API_REFERENCE.md](../API_REFERENCE.md#database-schema) or `api/prisma/schema.prisma`
+→ [API_REFERENCE.md](api/reference.md#database-schema) or `api/prisma/schema.prisma`
 
 ### "How do I deploy to production?"
-→ [DEPLOYMENT.md](../DEPLOYMENT.md#phase-5-production-deployment)
+→ [DEPLOYMENT.md](deployment/overview.md#phase-5-production-deployment)
 
 ### "What are the environment variables?"
-→ [.env.example](../.env.example) or [DEPLOYMENT.md](../DEPLOYMENT.md#environment-variables)
+→ [.env.example](../.env.example) or [DEPLOYMENT.md](deployment/overview.md#environment-variables)
 
 ---
 

@@ -2,7 +2,7 @@
 
 A collaborative platform for voice actors, writers, and artists to create and share scripts, auditions, and creative content.
 
-> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](PROJECT_VALINE_SUMMARY.md) for a comprehensive overview of the project, architecture, current status, and next steps.
+> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](docs/archive/merged/PROJECT_VALINE_SUMMARY-merged-20251104.md) for a comprehensive overview of the project, architecture, current status, and next steps.
 
 ## Table of Contents
 
@@ -34,7 +34,7 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 
 ✅ **Production-Ready** - 83% Complete (Phases 00-08 of 13)
 
-> 🤖 **Autonomous Agent Build Complete!** See [AUTONOMOUS_AGENT_SUMMARY.md](AUTONOMOUS_AGENT_SUMMARY.md) for comprehensive wrap-up, manual steps, and complete feature list.
+> 🤖 **Autonomous Agent Build Complete!** See [AUTONOMOUS_AGENT_SUMMARY.md](docs/archive/historical/AUTONOMOUS_AGENT_SUMMARY-20251104.md) for comprehensive wrap-up, manual steps, and complete feature list.
 
 ### Recent Achievements (Autonomous Agent Build - Nov 2025)
 
@@ -278,8 +278,8 @@ npx serverless deploy --stage dev
 ```
 
 See:
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete deployment guide with troubleshooting
-- [QUICK_START.md](QUICK_START.md) - 5-minute deployment guide
+- [DEPLOYMENT.md](docs/deployment/overview.md) - Complete deployment guide with troubleshooting
+- [QUICK_START.md](docs/quickstart/README.md) - 5-minute deployment guide
 - [scripts/deployment/README.md](scripts/deployment/README.md) - Deployment scripts documentation
 
 ### Orchestrator Setup

@@ -280,18 +280,18 @@ git push origin main  # Automatically deploys to production
 ## 📚 Documentation
 
 ### User Guides
-- [Quick Start Guide](QUICK_START.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE_AWS.md)
-- [Troubleshooting](TROUBLESHOOTING.md)
+- [Quick Start Guide](../quickstart/README.md)
+- [Deployment Guide](../deployment/aws-guide.md)
+- [Troubleshooting](../troubleshooting/README.md)
 
 ### Developer Guides
-- [Project Summary](PROJECT_VALINE_SUMMARY.md)
+- [Project Summary](../archive/merged/PROJECT_VALINE_SUMMARY-merged-20251104.md)
 - [CI/CD Setup](docs/CI-CD-SETUP.md)
 - [Test Implementation](logs/agent/phase-07-test-implementation-guide.md)
 - [Image Optimization](docs/IMAGE_OPTIMIZATION_GUIDE.md)
 
 ### API Reference
-- [API Reference](API_REFERENCE.md)
+- [API Reference](../api/reference.md)
 - [Backend Architecture](serverless/README.md)
 
 ---
@@ -383,4 +383,4 @@ Before deploying to production, ensure:
 
 **Ready for Production:** ⏳ Pending final image optimization and infrastructure setup
 
-**Questions?** Check the [Deployment Guide](DEPLOYMENT_GUIDE_AWS.md) or [Troubleshooting](TROUBLESHOOTING.md) docs.
+**Questions?** Check the [Deployment Guide](../deployment/aws-guide.md) or [Troubleshooting](../troubleshooting/README.md) docs.

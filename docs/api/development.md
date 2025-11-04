@@ -1043,8 +1043,8 @@ Once the dev backend is deployed:
 ## References
 
 - [Backend Implementation PR #146](https://github.com/gcolon75/Project-Valine/pull/146)
-- [Deployment Guide](../DEPLOYMENT.md)
-- [Backend Phase 02 Summary](../BACKEND_PHASE_02_SUMMARY.md)
+- [Deployment Guide](../deployment/overview.md)
+- [Backend Phase 02 Summary](../archive/historical/BACKEND_PHASE_02_SUMMARY-20251104.md)
 - [Serverless Configuration](../serverless/serverless.yml)
 - [Full API Documentation](../serverless/API_DOCUMENTATION.md)
 

@@ -491,7 +491,7 @@ This roadmap will be reviewed and updated:
 ## Feedback & Updates
 
 To suggest changes to this roadmap:
-1. Review [BACKLOG.md](BACKLOG.md) for detailed features
+1. Review [BACKLOG.md](../guides/backlog.md) for detailed features
 2. Create GitHub issue with label `roadmap`
 3. Participate in monthly planning discussions
 4. Join community Discord for updates

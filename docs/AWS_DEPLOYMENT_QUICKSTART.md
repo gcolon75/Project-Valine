@@ -343,10 +343,10 @@ npx prisma db push          # Quick schema sync (dev only)
 ## Full Documentation
 
 For detailed information, see:
-- [DEPLOYMENT_GUIDE_AWS.md](../DEPLOYMENT_GUIDE_AWS.md) - Complete deployment guide with all curl examples
+- [DEPLOYMENT_GUIDE_AWS.md](deployment/aws-guide.md) - Complete deployment guide with all curl examples
 - [DATABASE_PROVIDER_COMPARISON.md](./DATABASE_PROVIDER_COMPARISON.md) - Database provider comparison
-- [DEPLOYMENT.md](../DEPLOYMENT.md) - Original deployment documentation
-- [API_REFERENCE.md](../API_REFERENCE.md) - API endpoint reference
+- [DEPLOYMENT.md](deployment/overview.md) - Original deployment documentation
+- [API_REFERENCE.md](api/reference.md) - API endpoint reference
 
 ---
 
@@ -354,7 +354,7 @@ For detailed information, see:
 
 Having issues? Check:
 1. [Troubleshooting section](#troubleshooting) above
-2. [Full deployment guide](../DEPLOYMENT_GUIDE_AWS.md)
+2. [Full deployment guide](deployment/aws-guide.md)
 3. [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
 
 ---
