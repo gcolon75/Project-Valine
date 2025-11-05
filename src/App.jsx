@@ -1,8 +1,11 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout.jsx';
+import MarketingLayout from './layouts/MarketingLayout.jsx';
 import Home from './pages/Home.jsx';
 import About from './pages/About.jsx';
+import Features from './pages/Features.jsx';
+import Join from './pages/Join.jsx';
 import Login from './pages/Login.jsx';
 import Feed from './pages/Feed.jsx';
 import Search from './services/Search.jsx/index.js';
@@ -24,10 +27,15 @@ import NotFound from './pages/NotFound.jsx';
 function App() {
   return (
     <Routes>
-      {/* Marketing pages */}
-      <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/login" element={<Login />} />
+      {/* Marketing pages - Light mode forced via MarketingLayout */}
+      <Route element={<MarketingLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/about-us" element={<About />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/join" element={<Join />} />
+        <Route path="/login" element={<Login />} />
+      </Route>
       {/* Authenticated pages under AppLayout */}
       <Route element={<AppLayout />}>
         <Route path="/feed" element={<Feed />} />
