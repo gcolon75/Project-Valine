@@ -8,11 +8,34 @@ import {
 import ImageCropper from '../components/ImageCropper';
 import MediaUploader from '../components/MediaUploader';
 import SkillsTags from '../components/SkillsTags';
+import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  
+  // Feature flag for backend integration
+  const BACKEND_LINKS_ENABLED = import.meta.env.VITE_ENABLE_PROFILE_LINKS_API === 'true';
+  
+  // Helper function to convert old externalLinks format to new normalized format
+  const convertLegacyLinks = (externalLinks) => {
+    if (!externalLinks || typeof externalLinks !== 'object') return [];
+    
+    // If it's already an array, assume it's the new format
+    if (Array.isArray(externalLinks)) return externalLinks;
+    
+    // Convert old format to new
+    const links = [];
+    if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'Website' });
+    if (externalLinks.imdb) links.push({ label: 'IMDb', url: externalLinks.imdb, type: 'IMDb' });
+    if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'Portfolio' });
+    if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'Instagram' });
+    if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'LinkedIn' });
+    
+    return links;
+  };
   
   // Form state
   const [formData, setFormData] = useState({
@@ -33,13 +56,8 @@ export default function ProfileEdit() {
       phone: false,
       platform: true
     },
-    externalLinks: user?.externalLinks || {
-      website: '',
-      imdb: '',
-      showreel: '',
-      instagram: '',
-      linkedin: ''
-    },
+    // Support both old and new link formats
+    profileLinks: convertLegacyLinks(user?.externalLinks || user?.profileLinks),
     primaryReel: user?.primaryReel || null,
     reelPrivacy: user?.reelPrivacy || 'public',
     credits: user?.credits || [],
@@ -98,11 +116,39 @@ export default function ProfileEdit() {
 
   const handleSave = async () => {
     try {
-      // TODO: Call API to update profile
-      await updateUser(formData);
-      navigate(`/profile/${user.username}`);
+      // Validate headline length
+      if (formData.headline && formData.headline.length > 100) {
+        toast.error('Headline must be 100 characters or less');
+        return;
+      }
+      
+      // Optimistic update - show loading toast
+      const toastId = toast.loading('Saving profile changes...');
+      
+      // Optimistically update local user context
+      updateUser(formData);
+      
+      // TODO: Backend API integration
+      // When backend is ready, call the profile update endpoint:
+      // if (BACKEND_LINKS_ENABLED) {
+      //   await updateUserProfile(user.id, formData);
+      //   await updateProfileLinks(user.id, formData.profileLinks);
+      // }
+      
+      // Simulate API delay for realistic UX (remove when backend is ready)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Success feedback
+      toast.success('Profile saved!', { id: toastId });
+      
+      // Navigate back to profile after brief delay
+      setTimeout(() => {
+        navigate(`/profile/${user.username}`);
+      }, 300);
+      
     } catch (error) {
       console.error('Failed to update profile:', error);
+      toast.error('Failed to save profile. Please try again.');
     }
   };
 
@@ -364,29 +410,11 @@ export default function ProfileEdit() {
               <FormSection title="Contact & Links" icon={LinkIcon}>
                 <div className="space-y-4">
                   <FormField label="External Links">
-                    <div className="space-y-3">
-                      <input
-                        type="url"
-                        value={formData.externalLinks.website}
-                        onChange={(e) => handleNestedChange('externalLinks', 'website', e.target.value)}
-                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Website URL"
-                      />
-                      <input
-                        type="url"
-                        value={formData.externalLinks.imdb}
-                        onChange={(e) => handleNestedChange('externalLinks', 'imdb', e.target.value)}
-                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="IMDb URL"
-                      />
-                      <input
-                        type="url"
-                        value={formData.externalLinks.linkedin}
-                        onChange={(e) => handleNestedChange('externalLinks', 'linkedin', e.target.value)}
-                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="LinkedIn URL"
-                      />
-                    </div>
+                    <ProfileLinksEditor
+                      links={formData.profileLinks}
+                      onChange={(links) => handleChange('profileLinks', links)}
+                      maxLinks={10}
+                    />
                   </FormField>
 
                   <FormField label="Representative Agency">
