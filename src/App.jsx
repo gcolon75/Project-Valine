@@ -34,6 +34,7 @@ function App() {
         <Route path="/about-us" element={<About />} />
         <Route path="/features" element={<Features />} />
         <Route path="/join" element={<Join />} />
+        <Route path="/signup" element={<Join />} />
         <Route path="/login" element={<Login />} />
       </Route>
       {/* Authenticated pages under AppLayout */}

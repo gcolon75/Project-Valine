@@ -53,6 +53,7 @@ export default function App() {
           <Route path="about-us" element={<AboutPage />} />
           <Route path="features" element={<FeaturesPage />} />
           <Route path="join" element={<JoinPage />} />
+          <Route path="signup" element={<JoinPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />
         </Route>

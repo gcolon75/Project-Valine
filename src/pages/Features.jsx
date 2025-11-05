@@ -109,7 +109,7 @@ const Features = () => {
               to="/join"
               className="inline-block bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105 shadow-xl"
             >
-              Create Free Account
+              Get Started
             </Link>
           </div>
         </div>
