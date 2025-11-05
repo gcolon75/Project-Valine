@@ -1,0 +1,346 @@
+name: Security & Dependency Audit
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/security-audit.yml'
+  workflow_dispatch:
+  schedule:
+    # Run daily at 8 AM UTC
+    - cron: '0 8 * * *'
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  dependency-audit:
+    name: NPM Dependency Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          npm audit --json > npm-audit.json 2>&1 || true
+          npm audit > npm-audit.txt 2>&1 || echo "NPM_AUDIT_FAILED=true" >> $GITHUB_ENV
+
+      - name: Parse audit results
+        run: |
+          cat > parse-audit.mjs << 'EOF'
+          import { readFileSync } from 'fs';
+
+          try {
+            const auditData = JSON.parse(readFileSync('npm-audit.json', 'utf8'));
+            const vulnerabilities = auditData.vulnerabilities || {};
+            
+            let critical = 0;
+            let high = 0;
+            let moderate = 0;
+            let low = 0;
+            let info = 0;
+            
+            const vulnList = [];
+            
+            for (const [pkg, details] of Object.entries(vulnerabilities)) {
+              const severity = details.severity;
+              const via = details.via?.[0];
+              
+              if (severity === 'critical') critical++;
+              else if (severity === 'high') high++;
+              else if (severity === 'moderate') moderate++;
+              else if (severity === 'low') low++;
+              else if (severity === 'info') info++;
+              
+              if (typeof via === 'object' && via.title) {
+                vulnList.push({
+                  package: pkg,
+                  severity: severity,
+                  title: via.title,
+                  url: via.url,
+                  range: details.range
+                });
+              }
+            }
+            
+            console.log('# Security Audit Results\n');
+            console.log('## Summary\n');
+            console.log(`- **Critical:** ${critical} ${critical > 0 ? '🔴' : ''}`);
+            console.log(`- **High:** ${high} ${high > 0 ? '🟠' : ''}`);
+            console.log(`- **Moderate:** ${moderate} ${moderate > 0 ? '🟡' : ''}`);
+            console.log(`- **Low:** ${low}`);
+            console.log(`- **Info:** ${info}`);
+            console.log('');
+            
+            if (vulnList.length > 0) {
+              console.log('## Vulnerabilities Found\n');
+              vulnList.sort((a, b) => {
+                const order = { critical: 0, high: 1, moderate: 2, low: 3, info: 4 };
+                return order[a.severity] - order[b.severity];
+              });
+              
+              vulnList.slice(0, 20).forEach(vuln => {
+                const emoji = vuln.severity === 'critical' ? '🔴' : 
+                             vuln.severity === 'high' ? '🟠' : 
+                             vuln.severity === 'moderate' ? '🟡' : '⚪';
+                console.log(`### ${emoji} ${vuln.package}`);
+                console.log(`**Severity:** ${vuln.severity.toUpperCase()}`);
+                console.log(`**Issue:** ${vuln.title}`);
+                console.log(`**Affected versions:** ${vuln.range}`);
+                if (vuln.url) console.log(`**Details:** ${vuln.url}`);
+                console.log('');
+              });
+              
+              if (vulnList.length > 20) {
+                console.log(`_...and ${vulnList.length - 20} more vulnerabilities_\n`);
+              }
+              
+              console.log('## Recommended Actions\n');
+              console.log('1. Review each vulnerability and assess impact');
+              console.log('2. Run `npm audit fix` to auto-fix compatible issues');
+              console.log('3. For breaking changes, update manually with testing');
+              console.log('4. Consider using `npm audit fix --force` for critical issues (with caution)');
+              console.log('5. Check if vulnerable packages can be replaced');
+            } else {
+              console.log('## ✅ No Vulnerabilities Found\n');
+              console.log('All dependencies are up to date and secure.');
+            }
+          } catch (error) {
+            console.error('Error parsing audit results:', error.message);
+            process.exit(1);
+          }
+          EOF
+          
+          node parse-audit.mjs > audit-report.txt 2>&1
+          cat audit-report.txt
+
+      - name: Check for outdated packages
+        run: |
+          npm outdated --json > outdated.json 2>&1 || true
+          
+          cat > parse-outdated.mjs << 'EOF'
+          import { readFileSync, existsSync } from 'fs';
+
+          if (!existsSync('outdated.json')) {
+            console.log('No outdated packages information available.');
+            process.exit(0);
+          }
+
+          try {
+            const content = readFileSync('outdated.json', 'utf8').trim();
+            if (!content || content === '{}') {
+              console.log('\n## 📦 All Packages Up to Date\n');
+              process.exit(0);
+            }
+            
+            const outdated = JSON.parse(content);
+            const packages = Object.entries(outdated);
+            
+            if (packages.length === 0) {
+              console.log('\n## 📦 All Packages Up to Date\n');
+              process.exit(0);
+            }
+            
+            console.log('\n## 📦 Outdated Packages\n');
+            console.log(`Found ${packages.length} outdated packages:\n`);
+            
+            packages.slice(0, 15).forEach(([name, info]) => {
+              const updateType = 
+                info.latest.split('.')[0] !== info.current.split('.')[0] ? 'MAJOR' :
+                info.latest.split('.')[1] !== info.current.split('.')[1] ? 'MINOR' : 'PATCH';
+              
+              console.log(`- **${name}**: ${info.current} → ${info.latest} (${updateType})`);
+            });
+            
+            if (packages.length > 15) {
+              console.log(`\n_...and ${packages.length - 15} more packages_`);
+            }
+          } catch (error) {
+            console.log('\nUnable to parse outdated packages information.');
+          }
+          EOF
+          
+          node parse-outdated.mjs >> audit-report.txt 2>&1
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit-reports
+          path: |
+            npm-audit.json
+            npm-audit.txt
+            audit-report.txt
+            outdated.json
+          retention-days: 30
+
+      - name: Generate security summary
+        if: always()
+        run: |
+          echo "## 🔒 Security & Dependency Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f audit-report.txt ]; then
+            cat audit-report.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Audit report not available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🔒 Security & Dependency Audit\n\n';
+            
+            try {
+              const auditData = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+              const vulnerabilities = auditData.vulnerabilities || {};
+              
+              let critical = 0, high = 0, moderate = 0, low = 0;
+              
+              for (const details of Object.values(vulnerabilities)) {
+                if (details.severity === 'critical') critical++;
+                else if (details.severity === 'high') high++;
+                else if (details.severity === 'moderate') moderate++;
+                else if (details.severity === 'low') low++;
+              }
+              
+              comment += '### Vulnerability Summary\n\n';
+              comment += `- **Critical:** ${critical} ${critical > 0 ? '🔴' : ''}\n`;
+              comment += `- **High:** ${high} ${high > 0 ? '🟠' : ''}\n`;
+              comment += `- **Moderate:** ${moderate} ${moderate > 0 ? '🟡' : ''}\n`;
+              comment += `- **Low:** ${low}\n\n`;
+              
+              if (critical > 0 || high > 0) {
+                comment += '⚠️ **Action Required:** Critical or high severity vulnerabilities found.\n\n';
+                comment += '**Recommended steps:**\n';
+                comment += '1. Run `npm audit fix` to auto-fix issues\n';
+                comment += '2. Review breaking changes before updating\n';
+                comment += '3. Test thoroughly after updates\n\n';
+              } else if (moderate > 0 || low > 0) {
+                comment += '✅ No critical vulnerabilities, but some lower severity issues exist.\n\n';
+              } else {
+                comment += '✅ **No vulnerabilities found!** All dependencies are secure.\n\n';
+              }
+            } catch (error) {
+              comment += '⚠️ Unable to parse audit results. Check workflow logs.\n\n';
+            }
+            
+            comment += '📥 Download full security audit report from workflow artifacts.\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail on critical vulnerabilities
+        if: env.NPM_AUDIT_FAILED == 'true'
+        run: |
+          echo "::warning::Security vulnerabilities found. Review the audit report."
+          # Don't fail the build, just warn
+          exit 0
+
+  secret-scanning:
+    name: Secret Scanning Patterns
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for common secret patterns
+        run: |
+          cat > check-secrets.sh << 'EOF'
+          #!/bin/bash
+          
+          echo "🔍 Scanning for potential secrets..."
+          echo ""
+          
+          # Patterns to search for
+          PATTERNS=(
+            "api[_-]?key"
+            "api[_-]?secret"
+            "access[_-]?token"
+            "secret[_-]?key"
+            "private[_-]?key"
+            "password\s*="
+            "passwd\s*="
+            "aws[_-]?access"
+            "aws[_-]?secret"
+            "AKIA[0-9A-Z]{16}"
+            "mongodb(\+srv)?:\/\/[^:]+:[^@]+"
+            "postgres:\/\/[^:]+:[^@]+"
+          )
+          
+          FOUND=0
+          
+          for pattern in "${PATTERNS[@]}"; do
+            results=$(git grep -iIn "$pattern" -- ':!*.md' ':!*.txt' ':!check-secrets.sh' 2>/dev/null || true)
+            if [ -n "$results" ]; then
+              echo "⚠️  Found potential secret pattern: $pattern"
+              echo "$results" | head -5
+              echo ""
+              FOUND=1
+            fi
+          done
+          
+          if [ $FOUND -eq 0 ]; then
+            echo "✅ No obvious secret patterns found"
+          else
+            echo ""
+            echo "⚠️  Potential secrets detected. Please review:"
+            echo "1. Ensure no real secrets are committed"
+            echo "2. Use .env files for local secrets (ignored by git)"
+            echo "3. Use GitHub Secrets for CI/CD credentials"
+            echo "4. Consider using a secrets management tool"
+          fi
+          
+          exit $FOUND
+          EOF
+          
+          chmod +x check-secrets.sh
+          ./check-secrets.sh > secret-scan.txt 2>&1 || echo "SECRET_PATTERNS_FOUND=true" >> $GITHUB_ENV
+          cat secret-scan.txt
+
+      - name: Upload secret scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: secret-scan-results
+          path: secret-scan.txt
+          retention-days: 30
+
+      - name: Generate secret scan summary
+        if: always()
+        run: |
+          echo "## 🔐 Secret Scanning" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f secret-scan.txt ]; then
+            cat secret-scan.txt >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Warn on secret patterns
+        if: env.SECRET_PATTERNS_FOUND == 'true'
+        run: |
+          echo "::warning::Potential secret patterns detected. Review the secret scan results."

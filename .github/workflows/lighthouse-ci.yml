@@ -1,0 +1,221 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'vite.config.js'
+      - 'package.json'
+      - '.github/workflows/lighthouse-ci.yml'
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Wednesdays at 9 AM UTC
+    - cron: '0 9 * * 3'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Install Lighthouse CI
+        run: npm install --no-save @lhci/cli@0.13.x
+
+      - name: Create Lighthouse CI config
+        run: |
+          cat > lighthouserc.json << 'EOF'
+          {
+            "ci": {
+              "collect": {
+                "startServerCommand": "npm run preview",
+                "startServerReadyPattern": "Local:.*http://localhost:4173",
+                "url": [
+                  "http://localhost:4173/",
+                  "http://localhost:4173/features",
+                  "http://localhost:4173/about-us",
+                  "http://localhost:4173/login",
+                  "http://localhost:4173/join"
+                ],
+                "numberOfRuns": 3,
+                "settings": {
+                  "preset": "desktop",
+                  "throttling": {
+                    "rttMs": 40,
+                    "throughputKbps": 10240,
+                    "cpuSlowdownMultiplier": 1
+                  }
+                }
+              },
+              "assert": {
+                "preset": "lighthouse:recommended",
+                "assertions": {
+                  "categories:performance": ["error", {"minScore": 0.8}],
+                  "categories:accessibility": ["error", {"minScore": 0.9}],
+                  "categories:best-practices": ["error", {"minScore": 0.9}],
+                  "categories:seo": ["error", {"minScore": 0.9}],
+                  "first-contentful-paint": ["error", {"maxNumericValue": 2000}],
+                  "largest-contentful-paint": ["error", {"maxNumericValue": 3000}],
+                  "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+                  "total-blocking-time": ["error", {"maxNumericValue": 300}],
+                  "speed-index": ["error", {"maxNumericValue": 3000}]
+                }
+              },
+              "upload": {
+                "target": "temporary-public-storage"
+              }
+            }
+          }
+          EOF
+
+      - name: Run Lighthouse CI
+        id: lighthouse
+        run: |
+          npx lhci autorun --config=lighthouserc.json || echo "LHCI_FAILED=true" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+          retention-days: 30
+
+      - name: Generate performance summary
+        if: always()
+        run: |
+          echo "## 🚀 Lighthouse Performance Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d ".lighthouseci" ]; then
+            # Find the latest manifest
+            MANIFEST=$(find .lighthouseci -name "manifest.json" | head -1)
+            
+            if [ -f "$MANIFEST" ]; then
+              node -e "
+                const fs = require('fs');
+                const manifest = JSON.parse(fs.readFileSync('$MANIFEST', 'utf8'));
+                
+                console.log('### Performance Budgets\n');
+                console.log('| Metric | Budget | Status |');
+                console.log('|--------|--------|--------|');
+                console.log('| **Performance Score** | ≥ 80 | Target |');
+                console.log('| **FCP** | ≤ 2.0s | Target |');
+                console.log('| **LCP** | ≤ 3.0s | Target |');
+                console.log('| **CLS** | ≤ 0.1 | Target |');
+                console.log('| **TBT** | ≤ 300ms | Target |');
+                console.log('| **Speed Index** | ≤ 3.0s | Target |');
+                console.log('');
+                
+                console.log('### Pages Audited\n');
+                manifest.forEach((entry, i) => {
+                  const report = JSON.parse(fs.readFileSync(entry.jsonPath, 'utf8'));
+                  const url = new URL(report.finalUrl).pathname;
+                  const perf = Math.round(report.categories.performance.score * 100);
+                  const a11y = Math.round(report.categories.accessibility.score * 100);
+                  const bp = Math.round(report.categories['best-practices'].score * 100);
+                  const seo = Math.round(report.categories.seo.score * 100);
+                  
+                  const perfEmoji = perf >= 90 ? '🟢' : perf >= 50 ? '🟡' : '🔴';
+                  
+                  console.log(\`#### \${perfEmoji} \${url || 'Home'}\n\`);
+                  console.log(\`- **Performance:** \${perf}/100\`);
+                  console.log(\`- **Accessibility:** \${a11y}/100\`);
+                  console.log(\`- **Best Practices:** \${bp}/100\`);
+                  console.log(\`- **SEO:** \${seo}/100\`);
+                  
+                  const lcp = report.audits['largest-contentful-paint']?.numericValue;
+                  const fcp = report.audits['first-contentful-paint']?.numericValue;
+                  const cls = report.audits['cumulative-layout-shift']?.numericValue;
+                  
+                  if (lcp) console.log(\`- **LCP:** \${(lcp / 1000).toFixed(2)}s\`);
+                  if (fcp) console.log(\`- **FCP:** \${(fcp / 1000).toFixed(2)}s\`);
+                  if (cls !== undefined) console.log(\`- **CLS:** \${cls.toFixed(3)}\`);
+                  console.log('');
+                });
+                
+                if (process.env.LHCI_FAILED === 'true') {
+                  console.log('### ⚠️ Performance Budget Violations\n');
+                  console.log('Some pages did not meet the performance budgets. Review the detailed reports in artifacts.\n');
+                  console.log('**Action items:**\n');
+                  console.log('1. Check bundle size and code splitting\n');
+                  console.log('2. Optimize images and use modern formats (WebP/AVIF)\n');
+                  console.log('3. Review third-party scripts\n');
+                  console.log('4. Consider lazy loading for below-the-fold content\n');
+                }
+              " >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ No manifest file found" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ No Lighthouse results directory found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const manifestPath = '.lighthouseci/manifest.json';
+            if (!fs.existsSync(manifestPath)) {
+              console.log('No manifest found');
+              return;
+            }
+            
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            
+            let comment = '## 🚀 Lighthouse Performance Report\n\n';
+            comment += '| Page | Performance | Accessibility | Best Practices | SEO |\n';
+            comment += '|------|-------------|---------------|----------------|-----|\n';
+            
+            manifest.forEach(entry => {
+              const report = JSON.parse(fs.readFileSync(entry.jsonPath, 'utf8'));
+              const url = new URL(report.finalUrl).pathname || '/';
+              const perf = Math.round(report.categories.performance.score * 100);
+              const a11y = Math.round(report.categories.accessibility.score * 100);
+              const bp = Math.round(report.categories['best-practices'].score * 100);
+              const seo = Math.round(report.categories.seo.score * 100);
+              
+              const perfEmoji = perf >= 90 ? '🟢' : perf >= 50 ? '🟡' : '🔴';
+              
+              comment += `| ${url} | ${perfEmoji} ${perf} | ${a11y} | ${bp} | ${seo} |\n`;
+            });
+            
+            comment += '\n📥 Download full Lighthouse reports from workflow artifacts.\n';
+            
+            if (process.env.LHCI_FAILED === 'true') {
+              comment += '\n⚠️ **Some performance budgets were not met.** Please review the detailed reports.\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

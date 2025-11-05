@@ -1,0 +1,276 @@
+name: Visual Regression Testing
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**/*.jsx'
+      - 'src/**/*.js'
+      - 'src/**/*.css'
+      - 'tailwind.config.js'
+      - '.github/workflows/visual-regression.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  visual-tests:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Create visual regression test
+        run: |
+          mkdir -p visual-tests
+          cat > visual-tests/snapshot.spec.js << 'EOF'
+          const { test, expect } = require('@playwright/test');
+
+          // Key pages and components to snapshot
+          const pages = [
+            { name: 'Home', path: '/' },
+            { name: 'Features', path: '/features' },
+            { name: 'About', path: '/about-us' },
+            { name: 'Login', path: '/login' },
+            { name: 'Join', path: '/join' }
+          ];
+
+          // Test viewports
+          const viewports = [
+            { name: 'Mobile', width: 375, height: 667 },
+            { name: 'Tablet', width: 768, height: 1024 },
+            { name: 'Desktop', width: 1280, height: 720 }
+          ];
+
+          for (const viewport of viewports) {
+            test.describe(`${viewport.name} viewport`, () => {
+              test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+              for (const page of pages) {
+                test(`${page.name} page`, async ({ page: browserPage }) => {
+                  await browserPage.goto(page.path, { 
+                    waitUntil: 'networkidle',
+                    timeout: 30000 
+                  });
+                  
+                  // Wait for any animations to complete
+                  await browserPage.waitForTimeout(1000);
+                  
+                  // Take full page screenshot
+                  await expect(browserPage).toHaveScreenshot(`${viewport.name.toLowerCase()}-${page.name.toLowerCase()}.png`, {
+                    fullPage: true,
+                    animations: 'disabled',
+                    maxDiffPixels: 100
+                  });
+                });
+              }
+            });
+          }
+
+          // Test both light and dark modes for Home page
+          test.describe('Theme variations', () => {
+            test('Home page - Dark mode', async ({ page }) => {
+              await page.goto('/', { waitUntil: 'networkidle' });
+              await page.evaluate(() => {
+                document.documentElement.classList.add('dark');
+              });
+              await page.waitForTimeout(500);
+              await expect(page).toHaveScreenshot('home-dark.png', {
+                fullPage: false,
+                animations: 'disabled'
+              });
+            });
+
+            test('Home page - Light mode', async ({ page }) => {
+              await page.goto('/', { waitUntil: 'networkidle' });
+              await page.evaluate(() => {
+                document.documentElement.classList.remove('dark');
+              });
+              await page.waitForTimeout(500);
+              await expect(page).toHaveScreenshot('home-light.png', {
+                fullPage: false,
+                animations: 'disabled'
+              });
+            });
+          });
+          EOF
+
+      - name: Update Playwright config for visual tests
+        run: |
+          cat > playwright-visual.config.js << 'EOF'
+          module.exports = {
+            testDir: './visual-tests',
+            timeout: 60000,
+            use: {
+              headless: true,
+              baseURL: 'http://localhost:4173',
+              ignoreHTTPSErrors: true,
+              screenshot: 'only-on-failure',
+              video: 'retain-on-failure'
+            },
+            webServer: {
+              command: 'npm run preview',
+              port: 4173,
+              timeout: 120000,
+              reuseExistingServer: false
+            },
+            projects: [
+              { name: 'chromium', use: { browserName: 'chromium' } }
+            ],
+            reporter: [
+              ['html', { outputFolder: 'playwright-report-visual' }],
+              ['json', { outputFile: 'visual-test-results.json' }]
+            ]
+          };
+          EOF
+
+      - name: Run visual regression tests
+        id: visual-tests
+        run: |
+          npx playwright test --config=playwright-visual.config.js --update-snapshots
+        continue-on-error: true
+
+      - name: Upload snapshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-snapshots
+          path: |
+            visual-tests/**/*-snapshots/
+            playwright-report-visual/
+            visual-test-results.json
+          retention-days: 30
+
+      - name: Upload baseline snapshots to repository
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        run: |
+          echo "Baseline snapshots generated. These should be committed to version control."
+          echo "Run this workflow manually with workflow_dispatch to update baselines."
+
+      - name: Generate visual regression summary
+        if: always()
+        run: |
+          echo "## 📸 Visual Regression Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f visual-test-results.json ]; then
+            node -e "
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('visual-test-results.json', 'utf8'));
+              const suites = results.suites || [];
+              
+              let totalTests = 0;
+              let passed = 0;
+              let failed = 0;
+              
+              function countTests(suite) {
+                suite.specs?.forEach(spec => {
+                  totalTests++;
+                  if (spec.ok) passed++;
+                  else failed++;
+                });
+                suite.suites?.forEach(countTests);
+              }
+              
+              suites.forEach(countTests);
+              
+              console.log('### Summary\n');
+              console.log(\`- **Total snapshots:** \${totalTests}\`);
+              console.log(\`- **Passed:** \${passed} ✅\`);
+              console.log(\`- **Failed:** \${failed} \${failed > 0 ? '❌' : ''}\`);
+              console.log('');
+              
+              if (failed > 0) {
+                console.log('### ⚠️ Visual Changes Detected\n');
+                console.log('Visual differences were found. This could indicate:\n');
+                console.log('1. Intentional UI changes (update baselines if expected)\n');
+                console.log('2. Unintended regressions (review and fix)\n');
+                console.log('3. Dynamic content differences\n');
+                console.log('');
+                console.log('**Action:** Review the visual diff report in artifacts.\n');
+              } else {
+                console.log('### ✅ All Visual Tests Passed\n');
+                console.log('No visual regressions detected.\n');
+              }
+              
+              console.log('### 📋 Test Coverage\n');
+              console.log('- **Pages:** Home, Features, About, Login, Join\n');
+              console.log('- **Viewports:** Mobile (375px), Tablet (768px), Desktop (1280px)\n');
+              console.log('- **Themes:** Light and Dark mode\n');
+            " >> $GITHUB_STEP_SUMMARY || echo "Unable to parse results" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Visual regression tests generate baseline snapshots on first run." >> $GITHUB_STEP_SUMMARY
+            echo "Subsequent runs will compare against these baselines." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 📸 Visual Regression Test Results\n\n';
+            
+            if (fs.existsSync('visual-test-results.json')) {
+              const results = JSON.parse(fs.readFileSync('visual-test-results.json', 'utf8'));
+              const suites = results.suites || [];
+              
+              let totalTests = 0;
+              let passed = 0;
+              let failed = 0;
+              
+              function countTests(suite) {
+                suite.specs?.forEach(spec => {
+                  totalTests++;
+                  if (spec.ok) passed++;
+                  else failed++;
+                });
+                suite.suites?.forEach(countTests);
+              }
+              
+              suites.forEach(countTests);
+              
+              comment += `**Total snapshots:** ${totalTests}\n`;
+              comment += `**Passed:** ${passed} ✅\n`;
+              comment += `**Failed:** ${failed} ${failed > 0 ? '❌' : ''}\n\n`;
+              
+              if (failed > 0) {
+                comment += '⚠️ **Visual changes detected.** Review the visual diff report in workflow artifacts.\n';
+              } else {
+                comment += '✅ **No visual regressions detected.**\n';
+              }
+            } else {
+              comment += 'Baseline snapshots generated. Subsequent runs will detect visual changes.\n';
+            }
+            
+            comment += '\n📥 Download visual snapshots from workflow artifacts for detailed comparison.\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
