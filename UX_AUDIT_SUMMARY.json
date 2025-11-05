@@ -1,0 +1,287 @@
+{
+  "metadata": {
+    "date": "2025-11-04T23:24:59.934Z",
+    "pagesAnalyzed": 37,
+    "componentsAnalyzed": 27,
+    "totalFindings": 114
+  },
+  "summary": {
+    "high": 21,
+    "medium": 88,
+    "low": 5
+  },
+  "byCategory": {
+    "Spacing": {
+      "High": 0,
+      "Medium": 5,
+      "Low": 2
+    },
+    "Color": {
+      "High": 0,
+      "Medium": 17,
+      "Low": 0
+    },
+    "Accessibility": {
+      "High": 0,
+      "Medium": 65,
+      "Low": 0
+    },
+    "Responsive": {
+      "High": 21,
+      "Medium": 0,
+      "Low": 0
+    },
+    "Visual Hierarchy": {
+      "High": 0,
+      "Medium": 1,
+      "Low": 3
+    }
+  },
+  "byPage": {
+    "About": {
+      "type": "marketing",
+      "route": "about-us",
+      "findings": 3,
+      "file": "src/pages/About.jsx"
+    },
+    "AuditionDetail": {
+      "type": "app",
+      "route": "/auditiondetail",
+      "findings": 3,
+      "file": "src/pages/AuditionDetail.jsx"
+    },
+    "Index": {
+      "type": "app",
+      "route": "/index",
+      "findings": 2,
+      "file": "src/pages/Scripts/Index.jsx"
+    },
+    "New": {
+      "type": "app",
+      "route": "/new",
+      "findings": 1,
+      "file": "src/pages/Scripts/New.jsx"
+    },
+    "Show": {
+      "type": "app",
+      "route": "/show",
+      "findings": 2,
+      "file": "src/pages/Scripts/Show.jsx"
+    },
+    "Auditions": {
+      "type": "app",
+      "route": "/auditions",
+      "findings": 3,
+      "file": "src/pages/Auditions.jsx"
+    },
+    "AuthCallback": {
+      "type": "app",
+      "route": "/authcallback",
+      "findings": 4,
+      "file": "src/pages/AuthCallback.jsx"
+    },
+    "Bookmarks": {
+      "type": "app",
+      "route": "bookmarks",
+      "findings": 2,
+      "file": "src/pages/Bookmarks.jsx"
+    },
+    "Dashboard": {
+      "type": "app",
+      "route": "dashboard",
+      "findings": 3,
+      "file": "src/pages/Dashboard.jsx"
+    },
+    "Discover": {
+      "type": "app",
+      "route": "discover",
+      "findings": 2,
+      "file": "src/pages/Discover.jsx"
+    },
+    "Features": {
+      "type": "marketing",
+      "route": "features",
+      "findings": 3,
+      "file": "src/pages/Features.jsx"
+    },
+    "Feed": {
+      "type": "app",
+      "route": "feed",
+      "findings": 3,
+      "file": "src/pages/Feed.jsx"
+    },
+    "Forbidden": {
+      "type": "error",
+      "route": "/forbidden",
+      "findings": 3,
+      "file": "src/pages/Forbidden.jsx"
+    },
+    "Home": {
+      "type": "marketing",
+      "route": "/",
+      "findings": 5,
+      "file": "src/pages/Home.jsx"
+    },
+    "Inbox": {
+      "type": "app",
+      "route": "inbox",
+      "findings": 2,
+      "file": "src/pages/Inbox.jsx"
+    },
+    "Join": {
+      "type": "marketing",
+      "route": "join",
+      "findings": 1,
+      "file": "src/pages/Join.jsx"
+    },
+    "Login": {
+      "type": "marketing",
+      "route": "login",
+      "findings": 1,
+      "file": "src/pages/Login.jsx"
+    },
+    "Messages": {
+      "type": "app",
+      "route": "/messages",
+      "findings": 2,
+      "file": "src/pages/Messages.jsx"
+    },
+    "NewAudition": {
+      "type": "app",
+      "route": "/newaudition",
+      "findings": 3,
+      "file": "src/pages/NewAudition.jsx"
+    },
+    "NewScript": {
+      "type": "app",
+      "route": "/newscript",
+      "findings": 3,
+      "file": "src/pages/NewScript.jsx"
+    },
+    "NotFound": {
+      "type": "error",
+      "route": "*",
+      "findings": 2,
+      "file": "src/pages/NotFound.jsx"
+    },
+    "Notifications": {
+      "type": "app",
+      "route": "notifications",
+      "findings": 4,
+      "file": "src/pages/Notifications.jsx"
+    },
+    "Post": {
+      "type": "app",
+      "route": "post",
+      "findings": 1,
+      "file": "src/pages/Post.jsx"
+    },
+    "PostScript": {
+      "type": "app",
+      "route": "post",
+      "findings": 3,
+      "file": "src/pages/PostScript.jsx"
+    },
+    "Profile": {
+      "type": "app",
+      "route": "profile/:id?",
+      "findings": 2,
+      "file": "src/pages/Profile.jsx"
+    },
+    "ProfileEdit": {
+      "type": "app",
+      "route": "/profileedit",
+      "findings": 1,
+      "file": "src/pages/ProfileEdit.jsx"
+    },
+    "ProfileSetup": {
+      "type": "app",
+      "route": "setup",
+      "findings": 0,
+      "file": "src/pages/ProfileSetup.jsx"
+    },
+    "Reels": {
+      "type": "app",
+      "route": "reels",
+      "findings": 3,
+      "file": "src/pages/Reels.jsx"
+    },
+    "Requests": {
+      "type": "app",
+      "route": "requests",
+      "findings": 3,
+      "file": "src/pages/Requests.jsx"
+    },
+    "ScriptDetail": {
+      "type": "app",
+      "route": "/scriptdetail",
+      "findings": 3,
+      "file": "src/pages/ScriptDetail.jsx"
+    },
+    "Scripts": {
+      "type": "app",
+      "route": "/scripts",
+      "findings": 3,
+      "file": "src/pages/Scripts.jsx"
+    },
+    "Settings": {
+      "type": "app",
+      "route": "settings",
+      "findings": 2,
+      "file": "src/pages/Settings.jsx"
+    },
+    "SkeletonTest": {
+      "type": "app",
+      "route": "/skeletontest",
+      "findings": 2,
+      "file": "src/pages/SkeletonTest.jsx"
+    },
+    "Trending": {
+      "type": "app",
+      "route": "/trending",
+      "findings": 3,
+      "file": "src/pages/Trending.jsx"
+    }
+  },
+  "prioritizedActions": [
+    {
+      "priority": "High",
+      "name": "Accessibility Audit Fixes",
+      "branch": "fix/accessibility-improvements",
+      "effort": "Medium",
+      "impact": "High",
+      "tasks": [
+        "Add alt text to all images",
+        "Add ARIA labels to icon-only buttons",
+        "Ensure focus states on all interactive elements",
+        "Verify keyboard navigation works on all pages"
+      ]
+    },
+    {
+      "priority": "High",
+      "name": "Light Mode Polish",
+      "branch": "feat/light-mode-polish",
+      "effort": "Small",
+      "impact": "High",
+      "tasks": [
+        "Replace remaining bg-white with surface tokens",
+        "Add subtle shadows to cards and elevated elements",
+        "Implement depth through layered surfaces",
+        "Test all marketing pages in light mode"
+      ]
+    },
+    {
+      "priority": "High",
+      "name": "Responsive Design Fixes",
+      "branch": "fix/responsive-improvements",
+      "effort": "Medium",
+      "impact": "High",
+      "tasks": [
+        "Add responsive breakpoints to pages lacking them",
+        "Replace fixed widths with responsive utilities",
+        "Test on mobile (375px), tablet (768px), desktop (1280px)",
+        "Add bottom navigation for mobile app"
+      ]
+    }
+  ]
+}
