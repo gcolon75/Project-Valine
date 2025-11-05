@@ -14,11 +14,18 @@ export default function MarketingLayout() {
   
   // Force light mode on marketing pages and restore on unmount
   useEffect(() => {
-    const previousTheme = theme;
-    setTheme('light');
+    // Store the theme that was active when we entered marketing
+    const storedTheme = localStorage.getItem('theme');
+    const previousTheme = storedTheme || 'light';
+    
+    // Ensure light mode is active (may already be set by index.html pre-hydration script)
+    if (theme !== 'light') {
+      setTheme('light');
+    }
     
     // Restore previous theme when leaving marketing pages
     return () => {
+      // Only restore if user had a different preference before (not light)
       if (previousTheme !== 'light') {
         setTheme(previousTheme);
       }
