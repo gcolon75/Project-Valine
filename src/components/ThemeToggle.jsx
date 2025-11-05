@@ -14,9 +14,9 @@ export default function ThemeToggle() {
       title="Toggle color theme"
     >
       {isDark ? (
-        <Sun className="w-4 h-4 transition-transform duration-200" />
+        <Sun className="w-4 h-4 transition-transform duration-200" aria-hidden="true" />
       ) : (
-        <Moon className="w-4 h-4 transition-transform duration-200" />
+        <Moon className="w-4 h-4 transition-transform duration-200" aria-hidden="true" />
       )}
       <span className="hidden sm:inline">{isDark ? "Light" : "Dark"} mode</span>
     </button>
