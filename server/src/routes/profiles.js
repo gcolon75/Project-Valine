@@ -1,129 +1,475 @@
 import { Router } from 'express'
-import { validateUrl, validateStringLength, createError, sanitizeString } from '../utils/validators.js'
+import { PrismaClient } from '@prisma/client'
+import {
+  validateUrl,
+  validateStringLength,
+  createError,
+  sanitizeString,
+  validateProfileLink,
+  VALID_LINK_TYPES
+} from '../utils/validators.js'
 
 const router = Router()
+const prisma = new PrismaClient()
 
-// Valid social link keys
+// Valid social link keys (kept for backward compatibility)
 const VALID_SOCIAL_LINKS = ['website', 'instagram', 'imdb', 'linkedin', 'showreel']
 
 /**
  * GET /profiles/:userId
- * Get user profile including title, headline, and social links
+ * Get user profile including title, headline, and profile links
  */
-router.get('/:userId', (req, res) => {
+router.get('/:userId', async (req, res) => {
   const { userId } = req.params
   
-  // TODO: Replace with actual database lookup
-  // For now, return mock data
-  const profile = {
-    userId,
-    vanityUrl: 'demo-user',
-    headline: 'Voice Actor - Classical & Contemporary',
-    title: 'Senior Voice Actor',
-    bio: 'Experienced voice actor specializing in character work and commercial voice-over.',
-    socialLinks: {
-      website: 'https://example.com',
-      instagram: 'https://instagram.com/demouser',
-      imdb: 'https://imdb.com/name/nm1234567',
-      linkedin: 'https://linkedin.com/in/demouser',
-      showreel: 'https://example.com/reel'
-    }
-  }
-  
-  return res.json({ profile })
-})
-
-/**
- * PATCH /profiles/:userId
- * Update user profile including title, headline, and social links
- * Body: { 
- *   title?: string,
- *   headline?: string,
- *   socialLinks?: { website?, instagram?, imdb?, linkedin?, showreel? }
- * }
- */
-router.patch('/:userId', (req, res) => {
-  const { userId } = req.params
-  const { title, headline, socialLinks } = req.body || {}
-  
-  // Validate title
-  if (title !== undefined) {
-    const titleValidation = validateStringLength(sanitizeString(title), 0, 100, 'title')
-    if (!titleValidation.valid) {
-      return res.status(400).json(
-        createError('INVALID_TITLE', titleValidation.error, {
-          field: 'title',
-          value: title
-        })
-      )
-    }
-  }
-  
-  // Validate headline
-  if (headline !== undefined) {
-    const headlineValidation = validateStringLength(sanitizeString(headline), 0, 200, 'headline')
-    if (!headlineValidation.valid) {
-      return res.status(400).json(
-        createError('INVALID_HEADLINE', headlineValidation.error, {
-          field: 'headline',
-          value: headline
-        })
-      )
-    }
-  }
-  
-  // Validate socialLinks
-  if (socialLinks !== undefined && socialLinks !== null) {
-    if (typeof socialLinks !== 'object' || Array.isArray(socialLinks)) {
-      return res.status(400).json(
-        createError('INVALID_SOCIAL_LINKS', 'socialLinks must be an object', {
-          field: 'socialLinks',
-          type: typeof socialLinks
+  try {
+    // Fetch profile with links
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+      include: {
+        links: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    })
+    
+    if (!profile) {
+      return res.status(404).json(
+        createError('PROFILE_NOT_FOUND', 'Profile not found', {
+          userId
         })
       )
     }
     
-    // Validate each social link URL
-    for (const [key, url] of Object.entries(socialLinks)) {
-      // Check if key is valid
-      if (!VALID_SOCIAL_LINKS.includes(key)) {
+    return res.json({ profile })
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to fetch profile', {
+        message: error.message
+      })
+    )
+  }
+})
+
+/**
+ * PATCH /profiles/:userId
+ * Update user profile including title, headline, and profile links
+ * Body: { 
+ *   title?: string,
+ *   headline?: string,
+ *   links?: Array<{ id?: string, label: string, url: string, type: string }>
+ * }
+ */
+router.patch('/:userId', async (req, res) => {
+  const { userId } = req.params
+  const { title, headline, links } = req.body || {}
+  
+  try {
+    // Validate title
+    if (title !== undefined) {
+      const titleValidation = validateStringLength(sanitizeString(title), 0, 100, 'title')
+      if (!titleValidation.valid) {
         return res.status(400).json(
-          createError('INVALID_SOCIAL_LINK_KEY', `Invalid social link key: ${key}`, {
-            field: `socialLinks.${key}`,
-            validKeys: VALID_SOCIAL_LINKS
-          })
-        )
-      }
-      
-      // Skip validation if URL is null or empty (allows removal)
-      if (!url) continue
-      
-      // Validate URL format and protocol
-      const urlValidation = validateUrl(url)
-      if (!urlValidation.valid) {
-        return res.status(400).json(
-          createError('INVALID_URL', urlValidation.error, {
-            field: `socialLinks.${key}`,
-            value: url
+          createError('INVALID_TITLE', titleValidation.error, {
+            field: 'title',
+            value: title
           })
         )
       }
     }
+    
+    // Validate headline
+    if (headline !== undefined) {
+      const headlineValidation = validateStringLength(sanitizeString(headline), 0, 200, 'headline')
+      if (!headlineValidation.valid) {
+        return res.status(400).json(
+          createError('INVALID_HEADLINE', headlineValidation.error, {
+            field: 'headline',
+            value: headline
+          })
+        )
+      }
+    }
+    
+    // Validate links if provided
+    if (links !== undefined) {
+      if (!Array.isArray(links)) {
+        return res.status(400).json(
+          createError('INVALID_LINKS', 'links must be an array', {
+            field: 'links',
+            type: typeof links
+          })
+        )
+      }
+      
+      // Validate each link
+      for (let i = 0; i < links.length; i++) {
+        const linkValidation = validateProfileLink(links[i])
+        if (!linkValidation.valid) {
+          return res.status(400).json(
+            createError('INVALID_LINK', linkValidation.error, {
+              field: `links[${i}].${linkValidation.field}`,
+              index: i
+            })
+          )
+        }
+      }
+      
+      // Check max links (reasonable limit)
+      if (links.length > 20) {
+        return res.status(400).json(
+          createError('TOO_MANY_LINKS', 'Maximum 20 links allowed', {
+            count: links.length,
+            max: 20
+          })
+        )
+      }
+    }
+    
+    // Check if profile exists
+    const profile = await prisma.profile.findUnique({
+      where: { userId }
+    })
+    
+    if (!profile) {
+      return res.status(404).json(
+        createError('PROFILE_NOT_FOUND', 'Profile not found', {
+          userId
+        })
+      )
+    }
+    
+    // Start transaction to update profile and links
+    const result = await prisma.$transaction(async (tx) => {
+      // Update profile fields
+      const updateData = {}
+      if (title !== undefined) {
+        updateData.title = sanitizeString(title) || null
+      }
+      if (headline !== undefined) {
+        updateData.headline = sanitizeString(headline) || null
+      }
+      
+      let updatedProfile = profile
+      if (Object.keys(updateData).length > 0) {
+        updatedProfile = await tx.profile.update({
+          where: { userId },
+          data: updateData
+        })
+      }
+      
+      // Handle links upsert if provided
+      if (links !== undefined) {
+        // Delete existing links not in the new set
+        const linkIds = links.filter(l => l.id).map(l => l.id)
+        await tx.profileLink.deleteMany({
+          where: {
+            profileId: profile.id,
+            ...(linkIds.length > 0 ? { id: { notIn: linkIds } } : {})
+          }
+        })
+        
+        // Upsert each link
+        for (const link of links) {
+          const linkData = {
+            userId,
+            profileId: profile.id,
+            label: sanitizeString(link.label),
+            url: link.url,
+            type: link.type
+          }
+          
+          if (link.id) {
+            // Update existing link
+            await tx.profileLink.update({
+              where: { id: link.id },
+              data: linkData
+            })
+          } else {
+            // Create new link
+            await tx.profileLink.create({
+              data: linkData
+            })
+          }
+        }
+      }
+      
+      // Fetch updated profile with links
+      return await tx.profile.findUnique({
+        where: { userId },
+        include: {
+          links: {
+            orderBy: { createdAt: 'asc' }
+          }
+        }
+      })
+    })
+    
+    return res.json({
+      success: true,
+      profile: result
+    })
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to update profile', {
+        message: error.message
+      })
+    )
   }
+})
+
+/**
+ * GET /profiles/:userId/links
+ * Get all profile links for a user
+ */
+router.get('/:userId/links', async (req, res) => {
+  const { userId } = req.params
   
-  // TODO: Replace with actual database update
-  // For now, return success
-  const updatedProfile = {
-    userId,
-    ...(title !== undefined && { title: sanitizeString(title) }),
-    ...(headline !== undefined && { headline: sanitizeString(headline) }),
-    ...(socialLinks && { socialLinks })
+  try {
+    // Check if profile exists
+    const profile = await prisma.profile.findUnique({
+      where: { userId }
+    })
+    
+    if (!profile) {
+      return res.status(404).json(
+        createError('PROFILE_NOT_FOUND', 'Profile not found', {
+          userId
+        })
+      )
+    }
+    
+    // Fetch links
+    const links = await prisma.profileLink.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' }
+    })
+    
+    return res.json({ links })
+  } catch (error) {
+    console.error('Error fetching links:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to fetch links', {
+        message: error.message
+      })
+    )
   }
+})
+
+/**
+ * POST /profiles/:userId/links
+ * Create a new profile link
+ * Body: { label: string, url: string, type: string }
+ */
+router.post('/:userId/links', async (req, res) => {
+  const { userId } = req.params
+  const { label, url, type } = req.body || {}
   
-  return res.json({ 
-    success: true,
-    profile: updatedProfile 
-  })
+  try {
+    // Validate link
+    const linkValidation = validateProfileLink({ label, url, type })
+    if (!linkValidation.valid) {
+      return res.status(400).json(
+        createError('INVALID_LINK', linkValidation.error, {
+          field: linkValidation.field
+        })
+      )
+    }
+    
+    // Check if profile exists
+    const profile = await prisma.profile.findUnique({
+      where: { userId }
+    })
+    
+    if (!profile) {
+      return res.status(404).json(
+        createError('PROFILE_NOT_FOUND', 'Profile not found', {
+          userId
+        })
+      )
+    }
+    
+    // Check link count
+    const linkCount = await prisma.profileLink.count({
+      where: { userId }
+    })
+    
+    if (linkCount >= 20) {
+      return res.status(400).json(
+        createError('TOO_MANY_LINKS', 'Maximum 20 links allowed', {
+          count: linkCount,
+          max: 20
+        })
+      )
+    }
+    
+    // Create link
+    const link = await prisma.profileLink.create({
+      data: {
+        userId,
+        profileId: profile.id,
+        label: sanitizeString(label),
+        url,
+        type
+      }
+    })
+    
+    return res.status(201).json({
+      success: true,
+      link
+    })
+  } catch (error) {
+    console.error('Error creating link:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to create link', {
+        message: error.message
+      })
+    )
+  }
+})
+
+/**
+ * PATCH /profiles/:userId/links/:linkId
+ * Update a profile link
+ * Body: { label?: string, url?: string, type?: string }
+ */
+router.patch('/:userId/links/:linkId', async (req, res) => {
+  const { userId, linkId } = req.params
+  const { label, url, type } = req.body || {}
+  
+  try {
+    // Check if link exists and belongs to user
+    const existingLink = await prisma.profileLink.findFirst({
+      where: {
+        id: linkId,
+        userId
+      }
+    })
+    
+    if (!existingLink) {
+      return res.status(404).json(
+        createError('LINK_NOT_FOUND', 'Link not found', {
+          linkId,
+          userId
+        })
+      )
+    }
+    
+    // Build update data
+    const updateData = {}
+    if (label !== undefined) {
+      const labelValidation = validateStringLength(label, 1, 40, 'label')
+      if (!labelValidation.valid) {
+        return res.status(400).json(
+          createError('INVALID_LABEL', labelValidation.error, {
+            field: 'label'
+          })
+        )
+      }
+      updateData.label = sanitizeString(label)
+    }
+    
+    if (url !== undefined) {
+      if (!url) {
+        return res.status(400).json(
+          createError('INVALID_URL', 'URL is required', {
+            field: 'url'
+          })
+        )
+      }
+      const urlValidation = validateUrl(url)
+      if (!urlValidation.valid) {
+        return res.status(400).json(
+          createError('INVALID_URL', urlValidation.error, {
+            field: 'url'
+          })
+        )
+      }
+      updateData.url = url
+    }
+    
+    if (type !== undefined) {
+      if (!VALID_LINK_TYPES.includes(type)) {
+        return res.status(400).json(
+          createError('INVALID_TYPE', `Type must be one of: ${VALID_LINK_TYPES.join(', ')}`, {
+            field: 'type',
+            validTypes: VALID_LINK_TYPES
+          })
+        )
+      }
+      updateData.type = type
+    }
+    
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json(
+        createError('NO_UPDATES', 'No valid fields provided for update')
+      )
+    }
+    
+    // Update link
+    const link = await prisma.profileLink.update({
+      where: { id: linkId },
+      data: updateData
+    })
+    
+    return res.json({
+      success: true,
+      link
+    })
+  } catch (error) {
+    console.error('Error updating link:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to update link', {
+        message: error.message
+      })
+    )
+  }
+})
+
+/**
+ * DELETE /profiles/:userId/links/:linkId
+ * Delete a profile link
+ */
+router.delete('/:userId/links/:linkId', async (req, res) => {
+  const { userId, linkId } = req.params
+  
+  try {
+    // Check if link exists and belongs to user
+    const existingLink = await prisma.profileLink.findFirst({
+      where: {
+        id: linkId,
+        userId
+      }
+    })
+    
+    if (!existingLink) {
+      return res.status(404).json(
+        createError('LINK_NOT_FOUND', 'Link not found', {
+          linkId,
+          userId
+        })
+      )
+    }
+    
+    // Delete link
+    await prisma.profileLink.delete({
+      where: { id: linkId }
+    })
+    
+    return res.json({
+      success: true,
+      message: 'Link deleted successfully'
+    })
+  } catch (error) {
+    console.error('Error deleting link:', error)
+    return res.status(500).json(
+      createError('DATABASE_ERROR', 'Failed to delete link', {
+        message: error.message
+      })
+    )
+  }
 })
 
 export default router
