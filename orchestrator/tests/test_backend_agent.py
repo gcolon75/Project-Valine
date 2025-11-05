@@ -541,8 +541,9 @@ class TestBackendAgentConversationsList(unittest.TestCase):
         conversation_id = start['conversation_id']
         
         # Manually set malformed check results
-        conversation = self.agent.conversations[conversation_id]
+        conversation = self.agent._get_conversation(conversation_id)
         conversation.check_results = {'bad_check': 'not a dict'}
+        self.agent._save_conversation(conversation)
         
         # List conversations should not crash
         result = self.agent.list_conversations()
