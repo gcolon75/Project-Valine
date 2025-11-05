@@ -24,7 +24,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -452,7 +452,7 @@ async function createGitHubIssue(issuePayload) {
     tempFile = path.join(os.tmpdir(), `issue-${Date.now()}.md`);
     fs.writeFileSync(tempFile, issuePayload.body);
     
-    // Build command args array to avoid shell injection
+    // Build command args array - safe from shell injection
     const args = [
       'issue', 'create',
       '--title', issuePayload.title,
@@ -464,19 +464,22 @@ async function createGitHubIssue(issuePayload) {
       args.push('--label', label);
     });
     
-    const result = execSync(`gh ${args.map(arg => {
-      // Escape arguments that contain spaces or special characters
-      if (arg.includes(' ') || arg.includes('"') || arg.includes("'")) {
-        return `"${arg.replace(/"/g, '\\"')}"`;
-      }
-      return arg;
-    }).join(' ')}`, { 
+    // Use spawnSync with args array to prevent shell injection
+    const result = spawnSync('gh', args, { 
       cwd: rootDir,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
     
-    const issueUrl = result.trim();
+    if (result.error) {
+      throw result.error;
+    }
+    
+    if (result.status !== 0) {
+      throw new Error(result.stderr || 'gh command failed');
+    }
+    
+    const issueUrl = result.stdout.trim();
     console.log(`✅ Created: ${issueUrl}`);
     
     return { success: true, url: issueUrl };
