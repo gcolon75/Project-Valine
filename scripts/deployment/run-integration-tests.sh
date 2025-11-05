@@ -137,16 +137,17 @@ run_tests() {
     log ""
     
     # Run vitest on server tests
+    # Let vitest handle test discovery in server/src directory
     if [ "$VERBOSE" = true ]; then
         log "Running tests in verbose mode..."
-        if npx vitest run server/src/**/__tests__/**/*.test.js 2>&1 | tee -a "$TEST_LOG"; then
+        if npx vitest run server/src 2>&1 | tee -a "$TEST_LOG"; then
             TEST_EXIT_CODE=0
         else
             TEST_EXIT_CODE=$?
         fi
     else
         log "Running tests..."
-        if npx vitest run server/src/**/__tests__/**/*.test.js >> "$TEST_LOG" 2>&1; then
+        if npx vitest run server/src >> "$TEST_LOG" 2>&1; then
             TEST_EXIT_CODE=0
         else
             TEST_EXIT_CODE=$?

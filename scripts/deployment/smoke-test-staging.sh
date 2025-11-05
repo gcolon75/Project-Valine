@@ -360,7 +360,7 @@ log "Test Suite: Rate Limiting"
 log "-----------------------------------------"
 
 log "Testing rate limit protection (sending 5 rapid requests)..."
-for i in {1..5}; do
+for i in $(seq 1 5); do
     response=$(curl -s -w "\n%{http_code}" "$API_BASE/health" 2>&1)
     status_code=$(echo "$response" | tail -n1)
     
