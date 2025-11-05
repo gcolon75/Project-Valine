@@ -20,7 +20,7 @@ app.use(morgan('dev'))
 
 app.use('/auth', authRouter)
 app.use('/health', healthRouter)
-app.use('/preferences', preferencesRouter)
+app.use('/api', preferencesRouter)
 app.use('/profiles', profilesRouter)
 app.use('/dashboard', dashboardRouter)
 
