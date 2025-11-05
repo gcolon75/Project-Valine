@@ -18,6 +18,10 @@ jobs:
   visual-tests:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+      actions: read
     
     steps:
       - name: Checkout code

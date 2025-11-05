@@ -21,6 +21,10 @@ jobs:
   dependency-audit:
     name: NPM Dependency Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+      actions: read
     
     steps:
       - name: Checkout code
@@ -272,6 +276,9 @@ jobs:
   secret-scanning:
     name: Secret Scanning Patterns
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     
     steps:
       - name: Checkout code

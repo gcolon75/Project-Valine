@@ -21,6 +21,10 @@ jobs:
   axe-core-audit:
     name: Axe-core Accessibility Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+      actions: read
     
     steps:
       - name: Checkout code
