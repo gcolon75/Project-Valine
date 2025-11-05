@@ -122,6 +122,10 @@ const categoryLabelMap = {
   'Visual Hierarchy': 'design-tokens',
 };
 
+// Constants for title formatting
+const MAX_TITLE_LENGTH = 60;
+const TITLE_TRUNCATE_LENGTH = 57; // MAX - 3 for "..."
+
 /**
  * Sanitize a page name for use in JavaScript identifiers (function names, etc.)
  * Only allows alphanumeric characters to ensure valid JavaScript identifiers.
@@ -133,7 +137,8 @@ function sanitizeForIdentifier(pageName) {
   // JavaScript identifiers must start with letter, _, or $ and contain only alphanumeric, _, $
   // We use a strict alphanumeric-only approach for simplicity
   const sanitized = pageName.replace(/[^a-zA-Z0-9]/g, '');
-  return sanitized || 'PageComponent'; // Fallback if all chars removed
+  // Provide unique fallback if all chars removed, using original length for context
+  return sanitized || `UnknownPage${pageName.length}`;
 }
 
 /**
@@ -148,7 +153,8 @@ function sanitizeForDisplay(pageTitle) {
   // Whitelist approach: only allow known-safe characters
   // Letters, numbers, spaces, hyphens, underscores
   const sanitized = pageTitle.replace(/[^a-zA-Z0-9 \-_]/g, '').trim();
-  return sanitized || 'Page'; // Fallback if all chars removed
+  // Provide context-aware fallback if all chars removed
+  return sanitized || `Unknown Page (${pageTitle.length} chars)`;
 }
 
 // Load audit findings
@@ -264,10 +270,10 @@ function generateIssueTitle(finding) {
     'Visual Hierarchy': '[Design]',
   }[finding.Category] || `[${finding.Category}]`;
 
-  // Create a concise title
+  // Create a concise title using constants
   let title = finding.Issue;
-  if (title.length > 60) {
-    title = title.substring(0, 57) + '...';
+  if (title.length > MAX_TITLE_LENGTH) {
+    title = title.substring(0, TITLE_TRUNCATE_LENGTH) + '...';
   }
 
   return `${categoryPrefix} ${title} - ${finding.Page}`;
