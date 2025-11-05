@@ -11,7 +11,12 @@ import crypto from 'crypto'
  * @returns {string} ETag value
  */
 function generateETag(content) {
-  const str = typeof content === 'string' ? content : JSON.stringify(content)
+  // Handle null/undefined by converting to empty string
+  const str = content === undefined || content === null 
+    ? '' 
+    : typeof content === 'string' 
+      ? content 
+      : JSON.stringify(content)
   return `"${crypto.createHash('md5').update(str).digest('hex')}"`
 }
 
