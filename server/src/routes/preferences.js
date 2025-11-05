@@ -1,31 +1,47 @@
 import { Router } from 'express'
 import { validateTheme, createError } from '../utils/validators.js'
+import { requireAuth } from '../utils/auth.js'
+import { getPrisma } from '../utils/db.js'
 
 const router = Router()
 
 /**
- * GET /preferences/:userId
- * Get user preferences including theme
+ * GET /api/me/preferences
+ * Get authenticated user's preferences including theme
+ * Requires authentication
  */
-router.get('/:userId', (req, res) => {
-  const { userId } = req.params
-  
-  // TODO: Replace with actual database lookup
-  // For now, return mock data
-  const preferences = {
-    theme: 'light', // 'light' | 'dark' | null (system default)
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const prisma = getPrisma()
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { theme: true }
+    })
+    
+    if (!user) {
+      return res.status(404).json(
+        createError('USER_NOT_FOUND', 'User not found', {})
+      )
+    }
+    
+    return res.json({ 
+      theme: user.theme 
+    })
+  } catch (error) {
+    console.error('Error fetching user preferences:', error)
+    return res.status(500).json(
+      createError('INTERNAL_ERROR', 'Failed to fetch preferences', {})
+    )
   }
-  
-  return res.json({ preferences })
 })
 
 /**
- * PATCH /preferences/:userId
- * Update user preferences
- * Body: { theme?: 'light' | 'dark' }
+ * PATCH /api/me/preferences
+ * Update authenticated user's preferences
+ * Body: { theme: 'light' | 'dark' }
+ * Requires authentication
  */
-router.patch('/:userId', (req, res) => {
-  const { userId } = req.params
+router.patch('/me', requireAuth, async (req, res) => {
   const { theme } = req.body || {}
   
   // Validate theme value
@@ -40,16 +56,23 @@ router.patch('/:userId', (req, res) => {
     )
   }
   
-  // TODO: Replace with actual database update
-  // For now, return success
-  const updatedPreferences = {
-    theme: theme || null,
+  try {
+    const prisma = getPrisma()
+    const updatedUser = await prisma.user.update({
+      where: { id: req.userId },
+      data: { theme: theme || null },
+      select: { theme: true }
+    })
+    
+    return res.json({ 
+      theme: updatedUser.theme 
+    })
+  } catch (error) {
+    console.error('Error updating user preferences:', error)
+    return res.status(500).json(
+      createError('INTERNAL_ERROR', 'Failed to update preferences', {})
+    )
   }
-  
-  return res.json({ 
-    success: true,
-    preferences: updatedPreferences 
-  })
 })
 
 export default router
