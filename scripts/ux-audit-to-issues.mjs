@@ -2,23 +2,6 @@
 
 /**
  * UX Audit to GitHub Issues Converter
- * 
- * Converts UX_AUDIT_FINDINGS.csv and UX_AUDIT_SUMMARY.json into GitHub issue drafts.
- * Can generate JSON payloads or directly create GitHub issues using gh CLI.
- * 
- * Usage:
- *   node scripts/ux-audit-to-issues.mjs [options]
- * 
- * Options:
- *   --severity <levels>     Filter by severity: high, medium, low (comma-separated)
- *   --category <types>      Filter by category: Accessibility, Responsive, etc.
- *   --page <names>          Filter by specific page names
- *   --output <file>         Output JSON file (default: ux-audit-issues.json)
- *   --create                Create GitHub issues (requires gh CLI)
- *   --dry-run               Preview issues without creating
- *   --limit <n>             Limit number of issues to process
- *   --delay <ms>            Delay between API calls (default: 1000ms)
- *   --help                  Show this help message
  */
 
 import fs from 'fs';
@@ -30,6 +13,33 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..');
+
+// Help text
+const HELP_TEXT = `
+UX Audit to GitHub Issues Converter
+
+Converts UX_AUDIT_FINDINGS.csv and UX_AUDIT_SUMMARY.json into GitHub issue drafts.
+Can generate JSON payloads or directly create GitHub issues using gh CLI.
+
+Usage:
+  node scripts/ux-audit-to-issues.mjs [options]
+
+Options:
+  --severity <levels>     Filter by severity: high, medium, low (comma-separated)
+  --category <types>      Filter by category: Accessibility, Responsive, etc.
+  --page <names>          Filter by specific page names
+  --output <file>         Output JSON file (default: ux-audit-issues.json)
+  --create                Create GitHub issues (requires gh CLI)
+  --dry-run               Preview issues without creating
+  --limit <n>             Limit number of issues to process
+  --delay <ms>            Delay between API calls (default: 1000ms)
+  --help                  Show this help message
+
+Examples:
+  npm run ux:audit-to-issues -- --severity high
+  npm run ux:audit-to-issues -- --category responsive --create --dry-run
+  npm run ux:audit-to-issues -- --severity high --limit 10 --create
+`;
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -71,7 +81,7 @@ for (let i = 0; i < args.length; i++) {
       options.delay = parseInt(args[++i], 10);
       break;
     case '--help':
-      console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 20).join('\n'));
+      console.log(HELP_TEXT);
       process.exit(0);
     default:
       if (args[i].startsWith('--')) {
@@ -322,14 +332,18 @@ Apply responsive classes to:
   }
   
   if (category === 'Accessibility' && issue.includes('h1')) {
+    // Sanitize page name for use in function name and text
+    const pageName = finding.Page.replace(/[^a-zA-Z0-9]/g, '');
+    const pageTitle = finding.Page.replace(/[<>{}]/g, ''); // Remove potentially dangerous chars
+    
     return `Add a descriptive H1 heading at the top of the page:
 
 \`\`\`jsx
-function ${finding.Page}() {
+function ${pageName}() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-neutral-900 mb-6">
-        ${finding.Page}
+        ${pageTitle}
       </h1>
       {/* Rest of page content */}
     </div>
@@ -339,7 +353,7 @@ function ${finding.Page}() {
 
 For visually hidden H1 (if design doesn't show it):
 \`\`\`jsx
-<h1 className="sr-only">${finding.Page}</h1>
+<h1 className="sr-only">${pageTitle}</h1>
 \`\`\``;
   }
   
