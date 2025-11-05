@@ -15,7 +15,7 @@ const Features = () => {
           {/* Hero */}
           <div className="text-center mb-20 animate-fade-in">
             <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6">
-              <Zap className="w-4 h-4 text-[#0CCE6B]" />
+              <Zap className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
               <span className="text-sm font-medium text-[#0CCE6B]">
                 All Features
               </span>
@@ -29,7 +29,7 @@ const Features = () => {
           </div>
 
           {/* Main Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-20">
             <FeatureCard
               icon={Users}
               title="Professional Networking"
@@ -73,7 +73,7 @@ const Features = () => {
             <h2 className="text-3xl font-bold text-neutral-900 mb-12 text-center">
               More Features
             </h2>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
               <FeatureItem
                 icon={Shield}
                 title="Privacy Controls"
@@ -108,6 +108,7 @@ const Features = () => {
             <Link
               to="/join"
               className="inline-block bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105 shadow-xl"
+              aria-label="Create a free account"
             >
               Create Free Account
             </Link>
@@ -124,7 +125,7 @@ const Features = () => {
 const FeatureCard = ({ icon: Icon, title, description, color }) => (
   <div className="bg-white border border-neutral-200 rounded-2xl p-8 hover:shadow-xl hover:-translate-y-2 transition-all">
     <div className={`w-14 h-14 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-6`}>
-      <Icon className="w-7 h-7 text-white" />
+      <Icon className="w-7 h-7 text-white" aria-hidden="true" />
     </div>
     <h3 className="text-xl font-bold text-neutral-900 mb-3">
       {title}
@@ -139,7 +140,7 @@ const FeatureCard = ({ icon: Icon, title, description, color }) => (
 const FeatureItem = ({ icon: Icon, title, description }) => (
   <div className="flex space-x-4">
     <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-5 h-5 text-white" />
+      <Icon className="w-5 h-5 text-white" aria-hidden="true" />
     </div>
     <div>
       <h4 className="font-semibold text-neutral-900 mb-2">

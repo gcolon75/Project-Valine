@@ -50,8 +50,9 @@ const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
         ? 'border-[#0CCE6B] text-[#0CCE6B]'
         : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
     }`}
+    aria-label={`View ${label}${count !== undefined ? ` (${count})` : ''}`}
   >
-    <Icon className="w-5 h-5" />
+    <Icon className="w-5 h-5" aria-hidden="true" />
     <span className="font-medium">{label}</span>
     {count !== undefined && (
       <span className="text-sm">({count})</span>

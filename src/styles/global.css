@@ -133,3 +133,26 @@ a { color: var(--ink); text-decoration: none; }
   background-size: 200% 100%;
   animation: shimmer 1.2s linear infinite;
 }
+
+/* ===== A11y: Focus-visible styles for keyboard navigation ===== */
+/* Apply to interactive elements: buttons, links, inputs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--brand, #10b981);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus outline but only when focus-visible is applied */
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+  outline: none;
+}
