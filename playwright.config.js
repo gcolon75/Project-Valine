@@ -1,5 +1,5 @@
 // Playwright config (adjust testDir and baseURL to your repo)
-module.exports = {
+export default {
   timeout: 120000,
   use: {
     headless: true,
@@ -11,7 +11,7 @@ module.exports = {
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
-  testDir: 'playwright-tests',
-  // Also include tests/e2e directory
-  testMatch: ['playwright-tests/**/*.spec.js', 'tests/e2e/**/*.spec.ts']
+  testDir: '.',
+  // Test match patterns for both directories
+  testMatch: ['**/playwright-tests/**/*.spec.js', '**/tests/e2e/**/*.spec.ts']
 };
