@@ -61,16 +61,23 @@ async function migrateProfile(profile, dryRun = false) {
     }
   }
   
-  const entries = Object.entries(linksData).filter(([key, value]) => {
-    // Only process entries with valid URLs
+  /**
+   * Lightweight URL validation helper
+   */
+  const isValidUrl = (value) => {
     if (!value || typeof value !== 'string') return false
+    // Quick check for http/https protocol
+    if (!value.startsWith('http://') && !value.startsWith('https://')) return false
+    // More thorough check with URL constructor
     try {
       new URL(value)
       return true
     } catch {
       return false
     }
-  })
+  }
+  
+  const entries = Object.entries(linksData).filter(([key, value]) => isValidUrl(value))
   
   if (entries.length === 0) {
     return { skipped: true, reason: 'No valid URLs in socialLinks' }

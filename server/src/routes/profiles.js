@@ -178,6 +178,8 @@ router.patch('/:userId', async (req, res) => {
         })
         
         // Upsert each link with position
+        // Links are processed in order, so array index is used as fallback position
+        // This ensures predictable ordering when positions are not explicitly set
         for (let i = 0; i < links.length; i++) {
           const link = links[i]
           const linkData = {

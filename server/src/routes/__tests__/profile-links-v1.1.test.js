@@ -376,7 +376,9 @@ describe('Profile Links API v1.1', () => {
         // Note: In production, this would be 60 seconds. For testing, this may be skipped.
         // This test documents the expected behavior.
         
-        const remainingHeader = (await requests[requests.length - 1]).headers.get('X-RateLimit-Remaining')
+        const responses = await Promise.all(requests)
+        const lastResponse = responses[responses.length - 1]
+        const remainingHeader = lastResponse.headers.get('X-RateLimit-Remaining')
         expect(parseInt(remainingHeader)).toBeGreaterThanOrEqual(0)
       })
     })

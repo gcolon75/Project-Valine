@@ -14,14 +14,35 @@ const rateLimitStore = new Map()
 /**
  * Clean up expired entries periodically
  */
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (value.resetTime < now) {
-      rateLimitStore.delete(key)
+let cleanupInterval = null
+
+function startCleanup() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, value] of rateLimitStore.entries()) {
+        if (value.resetTime < now) {
+          rateLimitStore.delete(key)
+        }
+      }
+    }, 60000) // Clean up every minute
+    
+    // Allow cleanup to be stopped (useful for tests)
+    if (cleanupInterval.unref) {
+      cleanupInterval.unref()
     }
   }
-}, 60000) // Clean up every minute
+}
+
+function stopCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval)
+    cleanupInterval = null
+  }
+}
+
+// Start cleanup on module load
+startCleanup()
 
 /**
  * Rate limiting middleware
@@ -108,5 +129,10 @@ export function resetRateLimit(key) {
 export function clearRateLimits() {
   rateLimitStore.clear()
 }
+
+/**
+ * Stop the cleanup interval (useful for testing and shutdown)
+ */
+export { stopCleanup }
 
 export default rateLimitMiddleware
