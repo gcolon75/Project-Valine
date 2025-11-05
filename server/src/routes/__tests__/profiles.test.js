@@ -243,6 +243,106 @@ describe('User Profiles API', () => {
         expect(data.profile.socialLinks).toEqual(updates.socialLinks)
       })
     })
+
+    describe('Profile Links Array', () => {
+      it('should accept links array', async () => {
+        const response = await fetch(`${BASE_URL}/profiles/user_123`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            links: [
+              {
+                label: 'My Website',
+                url: 'https://example.com',
+                type: 'website'
+              },
+              {
+                label: 'IMDB Profile',
+                url: 'https://imdb.com/name/nm123',
+                type: 'imdb'
+              }
+            ]
+          })
+        })
+        
+        expect(response.status).toBe(200)
+        const data = await response.json()
+        expect(data.profile.links).toBeDefined()
+        expect(Array.isArray(data.profile.links)).toBe(true)
+      })
+
+      it('should reject non-array links', async () => {
+        const response = await fetch(`${BASE_URL}/profiles/user_123`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            links: 'not-an-array'
+          })
+        })
+        
+        expect(response.status).toBe(400)
+        const data = await response.json()
+        expect(data.error.code).toBe('INVALID_LINKS')
+      })
+
+      it('should reject links with invalid data', async () => {
+        const response = await fetch(`${BASE_URL}/profiles/user_123`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            links: [
+              {
+                label: 'Test',
+                url: 'invalid-url',
+                type: 'website'
+              }
+            ]
+          })
+        })
+        
+        expect(response.status).toBe(400)
+        const data = await response.json()
+        expect(data.error.code).toBe('INVALID_LINK')
+      })
+
+      it('should reject too many links', async () => {
+        const links = Array.from({ length: 21 }, (_, i) => ({
+          label: `Link ${i + 1}`,
+          url: `https://example${i}.com`,
+          type: 'website'
+        }))
+        
+        const response = await fetch(`${BASE_URL}/profiles/user_123`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ links })
+        })
+        
+        expect(response.status).toBe(400)
+        const data = await response.json()
+        expect(data.error.code).toBe('TOO_MANY_LINKS')
+        expect(data.error.details.max).toBe(20)
+      })
+
+      it('should allow updating existing links with id', async () => {
+        const response = await fetch(`${BASE_URL}/profiles/user_123`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            links: [
+              {
+                id: 'existing-link-id',
+                label: 'Updated Label',
+                url: 'https://updated.com',
+                type: 'website'
+              }
+            ]
+          })
+        })
+        
+        expect(response.status).toBe(200)
+      })
+    })
   })
 
   describe('Error Response Format', () => {

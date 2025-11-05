@@ -122,3 +122,103 @@ export function sanitizeString(input) {
   if (!input) return input
   return String(input).trim()
 }
+
+/**
+ * Sanitize and normalize URL
+ * @param {string} url - URL to sanitize
+ * @returns {string} Normalized URL
+ */
+export function sanitizeUrl(url) {
+  if (!url) return url
+  
+  try {
+    // Parse URL to normalize it (removes extra slashes, normalizes encoding, etc.)
+    const parsed = new URL(url.trim())
+    
+    // Reconstruct URL to normalize it
+    return parsed.toString()
+  } catch {
+    // If URL is invalid, return as-is (will be caught by validation)
+    return url
+  }
+}
+
+/**
+ * Valid profile link types
+ */
+export const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other']
+
+/**
+ * Validate profile link type
+ * @param {string} type - Link type to validate
+ * @returns {object} { valid: boolean, error?: string }
+ */
+export function validateLinkType(type) {
+  if (!type) {
+    return {
+      valid: false,
+      error: 'Link type is required'
+    }
+  }
+  
+  if (!VALID_LINK_TYPES.includes(type)) {
+    return {
+      valid: false,
+      error: `Link type must be one of: ${VALID_LINK_TYPES.join(', ')}`
+    }
+  }
+  
+  return { valid: true }
+}
+
+/**
+ * Validate profile link object
+ * @param {object} link - Link object to validate
+ * @returns {object} { valid: boolean, error?: string, field?: string }
+ */
+export function validateProfileLink(link) {
+  if (!link || typeof link !== 'object') {
+    return {
+      valid: false,
+      error: 'Link must be an object',
+      field: 'link'
+    }
+  }
+  
+  // Validate label
+  const labelValidation = validateStringLength(link.label, 1, 40, 'label')
+  if (!labelValidation.valid) {
+    return {
+      ...labelValidation,
+      field: 'label'
+    }
+  }
+  
+  // Validate URL (required for profile links)
+  if (!link.url) {
+    return {
+      valid: false,
+      error: 'URL is required',
+      field: 'url'
+    }
+  }
+  
+  const urlValidation = validateUrl(link.url)
+  if (!urlValidation.valid) {
+    return {
+      ...urlValidation,
+      field: 'url'
+    }
+  }
+  
+  // Validate type
+  const typeValidation = validateLinkType(link.type)
+  if (!typeValidation.valid) {
+    return {
+      ...typeValidation,
+      field: 'type'
+    }
+  }
+  
+  return { valid: true }
+}

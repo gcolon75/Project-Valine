@@ -8,7 +8,11 @@ import {
   validateUrl,
   validateTheme,
   validateStringLength,
-  sanitizeString
+  sanitizeString,
+  sanitizeUrl,
+  validateLinkType,
+  validateProfileLink,
+  VALID_LINK_TYPES
 } from '../validators.js'
 
 describe('Validation Utilities', () => {
@@ -246,6 +250,51 @@ describe('Validation Utilities', () => {
     })
   })
 
+  describe('sanitizeUrl', () => {
+    it('should trim whitespace from URL', () => {
+      const result = sanitizeUrl('  https://example.com  ')
+      expect(result).toBe('https://example.com/')
+    })
+
+    it('should normalize URL', () => {
+      const result = sanitizeUrl('https://example.com')
+      expect(result).toBe('https://example.com/')
+    })
+
+    it('should handle URL with path', () => {
+      const result = sanitizeUrl('https://example.com/path')
+      expect(result).toBe('https://example.com/path')
+    })
+
+    it('should handle URL with query params', () => {
+      const result = sanitizeUrl('https://example.com?key=value')
+      expect(result).toBe('https://example.com/?key=value')
+    })
+
+    it('should handle null', () => {
+      expect(sanitizeUrl(null)).toBe(null)
+    })
+
+    it('should handle undefined', () => {
+      expect(sanitizeUrl(undefined)).toBe(undefined)
+    })
+
+    it('should handle empty string', () => {
+      expect(sanitizeUrl('')).toBe('')
+    })
+
+    it('should handle invalid URL gracefully', () => {
+      // Invalid URLs are returned as-is (will be caught by validation)
+      expect(sanitizeUrl('not-a-url')).toBe('not-a-url')
+    })
+
+    it('should normalize URL encoding', () => {
+      const result = sanitizeUrl('https://example.com/path with spaces')
+      // URL constructor will encode spaces
+      expect(result).toContain('example.com')
+    })
+  })
+
   describe('Integration Tests', () => {
     it('should validate and sanitize title', () => {
       const input = '  Senior Voice Actor  '
@@ -277,6 +326,173 @@ describe('Validation Utilities', () => {
       invalidThemes.forEach(theme => {
         expect(validateTheme(theme).valid).toBe(false)
       })
+    })
+  })
+})
+
+describe('Profile Link Validators', () => {
+  describe('validateLinkType', () => {
+    it('should accept valid link types', () => {
+      VALID_LINK_TYPES.forEach(type => {
+        const result = validateLinkType(type)
+        expect(result.valid).toBe(true)
+      })
+    })
+
+    it('should reject invalid link type', () => {
+      const result = validateLinkType('twitter')
+      expect(result.valid).toBe(false)
+      expect(result.error).toContain('must be one of')
+    })
+
+    it('should reject empty type', () => {
+      const result = validateLinkType('')
+      expect(result.valid).toBe(false)
+      expect(result.error).toContain('required')
+    })
+
+    it('should reject null type', () => {
+      const result = validateLinkType(null)
+      expect(result.valid).toBe(false)
+      expect(result.error).toContain('required')
+    })
+  })
+
+  describe('validateProfileLink', () => {
+    it('should accept valid profile link', () => {
+      const link = {
+        label: 'My Website',
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(true)
+    })
+
+    it('should reject non-object link', () => {
+      const result = validateProfileLink('not-an-object')
+      expect(result.valid).toBe(false)
+      expect(result.error).toContain('object')
+    })
+
+    it('should reject link with missing label', () => {
+      const link = {
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('label')
+    })
+
+    it('should reject link with empty label', () => {
+      const link = {
+        label: '',
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('label')
+    })
+
+    it('should reject link with label exceeding 40 characters', () => {
+      const link = {
+        label: 'A'.repeat(41),
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('label')
+      expect(result.error).toContain('40')
+    })
+
+    it('should accept link with label at 40 characters', () => {
+      const link = {
+        label: 'A'.repeat(40),
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(true)
+    })
+
+    it('should reject link with missing URL', () => {
+      const link = {
+        label: 'My Link',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('url')
+      expect(result.error).toContain('required')
+    })
+
+    it('should reject link with invalid URL', () => {
+      const link = {
+        label: 'My Link',
+        url: 'not-a-url',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('url')
+    })
+
+    it('should reject link with invalid URL protocol', () => {
+      const link = {
+        label: 'My Link',
+        url: 'ftp://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('url')
+      expect(result.error).toContain('http or https')
+    })
+
+    it('should reject link with missing type', () => {
+      const link = {
+        label: 'My Link',
+        url: 'https://example.com'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('type')
+    })
+
+    it('should reject link with invalid type', () => {
+      const link = {
+        label: 'My Link',
+        url: 'https://example.com',
+        type: 'twitter'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(false)
+      expect(result.field).toBe('type')
+    })
+
+    it('should accept all valid link types', () => {
+      VALID_LINK_TYPES.forEach(type => {
+        const link = {
+          label: 'My Link',
+          url: 'https://example.com',
+          type
+        }
+        const result = validateProfileLink(link)
+        expect(result.valid).toBe(true)
+      })
+    })
+
+    it('should trim whitespace from label', () => {
+      const link = {
+        label: '  My Website  ',
+        url: 'https://example.com',
+        type: 'website'
+      }
+      const result = validateProfileLink(link)
+      expect(result.valid).toBe(true)
     })
   })
 })
