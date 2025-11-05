@@ -23,6 +23,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
@@ -112,14 +113,21 @@ function loadAuditFindings() {
   const headers = lines[0].split(',');
   
   const findings = lines.slice(1).map(line => {
-    // Simple CSV parsing (may need improvement for complex cases)
+    // CSV parsing with proper quote handling
     const values = [];
     let current = '';
     let inQuotes = false;
     
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      if (char === '"') {
+      const nextChar = line[i + 1];
+      
+      if (char === '"' && nextChar === '"' && inQuotes) {
+        // Escaped quote: "" becomes "
+        current += '"';
+        i++; // Skip next quote
+      } else if (char === '"') {
+        // Toggle quote state
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
         values.push(current.trim());
@@ -438,22 +446,35 @@ async function createGitHubIssue(issuePayload) {
     return { success: true, dryRun: true };
   }
 
+  let tempFile;
   try {
-    // Write body to temp file
-    const tempFile = path.join('/tmp', `issue-${Date.now()}.md`);
+    // Write body to temp file using OS temp directory
+    tempFile = path.join(os.tmpdir(), `issue-${Date.now()}.md`);
     fs.writeFileSync(tempFile, issuePayload.body);
     
-    const labelsArg = issuePayload.labels.map(l => `--label "${l}"`).join(' ');
-    const cmd = `gh issue create --title "${issuePayload.title}" --body-file "${tempFile}" ${labelsArg}`;
+    // Build command args array to avoid shell injection
+    const args = [
+      'issue', 'create',
+      '--title', issuePayload.title,
+      '--body-file', tempFile
+    ];
     
-    const result = execSync(cmd, { 
+    // Add labels
+    issuePayload.labels.forEach(label => {
+      args.push('--label', label);
+    });
+    
+    const result = execSync(`gh ${args.map(arg => {
+      // Escape arguments that contain spaces or special characters
+      if (arg.includes(' ') || arg.includes('"') || arg.includes("'")) {
+        return `"${arg.replace(/"/g, '\\"')}"`;
+      }
+      return arg;
+    }).join(' ')}`, { 
       cwd: rootDir,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
-    
-    // Clean up temp file
-    fs.unlinkSync(tempFile);
     
     const issueUrl = result.trim();
     console.log(`✅ Created: ${issueUrl}`);
@@ -463,6 +484,15 @@ async function createGitHubIssue(issuePayload) {
     console.error(`❌ Failed to create issue: ${issuePayload.title}`);
     console.error(`   Error: ${error.message}`);
     return { success: false, error: error.message };
+  } finally {
+    // Always clean up temp file
+    if (tempFile && fs.existsSync(tempFile)) {
+      try {
+        fs.unlinkSync(tempFile);
+      } catch (cleanupError) {
+        console.warn(`⚠️  Failed to clean up temp file: ${tempFile}`);
+      }
+    }
   }
 }
 
