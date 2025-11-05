@@ -104,8 +104,6 @@ export const validateProfileLink = (link) => {
   // Validate label (API spec: 1-40 characters)
   if (!link.label || typeof link.label !== 'string' || link.label.trim() === '') {
     errors.label = 'Label is required';
-  } else if (link.label.trim().length < 1) {
-    errors.label = 'Label must be at least 1 character';
   } else if (link.label.length > 40) {
     errors.label = 'Label must be 40 characters or less';
   }

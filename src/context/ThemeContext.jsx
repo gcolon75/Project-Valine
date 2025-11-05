@@ -68,6 +68,7 @@ export function ThemeProvider({ children }) {
    * Toggle theme and persist to backend
    */
   const toggle = useCallback(async () => {
+    const previousTheme = theme;
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     
     // Optimistic update
@@ -79,7 +80,7 @@ export function ThemeProvider({ children }) {
     } catch (error) {
       console.error('Failed to save theme preference:', error);
       // Rollback on error
-      setTheme(theme);
+      setTheme(previousTheme);
     }
   }, [theme]);
 

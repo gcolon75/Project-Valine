@@ -161,11 +161,11 @@ export default function ProfileEdit() {
         return;
       }
 
-      // Validate all links before saving
+      // Validate all links before saving using the validation utility
+      const { validateProfileLink } = await import('../utils/urlValidation');
       const invalidLinks = formData.profileLinks.filter(link => {
-        const hasLabel = link.label && link.label.trim().length > 0;
-        const hasUrl = link.url && link.url.trim().length > 0;
-        return !hasLabel || !hasUrl || link.label.length > 40 || link.url.length > 2048;
+        const validation = validateProfileLink(link);
+        return !validation.valid;
       });
 
       if (invalidLinks.length > 0) {

@@ -243,7 +243,7 @@ describe('Profile Service', () => {
     it('should map API types to frontend types', () => {
       expect(profileService.mapLinkTypeFromApi('website')).toBe('Website');
       expect(profileService.mapLinkTypeFromApi('imdb')).toBe('IMDb');
-      expect(profileService.mapLinkTypeFromApi('showreel')).toBe('YouTube');
+      expect(profileService.mapLinkTypeFromApi('showreel')).toBe('Showreel');
       expect(profileService.mapLinkTypeFromApi('other')).toBe('Other');
     });
 

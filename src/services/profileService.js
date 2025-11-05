@@ -131,7 +131,7 @@ export const mapLinkTypeFromApi = (type) => {
   const typeMap = {
     'website': 'Website',
     'imdb': 'IMDb',
-    'showreel': 'YouTube',
+    'showreel': 'Showreel',
     'other': 'Other'
   };
 
