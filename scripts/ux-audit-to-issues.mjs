@@ -617,7 +617,7 @@ function getSprintDueDate(sprintNumber) {
 }
 
 // Generate roadmap summary
-function generateRoadmapSummary(issuePayloads, summary) {
+function generateRoadmapSummary(issuePayloads) {
   const categories = {};
   const severities = { High: [], Medium: [], Low: [] };
   
@@ -883,7 +883,7 @@ async function main() {
   
   // Generate roadmap summary
   console.log('\n📊 Generating roadmap summary...');
-  const roadmapContent = generateRoadmapSummary(issuePayloads, summary);
+  const roadmapContent = generateRoadmapSummary(issuePayloads);
   const roadmapPath = path.join(rootDir, options.roadmap);
   fs.writeFileSync(roadmapPath, roadmapContent);
   console.log(`💾 Saved roadmap to: ${options.roadmap}`);
