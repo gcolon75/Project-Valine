@@ -9,6 +9,7 @@ Welcome to the Project Valine documentation! This directory contains comprehensi
 - **API Development?** See [API Documentation](api/)
 - **Backend work?** Check [Backend Documentation](backend/)
 - **Frontend work?** Visit [Frontend Documentation](frontend/)
+- **UX Audits?** See [UX Audit Documentation](UX_AUDIT_AGENT.md) and [UX Audit to Issues Guide](UX_AUDIT_TO_ISSUES_GUIDE.md)
 
 ### For Operations
 - **Deploying?** See [Deployment Guides](deployment/)
