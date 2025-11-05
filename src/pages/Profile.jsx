@@ -247,46 +247,77 @@ export default function Profile() {
               </p>
             </div>
 
-            {/* Links Section */}
-            {displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link) && (
+            {/* Links Section - supports both new normalized format (links array) and legacy format (externalLinks object) */}
+            {((displayData.links && displayData.links.length > 0) || 
+              (displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link))) && (
               <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center space-x-2">
                   <ExternalLink className="w-5 h-5" />
                   <span>Links</span>
                 </h3>
                 <div className="space-y-3">
-                  {displayData.externalLinks.website && isValidUrl(displayData.externalLinks.website) && (
-                    <a 
-                      href={displayData.externalLinks.website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
-                    >
-                      <Globe className="w-5 h-5" />
-                      <span>Website</span>
-                    </a>
-                  )}
-                  {displayData.externalLinks.showreel && isValidUrl(displayData.externalLinks.showreel) && (
-                    <a 
-                      href={displayData.externalLinks.showreel} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
-                    >
-                      <Film className="w-5 h-5" />
-                      <span>Showreel</span>
-                    </a>
-                  )}
-                  {displayData.externalLinks.imdb && isValidUrl(displayData.externalLinks.imdb) && (
-                    <a 
-                      href={displayData.externalLinks.imdb} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span>IMDb</span>
-                    </a>
+                  {/* New normalized format */}
+                  {displayData.links && displayData.links.map((link) => {
+                    if (!isValidUrl(link.url)) return null;
+                    
+                    // Choose icon based on type
+                    const LinkIcon = link.type === 'website' ? Globe 
+                                   : link.type === 'showreel' ? Film 
+                                   : link.type === 'imdb' ? FileText 
+                                   : ExternalLink;
+                    
+                    return (
+                      <a 
+                        key={link.id || link.url}
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                        aria-label={`Visit ${link.label}`}
+                      >
+                        <LinkIcon className="w-5 h-5" aria-hidden="true" />
+                        <span>{link.label}</span>
+                      </a>
+                    );
+                  })}
+                  
+                  {/* Legacy format - only render if links array doesn't exist */}
+                  {!displayData.links && displayData.externalLinks && (
+                    <>
+                      {displayData.externalLinks.website && isValidUrl(displayData.externalLinks.website) && (
+                        <a 
+                          href={displayData.externalLinks.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                        >
+                          <Globe className="w-5 h-5" />
+                          <span>Website</span>
+                        </a>
+                      )}
+                      {displayData.externalLinks.showreel && isValidUrl(displayData.externalLinks.showreel) && (
+                        <a 
+                          href={displayData.externalLinks.showreel} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                        >
+                          <Film className="w-5 h-5" />
+                          <span>Showreel</span>
+                        </a>
+                      )}
+                      {displayData.externalLinks.imdb && isValidUrl(displayData.externalLinks.imdb) && (
+                        <a 
+                          href={displayData.externalLinks.imdb} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                        >
+                          <FileText className="w-5 h-5" />
+                          <span>IMDb</span>
+                        </a>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

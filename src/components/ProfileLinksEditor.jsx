@@ -16,18 +16,12 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
   const [validationErrors, setValidationErrors] = useState({});
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // Common link types for suggestions
+  // Link types matching API spec: website|imdb|showreel|other
   const linkTypes = [
-    'Website',
-    'Portfolio',
-    'IMDb',
-    'LinkedIn',
-    'Twitter',
-    'Instagram',
-    'YouTube',
-    'Vimeo',
-    'SoundCloud',
-    'Other'
+    { value: 'website', label: 'Website' },
+    { value: 'imdb', label: 'IMDb' },
+    { value: 'showreel', label: 'Showreel' },
+    { value: 'other', label: 'Other' }
   ];
 
   const handleAddLink = () => {
@@ -35,7 +29,7 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
       return;
     }
 
-    const newLink = { label: '', url: '', type: 'Website' };
+    const newLink = { label: '', url: '', type: 'website' };
     const newLinks = [...links, newLink];
     onChange(newLinks);
     setEditingIndex(links.length);
@@ -151,13 +145,13 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
                   </label>
                   <select
                     id={`link-type-${index}`}
-                    value={link.type || 'Website'}
+                    value={link.type || 'website'}
                     onChange={(e) => handleUpdateLink(index, 'type', e.target.value)}
                     className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                     aria-describedby={validationErrors[index]?.type ? `link-type-error-${index}` : undefined}
                   >
                     {linkTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
                   {validationErrors[index]?.type && (
@@ -181,7 +175,7 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
                     value={link.label}
                     onChange={(e) => handleUpdateLink(index, 'label', e.target.value)}
                     placeholder="e.g., My Portfolio"
-                    maxLength={50}
+                    maxLength={40}
                     className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                     aria-required="true"
                     aria-invalid={!!validationErrors[index]?.label}
@@ -194,7 +188,7 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
                       </p>
                     ) : (
                       <p id={`link-label-hint-${index}`} className="text-xs text-neutral-500 dark:text-neutral-600">
-                        {link.label.length}/50 characters
+                        {link.label.length}/40 characters
                       </p>
                     )}
                   </div>
@@ -266,8 +260,8 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
       {/* Info Message */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
         <p className="text-xs text-blue-800 dark:text-blue-300">
-          <strong>Note:</strong> Links will be stored in normalized format. Backend API integration pending.
-          See documentation for expected API contract.
+          <strong>Note:</strong> Links are stored in normalized format with types: website, imdb, showreel, or other.
+          Maximum {maxLinks} links allowed per profile. URLs must use http:// or https://.
         </p>
       </div>
     </div>
