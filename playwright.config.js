@@ -11,5 +11,7 @@ module.exports = {
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
-  testDir: 'playwright-tests'
+  testDir: 'playwright-tests',
+  // Also include tests/e2e directory
+  testMatch: ['playwright-tests/**/*.spec.js', 'tests/e2e/**/*.spec.ts']
 };
