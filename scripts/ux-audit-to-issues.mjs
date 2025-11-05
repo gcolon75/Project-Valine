@@ -588,7 +588,7 @@ function generateMilestones(issuePayloads) {
   
   if (highPriority.length > 0) {
     milestones.push({
-      title: 'UX Polish — Sprint 1',
+      title: 'UX Polish - Sprint 1',
       description: `High priority UX improvements from Deep Audit. Focuses on critical responsive design issues and high-impact accessibility fixes.\n\nIncludes ${highPriority.length} issues:\n- Responsive design fixes\n- Critical accessibility improvements\n- High-impact visual improvements`,
       dueDate: getSprintDueDate(1),
       state: 'open',
@@ -598,7 +598,7 @@ function generateMilestones(issuePayloads) {
   
   if (mediumPriority.length > 0) {
     milestones.push({
-      title: 'UX Polish — Sprint 2',
+      title: 'UX Polish - Sprint 2',
       description: `Medium priority UX improvements from Deep Audit. Enhances overall user experience with accessibility, design token adoption, and polish.\n\nIncludes ${mediumPriority.length} issues:\n- Accessibility enhancements\n- Design token migration\n- Visual hierarchy improvements`,
       dueDate: getSprintDueDate(2),
       state: 'open',
@@ -661,7 +661,7 @@ function generateRoadmapSummary(issuePayloads, summary) {
   roadmap += `## Milestones\n\n`;
   
   if (severities.High.length > 0) {
-    roadmap += `### 🎯 Sprint 1: High Priority (UX Polish — Sprint 1)\n\n`;
+    roadmap += `### 🎯 Sprint 1: High Priority (UX Polish - Sprint 1)\n\n`;
     roadmap += `**Due Date:** ${getSprintDueDate(1)}\n\n`;
     roadmap += `**Focus Areas:**\n`;
     roadmap += `- Responsive design fixes (critical for mobile users)\n`;
@@ -687,7 +687,7 @@ function generateRoadmapSummary(issuePayloads, summary) {
   }
   
   if (severities.Medium.length > 0) {
-    roadmap += `### 🎯 Sprint 2: Medium Priority (UX Polish — Sprint 2)\n\n`;
+    roadmap += `### 🎯 Sprint 2: Medium Priority (UX Polish - Sprint 2)\n\n`;
     roadmap += `**Due Date:** ${getSprintDueDate(2)}\n\n`;
     roadmap += `**Focus Areas:**\n`;
     roadmap += `- Accessibility enhancements (focus states, headings)\n`;

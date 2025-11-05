@@ -143,7 +143,7 @@ This roadmap addresses 81 UX issues...
 
 ## Milestones
 
-### 🎯 Sprint 1: High Priority (UX Polish — Sprint 1)
+### 🎯 Sprint 1: High Priority (UX Polish - Sprint 1)
 **Due Date:** 2025-11-19
 
 **Issues (18):**
@@ -163,12 +163,12 @@ This roadmap addresses 81 UX issues...
 
 When using `--create-milestones`, two milestones are created:
 
-- **UX Polish — Sprint 1** (Due: 2 weeks)
+- **UX Polish - Sprint 1** (Due: 2 weeks)
   - High priority issues
   - Responsive design fixes
   - Critical accessibility improvements
 
-- **UX Polish — Sprint 2** (Due: 4 weeks)
+- **UX Polish - Sprint 2** (Due: 4 weeks)
   - Medium priority issues
   - Design token migration
   - Visual hierarchy improvements
@@ -233,7 +233,7 @@ npm run ux:audit-to-issues -- --severity high,medium --create --delay 2000
 
 # Step 9: Track progress
 gh issue list --label ux-audit --state open
-gh issue list --milestone "UX Polish — Sprint 1" --state open
+gh issue list --milestone "UX Polish - Sprint 1" --state open
 ```
 
 ### CI/CD Integration
