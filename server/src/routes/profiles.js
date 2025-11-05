@@ -9,6 +9,8 @@ import {
   validateProfileLink,
   VALID_LINK_TYPES
 } from '../utils/validators.js'
+import { etagMiddleware } from '../middleware/etag.js'
+import { rateLimitMiddleware } from '../middleware/rateLimit.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -19,17 +21,21 @@ const VALID_SOCIAL_LINKS = ['website', 'instagram', 'imdb', 'linkedin', 'showree
 /**
  * GET /profiles/:userId
  * Get user profile including title, headline, and profile links
+ * Supports ETag/caching via If-None-Match header
  */
-router.get('/:userId', async (req, res) => {
+router.get('/:userId', etagMiddleware({ maxAge: 300 }), async (req, res) => {
   const { userId } = req.params
   
   try {
-    // Fetch profile with links
+    // Fetch profile with links ordered by position, then createdAt
     const profile = await prisma.profile.findUnique({
       where: { userId },
       include: {
         links: {
-          orderBy: { createdAt: 'asc' }
+          orderBy: [
+            { position: 'asc' },
+            { createdAt: 'asc' }
+          ]
         }
       }
     })
@@ -171,14 +177,16 @@ router.patch('/:userId', async (req, res) => {
           }
         })
         
-        // Upsert each link
-        for (const link of links) {
+        // Upsert each link with position
+        for (let i = 0; i < links.length; i++) {
+          const link = links[i]
           const linkData = {
             userId,
             profileId: profile.id,
             label: sanitizeString(link.label),
             url: sanitizeUrl(link.url),
-            type: link.type
+            type: link.type,
+            position: link.position !== undefined ? link.position : i
           }
           
           if (link.id) {
@@ -196,12 +204,15 @@ router.patch('/:userId', async (req, res) => {
         }
       }
       
-      // Fetch updated profile with links
+      // Fetch updated profile with links ordered by position
       return await tx.profile.findUnique({
         where: { userId },
         include: {
           links: {
-            orderBy: { createdAt: 'asc' }
+            orderBy: [
+              { position: 'asc' },
+              { createdAt: 'asc' }
+            ]
           }
         }
       })
@@ -224,8 +235,9 @@ router.patch('/:userId', async (req, res) => {
 /**
  * GET /profiles/:userId/links
  * Get all profile links for a user
+ * Supports ETag/caching via If-None-Match header
  */
-router.get('/:userId/links', async (req, res) => {
+router.get('/:userId/links', etagMiddleware({ maxAge: 300 }), async (req, res) => {
   const { userId } = req.params
   
   try {
@@ -242,10 +254,13 @@ router.get('/:userId/links', async (req, res) => {
       )
     }
     
-    // Fetch links
+    // Fetch links ordered by position, then createdAt
     const links = await prisma.profileLink.findMany({
       where: { userId },
-      orderBy: { createdAt: 'asc' }
+      orderBy: [
+        { position: 'asc' },
+        { createdAt: 'asc' }
+      ]
     })
     
     return res.json({ links })
@@ -262,11 +277,12 @@ router.get('/:userId/links', async (req, res) => {
 /**
  * POST /profiles/:userId/links
  * Create a new profile link
- * Body: { label: string, url: string, type: string }
+ * Body: { label: string, url: string, type: string, position?: number }
+ * Rate limited: 10 requests per minute per userId
  */
-router.post('/:userId/links', async (req, res) => {
+router.post('/:userId/links', rateLimitMiddleware({ windowMs: 60000, maxRequests: 10 }), async (req, res) => {
   const { userId } = req.params
-  const { label, url, type } = req.body || {}
+  const { label, url, type, position } = req.body || {}
   
   try {
     // Validate link
@@ -306,6 +322,9 @@ router.post('/:userId/links', async (req, res) => {
       )
     }
     
+    // Determine position - use provided position or append to end
+    const finalPosition = position !== undefined ? position : linkCount
+    
     // Create link
     const link = await prisma.profileLink.create({
       data: {
@@ -313,7 +332,8 @@ router.post('/:userId/links', async (req, res) => {
         profileId: profile.id,
         label: sanitizeString(label),
         url: sanitizeUrl(url),
-        type
+        type,
+        position: finalPosition
       }
     })
     
@@ -334,11 +354,11 @@ router.post('/:userId/links', async (req, res) => {
 /**
  * PATCH /profiles/:userId/links/:linkId
  * Update a profile link
- * Body: { label?: string, url?: string, type?: string }
+ * Body: { label?: string, url?: string, type?: string, position?: number }
  */
 router.patch('/:userId/links/:linkId', async (req, res) => {
   const { userId, linkId } = req.params
-  const { label, url, type } = req.body || {}
+  const { label, url, type, position } = req.body || {}
   
   try {
     // Check if link exists and belongs to user
@@ -403,6 +423,17 @@ router.patch('/:userId/links/:linkId', async (req, res) => {
       updateData.type = type
     }
     
+    if (position !== undefined) {
+      if (typeof position !== 'number' || position < 0) {
+        return res.status(400).json(
+          createError('INVALID_POSITION', 'Position must be a non-negative number', {
+            field: 'position'
+          })
+        )
+      }
+      updateData.position = position
+    }
+    
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json(
         createError('NO_UPDATES', 'No valid fields provided for update')
@@ -432,8 +463,9 @@ router.patch('/:userId/links/:linkId', async (req, res) => {
 /**
  * DELETE /profiles/:userId/links/:linkId
  * Delete a profile link
+ * Rate limited: 10 requests per minute per userId
  */
-router.delete('/:userId/links/:linkId', async (req, res) => {
+router.delete('/:userId/links/:linkId', rateLimitMiddleware({ windowMs: 60000, maxRequests: 10 }), async (req, res) => {
   const { userId, linkId } = req.params
   
   try {

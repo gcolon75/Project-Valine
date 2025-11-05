@@ -2,15 +2,38 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for deploying the new normalized profile links feature. The migration introduces a dedicated `profile_links` table to replace the JSON-based `socialLinks` field in the profiles table.
+This guide provides step-by-step instructions for deploying the profile links feature enhancements. This update includes:
+- Custom link ordering via `position` field
+- ETag-based caching for GET endpoints  
+- Rate limiting for POST/DELETE operations
+- Migration script for legacy `socialLinks` JSON data
 
-## What's New
+## What's New (v1.1)
 
 ### Schema Changes
+- **New Column**: `position` (integer) on `profile_links` table for custom ordering
+- **New Index**: Composite index on `userId` and `position` for efficient queries
+- **Migration**: `20251105210000_add_profile_links_ordering`
+
+### API Changes
+- **Ordering**: All GET endpoints now return links ordered by `position`, then `createdAt`
+- **Position Field**: POST and PATCH endpoints accept optional `position` parameter
+- **ETag Support**: GET endpoints return `ETag` and `Cache-Control` headers
+- **Rate Limiting**: POST/DELETE endpoints limited to 10 requests/minute per userId
+- **Headers**: Rate limit info in `X-RateLimit-*` headers
+
+### Data Migration
+- **Script**: `api/scripts/migrate-social-links.js`
+- **Purpose**: Convert legacy `socialLinks` JSON to normalized `profile_links` table
+- **Safety**: Idempotent, non-destructive, preserves original data
+
+## Previous Features (v1.0)
+
+### Schema Changes (v1.0)
 - **New Table**: `profile_links` for normalized link storage
 - **New Field**: `title` on User profiles (already migrated in previous release)
 
-### API Changes
+### API Changes (v1.0)
 - **GET /profiles/:userId**: Now includes `links` array
 - **PATCH /profiles/:userId**: Accepts `links` array for batch updates
 - **New Endpoints**: 
@@ -19,7 +42,7 @@ This guide provides step-by-step instructions for deploying the new normalized p
   - `PATCH /profiles/:userId/links/:linkId`
   - `DELETE /profiles/:userId/links/:linkId`
 
-## Migration Steps
+## Migration Steps (v1.1)
 
 ### Phase 1: Database Schema Update
 
@@ -29,24 +52,38 @@ This guide provides step-by-step instructions for deploying the new normalized p
    pg_dump -h localhost -U username valine_db > backup_$(date +%Y%m%d).sql
    ```
 
-2. **Apply Migration**
+2. **Apply Ordering Migration**
    ```bash
    cd api
    npx prisma migrate deploy
    ```
 
-   This will apply migration `20251105030800_add_profile_links_table` which:
-   - Creates `profile_links` table
-   - Adds foreign keys to `users` and `profiles`
-   - Creates indexes for performance
+   This will apply two migrations:
+   - `20251105030800_add_profile_links_table` (if not already applied)
+     - Creates `profile_links` table
+     - Adds foreign keys to `users` and `profiles`
+     - Creates indexes for performance
+   
+   - `20251105210000_add_profile_links_ordering` (new)
+     - Adds `position` column (integer, default 0)
+     - Creates composite index on `userId` and `position`
 
 3. **Verify Migration**
    ```bash
-   # Check table exists
-   psql -h localhost -U username -d valine_db -c "\d profile_links"
+   # Check position column exists
+   psql -h localhost -U username -d valine_db -c "SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'profile_links' AND column_name = 'position';"
    
-   # Verify indexes
-   psql -h localhost -U username -d valine_db -c "\di profile_links*"
+   # Verify new index
+   psql -h localhost -U username -d valine_db -c "\di profile_links_userId_position_idx"
+   
+   # Check all existing links have position = 0 (default)
+   psql -h localhost -U username -d valine_db -c "SELECT COUNT(*) as total, COUNT(CASE WHEN position = 0 THEN 1 END) as with_default_position FROM profile_links;"
+   ```
+
+4. **Rollback Plan** (if needed)
+   ```bash
+   # Run rollback SQL (see api/prisma/migrations/20251105210000_add_profile_links_ordering/ROLLBACK.md)
+   psql -h localhost -U username -d valine_db < rollback.sql
    ```
 
 ### Phase 2: Deploy Backend Changes
@@ -78,39 +115,124 @@ This guide provides step-by-step instructions for deploying the new normalized p
    - Monitor logs for errors
    - Test critical user flows
 
-### Phase 3: Data Migration (Optional)
+### Phase 3: Data Migration (v1.1)
 
-If you have existing `socialLinks` data in profiles, you can migrate it:
+Migrate existing `socialLinks` JSON data to normalized `profile_links` table using the provided script.
 
-```javascript
-// Migration script (run once)
-import { PrismaClient } from '@prisma/client'
+1. **Run Dry Run First (Recommended)**
+   ```bash
+   cd api
+   npm run migrate:social-links:dry-run
+   ```
 
-const prisma = new PrismaClient()
+   This will:
+   - Show what would be migrated without making changes
+   - Display summary of profiles and links to be converted
+   - Validate all URLs before migration
 
-async function migrateProfileLinks() {
-  const profiles = await prisma.profile.findMany({
-    where: {
-      socialLinks: { not: null }
-    }
-  })
-  
-  for (const profile of profiles) {
-    const socialLinks = profile.socialLinks
-    const links = []
-    
-    // Convert JSON socialLinks to normalized links
-    if (socialLinks.website) {
-      links.push({
-        userId: profile.userId,
-        profileId: profile.id,
-        label: 'Website',
-        url: socialLinks.website,
-        type: 'website'
-      })
-    }
-    
-    if (socialLinks.imdb) {
+   Example output:
+   ```
+   Starting socialLinks migration...
+   Mode: DRY RUN
+
+   Found 150 profiles with socialLinks data
+
+   Profile user_123: Found 3 links to migrate
+     [DRY RUN] Would create 3 profile links
+     - Website (website): https://example.com
+     - IMDb Profile (imdb): https://imdb.com/name/nm1234567
+     - LinkedIn (other): https://linkedin.com/in/johndoe
+
+   ...
+
+   Migration Summary:
+   ==================
+   Profiles processed: 145
+   Profiles skipped: 5
+   Links migrated: 432
+
+   This was a DRY RUN. No changes were made.
+   ```
+
+2. **Review Dry Run Results**
+   - Check that all URLs are valid
+   - Verify type mappings are correct
+   - Identify any profiles that will be skipped
+
+3. **Run Live Migration**
+   ```bash
+   cd api
+   npm run migrate:social-links
+   ```
+
+   This will:
+   - Convert all `socialLinks` JSON to normalized `profile_links`
+   - Skip duplicate URLs (idempotent)
+   - Preserve original `socialLinks` JSON field
+   - Assign sequential positions (0, 1, 2, ...)
+
+4. **Verify Migration**
+   ```bash
+   # Check migrated links count
+   psql -h localhost -U username -d valine_db -c "SELECT COUNT(*) FROM profile_links;"
+   
+   # View sample migrated links
+   psql -h localhost -U username -d valine_db -c "SELECT userId, label, url, type, position FROM profile_links LIMIT 10;"
+   
+   # Check for any profiles with both socialLinks and profile_links
+   psql -h localhost -U username -d valine_db -c "
+     SELECT p.userId, 
+            COUNT(pl.id) as link_count,
+            p.socialLinks IS NOT NULL as has_json_links
+     FROM profiles p
+     LEFT JOIN profile_links pl ON pl.profileId = p.id
+     WHERE p.socialLinks IS NOT NULL
+     GROUP BY p.userId, p.socialLinks
+     LIMIT 10;
+   "
+   ```
+
+5. **Post-Migration Testing**
+   ```bash
+   # Test fetching profile with migrated links
+   curl http://localhost:5000/profiles/user_123
+   
+   # Verify links are ordered by position
+   curl http://localhost:5000/profiles/user_123/links
+   ```
+
+### Migration Script Details
+
+**Location**: `api/scripts/migrate-social-links.js`
+
+**Features**:
+- Idempotent: Safe to run multiple times
+- Non-destructive: Preserves original `socialLinks` JSON
+- URL validation: Skips invalid URLs
+- Duplicate detection: Skips already-migrated URLs
+- Position assignment: Uses order from JSON object
+
+**Type Mapping**:
+| Legacy Key | Link Type | Label |
+|------------|-----------|-------|
+| website | website | Website |
+| imdb | imdb | IMDb Profile |
+| showreel | showreel | Showreel |
+| linkedin | other | LinkedIn |
+| instagram | other | Instagram |
+| twitter | other | Twitter |
+| facebook | other | Facebook |
+| youtube | other | YouTube |
+
+**Error Handling**:
+- Skips profiles with null/invalid socialLinks
+- Logs errors for individual link creation failures
+- Continues processing remaining profiles on error
+- Returns summary with success/failure counts
+
+### Phase 3 (Old): Manual Data Migration (Optional - Not Recommended)
+
+If you prefer to manually migrate data instead of using the script:
       links.push({
         userId: profile.userId,
         profileId: profile.id,

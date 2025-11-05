@@ -5,7 +5,9 @@
   "scripts": {
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "migrate:social-links": "node scripts/migrate-social-links.js",
+    "migrate:social-links:dry-run": "node scripts/migrate-social-links.js --dry-run"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0"
