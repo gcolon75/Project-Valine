@@ -54,7 +54,7 @@ const Home = () => {
                       to="/join"
                       className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
                     >
-                      <span>Get Started Free</span>
+                      <span>Get Started</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <Link
@@ -174,7 +174,7 @@ const Home = () => {
             to="/join"
             className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl"
           >
-            <span>Create Free Account</span>
+            <span>Get Started</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

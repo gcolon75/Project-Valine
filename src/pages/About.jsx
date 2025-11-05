@@ -59,7 +59,7 @@ const About = () => {
             to="/join"
             className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl"
           >
-            <span>Create Free Account</span>
+            <span>Get Started</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
