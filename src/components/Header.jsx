@@ -8,6 +8,14 @@ import ThemeToggle from '@/components/ThemeToggle.jsx'; // or ../components/Them
 </div>
 
 /**
+ * LEGACY COMPONENT - NO LONGER USED
+ * 
+ * This component has been replaced by MarketingLayout (for marketing pages)
+ * and AppLayout (for authenticated pages).
+ * 
+ * TODO: Remove this file after confirming no imports remain in codebase.
+ * Last checked: 2025-11-05
+ * 
  * Primary navigation bar for the authenticated application. It sticks to the top
  * of the viewport and adapts to light/dark mode. Active links are
  * highlighted. The profile link displays the current user name for better
