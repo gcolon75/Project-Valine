@@ -75,10 +75,24 @@ for (let i = 0; i < args.length; i++) {
       options.dryRun = true;
       break;
     case '--limit':
-      options.limit = parseInt(args[++i], 10);
+      {
+        const limitValue = parseInt(args[++i], 10);
+        if (isNaN(limitValue) || limitValue < 1) {
+          console.error('Error: --limit must be a positive integer');
+          process.exit(1);
+        }
+        options.limit = limitValue;
+      }
       break;
     case '--delay':
-      options.delay = parseInt(args[++i], 10);
+      {
+        const delayValue = parseInt(args[++i], 10);
+        if (isNaN(delayValue) || delayValue < 0) {
+          console.error('Error: --delay must be a non-negative integer');
+          process.exit(1);
+        }
+        options.delay = delayValue;
+      }
       break;
     case '--help':
       console.log(HELP_TEXT);
@@ -332,9 +346,10 @@ Apply responsive classes to:
   }
   
   if (category === 'Accessibility' && issue.includes('h1')) {
-    // Sanitize page name for use in function name and text
-    const pageName = finding.Page.replace(/[^a-zA-Z0-9]/g, '');
-    const pageTitle = finding.Page.replace(/[<>{}]/g, ''); // Remove potentially dangerous chars
+    // Sanitize page name for use in function name (alphanumeric only)
+    const pageName = finding.Page.replace(/[^a-zA-Z0-9]/g, '') || 'PageComponent';
+    // Sanitize page title for display (remove all special chars that could break JSX/HTML)
+    const pageTitle = finding.Page.replace(/[<>{}[\]()\\/"'`$]/g, '').trim() || 'Page';
     
     return `Add a descriptive H1 heading at the top of the page:
 
