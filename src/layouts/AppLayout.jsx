@@ -74,7 +74,7 @@ export default function AppLayout() {
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-2/95 backdrop-blur-lg border-t border-subtle"
         aria-label="Mobile navigation"
       >
-        <div className="flex items-center justify-around px-2 py-2 safe-area-inset-bottom">
+        <div className="flex items-center justify-around px-2 py-2 pb-safe">
           <MobileNavItem to="/dashboard" icon={Home} label="Home" />
           <MobileNavItem to="/reels" icon={Video} label="Reels" />
           <MobileNavItem to="/post" icon={PlusCircle} label="Create" />

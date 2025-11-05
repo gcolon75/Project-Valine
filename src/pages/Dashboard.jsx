@@ -157,7 +157,6 @@ export default function Dashboard() {
 
             {/* Saved tags */}
             <Card title="Saved tags" padding="default">
-              <div className="text-sm font-semibold text-neutral-900 dark:text-white sr-only">Saved tags</div>
               <div className="flex flex-wrap gap-2">
                 {savedTags.map((t) => (
                   <button
