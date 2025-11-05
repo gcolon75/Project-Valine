@@ -100,6 +100,12 @@ export const batchUpdateProfileLinks = async (userId, links) => {
  * @returns {string} API link type
  */
 const mapLinkTypeToApi = (type) => {
+  // If already in API format, return as-is
+  if (['website', 'imdb', 'showreel', 'other'].includes(type)) {
+    return type;
+  }
+
+  // Map frontend types to API types
   const typeMap = {
     'Website': 'website',
     'Portfolio': 'website',
