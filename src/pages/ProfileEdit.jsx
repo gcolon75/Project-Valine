@@ -1,5 +1,5 @@
 // src/pages/ProfileEdit.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, MapPin, Briefcase, GraduationCap, Award, 
@@ -11,6 +11,7 @@ import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getProfile, updateProfile, batchUpdateProfileLinks } from '../services/profileService';
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ export default function ProfileEdit() {
   
   // Feature flag for backend integration
   const BACKEND_LINKS_ENABLED = import.meta.env.VITE_ENABLE_PROFILE_LINKS_API === 'true';
+  
+  // Loading state
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
   // Helper function to convert old externalLinks format to new normalized format
   const convertLegacyLinks = (externalLinks) => {
@@ -28,11 +32,11 @@ export default function ProfileEdit() {
     
     // Convert old format to new
     const links = [];
-    if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'Website' });
-    if (externalLinks.imdb) links.push({ label: 'IMDb', url: externalLinks.imdb, type: 'IMDb' });
-    if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'Portfolio' });
-    if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'Instagram' });
-    if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'LinkedIn' });
+    if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'website' });
+    if (externalLinks.imdb) links.push({ label: 'IMDb', url: externalLinks.imdb, type: 'imdb' });
+    if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'showreel' });
+    if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'other' });
+    if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'other' });
     
     return links;
   };
@@ -42,6 +46,7 @@ export default function ProfileEdit() {
     displayName: user?.displayName || '',
     username: user?.username || '',
     headline: user?.headline || '',
+    title: user?.title || '',
     pronouns: user?.pronouns || '',
     location: user?.location || '',
     availabilityStatus: user?.availabilityStatus || 'available',
@@ -65,6 +70,34 @@ export default function ProfileEdit() {
     education: user?.education || [],
     skills: user?.skills || []
   });
+
+  // Load profile from backend on mount if feature is enabled
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (BACKEND_LINKS_ENABLED && user?.id) {
+        setIsLoadingProfile(true);
+        try {
+          const profile = await getProfile(user.id);
+          // Update form data with backend profile
+          if (profile) {
+            setFormData(prev => ({
+              ...prev,
+              title: profile.title || prev.title,
+              headline: profile.headline || prev.headline,
+              profileLinks: profile.links || prev.profileLinks
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to load profile from backend:', error);
+          // Continue with existing data
+        } finally {
+          setIsLoadingProfile(false);
+        }
+      }
+    };
+
+    loadProfile();
+  }, [BACKEND_LINKS_ENABLED, user?.id]);
 
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [cropperType, setCropperType] = useState(null); // 'avatar' or 'banner'
@@ -121,33 +154,68 @@ export default function ProfileEdit() {
         toast.error('Headline must be 100 characters or less');
         return;
       }
+
+      // Validate title length
+      if (formData.title && formData.title.length > 100) {
+        toast.error('Title must be 100 characters or less');
+        return;
+      }
+
+      // Validate all links before saving using the validation utility
+      const { validateProfileLink } = await import('../utils/urlValidation');
+      const invalidLinks = formData.profileLinks.filter(link => {
+        const validation = validateProfileLink(link);
+        return !validation.valid;
+      });
+
+      if (invalidLinks.length > 0) {
+        toast.error('Please fix validation errors in profile links before saving');
+        return;
+      }
       
       // Optimistic update - show loading toast
       const toastId = toast.loading('Saving profile changes...');
       
+      // Save previous state for rollback
+      const previousFormData = { ...formData };
+      
       // Optimistically update local user context
       updateUser(formData);
       
-      // TODO: Backend API integration
-      // When backend is ready, call the profile update endpoint:
-      // if (BACKEND_LINKS_ENABLED) {
-      //   await updateUserProfile(user.id, formData);
-      //   await updateProfileLinks(user.id, formData.profileLinks);
-      // }
-      
-      // Simulate API delay for realistic UX (remove when backend is ready)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Success feedback
-      toast.success('Profile saved!', { id: toastId });
-      
-      // Navigate back to profile after brief delay
-      setTimeout(() => {
-        navigate(`/profile/${user.username}`);
-      }, 300);
+      try {
+        // Backend API integration
+        if (BACKEND_LINKS_ENABLED && user?.id) {
+          // Update profile with title, headline, and links
+          const profileUpdate = {
+            title: formData.title,
+            headline: formData.headline,
+            links: formData.profileLinks
+          };
+          
+          await updateProfile(user.id, profileUpdate);
+        } else {
+          // Fallback: simulate API delay for realistic UX
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        // Success feedback
+        toast.success('Profile saved!', { id: toastId });
+        
+        // Navigate back to profile after brief delay
+        setTimeout(() => {
+          navigate(`/profile/${user.username}`);
+        }, 300);
+      } catch (error) {
+        // Rollback optimistic update on error
+        updateUser(previousFormData);
+        setFormData(previousFormData);
+        
+        console.error('Failed to update profile:', error);
+        toast.error('Failed to save profile. Please try again.', { id: toastId });
+      }
       
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error('Unexpected error saving profile:', error);
       toast.error('Failed to save profile. Please try again.');
     }
   };
@@ -314,6 +382,20 @@ export default function ProfileEdit() {
                     </div>
                   </FormField>
 
+                  <FormField label="Professional Title">
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => handleChange('title', e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Senior Voice Actor"
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
+                      {formData.title.length}/100 characters
+                    </p>
+                  </FormField>
+
                   <FormField label="Headline" required>
                     <input
                       type="text"
@@ -413,7 +495,7 @@ export default function ProfileEdit() {
                     <ProfileLinksEditor
                       links={formData.profileLinks}
                       onChange={(links) => handleChange('profileLinks', links)}
-                      maxLinks={10}
+                      maxLinks={20}
                     />
                   </FormField>
 

@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useThemeSync } from "../hooks/useThemeSync";
 
 import MarketingLayout from "../layouts/MarketingLayout";
 import AppLayout from "../layouts/AppLayout";
@@ -44,6 +45,9 @@ const Fallback = () => (
 );
 
 export default function App() {
+  // Sync theme with backend on login
+  useThemeSync();
+  
   return (
     <Suspense fallback={<Fallback />}>
       <Routes>

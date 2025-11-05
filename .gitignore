@@ -60,7 +60,9 @@ test-results/
 # UX_AUDIT_FINDINGS.csv
 # UX_AUDIT_SUMMARY.json
 
-# UX Audit to Issues generated JSON files
+# UX Audit to Issues generated files (can be regenerated with npm run ux:audit-to-issues)
 ux-audit-issues.json
 *-issues.json
 test-*.json
+UX_AUDIT_ROADMAP.md
+*_ROADMAP.md
