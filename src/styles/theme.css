@@ -12,7 +12,14 @@
   --outer: #0b1420;
 
   /* -------- DARK (default) -------- */
-  --bg: #0a0a0a;
+  /* Surface tier tokens for dark mode */
+  --surface-0: #0a0a0a;  /* Page background */
+  --surface-1: #141414;  /* Sunken areas */
+  --surface-2: rgba(23, 23, 23, 0.40);  /* Cards */
+  --surface-3: rgba(23, 23, 23, 0.90);  /* Modals */
+  
+  /* Primary color tokens derived from surface-0 */
+  --bg: var(--surface-0);
   --text: #f3f4f6;
   --muted: #a6adb7;
 
@@ -33,13 +40,30 @@
   --scroll-thumb: rgba(255,255,255,.25);
   --scroll-track: rgba(255,255,255,.06);
 
+  /* Subtle border tokens */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  
+  /* Shadow tokens for dark mode (subtle) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.55);
+
   /* Native control theming hint (default dark) */
   color-scheme: dark;
 }
 
 :root[data-theme="light"] {
   /* -------- LIGHT - Improved visual design with reduced glare and better depth -------- */
-  --bg: #fafbfc;         /* softer off-white, reduces glare */
+  /* Surface tier tokens for depth hierarchy */
+  --surface-0: #fafbfc;  /* Page background */
+  --surface-1: #f4f6f8;  /* Sunken areas, wells */
+  --surface-2: #ffffff;  /* Cards, elevated content */
+  --surface-3: #ffffff;  /* Modals, popovers (with shadow) */
+  
+  /* Primary color tokens derived from surface-0 */
+  --bg: var(--surface-0);
   --text: #1f2937;       /* slate-ish */
   --muted: #6b7280;
 
@@ -58,6 +82,16 @@
 
   --scroll-thumb: rgba(11,20,32,.30);
   --scroll-track: rgba(11,20,32,.05);
+
+  /* Subtle border tokens */
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.10);
+  
+  /* Shadow tokens for depth */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 2px 8px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 4px 16px rgba(16, 24, 40, 0.12);
+  --shadow-xl: 0 8px 24px rgba(16, 24, 40, 0.16);
 
   /* Native control theming hint */
   color-scheme: light;

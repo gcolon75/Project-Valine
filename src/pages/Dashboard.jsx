@@ -13,7 +13,7 @@ const StatCard = ({ icon: Icon, label, value, trend, trendUp }) => (
   <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6 hover:shadow-lg transition-all shadow-sm">
     <div className="flex items-center justify-between mb-3">
       <div className="w-12 h-12 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center shadow-sm">
-        <Icon className="w-6 h-6 text-white" />
+        <Icon className="w-6 h-6 text-white" aria-hidden="true" />
       </div>
       <span className={`text-sm font-semibold ${trendUp ? 'text-[#0CCE6B]' : 'text-red-500'}`}>
         {trend}
