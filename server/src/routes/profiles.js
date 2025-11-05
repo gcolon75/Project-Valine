@@ -115,15 +115,10 @@ router.patch('/:userId', (req, res) => {
   // For now, return success
   const updatedProfile = {
     userId,
-    title: title !== undefined ? sanitizeString(title) : undefined,
-    headline: headline !== undefined ? sanitizeString(headline) : undefined,
-    socialLinks: socialLinks || undefined
+    ...(title !== undefined && { title: sanitizeString(title) }),
+    ...(headline !== undefined && { headline: sanitizeString(headline) }),
+    ...(socialLinks && { socialLinks })
   }
-  
-  // Remove undefined fields
-  Object.keys(updatedProfile).forEach(key => 
-    updatedProfile[key] === undefined && delete updatedProfile[key]
-  )
   
   return res.json({ 
     success: true,

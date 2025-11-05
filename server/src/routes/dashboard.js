@@ -105,17 +105,20 @@ function getRangePeriod(range) {
   return periods[range] || 'Last 30 days'
 }
 
+// Range multipliers for scaling mock data
+// 7d = ~1 week (0.25x base), 30d = ~1 month (1x base), 90d = ~3 months (3x base), all = ~10x base
+const RANGE_MULTIPLIERS = {
+  '7d': 0.25,   // One week of activity
+  '30d': 1,     // One month baseline
+  '90d': 3,     // Three months (3x monthly)
+  'all': 10     // All-time (10x monthly)
+}
+
 /**
  * Helper function to generate mock values scaled by range
  */
 function generateMockValue(range, baseMin, baseMax) {
-  const multipliers = {
-    '7d': 0.25,
-    '30d': 1,
-    '90d': 3,
-    'all': 10
-  }
-  const mult = multipliers[range] || 1
+  const mult = RANGE_MULTIPLIERS[range] || 1
   const min = Math.floor(baseMin * mult)
   const max = Math.floor(baseMax * mult)
   return Math.floor(Math.random() * (max - min + 1)) + min

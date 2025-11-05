@@ -86,7 +86,7 @@ export function validateTheme(theme) {
  * @returns {object} { valid: boolean, error?: string }
  */
 export function validateStringLength(value, min, max, fieldName = 'field') {
-  if (!value) {
+  if (value == null || value === '') {
     if (min > 0) {
       return {
         valid: false,
@@ -114,9 +114,9 @@ export function validateStringLength(value, min, max, fieldName = 'field') {
 }
 
 /**
- * Sanitize string input (trim and remove potentially harmful characters)
+ * Sanitize string input by trimming leading and trailing whitespace
  * @param {string} input - String to sanitize
- * @returns {string} Sanitized string
+ * @returns {string} Sanitized string with whitespace trimmed
  */
 export function sanitizeString(input) {
   if (!input) return input
