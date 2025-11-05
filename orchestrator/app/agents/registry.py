@@ -70,6 +70,12 @@ def get_agents() -> List[AgentInfo]:
             name='Uptime Guardian',
             description='Monitors Discord bot and critical services for 24/7 uptime. Detects downtime instantly, provides health checks with response times, and alerts the squad if services go offline. Auto-recovery capabilities coming soon!',
             command='/uptime-check'
+        ),
+        AgentInfo(
+            id='backend_agent',
+            name='Backend Agent',
+            description='Prepares backend-side work required to support UX changes: API endpoints, schema migrations, validation, contract tests, backfills, and draft PR payloads. Safe-by-default: produces previews and draft PR payloads only; requires human confirmation to create branches/PRs or run migrations.',
+            command='/backend-task'
         )
     ]
 
