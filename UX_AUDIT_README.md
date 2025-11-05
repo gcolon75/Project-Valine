@@ -34,6 +34,26 @@ This directory contains the results of the automated UX Deep Audit performed on 
 
 **Use for:** Dashboards, automation, integration with tools
 
+### 📋 UX_AUDIT_ROADMAP.md (Generated via `ux:audit-to-issues`)
+**Sprint Planning and Milestone Roadmap**
+- Executive summary with issue counts by severity
+- Issues organized by sprint (Sprint 1: High, Sprint 2: Medium)
+- Project board column structure recommendations
+- Sequencing and priority guidelines
+- Labels and owner suggestions
+- Success criteria
+
+**Use for:** Sprint planning, milestone tracking, team coordination
+
+### 📄 ux-audit-issues.json (Generated via `ux:audit-to-issues`)
+**GitHub Issue Payloads**
+- Complete issue definitions ready for GitHub
+- Title, body, labels, and metadata for each issue
+- Reproduction steps and code suggestions
+- Acceptance criteria checklists
+
+**Use for:** Automated GitHub issue creation, review before creating issues
+
 ## Quick Stats
 
 - **Pages Analyzed:** 37
@@ -158,6 +178,38 @@ This will:
    - `UX_AUDIT_FINDINGS.csv` (for project management)
    - `UX_AUDIT_SUMMARY.json` (for dashboards/tools)
 
+### Convert Audit to GitHub Issues and Roadmap
+
+After running the audit, convert findings to GitHub issues and create a roadmap:
+
+```bash
+# Generate issue payloads and roadmap (High and Medium severity)
+npm run ux:audit-to-issues -- --severity high,medium
+
+# Preview what would be created (dry run)
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones --create --dry-run
+
+# Create milestones in GitHub
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones
+
+# Create issues in GitHub (with rate limiting)
+npm run ux:audit-to-issues -- --severity high,medium --create --delay 2000
+
+# Filter by category
+npm run ux:audit-to-issues -- --category accessibility --severity high,medium
+
+# Limit number of issues
+npm run ux:audit-to-issues -- --severity high --limit 10
+```
+
+This will:
+1. Load findings from CSV and JSON
+2. Group and consolidate duplicate issues
+3. Generate issue payloads with full details
+4. Create `UX_AUDIT_ROADMAP.md` with sprint planning
+5. Optionally create GitHub milestones
+6. Optionally create GitHub issues with labels
+
 ### Customize the Audit
 
 Edit `scripts/ux-audit-agent.mjs` to:
@@ -184,6 +236,33 @@ Edit `scripts/ux-audit-agent.mjs` to:
 - [ ] Add subtle shadows for depth
 
 ## Integration Examples
+
+### Create GitHub Issues from Audit
+
+The `ux:audit-to-issues` script automates GitHub issue creation:
+
+```bash
+# 1. Generate issue payloads (review before creating)
+npm run ux:audit-to-issues -- --severity high,medium
+
+# 2. Review the generated files:
+#    - ux-audit-issues.json (issue definitions)
+#    - UX_AUDIT_ROADMAP.md (sprint plan)
+
+# 3. Create milestones in GitHub
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones
+
+# 4. Create issues in GitHub
+npm run ux:audit-to-issues -- --severity high,medium --create
+```
+
+**Features:**
+- Consolidates duplicate issues by page/category
+- Generates detailed issue bodies with reproduction steps
+- Creates code suggestions and acceptance criteria
+- Assigns appropriate labels (accessibility, responsive, etc.)
+- Groups issues into milestones (Sprint 1: High, Sprint 2: Medium)
+- Generates comprehensive roadmap with sequencing
 
 ### Import CSV to Jira
 1. Open Jira project
