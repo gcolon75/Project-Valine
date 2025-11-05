@@ -1,5 +1,10 @@
-// Playwright config (adjust testDir and baseURL to your repo)
-module.exports = {
+/**
+ * Playwright Configuration
+ * Supports both legacy tests (playwright-tests/) and new e2e tests (tests/e2e/)
+ */
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
   timeout: 120000,
   use: {
     headless: true,
@@ -9,7 +14,15 @@ module.exports = {
     ignoreHTTPSErrors: true,
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    { 
+      name: 'chromium', 
+      use: { browserName: 'chromium' } 
+    },
   ],
-  testDir: 'playwright-tests'
-};
+  testDir: '.',
+  // Test match patterns for both legacy and new test directories
+  testMatch: [
+    '**/playwright-tests/**/*.spec.js',
+    '**/tests/e2e/**/*.spec.ts'
+  ]
+});
