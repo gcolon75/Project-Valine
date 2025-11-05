@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "cd .. && npx vitest run server/src",
+    "test:server": "cd .. && npx vitest run server/src"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
