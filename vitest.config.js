@@ -13,7 +13,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',
-      '**/playwright-tests*',  // Exclude Playwright E2E tests (run separately)
+      'playwright-tests_*.spec.js',  // Exclude Playwright E2E tests (run separately)
     ],
     coverage: {
       provider: 'v8',
@@ -24,7 +24,7 @@ export default defineConfig({
         '**/*.config.js',
         '**/dist/**',
         '**/build/**',
-        '**/playwright-tests*',
+        'playwright-tests_*.spec.js',
       ],
     },
   },

@@ -147,7 +147,12 @@ jobs:
       - name: Run visual regression tests
         id: visual-tests
         run: |
-          npx playwright test --config=playwright-visual.config.js --update-snapshots
+          # Update snapshots only on manual dispatch or main branch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            npx playwright test --config=playwright-visual.config.js --update-snapshots
+          else
+            npx playwright test --config=playwright-visual.config.js
+          fi
         continue-on-error: true
 
       - name: Upload snapshots

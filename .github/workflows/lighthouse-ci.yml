@@ -41,7 +41,7 @@ jobs:
         run: npm run build
 
       - name: Install Lighthouse CI
-        run: npm install --no-save @lhci/cli@0.13.x
+        run: npm install --no-save @lhci/cli@0.13.0
 
       - name: Create Lighthouse CI config
         run: |

@@ -251,12 +251,23 @@ jobs:
               body: comment
             });
 
-      - name: Fail on critical vulnerabilities
+      - name: Check critical vulnerabilities
         if: env.NPM_AUDIT_FAILED == 'true'
         run: |
-          echo "::warning::Security vulnerabilities found. Review the audit report."
-          # Don't fail the build, just warn
-          exit 0
+          # Parse audit to check for critical/high vulnerabilities
+          if [ -f npm-audit.json ]; then
+            CRITICAL=$(node -e "const data=require('./npm-audit.json'); const vulns=data.vulnerabilities||{}; console.log(Object.values(vulns).filter(v=>v.severity==='critical').length)")
+            HIGH=$(node -e "const data=require('./npm-audit.json'); const vulns=data.vulnerabilities||{}; console.log(Object.values(vulns).filter(v=>v.severity==='high').length)")
+            
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "::error::Found $CRITICAL critical vulnerabilities. Fix before merging."
+              exit 1
+            elif [ "$HIGH" -gt 0 ]; then
+              echo "::warning::Found $HIGH high severity vulnerabilities. Review before merging."
+            fi
+          fi
+          
+          echo "::warning::Security audit found issues. Review the audit report."
 
   secret-scanning:
     name: Secret Scanning Patterns

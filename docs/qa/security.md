@@ -98,7 +98,7 @@ npm ls vulnerable-package
    **Vulnerability**: CVE-2024-XXXXX
    **Severity**: Moderate
    **Reason**: Not exploitable in our use case (used only in tests)
-   **Review Date**: 2025-11-05
+   **Review Date**: YYYY-MM-DD
    **Reviewer**: @username
    ```
 
