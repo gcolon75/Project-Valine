@@ -25,8 +25,8 @@ export default function MarketingLayout() {
     
     // Restore previous theme when leaving marketing pages
     return () => {
-      // Only restore if user had a different preference before
-      if (previousTheme !== 'light' && previousTheme !== theme) {
+      // Only restore if user had a different preference before (not light)
+      if (previousTheme !== 'light') {
         setTheme(previousTheme);
       }
     };
