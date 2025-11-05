@@ -15,7 +15,8 @@
     "perf:audit": "node scripts/performance-audit.cjs",
     "build:analyze": "npm run build && npm run perf:audit",
     "optimize:images": "node scripts/optimize-images.mjs",
-    "ux:audit": "node scripts/ux-audit-agent.mjs"
+    "ux:audit": "node scripts/ux-audit-agent.mjs",
+    "ux:audit-to-issues": "node scripts/ux-audit-to-issues.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
