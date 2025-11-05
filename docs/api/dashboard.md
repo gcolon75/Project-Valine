@@ -10,8 +10,8 @@ Get aggregated statistics for the user's dashboard.
 
 **Query Parameters:**
 - `userId` (required*) - User ID (*temporary - will be extracted from auth token)
-- `range` (optional) - Time range for statistics. Default: `30d`
-  - `7d` - Last 7 days
+- `range` (optional) - Time range for statistics. Default: `7d`
+  - `7d` - Last 7 days (default, minimal data)
   - `30d` - Last 30 days  
   - `90d` - Last 90 days
   - `all` - All time
@@ -20,8 +20,8 @@ Get aggregated statistics for the user's dashboard.
 ```json
 {
   "stats": {
-    "range": "30d",
-    "period": "Last 30 days",
+    "range": "7d",
+    "period": "Last 7 days",
     "profile": {
       "views": 1247,
       "uniqueVisitors": 892,
@@ -67,7 +67,7 @@ Get aggregated statistics for the user's dashboard.
 
 **Response Headers:**
 ```
-Cache-Control: private, max-age=300
+Cache-Control: private, max-age=60
 Vary: Authorization
 ```
 
@@ -104,7 +104,7 @@ Missing userId:
 
 **Example Requests:**
 
-Default range (30 days):
+Default range (7 days):
 ```bash
 curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123"
 ```
@@ -135,10 +135,19 @@ curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123&range=30d" \
 - **viewTrend**: Percentage change compared to previous period
 
 ### Engagement Stats
+
+**Engagement Metric Definition:**
+Total engagement is the sum of all user interactions with content, including:
 - **totalLikes**: Sum of likes across all content
 - **totalComments**: Sum of comments across all content
 - **totalShares**: Sum of shares across all content
-- **engagementRate**: (likes + comments + shares) / views
+
+**Total Engagement Formula:**
+```
+totalEngagement = totalLikes + totalComments + totalShares
+```
+
+- **engagementRate**: Percentage calculated as `(totalEngagement / views) × 100`
 
 ### Content Stats
 - **postsCreated**: Number of new posts published
@@ -168,13 +177,13 @@ Array of top-performing content items:
 The endpoint returns cache headers to optimize performance:
 
 ```
-Cache-Control: private, max-age=300
+Cache-Control: private, max-age=60
 Vary: Authorization
 ```
 
 **Explanation:**
 - `private`: Response is specific to the user, don't cache in CDN
-- `max-age=300`: Cache for 5 minutes (300 seconds)
+- `max-age=60`: Cache for 1 minute (60 seconds) - short cache for minimal data
 - `Vary: Authorization`: Cache varies by auth token
 
 ### Client-Side Caching
@@ -182,9 +191,9 @@ Vary: Authorization
 Frontend should respect cache headers:
 
 ```javascript
-// Fetch with cache support
+// Fetch with cache support (default 7d range)
 const response = await fetch(
-  `/dashboard/stats?userId=${userId}&range=30d`,
+  `/dashboard/stats?userId=${userId}&range=7d`,
   {
     headers: {
       'Authorization': `Bearer ${token}`
@@ -205,7 +214,7 @@ const cached = await redis.get(cacheKey)
 if (cached) return JSON.parse(cached)
 
 const stats = await calculateStats(userId, range)
-await redis.setex(cacheKey, 300, JSON.stringify(stats))
+await redis.setex(cacheKey, 60, JSON.stringify(stats))  // 1 minute cache
 return stats
 ```
 
@@ -231,10 +240,15 @@ Statistics scale based on time range:
 
 ### Performance Notes
 
-- **7d**: Fast query, minimal data
-- **30d**: Optimal balance (default)
+- **7d**: Fast query, minimal data (default, recommended)
+- **30d**: Moderate data size
 - **90d**: Slower query, more data processing
 - **all**: May require pagination for large datasets
+
+**Default Behavior:**
+- Default range is 7 days to minimize data transfer and server processing
+- Short 1-minute cache reduces server load while keeping data fresh
+- Optimal for dashboard widgets that need frequent updates
 
 ---
 
@@ -326,12 +340,12 @@ function DashboardStats({ userId }) {
 // Use React Query for automatic caching
 import { useQuery } from '@tanstack/react-query'
 
-function useDashboardStats(userId, range = '30d') {
+function useDashboardStats(userId, range = '7d') {
   return useQuery({
     queryKey: ['dashboard-stats', userId, range],
     queryFn: () => getDashboardStats(userId, range),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute (matches server cache)
+    cacheTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 ```

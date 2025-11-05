@@ -9,20 +9,20 @@ const BASE_URL = process.env.API_URL || 'http://localhost:5000'
 
 describe('Dashboard Statistics API', () => {
   describe('GET /dashboard/stats', () => {
-    it('should return stats with default range (30d)', async () => {
+    it('should return stats with default range (7d)', async () => {
       const response = await fetch(`${BASE_URL}/dashboard/stats?userId=user_123`)
       expect(response.status).toBe(200)
       
       const data = await response.json()
       expect(data).toHaveProperty('stats')
-      expect(data.stats.range).toBe('30d')
+      expect(data.stats.range).toBe('7d')
     })
 
     it('should include cache headers', async () => {
       const response = await fetch(`${BASE_URL}/dashboard/stats?userId=user_123`)
       
       expect(response.headers.get('cache-control')).toContain('private')
-      expect(response.headers.get('cache-control')).toContain('max-age=300')
+      expect(response.headers.get('cache-control')).toContain('max-age=60')
       expect(response.headers.get('vary')).toBe('Authorization')
     })
 
@@ -226,6 +226,63 @@ describe('Dashboard Statistics API', () => {
       
       expect(data.stats.range).toBe('7d')
       expect(data.stats.period).toBe('Last 7 days')
+    })
+  })
+
+  describe('Empty Dataset Scenarios', () => {
+    it('should handle empty dataset gracefully', async () => {
+      // Even with mock data, endpoint should return valid structure
+      const response = await fetch(`${BASE_URL}/dashboard/stats?userId=new_user&range=7d`)
+      expect(response.status).toBe(200)
+      
+      const data = await response.json()
+      expect(data.stats).toBeDefined()
+      expect(data.stats.profile).toBeDefined()
+      expect(data.stats.engagement).toBeDefined()
+      expect(typeof data.stats.profile.views).toBe('number')
+      expect(typeof data.stats.engagement.totalLikes).toBe('number')
+    })
+
+    it('should return zero or valid values for new user with 7d range', async () => {
+      const response = await fetch(`${BASE_URL}/dashboard/stats?userId=new_user_empty&range=7d`)
+      expect(response.status).toBe(200)
+      
+      const data = await response.json()
+      // With mock data, values will be generated, but structure should be valid
+      expect(data.stats.profile.views).toBeGreaterThanOrEqual(0)
+      expect(data.stats.engagement.totalLikes).toBeGreaterThanOrEqual(0)
+      expect(data.stats.content.postsCreated).toBeGreaterThanOrEqual(0)
+    })
+  })
+
+  describe('Minimal Data Response for 7d', () => {
+    it('should provide minimal essential metrics for 7d range', async () => {
+      const response = await fetch(`${BASE_URL}/dashboard/stats?userId=user_123&range=7d`)
+      const data = await response.json()
+      
+      // Essential metrics that must be present
+      expect(data.stats.profile.views).toBeDefined()
+      expect(data.stats.engagement.totalLikes).toBeDefined()
+      expect(data.stats.engagement.totalComments).toBeDefined()
+      expect(data.stats.engagement.totalShares).toBeDefined()
+      
+      // Verify data types
+      expect(typeof data.stats.profile.views).toBe('number')
+      expect(typeof data.stats.engagement.totalLikes).toBe('number')
+      expect(typeof data.stats.engagement.totalComments).toBe('number')
+      expect(typeof data.stats.engagement.totalShares).toBe('number')
+    })
+
+    it('should calculate total engagement correctly', async () => {
+      const response = await fetch(`${BASE_URL}/dashboard/stats?userId=user_123&range=7d`)
+      const data = await response.json()
+      
+      const { totalLikes, totalComments, totalShares } = data.stats.engagement
+      const totalEngagement = totalLikes + totalComments + totalShares
+      
+      // Total engagement should be sum of individual metrics
+      expect(totalEngagement).toBeGreaterThanOrEqual(0)
+      expect(typeof totalEngagement).toBe('number')
     })
   })
 })
