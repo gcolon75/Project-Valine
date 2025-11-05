@@ -8,10 +8,13 @@ The Profile Links API provides endpoints for managing user profile links in a no
 
 - **Normalized Storage**: Links are stored in a dedicated `profile_links` table
 - **Type Safety**: Links are categorized by type (website, IMDB, showreel, other)
+- **Custom Ordering**: Links can be reordered using position field (v1.1)
 - **Validation**: Strict validation for URLs, labels, and link types
 - **CRUD Operations**: Full create, read, update, and delete operations
 - **Batch Updates**: Update multiple links in a single request via profile endpoint
 - **Link Limits**: Maximum 20 links per profile to prevent abuse
+- **Caching Support**: ETag-based caching for GET endpoints (v1.1)
+- **Rate Limiting**: 10 requests/minute for POST/DELETE operations (v1.1)
 
 ## Endpoints
 
@@ -525,6 +528,326 @@ If you previously used the `socialLinks` JSON field, here's how to migrate:
 
 ---
 
+## Link Ordering (v1.1)
+
+### Overview
+
+Links now support custom ordering via a `position` field. This allows users to control the display order of their profile links.
+
+### Position Field
+
+- **Type**: Integer
+- **Default**: 0 (or index position when created in batch)
+- **Range**: 0 to 2,147,483,647
+- **Behavior**: Links are sorted by `position` ascending, then by `createdAt` ascending
+
+### Setting Link Order
+
+**During Creation (POST):**
+```json
+{
+  "label": "My Website",
+  "url": "https://example.com",
+  "type": "website",
+  "position": 0
+}
+```
+
+**During Update (PATCH):**
+```json
+{
+  "position": 5
+}
+```
+
+**Batch Update via Profile:**
+```json
+{
+  "links": [
+    { "id": "link_1", "label": "First", "url": "...", "type": "website", "position": 0 },
+    { "id": "link_2", "label": "Second", "url": "...", "type": "imdb", "position": 1 },
+    { "label": "Third", "url": "...", "type": "other", "position": 2 }
+  ]
+}
+```
+
+### Reordering Strategy
+
+**Simple Reorder:**
+1. Fetch all links: `GET /profiles/:userId/links`
+2. Update each link's position: `PATCH /profiles/:userId/links/:linkId` with `{ "position": newPosition }`
+
+**Batch Reorder:**
+1. Fetch profile with links: `GET /profiles/:userId`
+2. Modify links array with new positions
+3. Update profile: `PATCH /profiles/:userId` with entire links array
+
+### Best Practices
+
+- Use sequential integers (0, 1, 2, ...) for simplicity
+- Leave gaps (0, 10, 20, ...) to allow inserting links without renumbering
+- When displaying links, always sort by position, then createdAt
+
+---
+
+## Caching & ETags (v1.1)
+
+### Overview
+
+GET endpoints support ETag-based caching to reduce bandwidth and improve performance.
+
+### How It Works
+
+1. **First Request**: Server returns data with `ETag` header
+2. **Subsequent Requests**: Client sends `If-None-Match` header with ETag value
+3. **Response**:
+   - `304 Not Modified`: Content unchanged, no body sent
+   - `200 OK`: Content changed, new data with new ETag
+
+### Headers
+
+**Response Headers:**
+```
+ETag: "a1b2c3d4e5f6..."
+Cache-Control: public, max-age=300
+```
+
+**Request Headers (for conditional requests):**
+```
+If-None-Match: "a1b2c3d4e5f6..."
+```
+
+### Example
+
+**Initial Request:**
+```http
+GET /profiles/user_123/links
+```
+
+**Response:**
+```http
+HTTP/1.1 200 OK
+ETag: "abc123"
+Cache-Control: public, max-age=300
+
+{
+  "links": [...]
+}
+```
+
+**Subsequent Request:**
+```http
+GET /profiles/user_123/links
+If-None-Match: "abc123"
+```
+
+**Response (unchanged):**
+```http
+HTTP/1.1 304 Not Modified
+ETag: "abc123"
+Cache-Control: public, max-age=300
+```
+
+### Affected Endpoints
+
+- `GET /profiles/:userId` (with links)
+- `GET /profiles/:userId/links`
+
+### Cache Duration
+
+- **Default**: 300 seconds (5 minutes)
+- **Recommendation**: Respect `Cache-Control` max-age value
+
+### Client Implementation
+
+```javascript
+// Store ETag from response
+const response = await fetch('/profiles/user_123/links')
+const etag = response.headers.get('ETag')
+localStorage.setItem('links-etag', etag)
+
+// Use ETag in subsequent requests
+const cachedEtag = localStorage.getItem('links-etag')
+const response2 = await fetch('/profiles/user_123/links', {
+  headers: {
+    'If-None-Match': cachedEtag
+  }
+})
+
+if (response2.status === 304) {
+  // Use cached data
+  const cachedData = localStorage.getItem('links-data')
+  return JSON.parse(cachedData)
+} else {
+  // Update cache
+  const newData = await response2.json()
+  const newEtag = response2.headers.get('ETag')
+  localStorage.setItem('links-data', JSON.stringify(newData))
+  localStorage.setItem('links-etag', newEtag)
+  return newData
+}
+```
+
+---
+
+## Rate Limiting (v1.1)
+
+### Overview
+
+Mutating operations (POST, DELETE) are rate limited to prevent abuse and ensure fair usage.
+
+### Limits
+
+- **POST /profiles/:userId/links**: 10 requests per minute per userId
+- **DELETE /profiles/:userId/links/:linkId**: 10 requests per minute per userId
+
+### Headers
+
+**Rate Limit Info (all responses):**
+```
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 7
+X-RateLimit-Reset: 2025-11-05T21:30:00.000Z
+```
+
+**Rate Limit Exceeded (429 response):**
+```
+Retry-After: 45
+X-RateLimit-Reset: 2025-11-05T21:30:00.000Z
+```
+
+### Error Response (429 Too Many Requests)
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Too many requests, please try again later",
+    "details": {
+      "retryAfter": 45,
+      "resetTime": "2025-11-05T21:30:00.000Z"
+    }
+  }
+}
+```
+
+### Client Implementation
+
+```javascript
+async function createLink(userId, linkData) {
+  try {
+    const response = await fetch(`/profiles/${userId}/links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(linkData)
+    })
+    
+    // Check rate limit headers
+    const remaining = response.headers.get('X-RateLimit-Remaining')
+    if (remaining && parseInt(remaining) < 3) {
+      console.warn('Approaching rate limit:', remaining, 'requests remaining')
+    }
+    
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After')
+      throw new Error(`Rate limited. Retry after ${retryAfter} seconds`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error('Failed to create link:', error)
+    throw error
+  }
+}
+```
+
+### Best Practices
+
+1. **Respect Rate Limits**: Monitor `X-RateLimit-Remaining` header
+2. **Implement Backoff**: Wait for `Retry-After` seconds when rate limited
+3. **Batch Operations**: Use profile PATCH endpoint for bulk updates (not rate limited)
+4. **User Feedback**: Display remaining requests to users
+5. **Exponential Backoff**: Implement exponential backoff for retries
+
+---
+
+## Migration from socialLinks (v1.1)
+
+### Overview
+
+A migration script is available to convert legacy `socialLinks` JSON data to the normalized `profile_links` table.
+
+### Running the Migration
+
+**Dry Run (recommended first):**
+```bash
+cd api
+npm run migrate:social-links:dry-run
+```
+
+**Live Migration:**
+```bash
+cd api
+npm run migrate:social-links
+```
+
+### What the Script Does
+
+1. Fetches all profiles with `socialLinks` data
+2. Parses JSON and validates URLs
+3. Creates corresponding `profile_links` entries
+4. Preserves original `socialLinks` JSON (non-destructive)
+5. Skips duplicate URLs (idempotent)
+6. Assigns positions based on order in JSON
+
+### Mapping
+
+| Legacy Key | Link Type | Label |
+|------------|-----------|-------|
+| website | website | Website |
+| imdb | imdb | IMDb Profile |
+| showreel | showreel | Showreel |
+| linkedin | other | LinkedIn |
+| instagram | other | Instagram |
+| twitter | other | Twitter |
+| facebook | other | Facebook |
+| youtube | other | YouTube |
+
+### Example Output
+
+```
+Starting socialLinks migration...
+Mode: LIVE
+
+Found 150 profiles with socialLinks data
+
+  Profile user_123: Found 3 links to migrate
+    ✓ Created: Website (website)
+    ✓ Created: IMDb Profile (imdb)
+    ✓ Created: LinkedIn (other)
+
+...
+
+Migration Summary:
+==================
+Profiles processed: 145
+Profiles skipped: 5
+Links migrated: 432
+Links skipped (duplicates): 12
+
+✓ Migration completed successfully!
+```
+
+### Post-Migration
+
+1. Verify migrated data: `SELECT * FROM profile_links`
+2. Test API endpoints with migrated profiles
+3. Optionally remove `socialLinks` JSON field in future migration (not recommended immediately)
+
+For detailed migration guide, see [MIGRATION_PROFILE_LINKS.md](./MIGRATION_PROFILE_LINKS.md)
+
+---
+
 ## Support
 
 For questions or issues with the Profile Links API, please:
@@ -532,6 +855,9 @@ For questions or issues with the Profile Links API, please:
 2. Review the validation rules
 3. Test with the provided examples
 4. Contact the backend team
+
+**Version**: 1.1.0 (November 2025)  
+**Changelog**: Added ordering, caching, rate limiting, and migration support
 
 **Last Updated**: 2025-11-05
 **Version**: 1.0.0

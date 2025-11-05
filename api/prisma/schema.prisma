@@ -235,12 +235,14 @@ model ProfileLink {
   label     String   // 1-40 characters
   url       String   @db.Text
   type      String   // "website" | "imdb" | "showreel" | "other"
+  position  Int      @default(0) // Order/position for custom sorting
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("profile_links")
   @@index([userId])
   @@index([profileId])
+  @@index([userId, position])
 }
 
 model Media {
