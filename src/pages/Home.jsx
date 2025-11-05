@@ -34,7 +34,7 @@ const Home = () => {
                 {/* Text Content */}
                 <div>
                   <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-8 animate-slide-up">
-                    <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
+                    <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
                     <span className="text-sm font-medium text-[#0CCE6B]">
                       The Professional Network for Voice Actors
                     </span>
@@ -73,7 +73,7 @@ const Home = () => {
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
                     {/* Placeholder Hero Image */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
-                      <Mic className="w-32 h-32 text-[#0CCE6B]/30" />
+                      <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
                     </div>
                   </div>
                   
@@ -81,7 +81,7 @@ const Home = () => {
                   <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-white" />
+                        <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
                       </div>
                       <span className="text-sm font-semibold text-neutral-900">New!</span>
                     </div>
@@ -205,7 +205,7 @@ const TrendingCard = ({ delay }) => (
     style={{ animationDelay: delay }}
   >
     <div className="flex items-center space-x-2 mb-3">
-      <Sparkles className="w-5 h-5 text-white" />
+      <Sparkles className="w-5 h-5 text-white" aria-hidden="true" />
       <h3 className="text-white font-bold text-lg">Trending Now</h3>
     </div>
     <p className="text-white/90 text-sm mb-4">
@@ -229,7 +229,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
     style={{ animationDelay: delay }}
   >
     <div className="w-12 h-12 bg-[#0CCE6B]/10 rounded-lg flex items-center justify-center mb-4">
-      <Icon className="w-6 h-6 text-[#0CCE6B]" />
+      <Icon className="w-6 h-6 text-[#0CCE6B]" aria-hidden="true" />
     </div>
     <h3 className="text-xl font-bold mb-3 text-neutral-900">{title}</h3>
     <p className="text-neutral-600">{description}</p>
