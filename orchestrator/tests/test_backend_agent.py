@@ -533,6 +533,23 @@ class TestBackendAgentConversationsList(unittest.TestCase):
         # First conversation should have more recent activity
         self.assertEqual(result[0]['conversation_id'], start1['conversation_id'])
         self.assertEqual(result[1]['conversation_id'], start2['conversation_id'])
+    
+    def test_list_conversations_malformed_checks(self):
+        """Test that malformed check results are handled gracefully."""
+        # Start a task
+        start = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        conversation_id = start['conversation_id']
+        
+        # Manually set malformed check results
+        conversation = self.agent.conversations[conversation_id]
+        conversation.check_results = {'bad_check': 'not a dict'}
+        
+        # List conversations should not crash
+        result = self.agent.list_conversations()
+        
+        self.assertEqual(len(result), 1)
+        # Should mark checks as failed for malformed data
+        self.assertEqual(result[0]['checks_status'], 'failed')
 
 
 if __name__ == '__main__':

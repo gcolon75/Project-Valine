@@ -10,6 +10,9 @@ import json
 from pathlib import Path
 
 # Add parent directory to path for imports
+# Note: This example is designed to be run from the orchestrator directory:
+#   cd orchestrator && python examples/list_conversations_demo.py
+# For production use, consider installing orchestrator as a proper package
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from agents.backend_agent import BackendAgent

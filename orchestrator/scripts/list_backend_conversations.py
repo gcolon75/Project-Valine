@@ -27,6 +27,9 @@ import argparse
 from pathlib import Path
 
 # Add parent directory to path for imports
+# Note: This script is designed to be run from the orchestrator directory:
+#   cd orchestrator && python scripts/list_backend_conversations.py
+# For production use, consider installing orchestrator as a proper package
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from agents.backend_agent import BackendAgent

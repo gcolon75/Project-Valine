@@ -851,14 +851,28 @@ class BackendAgent:
             preview_ready = conversation.preview_message is not None
             
             # Determine checks status
+            # Note: check_results is a dict of check_type -> result_dict
+            # Each result_dict should have a 'passed' field, but we use .get() for safety
             if not conversation.check_results:
                 checks_status = 'none'
             else:
-                all_passed = all(
-                    check.get('passed', False) 
-                    for check in conversation.check_results.values()
-                )
-                checks_status = 'passed' if all_passed else 'failed'
+                try:
+                    # Filter to only dict entries, and collect their 'passed' values
+                    valid_checks = [
+                        check.get('passed', False)
+                        for check in conversation.check_results.values()
+                        if isinstance(check, dict)
+                    ]
+                    
+                    # If no valid checks found, mark as failed (malformed data)
+                    if not valid_checks:
+                        checks_status = 'failed'
+                    else:
+                        all_passed = all(valid_checks)
+                        checks_status = 'passed' if all_passed else 'failed'
+                except (AttributeError, TypeError):
+                    # If check_results has unexpected structure, mark as failed
+                    checks_status = 'failed'
             
             draft_pr_payload_exists = conversation.draft_pr_payload is not None
             
