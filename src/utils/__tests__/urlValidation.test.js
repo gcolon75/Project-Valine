@@ -176,13 +176,13 @@ describe('urlValidation', () => {
 
     it('should enforce label max length', () => {
       const link = {
-        label: 'a'.repeat(51),
+        label: 'a'.repeat(41),
         url: 'https://example.com',
         type: 'Website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(false);
-      expect(result.errors.label).toContain('50 characters');
+      expect(result.errors.label).toContain('40 characters');
     });
 
     it('should require url', () => {

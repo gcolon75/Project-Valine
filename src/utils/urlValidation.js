@@ -101,11 +101,11 @@ export const validateProfileLink = (link) => {
     return { valid: false, errors: { _form: 'Invalid link object' } };
   }
   
-  // Validate label
+  // Validate label (API spec: 1-40 characters)
   if (!link.label || typeof link.label !== 'string' || link.label.trim() === '') {
     errors.label = 'Label is required';
-  } else if (link.label.length > 50) {
-    errors.label = 'Label must be 50 characters or less';
+  } else if (link.label.length > 40) {
+    errors.label = 'Label must be 40 characters or less';
   }
   
   // Validate URL

@@ -21,8 +21,8 @@ describe('ProfileLinksEditor', () => {
 
     it('should render existing links', () => {
       const links = [
-        { label: 'My Website', url: 'https://example.com', type: 'Website' },
-        { label: 'IMDb Profile', url: 'https://imdb.com', type: 'IMDb' }
+        { label: 'My Website', url: 'https://example.com', type: 'website' },
+        { label: 'IMDb Profile', url: 'https://imdb.com', type: 'imdb' }
       ];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
@@ -33,10 +33,11 @@ describe('ProfileLinksEditor', () => {
       expect(screen.getByDisplayValue('https://imdb.com')).toBeInTheDocument();
     });
 
-    it('should show backend integration note', () => {
+    it('should show info about link types and limits', () => {
       render(<ProfileLinksEditor links={[]} onChange={mockOnChange} />);
       
-      expect(screen.getByText(/Backend API integration pending/i)).toBeInTheDocument();
+      expect(screen.getByText(/Links are stored in normalized format/i)).toBeInTheDocument();
+      expect(screen.getByText(/website, imdb, showreel, or other/i)).toBeInTheDocument();
     });
   });
 
@@ -49,14 +50,14 @@ describe('ProfileLinksEditor', () => {
       await user.click(addButton);
       
       expect(mockOnChange).toHaveBeenCalledWith([
-        { label: '', url: '', type: 'Website' }
+        { label: '', url: '', type: 'website' }
       ]);
     });
 
     it('should add another link when clicking "Add Another Link"', async () => {
       const user = userEvent.setup();
       const links = [
-        { label: 'My Website', url: 'https://example.com', type: 'Website' }
+        { label: 'My Website', url: 'https://example.com', type: 'website' }
       ];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
@@ -66,7 +67,7 @@ describe('ProfileLinksEditor', () => {
       
       expect(mockOnChange).toHaveBeenCalledWith([
         ...links,
-        { label: '', url: '', type: 'Website' }
+        { label: '', url: '', type: 'website' }
       ]);
     });
 
@@ -74,7 +75,7 @@ describe('ProfileLinksEditor', () => {
       const links = Array.from({ length: 10 }, (_, i) => ({
         label: `Link ${i}`,
         url: `https://example${i}.com`,
-        type: 'Website'
+        type: 'website'
       }));
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} maxLinks={10} />);
@@ -88,8 +89,8 @@ describe('ProfileLinksEditor', () => {
     it('should remove a link when clicking remove button', async () => {
       const user = userEvent.setup();
       const links = [
-        { label: 'Website 1', url: 'https://example1.com', type: 'Website' },
-        { label: 'Website 2', url: 'https://example2.com', type: 'Website' }
+        { label: 'Website 1', url: 'https://example1.com', type: 'website' },
+        { label: 'Website 2', url: 'https://example2.com', type: 'website' }
       ];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
@@ -104,7 +105,7 @@ describe('ProfileLinksEditor', () => {
   describe('Editing Links', () => {
     it('should update label when typing', async () => {
       const user = userEvent.setup();
-      const links = [{ label: '', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: '', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -119,7 +120,7 @@ describe('ProfileLinksEditor', () => {
 
     it('should update url when typing', async () => {
       const user = userEvent.setup();
-      const links = [{ label: 'My Website', url: '', type: 'Website' }];
+      const links = [{ label: 'My Website', url: '', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -134,22 +135,22 @@ describe('ProfileLinksEditor', () => {
 
     it('should update type when selecting', async () => {
       const user = userEvent.setup();
-      const links = [{ label: 'My Link', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: 'My Link', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
       const typeSelect = screen.getByDisplayValue('Website');
-      await user.selectOptions(typeSelect, 'IMDb');
+      await user.selectOptions(typeSelect, 'imdb');
       
       expect(mockOnChange).toHaveBeenLastCalledWith([
-        { label: 'My Link', url: 'https://example.com', type: 'IMDb' }
+        { label: 'My Link', url: 'https://example.com', type: 'imdb' }
       ]);
     });
   });
 
   describe('Validation', () => {
     it('should show validation hint for URL format', () => {
-      const links = [{ label: 'My Website', url: '', type: 'Website' }];
+      const links = [{ label: 'My Website', url: '', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -159,7 +160,7 @@ describe('ProfileLinksEditor', () => {
 
     it('should call onChange when editing fields', async () => {
       const user = userEvent.setup();
-      const links = [{ label: '', url: '', type: 'Website' }];
+      const links = [{ label: '', url: '', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -170,35 +171,35 @@ describe('ProfileLinksEditor', () => {
     });
 
     it('should show character count for label', () => {
-      const links = [{ label: 'Test', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: 'Test', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
-      expect(screen.getByText('4/50 characters')).toBeInTheDocument();
+      expect(screen.getByText('4/40 characters')).toBeInTheDocument();
     });
 
     it('should enforce label max length', async () => {
       const user = userEvent.setup();
-      const links = [{ label: '', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: '', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
       const labelInput = screen.getByPlaceholderText('e.g., My Portfolio');
-      const longLabel = 'a'.repeat(51);
+      const longLabel = 'a'.repeat(41);
       
-      // maxLength attribute should prevent typing beyond 50 chars
+      // maxLength attribute should prevent typing beyond 40 chars
       await user.type(labelInput, longLabel);
       
-      // Input should be truncated to 50 chars
+      // Input should be truncated to 40 chars
       const calls = mockOnChange.mock.calls;
       const lastCall = calls[calls.length - 1][0];
-      expect(lastCall[0].label.length).toBeLessThanOrEqual(50);
+      expect(lastCall[0].label.length).toBeLessThanOrEqual(40);
     });
   });
 
   describe('Accessibility', () => {
     it('should have proper ARIA labels', () => {
-      const links = [{ label: 'My Website', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: 'My Website', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -207,7 +208,7 @@ describe('ProfileLinksEditor', () => {
     });
 
     it('should mark required fields', () => {
-      const links = [{ label: '', url: '', type: 'Website' }];
+      const links = [{ label: '', url: '', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -219,7 +220,7 @@ describe('ProfileLinksEditor', () => {
     });
 
     it('should have proper aria-describedby for hint text', () => {
-      const links = [{ label: '', url: '', type: 'Website' }];
+      const links = [{ label: '', url: '', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -233,8 +234,8 @@ describe('ProfileLinksEditor', () => {
   describe('Drag and Drop', () => {
     it('should support draggable links', () => {
       const links = [
-        { label: 'Link 1', url: 'https://example1.com', type: 'Website' },
-        { label: 'Link 2', url: 'https://example2.com', type: 'Website' }
+        { label: 'Link 1', url: 'https://example1.com', type: 'website' },
+        { label: 'Link 2', url: 'https://example2.com', type: 'website' }
       ];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
@@ -247,7 +248,7 @@ describe('ProfileLinksEditor', () => {
 
   describe('Link Types', () => {
     it('should support all common link types', () => {
-      const links = [{ label: 'Test', url: 'https://example.com', type: 'Website' }];
+      const links = [{ label: 'Test', url: 'https://example.com', type: 'website' }];
       
       render(<ProfileLinksEditor links={links} onChange={mockOnChange} />);
       
@@ -255,8 +256,7 @@ describe('ProfileLinksEditor', () => {
       const options = within(typeSelect).getAllByRole('option');
       
       const expectedTypes = [
-        'Website', 'Portfolio', 'IMDb', 'LinkedIn', 'Twitter',
-        'Instagram', 'YouTube', 'Vimeo', 'SoundCloud', 'Other'
+        'Website', 'IMDb', 'Showreel', 'Other'
       ];
       
       expect(options).toHaveLength(expectedTypes.length);

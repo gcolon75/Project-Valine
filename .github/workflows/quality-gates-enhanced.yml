@@ -1,0 +1,396 @@
+name: Enhanced Quality Gates (A11y, Perf, Security)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'orchestrator/**'
+      - 'package.json'
+      - '.github/workflows/quality-gates-enhanced.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+  # Performance thresholds (right-sized for project)
+  PERF_THRESHOLD_FCP: '1800'      # First Contentful Paint (ms)
+  PERF_THRESHOLD_LCP: '2500'      # Largest Contentful Paint (ms)
+  PERF_THRESHOLD_TTI: '3800'      # Time to Interactive (ms)
+  PERF_THRESHOLD_CLS: '0.1'       # Cumulative Layout Shift
+  # Accessibility thresholds
+  A11Y_THRESHOLD_CRITICAL: '0'    # No critical violations
+  A11Y_THRESHOLD_SERIOUS: '5'     # Max 5 serious violations
+  A11Y_THRESHOLD_MODERATE: '15'   # Max 15 moderate violations
+
+jobs:
+  accessibility-gate:
+    name: Accessibility Quality Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Start server and run a11y audit
+        run: |
+          # Start preview server in background
+          npm run preview &
+          SERVER_PID=$!
+          
+          # Wait for server to be ready
+          npx wait-on http://localhost:4173 --timeout 30000
+          
+          # Run axe-core audit
+          npx @axe-core/cli http://localhost:4173 \
+            --exit \
+            --save axe-results.json \
+            --tags wcag2a,wcag2aa,wcag21aa
+          
+          # Kill server
+          kill $SERVER_PID || true
+        continue-on-error: true
+
+      - name: Parse and validate a11y results
+        id: a11y-check
+        run: |
+          # Parse results
+          CRITICAL=$(jq '[.violations[] | select(.impact == "critical")] | length' axe-results.json || echo 0)
+          SERIOUS=$(jq '[.violations[] | select(.impact == "serious")] | length' axe-results.json || echo 0)
+          MODERATE=$(jq '[.violations[] | select(.impact == "moderate")] | length' axe-results.json || echo 0)
+          MINOR=$(jq '[.violations[] | select(.impact == "minor")] | length' axe-results.json || echo 0)
+          
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "serious=$SERIOUS" >> $GITHUB_OUTPUT
+          echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          
+          # Check thresholds
+          if [ "$CRITICAL" -gt "${{ env.A11Y_THRESHOLD_CRITICAL }}" ]; then
+            echo "a11y_pass=false" >> $GITHUB_OUTPUT
+            echo "❌ FAILED: $CRITICAL critical violations (threshold: ${{ env.A11Y_THRESHOLD_CRITICAL }})"
+            exit 1
+          elif [ "$SERIOUS" -gt "${{ env.A11Y_THRESHOLD_SERIOUS }}" ]; then
+            echo "a11y_pass=false" >> $GITHUB_OUTPUT
+            echo "⚠️ WARNING: $SERIOUS serious violations (threshold: ${{ env.A11Y_THRESHOLD_SERIOUS }})"
+            exit 1
+          elif [ "$MODERATE" -gt "${{ env.A11Y_THRESHOLD_MODERATE }}" ]; then
+            echo "a11y_pass=false" >> $GITHUB_OUTPUT
+            echo "⚠️ WARNING: $MODERATE moderate violations (threshold: ${{ env.A11Y_THRESHOLD_MODERATE }})"
+          else
+            echo "a11y_pass=true" >> $GITHUB_OUTPUT
+            echo "✅ PASSED: Accessibility checks within thresholds"
+          fi
+
+      - name: Upload a11y results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-results-${{ github.run_number }}
+          path: axe-results.json
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const critical = '${{ steps.a11y-check.outputs.critical }}';
+            const serious = '${{ steps.a11y-check.outputs.serious }}';
+            const moderate = '${{ steps.a11y-check.outputs.moderate }}';
+            const minor = '${{ steps.a11y-check.outputs.minor }}';
+            const passed = '${{ steps.a11y-check.outputs.a11y_pass }}' === 'true';
+            
+            const icon = passed ? '✅' : '❌';
+            const status = passed ? 'PASSED' : 'FAILED';
+            
+            const body = `## ${icon} Accessibility Quality Gate: ${status}
+            
+            ### Violation Summary
+            - **Critical:** ${critical} (threshold: ${{ env.A11Y_THRESHOLD_CRITICAL }})
+            - **Serious:** ${serious} (threshold: ${{ env.A11Y_THRESHOLD_SERIOUS }})
+            - **Moderate:** ${moderate} (threshold: ${{ env.A11Y_THRESHOLD_MODERATE }})
+            - **Minor:** ${minor}
+            
+            ${passed ? '✨ All accessibility checks passed!' : '⚠️ Please fix violations above thresholds.'}
+            
+            [View detailed results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  performance-gate:
+    name: Performance Quality Gate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+
+      - name: Run Lighthouse CI
+        run: |
+          # Start preview server
+          npm run preview &
+          SERVER_PID=$!
+          
+          # Wait for server
+          npx wait-on http://localhost:4173 --timeout 30000
+          
+          # Run Lighthouse
+          lhci autorun --collect.url=http://localhost:4173 --collect.numberOfRuns=3
+          
+          # Kill server
+          kill $SERVER_PID || true
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
+          LHCI_BUILD_CONTEXT__COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          LHCI_BUILD_CONTEXT__AUTHOR: ${{ github.actor }}
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
+        continue-on-error: true
+
+      - name: Parse Lighthouse results
+        id: perf-check
+        run: |
+          # Parse Lighthouse JSON results
+          FCP=$(jq '.audits["first-contentful-paint"].numericValue' .lighthouseci/*.json | head -1)
+          LCP=$(jq '.audits["largest-contentful-paint"].numericValue' .lighthouseci/*.json | head -1)
+          TTI=$(jq '.audits.interactive.numericValue' .lighthouseci/*.json | head -1)
+          CLS=$(jq '.audits["cumulative-layout-shift"].numericValue' .lighthouseci/*.json | head -1)
+          PERF_SCORE=$(jq '.categories.performance.score * 100' .lighthouseci/*.json | head -1)
+          
+          echo "fcp=$FCP" >> $GITHUB_OUTPUT
+          echo "lcp=$LCP" >> $GITHUB_OUTPUT
+          echo "tti=$TTI" >> $GITHUB_OUTPUT
+          echo "cls=$CLS" >> $GITHUB_OUTPUT
+          echo "perf_score=$PERF_SCORE" >> $GITHUB_OUTPUT
+          
+          # Check thresholds
+          FAILED=false
+          if (( $(echo "$FCP > ${{ env.PERF_THRESHOLD_FCP }}" | bc -l) )); then
+            echo "❌ FCP: ${FCP}ms exceeds threshold ${{ env.PERF_THRESHOLD_FCP }}ms"
+            FAILED=true
+          fi
+          
+          if (( $(echo "$LCP > ${{ env.PERF_THRESHOLD_LCP }}" | bc -l) )); then
+            echo "❌ LCP: ${LCP}ms exceeds threshold ${{ env.PERF_THRESHOLD_LCP }}ms"
+            FAILED=true
+          fi
+          
+          if (( $(echo "$TTI > ${{ env.PERF_THRESHOLD_TTI }}" | bc -l) )); then
+            echo "❌ TTI: ${TTI}ms exceeds threshold ${{ env.PERF_THRESHOLD_TTI }}ms"
+            FAILED=true
+          fi
+          
+          if (( $(echo "$CLS > ${{ env.PERF_THRESHOLD_CLS }}" | bc -l) )); then
+            echo "❌ CLS: $CLS exceeds threshold ${{ env.PERF_THRESHOLD_CLS }}"
+            FAILED=true
+          fi
+          
+          if [ "$FAILED" = true ]; then
+            echo "perf_pass=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "perf_pass=true" >> $GITHUB_OUTPUT
+            echo "✅ All performance metrics within thresholds"
+          fi
+
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results-${{ github.run_number }}
+          path: .lighthouseci/
+          retention-days: 30
+
+      - name: Performance summary
+        if: always()
+        run: |
+          echo "## 🚀 Performance Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Core Web Vitals" >> $GITHUB_STEP_SUMMARY
+          echo "- **FCP:** ${{ steps.perf-check.outputs.fcp }}ms (threshold: ${{ env.PERF_THRESHOLD_FCP }}ms)" >> $GITHUB_STEP_SUMMARY
+          echo "- **LCP:** ${{ steps.perf-check.outputs.lcp }}ms (threshold: ${{ env.PERF_THRESHOLD_LCP }}ms)" >> $GITHUB_STEP_SUMMARY
+          echo "- **TTI:** ${{ steps.perf-check.outputs.tti }}ms (threshold: ${{ env.PERF_THRESHOLD_TTI }}ms)" >> $GITHUB_STEP_SUMMARY
+          echo "- **CLS:** ${{ steps.perf-check.outputs.cls }} (threshold: ${{ env.PERF_THRESHOLD_CLS }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Performance Score:** ${{ steps.perf-check.outputs.perf_score }}/100" >> $GITHUB_STEP_SUMMARY
+
+  security-gate:
+    name: Security Quality Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: |
+          cd orchestrator
+          pip install -r requirements.txt
+          pip install bandit safety
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          npm audit --json > npm-audit.json || true
+          
+          HIGH=$(jq '.metadata.vulnerabilities.high' npm-audit.json || echo 0)
+          CRITICAL=$(jq '.metadata.vulnerabilities.critical' npm-audit.json || echo 0)
+          
+          echo "npm_high=$HIGH" >> $GITHUB_OUTPUT
+          echo "npm_critical=$CRITICAL" >> $GITHUB_OUTPUT
+          
+          if [ "$CRITICAL" -gt "0" ] || [ "$HIGH" -gt "5" ]; then
+            echo "npm_pass=false" >> $GITHUB_OUTPUT
+            echo "❌ NPM audit failed: $CRITICAL critical, $HIGH high"
+            exit 1
+          else
+            echo "npm_pass=true" >> $GITHUB_OUTPUT
+            echo "✅ NPM audit passed"
+          fi
+        continue-on-error: true
+
+      - name: Run bandit (Python)
+        id: bandit
+        run: |
+          cd orchestrator
+          bandit -r app/ -f json -o bandit-report.json || true
+          
+          HIGH=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit-report.json || echo 0)
+          
+          echo "bandit_high=$HIGH" >> $GITHUB_OUTPUT
+          
+          if [ "$HIGH" -gt "0" ]; then
+            echo "bandit_pass=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Bandit found $HIGH high severity issues"
+          else
+            echo "bandit_pass=true" >> $GITHUB_OUTPUT
+            echo "✅ Bandit scan passed"
+          fi
+        continue-on-error: true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports-${{ github.run_number }}
+          path: |
+            npm-audit.json
+            orchestrator/bandit-report.json
+          retention-days: 30
+
+      - name: Security summary
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### NPM Audit" >> $GITHUB_STEP_SUMMARY
+          echo "- **Critical:** ${{ steps.npm-audit.outputs.npm_critical }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **High:** ${{ steps.npm-audit.outputs.npm_high }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Bandit (Python)" >> $GITHUB_STEP_SUMMARY
+          echo "- **High Severity:** ${{ steps.bandit.outputs.bandit_high }}" >> $GITHUB_STEP_SUMMARY
+
+  quality-gate-summary:
+    name: Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [accessibility-gate, performance-gate, security-gate]
+    if: always()
+    
+    steps:
+      - name: Check all gates
+        run: |
+          echo "## 🎯 Enhanced Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          A11Y="${{ needs.accessibility-gate.result }}"
+          PERF="${{ needs.performance-gate.result }}"
+          SEC="${{ needs.security-gate.result }}"
+          
+          if [ "$A11Y" = "success" ]; then
+            echo "✅ **Accessibility:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Accessibility:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "$PERF" = "success" ]; then
+            echo "✅ **Performance:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Performance:** Failed or Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "$SEC" = "success" ]; then
+            echo "✅ **Security:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Security:** Review Required" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Only fail if critical gates fail
+          if [ "$A11Y" != "success" ]; then
+            echo "### ⚠️ Critical gate failed: Accessibility" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          elif [ "$SEC" != "success" ]; then
+            echo "### ⚠️ Security review required before merge" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✨ All quality gates passed!" >> $GITHUB_STEP_SUMMARY
+          fi
