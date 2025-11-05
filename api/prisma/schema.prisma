@@ -15,6 +15,7 @@ model User {
   avatar       String?
   name         String?
   role         String   @default("artist") // 'artist' | 'observer'
+  theme        String?  // 'light' | 'dark' - theme preference
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

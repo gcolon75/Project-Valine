@@ -5,6 +5,7 @@ import morgan from 'morgan'
 
 import authRouter from './routes/auth.js'
 import healthRouter from './routes/health.js'
+import preferencesRouter from './routes/preferences.js'
 
 const app = express()
 
@@ -17,6 +18,7 @@ app.use(morgan('dev'))
 
 app.use('/auth', authRouter)
 app.use('/health', healthRouter)
+app.use('/preferences', preferencesRouter)
 
 app.get('/', (req, res) => {
   res.json({ ok: true, name: 'Project Valine API' })
