@@ -73,10 +73,14 @@ class ConversationState:
         self.preview_message = None
         self.check_results = {}
         self.created_at = datetime.now(timezone.utc)
+        self.last_activity_at = datetime.now(timezone.utc)
         self.confirmed = False
         self.needs_clarification = False
         self.clarification_questions = []
         self.context_files = []
+        self.status = 'in-progress'  # in-progress, waiting, interrupted, completed, draft-preview
+        self.draft_pr_payload = None
+        self.artifacts_urls = []
         
     def to_dict(self):
         """Convert to dictionary for storage."""
@@ -90,10 +94,14 @@ class ConversationState:
             'preview_message': self.preview_message,
             'check_results': self.check_results,
             'created_at': self.created_at.isoformat(),
+            'last_activity_at': self.last_activity_at.isoformat(),
             'confirmed': self.confirmed,
             'needs_clarification': self.needs_clarification,
             'clarification_questions': self.clarification_questions,
-            'context_files': self.context_files
+            'context_files': self.context_files,
+            'status': self.status,
+            'draft_pr_payload': self.draft_pr_payload,
+            'artifacts_urls': self.artifacts_urls
         }
     
     @classmethod
@@ -113,9 +121,18 @@ class ConversationState:
         conversation.needs_clarification = data.get('needs_clarification', False)
         conversation.clarification_questions = data.get('clarification_questions', [])
         conversation.context_files = data.get('context_files', [])
+        conversation.status = data.get('status', 'in-progress')
+        conversation.draft_pr_payload = data.get('draft_pr_payload')
+        conversation.artifacts_urls = data.get('artifacts_urls', [])
         if 'created_at' in data:
             conversation.created_at = datetime.fromisoformat(data['created_at'])
+        if 'last_activity_at' in data:
+            conversation.last_activity_at = datetime.fromisoformat(data['last_activity_at'])
         return conversation
+    
+    def update_activity(self):
+        """Update the last activity timestamp."""
+        self.last_activity_at = datetime.now(timezone.utc)
 
 
 class BackendAgent:
@@ -271,6 +288,8 @@ class BackendAgent:
         if clarifications:
             conversation.needs_clarification = True
             conversation.clarification_questions = clarifications
+            conversation.status = 'waiting'  # Waiting for clarification
+            conversation.update_activity()
             self.conversations[conversation_id] = conversation
             
             return {
@@ -284,6 +303,8 @@ class BackendAgent:
         # Generate preview of changes
         preview = self._generate_task_preview(conversation)
         conversation.preview_message = preview['message']
+        conversation.status = 'draft-preview'  # Preview ready, waiting for confirmation
+        conversation.update_activity()
         self.conversations[conversation_id] = conversation
         
         return {
@@ -494,9 +515,12 @@ class BackendAgent:
         # Handle positive confirmation
         if user_confirmation.lower() in ['yes', 'confirm', 'proceed', 'go']:
             conversation.confirmed = True
+            conversation.status = 'completed'
+            conversation.update_activity()
             
             # Prepare draft PR payload
             draft_pr = self._prepare_draft_pr(conversation)
+            conversation.draft_pr_payload = draft_pr
             
             # Clean up conversation
             del self.conversations[conversation_id]
@@ -508,6 +532,7 @@ class BackendAgent:
             }
         
         # Handle additional questions or modifications
+        conversation.update_activity()
         return {
             'success': True,
             'message': f"💬 Noted: {user_confirmation}\n\n" + 
@@ -715,6 +740,7 @@ class BackendAgent:
             }
         
         conversation = self.conversations[conversation_id]
+        conversation.update_activity()
         
         # Run checks (in a real implementation, would run actual commands)
         checks = {
@@ -792,3 +818,74 @@ class BackendAgent:
             msg += "\n"
         
         return msg
+    
+    def list_conversations(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        max_results: int = 200
+    ) -> List[Dict[str, Any]]:
+        """
+        List agent conversation states with optional filtering.
+        
+        Args:
+            filters: Optional dictionary of filters. Supported keys:
+                - status: List of status values to filter by
+                  (e.g., ['in-progress', 'waiting', 'interrupted', 'draft-preview'])
+            max_results: Maximum number of results to return (default: 200)
+            
+        Returns:
+            List of conversation objects with metadata
+        """
+        results = []
+        
+        for conversation_id, conversation in self.conversations.items():
+            # Apply status filter if provided
+            if filters and 'status' in filters:
+                status_filter = filters['status']
+                if isinstance(status_filter, str):
+                    status_filter = [status_filter]
+                if conversation.status not in status_filter:
+                    continue
+            
+            # Determine derived fields
+            preview_ready = conversation.preview_message is not None
+            
+            # Determine checks status
+            if not conversation.check_results:
+                checks_status = 'none'
+            else:
+                all_passed = all(
+                    check.get('passed', False) 
+                    for check in conversation.check_results.values()
+                )
+                checks_status = 'passed' if all_passed else 'failed'
+            
+            draft_pr_payload_exists = conversation.draft_pr_payload is not None
+            
+            # Get task name and type from task_details
+            task_name = conversation.task_details.get('summary', conversation.task_id)
+            task_type = conversation.task_details.get('type', 'backend')
+            
+            # Build conversation object
+            conv_obj = {
+                'conversation_id': conversation.conversation_id,
+                'task_id': conversation.task_id,
+                'task_name': task_name,
+                'task_type': task_type,
+                'assigned_agent': 'backend_agent',
+                'status': conversation.status,
+                'preview_ready': preview_ready,
+                'checks_status': checks_status,
+                'draft_pr_payload_exists': draft_pr_payload_exists,
+                'artifacts_urls': conversation.artifacts_urls,
+                'created_at': conversation.created_at.isoformat(),
+                'last_activity_at': conversation.last_activity_at.isoformat()
+            }
+            
+            results.append(conv_obj)
+        
+        # Sort by last_activity_at (most recent first)
+        results.sort(key=lambda x: x['last_activity_at'], reverse=True)
+        
+        # Apply max_results limit
+        return results[:max_results]

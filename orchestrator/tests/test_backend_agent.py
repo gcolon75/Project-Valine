@@ -396,5 +396,144 @@ class TestBackendAgentIntegration(unittest.TestCase):
             self.assertGreater(len(start['questions']), 0)
 
 
+class TestBackendAgentConversationsList(unittest.TestCase):
+    """Test suite for list_conversations functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.agent = BackendAgent(repo="test/repo")
+    
+    def test_list_conversations_empty(self):
+        """Test listing conversations when none exist."""
+        result = self.agent.list_conversations()
+        
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+    
+    def test_list_conversations_single(self):
+        """Test listing single conversation."""
+        # Start a task
+        start = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        conversation_id = start['conversation_id']
+        
+        # List conversations
+        result = self.agent.list_conversations()
+        
+        self.assertEqual(len(result), 1)
+        
+        # Check conversation object structure
+        conv = result[0]
+        self.assertEqual(conv['conversation_id'], conversation_id)
+        self.assertEqual(conv['task_id'], 'validators-and-security')
+        self.assertIn('task_name', conv)
+        self.assertEqual(conv['task_type'], 'validation')
+        self.assertEqual(conv['assigned_agent'], 'backend_agent')
+        self.assertEqual(conv['status'], 'draft-preview')
+        self.assertTrue(conv['preview_ready'])
+        self.assertEqual(conv['checks_status'], 'none')
+        self.assertFalse(conv['draft_pr_payload_exists'])
+        self.assertIn('artifacts_urls', conv)
+        self.assertIn('created_at', conv)
+        self.assertIn('last_activity_at', conv)
+    
+    def test_list_conversations_multiple(self):
+        """Test listing multiple conversations."""
+        # Start multiple tasks
+        start1 = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        start2 = self.agent.start_task(user='testuser', task_id='theme-preference-api')
+        
+        # List conversations
+        result = self.agent.list_conversations()
+        
+        self.assertEqual(len(result), 2)
+        
+        # Check that conversations are returned
+        conv_ids = [conv['conversation_id'] for conv in result]
+        self.assertIn(start1['conversation_id'], conv_ids)
+        self.assertIn(start2['conversation_id'], conv_ids)
+    
+    def test_list_conversations_filter_by_status(self):
+        """Test filtering conversations by status."""
+        # Start two tasks - one with preview, one waiting for clarification
+        start1 = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        start2 = self.agent.start_task(user='testuser', task_id='theme-preference-api')
+        
+        # Filter by draft-preview status
+        result = self.agent.list_conversations(filters={'status': ['draft-preview']})
+        
+        # Should only get the validators task (no clarifications needed)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['status'], 'draft-preview')
+        self.assertEqual(result[0]['conversation_id'], start1['conversation_id'])
+        
+        # Filter by waiting status
+        result_waiting = self.agent.list_conversations(filters={'status': ['waiting']})
+        
+        # Should only get the theme task (needs clarifications)
+        self.assertEqual(len(result_waiting), 1)
+        self.assertEqual(result_waiting[0]['status'], 'waiting')
+        self.assertEqual(result_waiting[0]['conversation_id'], start2['conversation_id'])
+    
+    def test_list_conversations_filter_multiple_statuses(self):
+        """Test filtering by multiple statuses."""
+        # Start tasks
+        start1 = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        start2 = self.agent.start_task(user='testuser', task_id='theme-preference-api')
+        
+        # Filter by both statuses
+        result = self.agent.list_conversations(
+            filters={'status': ['draft-preview', 'waiting']}
+        )
+        
+        # Should get both
+        self.assertEqual(len(result), 2)
+    
+    def test_list_conversations_with_checks(self):
+        """Test conversation with checks run."""
+        # Start a task and run checks
+        start = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        conversation_id = start['conversation_id']
+        
+        self.agent.run_checks(conversation_id=conversation_id)
+        
+        # List conversations
+        result = self.agent.list_conversations()
+        
+        self.assertEqual(len(result), 1)
+        conv = result[0]
+        
+        # Checks should have been run
+        self.assertEqual(conv['checks_status'], 'passed')
+    
+    def test_list_conversations_max_results(self):
+        """Test max_results parameter."""
+        # Start 5 tasks
+        for i in range(5):
+            self.agent.start_task(user=f'user{i}', task_id='validators-and-security')
+        
+        # Request only 3
+        result = self.agent.list_conversations(max_results=3)
+        
+        self.assertEqual(len(result), 3)
+    
+    def test_list_conversations_sorting(self):
+        """Test that conversations are sorted by last_activity_at."""
+        # Start two tasks
+        start1 = self.agent.start_task(user='testuser', task_id='validators-and-security')
+        start2 = self.agent.start_task(user='testuser', task_id='dashboard-stats-endpoints')
+        
+        # Update activity on first one
+        import time
+        time.sleep(0.1)  # Small delay to ensure different timestamps
+        self.agent.run_checks(conversation_id=start1['conversation_id'])
+        
+        # List conversations
+        result = self.agent.list_conversations()
+        
+        # First conversation should have more recent activity
+        self.assertEqual(result[0]['conversation_id'], start1['conversation_id'])
+        self.assertEqual(result[1]['conversation_id'], start2['conversation_id'])
+
+
 if __name__ == '__main__':
     unittest.main()
