@@ -38,9 +38,12 @@ export function requireAuth(req, res, next) {
     })
   }
   
-  // In a real implementation, validate JWT and extract userId
-  // For now, we'll use a simple stub that returns a fixed user ID
-  // This matches the stub auth in auth.js
+  // TODO: In production, validate JWT and extract real userId from token
+  // This is a development stub that returns a fixed user ID for testing
+  // SECURITY WARNING: This must be replaced before production deployment
+  // Example production implementation:
+  //   const decoded = jwt.verify(token, process.env.JWT_SECRET)
+  //   req.userId = decoded.userId
   req.userId = 'user_123'
   
   next()

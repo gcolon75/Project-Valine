@@ -1,7 +1,11 @@
 /**
  * Database client singleton
  * Provides a single Prisma client instance for the server
- * Uses the generated Prisma client from the api directory
+ * 
+ * Note: This imports the Prisma client generated in the api directory
+ * to avoid duplicating the schema and generated client. The path goes
+ * through node_modules because that's where the generated client lives
+ * after running `prisma generate` in the api directory.
  */
 
 import { PrismaClient } from '../../../api/node_modules/@prisma/client/index.js'
