@@ -1,72 +1,9 @@
-import { Sparkles, ArrowRight, Mic, Users, FileText, Twitter, Linkedin, Github } from 'lucide-react';
+import { Sparkles, ArrowRight, Mic, Users, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
 
 const Home = () => {
-  const { theme, setTheme } = useTheme();
-  
-  // Force light mode on marketing pages and restore on unmount
-  useEffect(() => {
-    const previousTheme = theme;
-    setTheme('light');
-    
-    // Restore previous theme when leaving the page
-    return () => {
-      if (previousTheme !== 'light') {
-        setTheme(previousTheme);
-      }
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
-      
-      {/* Header - Light mode only on marketing pages */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-neutral-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
-                <Mic className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
-                Project Valine
-              </span>
-            </Link>
-
-            {/* Navigation - Light mode only, no theme toggle on marketing */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link to="/about-us" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors">
-                About
-              </Link>
-              <Link to="/features" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors">
-                Features
-              </Link>
-            </nav>
-
-            {/* CTA Buttons - Single primary CTA */}
-            <div className="flex items-center space-x-3">
-              <Link
-                to="/login"
-                className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/join"
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105"
-              >
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Add padding to body so content doesn't hide under fixed header */}
-      <div className="pt-20">
+    <>
       
       {/* Hero Section with Background - Updated layout: stat cards moved to sides */}
       <section className="relative px-4 py-20 md:py-32 animate-fade-in overflow-hidden">
@@ -243,75 +180,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer - Dark background for contrast */}
-      <footer className="bg-[#1a1a1a] border-t border-neutral-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            
-            {/* Brand Column */}
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
-                  <Mic className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">
-                  Project Valine
-                </span>
-              </div>
-              <p className="text-neutral-400 text-sm mb-4 max-w-sm">
-                The professional network for voice actors and creative artists. Connect, collaborate, and grow your career.
-              </p>
-              <div className="flex items-center space-x-4">
-                <a href="#" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">
-                  <Twitter className="w-5 h-5" />
-                </a>
-                <a href="#" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">
-                  <Linkedin className="w-5 h-5" />
-                </a>
-                <a href="#" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">
-                  <Github className="w-5 h-5" />
-                </a>
-              </div>
-            </div>
-
-            {/* Product Column */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/about-us" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">About</Link></li>
-                <li><Link to="/features" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Features</Link></li>
-                <li><Link to="/pricing" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Pricing</Link></li>
-                <li><Link to="/changelog" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Changelog</Link></li>
-              </ul>
-            </div>
-
-            {/* Resources Column */}
-            <div>
-              <h4 className="text-white font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/help" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Help Center</Link></li>
-                <li><Link to="/community" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Community</Link></li>
-                <li><Link to="/blog" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Blog</Link></li>
-                <li><Link to="/status" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Status</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-neutral-500 text-sm">
-              &copy; 2025 Project Valine. All rights reserved.
-            </p>
-            <div className="flex items-center space-x-6 text-sm">
-              <Link to="/privacy" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Privacy</Link>
-              <Link to="/terms" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Terms</Link>
-              <Link to="/cookies" className="text-neutral-400 hover:text-[#0CCE6B] transition-colors">Cookies</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-      </div>
-    </div>
+    </>
   );
 };
 
