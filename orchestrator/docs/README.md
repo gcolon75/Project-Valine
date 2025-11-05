@@ -13,6 +13,7 @@ Start here for initial setup and integration:
 
 #### 🤖 Agent Guides
 Documentation for all agent personalities and automated systems:
+- [**backend_agent.md**](backend_agent.md) - Backend Agent for API endpoints, migrations, validation, and tests
 - [**ISSUE_TRIAGE_AGENT_GUIDE.md**](guides/agents/ISSUE_TRIAGE_AGENT_GUIDE.md) - Automated issue analysis and triage
 - [**ISSUE_TRIAGE_QUICK_REF.md**](guides/agents/ISSUE_TRIAGE_QUICK_REF.md) - Quick reference for issue triage
 - [**OPERATIONAL_READINESS_AGENT_GUIDE.md**](guides/agents/OPERATIONAL_READINESS_AGENT_GUIDE.md) - Operational readiness monitoring
@@ -83,6 +84,7 @@ Historical documentation moved to [deprecated/](deprecated/) folder.
 - See [DISCORD_TROUBLESHOOTING.md](troubleshooting/DISCORD_TROUBLESHOOTING.md) for common issues
 
 **Configure automated agents:**
+- Backend Agent: [backend_agent.md](backend_agent.md)
 - UX Agent: [UX_AGENT_README.md](guides/agents/UX_AGENT_README.md)
 - QA Checker: [QA_CHECKER_GUIDE.md](guides/agents/QA_CHECKER_GUIDE.md)
 - Issue Triage: [ISSUE_TRIAGE_AGENT_GUIDE.md](guides/agents/ISSUE_TRIAGE_AGENT_GUIDE.md)
