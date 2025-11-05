@@ -4,43 +4,55 @@
 
 ## Executive Summary
 
-This roadmap addresses 3 UX issues identified in the Deep Audit, organized into sprints by severity and impact.
+This roadmap addresses 5 UX issues identified in the Deep Audit, organized into sprints by severity and impact.
 
 ### Overview
 
 | Severity | Count | Sprint Assignment |
 |----------|-------|-------------------|
-| High     | 3 | Sprint 1 |
-| Medium   | 0 | Sprint 2 |
+| High     | 0 | Sprint 1 |
+| Medium   | 5 | Sprint 2 |
 | Low      | 0 | Backlog |
 
 ### Issues by Category
 
 | Category | High | Medium | Low | Total |
 |----------|------|--------|-----|-------|
-| Responsive | 3 | 0 | 0 | 3 |
+| Color | 0 | 2 | 0 | 2 |
+| Accessibility | 0 | 2 | 0 | 2 |
+| Visual Hierarchy | 0 | 1 | 0 | 1 |
 
 ## Milestones
 
-### 🎯 Sprint 1: High Priority (UX Polish — Sprint 1)
+### 🎯 Sprint 2: Medium Priority (UX Polish — Sprint 2)
 
-**Due Date:** 2025-11-19
+**Due Date:** 2025-12-03
 
 **Focus Areas:**
-- Responsive design fixes (critical for mobile users)
-- High-impact accessibility improvements
-- Critical visual/interaction issues
+- Accessibility enhancements (focus states, headings)
+- Design token migration (replace hardcoded colors)
+- Visual hierarchy and consistency improvements
 
-**Issues (3):**
+**Issues (5):**
 
-#### Responsive (3)
+#### Color (2)
 
-- [ ] [Responsive] No responsive breakpoints detected - AuditionDetail
-  - Files: src/pages/AuditionDetail.jsx
-- [ ] [Responsive] No responsive breakpoints detected - Index
-  - Files: src/pages/Auditions/Index.jsx
-- [ ] [Responsive] No responsive breakpoints detected - New
-  - Files: src/pages/Auditions/New.jsx
+- [ ] [Design] Hardcoded color values detected - Dashboard
+  - Files: src/pages/Dashboard.jsx
+- [ ] [Design] Hardcoded color values detected - Home
+  - Files: src/pages/Home.jsx
+
+#### Accessibility (2)
+
+- [ ] [A11y] Missing H1 heading - Dashboard
+  - Files: src/pages/Dashboard.jsx
+- [ ] [A11y] Missing focus states - Home
+  - Files: src/pages/Home.jsx
+
+#### Visual Hierarchy (1)
+
+- [ ] [Design] Multiple competing CTAs - Home
+  - Files: src/pages/Home.jsx
 
 ## Project Board Recommendations
 

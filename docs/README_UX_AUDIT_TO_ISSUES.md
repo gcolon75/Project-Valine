@@ -8,16 +8,19 @@ Quick reference guide for converting UX audit findings into tracked GitHub issue
 # 1. Run UX audit
 npm run ux:audit
 
-# 2. Generate issue drafts (high priority only)
-npm run ux:audit-to-issues -- --severity high --output high-priority-issues.json
+# 2. Generate issue drafts, roadmap, and milestones
+npm run ux:audit-to-issues -- --severity high,medium
 
-# 3. Preview issues before creating (dry run)
-npm run ux:audit-to-issues -- --severity high --create --dry-run
+# 3. Preview issues and milestones before creating (dry run)
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones --create --dry-run
 
-# 4. Create GitHub issues (requires gh CLI authentication)
-npm run ux:audit-to-issues -- --severity high --create
+# 4. Create GitHub milestones (requires gh CLI authentication)
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones
 
-# 5. Create issues for specific category
+# 5. Create GitHub issues (requires gh CLI authentication)
+npm run ux:audit-to-issues -- --severity high,medium --create
+
+# 6. Create issues for specific category
 npm run ux:audit-to-issues -- --category responsive --severity high --create
 ```
 
@@ -70,19 +73,25 @@ npm run ux:audit-to-issues -- --page "Dashboard,Profile,Feed" --severity high --
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `--severity` | Filter by severity (comma-separated) | `--severity high,critical` |
+| `--severity` | Filter by severity (comma-separated) | `--severity high,medium` |
 | `--category` | Filter by category | `--category responsive,accessibility` |
 | `--page` | Filter by page name | `--page Home,Dashboard` |
 | `--output` | Output JSON file path | `--output my-issues.json` |
+| `--roadmap` | Roadmap markdown file path | `--roadmap CUSTOM_ROADMAP.md` |
 | `--create` | Create GitHub issues | `--create` |
+| `--create-milestones` | Create GitHub milestones | `--create-milestones` |
 | `--dry-run` | Preview without creating | `--dry-run` |
 | `--limit` | Limit number of issues | `--limit 10` |
 | `--delay` | Delay between API calls (ms) | `--delay 2000` |
 | `--help` | Show help message | `--help` |
 
-## Output Structure
+## Output Files
 
-The script generates a JSON file with this structure:
+The script generates three output files:
+
+### 1. Issue Payloads JSON (`ux-audit-issues.json`)
+
+Complete GitHub issue definitions:
 
 ```json
 {
@@ -108,6 +117,61 @@ The script generates a JSON file with this structure:
   ]
 }
 ```
+
+### 2. Roadmap Document (`UX_AUDIT_ROADMAP.md`)
+
+Comprehensive sprint planning document with:
+- Executive summary with issue counts by severity
+- Issues organized by sprint (Sprint 1: High, Sprint 2: Medium)
+- Project board column structure recommendations
+- Sequencing and priority guidelines
+- Labels and owner suggestions
+- Success criteria
+
+**Example structure:**
+```markdown
+# UX Audit Roadmap and Milestones
+
+## Executive Summary
+This roadmap addresses 81 UX issues...
+
+### Overview
+| Severity | Count | Sprint Assignment |
+|----------|-------|-------------------|
+| High     | 18    | Sprint 1          |
+| Medium   | 63    | Sprint 2          |
+
+## Milestones
+
+### 🎯 Sprint 1: High Priority (UX Polish — Sprint 1)
+**Due Date:** 2025-11-19
+
+**Issues (18):**
+#### Responsive (18)
+- [ ] [Responsive] No responsive breakpoints detected - AuditionDetail
+  - Files: src/pages/AuditionDetail.jsx
+...
+
+## Project Board Recommendations
+...
+
+## Sequencing Recommendations
+...
+```
+
+### 3. Milestone Definitions (Created in GitHub)
+
+When using `--create-milestones`, two milestones are created:
+
+- **UX Polish — Sprint 1** (Due: 2 weeks)
+  - High priority issues
+  - Responsive design fixes
+  - Critical accessibility improvements
+
+- **UX Polish — Sprint 2** (Due: 4 weeks)
+  - Medium priority issues
+  - Design token migration
+  - Visual hierarchy improvements
 
 ## Labels Applied
 
@@ -148,23 +212,28 @@ npm run ux:audit
 # Step 2: Review audit report
 cat UX_AUDIT_REPORT.md
 
-# Step 3: Generate issue drafts
-npm run ux:audit-to-issues -- --severity high --output issues-draft.json
+# Step 3: Generate issue drafts, roadmap, and milestone definitions
+npm run ux:audit-to-issues -- --severity high,medium
 
-# Step 4: Review drafts
-cat issues-draft.json | jq '.issues[0]'
+# Step 4: Review generated artifacts
+cat ux-audit-issues.json | jq '.metadata'
+cat UX_AUDIT_ROADMAP.md
 
-# Step 5: Create issues (dry run first)
-npm run ux:audit-to-issues -- --severity high --create --dry-run
+# Step 5: Preview before creating (dry run)
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones --create --dry-run
 
-# Step 6: Create issues for real
-npm run ux:audit-to-issues -- --severity high --create
+# Step 6: Create milestones in GitHub
+npm run ux:audit-to-issues -- --severity high,medium --create-milestones
 
-# Step 7: Organize in GitHub Projects
-# (Manual: Add issues to project board, assign, set milestones)
+# Step 7: Create issues in GitHub
+npm run ux:audit-to-issues -- --severity high,medium --create --delay 2000
 
-# Step 8: Track progress
+# Step 8: Organize in GitHub Projects
+# (Manual: Add issues to project board, assign to milestones)
+
+# Step 9: Track progress
 gh issue list --label ux-audit --state open
+gh issue list --milestone "UX Polish — Sprint 1" --state open
 ```
 
 ### CI/CD Integration
