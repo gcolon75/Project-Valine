@@ -8,7 +8,11 @@ import {
   validateUrl,
   validateTheme,
   validateStringLength,
-  sanitizeString
+  sanitizeString,
+  sanitizeUrl,
+  validateLinkType,
+  validateProfileLink,
+  VALID_LINK_TYPES
 } from '../validators.js'
 
 describe('Validation Utilities', () => {
@@ -246,6 +250,51 @@ describe('Validation Utilities', () => {
     })
   })
 
+  describe('sanitizeUrl', () => {
+    it('should trim whitespace from URL', () => {
+      const result = sanitizeUrl('  https://example.com  ')
+      expect(result).toBe('https://example.com/')
+    })
+
+    it('should normalize URL', () => {
+      const result = sanitizeUrl('https://example.com')
+      expect(result).toBe('https://example.com/')
+    })
+
+    it('should handle URL with path', () => {
+      const result = sanitizeUrl('https://example.com/path')
+      expect(result).toBe('https://example.com/path')
+    })
+
+    it('should handle URL with query params', () => {
+      const result = sanitizeUrl('https://example.com?key=value')
+      expect(result).toBe('https://example.com/?key=value')
+    })
+
+    it('should handle null', () => {
+      expect(sanitizeUrl(null)).toBe(null)
+    })
+
+    it('should handle undefined', () => {
+      expect(sanitizeUrl(undefined)).toBe(undefined)
+    })
+
+    it('should handle empty string', () => {
+      expect(sanitizeUrl('')).toBe('')
+    })
+
+    it('should handle invalid URL gracefully', () => {
+      // Invalid URLs are returned as-is (will be caught by validation)
+      expect(sanitizeUrl('not-a-url')).toBe('not-a-url')
+    })
+
+    it('should normalize URL encoding', () => {
+      const result = sanitizeUrl('https://example.com/path with spaces')
+      // URL constructor will encode spaces
+      expect(result).toContain('example.com')
+    })
+  })
+
   describe('Integration Tests', () => {
     it('should validate and sanitize title', () => {
       const input = '  Senior Voice Actor  '
@@ -280,13 +329,6 @@ describe('Validation Utilities', () => {
     })
   })
 })
-
-// Import new validators for profile links tests
-import {
-  validateLinkType,
-  validateProfileLink,
-  VALID_LINK_TYPES
-} from '../validators.js'
 
 describe('Profile Link Validators', () => {
   describe('validateLinkType', () => {

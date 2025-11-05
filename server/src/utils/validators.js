@@ -124,6 +124,26 @@ export function sanitizeString(input) {
 }
 
 /**
+ * Sanitize and normalize URL
+ * @param {string} url - URL to sanitize
+ * @returns {string} Normalized URL
+ */
+export function sanitizeUrl(url) {
+  if (!url) return url
+  
+  try {
+    // Parse URL to normalize it (removes extra slashes, normalizes encoding, etc.)
+    const parsed = new URL(url.trim())
+    
+    // Reconstruct URL to normalize it
+    return parsed.toString()
+  } catch {
+    // If URL is invalid, return as-is (will be caught by validation)
+    return url
+  }
+}
+
+/**
  * Valid profile link types
  */
 export const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other']

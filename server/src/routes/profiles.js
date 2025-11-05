@@ -5,6 +5,7 @@ import {
   validateStringLength,
   createError,
   sanitizeString,
+  sanitizeUrl,
   validateProfileLink,
   VALID_LINK_TYPES
 } from '../utils/validators.js'
@@ -176,7 +177,7 @@ router.patch('/:userId', async (req, res) => {
             userId,
             profileId: profile.id,
             label: sanitizeString(link.label),
-            url: link.url,
+            url: sanitizeUrl(link.url),
             type: link.type
           }
           
@@ -311,7 +312,7 @@ router.post('/:userId/links', async (req, res) => {
         userId,
         profileId: profile.id,
         label: sanitizeString(label),
-        url,
+        url: sanitizeUrl(url),
         type
       }
     })
@@ -387,7 +388,7 @@ router.patch('/:userId/links/:linkId', async (req, res) => {
           })
         )
       }
-      updateData.url = url
+      updateData.url = sanitizeUrl(url)
     }
     
     if (type !== undefined) {
