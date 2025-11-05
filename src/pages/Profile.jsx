@@ -5,6 +5,7 @@ import { getUserProfile } from '../services/userService';
 import { useApiFallback } from '../hooks/useApiFallback';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
+import { Button, Card } from '../components/ui';
 import { Share2, FileText, Video, User, ExternalLink, Globe, Film } from 'lucide-react';
 
 // URL validation helper to prevent XSS attacks
@@ -45,17 +46,18 @@ const FALLBACK_PROFILE = {
 const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
   <button
     onClick={onClick}
-    className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-colors ${
+    className={`flex items-center space-x-2 px-3 sm:px-4 py-3 border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand min-h-[44px] ${
       active
         ? 'border-[#0CCE6B] text-[#0CCE6B]'
         : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
     }`}
     aria-label={`View ${label}${count !== undefined ? ` (${count})` : ''}`}
+    aria-pressed={active}
   >
     <Icon className="w-5 h-5" aria-hidden="true" />
-    <span className="font-medium">{label}</span>
+    <span className="font-medium text-sm sm:text-base">{label}</span>
     {count !== undefined && (
-      <span className="text-sm">({count})</span>
+      <span className="text-xs sm:text-sm">({count})</span>
     )}
   </button>
 );
@@ -88,41 +90,47 @@ export default function Profile() {
   const displayData = profile;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      {/* Profile Header with Gradient Accent - Fixed: removed overflow-hidden to prevent avatar clipping */}
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 animate-slide-up">
-        {/* Cover Image with Gradient - Fixed: rounded top corners to maintain border radius */}
-        <div className="h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative rounded-t-2xl overflow-hidden">
+    <div className="container mx-auto px-4 py-6 max-w-5xl">
+      {/* Profile Header with Gradient Accent */}
+      <Card padding="none" className="animate-slide-up">
+        {/* Cover Image with Gradient */}
+        <div className="h-32 sm:h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
           <div className="absolute inset-0 bg-black/20" />
         </div>
 
         {/* Profile Info */}
-        <div className="px-6 pb-6">
-          <div className="flex items-end justify-between -mt-16 mb-4">
-            {/* Avatar with Gradient Border - Fixed: added proper z-index and ensured full visibility */}
+        <div className="px-4 sm:px-6 pb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-12 sm:-mt-16 mb-4 gap-4">
+            {/* Avatar with Gradient Border */}
             <div className="relative z-10 p-1 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full shadow-xl">
               {displayData.avatar ? (
                 <img 
                   src={displayData.avatar}
                   alt={displayData.displayName}
-                  className="w-32 h-32 rounded-full border-4 border-white dark:border-[#1a1a1a] object-cover"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 object-cover"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full border-4 border-white dark:border-[#1a1a1a] bg-neutral-200 dark:bg-neutral-700" />
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 bg-neutral-200 dark:bg-neutral-700" aria-hidden="true" />
               )}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-3">
-              <button 
+            <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
+              <Button 
                 onClick={() => window.location.href = '/profile-edit'}
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105"
+                variant="primary"
+                size="md"
               >
                 Edit Profile
-              </button>
-              <button className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white p-2 rounded-lg transition-all">
+              </Button>
+              <Button 
+                variant="secondary"
+                size="md"
+                aria-label="Share profile"
+                className="!p-2 !min-h-[44px] !min-w-[44px]"
+              >
                 <Share2 className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -145,26 +153,26 @@ export default function Profile() {
           )}
 
           {/* Stats */}
-          <div className="flex items-center space-x-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
             <div>
-              <span className="text-2xl font-bold text-[#0CCE6B]">{displayData.postsCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.postsCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Posts</span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-[#0CCE6B]">{displayData.followersCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.followersCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Followers</span>
             </div>
             <div>
-              <span className="text-2xl font-bold text-[#0CCE6B]">{displayData.followingCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.followingCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Following</span>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Profile Tabs */}
-      <div className="bg-white dark:bg-[#1a1a1a] border-b border-neutral-200 dark:border-neutral-700">
-        <div className="flex items-center space-x-1 px-6">
+      <div className="bg-surface-2 border-b border-subtle rounded-t-xl">
+        <div className="flex items-center space-x-1 px-2 sm:px-6 overflow-x-auto scrollbar-hide">
           <ProfileTab
             active={activeTab === 'posts'}
             onClick={() => setActiveTab('posts')}
@@ -196,36 +204,34 @@ export default function Profile() {
       </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div className="space-y-6">
         {activeTab === 'posts' && (
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Posts</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card title="Posts" padding="default">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {displayData.posts && displayData.posts.length > 0 ? (
                 displayData.posts.slice(0, 6).map(post => (
-                  <div key={post.id} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-3">
+                  <div key={post.id} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 p-3">
                     <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{post.content}</p>
                   </div>
                 ))
               ) : (
                 [1,2,3,4,5,6].map(i => (
-                  <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 aspect-video" />
+                  <div key={i} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 aspect-video" aria-hidden="true" />
                 ))
               )}
             </div>
-          </div>
+          </Card>
         )}
         
         {activeTab === 'reels' && (
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Reels</h2>
-            <div className="grid grid-cols-3 gap-2">
+          <Card title="Reels" padding="default">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {/* Reels thumbnails */}
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
+              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
             </div>
-          </div>
+          </Card>
         )}
         
         {activeTab === 'scripts' && (
@@ -238,20 +244,17 @@ export default function Profile() {
         
         {activeTab === 'about' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-                About
-              </h3>
+            <Card title="About" padding="default">
               <p className="text-neutral-700 dark:text-neutral-300">
                 {displayData.bio || 'No bio available'}
               </p>
-            </div>
+            </Card>
 
             {/* Links Section */}
             {displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link) && (
-              <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center space-x-2">
-                  <ExternalLink className="w-5 h-5" />
+              <Card padding="default">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+                  <ExternalLink className="w-5 h-5" aria-hidden="true" />
                   <span>Links</span>
                 </h3>
                 <div className="space-y-3">
@@ -260,9 +263,10 @@ export default function Profile() {
                       href={displayData.externalLinks.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      aria-label="Visit website"
                     >
-                      <Globe className="w-5 h-5" />
+                      <Globe className="w-5 h-5" aria-hidden="true" />
                       <span>Website</span>
                     </a>
                   )}
@@ -271,9 +275,10 @@ export default function Profile() {
                       href={displayData.externalLinks.showreel} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      aria-label="View showreel"
                     >
-                      <Film className="w-5 h-5" />
+                      <Film className="w-5 h-5" aria-hidden="true" />
                       <span>Showreel</span>
                     </a>
                   )}
@@ -282,14 +287,15 @@ export default function Profile() {
                       href={displayData.externalLinks.imdb} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      aria-label="View IMDb profile"
                     >
-                      <FileText className="w-5 h-5" />
+                      <FileText className="w-5 h-5" aria-hidden="true" />
                       <span>IMDb</span>
                     </a>
                   )}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
