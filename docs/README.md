@@ -14,6 +14,7 @@ Welcome to the Project Valine documentation! This directory contains comprehensi
 - **Deploying?** See [Deployment Guides](deployment/)
 - **Issues?** Check [Troubleshooting](troubleshooting/)
 - **Monitoring?** Review [CloudWatch Setup](CLOUDWATCH_SETUP.md)
+- **Quality Assurance?** See [QA Documentation](qa/)
 
 ### For Project Managers
 - **Project overview?** Read [Project Summary](reference/project-summary.md)
@@ -48,6 +49,13 @@ docs/
 │   ├── serverless-guide.md        # Serverless deployment
 │   ├── quick-deploy.md            # Quick deployment
 │   └── checklist.md               # Pre-deployment checklist
+│
+├── qa/                            # Quality Assurance & CI/CD
+│   ├── ci-overview.md             # CI/CD workflow overview
+│   ├── a11y-checklist.md          # Accessibility checklist
+│   ├── lighthouse.md              # Performance guide
+│   ├── bundle-optimization.md     # Bundle size optimization
+│   └── security.md                # Security best practices
 │
 ├── troubleshooting/               # Troubleshooting guides
 │   ├── README.md                  # General troubleshooting

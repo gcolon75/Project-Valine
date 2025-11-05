@@ -2,6 +2,11 @@
 
 A collaborative platform for voice actors, writers, and artists to create and share scripts, auditions, and creative content.
 
+[![CI - Pull Request Check](https://github.com/gcolon75/Project-Valine/actions/workflows/ci-pr-check.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/ci-pr-check.yml)
+[![Accessibility Audit](https://github.com/gcolon75/Project-Valine/actions/workflows/accessibility-audit.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/accessibility-audit.yml)
+[![Lighthouse CI](https://github.com/gcolon75/Project-Valine/actions/workflows/lighthouse-ci.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/lighthouse-ci.yml)
+[![Security Audit](https://github.com/gcolon75/Project-Valine/actions/workflows/security-audit.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/security-audit.yml)
+
 > 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](docs/archive/merged/PROJECT_VALINE_SUMMARY-merged-20251104.md) for a comprehensive overview of the project, architecture, current status, and next steps.
 
 ## Table of Contents
@@ -432,6 +437,13 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 - 🔧 [Troubleshooting](docs/troubleshooting/) - Fix common issues
 - 📊 [CloudWatch Setup](docs/CLOUDWATCH_SETUP.md) - Monitoring and logging
 
+**Quality Assurance:**
+- 🔍 [CI/CD Overview](docs/qa/ci-overview.md) - Continuous integration workflows
+- ♿ [Accessibility Checklist](docs/qa/a11y-checklist.md) - WCAG 2.1 AA compliance guide
+- 🚀 [Lighthouse Guide](docs/qa/lighthouse.md) - Performance optimization
+- 📦 [Bundle Optimization](docs/qa/bundle-optimization.md) - Bundle size management
+- 🔒 [Security Best Practices](docs/qa/security.md) - Security guidelines
+
 **Orchestrator & Automation:**
 - 🤖 [Orchestrator Documentation](orchestrator/README.md) - Bot setup and agent management
 - 💬 [Discord Integration](orchestrator/docs/) - Discord bot guides
@@ -451,6 +463,7 @@ docs/
 ├── backend/          # Backend guides
 ├── frontend/         # Frontend guides
 ├── deployment/       # Deployment guides
+├── qa/               # Quality assurance & CI/CD
 ├── quickstart/       # Quick start guides
 ├── troubleshooting/  # Troubleshooting guides
 ├── guides/           # Development guides
