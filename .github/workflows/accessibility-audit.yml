@@ -1,0 +1,268 @@
+name: Accessibility Audit
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**/*.jsx'
+      - 'src/**/*.js'
+      - 'src/**/*.tsx'
+      - 'src/**/*.ts'
+      - '.github/workflows/accessibility-audit.yml'
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  axe-core-audit:
+    name: Axe-core Accessibility Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        run: |
+          npm run preview &
+          echo "PREVIEW_PID=$!" >> $GITHUB_ENV
+          sleep 10
+        
+      - name: Run axe-core accessibility tests
+        id: axe-tests
+        run: |
+          # Create test script for axe-core
+          cat > /tmp/axe-test.mjs << 'EOF'
+          import { chromium } from 'playwright';
+          import { createRequire } from 'module';
+          const require = createRequire(import.meta.url);
+          const AxeBuilder = require('@axe-core/playwright').default;
+          import { writeFileSync } from 'fs';
+
+          const pages = [
+            { name: 'Home', url: '/', type: 'marketing' },
+            { name: 'Features', url: '/features', type: 'marketing' },
+            { name: 'About', url: '/about-us', type: 'marketing' },
+            { name: 'Login', url: '/login', type: 'marketing' },
+            { name: 'Join', url: '/join', type: 'marketing' }
+          ];
+
+          async function runAudit() {
+            const browser = await chromium.launch();
+            const context = await browser.newContext();
+            const results = [];
+            let totalViolations = 0;
+
+            for (const page of pages) {
+              console.log(`\n🔍 Scanning ${page.name} (${page.url})...`);
+              const browserPage = await context.newPage();
+              
+              try {
+                await browserPage.goto(`http://localhost:4173${page.url}`, { 
+                  waitUntil: 'networkidle',
+                  timeout: 30000 
+                });
+                
+                const accessibilityScanResults = await new AxeBuilder({ page: browserPage })
+                  .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+                  .analyze();
+
+                const violations = accessibilityScanResults.violations;
+                totalViolations += violations.length;
+
+                results.push({
+                  page: page.name,
+                  url: page.url,
+                  type: page.type,
+                  violations: violations.length,
+                  violationDetails: violations.map(v => ({
+                    id: v.id,
+                    impact: v.impact,
+                    description: v.description,
+                    help: v.help,
+                    helpUrl: v.helpUrl,
+                    nodes: v.nodes.length
+                  }))
+                });
+
+                if (violations.length > 0) {
+                  console.log(`  ❌ Found ${violations.length} violations`);
+                  violations.forEach(v => {
+                    console.log(`    - [${v.impact?.toUpperCase()}] ${v.id}: ${v.help}`);
+                  });
+                } else {
+                  console.log(`  ✅ No violations found`);
+                }
+              } catch (error) {
+                console.log(`  ⚠️  Error scanning page: ${error.message}`);
+                results.push({
+                  page: page.name,
+                  url: page.url,
+                  type: page.type,
+                  error: error.message
+                });
+              }
+              
+              await browserPage.close();
+            }
+
+            await browser.close();
+
+            // Write results to file
+            writeFileSync('axe-results.json', JSON.stringify(results, null, 2));
+
+            console.log(`\n📊 Total violations found: ${totalViolations}`);
+            return totalViolations;
+          }
+
+          runAudit()
+            .then(violations => process.exit(violations > 0 ? 1 : 0))
+            .catch(err => {
+              console.error('Audit failed:', err);
+              process.exit(1);
+            });
+          EOF
+
+          # Install required packages
+          npm install --no-save @axe-core/playwright
+
+          # Run the audit
+          node /tmp/axe-test.mjs
+        continue-on-error: true
+
+      - name: Upload axe results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: axe-accessibility-results
+          path: axe-results.json
+          retention-days: 30
+
+      - name: Generate accessibility summary
+        if: always()
+        run: |
+          echo "## ♿ Accessibility Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f axe-results.json ]; then
+            # Parse and display results
+            node -e "
+              const results = require('./axe-results.json');
+              let summary = '';
+              let totalViolations = 0;
+              let criticalCount = 0;
+              let seriousCount = 0;
+              
+              results.forEach(result => {
+                if (result.error) {
+                  summary += \`### ⚠️ \${result.page}\n\nError: \${result.error}\n\n\`;
+                } else {
+                  totalViolations += result.violations;
+                  summary += \`### \${result.violations > 0 ? '❌' : '✅'} \${result.page} (\${result.url})\n\n\`;
+                  summary += \`- **Violations:** \${result.violations}\n\`;
+                  
+                  if (result.violations > 0) {
+                    const bySeverity = {};
+                    result.violationDetails.forEach(v => {
+                      bySeverity[v.impact] = (bySeverity[v.impact] || 0) + 1;
+                      if (v.impact === 'critical') criticalCount++;
+                      if (v.impact === 'serious') seriousCount++;
+                    });
+                    
+                    if (bySeverity.critical) summary += \`- **Critical:** \${bySeverity.critical}\n\`;
+                    if (bySeverity.serious) summary += \`- **Serious:** \${bySeverity.serious}\n\`;
+                    if (bySeverity.moderate) summary += \`- **Moderate:** \${bySeverity.moderate}\n\`;
+                    if (bySeverity.minor) summary += \`- **Minor:** \${bySeverity.minor}\n\`;
+                  }
+                  summary += '\n';
+                }
+              });
+              
+              console.log(\`### Summary\n\n\`);
+              console.log(\`- **Pages scanned:** \${results.length}\n\`);
+              console.log(\`- **Total violations:** \${totalViolations}\n\`);
+              console.log(\`- **Critical issues:** \${criticalCount}\n\`);
+              console.log(\`- **Serious issues:** \${seriousCount}\n\`);
+              console.log('');
+              console.log(summary);
+              
+              if (totalViolations > 0) {
+                console.log('### 📋 Next Steps\n');
+                console.log('1. Review the detailed report in the artifacts\n');
+                console.log('2. Prioritize critical and serious issues\n');
+                console.log('3. See [Accessibility Checklist](../../docs/qa/a11y-checklist.md) for guidance\n');
+              }
+            " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No results file found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -n "$PREVIEW_PID" ]; then
+            kill $PREVIEW_PID || true
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (!fs.existsSync('axe-results.json')) {
+              console.log('No results file found');
+              return;
+            }
+            
+            const results = JSON.parse(fs.readFileSync('axe-results.json', 'utf8'));
+            const totalViolations = results.reduce((sum, r) => sum + (r.violations || 0), 0);
+            
+            let comment = '## ♿ Accessibility Audit Results\n\n';
+            comment += `**Pages scanned:** ${results.length}\n`;
+            comment += `**Total violations:** ${totalViolations}\n\n`;
+            
+            if (totalViolations > 0) {
+              comment += '### Issues Found\n\n';
+              results.forEach(result => {
+                if (result.violations > 0) {
+                  comment += `**${result.page}** (${result.url}): ${result.violations} violations\n`;
+                }
+              });
+              comment += '\n📥 Download full report from workflow artifacts for details.\n';
+            } else {
+              comment += '✅ No accessibility violations found!\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -1,0 +1,247 @@
+name: Bundle Analysis
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.js'
+      - '.github/workflows/bundle-analysis.yml'
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Fridays at 9 AM UTC
+    - cron: '0 9 * * 5'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  analyze:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        env:
+          VITE_API_BASE: https://api.example.com
+        run: npm run build
+
+      - name: Run performance audit script
+        id: perf-audit
+        run: |
+          npm run perf:audit > perf-audit.txt 2>&1 || true
+          cat perf-audit.txt
+
+      - name: Analyze bundle with detailed stats
+        run: |
+          cat > analyze-bundle.mjs << 'EOF'
+          import { readFileSync, readdirSync, statSync } from 'fs';
+          import { join } from 'path';
+
+          const distDir = './dist';
+          const budgets = {
+            totalJS: 300,
+            totalCSS: 60,
+            largestJS: 250,
+            largestCSS: 50
+          };
+
+          function getFilesRecursive(dir, ext) {
+            const files = [];
+            const items = readdirSync(dir, { withFileTypes: true });
+            
+            for (const item of items) {
+              const fullPath = join(dir, item.name);
+              if (item.isDirectory()) {
+                files.push(...getFilesRecursive(fullPath, ext));
+              } else if (item.name.endsWith(ext)) {
+                files.push(fullPath);
+              }
+            }
+            return files;
+          }
+
+          function analyzeBundle() {
+            const jsFiles = getFilesRecursive(distDir, '.js');
+            const cssFiles = getFilesRecursive(distDir, '.css');
+            
+            const jsStats = jsFiles.map(file => ({
+              name: file.replace(distDir + '/', ''),
+              size: statSync(file).size / 1024
+            }));
+            
+            const cssStats = cssFiles.map(file => ({
+              name: file.replace(distDir + '/', ''),
+              size: statSync(file).size / 1024
+            }));
+            
+            const totalJS = jsStats.reduce((sum, f) => sum + f.size, 0);
+            const totalCSS = cssStats.reduce((sum, f) => sum + f.size, 0);
+            const largestJS = Math.max(...jsStats.map(f => f.size), 0);
+            const largestCSS = Math.max(...cssStats.map(f => f.size), 0);
+            
+            console.log('# Bundle Analysis Report\n');
+            console.log('## Summary\n');
+            console.log(`Total JavaScript: ${totalJS.toFixed(2)} KB (Budget: ${budgets.totalJS} KB) ${totalJS > budgets.totalJS ? '❌' : '✅'}`);
+            console.log(`Total CSS: ${totalCSS.toFixed(2)} KB (Budget: ${budgets.totalCSS} KB) ${totalCSS > budgets.totalCSS ? '❌' : '✅'}`);
+            console.log(`Largest JS file: ${largestJS.toFixed(2)} KB (Budget: ${budgets.largestJS} KB) ${largestJS > budgets.largestJS ? '❌' : '✅'}`);
+            console.log(`Largest CSS file: ${largestCSS.toFixed(2)} KB (Budget: ${budgets.largestCSS} KB) ${largestCSS > budgets.largestCSS ? '❌' : '✅'}`);
+            console.log('');
+            
+            console.log('## JavaScript Files\n');
+            jsStats.sort((a, b) => b.size - a.size).forEach(file => {
+              const sizeStr = file.size.toFixed(2).padStart(8);
+              console.log(`${sizeStr} KB  ${file.name}`);
+            });
+            console.log('');
+            
+            console.log('## CSS Files\n');
+            cssStats.sort((a, b) => b.size - a.size).forEach(file => {
+              const sizeStr = file.size.toFixed(2).padStart(8);
+              console.log(`${sizeStr} KB  ${file.name}`);
+            });
+            console.log('');
+            
+            // Check for budget violations
+            const violations = [];
+            if (totalJS > budgets.totalJS) violations.push(`Total JS exceeds budget by ${(totalJS - budgets.totalJS).toFixed(2)} KB`);
+            if (totalCSS > budgets.totalCSS) violations.push(`Total CSS exceeds budget by ${(totalCSS - budgets.totalCSS).toFixed(2)} KB`);
+            if (largestJS > budgets.largestJS) violations.push(`Largest JS file exceeds budget by ${(largestJS - budgets.largestJS).toFixed(2)} KB`);
+            if (largestCSS > budgets.largestCSS) violations.push(`Largest CSS file exceeds budget by ${(largestCSS - budgets.largestCSS).toFixed(2)} KB`);
+            
+            if (violations.length > 0) {
+              console.log('## ⚠️ Budget Violations\n');
+              violations.forEach(v => console.log(`- ${v}`));
+              console.log('');
+              console.log('### Recommendations\n');
+              console.log('- Review and optimize large dependencies');
+              console.log('- Consider code splitting for better lazy loading');
+              console.log('- Use dynamic imports for route-based code splitting');
+              console.log('- Check for duplicate dependencies');
+              console.log('- Remove unused code and dependencies');
+              process.exit(1);
+            } else {
+              console.log('## ✅ All Budgets Met\n');
+              console.log('Bundle sizes are within acceptable limits.');
+            }
+          }
+
+          analyzeBundle();
+          EOF
+          
+          node analyze-bundle.mjs > bundle-analysis.txt 2>&1 || echo "BUNDLE_EXCEEDED=true" >> $GITHUB_ENV
+          cat bundle-analysis.txt
+
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-analysis
+          path: |
+            bundle-analysis.txt
+            perf-audit.txt
+            dist/
+          retention-days: 30
+
+      - name: Generate bundle summary
+        if: always()
+        run: |
+          echo "## 📦 Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f bundle-analysis.txt ]; then
+            cat bundle-analysis.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Bundle analysis file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Performance Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f perf-audit.txt ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -50 perf-audit.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Compare with base branch
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## 📊 Bundle Size Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Comparing PR bundle size with base branch..." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get current total size
+          CURRENT_SIZE=$(du -sb dist | cut -f1)
+          CURRENT_SIZE_KB=$((CURRENT_SIZE / 1024))
+          
+          echo "**Current bundle size:** ${CURRENT_SIZE_KB} KB" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Note: To enable size comparison, implement base branch build comparison._" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 📦 Bundle Analysis Report\n\n';
+            
+            if (fs.existsSync('bundle-analysis.txt')) {
+              const analysis = fs.readFileSync('bundle-analysis.txt', 'utf8');
+              
+              // Extract key metrics
+              const summaryMatch = analysis.match(/## Summary\n\n([\s\S]*?)##/);
+              if (summaryMatch) {
+                comment += '### Summary\n\n';
+                comment += summaryMatch[1].trim() + '\n\n';
+              }
+              
+              if (process.env.BUNDLE_EXCEEDED === 'true') {
+                comment += '⚠️ **Warning: Bundle size exceeds budget limits.**\n\n';
+                comment += 'Please review the bundle analysis report in the workflow artifacts.\n\n';
+                comment += '**Recommended actions:**\n';
+                comment += '- Review large dependencies\n';
+                comment += '- Implement code splitting\n';
+                comment += '- Remove unused code\n';
+              } else {
+                comment += '✅ **All bundle size budgets are within limits.**\n';
+              }
+            } else {
+              comment += '⚠️ Bundle analysis data not available.\n';
+            }
+            
+            comment += '\n📥 Download detailed bundle analysis from workflow artifacts.\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail if budget exceeded
+        if: env.BUNDLE_EXCEEDED == 'true'
+        run: |
+          echo "::error::Bundle size budget exceeded. Review the bundle analysis report."
+          exit 1
