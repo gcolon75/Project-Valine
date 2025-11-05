@@ -1,0 +1,133 @@
+// Profile service - API client for profile links and profile data
+import apiClient from './api';
+
+/**
+ * Get user profile with links
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} Profile data with links array
+ */
+export const getProfile = async (userId) => {
+  const { data } = await apiClient.get(`/profiles/${userId}`);
+  return data.profile;
+};
+
+/**
+ * Update user profile (including title, headline, and links)
+ * @param {string} userId - User ID
+ * @param {Object} updates - Profile updates
+ * @param {string} [updates.title] - Professional title
+ * @param {string} [updates.headline] - Profile headline
+ * @param {Array} [updates.links] - Profile links array
+ * @returns {Promise<Object>} Updated profile
+ */
+export const updateProfile = async (userId, updates) => {
+  const { data } = await apiClient.patch(`/profiles/${userId}`, updates);
+  return data.profile;
+};
+
+/**
+ * Get all profile links for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of profile links
+ */
+export const getProfileLinks = async (userId) => {
+  const { data } = await apiClient.get(`/profiles/${userId}/links`);
+  return data.links;
+};
+
+/**
+ * Create a new profile link
+ * @param {string} userId - User ID
+ * @param {Object} link - Link data
+ * @param {string} link.label - Display label (1-40 characters)
+ * @param {string} link.url - URL (http/https, max 2048 characters)
+ * @param {string} link.type - Link type (website|imdb|showreel|other)
+ * @returns {Promise<Object>} Created link
+ */
+export const createProfileLink = async (userId, link) => {
+  const { data } = await apiClient.post(`/profiles/${userId}/links`, link);
+  return data.link;
+};
+
+/**
+ * Update an existing profile link
+ * @param {string} userId - User ID
+ * @param {string} linkId - Link ID
+ * @param {Object} updates - Link updates
+ * @param {string} [updates.label] - Display label
+ * @param {string} [updates.url] - URL
+ * @param {string} [updates.type] - Link type
+ * @returns {Promise<Object>} Updated link
+ */
+export const updateProfileLink = async (userId, linkId, updates) => {
+  const { data } = await apiClient.patch(`/profiles/${userId}/links/${linkId}`, updates);
+  return data.link;
+};
+
+/**
+ * Delete a profile link
+ * @param {string} userId - User ID
+ * @param {string} linkId - Link ID
+ * @returns {Promise<Object>} Success response
+ */
+export const deleteProfileLink = async (userId, linkId) => {
+  const { data } = await apiClient.delete(`/profiles/${userId}/links/${linkId}`);
+  return data;
+};
+
+/**
+ * Batch update profile links (optimized for saving all links at once)
+ * Uses the profile PATCH endpoint to update all links in one request
+ * @param {string} userId - User ID
+ * @param {Array} links - Array of link objects
+ * @returns {Promise<Object>} Updated profile with links
+ */
+export const batchUpdateProfileLinks = async (userId, links) => {
+  // Transform links to API format (convert frontend types to backend types)
+  const apiLinks = links.map(link => ({
+    id: link.id, // Include id if updating existing link
+    label: link.label.trim(),
+    url: link.url.trim(),
+    type: mapLinkTypeToApi(link.type)
+  }));
+
+  return await updateProfile(userId, { links: apiLinks });
+};
+
+/**
+ * Map frontend link type to API link type
+ * @param {string} type - Frontend link type
+ * @returns {string} API link type
+ */
+const mapLinkTypeToApi = (type) => {
+  const typeMap = {
+    'Website': 'website',
+    'Portfolio': 'website',
+    'IMDb': 'imdb',
+    'LinkedIn': 'other',
+    'Twitter': 'other',
+    'Instagram': 'other',
+    'YouTube': 'showreel',
+    'Vimeo': 'showreel',
+    'SoundCloud': 'showreel',
+    'Other': 'other'
+  };
+
+  return typeMap[type] || 'other';
+};
+
+/**
+ * Map API link type to frontend link type
+ * @param {string} type - API link type
+ * @returns {string} Frontend link type
+ */
+export const mapLinkTypeFromApi = (type) => {
+  const typeMap = {
+    'website': 'Website',
+    'imdb': 'IMDb',
+    'showreel': 'YouTube',
+    'other': 'Other'
+  };
+
+  return typeMap[type] || 'Website';
+};
