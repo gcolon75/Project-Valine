@@ -10,7 +10,7 @@ const router = Router()
  * Get authenticated user's preferences including theme
  * Requires authentication
  */
-router.get('/me', requireAuth, async (req, res) => {
+router.get('/me/preferences', requireAuth, async (req, res) => {
   try {
     const prisma = getPrisma()
     const user = await prisma.user.findUnique({
@@ -41,7 +41,7 @@ router.get('/me', requireAuth, async (req, res) => {
  * Body: { theme: 'light' | 'dark' }
  * Requires authentication
  */
-router.patch('/me', requireAuth, async (req, res) => {
+router.patch('/me/preferences', requireAuth, async (req, res) => {
   const { theme } = req.body || {}
   
   // Validate theme value

@@ -1,9 +1,10 @@
 /**
  * Database client singleton
  * Provides a single Prisma client instance for the server
+ * Uses the generated Prisma client from the api directory
  */
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../../../api/node_modules/@prisma/client/index.js'
 
 let prisma = null
 
