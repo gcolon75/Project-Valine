@@ -122,6 +122,35 @@ const categoryLabelMap = {
   'Visual Hierarchy': 'design-tokens',
 };
 
+/**
+ * Sanitize a page name for use in JavaScript identifiers (function names, etc.)
+ * Only allows alphanumeric characters to ensure valid JavaScript identifiers.
+ * 
+ * @param {string} pageName - The page name from audit findings
+ * @returns {string} Sanitized name safe for use as JavaScript identifier
+ */
+function sanitizeForIdentifier(pageName) {
+  // JavaScript identifiers must start with letter, _, or $ and contain only alphanumeric, _, $
+  // We use a strict alphanumeric-only approach for simplicity
+  const sanitized = pageName.replace(/[^a-zA-Z0-9]/g, '');
+  return sanitized || 'PageComponent'; // Fallback if all chars removed
+}
+
+/**
+ * Sanitize a page title for use in JSX/HTML content.
+ * Uses a whitelist approach to only allow safe characters.
+ * Allows: letters, numbers, spaces, hyphens, underscores
+ * 
+ * @param {string} pageTitle - The page title from audit findings
+ * @returns {string} Sanitized title safe for use in JSX/HTML
+ */
+function sanitizeForDisplay(pageTitle) {
+  // Whitelist approach: only allow known-safe characters
+  // Letters, numbers, spaces, hyphens, underscores
+  const sanitized = pageTitle.replace(/[^a-zA-Z0-9 \-_]/g, '').trim();
+  return sanitized || 'Page'; // Fallback if all chars removed
+}
+
 // Load audit findings
 function loadAuditFindings() {
   const csvPath = path.join(rootDir, 'UX_AUDIT_FINDINGS.csv');
@@ -346,10 +375,9 @@ Apply responsive classes to:
   }
   
   if (category === 'Accessibility' && issue.includes('h1')) {
-    // Sanitize page name for use in function name (alphanumeric only)
-    const pageName = finding.Page.replace(/[^a-zA-Z0-9]/g, '') || 'PageComponent';
-    // Sanitize page title for display (remove all special chars that could break JSX/HTML)
-    const pageTitle = finding.Page.replace(/[<>{}[\]()\\/"'`$]/g, '').trim() || 'Page';
+    // Use sanitization functions to ensure safe output
+    const pageName = sanitizeForIdentifier(finding.Page);
+    const pageTitle = sanitizeForDisplay(finding.Page);
     
     return `Add a descriptive H1 heading at the top of the page:
 
