@@ -117,6 +117,45 @@ def main():
         print("  3. Review the preview and confirm")
     
     print()
+    
+    # 7. List all active conversations
+    print("=" * 80)
+    print("📋 Example 3: List Active Conversations")
+    print("-" * 80)
+    
+    conversations = agent.list_conversations()
+    print(f"Found {len(conversations)} active conversation(s):\n")
+    
+    for conv in conversations:
+        print(f"Conversation ID: {conv['conversation_id']}")
+        print(f"  Task: {conv['task_name']}")
+        print(f"  Status: {conv['status']}")
+        print(f"  Preview Ready: {conv['preview_ready']}")
+        print(f"  Checks Status: {conv['checks_status']}")
+        print(f"  Draft PR Exists: {conv['draft_pr_payload_exists']}")
+        print(f"  Created: {conv['created_at']}")
+        print(f"  Last Activity: {conv['last_activity_at']}")
+        print()
+    
+    # 8. Filter conversations by status
+    print("=" * 80)
+    print("🔍 Example 4: Filter Conversations by Status")
+    print("-" * 80)
+    
+    # Filter for conversations waiting for clarification
+    waiting_convs = agent.list_conversations(filters={'status': ['waiting']})
+    print(f"Conversations waiting for clarification: {len(waiting_convs)}")
+    for conv in waiting_convs:
+        print(f"  - {conv['task_id']} ({conv['conversation_id']})")
+    print()
+    
+    # Filter for conversations with draft preview ready
+    draft_convs = agent.list_conversations(filters={'status': ['draft-preview']})
+    print(f"Conversations with draft preview: {len(draft_convs)}")
+    for conv in draft_convs:
+        print(f"  - {conv['task_id']} ({conv['conversation_id']})")
+    print()
+    
     print("=" * 80)
     print("✅ Backend Agent Example Complete!")
     print("=" * 80)
