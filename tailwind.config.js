@@ -24,11 +24,31 @@ export default {
           light:   '#D1FAE5',   // emerald-100
           fg:      '#ECFDF5'    // on-brand foreground
         },
+        // Surface tier tokens for depth and separation
+        surface: {
+          0: 'var(--surface-0)',
+          1: 'var(--surface-1)',
+          2: 'var(--surface-2)',
+          3: 'var(--surface-3)',
+        },
       },
       // wider max widths for that "pro" feel
       maxWidth: {
         '8xl': '88rem',  // ~1408px
         '9xl': '96rem',  // ~1536px (use if you want super wide)
+      },
+      // Shadow tokens for depth (overriding Tailwind defaults)
+      boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        'DEFAULT': 'var(--shadow-md)',
+      },
+      // Border color tokens
+      borderColor: {
+        'subtle': 'var(--border-subtle)',
+        'default': 'var(--border-default)',
       },
       // UX Transformation: Custom animations
       animation: {

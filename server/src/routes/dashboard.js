@@ -10,11 +10,11 @@ const VALID_RANGES = ['7d', '30d', '90d', 'all']
  * GET /dashboard/stats
  * Get dashboard statistics for a user
  * Query params: 
- *   - range: '7d' | '30d' | '90d' | 'all' (default: '30d')
+ *   - range: '7d' | '30d' | '90d' | 'all' (default: '7d')
  *   - userId: User ID (required for now, will come from auth later)
  */
 router.get('/stats', (req, res) => {
-  const { range = '30d', userId } = req.query
+  const { range = '7d', userId } = req.query
   
   // Validate userId (temporary - will come from auth token later)
   if (!userId) {
@@ -85,7 +85,7 @@ router.get('/stats', (req, res) => {
   
   // Add cache headers
   res.set({
-    'Cache-Control': 'private, max-age=300', // Cache for 5 minutes
+    'Cache-Control': 'private, max-age=60', // Cache for 1 minute
     'Vary': 'Authorization'
   })
   

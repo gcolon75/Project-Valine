@@ -36,6 +36,7 @@ model User {
   settings           UserSettings?
   sentReelRequests   ReelRequest[]       @relation("requester")
   receivedReelRequests ReelRequest[]     @relation("owner")
+  profileLinks       ProfileLink[]
 
   @@map("users")
 }
@@ -218,10 +219,28 @@ model Profile {
 
   media       Media[]
   credits     Credit[]
+  links       ProfileLink[]
 
   @@map("profiles")
   @@index([vanityUrl])
   @@index([roles])
+}
+
+model ProfileLink {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  label     String   // 1-40 characters
+  url       String   @db.Text
+  type      String   // "website" | "imdb" | "showreel" | "other"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profile_links")
+  @@index([userId])
+  @@index([profileId])
 }
 
 model Media {

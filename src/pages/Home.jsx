@@ -8,15 +8,15 @@ const Home = () => {
       {/* Hero Section with Background - Updated layout: stat cards moved to sides */}
       <section className="relative px-4 py-20 md:py-32 animate-fade-in overflow-hidden">
         {/* Background Pattern - Light mode only */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5" aria-hidden="true" />
         
         {/* Decorative Elements */}
-        <div className="absolute top-20 right-10 w-72 h-72 bg-[#0CCE6B]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#474747]/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-10 w-72 h-72 bg-[#0CCE6B]/10 rounded-full blur-3xl" aria-hidden="true" />
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#474747]/5 rounded-full blur-3xl" aria-hidden="true" />
         
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Desktop: Three column layout with side cards. Mobile: Stack vertically */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
             
             {/* Left Sidebar: Stats Cards (Desktop) - Hidden on mobile, shown above content */}
             <div className="lg:col-span-2 order-1 lg:order-1">
@@ -29,12 +29,12 @@ const Home = () => {
 
             {/* Main Content: Text + Hero Image */}
             <div className="lg:col-span-8 order-2 lg:order-2">
-              <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="grid md:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center">
                 
                 {/* Text Content */}
                 <div>
                   <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-8 animate-slide-up">
-                    <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
+                    <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
                     <span className="text-sm font-medium text-[#0CCE6B]">
                       The Professional Network for Voice Actors
                     </span>
@@ -49,17 +49,19 @@ const Home = () => {
                   </p>
                   
                   {/* CTA Buttons */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
                     <Link
                       to="/join"
                       className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+                      aria-label="Get started with a free account"
                     >
                       <span>Get Started Free</span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                     </Link>
                     <Link
                       to="/about"
                       className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
+                      aria-label="Learn more about Project Valine"
                     >
                       Learn More
                     </Link>
@@ -71,7 +73,7 @@ const Home = () => {
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
                     {/* Placeholder Hero Image */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
-                      <Mic className="w-32 h-32 text-[#0CCE6B]/30" />
+                      <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
                     </div>
                   </div>
                   
@@ -79,7 +81,7 @@ const Home = () => {
                   <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
                     <div className="flex items-center space-x-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-white" />
+                        <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
                       </div>
                       <span className="text-sm font-semibold text-neutral-900">New!</span>
                     </div>
@@ -105,7 +107,7 @@ const Home = () => {
             Everything you need to succeed
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             <FeatureCard
               icon={Users}
               title="Connect with Artists"
@@ -135,7 +137,7 @@ const Home = () => {
             Loved by artists everywhere
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             <Testimonial
               quote="Project Valine has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
               author="Sarah Johnson"
@@ -173,9 +175,10 @@ const Home = () => {
           <Link
             to="/join"
             className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl"
+            aria-label="Create a free account"
           >
             <span>Create Free Account</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-5 h-5" aria-hidden="true" />
           </Link>
         </div>
       </section>
@@ -202,7 +205,7 @@ const TrendingCard = ({ delay }) => (
     style={{ animationDelay: delay }}
   >
     <div className="flex items-center space-x-2 mb-3">
-      <Sparkles className="w-5 h-5 text-white" />
+      <Sparkles className="w-5 h-5 text-white" aria-hidden="true" />
       <h3 className="text-white font-bold text-lg">Trending Now</h3>
     </div>
     <p className="text-white/90 text-sm mb-4">
@@ -211,9 +214,10 @@ const TrendingCard = ({ delay }) => (
     <Link 
       to="/reels"
       className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+      aria-label="Explore trending reels"
     >
       <span>Explore Reels</span>
-      <ArrowRight className="w-4 h-4" />
+      <ArrowRight className="w-4 h-4" aria-hidden="true" />
     </Link>
   </div>
 );
@@ -225,7 +229,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
     style={{ animationDelay: delay }}
   >
     <div className="w-12 h-12 bg-[#0CCE6B]/10 rounded-lg flex items-center justify-center mb-4">
-      <Icon className="w-6 h-6 text-[#0CCE6B]" />
+      <Icon className="w-6 h-6 text-[#0CCE6B]" aria-hidden="true" />
     </div>
     <h3 className="text-xl font-bold mb-3 text-neutral-900">{title}</h3>
     <p className="text-neutral-600">{description}</p>
@@ -240,7 +244,7 @@ const Testimonial = ({ quote, author, role, avatar, delay }) => (
   >
     <p className="text-neutral-700 mb-4 italic">"{quote}"</p>
     <div className="flex items-center space-x-3">
-      <img src={avatar} alt={author} className="w-12 h-12 rounded-full" />
+      <img src={avatar} alt={`${author}, ${role}`} className="w-12 h-12 rounded-full" />
       <div>
         <p className="font-semibold text-neutral-900">{author}</p>
         <p className="text-sm text-neutral-600">{role}</p>

@@ -9,30 +9,47 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 // They use the actual Express app but mock the database layer
 
 const BASE_URL = process.env.API_URL || 'http://localhost:5000'
+const AUTH_TOKEN = 'dev-token' // Match the token from auth.js stub
 
 describe('User Preferences API', () => {
-  describe('GET /preferences/:userId', () => {
-    it('should return user preferences', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`)
+  describe('GET /api/me/preferences', () => {
+    it('should require authentication', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`)
+      expect(response.status).toBe(401)
+      
+      const data = await response.json()
+      expect(data).toHaveProperty('error')
+      expect(data.error.code).toBe('UNAUTHORIZED')
+    })
+
+    it('should return user preferences when authenticated', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`
+        }
+      })
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data).toHaveProperty('preferences')
-      expect(data.preferences).toHaveProperty('theme')
+      expect(data).toHaveProperty('theme')
     })
 
     it('should return theme as light, dark, or null', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`)
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`
+        }
+      })
       const data = await response.json()
       
-      const theme = data.preferences.theme
+      const theme = data.theme
       expect(theme === 'light' || theme === 'dark' || theme === null).toBe(true)
     })
   })
 
-  describe('PATCH /preferences/:userId', () => {
-    it('should accept valid theme value (light)', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+  describe('PATCH /api/me/preferences', () => {
+    it('should require authentication', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -40,18 +57,35 @@ describe('User Preferences API', () => {
         body: JSON.stringify({ theme: 'light' })
       })
       
+      expect(response.status).toBe(401)
+      
+      const data = await response.json()
+      expect(data).toHaveProperty('error')
+      expect(data.error.code).toBe('UNAUTHORIZED')
+    })
+
+    it('should accept valid theme value (light)', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
+        },
+        body: JSON.stringify({ theme: 'light' })
+      })
+      
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data.success).toBe(true)
-      expect(data.preferences.theme).toBe('light')
+      expect(data.theme).toBe('light')
     })
 
     it('should accept valid theme value (dark)', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: 'dark' })
       })
@@ -59,15 +93,15 @@ describe('User Preferences API', () => {
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data.success).toBe(true)
-      expect(data.preferences.theme).toBe('dark')
+      expect(data.theme).toBe('dark')
     })
 
     it('should accept null theme value', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: null })
       })
@@ -75,15 +109,15 @@ describe('User Preferences API', () => {
       expect(response.status).toBe(200)
       
       const data = await response.json()
-      expect(data.success).toBe(true)
-      expect(data.preferences.theme).toBe(null)
+      expect(data.theme).toBe(null)
     })
 
     it('should reject invalid theme value', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: 'invalid' })
       })
@@ -99,10 +133,11 @@ describe('User Preferences API', () => {
     })
 
     it('should reject non-string theme value', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: 123 })
       })
@@ -114,10 +149,11 @@ describe('User Preferences API', () => {
 
   describe('Error Response Format', () => {
     it('should return standardized error format', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: 'invalid' })
       })
@@ -135,36 +171,43 @@ describe('User Preferences API', () => {
       expect(typeof data.error.message).toBe('string')
       expect(typeof data.error.details).toBe('object')
     })
+
+    it('should return proper error for unauthorized requests', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`)
+      const data = await response.json()
+      
+      expect(data.error).toBeDefined()
+      expect(data.error.code).toBe('UNAUTHORIZED')
+      expect(typeof data.error.message).toBe('string')
+    })
   })
 
   describe('Response Structure', () => {
-    it('GET should return preferences object', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`)
-      const data = await response.json()
-      
-      expect(data).toMatchObject({
-        preferences: {
-          theme: expect.any(String) || null
+    it('GET should return theme value', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         }
       })
+      const data = await response.json()
+      
+      expect(data).toHaveProperty('theme')
+      expect(data.theme === 'light' || data.theme === 'dark' || data.theme === null).toBe(true)
     })
 
-    it('PATCH should return success and updated preferences', async () => {
-      const response = await fetch(`${BASE_URL}/preferences/user_123`, {
+    it('PATCH should return updated theme', async () => {
+      const response = await fetch(`${BASE_URL}/api/me/preferences`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${AUTH_TOKEN}`
         },
         body: JSON.stringify({ theme: 'light' })
       })
       const data = await response.json()
       
-      expect(data).toMatchObject({
-        success: true,
-        preferences: {
-          theme: 'light'
-        }
-      })
+      expect(data).toHaveProperty('theme')
+      expect(data.theme).toBe('light')
     })
   })
 })

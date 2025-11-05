@@ -46,15 +46,17 @@ export default function PostCard({ post }) {
           <button
             onClick={() => likePost(post.id)}
             className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            aria-label={`Like post, currently ${post.likes} likes`}
           >
-            <Heart className="w-4 h-4" />
+            <Heart className="w-4 h-4" aria-hidden="true" />
             <span>{post.likes}</span>
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
             className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            aria-label={`View comments, ${post.comments} comments`}
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
             <span>{post.comments}</span>
           </button>
           <button
@@ -65,8 +67,9 @@ export default function PostCard({ post }) {
                 ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                 : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
             ].join(" ")}
+            aria-label={post.saved ? "Unsave post" : "Save post"}
           >
-            <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} />
+            <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.saved ? "Saved" : "Save"}</span>
           </button>
           <button
@@ -75,6 +78,7 @@ export default function PostCard({ post }) {
               // TODO: API call to request access
             }}
             className="ml-auto rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors"
+            aria-label="Request access to this post"
           >
             Request
           </button>
