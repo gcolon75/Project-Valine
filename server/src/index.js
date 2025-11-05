@@ -5,6 +5,9 @@ import morgan from 'morgan'
 
 import authRouter from './routes/auth.js'
 import healthRouter from './routes/health.js'
+import preferencesRouter from './routes/preferences.js'
+import profilesRouter from './routes/profiles.js'
+import dashboardRouter from './routes/dashboard.js'
 
 const app = express()
 
@@ -17,6 +20,9 @@ app.use(morgan('dev'))
 
 app.use('/auth', authRouter)
 app.use('/health', healthRouter)
+app.use('/preferences', preferencesRouter)
+app.use('/profiles', profilesRouter)
+app.use('/dashboard', dashboardRouter)
 
 app.get('/', (req, res) => {
   res.json({ ok: true, name: 'Project Valine API' })

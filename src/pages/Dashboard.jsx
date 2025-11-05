@@ -96,7 +96,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px] animate-fade-in">
+    <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px] animate-fade-in">
           {/* LEFT COLUMN */}
           <aside className="space-y-4">
             <div className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 p-4">
@@ -185,7 +185,7 @@ export default function Dashboard() {
             <PostComposer />
 
             {/* Stats Overview - Improved spacing and prominence */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               <StatCard
                 icon={Users}
                 label="Connections"

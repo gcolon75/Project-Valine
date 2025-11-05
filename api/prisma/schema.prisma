@@ -15,6 +15,7 @@ model User {
   avatar       String?
   name         String?
   role         String   @default("artist") // 'artist' | 'observer'
+  theme        String?  // 'light' | 'dark' - theme preference
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -205,12 +206,13 @@ model Profile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vanityUrl   String   @unique
   headline    String?
+  title       String?  // Professional title (e.g., "Senior Voice Actor")
   bio         String?  @db.Text
   roles       String[] // ["Actor", "Director", "Writer"]
   location    Json?    // { city: "Los Angeles", state: "CA", country: "USA" }
   privacy     Json     @default("{}") // { visibility: "public|network|private", showEmail: false, showPhone: false }
   tags        String[] // searchable tags
-  socialLinks Json?    // { website: "", instagram: "", imdb: "" }
+  socialLinks Json?    // { website: "", instagram: "", imdb: "", linkedin: "", showreel: "" }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
