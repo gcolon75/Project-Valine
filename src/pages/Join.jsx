@@ -27,8 +27,8 @@ const Join = () => {
       const user = await register(formData);
       toast.success('Account created successfully!');
       
-      // Navigate to profile setup for new users
-      navigate('/setup');
+      // Navigate to onboarding for new users
+      navigate('/onboarding');
     } catch (error) {
       toast.error(error.message || 'Failed to create account. Please try again.');
     }

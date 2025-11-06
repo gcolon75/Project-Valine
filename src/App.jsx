@@ -23,6 +23,7 @@ import AuditionsShow from './pages/Auditions/Show.jsx';
 import Requests from './pages/Requests.jsx';
 import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
+import Onboarding from './pages/Onboarding/index.jsx';
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
         <Route path="/signup" element={<Join />} />
         <Route path="/login" element={<Login />} />
       </Route>
+      {/* Onboarding - Standalone route for multi-step wizard */}
+      <Route path="/onboarding" element={<Onboarding />} />
       {/* Authenticated pages under AppLayout */}
       <Route element={<AppLayout />}>
         <Route path="/feed" element={<Feed />} />
