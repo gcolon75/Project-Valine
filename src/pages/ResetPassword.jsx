@@ -5,6 +5,7 @@ import { Lock, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-rea
 import toast from 'react-hot-toast';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
+import { validatePassword, passwordsMatch } from '../utils/validation';
 
 /**
  * Reset Password Page
@@ -72,22 +73,6 @@ const ResetPassword = () => {
     }
   };
 
-  const validatePassword = (password) => {
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
-    }
-    if (!/[A-Z]/.test(password)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/[a-z]/.test(password)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/[0-9]/.test(password)) {
-      return 'Password must contain at least one number';
-    }
-    return null;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFieldErrors({});
@@ -95,14 +80,14 @@ const ResetPassword = () => {
     // Validate passwords
     const errors = {};
     
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) {
-      errors.password = passwordError;
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.valid) {
+      errors.password = passwordValidation.errors[0]; // Show first error
     }
     
     if (!formData.confirmPassword) {
       errors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
+    } else if (!passwordsMatch(formData.password, formData.confirmPassword)) {
       errors.confirmPassword = 'Passwords do not match';
     }
     

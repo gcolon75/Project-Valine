@@ -5,6 +5,7 @@ import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
+import { isValidEmail } from '../utils/validation';
 
 /**
  * Forgot Password Page
@@ -26,7 +27,7 @@ const ForgotPassword = () => {
       return;
     }
     
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!isValidEmail(email)) {
       setError('Please enter a valid email address');
       return;
     }

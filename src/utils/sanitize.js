@@ -89,15 +89,23 @@ export function sanitizeLinkText(text, maxLength = 100) {
 /**
  * Encode HTML entities for safe display
  * Use when you want to display user input as-is without any HTML
+ * Uses a character map for consistent encoding without DOM manipulation
  * @param {string} text - Text to encode
  * @returns {string} HTML-encoded text
  */
 export function encodeHtmlEntities(text) {
   if (!text || typeof text !== 'string') return '';
   
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  const entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;'
+  };
+  
+  return text.replace(/[&<>"'/]/g, (char) => entityMap[char]);
 }
 
 /**

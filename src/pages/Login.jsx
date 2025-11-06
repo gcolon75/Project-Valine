@@ -4,6 +4,7 @@ import { Mail, Lock, ArrowRight, Sparkles, Code } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Alert from '../components/ui/Alert';
+import { isValidEmail } from '../utils/validation';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Login = () => {
     const errors = {};
     if (!formData.email) {
       errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!isValidEmail(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
     if (!formData.password) {
