@@ -18,25 +18,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 // Helper to analyze and format axe results
-interface AxeViolation {
-  id: string;
-  impact: string;
-  description: string;
-  help: string;
-  helpUrl: string;
-  nodes: Array<{
-    html: string;
-    target: string[];
-    failureSummary: string;
-  }>;
-}
-
-interface AxeResults {
-  violations: AxeViolation[];
-  passes: any[];
-  incomplete: any[];
-  inapplicable: any[];
-}
+import type { AxeResults, Result } from 'axe-core';
 
 function formatAxeResults(results: AxeResults, pageName: string) {
   const criticalViolations = results.violations.filter(v => v.impact === 'critical');
@@ -57,7 +39,7 @@ function formatAxeResults(results: AxeResults, pageName: string) {
     console.log('\n--- Violations by Priority ---\n');
     
     [...criticalViolations, ...seriousViolations, ...moderateViolations, ...minorViolations].forEach((violation, index) => {
-      console.log(`${index + 1}. [${violation.impact.toUpperCase()}] ${violation.id}`);
+      console.log(`${index + 1}. [${(violation.impact || 'unknown').toUpperCase()}] ${violation.id}`);
       console.log(`   Description: ${violation.description}`);
       console.log(`   Help: ${violation.help}`);
       console.log(`   More info: ${violation.helpUrl}`);

@@ -158,7 +158,7 @@ test.describe('DOMPurify Usage Validation', () => {
     
     const hasDOMPurify = await page.evaluate(() => {
       // Check if DOMPurify is imported/available
-      return typeof window.DOMPurify !== 'undefined' || 
+      return typeof (window as any).DOMPurify !== 'undefined' || 
              // Check in module scope (can't directly access, but can test)
              true; // Assume it's imported in modules
     });

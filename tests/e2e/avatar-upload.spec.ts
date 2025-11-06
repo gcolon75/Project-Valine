@@ -4,7 +4,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import path from 'path';
+import * as path from 'path';
 
 test.describe('Avatar Upload UX', () => {
   test.beforeEach(async ({ page }) => {
