@@ -13,6 +13,9 @@ const AboutPage = lazy(() => import("../pages/About"));
 const FeaturesPage = lazy(() => import("../pages/Features"));
 const JoinPage = lazy(() => import("../pages/Join"));
 const LoginPage = lazy(() => import("../pages/Login"));
+const VerifyEmailPage = lazy(() => import("../pages/VerifyEmail"));
+const ForgotPasswordPage = lazy(() => import("../pages/ForgotPassword"));
+const ResetPasswordPage = lazy(() => import("../pages/ResetPassword"));
 
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const DiscoverPage = lazy(() => import("../pages/Discover"));
@@ -61,6 +64,11 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />
         </Route>
+
+        {/* Auth flows - standalone pages without layout */}
+        <Route path="verify-email" element={<VerifyEmailPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
 
         {/* Authenticated app shell */}
         <Route element={<AppLayout />}>
