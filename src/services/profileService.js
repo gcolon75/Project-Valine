@@ -137,3 +137,52 @@ export const mapLinkTypeFromApi = (type) => {
 
   return typeMap[type] || 'Website';
 };
+
+/**
+ * Reorder profile links
+ * @param {string} userId - User ID
+ * @param {Array<string>} linkIds - Ordered array of link IDs
+ * @returns {Promise<Object>} Updated profile with reordered links
+ */
+export const reorderProfileLinks = async (userId, linkIds) => {
+  const { data } = await apiClient.post(`/profiles/${userId}/links/reorder`, {
+    linkIds
+  });
+  return data;
+};
+
+/**
+ * Request presigned URL for avatar upload
+ * @param {string} userId - User ID
+ * @param {string} fileName - File name
+ * @param {string} fileType - MIME type (e.g., 'image/jpeg')
+ * @returns {Promise<Object>} Presigned URL data { uploadUrl, fileUrl }
+ */
+export const requestAvatarUploadUrl = async (userId, fileName, fileType) => {
+  const { data } = await apiClient.post(`/profiles/${userId}/avatar/presign`, {
+    fileName,
+    fileType
+  });
+  return data;
+};
+
+/**
+ * Upload avatar to presigned S3 URL
+ * @param {string} uploadUrl - Presigned S3 upload URL
+ * @param {Blob} file - Image file blob
+ * @param {string} fileType - MIME type
+ * @returns {Promise<void>}
+ */
+export const uploadAvatarToS3 = async (uploadUrl, file, fileType) => {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': fileType,
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+};
