@@ -80,6 +80,162 @@ The Discord bot Lambda function was experiencing critical deployment failures:
 
 ---
 
+## [2025-11-06] - Security Hardening, Verification Infrastructure, Profile/Onboarding (PRs 155-187)
+
+### 🔒 Security & Privacy Hardening (PRs 181, 183-185)
+
+**Authentication Security:**
+- **CSRF Protection** ([PR #185](https://github.com/gcolon75/Project-Valine/pull/185)): Token-based CSRF protection on all state-changing endpoints (login, register, profile edit, settings)
+- **Rate Limiting** ([PR #181](https://github.com/gcolon75/Project-Valine/pull/181)): 
+  - Login/Register: 5 attempts per 15 minutes
+  - Password Reset: 3 attempts per hour
+  - API endpoints: 100 requests per 15 minutes
+  - 2FA verification: 5 attempts per 15 minutes
+- **Session Management** ([PR #185](https://github.com/gcolon75/Project-Valine/pull/185)): Secure httpOnly cookies, SameSite=Strict, 15-min access tokens, 7-day refresh tokens
+- **2FA Support** ([PR #183](https://github.com/gcolon75/Project-Valine/pull/183)): TOTP-based two-factor authentication with recovery codes
+
+**Content Security Policy:**
+- **CSP Report-Only Mode** ([PR #183](https://github.com/gcolon75/Project-Valine/pull/183)): 
+  - CSP configuration deployed in report-only mode
+  - Violation reporting to CloudWatch
+  - XSS protection with DOMPurify
+  - Inline script/style inventory completed
+  - Phased enforcement plan: Marketing pages (Q1 2026), Authenticated pages (Q2 2026), Full enforcement (Q3 2026)
+
+**Audit Logging:**
+- **Audit Log System** ([PR #184](https://github.com/gcolon75/Project-Valine/pull/184)):
+  - User authentication events (login, logout, failures)
+  - 2FA events (enable, disable, verification attempts)
+  - Profile changes (edit, delete, data export)
+  - Security events (password reset, email verification)
+  - Retention policies: Security (90 days), User actions (30 days), Failed attempts (7 days)
+
+**Security Documentation:**
+- Security runbooks: 2FA enablement, email verification, password reset
+- Incident response playbook for auth abuse scenarios
+- CSP rollout plan with phase timelines
+- Environment variable security guidelines
+
+### 🎨 Onboarding & Profile Builder (PRs 173, 175, 182)
+
+**Onboarding Wizard:**
+- **6-Step Profile Builder** ([PR #173](https://github.com/gcolon75/Project-Valine/pull/173)):
+  - Step 1: Profile photo upload (S3 + Cloudinary)
+  - Step 2: Bio and title (500 char limit)
+  - Step 3: Profile links (GitHub, LinkedIn, Twitter, Website, Portfolio)
+  - Step 4: Theme preference (light/dark mode)
+  - Step 5: Privacy settings (profile visibility, data controls)
+  - Step 6: Review and submit
+- **Progress Persistence** ([PR #173](https://github.com/gcolon75/Project-Valine/pull/173)): Onboarding state saved across sessions
+- **Accessibility** ([PR #175](https://github.com/gcolon75/Project-Valine/pull/175)): WCAG AA compliant forms, keyboard navigation, screen reader support
+
+**Profile Links Normalization:**
+- **Profile Links API** ([PR #182](https://github.com/gcolon75/Project-Valine/pull/182)):
+  - Normalized `profile_links` table (separate from User model)
+  - Profile link ordering and visibility controls
+  - URL validation with platform-specific patterns
+  - Migration from legacy `socialLinks` JSON field
+  - Rollback scripts for safe deployment
+- **Theme Preference API** ([PR #175](https://github.com/gcolon75/Project-Valine/pull/175)):
+  - GET/PATCH `/api/users/:id/theme` endpoint
+  - Theme stored in User model (nullable string: "light" | "dark" | null)
+  - LocalStorage sync for pre-hydration theme application
+
+### 🧪 Verification & Regression Infrastructure (PRs 186-187)
+
+**Post-Merge Verification** ([PR #186](https://github.com/gcolon75/Project-Valine/pull/186)):
+- Comprehensive verification script (`scripts/post-merge-comprehensive-verification.js`)
+- PR verification matrix for PRs 155-185
+- Migration validation (Prisma schemas, rollback scripts)
+- Security validation (middleware, auth routes, test coverage)
+- CSP policy analysis (directives, violations)
+- Vulnerability scanning (npm audit, secret patterns)
+- Audit log verification
+- Test suite execution (unit, integration, E2E)
+- Verification report: `logs/verification/verification-report.md`
+
+**Regression Test Suite** ([PR #187](https://github.com/gcolon75/Project-Valine/pull/187)):
+- **Accessibility Testing** (`tests/e2e/accessibility-sweep.spec.ts`):
+  - 14 scenarios covering WCAG AA compliance
+  - Marketing pages, authentication flows, authenticated pages, onboarding wizard
+  - Axe-core integration with severity classification (Critical → Serious → Moderate → Minor)
+- **Visual Regression** (`tests/e2e/visual-regression.spec.ts`):
+  - 15+ component/page snapshots
+  - Cross-browser (Chromium, WebKit, Firefox)
+  - Responsive viewports (Mobile, Tablet, Desktop)
+  - Dark/light theme variants
+- **CSP Compliance** (`tests/e2e/csp-compliance.spec.ts`):
+  - Inline script/style detection
+  - XSS payload testing
+  - External resource validation
+  - CSP header recommendations
+- **Negative Flow Testing** (`tests/e2e/negative-flows.spec.ts`):
+  - Expired token handling (auth, refresh, verification, reset)
+  - 2FA failures and account lockout
+  - Rate limiting validation
+  - Network errors (timeout, offline, 5xx)
+
+### 🗄️ Backend Improvements (PR 177 and related)
+
+**API Enhancements:**
+- Profile links ordering and caching
+- Theme preference endpoint with proper validation
+- Dashboard stats API (7-day engagement metrics)
+- Profile data export and deletion endpoints
+- Enhanced error handling and validation middleware
+
+**Database:**
+- Profile links migration (`20251105030800_add_profile_links_table`)
+- User theme field migration
+- Audit log model migration
+- Legacy data migration script (`api/scripts/migrate-social-links.js`)
+
+### 🖥️ Frontend Integration (PRs 175, 180, 185)
+
+**API Integration:**
+- Profile links edit UI with reordering
+- Theme preference toggle with instant preview
+- Onboarding wizard with progress tracking
+- CSRF token management in forms
+- Graceful API fallback to mock data
+- Optimistic updates with automatic rollback
+
+**Error Boundaries:**
+- Frontend error boundaries for crash recovery
+- User-friendly error messages
+- Diagnostic logging (`window.__diagnostics`)
+- Analytics tracking (`window.__analytics`)
+
+### 📚 Documentation Reorganization
+
+**New Documentation Structure:**
+- **PROJECT_STATUS.md**: Comprehensive current status, readiness, security posture, QA coverage, risks, next steps
+- **docs/README.md**: Complete documentation index with categorized navigation
+- **Reorganized Docs:**
+  - `docs/security/` - Security policies, CSP, runbooks, incident response
+  - `docs/backend/` - API docs, migrations, profile links, theme API
+  - `docs/frontend/` - Hardening reports, integration guides
+  - `docs/ux/` - UX audit reports, findings, transformation plan
+  - `docs/agents/` - Agent implementation docs
+  - `docs/verification/` - Post-merge verification, regression test guides
+  - `docs/ops/` - Deployment guides, CI/CD, monitoring, runbooks
+  - `docs/reference/` - Implementation summaries, roadmap, historical docs
+
+**Updated Root README.md:**
+- Prominent link to PROJECT_STATUS.md at top
+- Quick navigation to documentation sections
+- Status badges (CI, Accessibility, Lighthouse, Security)
+
+### 🔗 Related PRs & Issues
+
+- Security Hardening: [#181](https://github.com/gcolon75/Project-Valine/pull/181), [#183](https://github.com/gcolon75/Project-Valine/pull/183), [#184](https://github.com/gcolon75/Project-Valine/pull/184), [#185](https://github.com/gcolon75/Project-Valine/pull/185)
+- Onboarding/Profile: [#173](https://github.com/gcolon75/Project-Valine/pull/173), [#175](https://github.com/gcolon75/Project-Valine/pull/175), [#182](https://github.com/gcolon75/Project-Valine/pull/182)
+- Backend Improvements: [#177](https://github.com/gcolon75/Project-Valine/pull/177)
+- Frontend Integration: [#175](https://github.com/gcolon75/Project-Valine/pull/175), [#180](https://github.com/gcolon75/Project-Valine/pull/180), [#185](https://github.com/gcolon75/Project-Valine/pull/185)
+- Verification: [#186](https://github.com/gcolon75/Project-Valine/pull/186), [#187](https://github.com/gcolon75/Project-Valine/pull/187)
+
+---
+
 ## [Unreleased]
 
 ### Added

@@ -7,7 +7,16 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 [![Lighthouse CI](https://github.com/gcolon75/Project-Valine/actions/workflows/lighthouse-ci.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/lighthouse-ci.yml)
 [![Security Audit](https://github.com/gcolon75/Project-Valine/actions/workflows/security-audit.yml/badge.svg)](https://github.com/gcolon75/Project-Valine/actions/workflows/security-audit.yml)
 
-> 📖 **New to Project Valine?** Check out [PROJECT_VALINE_SUMMARY.md](docs/archive/merged/PROJECT_VALINE_SUMMARY-merged-20251104.md) for a comprehensive overview of the project, architecture, current status, and next steps.
+---
+
+## 📊 **[→ Project Status (Current Readiness, Security, QA)](PROJECT_STATUS.md)** ←
+
+**Latest Update:** PRs 155-187 merged | **Status:** Production-Ready (83% Complete)  
+**Security:** 2FA, CSRF, Rate Limits, CSP (Report-Only) | **Tests:** 107 (45% coverage)
+
+---
+
+> 📖 **New to Project Valine?** Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for current readiness, security posture, QA coverage, and next steps. See also [docs/](docs/README.md) for complete documentation index.
 
 ## Table of Contents
 
