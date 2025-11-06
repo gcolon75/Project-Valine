@@ -9,6 +9,7 @@ model User {
   id           String   @id @default(uuid())
   username     String   @unique
   email        String   @unique
+  emailVerified Boolean  @default(false) // Email verification status
   password     String   // hashed password
   displayName  String
   bio          String?
@@ -16,6 +17,8 @@ model User {
   name         String?
   role         String   @default("artist") // 'artist' | 'observer'
   theme        String?  // 'light' | 'dark' - theme preference
+  twoFactorEnabled Boolean @default(false) // 2FA enrollment status
+  twoFactorSecret  String? // TOTP secret (encrypted)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -37,6 +40,11 @@ model User {
   sentReelRequests   ReelRequest[]       @relation("requester")
   receivedReelRequests ReelRequest[]     @relation("owner")
   profileLinks       ProfileLink[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  twoFactorRecoveryCodes TwoFactorRecoveryCode[]
+  sessions           Session[]
+  auditLogs          AuditLog[]
 
   @@map("users")
 }
@@ -325,4 +333,89 @@ model ReelRequest {
   @@index([mediaId])
   @@index([requesterId])
   @@index([ownerId, status])
+}
+
+// ============================================
+// Security & Authentication Models
+// ============================================
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verification_tokens")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model TwoFactorRecoveryCode {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String   // hashed recovery code
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("two_factor_recovery_codes")
+  @@index([userId])
+  @@index([userId, used])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique // Session token or JWT ID
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@map("sessions")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // "profile.update", "email.change", "password.change", etc.
+  resource  String   // Resource type: "profile", "user", "settings"
+  resourceId String? // ID of the affected resource
+  changes   Json?    // Before/after values
+  ipAddress String?
+  userAgent String?
+  metadata  Json?    // Additional context
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
