@@ -1,650 +1,701 @@
-# Post-Merge Verification & Regression Sweep Orchestration Runbook
+# Orchestration Runbook: Verification and Sweep
 
 ## Overview
+Operational runbook for the **Orchestrate Verification and Sweep** workflow, which executes post-merge verification and Playwright regression testing against staging environments.
 
-This runbook provides step-by-step instructions for running the orchestrated post-merge verification and frontend regression/accessibility sweep workflow against a staging environment.
+**Workflow**: `.github/workflows/orchestrate-verification-and-sweep.yml`  
+**Last Updated**: 2025-11-06  
+**Owner**: QA & Operations Team  
+**Severity**: P2 (Non-blocking, manual execution only)
 
-**Purpose**: Validate that merged PRs 155-185 work correctly in a staging environment, with no security regressions, accessibility violations, or functional breaks.
+---
 
-**Components**:
-- Post-merge comprehensive verification script (`npm run verify:post-merge`)
-- Playwright regression and accessibility sweep (`./tests/e2e/run-regression-sweep.sh`)
-
-**Workflow**: `.github/workflows/orchestrate-verification-and-sweep.yml`
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Required Secrets](#required-secrets)
+- [Running the Workflow](#running-the-workflow)
+- [Artifact Locations](#artifact-locations)
+- [Health Checks](#health-checks)
+- [Triage Steps](#triage-steps)
+- [Safety Notes](#safety-notes)
+- [Troubleshooting](#troubleshooting)
+- [Related Documentation](#related-documentation)
 
 ---
 
 ## Prerequisites
 
-### 1. Staging Environment Requirements
+### Repository Access
+- **Required Role**: Write access to repository or Actions permission
+- **Branch**: Available on all branches (workflow_dispatch only)
 
-- A deployed staging environment accessible via HTTPS
-- Test user account with credentials for authentication testing
-- Staging environment should mirror production configuration
+### Environment Requirements
+- **Staging Environment**: Must be deployed and accessible
+- **Test User Account**: Valid staging credentials required
+- **Secrets**: All three required secrets must be configured
 
-### 2. Repository Access
+### Local Testing (Optional)
+Before running the workflow, you can test locally:
+```bash
+# Set environment variables
+export STAGING_URL="https://staging.valine.app"
+export TEST_USER_EMAIL="test@example.com"
+export TEST_USER_PASSWORD="SecureTestPass123!"
 
-- Admin or Maintainer access to the GitHub repository
-- Ability to add repository secrets
-- Permission to run GitHub Actions workflows
+# Run verification
+npm run verify:post-merge
+
+# Run regression sweep
+./tests/e2e/run-regression-sweep.sh
+```
 
 ---
 
-## Step 1: Add Repository Secrets
+## Required Secrets
 
-Repository secrets must be configured before running the workflow.
+The workflow requires three GitHub repository secrets. Configure these in **Settings → Secrets and variables → Actions**.
 
-### Navigate to Repository Secrets
+### 1. STAGING_URL
+**Description**: Full URL of the staging environment  
+**Format**: `https://staging.valine.app` (or your staging domain)  
+**Example**: `https://staging.valine.app`
 
-1. Go to your GitHub repository
-2. Click **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-
-### Required Secrets
-
-Add the following three secrets:
-
-#### `STAGING_URL`
-
-- **Name**: `STAGING_URL`
-- **Value**: The full URL of your staging environment (e.g., `https://staging.valine.example.com`)
-- **Notes**: 
-  - Must be a complete URL with protocol (https://)
-  - Do NOT include trailing slash
-  - Must be accessible from GitHub Actions runners
-
-**Example**:
+**How to Add**:
 ```
-https://staging.valine.example.com
+1. Navigate to: Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: STAGING_URL
+4. Secret: https://staging.valine.app
+5. Click "Add secret"
 ```
 
-#### `TEST_USER_EMAIL`
+### 2. TEST_USER_EMAIL
+**Description**: Email address for staging test user account  
+**Format**: Valid email address registered in staging environment  
+**Example**: `qa-tester@valine.app`
 
-- **Name**: `TEST_USER_EMAIL`
-- **Value**: Email address of a valid test user account in staging
-- **Notes**:
-  - This user should have a verified account
-  - Account should have completed onboarding
-  - Used for authentication tests
+**Requirements**:
+- Account must exist in staging environment
+- Email must be verified
+- Account should have standard user permissions (not admin)
 
-**Example**:
+**How to Add**:
 ```
-test-user@example.com
-```
-
-#### `TEST_USER_PASSWORD`
-
-- **Name**: `TEST_USER_PASSWORD`
-- **Value**: Password for the test user account
-- **Notes**:
-  - Store securely as a secret (never commit to code)
-  - Ensure this is a test account, not a real user
-  - Rotate periodically for security
-
-**Example**:
-```
-SecureTestP@ssw0rd123!
+1. Navigate to: Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: TEST_USER_EMAIL
+4. Secret: qa-tester@valine.app
+5. Click "Add secret"
 ```
 
-### Verify Secrets
+### 3. TEST_USER_PASSWORD
+**Description**: Password for staging test user account  
+**Format**: String (should meet password requirements)  
+**Example**: `SecureTestPassword123!`
 
-After adding all three secrets, you should see them listed under **Repository secrets**:
-- `STAGING_URL`
-- `TEST_USER_EMAIL`
-- `TEST_USER_PASSWORD`
+**Security Requirements**:
+- Use a strong, unique password
+- DO NOT reuse production passwords
+- Rotate periodically (quarterly recommended)
+- Document password rotation in team password manager
+
+**How to Add**:
+```
+1. Navigate to: Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: TEST_USER_PASSWORD
+4. Secret: [your secure password]
+5. Click "Add secret"
+```
+
+### Verifying Secrets
+After adding secrets, verify they are configured:
+```
+Repository → Settings → Secrets and variables → Actions → Repository secrets
+
+You should see:
+✅ STAGING_URL
+✅ TEST_USER_EMAIL
+✅ TEST_USER_PASSWORD
+```
 
 ---
 
-## Step 2: Run the Workflow
+## Running the Workflow
 
-### Manual Dispatch from GitHub UI
+### Via GitHub Actions UI
 
-1. Go to your GitHub repository
-2. Click **Actions** tab
-3. In the left sidebar, click **Orchestrate Verification and Sweep**
-4. Click the **Run workflow** dropdown button (top right)
-5. Select the branch (typically `main` or your feature branch)
-6. *Optional*: Override secrets using input fields if needed
-7. Click **Run workflow** (green button)
+**Step 1**: Navigate to Actions tab
+```
+1. Go to your repository on GitHub
+2. Click the "Actions" tab
+3. Find "Orchestrate Verification and Sweep" in the left sidebar
+```
 
-### Monitor Workflow Execution
+**Step 2**: Trigger workflow dispatch
+```
+1. Click "Run workflow" button (top right)
+2. Select branch (default: main)
+3. Optionally add description:
+   Example: "Testing PR #185 staging deployment"
+4. Click "Run workflow" (green button)
+```
 
-1. The workflow will appear in the list with a yellow status indicator
-2. Click on the workflow run to view real-time logs
-3. Expand each step to see detailed output
-4. Workflow will take approximately 15-30 minutes to complete
+**Step 3**: Monitor execution
+```
+1. Workflow run appears immediately
+2. Click on the run to view details
+3. Monitor each step's progress
+4. Typical duration: 30-40 minutes
+```
 
-### Workflow Steps Overview
+### Via GitHub CLI (gh)
 
-The workflow performs these steps in sequence:
+```bash
+# Run on main branch with description
+gh workflow run "Orchestrate Verification and Sweep" \
+  --ref main \
+  -f description="Manual staging validation"
 
-1. ✅ **Checkout code** - Clones the repository
-2. ✅ **Setup Node.js** - Installs Node.js 18
-3. ✅ **Install dependencies** - Runs `npm ci`
-4. ✅ **Install Playwright browsers** - Installs Chromium for testing
-5. ✅ **Verify secrets** - Checks that all required secrets are configured
-6. ✅ **Health check staging** - Verifies staging environment is accessible
-7. ✅ **Test authentication** - Validates test user credentials
-8. ✅ **Run post-merge verification** - Executes comprehensive verification
-9. ✅ **Upload verification logs** - Uploads verification artifacts
-10. ✅ **Run Playwright regression sweep** - Executes E2E and accessibility tests
-11. ✅ **Upload Playwright report** - Uploads interactive HTML report
-12. ✅ **Upload regression artifacts** - Uploads test results and reports
-13. ✅ **Generate workflow summary** - Creates summary with key findings
-14. ✅ **Check for critical findings** - Flags critical issues
+# Run on specific branch
+gh workflow run "Orchestrate Verification and Sweep" \
+  --ref feature/my-branch \
+  -f description="Testing feature branch"
+
+# Check run status
+gh run list --workflow="Orchestrate Verification and Sweep"
+
+# Watch latest run
+gh run watch
+```
+
+### Via GitHub API
+
+```bash
+# Get workflow ID
+curl -H "Authorization: token YOUR_TOKEN" \
+  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows
+
+# Trigger workflow
+curl -X POST \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/orchestrate-verification-and-sweep.yml/dispatches \
+  -d '{"ref":"main","inputs":{"description":"API triggered run"}}'
+```
 
 ---
 
-## Step 3: Download and Review Artifacts
+## Artifact Locations
 
-### Locate Artifacts
+The workflow generates three artifact bundles. Download them from the workflow run page.
 
-After the workflow completes (success or failure):
-
-1. Scroll to the bottom of the workflow run page
-2. Find the **Artifacts** section
-3. You should see three artifacts:
-   - `verification-logs`
-   - `playwright-report`
-   - `regression-artifacts`
-
-### Download Artifacts
-
-Click each artifact name to download a ZIP file containing:
-
-#### `verification-logs`
-
-**Location**: `logs/verification/`
+### 1. verification-and-smoke-artifacts
 
 **Contents**:
-- `verification-report.md` - Main verification report with executive summary
-- `artifacts/draft-prs.json` - Draft PR payloads for fixes
-- `artifacts/npm-audit.json` - Detailed vulnerability scan
-- `artifacts/unit-tests.txt` - Unit test results
-- `artifacts/e2e-tests.txt` - E2E test results
+```
+logs/verification/
+├── verification-report.md          # Main verification report
+├── pr-audit-summary.md             # PR audit summary
+└── artifacts/
+    └── draft-prs.json              # Generated PR drafts
 
-**Key files to review**:
-1. Start with `verification-report.md` for the executive summary
-2. Check `artifacts/draft-prs.json` for recommended fixes
-3. Review `artifacts/npm-audit.json` for vulnerabilities
+REGRESSION_VERIFICATION_REPORT.md   # Regression verification
+REGRESSION_SWEEP_REPORT.md          # Full sweep report
+UX_AUDIT_REPORT.md                  # UX audit findings
+UX_AUDIT_FINDINGS.csv               # Structured UX data
+UX_AUDIT_SUMMARY.json               # Machine-readable summary
+```
 
-#### `playwright-report`
+**How to Download**:
+1. Navigate to workflow run
+2. Scroll to "Artifacts" section (bottom)
+3. Click "verification-and-smoke-artifacts" to download ZIP
 
-**Location**: `playwright-report/`
+**Expected Files**:
+- `logs/verification/verification-report.md` - Always present
+- Reports (*.md) - Present if tests generated them
+- CSV/JSON files - Present if UX audit ran
 
-**Contents**:
-- `index.html` - Interactive HTML report (open in browser)
-- Test traces, screenshots, and videos
-- Per-test detailed results
-
-**How to view**:
-1. Extract the ZIP file
-2. Open `index.html` in a web browser
-3. Navigate through test results, filter by status
-4. Click on individual tests to see traces and screenshots
-
-#### `regression-artifacts`
-
-**Location**: `test-results/`, `REGRESSION_SWEEP_REPORT.md`
+### 2. playwright-report
 
 **Contents**:
-- `REGRESSION_SWEEP_REPORT.md` - Consolidated regression report
-- `test-results/accessibility/results.json` - axe-core violations
-- `test-results/visual-regression/results.json` - Screenshot diffs
-- `test-results/csp-compliance/results.json` - CSP violations
-- `test-results/negative-flows/results.json` - Error handling results
-- Various test result JSON files
+```
+playwright-report/
+├── index.html              # Interactive HTML report
+├── data/
+│   └── *.json             # Test result data
+└── trace/
+    └── *.zip              # Playwright traces
+```
 
-**Key files to review**:
-1. `REGRESSION_SWEEP_REPORT.md` - Overall regression summary
-2. `test-results/accessibility/results.json` - Accessibility violations by page
+**How to View**:
+1. Download artifact ZIP
+2. Extract locally
+3. Open `playwright-report/index.html` in browser
+4. Interactive report shows:
+   - Test results by suite
+   - Screenshots of failures
+   - Trace viewer (timeline, network, console)
+
+**Accessing Traces**:
+```bash
+# Install Playwright if not already installed
+npm install -D @playwright/test
+
+# View trace file
+npx playwright show-trace playwright-report/trace/trace-file.zip
+```
+
+### 3. regression-and-a11y-artifacts
+
+**Contents**:
+```
+test-results/
+├── accessibility/
+│   ├── *.json             # A11y scan results
+│   └── violations.csv     # Accessibility violations
+├── visual-regression/
+│   ├── baseline/          # Baseline screenshots
+│   ├── actual/            # Current screenshots
+│   └── diff/              # Visual diffs
+├── csp-compliance/
+│   └── csp-report.json    # CSP violation reports
+└── negative-flows/
+    └── error-states.json  # Error handling tests
+
+REGRESSION_SWEEP_REPORT.md  # Consolidated report
+```
+
+**Key Files**:
+- `test-results/accessibility/violations.csv` - All a11y issues
+- `REGRESSION_SWEEP_REPORT.md` - Executive summary
+- Visual diffs - Screenshots showing UI changes
 
 ---
 
-## Step 4: Triage Results
+## Health Checks
 
-### Understanding Workflow Status
+### Pre-Run Health Checks
+
+Before running the workflow, verify staging health:
+
+#### 1. Staging Availability
+```bash
+# Check if staging is accessible
+curl -I https://staging.valine.app
+
+# Expected response:
+# HTTP/2 200
+# server: nginx
+# content-type: text/html
+```
+
+#### 2. API Health Check
+```bash
+# Check API endpoint
+curl https://staging.valine.app/api/health
+
+# Expected response:
+# {"status":"healthy","version":"x.x.x","timestamp":"2025-11-06T..."}
+```
+
+#### 3. Authentication Service
+```bash
+# Test login endpoint availability
+curl -X POST https://staging.valine.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"dummy"}'
+
+# Expected response (even with wrong creds):
+# {"success":false,"error":"Invalid credentials"}
+# (Should NOT get connection refused or 502)
+```
+
+### Login Verification Commands
+
+Test authentication with configured test user:
+
+#### Valid Login Test
+```bash
+# Replace with your actual test credentials
+curl -X POST https://staging.valine.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "'"$TEST_USER_EMAIL"'",
+    "password": "'"$TEST_USER_PASSWORD"'"
+  }'
+
+# Expected successful response:
+# {
+#   "success": true,
+#   "token": "eyJhbGciOiJIUzI1NiIs...",
+#   "user": {
+#     "id": "usr_abc123",
+#     "email": "qa-tester@valine.app",
+#     "username": "qa-tester"
+#   }
+# }
+```
+
+#### Session Validation
+```bash
+# Use token from login response
+TOKEN="eyJhbGciOiJIUzI1NiIs..."
+
+curl https://staging.valine.app/api/auth/me \
+  -H "Authorization: Bearer $TOKEN"
+
+# Expected response:
+# {
+#   "id": "usr_abc123",
+#   "email": "qa-tester@valine.app",
+#   "emailVerified": true
+# }
+```
+
+---
+
+## Triage Steps
+
+When the workflow completes, follow these steps to triage results.
+
+### Step 1: Check Workflow Status
 
 **Green (Success)**:
-- All checks passed
-- No critical issues detected
-- Proceed with confidence
+- All steps completed successfully
+- No action required unless reviewing for insights
 
-**Yellow/Orange (Warning)**:
-- Some tests failed (informational)
-- Non-critical issues detected
-- Review artifacts for details
+**Yellow (Warning)**:
+- One or both main steps failed but continued
+- Artifacts still uploaded
+- **Action**: Review artifacts to determine severity
 
 **Red (Failure)**:
-- Critical issues detected
-- Secrets not configured correctly
-- Staging environment unreachable
+- Infrastructure or setup issue
+- **Action**: Check logs for setup/environment errors
 
-### Health Check and Authentication Tests
+### Step 2: Download and Review Artifacts
 
-Before reviewing detailed results, check these preliminary steps:
+**Priority Order**:
+1. **verification-and-smoke-artifacts** - Start here
+2. **regression-and-a11y-artifacts** - Check test results
+3. **playwright-report** - Deep dive on failures
 
-#### Health Check Command
+### Step 3: Analyze Verification Report
 
-The workflow automatically runs:
-```bash
-curl -f -s -o /dev/null -w "%{http_code}" "$STAGING_URL"
+**Location**: `logs/verification/verification-report.md`
+
+**Key Sections**:
+```markdown
+## Executive Summary
+- Total PRs verified: X
+- Security issues found: Y
+- Breaking changes: Z
+
+## Critical Findings
+- [Lists P0/P1 issues]
+
+## Recommendations
+- [Action items]
 ```
 
-**Expected**: HTTP 200, 301, or 302
+**Decision Matrix**:
+| Finding | Severity | Action |
+|---------|----------|--------|
+| Security vulnerability | P0 | Create hotfix PR immediately |
+| Breaking change | P1 | Create issue, notify team |
+| Minor bug | P2 | Add to backlog |
+| Enhancement opportunity | P3 | Document for future sprint |
 
-**If failed**:
-- Verify staging URL is correct
-- Check if staging environment is deployed
-- Verify network access from GitHub Actions runners
+### Step 4: Review Regression Sweep
 
-#### Login Test Command
+**Location**: `REGRESSION_SWEEP_REPORT.md`
 
-The workflow automatically runs:
-```bash
-curl -s -X POST "$STAGING_URL/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"TEST_USER_EMAIL","password":"TEST_USER_PASSWORD"}'
+**Check For**:
+- ❌ **Failed tests**: Regression or new bugs
+- ⚠️ **A11y violations**: Accessibility issues
+- 📸 **Visual diffs**: Unintended UI changes
+- 🔒 **CSP violations**: Security policy issues
+
+**Sample Report**:
+```markdown
+## Test Summary
+✅ 45 passed
+❌ 3 failed
+⚠️ 2 warnings
+
+## Failed Tests
+1. auth-error-states.spec.ts - Invalid password handling
+   - Expected: Error message shown
+   - Actual: Page crashed
+   
+2. visual-regression.spec.ts - Profile page layout
+   - Baseline mismatch: 15% difference
+   - Screenshot: visual-regression/diff/profile.png
 ```
 
-**Expected**: HTTP 200 or 201 with authentication token
+### Step 5: Investigate Failures
 
-**If failed**:
-- Verify test user credentials are correct
-- Check if user account exists in staging
-- Ensure `/api/auth/login` endpoint is deployed
+For each failure:
 
-### Verification Report Triage
+1. **Review test output** in artifacts
+2. **View screenshots/traces** in Playwright report
+3. **Reproduce locally** if needed:
+   ```bash
+   export STAGING_URL="https://staging.valine.app"
+   npm run test:e2e -- --grep "test-name"
+   ```
+4. **Determine root cause**:
+   - Is it a real bug? → Create issue
+   - Is it a test flake? → Re-run workflow
+   - Is it environment-specific? → Check staging config
 
-#### Executive Summary
+### Step 6: Take Action
 
-Open `verification-report.md` and locate the **Executive Summary** section.
+**If Critical Issues Found**:
+1. Create GitHub issue with label `severity:critical`
+2. Notify team via Slack/Discord
+3. Link workflow run in issue
+4. Assign to relevant developer
 
-**Key metrics**:
-- **PRs Merged**: Number of PRs from range 155-185 detected
-- **Security Tests**: Number of security checks performed
-- **Vulnerabilities**: Number of npm/secret vulnerabilities found
-- **Recommendations**: Number of recommended fixes
-- **Draft PRs**: Number of draft PR payloads generated
+**If Tests Need Updates**:
+1. Update test expectations if intentional change
+2. Fix flaky tests
+3. Adjust baselines for visual regression
 
-#### Prioritization Matrix
-
-| Priority | Action Required | Timeline |
-|----------|----------------|----------|
-| **Critical** | Immediate fix | Within 24 hours |
-| **High** | Priority fix | Within 1 week |
-| **Medium** | Schedule fix | Within 2 weeks |
-| **Low** | Consider fixing | Backlog |
-
-#### Security Findings
-
-**Critical security issues** to address immediately:
-- Exposed secrets or credentials in code
-- Critical npm vulnerabilities (CVSS 9.0+)
-- Authentication bypass vulnerabilities
-- Broken access control
-
-**Review**:
-1. Check `artifacts/npm-audit.json` for vulnerability details
-2. Check `artifacts/draft-prs.json` for security-related PRs
-3. Review any "PRIVATE/SECURITY FINDING" sections (redacted in public report)
-
-### Regression Sweep Triage
-
-#### Accessibility Violations
-
-Open `test-results/accessibility/results.json` or review the Playwright HTML report.
-
-**Severity levels** (WCAG):
-- **Critical**: Prevents users from accessing content
-- **Serious**: Major barrier for some users
-- **Moderate**: Noticeable issue but workaround exists
-- **Minor**: Cosmetic or minor inconvenience
-
-**Focus on**:
-- Critical and Serious violations first
-- Violations affecting authentication or core flows
-- Color contrast issues (common and easy to fix)
-
-**Example violation**:
-```json
-{
-  "id": "color-contrast",
-  "impact": "serious",
-  "description": "Elements must have sufficient color contrast",
-  "nodes": 3,
-  "help": "Ensure text has sufficient contrast ratio"
-}
-```
-
-**Next steps**:
-1. Identify affected components/pages
-2. Review WCAG guidelines linked in violation
-3. Create fix PR with updated styles
-
-#### Visual Regression Failures
-
-Visual regressions may indicate:
-- Intentional design changes (update snapshots)
-- Unintended CSS/layout bugs (fix the issue)
-- Browser rendering differences (review and adjust)
-
-**Review**:
-1. Open Playwright HTML report
-2. Look for tests with "Comparison failed" status
-3. View side-by-side diffs of screenshots
-4. Determine if changes are expected or bugs
-
-**Decision tree**:
-- **Expected change**: Update snapshots with `npx playwright test --update-snapshots`
-- **Unexpected change**: Fix the CSS/layout bug
-- **Browser-specific**: Review and adjust test thresholds
-
-#### CSP Compliance Issues
-
-CSP (Content Security Policy) violations indicate security risks.
-
-**Common violations**:
-- Inline `<script>` tags (XSS risk)
-- Inline `style=""` attributes (CSP violation)
-- Event handlers like `onclick` (XSS risk)
-- Missing DOMPurify for user content
-
-**Review**:
-1. Check `test-results/csp-compliance/results.json`
-2. Identify file paths of violations
-3. Refactor to use external scripts/stylesheets
-4. Ensure user content is sanitized with DOMPurify
-
-#### Negative Flow Test Failures
-
-Negative flow tests validate error handling.
-
-**Critical failures**:
-- No error message shown to user
-- App crashes on invalid input
-- Security bypass via error conditions
-- Rate limiting not enforced
-
-**Review**:
-1. Check `test-results/negative-flows/results.json`
-2. Identify which scenarios failed
-3. Verify error handling code exists
-4. Add missing error handling/validation
+**If All Green**:
+1. Document in team channel
+2. Mark staging as validated
+3. Proceed with production deployment (if applicable)
 
 ---
 
-## Step 5: Create Fix PRs
+## Safety Notes
 
-### Using Draft PR Payloads
+### 🔒 Security Considerations
 
-1. Open `logs/verification/artifacts/draft-prs.json`
-2. Each entry contains:
-   - `branch`: Suggested branch name
-   - `title`: PR title
-   - `body`: PR description with details
-   - `labels`: Suggested labels
-   - `filesAffected`: Files that need changes
+**Secrets Management**:
+- ⚠️ Never commit secrets to repository
+- ⚠️ Do not log secrets in workflow outputs
+- ⚠️ Rotate test passwords quarterly
+- ✅ Use GitHub Secrets for sensitive data
 
-3. Create PRs based on priority:
-   - Start with `priority: "critical"` or `priority: "high"`
-   - Create one PR per issue category
+**Test User Security**:
+- Use dedicated test account (not personal account)
+- Test account should have standard user permissions (not admin)
+- Monitor test account for suspicious activity
+- Test account should only exist in staging, not production
 
-### Example Fix Workflow
+**Data Handling**:
+- Test data should be synthetic/anonymized
+- Do not use real user PII in tests
+- Clean up test data after runs if needed
 
-For a high-priority vulnerability:
+### ⚙️ Workflow Execution
 
-```bash
-# Create fix branch
-git checkout -b fix/high-severity-vulnerabilities
+**Manual Dispatch Only**:
+- ✅ Workflow is manual trigger only (`workflow_dispatch`)
+- ✅ Does NOT run on push/PR automatically
+- ✅ Does NOT auto-merge anything
+- ✅ Safe to run on any branch
 
-# Update dependencies
-npm audit fix
+**Non-Destructive**:
+- Workflow is read-only on staging
+- Does not modify database
+- Does not change application state
+- Only performs GET requests and test actions
 
-# Verify fix
-npm audit
+**Failure Handling**:
+- Both main steps use `continue-on-error: true`
+- Artifacts uploaded even if tests fail
+- Workflow completes even with failures
+- No automatic rollbacks or alerts
 
-# Commit and push
-git add package.json package-lock.json
-git commit -m "fix: resolve high-severity npm vulnerabilities"
-git push origin fix/high-severity-vulnerabilities
+### 🚨 What This Workflow DOES NOT Do
 
-# Create PR using draft payload from artifacts
-```
+**Does NOT**:
+- ❌ Deploy code to any environment
+- ❌ Modify production systems
+- ❌ Auto-merge PRs
+- ❌ Create or update GitHub issues automatically
+- ❌ Send notifications (except via GitHub)
+- ❌ Execute on push/PR events
+- ❌ Run on production environments
 
-### Testing Fixes
+**Safety Guarantees**:
+- Requires explicit manual trigger
+- Cannot be triggered by external events
+- Isolated to staging environment only
+- All changes are test artifacts only
 
-Before merging fix PRs:
+### 📊 Resource Considerations
 
-1. Run the orchestration workflow again on the fix branch
-2. Verify the specific issue is resolved
-3. Ensure no new issues were introduced
-4. Review the new artifacts for confirmation
+**Timeout Management**:
+- Workflow timeout: 45 minutes
+- Dependency installation: 10 minutes max
+- Verification: 15 minutes max
+- Regression sweep: 20 minutes max
+
+**Cost Optimization**:
+- Uses GitHub Actions minutes
+- Consider running during off-peak hours
+- Artifacts retained for 30 days (configurable)
 
 ---
 
 ## Troubleshooting
 
-### Common Issues and Solutions
+### Workflow Won't Start
 
-#### Issue: "STAGING_URL secret not configured"
+**Problem**: "Run workflow" button disabled
 
-**Cause**: Secret is missing or has wrong name
+**Cause**: Insufficient permissions
 
-**Solution**:
-1. Go to Settings → Secrets and variables → Actions
-2. Verify secret name is exactly `STAGING_URL` (case-sensitive)
-3. Re-add the secret with correct name if needed
-4. Re-run the workflow
+**Resolution**:
+```
+1. Verify you have Write access to repository
+2. Check: Settings → Actions → General → Workflow permissions
+3. Ensure "Allow GitHub Actions to create and approve pull requests" is enabled
+```
 
-#### Issue: "Staging environment is unreachable"
+### Secrets Not Found Error
 
-**Cause**: URL is incorrect, environment is down, or network issue
+**Problem**: `Error: Secret STAGING_URL not found`
 
-**Solution**:
-1. Verify `STAGING_URL` value is correct (check for typos)
-2. Test URL manually: `curl -I https://your-staging-url.com`
-3. Check if staging environment is deployed and running
-4. Verify firewall/security group allows GitHub Actions IPs
+**Resolution**:
+1. Verify secrets are configured in Settings → Secrets
+2. Check secret names match exactly (case-sensitive)
+3. Ensure secrets are repository secrets, not environment secrets
 
-#### Issue: "Authentication test returned HTTP 401"
+### Authentication Failures
 
-**Cause**: Invalid credentials or user doesn't exist
+**Problem**: Login tests failing with "Invalid credentials"
 
-**Solution**:
+**Symptoms**:
+```
+Error: Login failed
+Status: 401 Unauthorized
+```
+
+**Resolution**:
 1. Verify test user exists in staging database
-2. Check credentials are correct (try manual login)
-3. Ensure user account is verified and active
-4. Re-add `TEST_USER_EMAIL` and `TEST_USER_PASSWORD` secrets
+2. Test login manually using curl command
+3. Check password hasn't been changed/expired
+4. Verify staging auth service is operational
 
-#### Issue: "Playwright tests timing out"
+### Timeout Errors
 
-**Cause**: Staging environment is slow or unresponsive
+**Problem**: Steps timeout before completion
 
-**Solution**:
+**Resolution**:
 1. Check staging environment performance
-2. Increase workflow timeout (default: 60 minutes)
-3. Run tests with fewer workers (edit workflow)
-4. Review staging server logs for errors
+2. Increase step timeout in workflow file
+3. Review if tests are hanging (not failing)
 
-#### Issue: "No artifacts uploaded"
+### Missing Artifacts
 
-**Cause**: Tests failed early or no results generated
+**Problem**: Artifacts section shows "No artifacts"
 
-**Solution**:
-1. Review workflow logs for errors
-2. Check that verification script completed
-3. Verify `logs/verification/` directory was created
-4. Re-run workflow with `continue-on-error` steps
+**Resolution**:
+1. Check if steps ran (may have failed early)
+2. Verify paths exist in workspace
+3. Check workflow logs for file generation errors
+4. Some artifacts only created if tests generate them
 
-#### Issue: "Too many test failures"
+### Test Flakiness
 
-**Cause**: Staging environment differs from expectations
+**Problem**: Tests fail inconsistently
 
-**Solution**:
-1. Review differences between staging and expected state
-2. Check if database migrations ran correctly
-3. Verify environment variables are configured
-4. Update tests to match staging environment
+**Investigation**:
+```bash
+# Run test multiple times locally
+for i in {1..5}; do
+  echo "Run $i"
+  npm run test:e2e -- --grep "flaky-test"
+done
+```
+
+**Common Causes**:
+- Network timing issues
+- Race conditions
+- Staging environment instability
+- Test data conflicts
+
+**Resolution**:
+1. Add retry logic to flaky tests
+2. Increase timeouts for slow operations
+3. Ensure proper test isolation
+4. Fix staging environment issues
 
 ---
 
-## Workflow Customization
+## Related Documentation
 
-### Override Secrets via Inputs
-
-You can override secrets when running the workflow manually:
-
-1. Click **Run workflow**
-2. Fill in optional input fields:
-   - `staging_url_override`: Override `STAGING_URL` secret
-   - `test_user_email_override`: Override `TEST_USER_EMAIL` secret
-   - `test_user_password_override`: Override `TEST_USER_PASSWORD` secret
-3. Click **Run workflow**
-
-**Use case**: Testing against a different environment or user without changing secrets.
-
-### Modify Workflow Parameters
-
-To customize the workflow behavior, edit `.github/workflows/orchestrate-verification-and-sweep.yml`:
-
-```yaml
-# Change Node.js version
-env:
-  NODE_VERSION: '20'  # Change from 18 to 20
-
-# Change workflow timeout
-jobs:
-  orchestrate:
-    timeout-minutes: 90  # Increase from 60 to 90
-
-# Change artifact retention
-- name: Upload verification logs
-  uses: actions/upload-artifact@v4
-  with:
-    retention-days: 60  # Increase from 30 to 60
-```
-
----
-
-## Expected Artifact Locations
-
-After downloading and extracting artifacts, you should find:
-
-### Verification Logs
-
-```
-verification-logs/
-├── verification-report.md           # Main report
-└── artifacts/
-    ├── draft-prs.json              # Draft PR payloads
-    ├── npm-audit.json              # Vulnerability details
-    ├── unit-tests.txt              # Unit test output
-    └── e2e-tests.txt               # E2E test output
-```
-
-### Playwright Report
-
-```
-playwright-report/
-├── index.html                       # Open this in browser
-├── data/
-│   └── (test result data)
-└── trace/
-    └── (test traces)
-```
-
-### Regression Artifacts
-
-```
-regression-artifacts/
-├── REGRESSION_SWEEP_REPORT.md       # Consolidated report
-└── test-results/
-    ├── accessibility/
-    │   └── results.json            # axe-core violations
-    ├── visual-regression/
-    │   └── results.json            # Screenshot diffs
-    ├── csp-compliance/
-    │   └── results.json            # CSP violations
-    ├── negative-flows/
-    │   └── results.json            # Error handling results
-    └── (various test JSON files)
-```
-
----
-
-## Best Practices
-
-### Scheduling Regular Runs
-
-**Recommendation**: Run this workflow after each merge to `main` or weekly.
-
-**Manual trigger**: Use for ad-hoc testing or before releases.
-
-**Automated trigger**: Consider adding to workflow:
-```yaml
-on:
-  schedule:
-    - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
-```
-
-### Maintaining Test Users
-
-- Rotate test user passwords regularly
-- Keep test user data realistic but not sensitive
-- Document test user account requirements
-- Ensure test users have necessary permissions
-
-### Artifact Retention
-
-- Default retention: 30 days
-- Download critical artifacts immediately
-- Archive important reports in project documentation
-- Clean up old artifacts periodically
-
-### Security Considerations
-
-- **Never** commit secrets to code
-- Rotate test passwords periodically
-- Use dedicated test accounts, not real users
-- Review security findings privately before public disclosure
-- Limit repository secret access to maintainers only
-
----
-
-## Support and References
-
-### Related Documentation
-
-- [Post-Merge Verification README](../../scripts/POST_MERGE_VERIFICATION_README.md)
+### Internal Documentation
+- [Post-Merge Verification Script](../../scripts/post-merge-comprehensive-verification.js)
 - [Regression Sweep README](../../tests/e2e/REGRESSION_SWEEP_README.md)
-- [Verification Guide](../../scripts/VERIFICATION_GUIDE.md)
-- [Accessibility Checklist](../qa/a11y-checklist.md)
-
-### GitHub Actions Documentation
-
-- [Workflow syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
-- [Encrypted secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-- [Manual workflow triggers](https://docs.github.com/en/actions/using-workflows/manually-running-a-workflow)
-- [Artifacts](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts)
+- [GitHub Actions Workflows](../.github/workflows/README.md)
+- [QA Testing Strategy](../qa/testing-strategy.md)
 
 ### External Resources
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Playwright Documentation](https://playwright.dev/docs/intro)
+- [GitHub Secrets Management](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 
-- [Playwright Documentation](https://playwright.dev/)
-- [axe-core Rules](https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md)
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-- [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
-
----
-
-## Changelog
-
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-11-06 | 1.0.0 | Initial runbook creation |
+### Workflow Files
+- `.github/workflows/orchestrate-verification-and-sweep.yml` - This workflow
+- `.github/workflows/post-merge-verification.yml` - Automated post-merge checks
+- `.github/workflows/phase5-staging-validation.yml` - Staging deployment validation
 
 ---
 
-**Task Reference**: Add orchestration workflow and runbook (PR 186, PR 187 integration)  
-**Maintainer**: Review this runbook after each workflow modification  
-**Last Updated**: 2025-11-06
+## Appendix: Quick Reference
+
+### Common Commands
+
+```bash
+# Verify secrets locally (requires GitHub CLI)
+gh secret list
+
+# View workflow runs
+gh run list --workflow="Orchestrate Verification and Sweep"
+
+# Download latest artifacts
+gh run download --name verification-and-smoke-artifacts
+
+# Cancel running workflow
+gh run cancel [run-id]
+
+# Re-run failed jobs
+gh run rerun [run-id] --failed
+```
+
+### Workflow Permissions
+
+```yaml
+permissions:
+  contents: read          # Read repository code
+  actions: read           # Read workflow artifacts
+  checks: write           # Write check status
+  pull-requests: write    # Comment on PRs (future use)
+```
+
+### Expected Duration by Step
+
+| Step | Typical Duration | Max Timeout |
+|------|------------------|-------------|
+| Checkout | 30s | 5min |
+| Setup Node | 1min | 5min |
+| Install deps | 3min | 10min |
+| Verification | 5-10min | 15min |
+| Regression sweep | 10-15min | 20min |
+| Upload artifacts | 1-2min | 5min |
+| **Total** | **20-30min** | **45min** |
+
+---
+
+**Version**: 1.0  
+**Review Schedule**: Monthly or after workflow changes  
+**Last Reviewed**: 2025-11-06
+
