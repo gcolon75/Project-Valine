@@ -1,6 +1,6 @@
 // src/components/AvatarUploader.jsx
 import { useState, useRef } from 'react';
-import { Upload, X, AlertCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /**
@@ -8,11 +8,15 @@ import toast from 'react-hot-toast';
  * Enhanced image uploader with validation and processing
  * 
  * Features:
+ * - Drag-and-drop support
  * - File type validation (JPEG, PNG, WebP)
  * - File size validation (max 5MB)
  * - Aspect ratio enforcement (square for avatars)
  * - Client-side image resizing
  * - EXIF metadata stripping for privacy
+ * - Progress indication
+ * - Cancel and retry functionality
+ * - Safari/iOS compatibility
  */
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -27,8 +31,11 @@ export default function AvatarUploader({
 }) {
   const [preview, setPreview] = useState(currentAvatar);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const uploadAbortController = useRef(null);
 
   /**
    * Validate file before processing
@@ -110,40 +117,106 @@ export default function AvatarUploader({
   };
 
   /**
-   * Handle file selection
+   * Handle file processing and upload
    */
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  const processFile = async (file) => {
     if (!validateFile(file)) {
       return;
     }
 
     setIsProcessing(true);
+    setUploadProgress(0);
     setError(null);
+    uploadAbortController.current = new AbortController();
 
     try {
+      // Simulate progress for processing
+      setUploadProgress(20);
+      
       // Process image
       const processedBlob = await processImage(file);
+      setUploadProgress(60);
 
       // Create preview URL
       const previewUrl = URL.createObjectURL(processedBlob);
       setPreview(previewUrl);
+      setUploadProgress(80);
 
       // Call onUpload with processed blob
       if (onUpload) {
         await onUpload(processedBlob, file.type);
       }
 
+      setUploadProgress(100);
       toast.success('Avatar uploaded successfully!');
     } catch (err) {
-      console.error('Failed to process image:', err);
-      setError('Failed to process image. Please try another file.');
-      toast.error('Failed to process image');
+      if (err.name === 'AbortError') {
+        toast.info('Upload cancelled');
+        setError(null);
+      } else {
+        console.error('Failed to process image:', err);
+        setError('Failed to process image. Please try another file.');
+        toast.error('Failed to process image');
+      }
     } finally {
       setIsProcessing(false);
+      setUploadProgress(0);
+      uploadAbortController.current = null;
     }
+  };
+
+  /**
+   * Handle file selection from input
+   */
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  /**
+   * Handle drag and drop
+   */
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set isDragging to false if we're leaving the drop zone entirely
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
+  /**
+   * Cancel upload
+   */
+  const handleCancel = () => {
+    if (uploadAbortController.current) {
+      uploadAbortController.current.abort();
+    }
+    handleClear();
   };
 
   /**
@@ -217,19 +290,73 @@ export default function AvatarUploader({
                 aria-label="Choose image file"
               />
               
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessing}
-                className="w-full p-8 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-[#0CCE6B] hover:bg-[#0CCE6B]/5 transition-colors disabled:opacity-50"
+              <div
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={() => !isProcessing && fileInputRef.current?.click()}
+                className={`w-full p-8 border-2 border-dashed rounded-lg transition-all cursor-pointer ${
+                  isProcessing 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : isDragging
+                    ? 'border-[#0CCE6B] bg-[#0CCE6B]/10'
+                    : 'border-neutral-300 dark:border-neutral-700 hover:border-[#0CCE6B] hover:bg-[#0CCE6B]/5'
+                }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                aria-label="Upload image by clicking or dragging"
               >
-                <Upload className="w-12 h-12 mx-auto mb-4 text-neutral-400 dark:text-neutral-600" />
-                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  {isProcessing ? 'Processing...' : 'Click to upload image'}
-                </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-600">
-                  JPEG, PNG, or WebP • Max 5MB
-                </p>
-              </button>
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-12 h-12 mx-auto mb-4 text-[#0CCE6B] animate-spin" />
+                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      Processing image...
+                    </p>
+                    {uploadProgress > 0 && (
+                      <div className="mt-3 max-w-xs mx-auto">
+                        <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-[#0CCE6B] h-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                            role="progressbar"
+                            aria-valuenow={uploadProgress}
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                          />
+                        </div>
+                        <p className="text-xs text-neutral-500 mt-1">{uploadProgress}%</p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancel();
+                      }}
+                      className="mt-3 text-sm text-neutral-600 hover:text-neutral-900 dark:hover:text-white underline"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-12 h-12 mx-auto mb-4 text-neutral-400 dark:text-neutral-600" aria-hidden="true" />
+                    <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                      {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600">
+                      JPEG, PNG, or WebP • Max 5MB
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
