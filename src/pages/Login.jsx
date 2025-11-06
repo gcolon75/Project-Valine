@@ -26,10 +26,11 @@ const Login = () => {
       toast.success('Welcome back!');
       
       // Navigate based on profile completion
-      if (user.profileComplete) {
+      if (user.onboardingComplete || user.profileComplete) {
         navigate('/dashboard');
       } else {
-        navigate('/setup');
+        // Redirect new users to onboarding
+        navigate('/onboarding');
       }
     } catch (error) {
       toast.error(error.message || 'Invalid credentials. Please try again.');
