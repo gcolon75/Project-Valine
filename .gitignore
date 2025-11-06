@@ -55,6 +55,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Verification logs and artifacts (can be regenerated)
+logs/verification/
+
 # UX Audit generated reports (can be regenerated with npm run ux:audit)
 # UX_AUDIT_REPORT.md
 # UX_AUDIT_FINDINGS.csv

@@ -1,0 +1,104 @@
+name: Post-Merge Verification
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      pr_range_start:
+        description: 'Start PR number to verify (default: 155)'
+        required: false
+        default: '155'
+      pr_range_end:
+        description: 'End PR number to verify (default: 185)'
+        required: false
+        default: '185'
+
+jobs:
+  verify:
+    name: Comprehensive Verification
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # For commenting on PRs
+      pull-requests: write  # For commenting on PRs
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Need full history to check PR merges
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run comprehensive verification
+        run: npm run verify:post-merge
+        env:
+          NODE_ENV: staging
+      
+      - name: Upload verification report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: verification-report
+          path: logs/verification/
+          retention-days: 30
+      
+      - name: Comment PR with results (if PR context)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'logs/verification/verification-report.md';
+            
+            if (fs.existsSync(reportPath)) {
+              const report = fs.readFileSync(reportPath, 'utf8');
+              
+              // Truncate if too long for GitHub comment
+              const maxLength = 65000;
+              const truncatedReport = report.length > maxLength 
+                ? report.substring(0, maxLength) + '\n\n...(truncated)'
+                : report;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: truncatedReport
+              });
+            }
+      
+      - name: Check for critical security findings
+        run: |
+          if [ -f logs/verification/artifacts/draft-prs.json ]; then
+            if grep -q "Priority: critical" logs/verification/artifacts/draft-prs.json; then
+              echo "::error::Critical security findings detected. Review logs/verification/verification-report.md"
+              exit 1
+            fi
+          else
+            echo "::warning::No draft PRs generated - verification may have been incomplete"
+          fi
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f logs/verification/verification-report.md ]; then
+            # Extract key metrics from report
+            grep -A 5 "Executive Summary" logs/verification/verification-report.md >> $GITHUB_STEP_SUMMARY || true
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📄 [Full Report Available in Artifacts]" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Verification report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
