@@ -1,9 +1,9 @@
 # Post-Merge Comprehensive Verification Report
 
 **Task ID:** be-post-merge-comprehensive-verification-155-185  
-**Conversation ID:** verify-1762392646392  
-**Generated:** 2025-11-06T01:31:28.918Z  
-**Duration:** 42.53s  
+**Conversation ID:** verify-1762392922211  
+**Generated:** 2025-11-06T01:36:04.798Z  
+**Duration:** 42.59s  
 
 ## Executive Summary
 
@@ -13,7 +13,7 @@ This report provides comprehensive verification of merged PRs 155-185 to ensure 
 - **PRs Verified:** 31
 - **PRs Merged:** 0
 - **Security Tests:** 9
-- **Vulnerabilities:** 0 npm, 12 secrets
+- **Vulnerabilities:** 0 npm, 8 secrets
 - **Recommendations:** 1
 
 ---
@@ -109,21 +109,17 @@ This report provides comprehensive verification of merged PRs 155-185 to ensure 
 ✅ No vulnerabilities found
 
 ### Secret Scan
-**Found:** 12 potential secrets
+**Found:** 8 potential secrets
 
 
 ⚠️ **SECURITY FINDING - PRIVATE**
 
 - **Generic Secret** in `src/context/AuthContext.jsx` (line 69)
-- **Generic Secret** in `src/context/__tests__/AuthContext.test.jsx` (line 113)
 - **Generic Secret** in `src/mocks/handlers.js` (line 144)
 - **Generic Secret** in `src/pages/Login.jsx` (line 32)
 - **Generic Secret** in `src/pages/ResetPassword.jsx` (line 89)
 - **Generic Secret** in `src/pages/Settings.jsx` (line 0)
-- **Generic Secret** in `src/services/__tests__/authService.test.js` (line 24)
-- **Generic Secret** in `server/src/routes/__tests__/preferences.test.js` (line 12)
 - **Generic Secret** in `server/src/routes/auth.js` (line 15)
-- **Generic Secret** in `server/src/utils/__tests__/crypto.test.js` (line 36)
 - **Generic Secret** in `api/prisma/seed.js` (line 10)
 - **Generic Secret** in `scripts/verify-deployment-example.sh` (line 107)
 
@@ -169,7 +165,7 @@ This report provides comprehensive verification of merged PRs 155-185 to ensure 
 - **Priority:** critical
 - **Category:** security
 - **Branch:** `security/remove-exposed-secrets`
-- **Details:** Found 12 potential secrets
+- **Details:** Found 8 potential secrets
 
 
 ---
@@ -183,7 +179,7 @@ This report provides comprehensive verification of merged PRs 155-185 to ensure 
 - **Remove exposed secrets** (`security/remove-exposed-secrets`)
   - Priority: critical
   - Labels: automated-fix, security
-  - Files: 12
+  - Files: 8
 
 
 Full PR payloads saved to: `logs/verification/artifacts/draft-prs.json`
@@ -216,4 +212,4 @@ The following artifacts have been generated:
 4. Address high-priority issues first
 5. Re-run verification after fixes
 
-**Conversation ID for reference:** `verify-1762392646392`
+**Conversation ID for reference:** `verify-1762392922211`

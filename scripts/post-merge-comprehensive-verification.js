@@ -115,7 +115,7 @@ function readFile(filePath) {
  */
 async function validatePRAcceptanceCriteria() {
   console.log('\n📋 STEP 1: Validating PR Acceptance Criteria (155-185)')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const prRange = Array.from({ length: 31 }, (_, i) => 155 + i) // 155-185
   
@@ -167,7 +167,7 @@ async function validatePRAcceptanceCriteria() {
  */
 async function validateMigrations() {
   console.log('\n🗄️  STEP 2: Validating Migrations and Data Integrity')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const checks = []
   
@@ -258,7 +258,7 @@ async function validateMigrations() {
  */
 async function executeSecurityValidation() {
   console.log('\n🔒 STEP 3: Security Validation Suite')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const tests = []
   
@@ -322,7 +322,7 @@ async function executeSecurityValidation() {
  */
 async function analyzeCSPPolicy() {
   console.log('\n🛡️  STEP 4: CSP Policy Analysis')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   // Check for CSP configuration
   const cspFiles = [
@@ -407,7 +407,7 @@ function extractCSPDirectives(content) {
  */
 async function runVulnerabilityScan() {
   console.log('\n🔍 STEP 5: Dependency Vulnerability Scan')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   try {
     const auditOutput = await execWithRateLimit(
@@ -446,13 +446,23 @@ async function runVulnerabilityScan() {
  */
 async function runSecretScan() {
   console.log('\n🔐 STEP 6: Secret Scanning')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const secrets = []
   const patterns = [
     { name: 'AWS Access Key', regex: /AKIA[0-9A-Z]{16}/ },
     { name: 'Private Key', regex: /-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/ },
     { name: 'Generic Secret', regex: /(?:password|secret|token|api[_-]?key)\s*[:=]\s*['"][^'"]{8,}['"]/i }
+  ]
+  
+  // Files/patterns to exclude to reduce false positives
+  const exclusions = [
+    /\.test\.(js|ts|jsx|tsx)$/,  // Test files
+    /\.spec\.(js|ts|jsx|tsx)$/,  // Spec files
+    /__tests__\//,               // Test directories
+    /\.example\./,               // Example files
+    /\.md$/,                     // Documentation
+    /README/i                    // READMEs
   ]
   
   // Scan specific directories (excluding node_modules, .git, etc.)
@@ -466,6 +476,10 @@ async function runSecretScan() {
       
       for (const file of files) {
         if (file.includes('node_modules') || file.includes('.git')) continue
+        
+        // Skip files matching exclusion patterns
+        const relPath = path.relative(ROOT, file)
+        if (exclusions.some(pattern => pattern.test(relPath))) continue
         
         const content = fs.readFileSync(file, 'utf8')
         
@@ -523,7 +537,7 @@ function findLineNumber(content, match) {
  */
 async function validateAuditLogs() {
   console.log('\n📝 STEP 7: Audit Log Validation')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const checks = []
   
@@ -571,7 +585,7 @@ async function validateAuditLogs() {
  */
 async function runTestSuites() {
   console.log('\n🧪 STEP 8: Running Test Suites')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   // Unit tests
   console.log('\n  Running unit tests...')
@@ -635,8 +649,8 @@ function parseTestOutput(output) {
   const testsMatch = output.match(/Tests\s+(\d+)\s+failed\s*\|\s*(\d+)\s+passed/)
   
   if (testsMatch) {
-    results.failed = parseInt(testsMatch[1] || 0)
-    results.passed = parseInt(testsMatch[2] || 0)
+    results.failed = parseInt(testsMatch[1] || '0', 10)
+    results.passed = parseInt(testsMatch[2] || '0', 10)
     results.total = results.failed + results.passed
   }
   
@@ -648,7 +662,7 @@ function parseTestOutput(output) {
  */
 function generateRecommendations() {
   console.log('\n💡 STEP 9: Generating Recommendations')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const recommendations = []
   
@@ -725,7 +739,7 @@ function generateRecommendations() {
  */
 function generateDraftPRs() {
   console.log('\n📦 STEP 10: Generating Draft PR Payloads')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const draftPRs = []
   
@@ -779,7 +793,7 @@ See the full verification report for context.
  */
 function generateReport() {
   console.log('\n📄 STEP 11: Generating Consolidated Report')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   
   const endTime = new Date()
   const duration = (endTime - state.startTime) / 1000

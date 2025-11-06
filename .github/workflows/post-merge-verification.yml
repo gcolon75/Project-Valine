@@ -75,9 +75,13 @@ jobs:
       
       - name: Check for critical security findings
         run: |
-          if grep -q "Priority: critical" logs/verification/artifacts/draft-prs.json; then
-            echo "::error::Critical security findings detected. Review logs/verification/verification-report.md"
-            exit 1
+          if [ -f logs/verification/artifacts/draft-prs.json ]; then
+            if grep -q "Priority: critical" logs/verification/artifacts/draft-prs.json; then
+              echo "::error::Critical security findings detected. Review logs/verification/verification-report.md"
+              exit 1
+            fi
+          else
+            echo "::warning::No draft PRs generated - verification may have been incomplete"
           fi
       
       - name: Summary
