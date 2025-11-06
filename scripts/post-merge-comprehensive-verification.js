@@ -337,13 +337,28 @@ async function analyzeCSPPolicy() {
     if (fileExists(file)) {
       const content = readFile(file)
       if (content) {
-        // Check for CSP directives
-        if (content.includes('Content-Security-Policy')) {
+        // Check for CSP directives in multiple forms
+        const hasCSP = content.includes('Content-Security-Policy') ||
+                      content.includes('contentSecurityPolicy') ||
+                      content.includes('CSP_REPORT_ONLY') ||
+                      content.includes('cspConfig')
+        
+        if (hasCSP) {
+          const directives = extractCSPDirectives(content)
+          const reportOnly = content.includes('reportOnly') || 
+                           content.includes('CSP_REPORT_ONLY') ||
+                           content.includes('report-only')
+          
           candidatePolicy = {
             source: file,
-            mode: content.includes('report-only') ? 'report-only' : 'enforce',
-            directives: extractCSPDirectives(content)
+            mode: reportOnly ? 'report-only' : 'enforce',
+            directives,
+            hasReportUri: content.includes('CSP_REPORT_URI') || content.includes('reportUri'),
+            configured: directives.length > 0
           }
+          
+          console.log(`  ✅ Found CSP configuration in ${file}`)
+          break
         }
       }
     }
@@ -351,13 +366,23 @@ async function analyzeCSPPolicy() {
   
   if (candidatePolicy) {
     state.csp.policy = candidatePolicy
-    console.log(`✅ Found CSP policy in ${candidatePolicy.mode} mode`)
+    console.log(`✅ CSP policy configured in ${candidatePolicy.mode} mode with ${candidatePolicy.directives.length} directives`)
+    
+    // Check for best practices
+    if (!candidatePolicy.hasReportUri) {
+      violations.push({
+        severity: 'low',
+        message: 'CSP configured but no report URI set',
+        recommendation: 'Configure CSP_REPORT_URI for violation monitoring'
+      })
+    }
   } else {
     violations.push({
       severity: 'medium',
       message: 'No CSP policy configuration found',
       recommendation: 'Implement CSP report-only mode'
     })
+    console.log('⚠️  No CSP policy found')
   }
   
   state.csp.violations = violations
@@ -365,10 +390,14 @@ async function analyzeCSPPolicy() {
 
 function extractCSPDirectives(content) {
   const directives = []
-  const cspRegex = /(default-src|script-src|style-src|img-src|connect-src|font-src|frame-src|media-src|object-src)/g
+  const cspRegex = /(default-src|defaultSrc|script-src|scriptSrc|style-src|styleSrc|img-src|imgSrc|connect-src|connectSrc|font-src|fontSrc|frame-src|frameSrc|media-src|mediaSrc|object-src|objectSrc|base-uri|baseUri|form-action|formAction|frame-ancestors|frameAncestors)/gi
   const matches = content.match(cspRegex)
   if (matches) {
-    directives.push(...matches)
+    // Normalize to kebab-case
+    const normalized = matches.map(m => 
+      m.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')
+    )
+    directives.push(...normalized)
   }
   return [...new Set(directives)]
 }
