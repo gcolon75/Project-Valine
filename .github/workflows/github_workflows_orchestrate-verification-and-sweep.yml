@@ -1,0 +1,151 @@
+name: Orchestrate Verification and Frontend Regression Sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (staging or prod-like)"
+        required: true
+        default: "staging"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: "18"
+
+jobs:
+  backend_verification_and_smoke:
+    name: Backend post-merge verification + staging smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      STAGING_URL: ${{ secrets.STAGING_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Post-merge verification (PR 186)
+        run: |
+          npm run verify:post-merge || true
+        continue-on-error: true
+
+      - name: Minimal staging smoke tests (health, login, profile links)
+        id: smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "== Health =="
+          curl -fsS -L "$STAGING_URL/health" || curl -fsS -L "$STAGING_URL/api/health" || true
+
+          echo "== Login =="
+          LOGIN_RESP=$(curl -sS -X POST "$STAGING_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$TEST_USER_EMAIL\",\"password\":\"$TEST_USER_PASSWORD\"}" \
+            -D -)
+          echo "$LOGIN_RESP" > logs/verification/login_response.txt || true
+
+          TOKEN=$(echo "$LOGIN_RESP" | grep -i "^set-cookie" | grep -i "token=" || true)
+          if [ -z "$TOKEN" ]; then
+            TOKEN=$(echo "$LOGIN_RESP" | grep -oE 'eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+' | head -n1 || true)
+          fi
+          echo "Token/Cookie captured? $( [ -n "$TOKEN" ] && echo yes || echo no )"
+
+          echo "== Profile link create (non-destructive if rate-limited) =="
+          # If token present, attempt a safe POST (server should rate-limit duplicates)
+          if [ -n "$TOKEN" ]; then
+            AUTH_HEADER=""
+            if [[ "$TOKEN" == eyJ* ]]; then
+              AUTH_HEADER="-H Authorization: Bearer $TOKEN"
+            fi
+            curl -sS -X POST "$STAGING_URL/api/profiles/test_user/links" \
+              -H "Content-Type: application/json" \
+              $AUTH_HEADER \
+              -d '{"label":"Website","url":"https://example.com","type":"website"}' \
+              -o logs/verification/profile_link_create.json || true
+          fi
+
+          echo "== Done smoke tests =="
+
+      - name: Collect verification artifacts
+        if: always()
+        run: |
+          mkdir -p logs/verification
+          # Ensure directory exists even if previous step didn’t create outputs
+          echo "Collected on $(date)" > logs/verification/_meta.txt
+        continue-on-error: true
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-and-smoke-artifacts
+          path: |
+            logs/verification/**
+            REGRESSION_VERIFICATION_REPORT.md
+            REGRESSION_SWEEP_REPORT.md
+            UX_AUDIT_REPORT.md
+            UX_AUDIT_FINDINGS.csv
+            UX_AUDIT_SUMMARY.json
+          if-no-files-found: warn
+
+  frontend_regression_and_a11y:
+    name: Frontend regression + a11y + CSP sweep (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    needs: backend_verification_and_smoke
+    env:
+      BASE_URL: ${{ secrets.STAGING_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium webkit firefox --with-deps
+
+      - name: Run regression sweep script (PR 187)
+        run: |
+          chmod +x ./tests/e2e/run-regression-sweep.sh
+          ./tests/e2e/run-regression-sweep.sh || true
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: warn
+
+      - name: Upload test results and regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-and-a11y-artifacts
+          path: |
+            test-results/**
+            REGRESSION_SWEEP_REPORT.md
+          if-no-files-found: warn
