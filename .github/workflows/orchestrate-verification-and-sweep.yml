@@ -1,0 +1,139 @@
+name: Orchestrate Verification and Sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      description:
+        description: 'Optional description for this run'
+        required: false
+        default: 'Manual verification and sweep run'
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  orchestrate-verification-and-sweep:
+    name: Post-Merge Verification & Regression Sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        timeout-minutes: 10
+      
+      - name: Run post-merge verification
+        id: verification
+        continue-on-error: true
+        run: npm run verify:post-merge
+        timeout-minutes: 15
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          NODE_ENV: staging
+      
+      - name: Run regression sweep
+        id: regression-sweep
+        continue-on-error: true
+        run: ./tests/e2e/run-regression-sweep.sh
+        timeout-minutes: 20
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          CI: true
+      
+      - name: Upload verification and smoke artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-and-smoke-artifacts
+          path: |
+            logs/verification/**
+            REGRESSION_VERIFICATION_REPORT.md
+            REGRESSION_SWEEP_REPORT.md
+            UX_AUDIT_REPORT.md
+            UX_AUDIT_FINDINGS.csv
+            UX_AUDIT_SUMMARY.json
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Upload regression and a11y artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-and-a11y-artifacts
+          path: |
+            test-results/**
+            REGRESSION_SWEEP_REPORT.md
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Orchestration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Run Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Staging URL**: Configured via secret" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test User**: Configured via secret" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node Version**: 18" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Verification Step" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.verification.outcome }}" = "success" ]; then
+            echo "✅ Post-merge verification completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Post-merge verification encountered issues (check artifacts)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Regression Sweep Step" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.regression-sweep.outcome }}" = "success" ]; then
+            echo "✅ Regression sweep completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Regression sweep encountered issues (check artifacts)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Three artifact bundles uploaded:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **verification-and-smoke-artifacts** - Verification logs and reports" >> $GITHUB_STEP_SUMMARY
+          echo "2. **playwright-report** - Playwright HTML report" >> $GITHUB_STEP_SUMMARY
+          echo "3. **regression-and-a11y-artifacts** - Test results and sweep report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f logs/verification/verification-report.md ]; then
+            echo "### Verification Report Preview" >> $GITHUB_STEP_SUMMARY
+            head -20 logs/verification/verification-report.md >> $GITHUB_STEP_SUMMARY || true
+          fi
+          
+          if [ -f REGRESSION_SWEEP_REPORT.md ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Regression Sweep Preview" >> $GITHUB_STEP_SUMMARY
+            head -20 REGRESSION_SWEEP_REPORT.md >> $GITHUB_STEP_SUMMARY || true
+          fi
