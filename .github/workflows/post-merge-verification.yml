@@ -19,6 +19,10 @@ jobs:
   verify:
     name: Comprehensive Verification
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write  # For commenting on PRs
+      pull-requests: write  # For commenting on PRs
     
     steps:
       - name: Checkout code
