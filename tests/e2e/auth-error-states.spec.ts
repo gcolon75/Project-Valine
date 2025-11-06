@@ -265,7 +265,7 @@ test.describe('Password Reset Error States', () => {
     await expect(passwordInput).toHaveAttribute('type', 'password');
     
     // Click toggle button
-    await page.click('button[aria-label*="Show password"]').first();
+    await page.locator('button[aria-label*="Show password"]').first().click();
     
     // Should now be text type
     await expect(passwordInput).toHaveAttribute('type', 'text');
