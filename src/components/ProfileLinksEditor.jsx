@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Plus, X, GripVertical, ExternalLink } from 'lucide-react';
 import { validateProfileLink } from '../utils/urlValidation';
+import { sanitizeText, sanitizeUrl } from '../utils/sanitize';
 
 /**
  * ProfileLinksEditor - Component for managing profile external links
@@ -57,7 +58,17 @@ export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10
 
   const handleUpdateLink = (index, field, value) => {
     const newLinks = [...links];
-    newLinks[index] = { ...newLinks[index], [field]: value };
+    
+    // Sanitize input based on field type
+    let sanitizedValue = value;
+    if (field === 'label') {
+      sanitizedValue = sanitizeText(value);
+    } else if (field === 'url') {
+      // Don't sanitize URL while typing (only on blur/save), but trim whitespace
+      sanitizedValue = value.trim();
+    }
+    
+    newLinks[index] = { ...newLinks[index], [field]: sanitizedValue };
     onChange(newLinks);
 
     // Validate the updated link

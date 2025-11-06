@@ -12,6 +12,7 @@ import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { getProfile, updateProfile, batchUpdateProfileLinks } from '../services/profileService';
+import { sanitizeText } from '../utils/sanitize';
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
@@ -149,21 +150,32 @@ export default function ProfileEdit() {
 
   const handleSave = async () => {
     try {
+      // Sanitize text fields before validation and submission
+      const sanitizedData = {
+        ...formData,
+        displayName: sanitizeText(formData.displayName),
+        headline: sanitizeText(formData.headline),
+        title: sanitizeText(formData.title),
+        bio: sanitizeText(formData.bio),
+        location: sanitizeText(formData.location),
+        pronouns: sanitizeText(formData.pronouns),
+      };
+      
       // Validate headline length
-      if (formData.headline && formData.headline.length > 100) {
+      if (sanitizedData.headline && sanitizedData.headline.length > 100) {
         toast.error('Headline must be 100 characters or less');
         return;
       }
 
       // Validate title length
-      if (formData.title && formData.title.length > 100) {
+      if (sanitizedData.title && sanitizedData.title.length > 100) {
         toast.error('Title must be 100 characters or less');
         return;
       }
 
       // Validate all links before saving using the validation utility
       const { validateProfileLink } = await import('../utils/urlValidation');
-      const invalidLinks = formData.profileLinks.filter(link => {
+      const invalidLinks = sanitizedData.profileLinks.filter(link => {
         const validation = validateProfileLink(link);
         return !validation.valid;
       });
@@ -179,17 +191,20 @@ export default function ProfileEdit() {
       // Save previous state for rollback
       const previousFormData = { ...formData };
       
+      // Update form data with sanitized values
+      setFormData(sanitizedData);
+      
       // Optimistically update local user context
-      updateUser(formData);
+      updateUser(sanitizedData);
       
       try {
         // Backend API integration
         if (BACKEND_LINKS_ENABLED && user?.id) {
-          // Update profile with title, headline, and links
+          // Update profile with title, headline, and links (all sanitized)
           const profileUpdate = {
-            title: formData.title,
-            headline: formData.headline,
-            links: formData.profileLinks
+            title: sanitizedData.title,
+            headline: sanitizedData.headline,
+            links: sanitizedData.profileLinks
           };
           
           await updateProfile(user.id, profileUpdate);
