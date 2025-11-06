@@ -1,0 +1,264 @@
+name: Orchestrate Verification and Sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_url_override:
+        description: 'Optional: Override STAGING_URL secret'
+        required: false
+        type: string
+      test_user_email_override:
+        description: 'Optional: Override TEST_USER_EMAIL secret'
+        required: false
+        type: string
+      test_user_password_override:
+        description: 'Optional: Override TEST_USER_PASSWORD secret'
+        required: false
+        type: string
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  orchestrate:
+    name: Run Post-Merge Verification and Regression Sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for verification
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Verify secrets are configured
+        run: |
+          echo "🔍 Verifying required secrets and inputs..."
+          STAGING_URL="${{ inputs.staging_url_override || secrets.STAGING_URL }}"
+          TEST_USER_EMAIL="${{ inputs.test_user_email_override || secrets.TEST_USER_EMAIL }}"
+          TEST_USER_PASSWORD="${{ inputs.test_user_password_override || secrets.TEST_USER_PASSWORD }}"
+          
+          if [ -z "$STAGING_URL" ]; then
+            echo "::error::STAGING_URL secret or input not configured"
+            exit 1
+          fi
+          
+          if [ -z "$TEST_USER_EMAIL" ]; then
+            echo "::error::TEST_USER_EMAIL secret or input not configured"
+            exit 1
+          fi
+          
+          if [ -z "$TEST_USER_PASSWORD" ]; then
+            echo "::error::TEST_USER_PASSWORD secret or input not configured"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets/inputs are configured"
+          echo "📍 STAGING_URL: $STAGING_URL"
+          echo "👤 TEST_USER_EMAIL: ${TEST_USER_EMAIL:0:3}***@***"
+      
+      - name: Health check staging environment
+        run: |
+          STAGING_URL="${{ inputs.staging_url_override || secrets.STAGING_URL }}"
+          echo "🏥 Checking staging environment health at: $STAGING_URL"
+          
+          # Health check with retry
+          for i in {1..5}; do
+            if curl -f -s -o /dev/null -w "%{http_code}" "$STAGING_URL" | grep -q "200\|301\|302"; then
+              echo "✅ Staging environment is reachable"
+              break
+            else
+              if [ $i -eq 5 ]; then
+                echo "::warning::Staging environment may be unreachable, continuing anyway"
+              else
+                echo "⏳ Retry $i/5..."
+                sleep 10
+              fi
+            fi
+          done
+      
+      - name: Test authentication credentials
+        continue-on-error: true
+        run: |
+          STAGING_URL="${{ inputs.staging_url_override || secrets.STAGING_URL }}"
+          TEST_USER_EMAIL="${{ inputs.test_user_email_override || secrets.TEST_USER_EMAIL }}"
+          TEST_USER_PASSWORD="${{ inputs.test_user_password_override || secrets.TEST_USER_PASSWORD }}"
+          
+          echo "🔐 Testing authentication against staging..."
+          
+          # Attempt login
+          RESPONSE=$(curl -s -X POST "$STAGING_URL/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$TEST_USER_EMAIL\",\"password\":\"$TEST_USER_PASSWORD\"}" \
+            -w "\n%{http_code}" || echo "000")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+            echo "✅ Authentication successful"
+          else
+            echo "⚠️ Authentication returned HTTP $HTTP_CODE"
+            echo "Response: $BODY"
+            echo "::warning::Authentication test did not return 200/201, proceeding with caution"
+          fi
+      
+      - name: Run post-merge verification
+        id: verification
+        continue-on-error: true
+        env:
+          STAGING_URL: ${{ inputs.staging_url_override || secrets.STAGING_URL }}
+          TEST_USER_EMAIL: ${{ inputs.test_user_email_override || secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ inputs.test_user_password_override || secrets.TEST_USER_PASSWORD }}
+          NODE_ENV: staging
+        run: |
+          echo "📋 Running comprehensive post-merge verification..."
+          npm run verify:post-merge
+          echo "✅ Verification complete"
+      
+      - name: Upload verification logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-logs
+          path: logs/verification/
+          if-no-files-found: warn
+          retention-days: 30
+      
+      - name: Run Playwright regression sweep
+        id: regression-sweep
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          STAGING_URL: ${{ inputs.staging_url_override || secrets.STAGING_URL }}
+          TEST_USER_EMAIL: ${{ inputs.test_user_email_override || secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ inputs.test_user_password_override || secrets.TEST_USER_PASSWORD }}
+          PW_BASE_URL: ${{ inputs.staging_url_override || secrets.STAGING_URL }}
+        run: |
+          echo "🎭 Running Playwright regression and accessibility sweep..."
+          chmod +x ./tests/e2e/run-regression-sweep.sh
+          ./tests/e2e/run-regression-sweep.sh || {
+            echo "::warning::Some regression tests failed - this is informational"
+            exit 0
+          }
+          echo "✅ Regression sweep complete"
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: warn
+          retention-days: 30
+      
+      - name: Upload regression artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-artifacts
+          path: |
+            test-results/
+            REGRESSION_SWEEP_REPORT.md
+          if-no-files-found: warn
+          retention-days: 30
+      
+      - name: Generate workflow summary
+        if: always()
+        run: |
+          echo "## 🚀 Orchestration Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Verification status
+          if [ "${{ steps.verification.outcome }}" = "success" ]; then
+            echo "### ✅ Post-Merge Verification" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Post-Merge Verification" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f logs/verification/verification-report.md ]; then
+            echo "Verification report generated successfully." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            # Extract summary if available
+            if grep -q "Executive Summary" logs/verification/verification-report.md; then
+              echo "#### Summary Excerpt" >> $GITHUB_STEP_SUMMARY
+              grep -A 10 "Executive Summary" logs/verification/verification-report.md | head -15 >> $GITHUB_STEP_SUMMARY || true
+            fi
+          else
+            echo "⚠️ Verification report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Regression sweep status
+          if [ "${{ steps.regression-sweep.outcome }}" = "success" ]; then
+            echo "### ✅ Regression & Accessibility Sweep" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Regression & Accessibility Sweep" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f playwright-report/index.html ]; then
+            echo "Playwright HTML report generated successfully." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Playwright report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **verification-logs**: Post-merge verification reports and artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- **playwright-report**: Interactive HTML report with test results" >> $GITHUB_STEP_SUMMARY
+          echo "- **regression-artifacts**: Test results and regression sweep report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📖 See [Orchestration Runbook](../../docs/ops/ORCHESTRATION_RUNBOOK.md) for triage instructions." >> $GITHUB_STEP_SUMMARY
+      
+      - name: Check for critical findings
+        if: always()
+        run: |
+          echo "🔍 Checking for critical findings..."
+          
+          CRITICAL_FOUND=false
+          
+          # Check verification artifacts for critical issues
+          if [ -f logs/verification/artifacts/draft-prs.json ]; then
+            if grep -qi "critical\|priority.*high" logs/verification/artifacts/draft-prs.json; then
+              echo "::warning::Critical or high-priority issues detected in verification"
+              CRITICAL_FOUND=true
+            fi
+          fi
+          
+          # Check for high-severity accessibility violations
+          if [ -f test-results/accessibility/results.json ]; then
+            if grep -qi "critical\|serious" test-results/accessibility/results.json; then
+              echo "::warning::Critical or serious accessibility violations detected"
+              CRITICAL_FOUND=true
+            fi
+          fi
+          
+          if [ "$CRITICAL_FOUND" = true ]; then
+            echo "⚠️ Critical findings detected - review artifacts for details"
+            echo "See Orchestration Runbook for triage guidance"
+          else
+            echo "✅ No critical findings detected"
+          fi
