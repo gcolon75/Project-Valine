@@ -1,5 +1,7 @@
 # Project Valine Security Guide
 
+> **📌 Backend Note:** All security features documented here are implemented in the **Serverless backend** (`/serverless`), which is the canonical production API. See [Canonical Backend Decision](../backend/canonical-backend.md).
+
 ## Overview
 
 This guide covers the comprehensive security features implemented in Project Valine, including authentication, authorization, data protection, and privacy controls.

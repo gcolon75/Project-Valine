@@ -1,5 +1,7 @@
 # Project Valine Backend Deployment Guide
 
+> **📌 Note:** This guide covers deployment of the **canonical Serverless backend** for staging and production. This is the only backend that should be deployed to AWS environments. See [Canonical Backend Decision](../backend/canonical-backend.md) for details.
+
 ## Prerequisites
 
 1. **AWS Account** with appropriate permissions
