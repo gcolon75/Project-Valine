@@ -6,21 +6,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  emailVerified Boolean  @default(false) // Email verification status
-  password     String   // hashed password
-  displayName  String
-  bio          String?
-  avatar       String?
-  name         String?
-  role         String   @default("artist") // 'artist' | 'observer'
-  theme        String?  // 'light' | 'dark' - theme preference
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
+  normalizedEmail String   @unique // lowercase, trimmed for deduplication
+  emailVerified   Boolean  @default(false) // Email verification status
+  emailVerifiedAt DateTime? // When email was verified
+  password        String   // hashed password (bcryptjs)
+  displayName     String
+  bio             String?
+  avatar          String?
+  name            String?
+  role            String   @default("artist") // 'artist' | 'observer'
+  status          String   @default("pending") // 'pending' | 'active' | 'suspended'
+  theme           String?  // 'light' | 'dark' - theme preference
   twoFactorEnabled Boolean @default(false) // 2FA enrollment status
   twoFactorSecret  String? // TOTP secret (encrypted)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   scripts            Script[]
   auditions          Audition[]
