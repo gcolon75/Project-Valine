@@ -88,6 +88,7 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 ### Quick Links
 
 - **[👉 Next Steps Guide](docs/guides/next-steps.md)** - Manual actions required for deployment
+- **[🔐 Account Creation MVP](docs/ACCOUNT_CREATION_MVP.md)** - User signup and authentication
 - **[📚 Complete Documentation](docs/)** - All docs organized by category
 - [Latest Changes](CHANGELOG.md)
 - [Quick Start Guide](docs/quickstart/README.md) - Get started in minutes

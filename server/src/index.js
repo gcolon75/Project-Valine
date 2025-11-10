@@ -16,6 +16,8 @@ import healthRouter from './routes/health.js'
 import preferencesRouter from './routes/preferences.js'
 import profilesRouter from './routes/profiles.js'
 import dashboardRouter from './routes/dashboard.js'
+import usersRouter from './routes/users.js'
+import accountAuthRouter from './routes/accountAuth.js'
 
 const app = express()
 
@@ -40,6 +42,10 @@ app.use(setCSRFToken)
 
 // Health check (no auth required)
 app.use('/health', healthRouter)
+
+// Account creation and authentication routes
+app.use('/api', usersRouter)
+app.use('/api', accountAuthRouter)
 
 // Original auth routes (legacy, for backward compatibility)
 app.use('/auth', authRouter)
