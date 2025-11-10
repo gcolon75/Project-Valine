@@ -31,6 +31,21 @@ node scripts/analyze-orchestration-run.mjs <RUN_ID>
 node scripts/analyze-orchestration-run.mjs 19125388400
 ```
 
+### Advanced Options
+
+```bash
+# Run with fail-on-p0 flag (exits with code 1 if P0 issues found)
+node scripts/analyze-orchestration-run.mjs 19125388400 --fail-on-p0
+
+# Get summary output instead of full details
+node scripts/analyze-orchestration-run.mjs 19125388400 --summary
+
+# Combine flags for CI/CD pipelines
+node scripts/analyze-orchestration-run.mjs 19125388400 --fail-on-p0 --summary
+```
+
+**Note:** See [ORCHESTRATION_ANALYSIS_README.md](./ORCHESTRATION_ANALYSIS_README.md#cli-flags) for all available flags and options.
+
 ## What You'll Get
 
 After running the analysis, you'll have:
@@ -72,12 +87,14 @@ Look for the status at the top:
 
 ## Decision Matrix
 
-| Situation | Action |
-|-----------|--------|
-| **P0 issues present** | ❌ BLOCK deployment<br>Fix all P0 issues<br>Re-run workflow<br>Re-analyze |
-| **Multiple P1 issues** | ⚠️ Review each issue<br>Create tracking issues<br>Decide: fix now or accept risk |
-| **Only P2 issues** | ✅ Create backlog issues<br>Proceed with deployment |
-| **No issues** | ✅ Proceed with deployment |
+| Situation | Action | Exit Code (with --fail-on-p0) |
+|-----------|--------|-------------------------------|
+| **P0 issues present** | ❌ BLOCK deployment<br>Fix all P0 issues<br>Re-run workflow<br>Re-analyze | Exit 1 |
+| **Multiple P1 issues** | ⚠️ Review each issue<br>Create tracking issues<br>Decide: fix now or accept risk | Exit 0 |
+| **Only P2 issues** | ✅ Create backlog issues<br>Proceed with deployment | Exit 0 |
+| **No issues** | ✅ Proceed with deployment | Exit 0 |
+
+**Note:** Exit codes are only relevant when using the `--fail-on-p0` flag. See [Exit Codes](./ORCHESTRATION_ANALYSIS_README.md#exit-codes) for complete details.
 
 ## Common Scenarios
 
