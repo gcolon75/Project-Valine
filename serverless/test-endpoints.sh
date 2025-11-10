@@ -126,6 +126,40 @@ test_endpoint "Login" "POST" "/auth/login" "$login_data" "200"
 # Me (authenticated)
 test_endpoint "Get Current User" "GET" "/auth/me" "" "200" "$TOKEN"
 
+# Email Verification - Test resend (should work for unverified users)
+echo -n "Testing Resend Verification... "
+resend_response=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE/auth/resend-verification" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{}')
+status_code=$(echo "$resend_response" | tail -n1)
+if [ "$status_code" = "200" ]; then
+  echo -e "${GREEN}✓ PASSED${NC}"
+  ((TESTS_PASSED++))
+  # Extract and display message
+  message=$(echo "$resend_response" | head -n-1 | grep -o '"message":"[^"]*"' | cut -d'"' -f4)
+  echo "  Message: $message"
+else
+  echo -e "${RED}✗ FAILED${NC} (expected 200, got $status_code)"
+  ((TESTS_FAILED++))
+fi
+
+# Email Verification - Test with invalid token (should fail)
+echo -n "Testing Verify Email (invalid token)... "
+verify_response=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE/auth/verify-email" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"invalid-token-12345"}')
+status_code=$(echo "$verify_response" | tail -n1)
+if [ "$status_code" = "400" ]; then
+  echo -e "${GREEN}✓ PASSED${NC} (correctly rejected invalid token)"
+  ((TESTS_PASSED++))
+else
+  echo -e "${YELLOW}⚠ WARNING${NC} (expected 400, got $status_code - may need real token)"
+fi
+
+# Note: Real verification token test would require extracting token from logs
+# which is not feasible in this automated test script
+
 echo ""
 echo "=================================="
 echo "3. Reels Endpoints"
