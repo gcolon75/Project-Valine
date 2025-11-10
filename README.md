@@ -485,6 +485,7 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 - 🔌 [API Documentation](docs/api/) - API reference, contracts, and integration
 - 💻 [Backend Guide](docs/backend/) - Backend development guidelines
 - 🎨 [Frontend Guide](docs/frontend/) - Frontend development guidelines
+- 👤 [Account Creation MVP](docs/ACCOUNT_CREATION_MVP.md) - User signup endpoint specification
 
 **Deployment & Operations:**
 - ☁️ [Deployment Guides](docs/deployment/) - AWS, serverless, and quick deploy
