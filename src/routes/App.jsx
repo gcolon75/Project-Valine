@@ -13,6 +13,8 @@ const AboutPage = lazy(() => import("../pages/About"));
 const FeaturesPage = lazy(() => import("../pages/Features"));
 const JoinPage = lazy(() => import("../pages/Join"));
 const LoginPage = lazy(() => import("../pages/Login"));
+const SignupPage = lazy(() => import("../pages/SignupPage"));
+const LoginPageSkeleton = lazy(() => import("../pages/LoginPage"));
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmail"));
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPassword"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPassword"));
@@ -62,6 +64,9 @@ export default function App() {
           <Route path="join" element={<JoinPage />} />
           <Route path="signup" element={<JoinPage />} />
           <Route path="login" element={<LoginPage />} />
+          {/* New auth form skeleton pages */}
+          <Route path="signup-page" element={<SignupPage />} />
+          <Route path="login-page" element={<LoginPageSkeleton />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />
         </Route>
 

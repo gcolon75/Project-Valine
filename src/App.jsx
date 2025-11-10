@@ -7,6 +7,8 @@ import About from './pages/About.jsx';
 import Features from './pages/Features.jsx';
 import Join from './pages/Join.jsx';
 import Login from './pages/Login.jsx';
+import SignupPage from './pages/SignupPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 import Feed from './pages/Feed.jsx';
 import Search from './services/Search.jsx/index.js';
 import Messages from './pages/Messages.jsx';
@@ -37,6 +39,9 @@ function App() {
         <Route path="/join" element={<Join />} />
         <Route path="/signup" element={<Join />} />
         <Route path="/login" element={<Login />} />
+        {/* New auth form skeleton pages */}
+        <Route path="/signup-page" element={<SignupPage />} />
+        <Route path="/login-page" element={<LoginPage />} />
       </Route>
       {/* Onboarding - Standalone route for multi-step wizard */}
       <Route path="/onboarding" element={<Onboarding />} />
