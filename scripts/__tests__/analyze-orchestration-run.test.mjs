@@ -1,12 +1,14 @@
 /**
  * Tests for analyze-orchestration-run.mjs
  * Validates enhanced a11y and Playwright parsing logic
+ * Validates REST API artifact retrieval fallback
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OrchestrationAnalyzer } from '../analyze-orchestration-run.mjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -324,6 +326,237 @@ describe('OrchestrationAnalyzer - Enhanced A11y and Playwright Parsing', () => {
       
       expect(analyzer.extractionStats.fileCount).toBe(3);
       expect(analyzer.extractionStats.totalSize).toBe(1024 + 2048 + 4096);
+    });
+  });
+
+  describe('REST API Artifact Retrieval', () => {
+    describe('Initialization', () => {
+      it('should set retrievalMode to REST when --no-gh flag is used', () => {
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        expect(restAnalyzer.options.useGH).toBe(false);
+        expect(restAnalyzer.results.summary.retrievalMode).toBe(null); // Not set until checkGitHubCLI is called
+      });
+
+      it('should default to CLI mode when useGH is not specified', () => {
+        const cliAnalyzer = new OrchestrationAnalyzer('12345');
+        expect(cliAnalyzer.options.useGH).toBe(true);
+      });
+    });
+
+    describe('GitHub Token Detection', () => {
+      it('should detect GITHUB_TOKEN environment variable', () => {
+        const originalToken = process.env.GITHUB_TOKEN;
+        process.env.GITHUB_TOKEN = 'test-token-123';
+        
+        const token = analyzer.getGitHubToken();
+        expect(token).toBe('test-token-123');
+        
+        // Restore
+        if (originalToken) {
+          process.env.GITHUB_TOKEN = originalToken;
+        } else {
+          delete process.env.GITHUB_TOKEN;
+        }
+      });
+
+      it('should detect GH_TOKEN environment variable as fallback', () => {
+        const originalGithubToken = process.env.GITHUB_TOKEN;
+        const originalGhToken = process.env.GH_TOKEN;
+        
+        delete process.env.GITHUB_TOKEN;
+        process.env.GH_TOKEN = 'gh-token-456';
+        
+        const token = analyzer.getGitHubToken();
+        expect(token).toBe('gh-token-456');
+        
+        // Restore
+        if (originalGithubToken) {
+          process.env.GITHUB_TOKEN = originalGithubToken;
+        }
+        if (originalGhToken) {
+          process.env.GH_TOKEN = originalGhToken;
+        } else {
+          delete process.env.GH_TOKEN;
+        }
+      });
+
+      it('should return undefined when no token is set', () => {
+        const originalGithubToken = process.env.GITHUB_TOKEN;
+        const originalGhToken = process.env.GH_TOKEN;
+        
+        delete process.env.GITHUB_TOKEN;
+        delete process.env.GH_TOKEN;
+        
+        const token = analyzer.getGitHubToken();
+        expect(token).toBeUndefined();
+        
+        // Restore
+        if (originalGithubToken) {
+          process.env.GITHUB_TOKEN = originalGithubToken;
+        }
+        if (originalGhToken) {
+          process.env.GH_TOKEN = originalGhToken;
+        }
+      });
+    });
+
+    describe('checkGitHubCLI with REST fallback', () => {
+      it('should use REST mode when --no-gh is specified', async () => {
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        const result = await restAnalyzer.checkGitHubCLI();
+        
+        expect(result).toBe(true);
+        expect(restAnalyzer.useRestApi).toBe(true);
+        expect(restAnalyzer.results.summary.retrievalMode).toBe('REST');
+      });
+
+      it('should set retrievalMode to CLI when gh is available', async () => {
+        // This test requires gh to be installed, so we'll skip if not available
+        const cliAnalyzer = new OrchestrationAnalyzer('12345', { useGH: true });
+        
+        try {
+          await cliAnalyzer.checkGitHubCLI();
+          
+          if (!cliAnalyzer.useRestApi) {
+            expect(cliAnalyzer.results.summary.retrievalMode).toBe('CLI');
+          }
+        } catch (error) {
+          // gh not installed, should fallback to REST
+          expect(cliAnalyzer.useRestApi).toBe(true);
+          expect(cliAnalyzer.results.summary.retrievalMode).toBe('REST');
+        }
+      });
+    });
+
+    describe('Degraded Mode Detection', () => {
+      it('should mark as degraded when REST API fails to fetch run details', async () => {
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        restAnalyzer.useRestApi = true;
+        
+        // Mock makeGitHubRequest to throw error
+        restAnalyzer.makeGitHubRequest = vi.fn().mockRejectedValue(new Error('API Error'));
+        
+        await expect(restAnalyzer.getRunDetailsViaREST()).rejects.toThrow('API Error');
+        expect(restAnalyzer.results.summary.degraded).toBe(true);
+        expect(restAnalyzer.results.summary.degradedReason).toContain('Failed to fetch run details');
+      });
+
+      it('should mark as degraded when REST API fails to list artifacts', async () => {
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        restAnalyzer.useRestApi = true;
+        
+        // Mock makeGitHubRequest to throw error
+        restAnalyzer.makeGitHubRequest = vi.fn().mockRejectedValue(new Error('API Error'));
+        
+        await expect(restAnalyzer.listArtifactsViaREST()).rejects.toThrow('API Error');
+        expect(restAnalyzer.results.summary.degraded).toBe(true);
+        expect(restAnalyzer.results.summary.degradedReason).toContain('Failed to list artifacts');
+      });
+
+      it('should mark as degraded on rate limit errors', async () => {
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        restAnalyzer.useRestApi = true;
+        
+        // Mock makeGitHubRequest to throw rate limit error
+        restAnalyzer.makeGitHubRequest = vi.fn().mockRejectedValue(new Error('rate limit exceeded'));
+        
+        const mockArtifacts = [{ id: 1, name: 'test-artifact' }];
+        
+        // Mock downloadFile to fail with rate limit
+        restAnalyzer.downloadFile = vi.fn().mockRejectedValue(new Error('rate limit exceeded'));
+        
+        await restAnalyzer.downloadArtifactsViaREST(mockArtifacts);
+        
+        expect(restAnalyzer.results.summary.degraded).toBe(true);
+        expect(restAnalyzer.results.summary.degradedReason).toContain('Rate limited');
+      });
+    });
+
+    describe('REST API Response Parsing', () => {
+      it('should parse run details from REST API format', async () => {
+        const mockRunData = await fs.readFile(
+          path.join(fixturesDir, 'mock-run-details.json'),
+          'utf-8'
+        ).then(JSON.parse);
+        
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        restAnalyzer.useRestApi = true;
+        
+        // Mock makeGitHubRequest
+        restAnalyzer.makeGitHubRequest = vi.fn().mockResolvedValue(mockRunData);
+        
+        const result = await restAnalyzer.getRunDetailsViaREST();
+        
+        expect(result.workflowName).toBe('orchestrate-verification-and-sweep');
+        expect(result.status).toBe('completed');
+        expect(result.conclusion).toBe('success');
+        expect(restAnalyzer.results.summary.status).toBe('success');
+      });
+
+      it('should parse artifacts list from REST API format', async () => {
+        const mockArtifactsData = await fs.readFile(
+          path.join(fixturesDir, 'mock-artifacts-list.json'),
+          'utf-8'
+        ).then(JSON.parse);
+        
+        const restAnalyzer = new OrchestrationAnalyzer('12345', { useGH: false });
+        restAnalyzer.useRestApi = true;
+        
+        // Mock makeGitHubRequest
+        restAnalyzer.makeGitHubRequest = vi.fn().mockResolvedValue(mockArtifactsData);
+        
+        const result = await restAnalyzer.listArtifactsViaREST();
+        
+        expect(result).toHaveLength(3);
+        expect(result[0].name).toBe('verification-and-smoke-artifacts');
+        expect(result[1].name).toBe('playwright-report');
+        expect(result[2].name).toBe('regression-and-a11y-artifacts');
+        
+        expect(restAnalyzer.results.summary.artifactsFound).toHaveLength(3);
+        expect(restAnalyzer.results.summary.artifactsMissing).toHaveLength(0);
+      });
+    });
+
+    describe('JSON Summary with Retrieval Mode', () => {
+      it('should include retrievalMode in summary JSON', () => {
+        analyzer.results.summary.retrievalMode = 'REST';
+        
+        const p0Count = 0;
+        const p1Count = 0;
+        const p2Count = 0;
+        
+        const gatingDecision = analyzer.computeGatingDecision(p0Count, p1Count, p2Count);
+        
+        const summary = {
+          runId: analyzer.runId,
+          timestamp: new Date().toISOString(),
+          status: analyzer.results.summary.status,
+          workflowName: analyzer.results.summary.workflowName,
+          retrievalMode: analyzer.results.summary.retrievalMode,
+          gating: {
+            decision: gatingDecision.decision,
+            recommendation: gatingDecision.recommendation,
+            exitCode: gatingDecision.exitCode,
+          },
+        };
+        
+        expect(summary.retrievalMode).toBe('REST');
+      });
+
+      it('should include degraded status in artifacts section', () => {
+        analyzer.results.summary.degraded = true;
+        analyzer.results.summary.degradedReason = 'Rate limited';
+        
+        const artifactsInfo = {
+          found: analyzer.results.summary.artifactsFound,
+          missing: analyzer.results.summary.artifactsMissing,
+          degraded: analyzer.results.summary.degraded || analyzer.results.summary.artifactsMissing.length > 0,
+          degradedReason: analyzer.results.summary.degradedReason,
+        };
+        
+        expect(artifactsInfo.degraded).toBe(true);
+        expect(artifactsInfo.degradedReason).toBe('Rate limited');
+      });
     });
   });
 });
