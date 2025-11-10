@@ -350,6 +350,29 @@ class OrchestrationAnalyzer {
       const files = await this.getFileList(artifactPath);
       this.logger.info(`  ${artifactName} contains ${files.length} file(s)`);
       
+      // Track extraction stats
+      let totalSize = 0;
+      for (const file of files) {
+        try {
+          const stats = await fs.stat(file);
+          totalSize += stats.size;
+          this.trackExtraction(file, stats.size);
+          
+          // Validate path safety (demonstration - paths already downloaded by gh cli)
+          const relativePath = path.relative(artifactPath, file);
+          try {
+            this.sanitizePath(relativePath, artifactPath);
+          } catch (err) {
+            this.logger.warning(`  Potentially unsafe path detected: ${relativePath}`);
+          }
+        } catch (err) {
+          // Skip files that can't be stat'd
+        }
+      }
+      
+      this.logger.info(`  Total size: ${this.formatBytes(totalSize)}`);
+      this.logger.debug(`  Cumulative extraction: ${this.extractionStats.fileCount} files, ${this.formatBytes(this.extractionStats.totalSize)}`);
+      
       // Show first few files
       const preview = files.slice(0, 5);
       for (const file of preview) {
