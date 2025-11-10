@@ -69,3 +69,7 @@ ux-audit-issues.json
 test-*.json
 UX_AUDIT_ROADMAP.md
 *_ROADMAP.md
+
+# Orchestration analysis outputs (can be regenerated)
+temp-artifacts/
+analysis-output/
