@@ -6,7 +6,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
-const MEDIA_BUCKET = process.env.MEDIA_BUCKET || 'valine-media-uploads';
+const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 
 /**
  * POST /api/profiles/:id/media/upload-url
