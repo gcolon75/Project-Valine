@@ -76,6 +76,76 @@ This directory contains utility scripts for Project-Valine deployment, verificat
 
 ## Development Scripts
 
+### analyze-orchestration-run.mjs
+
+**Purpose**: Post-run orchestration analysis agent that fetches and analyzes artifacts from GitHub Actions workflow runs.
+
+**Quick Start**:
+```bash
+# Basic usage (requires GitHub CLI)
+node scripts/analyze-orchestration-run.mjs <run-id>
+
+# Use REST API mode (no GitHub CLI required)
+node scripts/analyze-orchestration-run.mjs <run-id> --no-gh
+
+# With JSON output and custom directory
+node scripts/analyze-orchestration-run.mjs <run-id> --json --out-dir ./reports
+
+# With executive summary
+node scripts/analyze-orchestration-run.mjs <run-id> --summary ./exec-summary.md
+```
+
+**Artifact Retrieval Modes**:
+- **CLI Mode** (default): Uses GitHub CLI (`gh`) for artifact retrieval
+- **REST API Mode**: Uses GitHub REST API when `gh` is not available or `--no-gh` is specified
+
+**REST API Requirements**:
+- Environment variable `GITHUB_TOKEN` or `GH_TOKEN` with GitHub personal access token
+- Required scopes: `actions:read`, `repo` (for private repositories)
+- Falls back to unauthenticated requests (subject to lower rate limits)
+
+**What it analyzes**:
+- Health check results from verification artifacts
+- Authentication checks and API responses
+- Playwright test results (JSON preferred, HTML fallback)
+- Accessibility violations (separated by impact: critical, serious, moderate, minor)
+- Flakiness analysis for tests (< 20% failure rate)
+- Security findings from CSP reports
+
+**Outputs**:
+- `CONSOLIDATED_ANALYSIS_REPORT.md` - Full analysis report
+- `summary.json` - Machine-readable summary (with `--json`)
+- Executive summary (with `--summary`)
+- `draft-pr-payloads.json` - Suggested automated fixes
+- `draft-github-issues.json` - Issues for non-trivial problems
+
+**CLI Flags**:
+- `--out-dir <path>` - Output directory (default: analysis-output)
+- `--json` - Emit machine-readable summary.json
+- `--summary <path>` - Write executive summary markdown
+- `--fail-on <P0|P1|P2|none>` - Exit code policy (default: P0)
+- `--log-level <info|debug>` - Logging verbosity
+- `--no-gh` - Force REST API mode
+
+**Exit Codes**:
+- `0` - PROCEED: No critical issues
+- `1` - CAUTION: High-priority issues detected
+- `2` - BLOCK: Critical P0 issues present
+
+**Rate Limiting**:
+- REST API mode handles rate limiting gracefully
+- Logs rate limit status and reset time
+- Marks analysis as "degraded" rather than failing completely
+- Authenticated requests have higher rate limits (5000/hour vs 60/hour)
+
+**Security**:
+- Path traversal protection for artifact extraction
+- Size limits: 250MB max uncompressed, 10,000 files max
+- Safe extraction with validation
+- No external dependencies for extraction (uses built-in `unzip`)
+
+**Documentation**: See inline help with `--help` for complete usage information.
+
 ### check-imports.mjs
 
 **Purpose**: Check and validate import statements in the project.

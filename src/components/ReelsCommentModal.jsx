@@ -31,6 +31,7 @@ const ReelsCommentModal = ({ isOpen, onClose, reel }) => {
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors"
+            aria-label="Close comments"
           >
             <X className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
           </button>
@@ -83,6 +84,7 @@ const ReelsCommentModal = ({ isOpen, onClose, reel }) => {
               type="submit"
               disabled={!comment.trim()}
               className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all"
+              aria-label="Send comment"
             >
               <Send className="w-5 h-5" />
             </button>

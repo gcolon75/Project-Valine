@@ -29,7 +29,7 @@
  *   --summary <path>         Write executive summary markdown to specified path
  *   --fail-on <P0|P1|P2|none> Exit code policy based on severity (default: P0)
  *   --log-level <info|debug> Logging verbosity (default: info)
- *   --no-gh                  Force REST API artifact retrieval (stub mode)
+ *   --no-gh                  Force REST API artifact retrieval (fallback mode)
  * 
  * Exit Codes:
  *   0 - PROCEED: No critical issues or below threshold
@@ -46,8 +46,10 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createReadStream } from 'fs';
+import { createReadStream, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
+import https from 'https';
+import { Readable } from 'stream';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -182,6 +184,7 @@ class OrchestrationAnalyzer {
       fileCount: 0,
       sanitized: [],
     };
+    this.useRestApi = false; // Track which mode we're using
   }
 
   /**
@@ -259,12 +262,151 @@ class OrchestrationAnalyzer {
     try {
       await execAsync('gh --version');
       this.logger.success('GitHub CLI is installed');
+      this.useRestApi = false;
+      this.results.summary.retrievalMode = 'CLI';
       return true;
     } catch (error) {
-      this.logger.error('GitHub CLI (gh) is not installed or not in PATH');
-      this.logger.info('Please install from: https://cli.github.com/');
-      return false;
+      this.logger.warning('GitHub CLI (gh) is not installed or not in PATH');
+      this.logger.info('Falling back to REST API mode');
+      this.useRestApi = true;
+      this.results.summary.retrievalMode = 'REST';
+      return true; // Continue with REST API fallback
     }
+  }
+
+  /**
+   * Get GitHub authentication token
+   */
+  getGitHubToken() {
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (!token) {
+      this.logger.warning('No GITHUB_TOKEN or GH_TOKEN found in environment');
+      this.logger.warning('REST API requests may be rate limited');
+    }
+    return token;
+  }
+
+  /**
+   * Make authenticated GitHub REST API request
+   */
+  async makeGitHubRequest(url, options = {}) {
+    const token = this.getGitHubToken();
+    
+    return new Promise((resolve, reject) => {
+      const headers = {
+        'User-Agent': 'Project-Valine-Analyzer',
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const requestOptions = {
+        headers: { ...headers, ...options.headers },
+        method: options.method || 'GET',
+      };
+      
+      this.logger.debug(`REST API request: ${url}`);
+      
+      https.get(url, requestOptions, (res) => {
+        // Check for rate limiting
+        if (res.statusCode === 403) {
+          const rateLimitRemaining = res.headers['x-ratelimit-remaining'];
+          if (rateLimitRemaining === '0') {
+            const resetTime = new Date(parseInt(res.headers['x-ratelimit-reset']) * 1000);
+            this.logger.error(`Rate limit exceeded. Resets at ${resetTime.toISOString()}`);
+            return reject(new Error('GitHub API rate limit exceeded'));
+          }
+        }
+        
+        if (res.statusCode === 404) {
+          return reject(new Error(`Resource not found: ${url}`));
+        }
+        
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+        
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            resolve(parsed);
+          } catch (error) {
+            reject(new Error(`Failed to parse JSON response: ${error.message}`));
+          }
+        });
+      }).on('error', reject);
+    });
+  }
+
+  /**
+   * Download file via HTTPS with streaming
+   */
+  async downloadFile(url, outputPath, options = {}) {
+    const token = this.getGitHubToken();
+    
+    return new Promise((resolve, reject) => {
+      const headers = {
+        'User-Agent': 'Project-Valine-Analyzer',
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      this.logger.debug(`Downloading file: ${url} -> ${outputPath}`);
+      
+      https.get(url, { headers }, (res) => {
+        // Handle redirects
+        if (res.statusCode === 302 || res.statusCode === 301) {
+          const redirectUrl = res.headers.location;
+          this.logger.debug(`Following redirect to: ${redirectUrl}`);
+          
+          // Follow redirect without auth headers (S3 pre-signed URLs)
+          https.get(redirectUrl, (redirectRes) => {
+            if (redirectRes.statusCode !== 200) {
+              return reject(new Error(`HTTP ${redirectRes.statusCode} on redirect`));
+            }
+            
+            const fileStream = createWriteStream(outputPath);
+            redirectRes.pipe(fileStream);
+            
+            fileStream.on('finish', () => {
+              fileStream.close();
+              resolve(outputPath);
+            });
+            
+            fileStream.on('error', reject);
+          }).on('error', reject);
+          
+          return;
+        }
+        
+        if (res.statusCode === 403) {
+          return reject(new Error('Rate limit exceeded or unauthorized'));
+        }
+        
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        }
+        
+        const fileStream = createWriteStream(outputPath);
+        res.pipe(fileStream);
+        
+        fileStream.on('finish', () => {
+          fileStream.close();
+          resolve(outputPath);
+        });
+        
+        fileStream.on('error', reject);
+      }).on('error', reject);
+    });
   }
 
   /**
@@ -272,6 +414,10 @@ class OrchestrationAnalyzer {
    */
   async getRunDetails() {
     this.logger.section('Phase A: Fetching Run Details');
+    
+    if (this.useRestApi) {
+      return await this.getRunDetailsViaREST();
+    }
     
     try {
       const { stdout } = await execAsync(
@@ -296,10 +442,54 @@ class OrchestrationAnalyzer {
   }
 
   /**
+   * Get workflow run details via REST API
+   */
+  async getRunDetailsViaREST() {
+    try {
+      const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${this.runId}`;
+      const runData = await this.makeGitHubRequest(url);
+      
+      const runDetails = {
+        conclusion: runData.conclusion,
+        status: runData.status,
+        createdAt: runData.created_at,
+        displayTitle: runData.display_title || runData.name,
+        event: runData.event,
+        workflowName: runData.name,
+      };
+      
+      this.logger.success(`Run: ${runDetails.workflowName}`);
+      this.logger.info(`Status: ${runDetails.status} | Conclusion: ${runDetails.conclusion || 'N/A'}`);
+      this.logger.info(`Created: ${runDetails.createdAt}`);
+      this.logger.info(`Event: ${runDetails.event} | Title: ${runDetails.displayTitle}`);
+      
+      this.results.summary.status = runDetails.conclusion || runDetails.status;
+      this.results.summary.workflowName = runDetails.workflowName;
+      this.results.summary.createdAt = runDetails.createdAt;
+      
+      return runDetails;
+    } catch (error) {
+      this.logger.error(`Failed to fetch run details via REST: ${error.message}`);
+      
+      // Mark as degraded if REST fails
+      if (!this.results.summary.degraded) {
+        this.results.summary.degraded = true;
+        this.results.summary.degradedReason = 'Failed to fetch run details via REST API';
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
    * List artifacts for the run
    */
   async listArtifacts() {
     this.logger.section('Listing Artifacts');
+    
+    if (this.useRestApi) {
+      return await this.listArtifactsViaREST();
+    }
     
     try {
       const { stdout } = await execAsync(
@@ -336,6 +526,49 @@ class OrchestrationAnalyzer {
   }
 
   /**
+   * List artifacts via REST API
+   */
+  async listArtifactsViaREST() {
+    try {
+      const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${this.runId}/artifacts`;
+      const data = await this.makeGitHubRequest(url);
+      
+      const artifacts = data.artifacts || [];
+      
+      this.logger.info(`Found ${artifacts.length} artifact(s)`);
+      
+      const expectedArtifacts = [
+        'verification-and-smoke-artifacts',
+        'playwright-report',
+        'regression-and-a11y-artifacts',
+      ];
+      
+      for (const expected of expectedArtifacts) {
+        const found = artifacts.find(a => a.name === expected);
+        if (found) {
+          this.logger.success(`✓ ${expected} (${this.formatBytes(found.size_in_bytes)})`);
+          this.results.summary.artifactsFound.push(expected);
+        } else {
+          this.logger.warning(`✗ ${expected} (not found)`);
+          this.results.summary.artifactsMissing.push(expected);
+        }
+      }
+      
+      return artifacts;
+    } catch (error) {
+      this.logger.error(`Failed to list artifacts via REST: ${error.message}`);
+      
+      // Mark as degraded
+      if (!this.results.summary.degraded) {
+        this.results.summary.degraded = true;
+        this.results.summary.degradedReason = 'Failed to list artifacts via REST API';
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
    * Download artifacts
    */
   async downloadArtifacts(artifacts) {
@@ -343,6 +576,10 @@ class OrchestrationAnalyzer {
     
     // Create artifacts directory
     await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
+    
+    if (this.useRestApi) {
+      return await this.downloadArtifactsViaREST(artifacts);
+    }
     
     for (const artifact of artifacts) {
       try {
@@ -360,6 +597,83 @@ class OrchestrationAnalyzer {
         await this.listArtifactContents(artifactPath, artifact.name);
       } catch (error) {
         this.logger.warning(`Failed to download ${artifact.name}: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Download artifacts via REST API
+   */
+  async downloadArtifactsViaREST(artifacts) {
+    for (const artifact of artifacts) {
+      try {
+        this.logger.info(`Downloading: ${artifact.name}...`);
+        
+        // Download artifact zip
+        const zipPath = path.join(ARTIFACTS_DIR, `${artifact.name}.zip`);
+        const artifactPath = path.join(ARTIFACTS_DIR, artifact.name);
+        
+        // Create directory for extracted files
+        await fs.mkdir(artifactPath, { recursive: true });
+        
+        // Download the artifact zip
+        const downloadUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/artifacts/${artifact.id}/zip`;
+        
+        try {
+          await this.downloadFile(downloadUrl, zipPath);
+          this.logger.success(`Downloaded: ${artifact.name}`);
+          
+          // Extract the zip file using unzip command (Node.js doesn't have built-in zip support)
+          try {
+            await execAsync(`unzip -q "${zipPath}" -d "${artifactPath}"`);
+            this.logger.success(`Extracted: ${artifact.name}`);
+            
+            // Delete the zip file after extraction
+            await fs.unlink(zipPath);
+            
+          } catch (unzipError) {
+            this.logger.warning(`Failed to extract ${artifact.name}: ${unzipError.message}`);
+            this.logger.info('Attempting to use Node.js built-in extraction...');
+            
+            // Fallback: Try to use child_process with error handling
+            try {
+              // Check if unzip is available
+              await execAsync('which unzip');
+            } catch {
+              this.logger.error('unzip utility not found. Cannot extract artifacts.');
+              this.logger.info('Please install unzip: apt-get install unzip (Linux) or brew install unzip (macOS)');
+              
+              // Mark as degraded
+              if (!this.results.summary.degraded) {
+                this.results.summary.degraded = true;
+                this.results.summary.degradedReason = 'Cannot extract artifacts: unzip utility not found';
+              }
+            }
+          }
+          
+          // List contents
+          await this.listArtifactContents(artifactPath, artifact.name);
+          
+        } catch (downloadError) {
+          this.logger.warning(`Failed to download ${artifact.name} via REST: ${downloadError.message}`);
+          
+          // If this is a rate limit error, mark as degraded rather than failing
+          if (downloadError.message.includes('rate limit')) {
+            if (!this.results.summary.degraded) {
+              this.results.summary.degraded = true;
+              this.results.summary.degradedReason = 'Rate limited while downloading artifacts';
+            }
+          }
+        }
+        
+      } catch (error) {
+        this.logger.warning(`Failed to download ${artifact.name}: ${error.message}`);
+        
+        // Mark as degraded for partial failures
+        if (!this.results.summary.degraded) {
+          this.results.summary.degraded = true;
+          this.results.summary.degradedReason = `Partial artifact download failure: ${error.message}`;
+        }
       }
     }
   }
@@ -1037,7 +1351,8 @@ class OrchestrationAnalyzer {
     report += `**Run ID:** ${this.runId}\n`;
     report += `**Analysis Date:** ${new Date().toISOString()}\n`;
     report += `**Workflow:** ${this.results.summary.workflowName || 'orchestrate-verification-and-sweep'}\n`;
-    report += `**Status:** ${this.results.summary.status}\n\n`;
+    report += `**Status:** ${this.results.summary.status}\n`;
+    report += `**Retrieval Mode:** ${this.results.summary.retrievalMode || 'Unknown'}\n\n`;
     
     // Executive Summary
     report += `## Executive Summary\n\n`;
@@ -1360,6 +1675,7 @@ class OrchestrationAnalyzer {
       retrievalMode: this.results.summary.retrievalMode,
       status: this.results.summary.status,
       workflowName: this.results.summary.workflowName,
+      retrievalMode: this.results.summary.retrievalMode, // CLI or REST
       gating: {
         decision: gatingDecision.decision,
         recommendation: gatingDecision.recommendation,
@@ -1368,7 +1684,8 @@ class OrchestrationAnalyzer {
       artifacts: {
         found: this.results.summary.artifactsFound,
         missing: this.results.summary.artifactsMissing,
-        degraded: this.results.summary.artifactsMissing.length > 0,
+        degraded: this.results.summary.degraded || this.results.summary.artifactsMissing.length > 0,
+        degradedReason: this.results.summary.degradedReason,
       },
       issues: {
         p0: p0Count,
@@ -1875,9 +2192,12 @@ class OrchestrationAnalyzer {
       
       // Check prerequisites
       const hasGH = await this.checkGitHubCLI();
-      if (!hasGH) {
+      if (!hasGH && !this.useRestApi) {
+        this.logger.error('Neither GitHub CLI nor REST API mode available');
         process.exit(1);
       }
+      
+      this.logger.info(`Using ${this.useRestApi ? 'REST API' : 'GitHub CLI'} mode for artifact retrieval`);
       
       // Phase A: Fetch artifacts
       await this.getRunDetails();
@@ -1981,7 +2301,7 @@ ${colors.cyan}Options:${colors.reset}
                            P2: exit 1 if P2 issues present
                            none: always exit 0
   --log-level <info|debug> Logging verbosity (default: info)
-  --no-gh                  Force REST API artifact retrieval (stub mode)
+  --no-gh                  Force REST API artifact retrieval (fallback mode)
   -h, --help               Show this help message
 
 ${colors.cyan}Examples:${colors.reset}
@@ -2003,7 +2323,8 @@ ${colors.cyan}Exit Codes:${colors.reset}
   2 - BLOCK: Critical P0 issues present
 
 ${colors.cyan}Requirements:${colors.reset}
-  - GitHub CLI (gh) installed and authenticated
+  - GitHub CLI (gh) installed and authenticated (for CLI mode)
+  - OR: GITHUB_TOKEN environment variable (for REST API mode)
   - Valid run ID from orchestrate-verification-and-sweep workflow
 
 ${colors.cyan}Outputs:${colors.reset}
