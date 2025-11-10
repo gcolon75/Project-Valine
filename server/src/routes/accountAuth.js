@@ -6,9 +6,16 @@ import { Router } from 'express';
 import { getPrismaClient } from '../utils/prismaClient.js';
 import { comparePassword, normalizeEmail } from '../utils/passwordHash.js';
 import { generateAccessToken, requireAuth, isTokenExpired } from '../utils/jwtToken.js';
-import { loginRateLimiter } from '../middleware/rateLimiter.js';
+import { loginRateLimiter, createRateLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
+
+// Rate limiter for /me endpoint (more lenient than login)
+const meRateLimiter = createRateLimiter({
+  windowMs: 60000, // 1 minute
+  maxRequests: 30, // 30 requests per minute
+  message: 'Too many requests to /me endpoint, please try again later',
+});
 
 /**
  * POST /api/auth/login - Authenticate user
@@ -195,7 +202,7 @@ router.post('/auth/verify-email', async (req, res) => {
  *   - 200: User data
  *   - 401: Unauthorized
  */
-router.get('/auth/me', requireAuth, async (req, res) => {
+router.get('/auth/me', meRateLimiter, requireAuth, async (req, res) => {
   try {
     const prisma = getPrismaClient();
     

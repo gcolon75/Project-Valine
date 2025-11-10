@@ -84,7 +84,9 @@ export function validateEmail(email) {
     return false;
   }
   
-  // Basic email regex (not perfect but good enough for MVP)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Simple email validation - not vulnerable to ReDoS
+  // Format: localpart@domain.tld
+  // More strict than RFC 5322 but safe and practical
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
