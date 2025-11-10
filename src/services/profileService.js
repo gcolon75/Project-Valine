@@ -7,8 +7,15 @@ import apiClient from './api';
  * @returns {Promise<Object>} Profile data with links array
  */
 export const getProfile = async (userId) => {
-  const { data } = await apiClient.get(`/profiles/${userId}`);
-  return data.profile;
+  try {
+    const { data } = await apiClient.get(`/profiles/id/${userId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      throw new Error('Profile not found');
+    }
+    throw error;
+  }
 };
 
 /**
@@ -21,8 +28,19 @@ export const getProfile = async (userId) => {
  * @returns {Promise<Object>} Updated profile
  */
 export const updateProfile = async (userId, updates) => {
-  const { data } = await apiClient.patch(`/profiles/${userId}`, updates);
-  return data.profile;
+  try {
+    const { data } = await apiClient.put(`/profiles/id/${userId}`, updates);
+    return data;
+  } catch (error) {
+    // Handle specific error cases
+    if (error.response?.status === 409) {
+      throw new Error(error.response.data?.message || 'Conflict: Resource already exists');
+    }
+    if (error.response?.status === 400) {
+      throw new Error(error.response.data?.message || 'Validation error');
+    }
+    throw error;
+  }
 };
 
 /**

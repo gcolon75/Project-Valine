@@ -6,7 +6,10 @@ import {
   sanitizeUrl,
   isValidUrlLength,
   validateProfileUrl,
-  validateProfileLink
+  validateProfileLink,
+  validateProfileLinks,
+  VALID_LINK_TYPES,
+  MAX_PROFILE_LINKS
 } from '../urlValidation';
 
 describe('urlValidation', () => {
@@ -156,7 +159,7 @@ describe('urlValidation', () => {
       const link = {
         label: 'My Website',
         url: 'https://example.com',
-        type: 'Website'
+        type: 'website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(true);
@@ -167,18 +170,29 @@ describe('urlValidation', () => {
       const link = {
         label: '',
         url: 'https://example.com',
-        type: 'Website'
+        type: 'website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(false);
       expect(result.errors.label).toBeDefined();
     });
 
-    it('should enforce label max length', () => {
+    it('should enforce label min length (1 character)', () => {
+      const link = {
+        label: '',
+        url: 'https://example.com',
+        type: 'website'
+      };
+      const result = validateProfileLink(link);
+      expect(result.valid).toBe(false);
+      expect(result.errors.label).toBeDefined();
+    });
+
+    it('should enforce label max length (40 characters)', () => {
       const link = {
         label: 'a'.repeat(41),
         url: 'https://example.com',
-        type: 'Website'
+        type: 'website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(false);
@@ -189,7 +203,7 @@ describe('urlValidation', () => {
       const link = {
         label: 'My Website',
         url: '',
-        type: 'Website'
+        type: 'website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(false);
@@ -200,37 +214,107 @@ describe('urlValidation', () => {
       const link = {
         label: 'My Website',
         url: 'not a url',
-        type: 'Website'
+        type: 'website'
       };
       const result = validateProfileLink(link);
       expect(result.valid).toBe(false);
       expect(result.errors.url).toBeDefined();
     });
 
-    it('should enforce type max length', () => {
-      const link = {
-        label: 'My Website',
-        url: 'https://example.com',
-        type: 'a'.repeat(31)
-      };
-      const result = validateProfileLink(link);
-      expect(result.valid).toBe(false);
-      expect(result.errors.type).toContain('30 characters');
-    });
-
-    it('should allow optional type', () => {
+    it('should require type', () => {
       const link = {
         label: 'My Website',
         url: 'https://example.com'
       };
       const result = validateProfileLink(link);
-      expect(result.valid).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(result.errors.type).toBeDefined();
+    });
+
+    it('should enforce valid link types', () => {
+      const link = {
+        label: 'My Website',
+        url: 'https://example.com',
+        type: 'invalid-type'
+      };
+      const result = validateProfileLink(link);
+      expect(result.valid).toBe(false);
+      expect(result.errors.type).toContain('website, imdb, showreel, other');
+    });
+
+    it('should accept all valid link types', () => {
+      VALID_LINK_TYPES.forEach(type => {
+        const link = {
+          label: 'Test Link',
+          url: 'https://example.com',
+          type
+        };
+        const result = validateProfileLink(link);
+        expect(result.valid).toBe(true);
+      });
     });
 
     it('should handle invalid input', () => {
       const result = validateProfileLink(null);
       expect(result.valid).toBe(false);
       expect(result.errors._form).toBeDefined();
+    });
+  });
+
+  describe('validateProfileLinks', () => {
+    it('should validate array of valid links', () => {
+      const links = [
+        { label: 'Website', url: 'https://example.com', type: 'website' },
+        { label: 'IMDb', url: 'https://imdb.com/name/nm0000001', type: 'imdb' },
+      ];
+      const result = validateProfileLinks(links);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual({});
+      expect(result.globalErrors).toEqual([]);
+    });
+
+    it('should reject non-array input', () => {
+      const result = validateProfileLinks('not an array');
+      expect(result.valid).toBe(false);
+      expect(result.globalErrors).toContain('Links must be an array');
+    });
+
+    it('should enforce max links constraint', () => {
+      const links = Array(MAX_PROFILE_LINKS + 1).fill({
+        label: 'Test',
+        url: 'https://example.com',
+        type: 'website'
+      });
+      const result = validateProfileLinks(links);
+      expect(result.valid).toBe(false);
+      expect(result.globalErrors[0]).toContain(`Maximum of ${MAX_PROFILE_LINKS} links`);
+    });
+
+    it('should collect validation errors for each invalid link', () => {
+      const links = [
+        { label: 'Valid', url: 'https://example.com', type: 'website' },
+        { label: '', url: 'https://example.com', type: 'website' }, // Invalid label
+        { label: 'Invalid URL', url: 'not-a-url', type: 'website' }, // Invalid URL
+      ];
+      const result = validateProfileLinks(links);
+      expect(result.valid).toBe(false);
+      expect(result.errors[1]).toBeDefined();
+      expect(result.errors[2]).toBeDefined();
+    });
+
+    it('should allow empty arrays', () => {
+      const result = validateProfileLinks([]);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should allow exactly max links', () => {
+      const links = Array(MAX_PROFILE_LINKS).fill({
+        label: 'Test',
+        url: 'https://example.com',
+        type: 'website'
+      });
+      const result = validateProfileLinks(links);
+      expect(result.valid).toBe(true);
     });
   });
 

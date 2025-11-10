@@ -1,29 +1,28 @@
 // src/components/ProfileLinksEditor.jsx
 import { useState } from 'react';
 import { Plus, X, GripVertical, ExternalLink } from 'lucide-react';
-import { validateProfileLink } from '../utils/urlValidation';
+import { validateProfileLink, VALID_LINK_TYPES, MAX_PROFILE_LINKS } from '../utils/urlValidation';
 import { sanitizeText, sanitizeUrl } from '../utils/sanitize';
 
 /**
  * ProfileLinksEditor - Component for managing profile external links
  * Supports add/remove/reorder with client-side validation
  * 
- * @param {Array<{label: string, url: string, type?: string}>} links - Array of link objects
+ * @param {Array<{label: string, url: string, type: string}>} links - Array of link objects
  * @param {Function} onChange - Callback when links change
- * @param {number} maxLinks - Maximum number of links allowed (default: 10)
+ * @param {number} maxLinks - Maximum number of links allowed (default: 20 per API spec)
  */
-export default function ProfileLinksEditor({ links = [], onChange, maxLinks = 10 }) {
+export default function ProfileLinksEditor({ links = [], onChange, maxLinks = MAX_PROFILE_LINKS }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [editingIndex, setEditingIndex] = useState(null);
 
   // Link types matching API spec: website|imdb|showreel|other
-  const linkTypes = [
-    { value: 'website', label: 'Website' },
-    { value: 'imdb', label: 'IMDb' },
-    { value: 'showreel', label: 'Showreel' },
-    { value: 'other', label: 'Other' }
-  ];
+  const linkTypes = VALID_LINK_TYPES.map(type => ({
+    value: type,
+    label: type === 'imdb' ? 'IMDb' : 
+           type.charAt(0).toUpperCase() + type.slice(1)
+  }));
 
   const handleAddLink = () => {
     if (links.length >= maxLinks) {
