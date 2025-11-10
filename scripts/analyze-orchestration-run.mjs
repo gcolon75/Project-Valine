@@ -29,7 +29,7 @@
  *   --summary <path>         Write executive summary markdown to specified path
  *   --fail-on <P0|P1|P2|none> Exit code policy based on severity (default: P0)
  *   --log-level <info|debug> Logging verbosity (default: info)
- *   --no-gh                  Force REST API artifact retrieval (stub mode)
+ *   --no-gh                  Force REST API artifact retrieval (fallback mode)
  * 
  * Exit Codes:
  *   0 - PROCEED: No critical issues or below threshold
@@ -2298,7 +2298,7 @@ ${colors.cyan}Options:${colors.reset}
                            P2: exit 1 if P2 issues present
                            none: always exit 0
   --log-level <info|debug> Logging verbosity (default: info)
-  --no-gh                  Force REST API artifact retrieval (stub mode)
+  --no-gh                  Force REST API artifact retrieval (fallback mode)
   -h, --help               Show this help message
 
 ${colors.cyan}Examples:${colors.reset}
@@ -2320,7 +2320,8 @@ ${colors.cyan}Exit Codes:${colors.reset}
   2 - BLOCK: Critical P0 issues present
 
 ${colors.cyan}Requirements:${colors.reset}
-  - GitHub CLI (gh) installed and authenticated
+  - GitHub CLI (gh) installed and authenticated (for CLI mode)
+  - OR: GITHUB_TOKEN environment variable (for REST API mode)
   - Valid run ID from orchestrate-verification-and-sweep workflow
 
 ${colors.cyan}Outputs:${colors.reset}
