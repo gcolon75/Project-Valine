@@ -90,9 +90,11 @@ Register a new user account.
     "email": "user@example.com",
     "displayName": "John Doe",
     "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=johndoe",
+    "emailVerified": false,
     "createdAt": "2024-11-04T00:00:00.000Z"
   },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "message": "Registration successful. Please check your email to verify your account."
 }
 ```
 
@@ -131,6 +133,7 @@ Login with existing credentials.
     "displayName": "John Doe",
     "avatar": "https://...",
     "role": "artist",
+    "emailVerified": true,
     "createdAt": "2024-11-04T00:00:00.000Z"
   },
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -165,6 +168,7 @@ Get current authenticated user's profile.
     "avatar": "https://...",
     "bio": "Artist and creator",
     "role": "artist",
+    "emailVerified": true,
     "createdAt": "2024-11-04T00:00:00.000Z",
     "_count": {
       "posts": 10,
@@ -180,6 +184,95 @@ Get current authenticated user's profile.
 ```bash
 curl https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+#### POST /auth/verify-email
+Verify user's email address using a verification token.
+
+**Request Body:**
+```json
+{
+  "token": "abc123def456..."
+}
+```
+
+**Response (200) - Success:**
+```json
+{
+  "message": "Email verified successfully",
+  "verified": true
+}
+```
+
+**Response (200) - Already Verified:**
+```json
+{
+  "message": "Email address already verified",
+  "alreadyVerified": true
+}
+```
+
+**Response (400) - Invalid/Expired Token:**
+```json
+{
+  "error": "Invalid verification token"
+}
+```
+or
+```json
+{
+  "error": "Verification token has expired. Please request a new one."
+}
+```
+
+**Example:**
+```bash
+curl -X POST https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev/auth/verify-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "abc123def456..."
+  }'
+```
+
+---
+
+#### POST /auth/resend-verification
+Resend email verification link to the authenticated user. Only works if email is not yet verified.
+
+**Headers:** `Authorization: Bearer <token>` (required)
+
+**Request Body:** Empty object `{}`
+
+**Response (200):**
+```json
+{
+  "message": "Verification email sent successfully. Please check your email.",
+  "email": "user@example.com"
+}
+```
+
+**Response (400) - Already Verified:**
+```json
+{
+  "error": "Email address is already verified"
+}
+```
+
+**Response (401) - Unauthorized:**
+```json
+{
+  "error": "Unauthorized - No valid token provided"
+}
+```
+
+**Example:**
+```bash
+curl -X POST https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev/auth/resend-verification \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 ---

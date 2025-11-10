@@ -5,6 +5,7 @@ import { Mail, CheckCircle, AlertCircle, Loader2, ArrowRight } from 'lucide-reac
 import toast from 'react-hot-toast';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
+import * as authService from '../services/authService';
 
 /**
  * Email Verification Page
@@ -25,6 +26,7 @@ const VerifyEmail = () => {
   const [errorType, setErrorType] = useState(null); // expired | invalid | already_verified | network
   const [canResend, setCanResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [userEmail, setUserEmail] = useState(null); // Store email for resend
 
   useEffect(() => {
     if (!token) {
@@ -40,62 +42,75 @@ const VerifyEmail = () => {
     setState('verifying');
     
     try {
-      // TODO: Replace with actual API call
-      // const response = await apiClient.post('/auth/verify-email', { token });
+      // Call real backend endpoint
+      const response = await authService.verifyEmail(token);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock response - replace with actual logic
-      const mockSuccess = Math.random() > 0.3;
-      
-      if (mockSuccess) {
-        setState('success');
-        toast.success('Email verified successfully!');
-        
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      } else {
-        throw new Error('Token expired');
+      // Store email for potential resend
+      if (response.user?.email) {
+        setUserEmail(response.user.email);
       }
+      
+      setState('success');
+      toast.success('Email verified successfully!');
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
       console.error('Verification error:', err);
       setState('error');
       
-      // Determine error type
-      const message = err.message || err.response?.data?.message || '';
+      // Determine error type from response
+      const status = err.response?.status;
+      const message = err.response?.data?.message || err.message || '';
+      const errorCode = err.response?.data?.error;
       
-      if (message.includes('expired') || err.response?.status === 410) {
-        setErrorType('expired');
-        setCanResend(true);
-      } else if (message.includes('already verified') || err.response?.status === 409) {
-        setErrorType('already_verified');
-      } else if (!navigator.onLine || err.code === 'ERR_NETWORK') {
-        setErrorType('network');
-      } else {
-        setErrorType('invalid');
+      // Store email if provided in error response
+      if (err.response?.data?.email) {
+        setUserEmail(err.response.data.email);
       }
       
-      toast.error('Email verification failed');
+      // Handle specific error states
+      if (status === 410 || errorCode === 'TOKEN_EXPIRED' || message.includes('expired')) {
+        setErrorType('expired');
+        setCanResend(true);
+      } else if (status === 409 || errorCode === 'ALREADY_VERIFIED' || message.includes('already verified')) {
+        setErrorType('already_verified');
+        setCanResend(false);
+      } else if (status === 404 || errorCode === 'INVALID_TOKEN' || message.includes('invalid')) {
+        setErrorType('invalid');
+        setCanResend(true);
+      } else if (!navigator.onLine || err.code === 'ERR_NETWORK') {
+        setErrorType('network');
+        setCanResend(false);
+      } else {
+        setErrorType('invalid');
+        setCanResend(true);
+      }
+      
+      toast.error(message || 'Email verification failed');
     }
   };
 
   const handleResendVerification = async () => {
+    if (!userEmail) {
+      toast.error('Unable to resend verification. Please try registering again.');
+      return;
+    }
+    
     setIsResending(true);
     
     try {
-      // TODO: Replace with actual API call
-      // await apiClient.post('/auth/resend-verification');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call real backend endpoint
+      await authService.resendVerification(userEmail);
       
       toast.success('Verification email sent! Please check your inbox.');
       setCanResend(false);
     } catch (err) {
       console.error('Resend error:', err);
-      toast.error('Failed to resend verification email. Please try again.');
+      const message = err.response?.data?.message || 'Failed to resend verification email. Please try again.';
+      toast.error(message);
     } finally {
       setIsResending(false);
     }
@@ -168,7 +183,7 @@ const VerifyEmail = () => {
                 Email Verified!
               </h1>
               <p className="text-neutral-600 mb-6">
-                Your email has been successfully verified. Redirecting you to your dashboard...
+                Your email has been successfully verified. Redirecting you to sign in...
               </p>
               <Alert variant="success">
                 You can now access all features of your account.

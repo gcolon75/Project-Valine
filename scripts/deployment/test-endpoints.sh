@@ -128,6 +128,24 @@ else
 fi
 echo ""
 
+# Test 6: Auth Login Endpoint
+echo -e "${BLUE}Test 6: Auth Login Endpoint${NC}"
+echo "POST $API_BASE/auth/login (with invalid credentials - expect 400/401, not 404)"
+AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_BASE/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"wrongpassword"}')
+HTTP_CODE=$(echo "$AUTH_RESPONSE" | tail -n1)
+BODY=$(echo "$AUTH_RESPONSE" | head -n-1)
+
+if [ "$HTTP_CODE" = "400" ] || [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "200" ]; then
+  echo -e "${GREEN}✓${NC} Auth endpoint accessible (HTTP $HTTP_CODE)"
+  echo "   Response: $BODY" | head -c 200
+else
+  echo -e "${YELLOW}⚠${NC}  Auth endpoint returned HTTP $HTTP_CODE (expected 400/401 for bad creds)"
+  echo "   Response: $BODY"
+fi
+echo ""
+
 echo "======================================"
 echo -e "${GREEN}✅ API testing complete!${NC}"
 echo ""

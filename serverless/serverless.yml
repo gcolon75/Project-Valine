@@ -13,6 +13,9 @@ provider:
     DATABASE_URL: ${env:DATABASE_URL}
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
     AWS_REGION: ${env:AWS_REGION, "us-west-2"}
+    JWT_SECRET: ${env:JWT_SECRET}
+    EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
+    FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
 
 package:
   patterns:
@@ -59,6 +62,20 @@ functions:
       - httpApi:
           path: /auth/me
           method: get
+  
+  verifyEmail:
+    handler: src/handlers/auth.verifyEmail
+    events:
+      - httpApi:
+          path: /auth/verify-email
+          method: post
+  
+  resendVerification:
+    handler: src/handlers/auth.resendVerification
+    events:
+      - httpApi:
+          path: /auth/resend-verification
+          method: post
 
   # User endpoints
   createUser:

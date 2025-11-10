@@ -157,6 +157,8 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 - **Database**: DynamoDB (orchestrator state), Prisma ORM (API)
 - **File Storage**: S3 with presigned URLs
 
+> **⚠️ Important:** The **Serverless backend** (located in `/serverless`) is the canonical production/staging API. The Express routes in `/server` are legacy development stubs only and should NOT be deployed to staging or production environments.
+
 ### Orchestrator (Discord Bot)
 - **Framework**: AWS SAM
 - **Runtime**: Python 3.11
@@ -252,6 +254,8 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
    ```
 
 ### Backend Deployment
+
+> **📌 Deployment Note:** Deploy the **Serverless backend** (`/serverless` directory) to staging and production. The Express server in `/server` is for local development only.
 
 📚 **AWS Deployment Guides:**
 - **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute fast-track deployment guide

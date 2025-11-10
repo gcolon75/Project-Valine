@@ -1,5 +1,7 @@
 # Security Implementation Summary
 
+> **📌 Backend Note:** Security features are implemented in the **Serverless backend** (`/serverless`). The Express server (`/server`) mentioned in some legacy sections is for local development only. See [Canonical Backend Decision](../backend/canonical-backend.md).
+
 ## Overview
 
 This document provides a high-level summary of the account security and privacy hardening implementation for Project Valine.

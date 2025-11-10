@@ -31,11 +31,13 @@ export function AuthProvider({ children }) {
       if (authService.isAuthenticated()) {
         try {
           const userData = await authService.getCurrentUser();
+          // Store user data including emailVerified status
           setUser(userData);
         } catch (err) {
           console.error('Failed to fetch current user:', err);
           // Clear invalid token
-          authService.logout();
+          await authService.logout();
+          setUser(null);
         }
       }
       setIsInitialized(true);

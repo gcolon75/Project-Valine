@@ -183,4 +183,78 @@ describe('authService', () => {
       expect(token === null || token === undefined || typeof token === 'string').toBe(true);
     });
   });
+
+  describe('verifyEmail', () => {
+    it('should verify email with token', async () => {
+      const mockResponse = {
+        data: {
+          user: { id: '1', email: 'test@example.com', emailVerified: true },
+          message: 'Email verified successfully'
+        },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await authService.verifyEmail('mock-token-123');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/auth/verify-email', { token: 'mock-token-123' });
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle expired token', async () => {
+      const error = {
+        response: {
+          status: 410,
+          data: { error: 'TOKEN_EXPIRED', message: 'Token has expired' }
+        }
+      };
+      
+      apiClient.post.mockRejectedValue(error);
+
+      await expect(authService.verifyEmail('expired-token')).rejects.toMatchObject(error);
+    });
+
+    it('should handle already verified email', async () => {
+      const error = {
+        response: {
+          status: 409,
+          data: { error: 'ALREADY_VERIFIED', message: 'Email already verified' }
+        }
+      };
+      
+      apiClient.post.mockRejectedValue(error);
+
+      await expect(authService.verifyEmail('token')).rejects.toMatchObject(error);
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('should resend verification email', async () => {
+      const mockResponse = {
+        data: {
+          message: 'Verification email sent'
+        },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await authService.resendVerification('test@example.com');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/auth/resend-verification', { email: 'test@example.com' });
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle rate limiting', async () => {
+      const error = {
+        response: {
+          status: 429,
+          data: { message: 'Too many requests' }
+        }
+      };
+      
+      apiClient.post.mockRejectedValue(error);
+
+      await expect(authService.resendVerification('test@example.com')).rejects.toMatchObject(error);
+    });
+  });
 });
