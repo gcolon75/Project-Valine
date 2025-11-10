@@ -324,6 +324,51 @@ sam deploy --guided
 
 **Detailed Guide:** [orchestrator/README.md](orchestrator/README.md)
 
+### Automated Workflow Integration
+
+**Post-Run Orchestration Analysis** automatically analyzes workflow results from quality checks and generates comprehensive reports with actionable insights.
+
+**Workflow Name:** `Orchestrate Verification and Sweep`
+
+**How It Works:**
+1. The orchestration workflow runs automated quality checks (accessibility, security, regression tests)
+2. On completion, the `Analyze Orchestration Run` workflow automatically triggers
+3. Analysis results are uploaded as artifacts with severity-based gating decisions
+4. If configured, PR comments are posted with issue summaries and gating recommendations
+
+**Gating Logic:**
+- **P0 (Critical):** Exit code 2 - BLOCK merge
+- **P1 (Serious):** Exit code 1 if >3 issues - CAUTION recommended
+- **P2 (Moderate):** Non-gating by default
+- **P3 (Minor):** Non-gating, informational only
+
+**Manual Analysis:**
+```bash
+# Analyze a specific workflow run
+node scripts/analyze-orchestration-run.mjs <run-id> \
+  --out-dir analysis-output \
+  --json \
+  --summary report.md \
+  --fail-on P0
+
+# Available flags:
+#   --out-dir <path>         Output directory (default: analysis-output)
+#   --json                   Emit machine-readable summary.json
+#   --summary <path>         Write executive summary to file
+#   --fail-on <P0|P1|P2|none> Exit code policy (default: P0)
+#   --log-level <info|debug> Logging verbosity
+```
+
+**Configuration:**
+- Set `ORCHESTRATION_BOT_PAT` secret for PR comment posting
+- Without the secret, analysis still runs but comments are skipped
+- Reports are always uploaded as workflow artifacts
+
+**Documentation:**
+- [Analysis CLI Guide](scripts/ORCHESTRATION_ANALYSIS_CLI_GUIDE.md)
+- [Security Documentation](scripts/ORCHESTRATION_ANALYSIS_SECURITY.md)
+- [Quick Reference](scripts/ORCHESTRATION_ANALYSIS_QUICKREF.md)
+
 ## Project Structure
 
 ```
