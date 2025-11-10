@@ -92,3 +92,23 @@ export const isAuthenticated = () => {
 export const getAuthToken = () => {
   return localStorage.getItem('auth_token');
 };
+
+/**
+ * Verify email with token
+ * @param {string} token - Email verification token from URL
+ * @returns {Promise<{user}>} User data with verified email
+ */
+export const verifyEmail = async (token) => {
+  const { data } = await apiClient.post('/auth/verify-email', { token });
+  return data;
+};
+
+/**
+ * Resend email verification
+ * @param {string} email - User email to resend verification to
+ * @returns {Promise<{message}>} Success message
+ */
+export const resendVerification = async (email) => {
+  const { data } = await apiClient.post('/auth/resend-verification', { email });
+  return data;
+};

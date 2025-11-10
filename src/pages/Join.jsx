@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Sparkles, Mic, Code, Twitter, Linkedin, Github } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Sparkles, Code } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 
 const Join = () => {
   const navigate = useNavigate();
-  const { register, loading } = useAuth();
+  const { register, devLogin, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -25,12 +25,44 @@ const Join = () => {
     
     try {
       const user = await register(formData);
-      toast.success('Account created successfully!');
       
-      // Navigate to onboarding for new users
+      // Check if user needs email verification
+      if (user.emailVerified === false) {
+        toast.success('Account created! Please check your email to verify your account.');
+        // Redirect to a verification pending page or show message
+        navigate('/verify-email?registered=true');
+      } else {
+        // If no email verification required (dev mode or disabled)
+        toast.success('Account created successfully!');
+        // Navigate to onboarding for new users
+        navigate('/onboarding');
+      }
+    } catch (err) {
+      // Handle specific error types
+      const status = err.response?.status;
+      const responseData = err.response?.data || {};
+      const errorMessage = responseData.message || err.message || 'Failed to create account. Please try again.';
+      
+      if (status === 409 || errorMessage.includes('already exists')) {
+        toast.error('An account with this email or username already exists.');
+      } else if (status === 400) {
+        toast.error(errorMessage || 'Invalid registration data. Please check your input.');
+      } else if (status === 429) {
+        toast.error('Too many registration attempts. Please try again later.');
+      } else if (!navigator.onLine || err.code === 'ERR_NETWORK') {
+        toast.error('No internet connection. Please check your network and try again.');
+      } else {
+        toast.error(errorMessage);
+      }
+    }
+  };
+
+  // DEV BYPASS - Only available in development mode
+  const handleDevSignup = () => {
+    if (devLogin) {
+      devLogin();
+      toast.success('Dev mode: Logged in!');
       navigate('/onboarding');
-    } catch (error) {
-      toast.error(error.message || 'Failed to create account. Please try again.');
     }
   };
 

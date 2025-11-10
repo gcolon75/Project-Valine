@@ -42,6 +42,14 @@ const Login = () => {
       const user = await login(formData.email, formData.password);
       toast.success('Welcome back!');
       
+      // Check if email is verified (if auth is enabled)
+      if (user.emailVerified === false) {
+        // Redirect to verify page with message
+        toast.error('Please verify your email address to continue');
+        navigate('/verify-email?unverified=true');
+        return;
+      }
+      
       // Navigate based on profile completion
       if (user.onboardingComplete || user.profileComplete) {
         navigate('/dashboard');
@@ -52,17 +60,23 @@ const Login = () => {
     } catch (err) {
       // Handle specific error types
       const errorMessage = err.message || 'An error occurred';
+      const status = err.response?.status;
+      const responseData = err.response?.data || {};
       
-      if (err.response?.status === 401 || errorMessage.includes('Invalid credentials')) {
+      if (status === 401 || errorMessage.includes('Invalid credentials')) {
         setError('Invalid email or password. Please try again.');
-      } else if (err.response?.status === 429 || errorMessage.includes('rate limit')) {
+      } else if (status === 429 || errorMessage.includes('rate limit')) {
         setError('Too many login attempts. Please wait a few minutes and try again.');
-      } else if (err.response?.status === 403 && errorMessage.includes('verify')) {
+      } else if (status === 403 && (errorMessage.includes('verify') || responseData.requiresVerification)) {
         setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+        // Option to navigate to verify page
+        setTimeout(() => {
+          navigate('/verify-email?unverified=true');
+        }, 3000);
       } else if (!navigator.onLine || err.code === 'ERR_NETWORK') {
         setError('No internet connection. Please check your network and try again.');
       } else {
-        setError('Unable to sign in. Please try again later.');
+        setError(responseData.message || 'Unable to sign in. Please try again later.');
       }
       
       toast.error(errorMessage);
