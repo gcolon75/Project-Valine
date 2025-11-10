@@ -5,8 +5,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-// JWT Secret - MUST be set in environment
-const JWT_SECRET = process.env.AUTH_JWT_SECRET;
 const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
 
 // Verification token settings
@@ -14,16 +12,18 @@ const VERIFICATION_TOKEN_LENGTH = 32; // bytes (64 chars hex)
 const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
 
 /**
- * Ensure JWT secret is configured
+ * Get JWT secret from environment
+ * @returns {string} JWT secret
  */
-function ensureJwtSecret() {
-  if (!JWT_SECRET) {
+function getJwtSecret() {
+  const secret = process.env.AUTH_JWT_SECRET;
+  if (!secret) {
     throw new Error('AUTH_JWT_SECRET environment variable is required but not set');
   }
-  
-  if (JWT_SECRET.length < 32) {
+  if (secret.length < 32) {
     console.warn('WARNING: AUTH_JWT_SECRET should be at least 256 bits (32 characters) for security');
   }
+  return secret;
 }
 
 /**
@@ -32,7 +32,7 @@ function ensureJwtSecret() {
  * @returns {string} - JWT token
  */
 export function generateAccessToken(user) {
-  ensureJwtSecret();
+  const secret = getJwtSecret();
   
   const payload = {
     userId: user.id,
@@ -40,7 +40,7 @@ export function generateAccessToken(user) {
     type: 'access',
   };
   
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, secret, {
     expiresIn: JWT_EXPIRATION,
     issuer: 'project-valine',
     subject: user.id,
@@ -53,10 +53,10 @@ export function generateAccessToken(user) {
  * @returns {object|null} - Decoded payload or null if invalid
  */
 export function verifyAccessToken(token) {
-  ensureJwtSecret();
+  const secret = getJwtSecret();
   
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, secret, {
       issuer: 'project-valine',
     });
     
