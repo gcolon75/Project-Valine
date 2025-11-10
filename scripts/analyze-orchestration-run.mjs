@@ -6,9 +6,18 @@
  * This script fetches and analyzes artifacts from a GitHub Actions workflow run
  * of the orchestrate-verification-and-sweep workflow. It generates:
  * - Consolidated Markdown report
- * - P0/P1/P2 prioritized issues list
- * - Draft PR payloads for mechanical fixes
+ * - P0/P1/P2/P3 prioritized issues list (P3 = minor, non-gating)
+ * - Draft PR payloads for mechanical fixes with detailed suggestions
  * - Draft GitHub issues for non-trivial problems
+ * - Accessibility hotspots (top failing selectors)
+ * - Flakiness analysis for Playwright tests (< 20% failure rate)
+ * 
+ * Enhanced Features (Phase Group A):
+ * - A11y violations separated by impact (critical, serious, moderate, minor)
+ * - Severity mapping: critical→P0, serious→P1, moderate→P2, minor→P3
+ * - Extracts selectors and snippets from violations for targeted fixes
+ * - Prefers JSON over HTML for Playwright results parsing
+ * - Identifies trivial a11y fixes (alt attributes, aria-label gaps)
  * 
  * Usage:
  *   node scripts/analyze-orchestration-run.mjs <run-id> [options]
@@ -126,14 +135,23 @@ class AnalysisResults {
       failed: 0,
       skipped: 0,
       failedTests: [],
+      potentiallyFlaky: [], // Tests failing < 20% of recent runs
     };
     this.a11yViolations = [];
+    this.a11yViolationsByImpact = {
+      critical: [],
+      serious: [],
+      moderate: [],
+      minor: [],
+    };
+    this.a11yHotspots = []; // Top failing selectors/snippets
     this.securityFindings = [];
     this.cspReports = [];
     this.issues = {
       p0: [],
       p1: [],
       p2: [],
+      p3: [], // Minor (non-gating)
     };
     this.draftPRs = [];
     this.draftIssues = [];
@@ -638,16 +656,18 @@ class OrchestrationAnalyzer {
 
   /**
    * Analyze Playwright results
+   * Prefers JSON results over HTML parsing
    */
   async analyzePlaywrightResults() {
     this.logger.section('Analyzing Playwright Results');
     
     const playwrightDir = path.join(ARTIFACTS_DIR, 'playwright-report');
     
-    // Look for test results JSON
+    // Look for test results JSON (prefer JSON over HTML)
     const resultsFiles = [
       path.join(playwrightDir, 'results.json'),
       path.join(playwrightDir, 'test-results.json'),
+      path.join(playwrightDir, 'playwright-results.json'),
     ];
     
     let resultsFound = false;
@@ -659,6 +679,7 @@ class OrchestrationAnalyzer {
         
         this.processPlaywrightResults(results);
         resultsFound = true;
+        Logger.success(`Parsed Playwright results from JSON: ${path.basename(resultsFile)}`);
         break;
       } catch (error) {
         // Try next file
@@ -666,7 +687,7 @@ class OrchestrationAnalyzer {
     }
     
     if (!resultsFound) {
-      // Try to parse from HTML report
+      // Fallback: Try to parse from HTML report
       try {
         const htmlFile = path.join(playwrightDir, 'index.html');
         const html = await fs.readFile(htmlFile, 'utf-8');
@@ -685,13 +706,20 @@ class OrchestrationAnalyzer {
           this.results.playwrightResults.failed + 
           this.results.playwrightResults.skipped;
         
-        this.logger.info('Parsed Playwright results from HTML report');
+        Logger.info('Parsed Playwright results from HTML report (fallback)');
       } catch (error) {
-        this.logger.warning('Could not parse Playwright results');
+        Logger.warning('Could not parse Playwright results - No data available');
       }
     }
     
-    this.logger.info(`Playwright: ${this.results.playwrightResults.passed} passed, ${this.results.playwrightResults.failed} failed, ${this.results.playwrightResults.skipped} skipped`);
+    // Analyze flakiness (if historical data available)
+    await this.analyzeTestFlakiness(playwrightDir);
+    
+    Logger.info(`Playwright: ${this.results.playwrightResults.passed} passed, ${this.results.playwrightResults.failed} failed, ${this.results.playwrightResults.skipped} skipped`);
+    
+    if (this.results.playwrightResults.potentiallyFlaky.length > 0) {
+      Logger.warning(`Potentially flaky tests: ${this.results.playwrightResults.potentiallyFlaky.length}`);
+    }
     
     if (this.results.playwrightResults.failed > 0) {
       for (const failedTest of this.results.playwrightResults.failedTests) {
@@ -699,6 +727,7 @@ class OrchestrationAnalyzer {
           artifact: 'playwright-report',
           testName: failedTest.name,
           browser: failedTest.browser,
+          potentiallyFlaky: failedTest.potentiallyFlaky || false,
         });
       }
     }
@@ -773,6 +802,7 @@ class OrchestrationAnalyzer {
         name: test.title || test.name || 'Unknown test',
         browser: test.browser || 'unknown',
         error: test.error || test.message || 'No error message',
+        potentiallyFlaky: false, // Will be updated by flakiness analysis
       });
     } else if (test.status === 'skipped') {
       this.results.playwrightResults.skipped++;
@@ -780,15 +810,94 @@ class OrchestrationAnalyzer {
   }
 
   /**
+   * Analyze test flakiness based on historical data
+   * Tests failing < 20% of recent runs are marked as "Potentially Flaky"
+   */
+  async analyzeTestFlakiness(playwrightDir) {
+    try {
+      // Look for historical test results (if available)
+      const historyFile = path.join(playwrightDir, 'test-history.json');
+      const content = await fs.readFile(historyFile, 'utf-8');
+      const history = JSON.parse(content);
+      
+      if (!history || !Array.isArray(history)) {
+        Logger.info('No test history available for flakiness analysis');
+        return;
+      }
+      
+      // Calculate failure rate for each test
+      const testStats = new Map();
+      
+      for (const run of history) {
+        const testName = run.name || run.title;
+        if (!testName) continue;
+        
+        if (!testStats.has(testName)) {
+          testStats.set(testName, { total: 0, failures: 0 });
+        }
+        
+        const stats = testStats.get(testName);
+        stats.total++;
+        if (run.status === 'failed') {
+          stats.failures++;
+        }
+      }
+      
+      // Identify potentially flaky tests (< 20% failure rate)
+      for (const [testName, stats] of testStats.entries()) {
+        const failureRate = stats.failures / stats.total;
+        
+        if (failureRate > 0 && failureRate < 0.20) {
+          this.results.playwrightResults.potentiallyFlaky.push({
+            name: testName,
+            failureRate: Math.round(failureRate * 100),
+            totalRuns: stats.total,
+            failures: stats.failures,
+          });
+          
+          // Mark failed test as potentially flaky
+          const failedTest = this.results.playwrightResults.failedTests.find(
+            t => t.name === testName
+          );
+          if (failedTest) {
+            failedTest.potentiallyFlaky = true;
+          }
+        }
+      }
+      
+      Logger.success(`Analyzed test history: ${history.length} runs`);
+    } catch (error) {
+      // No history available - add placeholder
+      Logger.info('No artifact history available for flakiness analysis (placeholder)');
+    }
+  }
+
+  /**
    * Analyze accessibility results
+   * Enhanced to separate violations by impact and extract hotspots
    */
   async analyzeAccessibilityResults() {
     this.logger.section('Analyzing Accessibility Results');
     
     const a11yDir = path.join(ARTIFACTS_DIR, 'regression-and-a11y-artifacts');
     
+    try {
+      // Check if directory exists
+      await fs.access(a11yDir);
+    } catch (error) {
+      Logger.warning('No a11y data available - artifacts directory not found');
+      return;
+    }
+    
     // Look for axe results
     const a11yFiles = await this.findFiles(a11yDir, /axe.*\.json$/i);
+    
+    if (a11yFiles.length === 0) {
+      Logger.info('No a11y data available - no axe result files found');
+      return;
+    }
+    
+    const selectorCounts = new Map(); // Track most common failing selectors
     
     for (const a11yFile of a11yFiles) {
       try {
@@ -797,23 +906,59 @@ class OrchestrationAnalyzer {
         
         if (results.violations && Array.isArray(results.violations)) {
           for (const violation of results.violations) {
-            this.results.a11yViolations.push({
+            const impact = violation.impact || 'minor';
+            
+            // Store violation with all details
+            const violationData = {
               id: violation.id,
-              impact: violation.impact || 'unknown',
+              impact,
               description: violation.description,
               help: violation.help,
               helpUrl: violation.helpUrl,
               nodes: violation.nodes?.length || 0,
-            });
+              selectors: [],
+              snippets: [],
+            };
             
-            const severity = violation.impact === 'critical' ? 'p0' : 
-                           violation.impact === 'serious' ? 'p1' : 'p2';
+            // Extract selectors and snippets from nodes
+            if (violation.nodes && Array.isArray(violation.nodes)) {
+              for (const node of violation.nodes.slice(0, 3)) { // Limit to top 3
+                if (node.target && Array.isArray(node.target)) {
+                  const selector = node.target.join(' > ');
+                  violationData.selectors.push(selector);
+                  
+                  // Track selector frequency
+                  selectorCounts.set(selector, (selectorCounts.get(selector) || 0) + 1);
+                }
+                
+                if (node.html) {
+                  violationData.snippets.push(node.html.substring(0, 150));
+                }
+              }
+            }
+            
+            // Add to overall list and impact-specific list
+            this.results.a11yViolations.push(violationData);
+            
+            if (this.results.a11yViolationsByImpact[impact]) {
+              this.results.a11yViolationsByImpact[impact].push(violationData);
+            } else {
+              this.results.a11yViolationsByImpact.minor.push(violationData);
+            }
+            
+            // Map impact to severity (critical->P0, serious->P1, moderate->P2, minor->P3)
+            const severity = impact === 'critical' ? 'p0' : 
+                           impact === 'serious' ? 'p1' : 
+                           impact === 'moderate' ? 'p2' : 'p3';
             
             this.addIssue(severity, `A11y Violation: ${violation.id}`, violation.description, {
               artifact: 'regression-and-a11y-artifacts',
               file: path.basename(a11yFile),
-              impact: violation.impact,
+              impact,
               helpUrl: violation.helpUrl,
+              nodes: violationData.nodes,
+              selectors: violationData.selectors.slice(0, 2),
+              gating: severity !== 'p3', // P3 (minor) is non-gating
             });
           }
         }
@@ -824,8 +969,28 @@ class OrchestrationAnalyzer {
       }
     }
     
+    // Extract top failing selectors as hotspots
+    const sortedSelectors = Array.from(selectorCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    
+    for (const [selector, count] of sortedSelectors) {
+      this.results.a11yHotspots.push({
+        selector,
+        occurrences: count,
+      });
+    }
+    
     if (this.results.a11yViolations.length > 0) {
-      this.logger.warning(`Total a11y violations: ${this.results.a11yViolations.length}`);
+      Logger.warning(`Total a11y violations: ${this.results.a11yViolations.length}`);
+      Logger.info(`  Critical: ${this.results.a11yViolationsByImpact.critical.length}`);
+      Logger.info(`  Serious: ${this.results.a11yViolationsByImpact.serious.length}`);
+      Logger.info(`  Moderate: ${this.results.a11yViolationsByImpact.moderate.length}`);
+      Logger.info(`  Minor (non-gating): ${this.results.a11yViolationsByImpact.minor.length}`);
+      
+      if (this.results.a11yHotspots.length > 0) {
+        Logger.info(`  Hotspots identified: ${this.results.a11yHotspots.length}`);
+      }
     } else {
       this.logger.success('No a11y violations found');
     }
@@ -891,8 +1056,12 @@ class OrchestrationAnalyzer {
     report += `- **Health Checks:** ${this.results.healthChecks.length}\n`;
     report += `- **Auth Checks:** ${this.results.authChecks.length}\n`;
     report += `- **Playwright Tests:** ${this.results.playwrightResults.total} (${this.results.playwrightResults.passed} passed, ${this.results.playwrightResults.failed} failed)\n`;
-    report += `- **A11y Violations:** ${this.results.a11yViolations.length}\n`;
-    report += `- **Issues:** P0: ${p0Count}, P1: ${p1Count}, P2: ${p2Count}\n\n`;
+    report += `- **A11y Violations:** ${this.results.a11yViolations.length}`;
+    if (this.results.a11yViolations.length > 0) {
+      report += ` (P0: ${this.results.a11yViolationsByImpact.critical.length}, P1: ${this.results.a11yViolationsByImpact.serious.length}, P2: ${this.results.a11yViolationsByImpact.moderate.length}, P3: ${this.results.a11yViolationsByImpact.minor.length})`;
+    }
+    report += `\n`;
+    report += `- **Issues:** P0: ${p0Count}, P1: ${p1Count}, P2: ${p2Count}, P3: ${this.results.issues.p3.length} (non-gating)\n\n`;
     
     // Artifacts section
     report += `## Artifacts\n\n`;
@@ -947,40 +1116,77 @@ class OrchestrationAnalyzer {
       report += `- **Failed:** ${this.results.playwrightResults.failed}\n`;
       report += `- **Skipped:** ${this.results.playwrightResults.skipped}\n\n`;
       
+      if (this.results.playwrightResults.potentiallyFlaky.length > 0) {
+        report += `### Potentially Flaky Tests\n\n`;
+        report += `Tests failing < 20% of recent runs (if artifact history available):\n\n`;
+        for (const test of this.results.playwrightResults.potentiallyFlaky) {
+          report += `- ⚠️ **${test.name}**\n`;
+          report += `  - Failure rate: ${test.failureRate}% (${test.failures}/${test.totalRuns} runs)\n\n`;
+        }
+      }
+      
       if (this.results.playwrightResults.failedTests.length > 0) {
         report += `### Failed Tests\n\n`;
         for (const test of this.results.playwrightResults.failedTests) {
-          report += `- ❌ **${test.name}** (${test.browser})\n`;
+          const flakyIndicator = test.potentiallyFlaky ? ' 🔄 (Potentially Flaky)' : '';
+          report += `- ❌ **${test.name}** (${test.browser})${flakyIndicator}\n`;
           report += `  \`\`\`\n  ${test.error}\n  \`\`\`\n\n`;
         }
       }
+    } else {
+      report += `## Playwright Test Results\n\n`;
+      report += `No Playwright data available.\n\n`;
     }
     
     // Accessibility
     if (this.results.a11yViolations.length > 0) {
       report += `## Accessibility Violations\n\n`;
       
-      const bySeverity = {
-        critical: [],
-        serious: [],
-        moderate: [],
-        minor: [],
-      };
+      // Summary by impact
+      report += `### Summary by Impact\n\n`;
+      report += `- **Critical (P0):** ${this.results.a11yViolationsByImpact.critical.length}\n`;
+      report += `- **Serious (P1):** ${this.results.a11yViolationsByImpact.serious.length}\n`;
+      report += `- **Moderate (P2):** ${this.results.a11yViolationsByImpact.moderate.length}\n`;
+      report += `- **Minor (P3, non-gating):** ${this.results.a11yViolationsByImpact.minor.length}\n\n`;
       
-      for (const violation of this.results.a11yViolations) {
-        const severity = violation.impact || 'minor';
-        if (!bySeverity[severity]) bySeverity[severity] = [];
-        bySeverity[severity].push(violation);
+      // Accessibility Hotspots
+      if (this.results.a11yHotspots.length > 0) {
+        report += `### Accessibility Hotspots\n\n`;
+        report += `Top failing selectors/components:\n\n`;
+        for (const hotspot of this.results.a11yHotspots) {
+          report += `- \`${hotspot.selector}\` - ${hotspot.occurrences} violation(s)\n`;
+        }
+        report += `\n`;
       }
       
-      for (const [severity, violations] of Object.entries(bySeverity)) {
+      // Detailed violations by severity
+      for (const [severity, violations] of Object.entries(this.results.a11yViolationsByImpact)) {
         if (violations.length > 0) {
-          report += `### ${severity.charAt(0).toUpperCase() + severity.slice(1)} (${violations.length})\n\n`;
+          const severityLabel = severity === 'critical' ? 'Critical (P0)' :
+                               severity === 'serious' ? 'Serious (P1)' :
+                               severity === 'moderate' ? 'Moderate (P2)' :
+                               'Minor (P3, non-gating)';
+          
+          report += `### ${severityLabel} - ${violations.length} violation(s)\n\n`;
           
           for (const violation of violations) {
             report += `- **${violation.id}**: ${violation.description}\n`;
             report += `  - Impact: ${violation.impact}\n`;
             report += `  - Nodes: ${violation.nodes}\n`;
+            
+            // Show selectors if available
+            if (violation.selectors && violation.selectors.length > 0) {
+              report += `  - Selectors:\n`;
+              for (const selector of violation.selectors) {
+                report += `    - \`${selector}\`\n`;
+              }
+            }
+            
+            // Show snippets if available
+            if (violation.snippets && violation.snippets.length > 0 && violation.snippets[0]) {
+              report += `  - Example snippet: \`${violation.snippets[0]}\`\n`;
+            }
+            
             if (violation.helpUrl) {
               report += `  - [More info](${violation.helpUrl})\n`;
             }
@@ -988,18 +1194,22 @@ class OrchestrationAnalyzer {
           }
         }
       }
+    } else {
+      report += `## Accessibility Violations\n\n`;
+      report += `No a11y data available.\n\n`;
     }
     
     // Prioritized Issues
     report += `## Prioritized Issues\n\n`;
     
-    for (const priority of ['p0', 'p1', 'p2']) {
+    for (const priority of ['p0', 'p1', 'p2', 'p3']) {
       const issues = this.results.issues[priority];
       
       if (issues.length > 0) {
         const label = priority === 'p0' ? 'P0 - Critical' : 
                      priority === 'p1' ? 'P1 - High Priority' : 
-                     'P2 - Medium Priority';
+                     priority === 'p2' ? 'P2 - Medium Priority' :
+                     'P3 - Minor (Non-Gating)';
         
         report += `### ${label} (${issues.length})\n\n`;
         
@@ -1015,12 +1225,20 @@ class OrchestrationAnalyzer {
             report += `**File:** \`${issue.file}\`\n\n`;
           }
           
+          if (issue.selectors && issue.selectors.length > 0) {
+            report += `**Selectors:** ${issue.selectors.map(s => `\`${s}\``).join(', ')}\n\n`;
+          }
+          
           if (issue.snippet) {
             report += `**Snippet:**\n\`\`\`\n${issue.snippet}\n\`\`\`\n\n`;
           }
           
           if (issue.recommendation) {
             report += `**Recommended Fix:** ${issue.recommendation}\n\n`;
+          }
+          
+          if (priority === 'p3') {
+            report += `**Note:** This is a minor issue and is non-gating for deployment.\n\n`;
           }
           
           report += `---\n\n`;
@@ -1052,6 +1270,14 @@ class OrchestrationAnalyzer {
       report += `1. Review P2 issues for quick wins\n`;
       report += `2. Schedule fixes in upcoming sprint\n`;
       report += `3. Track in backlog\n\n`;
+    }
+    
+    const p3Count = this.results.issues.p3.length;
+    if (p3Count > 0) {
+      report += `### Minor Actions (P3, Non-Gating)\n\n`;
+      report += `1. Review P3 issues for trivial fixes (alt attributes, aria-label gaps)\n`;
+      report += `2. Consider automated PR generation for mechanical fixes\n`;
+      report += `3. Track in backlog for future polish work\n\n`;
     }
     
     // Gating Recommendation
@@ -1331,6 +1557,7 @@ class OrchestrationAnalyzer {
 
   /**
    * Generate draft PR payloads
+   * Enhanced to include detailed a11y fix suggestions
    */
   async generateDraftPRs() {
     this.logger.section('Generating Draft PR Payloads');
@@ -1352,9 +1579,19 @@ class OrchestrationAnalyzer {
         branch: `fix/${fix.type}-${Date.now()}`,
         title: fix.title,
         description: fix.description,
-        files: fix.files,
-        labels: ['automated-fix', fix.priority],
+        fixType: fix.fixType,
+        priority: fix.priority,
+        manual: fix.manual || false,
+        changes: fix.changes || [],
+        files: fix.files || [],
+        labels: ['automated-fix', 'a11y', fix.priority],
+        gating: fix.priority !== 'p3',
       };
+      
+      // Add snippet if available
+      if (fix.snippet) {
+        payload.exampleSnippet = fix.snippet;
+      }
       
       prPayloads.push(payload);
       this.results.draftPRs.push(payload);
@@ -1363,33 +1600,133 @@ class OrchestrationAnalyzer {
     const prPayloadsPath = path.join(OUTPUT_DIR, 'draft-pr-payloads.json');
     await fs.writeFile(prPayloadsPath, JSON.stringify(prPayloads, null, 2), 'utf-8');
     
-    this.logger.success(`Draft PR payloads saved to: ${prPayloadsPath}`);
-    this.logger.info(`Generated ${prPayloads.length} draft PR(s)`);
+    Logger.success(`Draft PR payloads saved to: ${prPayloadsPath}`);
+    Logger.info(`Generated ${prPayloads.length} draft PR(s)`);
+    
+    // Log summary
+    const trivialFixes = prPayloads.filter(pr => pr.priority === 'p3' && !pr.manual);
+    const manualFixes = prPayloads.filter(pr => pr.manual);
+    
+    if (trivialFixes.length > 0) {
+      Logger.info(`  - ${trivialFixes.length} trivial fix(es) (alt attributes, aria-label gaps)`);
+    }
+    if (manualFixes.length > 0) {
+      Logger.info(`  - ${manualFixes.length} manual fix(es) required (e.g., color contrast)`);
+    }
   }
 
   /**
    * Identify mechanical fixes from issues
+   * Enhanced to provide detailed a11y fix suggestions
    */
   identifyMechanicalFixes() {
     const fixes = [];
     
-    // Check for common fixable issues
+    // Check for common fixable a11y issues
     for (const violation of this.results.a11yViolations) {
-      if (violation.id === 'image-alt' || violation.id === 'label' || violation.id === 'button-name') {
-        fixes.push({
-          type: 'a11y',
-          title: `Fix a11y: ${violation.id}`,
+      let fixSuggestion = null;
+      
+      // Image alt attribute fixes
+      if (violation.id === 'image-alt') {
+        fixSuggestion = {
+          type: 'a11y-image-alt',
+          title: `Fix a11y: Add alt attributes to images`,
           description: `Automated fix for accessibility violation: ${violation.description}`,
-          priority: 'p2',
-          files: [{
-            path: 'identified during analysis',
-            fix: `Add appropriate ${violation.id} attributes`,
-          }],
-        });
+          priority: 'p3',
+          fixType: 'image-alt',
+          files: [],
+          changes: [],
+        };
+        
+        // Add specific suggestions for each selector
+        if (violation.selectors && violation.selectors.length > 0) {
+          for (const selector of violation.selectors) {
+            fixSuggestion.changes.push({
+              selector,
+              fix: `Add alt attribute with descriptive text`,
+              example: `<img src="..." alt="Descriptive text here">`,
+            });
+          }
+        }
+        
+        if (violation.snippets && violation.snippets.length > 0) {
+          fixSuggestion.snippet = violation.snippets[0];
+        }
+      }
+      
+      // Aria-label fixes
+      if (violation.id === 'aria-label' || violation.id === 'label' || violation.id === 'button-name') {
+        fixSuggestion = {
+          type: 'a11y-aria-label',
+          title: `Fix a11y: Add aria-label to ${violation.id === 'button-name' ? 'buttons' : 'form elements'}`,
+          description: `Automated fix for accessibility violation: ${violation.description}`,
+          priority: violation.impact === 'serious' ? 'p2' : 'p3',
+          fixType: violation.id,
+          files: [],
+          changes: [],
+        };
+        
+        if (violation.selectors && violation.selectors.length > 0) {
+          for (const selector of violation.selectors) {
+            fixSuggestion.changes.push({
+              selector,
+              fix: violation.id === 'button-name' 
+                ? `Add aria-label or visible text to button`
+                : `Add aria-label or associate with label element`,
+              example: violation.id === 'button-name'
+                ? `<button aria-label="Action description">...</button>`
+                : `<input aria-label="Field description" />`,
+            });
+          }
+        }
+      }
+      
+      // Color contrast fixes (informational only)
+      if (violation.id === 'color-contrast') {
+        fixSuggestion = {
+          type: 'a11y-color-contrast',
+          title: `Fix a11y: Improve color contrast`,
+          description: `${violation.description}. Requires manual color adjustment.`,
+          priority: 'p3',
+          fixType: 'color-contrast',
+          files: [],
+          changes: [],
+          manual: true, // Requires manual intervention
+        };
+        
+        if (violation.selectors && violation.selectors.length > 0) {
+          for (const selector of violation.selectors) {
+            fixSuggestion.changes.push({
+              selector,
+              fix: `Adjust foreground/background colors to meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text)`,
+            });
+          }
+        }
+      }
+      
+      if (fixSuggestion && fixSuggestion.changes.length > 0) {
+        fixes.push(fixSuggestion);
       }
     }
     
-    return fixes;
+    // Deduplicate fixes by type
+    const uniqueFixes = [];
+    const seenTypes = new Set();
+    
+    for (const fix of fixes) {
+      if (!seenTypes.has(fix.type)) {
+        seenTypes.add(fix.type);
+        uniqueFixes.push(fix);
+      } else {
+        // Merge changes into existing fix
+        const existing = uniqueFixes.find(f => f.type === fix.type);
+        if (existing) {
+          existing.changes.push(...fix.changes);
+        }
+      }
+    }
+    
+    return uniqueFixes;
   }
 
   /**
@@ -1401,7 +1738,7 @@ class OrchestrationAnalyzer {
     const OUTPUT_DIR = this.options.outDir;
     const issues = [];
     
-    // Create issues for P0 and P1 items
+    // Create issues for P0 and P1 items (gating issues)
     for (const priority of ['p0', 'p1']) {
       for (const issue of this.results.issues[priority]) {
         const draftIssue = {
@@ -1419,8 +1756,9 @@ class OrchestrationAnalyzer {
     const issuesPath = path.join(OUTPUT_DIR, 'draft-github-issues.json');
     await fs.writeFile(issuesPath, JSON.stringify(issues, null, 2), 'utf-8');
     
-    this.logger.success(`Draft issues saved to: ${issuesPath}`);
-    this.logger.info(`Generated ${issues.length} draft issue(s)`);
+    Logger.success(`Draft issues saved to: ${issuesPath}`);
+    Logger.info(`Generated ${issues.length} draft issue(s) (P0/P1 only)`);
+    Logger.info(`P2: ${this.results.issues.p2.length}, P3: ${this.results.issues.p3.length} (tracked separately)`);
   }
 
   /**
@@ -1487,6 +1825,7 @@ class OrchestrationAnalyzer {
     console.log(`  ${colors.red}P0 (Critical):${colors.reset} ${this.results.issues.p0.length}`);
     console.log(`  ${colors.yellow}P1 (High):${colors.reset} ${this.results.issues.p1.length}`);
     console.log(`  ${colors.blue}P2 (Medium):${colors.reset} ${this.results.issues.p2.length}`);
+    console.log(`  ${colors.cyan}P3 (Minor, non-gating):${colors.reset} ${this.results.issues.p3.length}`);
     
     console.log(`\n${colors.bright}Test Results:${colors.reset}`);
     console.log(`  Playwright: ${this.results.playwrightResults.passed}/${this.results.playwrightResults.total} passed`);
