@@ -281,6 +281,7 @@ export default function Messages() {
                 type="submit"
                 disabled={!message.trim()}
                 className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+                aria-label="Send message"
               >
                 <Send className="w-5 h-5" />
               </button>
