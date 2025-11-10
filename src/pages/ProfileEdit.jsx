@@ -12,6 +12,7 @@ import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { getProfile, updateProfile, batchUpdateProfileLinks } from '../services/profileService';
+import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 
 export default function ProfileEdit() {
@@ -103,6 +104,8 @@ export default function ProfileEdit() {
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [cropperType, setCropperType] = useState(null); // 'avatar' or 'banner'
   const [activeSection, setActiveSection] = useState('basic');
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingReel, setUploadingReel] = useState(false);
 
   // Skill suggestions for voice actors and theater professionals
   const skillSuggestions = [
@@ -146,6 +149,70 @@ export default function ProfileEdit() {
   const handleAvatarUpload = (imageUrl) => {
     handleChange('avatar', imageUrl);
     setShowImageCropper(false);
+  };
+
+  const handleBannerUpload = async (file, onProgress) => {
+    if (!user?.id) {
+      toast.error('You must be logged in to upload media');
+      return;
+    }
+
+    setUploadingBanner(true);
+    const toastId = toast.loading('Uploading banner...');
+
+    try {
+      const result = await uploadMedia(user.id, file, 'image', {
+        title: 'Profile Banner',
+        description: 'Cover banner for profile',
+        privacy: 'public',
+        onProgress,
+      });
+
+      // Update form data with the media URL (when available from backend)
+      // For now, use a temporary URL
+      const tempUrl = URL.createObjectURL(file);
+      handleChange('banner', tempUrl);
+
+      toast.success('Banner uploaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Banner upload failed:', error);
+      toast.error(error.message || 'Failed to upload banner', { id: toastId });
+      throw error;
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const handleReelUpload = async (file, onProgress) => {
+    if (!user?.id) {
+      toast.error('You must be logged in to upload media');
+      return;
+    }
+
+    setUploadingReel(true);
+    const toastId = toast.loading('Uploading reel...');
+
+    try {
+      const result = await uploadMedia(user.id, file, 'video', {
+        title: formData.reelPrivacy === 'public' ? 'Demo Reel' : 'Private Reel',
+        description: 'Primary demo reel',
+        privacy: formData.reelPrivacy,
+        onProgress,
+      });
+
+      // Update form data with the media URL (when available from backend)
+      // For now, use a temporary URL
+      const tempUrl = URL.createObjectURL(file);
+      handleChange('primaryReel', tempUrl);
+
+      toast.success('Reel uploaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Reel upload failed:', error);
+      toast.error(error.message || 'Failed to upload reel', { id: toastId });
+      throw error;
+    } finally {
+      setUploadingReel(false);
+    }
   };
 
   const handleSave = async () => {
@@ -312,17 +379,14 @@ export default function ProfileEdit() {
                         <button
                           onClick={() => handleChange('banner', null)}
                           className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+                          disabled={uploadingBanner}
                         >
                           <X className="w-5 h-5 text-white" />
                         </button>
                       </div>
                     ) : (
                       <MediaUploader
-                        onUpload={(file) => {
-                          // TODO: Upload file and get URL
-                          const url = URL.createObjectURL(file);
-                          handleChange('banner', url);
-                        }}
+                        onUpload={handleBannerUpload}
                         acceptedTypes="image/*"
                         uploadType="image"
                         maxSize={10}
@@ -545,15 +609,34 @@ export default function ProfileEdit() {
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                     Primary Reel
                   </label>
-                  <MediaUploader
-                    onUpload={(file) => {
-                      // TODO: Upload file and get URL
-                      console.log('Uploading reel:', file);
-                    }}
-                    acceptedTypes="video/*"
-                    uploadType="video"
-                    maxSize={500}
-                  />
+                  {formData.primaryReel ? (
+                    <div className="space-y-3">
+                      <div className="aspect-video rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                        <video 
+                          src={formData.primaryReel} 
+                          controls 
+                          className="w-full h-full"
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                      <button
+                        onClick={() => handleChange('primaryReel', null)}
+                        className="text-sm text-red-600 dark:text-red-400 hover:underline"
+                        disabled={uploadingReel}
+                      >
+                        Remove Reel
+                      </button>
+                    </div>
+                  ) : (
+                    <MediaUploader
+                      onUpload={handleReelUpload}
+                      acceptedTypes="video/*"
+                      uploadType="video"
+                      maxSize={500}
+                      showPreview={false}
+                    />
+                  )}
                 </div>
 
                 <FormField label="Reel Privacy">
@@ -561,6 +644,7 @@ export default function ProfileEdit() {
                     value={formData.reelPrivacy}
                     onChange={(e) => handleChange('reelPrivacy', e.target.value)}
                     className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={uploadingReel}
                   >
                     <option value="public">Public - Anyone can watch</option>
                     <option value="on-request">On Request - Requires approval</option>

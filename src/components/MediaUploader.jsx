@@ -11,12 +11,15 @@ export default function MediaUploader({
   acceptedTypes = "image/*,video/*",
   maxSize = 100, // MB
   uploadType = "media", // media, image, video, document
-  showPreview = true
+  showPreview = true,
+  onProgress = null, // Optional external progress callback
+  allowRetry = true // Allow retry on failure
 }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
+  const [lastFile, setLastFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const getIcon = () => {
@@ -40,6 +43,27 @@ export default function MediaUploader({
       return;
     }
 
+    // Validate file type
+    const acceptedTypesArray = acceptedTypes.split(',').map(t => t.trim());
+    const isValidType = acceptedTypesArray.some(type => {
+      if (type === '*/*') return true;
+      if (type.endsWith('/*')) {
+        const category = type.split('/')[0];
+        return file.type.startsWith(category + '/');
+      }
+      return file.type === type;
+    });
+
+    if (!isValidType) {
+      setError(`Invalid file type. Accepted types: ${acceptedTypes}`);
+      return;
+    }
+
+    setLastFile(file);
+    await performUpload(file);
+  };
+
+  const performUpload = async (file) => {
     setError(null);
     setUploading(true);
     setProgress(0);
@@ -51,20 +75,16 @@ export default function MediaUploader({
       reader.readAsDataURL(file);
     }
 
-    // Simulate upload progress (in real implementation, use XMLHttpRequest or fetch with progress)
-    const simulateProgress = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(simulateProgress);
-          return prev;
-        }
-        return prev + 10;
-      });
-    }, 200);
-
     try {
-      // Call the upload handler
-      await onUpload(file);
+      // Call the upload handler with progress tracking
+      await onUpload(file, (progressValue) => {
+        setProgress(progressValue);
+        if (onProgress) {
+          onProgress(progressValue);
+        }
+      });
+      
+      // Ensure we show 100% before hiding
       setProgress(100);
       
       setTimeout(() => {
@@ -72,12 +92,17 @@ export default function MediaUploader({
         setProgress(0);
       }, 1000);
     } catch (err) {
-      setError(err.message || 'Upload failed');
+      console.error('Upload error:', err);
+      setError(err.message || 'Upload failed. Please try again.');
       setUploading(false);
       setProgress(0);
       setPreview(null);
-    } finally {
-      clearInterval(simulateProgress);
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastFile) {
+      performUpload(lastFile);
     }
   };
 
@@ -177,7 +202,17 @@ export default function MediaUploader({
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="flex items-start justify-between">
+            <p className="text-sm text-red-600 dark:text-red-400 flex-1">{error}</p>
+            {allowRetry && lastFile && (
+              <button
+                onClick={handleRetry}
+                className="ml-3 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
