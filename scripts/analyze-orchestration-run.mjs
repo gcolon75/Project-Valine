@@ -125,6 +125,7 @@ class AnalysisResults {
       runId: null,
       status: 'unknown',
       timestamp: new Date().toISOString(),
+      retrievalMode: 'cli', // Default to CLI mode
       artifactsFound: [],
       artifactsMissing: [],
     };
@@ -177,7 +178,7 @@ class OrchestrationAnalyzer {
     this.logger = new Logger(this.options.logLevel);
     this.results = new AnalysisResults();
     this.results.summary.runId = runId;
-    this.results.summary.retrievalMode = null; // Will be set to 'CLI' or 'REST'
+    this.results.summary.retrievalMode = this.options.useGH ? 'cli' : 'rest';
     this.extractionStats = {
       totalSize: 0,
       fileCount: 0,
@@ -251,10 +252,11 @@ class OrchestrationAnalyzer {
    */
   async checkGitHubCLI() {
     if (!this.options.useGH) {
-      this.logger.warning('--no-gh flag specified: Using REST API mode');
-      this.useRestApi = true;
-      this.results.summary.retrievalMode = 'REST';
-      return true; // Continue with REST API
+      this.logger.warning('--no-gh flag specified: REST API mode not yet implemented');
+      this.logger.warning('Proceeding with GitHub CLI mode as fallback');
+      this.logger.debug('REST API artifact retrieval is a stub for future implementation');
+      // Update retrieval mode to indicate fallback occurred
+      this.results.summary.retrievalMode = 'hybrid';
     }
     
     try {
@@ -1670,6 +1672,7 @@ class OrchestrationAnalyzer {
     const summary = {
       runId: this.runId,
       timestamp: new Date().toISOString(),
+      retrievalMode: this.results.summary.retrievalMode,
       status: this.results.summary.status,
       workflowName: this.results.summary.workflowName,
       retrievalMode: this.results.summary.retrievalMode, // CLI or REST
