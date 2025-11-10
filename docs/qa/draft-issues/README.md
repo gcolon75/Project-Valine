@@ -108,7 +108,7 @@ gh issue create \
 
 ### Automated Creation (with JSON payload)
 
-See [draft-issues.json](draft-issues.json) for a machine-readable format suitable for GitHub API or automation tools.
+See [enhancement-issues-draft.json](enhancement-issues-draft.json) for a machine-readable format suitable for GitHub API or automation tools.
 
 ## Dependencies
 

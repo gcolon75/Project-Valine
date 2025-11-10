@@ -1,0 +1,201 @@
+{
+  "version": "1.0",
+  "repository": "gcolon75/Project-Valine",
+  "created_date": "2025-11-10",
+  "description": "Draft GitHub issues for orchestration analyzer enhancements",
+  "issues": [
+    {
+      "id": 1,
+      "title": "Rate Limiting & Exponential Backoff for REST Retrieval",
+      "labels": ["enhancement", "analyzer"],
+      "priority": "P2",
+      "dependency": "After REST fallback implementation",
+      "file": "01-rate-limiting-exponential-backoff.md",
+      "summary": "Implement intelligent retry logic with exponential backoff for REST API artifact retrieval to handle transient failures and respect GitHub's rate limits.",
+      "acceptance_criteria": [
+        "Implement exponential backoff utility function",
+        "Add rate limit detection from response headers",
+        "Respect Retry-After and X-RateLimit-Reset headers",
+        "Configure max retries and backoff parameters",
+        "Add structured logging for retry attempts",
+        "Include unit tests for retry logic",
+        "Update documentation with retry behavior",
+        "Add --no-retry flag to disable retries",
+        "Display remaining rate limit in debug mode",
+        "Provide clear error messages when rate limited"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Streaming Artifact Extraction to Reduce Peak Memory",
+      "labels": ["enhancement", "analyzer", "performance"],
+      "priority": "P2",
+      "dependency": "None",
+      "file": "02-streaming-artifact-extraction.md",
+      "summary": "Stream ZIP extraction and parsing to reduce memory footprint and improve startup time for large artifact collections.",
+      "acceptance_criteria": [
+        "Implement streaming download + extraction pipeline",
+        "Add progress tracking (bytes downloaded/extracted)",
+        "Skip irrelevant files during extraction",
+        "Parse JSON files incrementally using streaming parser",
+        "Write large files directly to disk without memory buffering",
+        "Maintain existing security limits",
+        "Add memory usage monitoring/logging",
+        "Include benchmark comparing memory usage",
+        "Update documentation with performance characteristics",
+        "Ensure error handling for corrupted ZIPs",
+        "Add unit tests with mocked ZIP streams"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Externalized Config File for Artifact Names & Severity Thresholds",
+      "labels": ["enhancement", "analyzer", "configuration"],
+      "priority": "P2",
+      "dependency": "None",
+      "file": "03-externalized-config-file.md",
+      "summary": "Enable configuration via external JSON/YAML files for artifact names, severity mappings, gating thresholds, and other settings.",
+      "acceptance_criteria": [
+        "Define configuration schema (JSON Schema)",
+        "Support both JSON and YAML formats",
+        "Load config from multiple sources with priority order",
+        "Validate configuration on load",
+        "Provide clear error messages for invalid config",
+        "Support environment variable overrides",
+        "Add --dump-config command",
+        "Update documentation with all options",
+        "Include example configs for common scenarios",
+        "Add unit tests for config loading",
+        "Support per-workflow config overrides"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Visual Diff Integration Pipeline",
+      "labels": ["enhancement", "analyzer", "visual-testing"],
+      "priority": "P3",
+      "dependency": "None",
+      "file": "04-visual-diff-integration-pipeline.md",
+      "summary": "Integrate visual regression testing with baseline comparison and automated diff generation for UI changes.",
+      "acceptance_criteria": [
+        "Choose visual diff provider (Percy, Chromatic, or self-hosted)",
+        "Implement screenshot extraction from Playwright artifacts",
+        "Set up baseline image storage",
+        "Implement image comparison algorithm",
+        "Generate visual diff report",
+        "Add visual regression issues to consolidated report",
+        "Support multiple viewports",
+        "Allow configurable diff threshold",
+        "Include before/after images in PR comments",
+        "Add approval workflow for intentional changes",
+        "Support baseline updates via CLI",
+        "Add visual diff results to gating logic",
+        "Document setup and usage",
+        "Include integration tests"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Flakiness Historical Storage (Persist Test Results Snapshot)",
+      "labels": ["enhancement", "analyzer", "testing"],
+      "priority": "P2",
+      "dependency": "None",
+      "file": "05-flakiness-historical-storage.md",
+      "summary": "Store minimal test result snapshots over time to track flakiness trends and test suite health metrics.",
+      "acceptance_criteria": [
+        "Choose storage backend (DynamoDB, S3, or GitHub Gist)",
+        "Define minimal snapshot schema",
+        "Implement snapshot creation from Playwright results",
+        "Store snapshot after each workflow run analysis",
+        "Add CLI command to query historical data",
+        "Implement flakiness trend calculation",
+        "Generate flakiness report with historical context",
+        "Add data retention policy (default 90 days)",
+        "Support privacy controls",
+        "Include historical context in main analysis report",
+        "Add visualization (optional: charts for trends)",
+        "Document storage schema and query patterns",
+        "Add migration tool for future schema changes",
+        "Include integration tests with mocked storage"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Extended Secret Redaction Patterns",
+      "labels": ["enhancement", "analyzer", "security"],
+      "priority": "P1",
+      "dependency": "None",
+      "file": "06-extended-secret-redaction-patterns.md",
+      "summary": "Expand secret redaction to cover JWTs, private keys, cloud credentials, database URLs, and other sensitive patterns.",
+      "acceptance_criteria": [
+        "Implement extended secret pattern library (20+ patterns)",
+        "Support custom patterns via config file",
+        "Redact secrets in artifact contents, errors, PR comments, and exports",
+        "Preserve partial secret for debugging",
+        "Add secret detection scoring",
+        "Include entropy analysis for generic secrets",
+        "Log redaction events",
+        "Support allowlist for known non-secrets",
+        "Add unit tests with real-world secret examples",
+        "Document all supported secret types",
+        "Include performance benchmark",
+        "Add --no-redact flag for debugging"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Performance Profiling Harness for Large Artifacts",
+      "labels": ["enhancement", "analyzer", "performance"],
+      "priority": "P2",
+      "dependency": "None",
+      "file": "07-performance-profiling-harness.md",
+      "summary": "Add comprehensive performance profiling to identify bottlenecks and track optimization improvements over time.",
+      "acceptance_criteria": [
+        "Implement performance profiler class",
+        "Add timing to all major phases",
+        "Capture memory usage at key checkpoints",
+        "Track artifact size and file counts",
+        "Generate performance summary report",
+        "Add --profile flag",
+        "Include performance data in JSON output",
+        "Add performance regression tests",
+        "Create performance baseline benchmarks",
+        "Document expected performance characteristics",
+        "Add CLI command to compare performance across runs",
+        "Support exporting profiles to Chrome DevTools",
+        "Include performance tips in documentation"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "PR Comment Templating & Localization Support",
+      "labels": ["enhancement", "analyzer", "i18n"],
+      "priority": "P3",
+      "dependency": "None",
+      "file": "08-pr-comment-templating-localization.md",
+      "summary": "Implement template system with i18n support for customizable, multi-language PR comments and notifications.",
+      "acceptance_criteria": [
+        "Implement template engine (Handlebars or similar)",
+        "Add i18n support with multiple locales",
+        "Create default templates (PR full, summary, Slack, email, plain text)",
+        "Support custom templates via config file",
+        "Add template validation on load",
+        "Include 5+ language translations",
+        "Register custom Handlebars helpers",
+        "Support template inheritance/composition",
+        "Add --template and --locale CLI flags",
+        "Document template syntax and available variables",
+        "Include template examples",
+        "Add unit tests for template rendering",
+        "Ensure accessibility compliance"
+      ]
+    }
+  ],
+  "priority_summary": {
+    "P1": 1,
+    "P2": 5,
+    "P3": 2
+  },
+  "implementation_order_recommendation": [6, 3, 2, 7, 5, 1, 4, 8],
+  "notes": "These enhancements are designed to improve the orchestration analyzer's reliability, performance, flexibility, and security. Most have no blocking dependencies and can be implemented in parallel."
+}
