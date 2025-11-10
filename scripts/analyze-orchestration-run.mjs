@@ -6,9 +6,18 @@
  * This script fetches and analyzes artifacts from a GitHub Actions workflow run
  * of the orchestrate-verification-and-sweep workflow. It generates:
  * - Consolidated Markdown report
- * - P0/P1/P2 prioritized issues list
- * - Draft PR payloads for mechanical fixes
+ * - P0/P1/P2/P3 prioritized issues list (P3 = minor, non-gating)
+ * - Draft PR payloads for mechanical fixes with detailed suggestions
  * - Draft GitHub issues for non-trivial problems
+ * - Accessibility hotspots (top failing selectors)
+ * - Flakiness analysis for Playwright tests (< 20% failure rate)
+ * 
+ * Enhanced Features (Phase Group A):
+ * - A11y violations separated by impact (critical, serious, moderate, minor)
+ * - Severity mapping: critical→P0, serious→P1, moderate→P2, minor→P3
+ * - Extracts selectors and snippets from violations for targeted fixes
+ * - Prefers JSON over HTML for Playwright results parsing
+ * - Identifies trivial a11y fixes (alt attributes, aria-label gaps)
  * 
  * Usage:
  *   node scripts/analyze-orchestration-run.mjs <run-id>
