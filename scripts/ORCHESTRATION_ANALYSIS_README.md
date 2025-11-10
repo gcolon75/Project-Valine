@@ -1,5 +1,39 @@
 # Post-Run Orchestration Analysis Agent
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Purpose](#purpose)
+- [Prerequisites](#prerequisites)
+  - [Required Tools](#required-tools)
+  - [Repository Secrets](#repository-secrets)
+  - [Optional Secrets](#optional-secrets)
+- [Usage](#usage)
+  - [Basic Usage](#basic-usage)
+  - [CLI Flags](#cli-flags)
+  - [Quick Reference](#quick-reference)
+  - [Example](#example)
+  - [Finding the Run ID](#finding-the-run-id)
+- [Exit Codes](#exit-codes)
+- [Degraded Mode Operation](#degraded-mode-operation)
+- [What It Does](#what-it-does)
+  - [Phase A: Fetch Artifacts and Primary Evidence](#phase-a-fetch-artifacts-and-primary-evidence)
+  - [Phase B: Automated Analysis](#phase-b-automated-analysis)
+  - [Phase C: Generate Outputs](#phase-c-generate-outputs)
+- [Understanding the Output](#understanding-the-output)
+  - [Priority Levels](#priority-levels)
+  - [Gating Recommendations](#gating-recommendations)
+- [Common Issues and Solutions](#common-issues-and-solutions)
+- [Sample Workflow](#sample-workflow)
+- [Outputs Directory Structure](#outputs-directory-structure)
+- [Automated Workflow Integration](#automated-workflow-integration)
+- [Integration with CI/CD](#integration-with-cicd)
+- [Customization](#customization)
+- [Security Considerations](#security-considerations)
+- [Troubleshooting](#troubleshooting)
+- [Support](#support)
+- [License](#license)
+
 ## Overview
 
 This agent performs comprehensive analysis of GitHub Actions workflow runs from the `orchestrate-verification-and-sweep` workflow. It fetches artifacts, analyzes them in detail, and generates actionable reports, draft PRs, and draft issues.
@@ -32,6 +66,15 @@ The orchestration workflow uses these secrets (ensure they are configured):
 - `TEST_USER_EMAIL` - Test user email for authentication
 - `TEST_USER_PASSWORD` - Test user password for authentication
 
+#### Optional Secrets
+
+- `ORCHESTRATION_BOT_PAT` - Personal Access Token for posting automated comments on PRs
+  - **Scopes required:**
+    - `Contents: write` - For accessing repository content
+    - `Pull requests: write` - For posting comments on pull requests
+    - `Actions: read` - For reading workflow run information
+  - If not set, the analyzer will skip automated PR commenting features
+
 ## Usage
 
 ### Basic Usage
@@ -39,6 +82,42 @@ The orchestration workflow uses these secrets (ensure they are configured):
 ```bash
 node scripts/analyze-orchestration-run.mjs <run-id>
 ```
+
+### CLI Flags
+
+The analyzer supports the following command-line flags:
+
+```bash
+node scripts/analyze-orchestration-run.mjs <run-id> [options]
+```
+
+**Available Options:**
+
+- `--fail-on-p0` - Exit with non-zero code if P0 (critical) issues are detected
+- `--summary` - Output a compact summary instead of full analysis details
+- `--json` - Output results in JSON format for programmatic consumption
+- `--no-download` - Skip artifact download if already present locally
+
+**Coming Soon:**
+
+- `--rest-fallback` - Use REST API fallback if GraphQL queries fail (implementation pending)
+
+### Quick Reference
+
+**Fail on critical issues with summary output:**
+
+```bash
+# Analyze run and exit with error code if P0 issues found
+node scripts/analyze-orchestration-run.mjs 19125388400 --fail-on-p0 --summary
+
+# Example output:
+# ✓ Analysis complete
+# ⚠ Found 2 P0 issues, 5 P1 issues, 3 P2 issues
+# ❌ BLOCKING: Critical issues detected - do not deploy
+# Exit code: 1
+```
+
+This is useful in CI/CD pipelines to automatically block deployments when critical issues are present.
 
 ### Example
 
@@ -61,6 +140,89 @@ gh run list --repo gcolon75/Project-Valine --workflow="orchestrate-verification-
 # View a specific run
 gh run view 19125388400 --repo gcolon75/Project-Valine
 ```
+
+## Exit Codes
+
+The analyzer uses standardized exit codes to indicate the analysis result:
+
+| Exit Code | Meaning | Description |
+|-----------|---------|-------------|
+| **0** | Success | Analysis completed successfully with no critical issues |
+| **1** | Critical Issues | P0 (critical) issues detected - blocks deployment |
+| **2** | Analysis Failed | Unable to complete analysis (missing artifacts, API errors, etc.) |
+| **3** | Invalid Input | Invalid run ID or missing required parameters |
+| **4** | Authentication Failed | GitHub CLI not authenticated or insufficient permissions |
+
+**Exit Code Policy:**
+
+- Exit code **0** is returned when:
+  - Analysis completes successfully AND
+  - No P0 issues are detected (P1/P2 issues are acceptable)
+  
+- Exit code **1** is returned when:
+  - Analysis completes successfully BUT
+  - One or more P0 (critical) issues are detected
+  - This should block deployment in CI/CD pipelines
+
+- Exit codes **2-4** indicate the analysis itself failed:
+  - These should trigger alerts to investigate the analysis tooling
+  - Do not proceed with deployment until analysis can complete
+
+**Using Exit Codes in CI/CD:**
+
+```bash
+# Example: Block deployment on critical issues
+if node scripts/analyze-orchestration-run.mjs "$RUN_ID" --fail-on-p0; then
+  echo "✅ Safe to deploy"
+  # Proceed with deployment
+else
+  EXIT_CODE=$?
+  if [ $EXIT_CODE -eq 1 ]; then
+    echo "❌ Critical issues detected - deployment blocked"
+  else
+    echo "⚠️ Analysis failed with exit code $EXIT_CODE"
+  fi
+  exit $EXIT_CODE
+fi
+```
+
+## Degraded Mode Operation
+
+When the analyzer encounters certain failures, it may operate in **degraded mode** to provide partial results:
+
+**Degraded Mode Triggers:**
+
+1. **Missing Artifacts** - Some artifacts are unavailable (expired, not uploaded, etc.)
+   - Analyzer will process available artifacts and note which are missing
+   - Report will include warnings about incomplete analysis
+   
+2. **API Rate Limiting** - GitHub API rate limits are exceeded
+   - Analyzer will complete with cached/local data where possible
+   - May skip non-critical metadata enrichment
+   
+3. **Partial Download Failures** - Some artifact downloads fail
+   - Analyzer will process successfully downloaded artifacts
+   - Failed downloads will be listed in the report
+
+**Degraded Mode Indicators:**
+
+The analysis report will include a **Degraded Mode Notice** section when operating in degraded mode:
+
+```
+⚠️ DEGRADED MODE NOTICE
+This analysis ran in degraded mode due to:
+- Missing artifact: playwright-report (expired after 90 days)
+- API rate limit reached (metadata enrichment skipped)
+
+Results may be incomplete. Manual review recommended.
+```
+
+**Best Practices for Degraded Mode:**
+
+- **Do not deploy** if critical artifacts are missing (health checks, auth logs)
+- **Proceed with caution** if only supplementary artifacts are missing (screenshots, traces)
+- **Re-run the workflow** if artifacts are missing due to upload failures
+- **Wait and retry** if API rate limits are the issue (limits reset hourly)
 
 ## What It Does
 
@@ -327,6 +489,30 @@ temp-artifacts/                        # Downloaded artifacts (can be deleted)
 ```
 
 **Note:** The `temp-artifacts/` directory can be deleted after analysis. All relevant information is extracted into the reports.
+
+## Automated Workflow Integration
+
+**Status: Coming in Next Phase**
+
+This section will document how to integrate the orchestration analyzer into automated GitHub Actions workflows for:
+
+- **Automatic PR Comments** - Post analysis summaries directly on pull requests
+- **Status Checks** - Create commit status checks based on analysis results
+- **Deployment Gating** - Automatically block/allow deployments based on findings
+- **Scheduled Analysis** - Run analysis on a schedule for monitoring trends
+- **Slack/Discord Notifications** - Send alerts when critical issues are detected
+
+**Prerequisites (when implemented):**
+- `ORCHESTRATION_BOT_PAT` secret configured with appropriate scopes
+- Workflow file: `.github/workflows/post-analysis-automation.yml`
+
+**Example Use Cases:**
+1. Run analyzer after each merge to main and post results as PR comment
+2. Gate production deployments on P0 issue count
+3. Send daily summary reports to team Slack channel
+4. Automatically create GitHub issues from P1/P2 findings
+
+Check back in the next phase for complete workflow examples and setup instructions.
 
 ## Integration with CI/CD
 

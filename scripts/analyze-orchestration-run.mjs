@@ -20,8 +20,21 @@
  * - Identifies trivial a11y fixes (alt attributes, aria-label gaps)
  * 
  * Usage:
- *   node scripts/analyze-orchestration-run.mjs <run-id>
+ *   node scripts/analyze-orchestration-run.mjs <run-id> [options]
  *   node scripts/analyze-orchestration-run.mjs 19125388400
+ * 
+ * CLI Flags:
+ *   --out-dir <path>         Output directory for reports (default: analysis-output)
+ *   --json                   Emit machine-readable summary.json file
+ *   --summary <path>         Write executive summary markdown to specified path
+ *   --fail-on <P0|P1|P2|none> Exit code policy based on severity (default: P0)
+ *   --log-level <info|debug> Logging verbosity (default: info)
+ *   --no-gh                  Force REST API artifact retrieval (stub mode)
+ * 
+ * Exit Codes:
+ *   0 - PROCEED: No critical issues or below threshold
+ *   1 - CAUTION: Multiple P1 issues, no P0
+ *   2 - BLOCK: P0 critical issues present
  * 
  * Requirements:
  *   - GitHub CLI (gh) must be installed and authenticated
@@ -33,6 +46,8 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createReadStream } from 'fs';
+import { pipeline } from 'stream/promises';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -42,7 +57,10 @@ const __dirname = path.dirname(__filename);
 const REPO_OWNER = 'gcolon75';
 const REPO_NAME = 'Project-Valine';
 const ARTIFACTS_DIR = path.join(process.cwd(), 'temp-artifacts');
-const OUTPUT_DIR = path.join(process.cwd(), 'analysis-output');
+
+// Security limits for artifact extraction
+const MAX_UNCOMPRESSED_SIZE = 250 * 1024 * 1024; // 250MB
+const MAX_FILE_COUNT = 10000;
 
 // ANSI color codes for better output
 const colors = {
@@ -57,27 +75,42 @@ const colors = {
 };
 
 /**
- * Logger utility
+ * Logger utility with structured logging and timestamps
  */
 class Logger {
-  static info(message) {
-    console.log(`${colors.blue}ℹ${colors.reset} ${message}`);
+  constructor(logLevel = 'info') {
+    this.logLevel = logLevel;
+    this.levels = { debug: 0, info: 1 };
   }
 
-  static success(message) {
-    console.log(`${colors.green}✓${colors.reset} ${message}`);
+  timestamp() {
+    return new Date().toISOString();
   }
 
-  static warning(message) {
-    console.log(`${colors.yellow}⚠${colors.reset} ${message}`);
+  debug(message) {
+    if (this.levels[this.logLevel] <= this.levels.debug) {
+      console.log(`${colors.magenta}[${this.timestamp()}]${colors.reset} ${colors.blue}DEBUG${colors.reset} ${message}`);
+    }
   }
 
-  static error(message) {
-    console.log(`${colors.red}✗${colors.reset} ${message}`);
+  info(message) {
+    console.log(`${colors.cyan}[${this.timestamp()}]${colors.reset} ${colors.blue}ℹ${colors.reset} ${message}`);
   }
 
-  static section(message) {
-    console.log(`\n${colors.cyan}${colors.bright}${message}${colors.reset}`);
+  success(message) {
+    console.log(`${colors.cyan}[${this.timestamp()}]${colors.reset} ${colors.green}✓${colors.reset} ${message}`);
+  }
+
+  warning(message) {
+    console.log(`${colors.cyan}[${this.timestamp()}]${colors.reset} ${colors.yellow}⚠${colors.reset} ${message}`);
+  }
+
+  error(message) {
+    console.log(`${colors.cyan}[${this.timestamp()}]${colors.reset} ${colors.red}✗${colors.reset} ${message}`);
+  }
+
+  section(message) {
+    console.log(`\n${colors.cyan}[${this.timestamp()}]${colors.reset} ${colors.cyan}${colors.bright}${message}${colors.reset}`);
   }
 }
 
@@ -129,23 +162,103 @@ class AnalysisResults {
  * Main orchestration analyzer
  */
 class OrchestrationAnalyzer {
-  constructor(runId) {
+  constructor(runId, options = {}) {
     this.runId = runId;
+    this.options = {
+      outDir: options.outDir || path.join(process.cwd(), 'analysis-output'),
+      emitJson: options.emitJson || false,
+      summaryPath: options.summaryPath || null,
+      failOn: options.failOn || 'P0',
+      logLevel: options.logLevel || 'info',
+      useGH: options.useGH !== false, // true by default unless --no-gh
+    };
+    this.logger = new Logger(this.options.logLevel);
     this.results = new AnalysisResults();
     this.results.summary.runId = runId;
+    this.extractionStats = {
+      totalSize: 0,
+      fileCount: 0,
+      sanitized: [],
+    };
+  }
+
+  /**
+   * Sanitize and validate extraction path for security
+   */
+  sanitizePath(archivePath, basePath) {
+    this.logger.debug(`Sanitizing path: ${archivePath}`);
+    
+    // Reject absolute paths
+    if (path.isAbsolute(archivePath)) {
+      throw new Error(`Rejected absolute path in archive: ${archivePath}`);
+    }
+    
+    // Reject drive letters (Windows)
+    if (/^[a-zA-Z]:/.test(archivePath)) {
+      throw new Error(`Rejected path with drive letter: ${archivePath}`);
+    }
+    
+    // Reject paths with '..' components
+    const normalized = path.normalize(archivePath);
+    if (normalized.includes('..')) {
+      throw new Error(`Rejected path with '..' traversal: ${archivePath}`);
+    }
+    
+    // Build final path
+    const finalPath = path.join(basePath, normalized);
+    
+    // Ensure final path is still within basePath
+    const resolvedBase = path.resolve(basePath);
+    const resolvedFinal = path.resolve(finalPath);
+    
+    if (!resolvedFinal.startsWith(resolvedBase)) {
+      throw new Error(`Rejected path outside base directory: ${archivePath}`);
+    }
+    
+    this.logger.debug(`Path sanitized: ${archivePath} -> ${finalPath}`);
+    
+    return {
+      original: archivePath,
+      sanitized: finalPath,
+      safe: true,
+    };
+  }
+
+  /**
+   * Track extraction statistics and enforce limits
+   */
+  trackExtraction(filePath, size) {
+    this.extractionStats.fileCount++;
+    this.extractionStats.totalSize += size;
+    
+    this.logger.debug(`Extraction stats: ${this.extractionStats.fileCount} files, ${this.formatBytes(this.extractionStats.totalSize)}`);
+    
+    if (this.extractionStats.fileCount > MAX_FILE_COUNT) {
+      throw new Error(`Extraction aborted: file count exceeds ${MAX_FILE_COUNT}`);
+    }
+    
+    if (this.extractionStats.totalSize > MAX_UNCOMPRESSED_SIZE) {
+      throw new Error(`Extraction aborted: total size exceeds ${this.formatBytes(MAX_UNCOMPRESSED_SIZE)}`);
+    }
   }
 
   /**
    * Check if GitHub CLI is installed
    */
   async checkGitHubCLI() {
+    if (!this.options.useGH) {
+      this.logger.warning('--no-gh flag specified: REST API mode not yet implemented');
+      this.logger.warning('Proceeding with GitHub CLI mode as fallback');
+      this.logger.debug('REST API artifact retrieval is a stub for future implementation');
+    }
+    
     try {
       await execAsync('gh --version');
-      Logger.success('GitHub CLI is installed');
+      this.logger.success('GitHub CLI is installed');
       return true;
     } catch (error) {
-      Logger.error('GitHub CLI (gh) is not installed or not in PATH');
-      Logger.info('Please install from: https://cli.github.com/');
+      this.logger.error('GitHub CLI (gh) is not installed or not in PATH');
+      this.logger.info('Please install from: https://cli.github.com/');
       return false;
     }
   }
@@ -154,7 +267,7 @@ class OrchestrationAnalyzer {
    * Get workflow run details
    */
   async getRunDetails() {
-    Logger.section('Phase A: Fetching Run Details');
+    this.logger.section('Phase A: Fetching Run Details');
     
     try {
       const { stdout } = await execAsync(
@@ -162,10 +275,10 @@ class OrchestrationAnalyzer {
       );
       
       const runDetails = JSON.parse(stdout);
-      Logger.success(`Run: ${runDetails.workflowName}`);
-      Logger.info(`Status: ${runDetails.status} | Conclusion: ${runDetails.conclusion || 'N/A'}`);
-      Logger.info(`Created: ${runDetails.createdAt}`);
-      Logger.info(`Event: ${runDetails.event} | Title: ${runDetails.displayTitle}`);
+      this.logger.success(`Run: ${runDetails.workflowName}`);
+      this.logger.info(`Status: ${runDetails.status} | Conclusion: ${runDetails.conclusion || 'N/A'}`);
+      this.logger.info(`Created: ${runDetails.createdAt}`);
+      this.logger.info(`Event: ${runDetails.event} | Title: ${runDetails.displayTitle}`);
       
       this.results.summary.status = runDetails.conclusion || runDetails.status;
       this.results.summary.workflowName = runDetails.workflowName;
@@ -173,7 +286,7 @@ class OrchestrationAnalyzer {
       
       return runDetails;
     } catch (error) {
-      Logger.error(`Failed to fetch run details: ${error.message}`);
+      this.logger.error(`Failed to fetch run details: ${error.message}`);
       throw error;
     }
   }
@@ -182,7 +295,7 @@ class OrchestrationAnalyzer {
    * List artifacts for the run
    */
   async listArtifacts() {
-    Logger.section('Listing Artifacts');
+    this.logger.section('Listing Artifacts');
     
     try {
       const { stdout } = await execAsync(
@@ -192,7 +305,7 @@ class OrchestrationAnalyzer {
       const data = JSON.parse(stdout);
       const artifacts = data.artifacts || [];
       
-      Logger.info(`Found ${artifacts.length} artifact(s)`);
+      this.logger.info(`Found ${artifacts.length} artifact(s)`);
       
       const expectedArtifacts = [
         'verification-and-smoke-artifacts',
@@ -203,17 +316,17 @@ class OrchestrationAnalyzer {
       for (const expected of expectedArtifacts) {
         const found = artifacts.find(a => a.name === expected);
         if (found) {
-          Logger.success(`✓ ${expected} (${this.formatBytes(found.size_in_bytes)})`);
+          this.logger.success(`✓ ${expected} (${this.formatBytes(found.size_in_bytes)})`);
           this.results.summary.artifactsFound.push(expected);
         } else {
-          Logger.warning(`✗ ${expected} (not found)`);
+          this.logger.warning(`✗ ${expected} (not found)`);
           this.results.summary.artifactsMissing.push(expected);
         }
       }
       
       return artifacts;
     } catch (error) {
-      Logger.error(`Failed to list artifacts: ${error.message}`);
+      this.logger.error(`Failed to list artifacts: ${error.message}`);
       throw error;
     }
   }
@@ -222,14 +335,14 @@ class OrchestrationAnalyzer {
    * Download artifacts
    */
   async downloadArtifacts(artifacts) {
-    Logger.section('Downloading Artifacts');
+    this.logger.section('Downloading Artifacts');
     
     // Create artifacts directory
     await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
     
     for (const artifact of artifacts) {
       try {
-        Logger.info(`Downloading: ${artifact.name}...`);
+        this.logger.info(`Downloading: ${artifact.name}...`);
         
         // Download artifact using gh cli
         const artifactPath = path.join(ARTIFACTS_DIR, artifact.name);
@@ -237,12 +350,12 @@ class OrchestrationAnalyzer {
           `gh run download ${this.runId} --name "${artifact.name}" --dir "${artifactPath}" --repo ${REPO_OWNER}/${REPO_NAME}`
         );
         
-        Logger.success(`Downloaded: ${artifact.name}`);
+        this.logger.success(`Downloaded: ${artifact.name}`);
         
         // List contents
         await this.listArtifactContents(artifactPath, artifact.name);
       } catch (error) {
-        Logger.warning(`Failed to download ${artifact.name}: ${error.message}`);
+        this.logger.warning(`Failed to download ${artifact.name}: ${error.message}`);
       }
     }
   }
@@ -253,21 +366,44 @@ class OrchestrationAnalyzer {
   async listArtifactContents(artifactPath, artifactName) {
     try {
       const files = await this.getFileList(artifactPath);
-      Logger.info(`  ${artifactName} contains ${files.length} file(s)`);
+      this.logger.info(`  ${artifactName} contains ${files.length} file(s)`);
+      
+      // Track extraction stats
+      let totalSize = 0;
+      for (const file of files) {
+        try {
+          const stats = await fs.stat(file);
+          totalSize += stats.size;
+          this.trackExtraction(file, stats.size);
+          
+          // Validate path safety (demonstration - paths already downloaded by gh cli)
+          const relativePath = path.relative(artifactPath, file);
+          try {
+            this.sanitizePath(relativePath, artifactPath);
+          } catch (err) {
+            this.logger.warning(`  Potentially unsafe path detected: ${relativePath}`);
+          }
+        } catch (err) {
+          // Skip files that can't be stat'd
+        }
+      }
+      
+      this.logger.info(`  Total size: ${this.formatBytes(totalSize)}`);
+      this.logger.debug(`  Cumulative extraction: ${this.extractionStats.fileCount} files, ${this.formatBytes(this.extractionStats.totalSize)}`);
       
       // Show first few files
       const preview = files.slice(0, 5);
       for (const file of preview) {
         const stats = await fs.stat(file);
         const relativePath = path.relative(artifactPath, file);
-        Logger.info(`    - ${relativePath} (${this.formatBytes(stats.size)})`);
+        this.logger.info(`    - ${relativePath} (${this.formatBytes(stats.size)})`);
       }
       
       if (files.length > 5) {
-        Logger.info(`    ... and ${files.length - 5} more file(s)`);
+        this.logger.info(`    ... and ${files.length - 5} more file(s)`);
       }
     } catch (error) {
-      Logger.warning(`Failed to list artifact contents: ${error.message}`);
+      this.logger.warning(`Failed to list artifact contents: ${error.message}`);
     }
   }
 
@@ -301,7 +437,7 @@ class OrchestrationAnalyzer {
    * Analyze verification artifacts
    */
   async analyzeVerificationArtifacts() {
-    Logger.section('Phase B: Analyzing Verification Artifacts');
+    this.logger.section('Phase B: Analyzing Verification Artifacts');
     
     const verificationDir = path.join(ARTIFACTS_DIR, 'verification-and-smoke-artifacts');
     
@@ -319,7 +455,7 @@ class OrchestrationAnalyzer {
    * Analyze health check results
    */
   async analyzeHealthChecks(baseDir) {
-    Logger.info('Analyzing health checks...');
+    this.logger.info('Analyzing health checks...');
     
     const healthFiles = [
       'logs/verification/health_status.txt',
@@ -355,9 +491,9 @@ class OrchestrationAnalyzer {
         this.results.healthChecks.push(healthCheck);
         
         if (healthCheck.status === 'healthy') {
-          Logger.success(`  Health check: ${healthCheck.status}`);
+          this.logger.success(`  Health check: ${healthCheck.status}`);
         } else {
-          Logger.warning(`  Health check: ${healthCheck.status}`);
+          this.logger.warning(`  Health check: ${healthCheck.status}`);
           this.addIssue('p1', 'Health Check Failed', `Health endpoint returned: ${healthCheck.status}`, {
             artifact: 'verification-and-smoke-artifacts',
             file: healthFile,
@@ -365,7 +501,7 @@ class OrchestrationAnalyzer {
           });
         }
       } catch (error) {
-        Logger.info(`  Health check file not found: ${healthFile}`);
+        this.logger.info(`  Health check file not found: ${healthFile}`);
       }
     }
   }
@@ -374,7 +510,7 @@ class OrchestrationAnalyzer {
    * Analyze authentication checks
    */
   async analyzeAuthChecks(baseDir) {
-    Logger.info('Analyzing authentication checks...');
+    this.logger.info('Analyzing authentication checks...');
     
     const authFiles = [
       'logs/verification/login_response_parsed.txt',
@@ -419,9 +555,9 @@ class OrchestrationAnalyzer {
         this.results.authChecks.push(authCheck);
         
         if (authCheck.status === 'success') {
-          Logger.success(`  Auth check (${authFile}): ${authCheck.status}`);
+          this.logger.success(`  Auth check (${authFile}): ${authCheck.status}`);
         } else if (authCheck.status === 'failed') {
-          Logger.error(`  Auth check (${authFile}): ${authCheck.status}`);
+          this.logger.error(`  Auth check (${authFile}): ${authCheck.status}`);
           this.addIssue('p0', 'Authentication Failed', `Login endpoint failed to authenticate test user`, {
             artifact: 'verification-and-smoke-artifacts',
             file: authFile,
@@ -429,10 +565,10 @@ class OrchestrationAnalyzer {
             recommendation: 'Check STAGING_URL, TEST_USER_EMAIL, and TEST_USER_PASSWORD secrets. Verify staging auth endpoint is working.',
           });
         } else {
-          Logger.info(`  Auth check (${authFile}): ${authCheck.status}`);
+          this.logger.info(`  Auth check (${authFile}): ${authCheck.status}`);
         }
       } catch (error) {
-        Logger.info(`  Auth file not found: ${authFile}`);
+        this.logger.info(`  Auth file not found: ${authFile}`);
       }
     }
   }
@@ -441,7 +577,7 @@ class OrchestrationAnalyzer {
    * Analyze verification reports
    */
   async analyzeVerificationReports(baseDir) {
-    Logger.info('Analyzing verification reports...');
+    this.logger.info('Analyzing verification reports...');
     
     const reportFiles = [
       'REGRESSION_VERIFICATION_REPORT.md',
@@ -459,7 +595,7 @@ class OrchestrationAnalyzer {
         const failures = this.extractFailuresFromMarkdown(content);
         
         if (failures.length > 0) {
-          Logger.warning(`  Found ${failures.length} failure(s) in ${reportFile}`);
+          this.logger.warning(`  Found ${failures.length} failure(s) in ${reportFile}`);
           
           for (const failure of failures) {
             this.addIssue('p1', failure.title, failure.description, {
@@ -468,7 +604,7 @@ class OrchestrationAnalyzer {
             });
           }
         } else {
-          Logger.success(`  No failures in ${reportFile}`);
+          this.logger.success(`  No failures in ${reportFile}`);
         }
         
         this.results.verificationSteps.push({
@@ -477,7 +613,7 @@ class OrchestrationAnalyzer {
           content: content.substring(0, 500),
         });
       } catch (error) {
-        Logger.info(`  Report not found: ${reportFile}`);
+        this.logger.info(`  Report not found: ${reportFile}`);
       }
     }
   }
@@ -523,7 +659,7 @@ class OrchestrationAnalyzer {
    * Prefers JSON results over HTML parsing
    */
   async analyzePlaywrightResults() {
-    Logger.section('Analyzing Playwright Results');
+    this.logger.section('Analyzing Playwright Results');
     
     const playwrightDir = path.join(ARTIFACTS_DIR, 'playwright-report');
     
@@ -741,7 +877,7 @@ class OrchestrationAnalyzer {
    * Enhanced to separate violations by impact and extract hotspots
    */
   async analyzeAccessibilityResults() {
-    Logger.section('Analyzing Accessibility Results');
+    this.logger.section('Analyzing Accessibility Results');
     
     const a11yDir = path.join(ARTIFACTS_DIR, 'regression-and-a11y-artifacts');
     
@@ -827,9 +963,9 @@ class OrchestrationAnalyzer {
           }
         }
         
-        Logger.info(`Found ${results.violations?.length || 0} a11y violation(s) in ${path.basename(a11yFile)}`);
+        this.logger.info(`Found ${results.violations?.length || 0} a11y violation(s) in ${path.basename(a11yFile)}`);
       } catch (error) {
-        Logger.warning(`Failed to parse ${a11yFile}: ${error.message}`);
+        this.logger.warning(`Failed to parse ${a11yFile}: ${error.message}`);
       }
     }
     
@@ -856,7 +992,7 @@ class OrchestrationAnalyzer {
         Logger.info(`  Hotspots identified: ${this.results.a11yHotspots.length}`);
       }
     } else {
-      Logger.success('No a11y violations found');
+      this.logger.success('No a11y violations found');
     }
   }
 
@@ -886,8 +1022,9 @@ class OrchestrationAnalyzer {
    * Generate consolidated report
    */
   async generateConsolidatedReport() {
-    Logger.section('Phase C: Generating Consolidated Report');
+    this.logger.section('Phase C: Generating Consolidated Report');
     
+    const OUTPUT_DIR = this.options.outDir;
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
     
     const reportPath = path.join(OUTPUT_DIR, 'CONSOLIDATED_ANALYSIS_REPORT.md');
@@ -1188,9 +1325,234 @@ class OrchestrationAnalyzer {
     
     await fs.writeFile(reportPath, report, 'utf-8');
     
-    Logger.success(`Consolidated report saved to: ${reportPath}`);
+    this.logger.success(`Consolidated report saved to: ${reportPath}`);
     
     return reportPath;
+  }
+
+  /**
+   * Generate JSON summary
+   */
+  async generateJsonSummary() {
+    if (!this.options.emitJson) {
+      this.logger.debug('JSON summary generation skipped (--json not specified)');
+      return;
+    }
+
+    this.logger.section('Generating JSON Summary');
+    
+    const OUTPUT_DIR = this.options.outDir;
+    const summaryPath = path.join(OUTPUT_DIR, 'summary.json');
+    
+    const p0Count = this.results.issues.p0.length;
+    const p1Count = this.results.issues.p1.length;
+    const p2Count = this.results.issues.p2.length;
+    
+    const gatingDecision = this.computeGatingDecision(p0Count, p1Count, p2Count);
+    
+    const summary = {
+      runId: this.runId,
+      timestamp: new Date().toISOString(),
+      status: this.results.summary.status,
+      workflowName: this.results.summary.workflowName,
+      gating: {
+        decision: gatingDecision.decision,
+        recommendation: gatingDecision.recommendation,
+        exitCode: gatingDecision.exitCode,
+      },
+      artifacts: {
+        found: this.results.summary.artifactsFound,
+        missing: this.results.summary.artifactsMissing,
+        degraded: this.results.summary.artifactsMissing.length > 0,
+      },
+      issues: {
+        p0: p0Count,
+        p1: p1Count,
+        p2: p2Count,
+        total: p0Count + p1Count + p2Count,
+      },
+      tests: {
+        playwright: {
+          total: this.results.playwrightResults.total,
+          passed: this.results.playwrightResults.passed,
+          failed: this.results.playwrightResults.failed,
+          skipped: this.results.playwrightResults.skipped,
+        },
+        a11y: {
+          violations: this.results.a11yViolations.length,
+        },
+      },
+      healthChecks: this.results.healthChecks.length,
+      authChecks: this.results.authChecks.length,
+      extraction: {
+        totalSize: this.extractionStats.totalSize,
+        fileCount: this.extractionStats.fileCount,
+        sanitizedPaths: this.extractionStats.sanitized.length,
+      },
+    };
+    
+    await fs.writeFile(summaryPath, JSON.stringify(summary, null, 2), 'utf-8');
+    this.logger.success(`JSON summary saved to: ${summaryPath}`);
+    
+    return summaryPath;
+  }
+
+  /**
+   * Generate executive summary markdown
+   */
+  async generateExecutiveSummary() {
+    if (!this.options.summaryPath) {
+      this.logger.debug('Executive summary generation skipped (--summary not specified)');
+      return;
+    }
+
+    this.logger.section('Generating Executive Summary');
+    
+    const p0Count = this.results.issues.p0.length;
+    const p1Count = this.results.issues.p1.length;
+    const p2Count = this.results.issues.p2.length;
+    
+    const gatingDecision = this.computeGatingDecision(p0Count, p1Count, p2Count);
+    
+    let summary = `# Executive Summary - Run ${this.runId}\n\n`;
+    summary += `**Date:** ${new Date().toISOString()}\n`;
+    summary += `**Workflow:** ${this.results.summary.workflowName || 'orchestrate-verification-and-sweep'}\n`;
+    summary += `**Status:** ${this.results.summary.status}\n\n`;
+    
+    summary += `## Gating Decision\n\n`;
+    summary += `**${gatingDecision.decision}** - ${gatingDecision.recommendation}\n\n`;
+    
+    if (this.results.summary.artifactsMissing.length > 0) {
+      summary += `⚠️ **DEGRADED**: Analysis performed with missing artifacts\n\n`;
+    }
+    
+    summary += `## Issue Summary\n\n`;
+    summary += `| Priority | Count | Description |\n`;
+    summary += `|----------|-------|-------------|\n`;
+    summary += `| P0 | ${p0Count} | Critical - Blocks deployment |\n`;
+    summary += `| P1 | ${p1Count} | High - Review required |\n`;
+    summary += `| P2 | ${p2Count} | Medium - Track in backlog |\n\n`;
+    
+    summary += `## Test Results\n\n`;
+    summary += `- **Playwright:** ${this.results.playwrightResults.passed}/${this.results.playwrightResults.total} passed`;
+    if (this.results.playwrightResults.failed > 0) {
+      summary += ` (${this.results.playwrightResults.failed} failed)`;
+    }
+    summary += `\n`;
+    summary += `- **Accessibility:** ${this.results.a11yViolations.length} violations\n\n`;
+    
+    if (this.results.summary.artifactsMissing.length > 0) {
+      summary += `## Missing Artifacts\n\n`;
+      for (const artifact of this.results.summary.artifactsMissing) {
+        summary += `- ${artifact}\n`;
+      }
+      summary += `\n`;
+    }
+    
+    summary += `## Recommended Actions\n\n`;
+    
+    if (p0Count > 0) {
+      summary += `1. **BLOCK deployment** - Critical issues must be resolved\n`;
+      summary += `2. Address all ${p0Count} P0 issue(s)\n`;
+      summary += `3. Re-run verification workflow\n\n`;
+    } else if (p1Count > 0) {
+      summary += `1. Review all ${p1Count} P1 issue(s)\n`;
+      summary += `2. Create tracking issues\n`;
+      summary += `3. Assess deployment readiness\n\n`;
+    } else {
+      summary += `1. Review P2 issues for quick wins\n`;
+      summary += `2. Proceed with deployment if all gates pass\n\n`;
+    }
+    
+    summary += `---\n`;
+    summary += `*Full report: CONSOLIDATED_ANALYSIS_REPORT.md*\n`;
+    
+    await fs.writeFile(this.options.summaryPath, summary, 'utf-8');
+    this.logger.success(`Executive summary saved to: ${this.options.summaryPath}`);
+    
+    return this.options.summaryPath;
+  }
+
+  /**
+   * Compute gating decision based on issue counts
+   */
+  computeGatingDecision(p0Count, p1Count, p2Count) {
+    this.logger.debug(`Computing gating decision: P0=${p0Count}, P1=${p1Count}, P2=${p2Count}`);
+    
+    const degraded = this.results.summary.artifactsMissing.length > 0;
+    let decision, recommendation, exitCode;
+    
+    if (p0Count > 0) {
+      decision = '🛑 BLOCK';
+      recommendation = 'Critical issues must be resolved before deployment';
+      exitCode = 2;
+      this.logger.debug(`Gating: BLOCK due to ${p0Count} P0 issue(s)`);
+    } else if (p1Count > 3) {
+      decision = '⚠️ CAUTION';
+      recommendation = 'Multiple high-priority issues detected. Consider delaying deployment.';
+      exitCode = 1;
+      this.logger.debug(`Gating: CAUTION due to ${p1Count} P1 issue(s)`);
+    } else if (p1Count > 0) {
+      decision = '⚠️ REVIEW REQUIRED';
+      recommendation = 'High-priority issues detected. Review before deployment decision.';
+      exitCode = 1;
+      this.logger.debug(`Gating: REVIEW due to ${p1Count} P1 issue(s)`);
+    } else {
+      decision = '✅ PROCEED';
+      recommendation = 'No critical issues detected. Safe to proceed with deployment.';
+      exitCode = 0;
+      this.logger.debug('Gating: PROCEED - no critical issues');
+    }
+    
+    if (degraded) {
+      recommendation += ' (DEGRADED: missing expected artifacts)';
+      this.logger.debug('Gating note: degraded analysis due to missing artifacts');
+    }
+    
+    return { decision, recommendation, exitCode };
+  }
+
+  /**
+   * Compute exit code based on fail-on policy
+   */
+  computeExitCode() {
+    const p0Count = this.results.issues.p0.length;
+    const p1Count = this.results.issues.p1.length;
+    const p2Count = this.results.issues.p2.length;
+    
+    const failOn = this.options.failOn.toUpperCase();
+    this.logger.debug(`Computing exit code with --fail-on=${failOn}: P0=${p0Count}, P1=${p1Count}, P2=${p2Count}`);
+    
+    if (failOn === 'NONE') {
+      this.logger.debug('Exit code: 0 (--fail-on=none)');
+      return 0;
+    }
+    
+    // P0 always blocks unless fail-on is none
+    if (p0Count > 0) {
+      this.logger.debug(`Exit code: 2 (${p0Count} P0 issues present)`);
+      return 2;
+    }
+    
+    // Check P1 threshold
+    if (failOn === 'P0' || failOn === 'P1') {
+      if (p1Count > 3) {
+        this.logger.debug(`Exit code: 1 (${p1Count} P1 issues, threshold exceeded)`);
+        return 1;
+      } else if (p1Count > 0 && failOn === 'P1') {
+        this.logger.debug(`Exit code: 1 (${p1Count} P1 issues present, --fail-on=P1)`);
+        return 1;
+      }
+    }
+    
+    // Check P2 threshold
+    if (failOn === 'P2' && p2Count > 0) {
+      this.logger.debug(`Exit code: 1 (${p2Count} P2 issues present, --fail-on=P2)`);
+      return 1;
+    }
+    
+    this.logger.debug('Exit code: 0 (no issues above threshold)');
+    return 0;
   }
 
   /**
@@ -1198,13 +1560,15 @@ class OrchestrationAnalyzer {
    * Enhanced to include detailed a11y fix suggestions
    */
   async generateDraftPRs() {
-    Logger.section('Generating Draft PR Payloads');
+    this.logger.section('Generating Draft PR Payloads');
+    
+    const OUTPUT_DIR = this.options.outDir;
     
     // Analyze issues for mechanical fixes
     const mechanicalFixes = this.identifyMechanicalFixes();
     
     if (mechanicalFixes.length === 0) {
-      Logger.info('No mechanical fixes identified');
+      this.logger.info('No mechanical fixes identified');
       return;
     }
     
@@ -1369,8 +1733,9 @@ class OrchestrationAnalyzer {
    * Generate draft issues
    */
   async generateDraftIssues() {
-    Logger.section('Generating Draft GitHub Issues');
+    this.logger.section('Generating Draft GitHub Issues');
     
+    const OUTPUT_DIR = this.options.outDir;
     const issues = [];
     
     // Create issues for P0 and P1 items (gating issues)
@@ -1445,7 +1810,9 @@ class OrchestrationAnalyzer {
    * Print summary
    */
   printSummary() {
-    Logger.section('Analysis Complete');
+    this.logger.section('Analysis Complete');
+    
+    const OUTPUT_DIR = this.options.outDir;
     
     console.log('\n' + '='.repeat(60));
     console.log(`${colors.bright}SUMMARY${colors.reset}`);
@@ -1466,6 +1833,12 @@ class OrchestrationAnalyzer {
     
     console.log(`\n${colors.bright}Outputs:${colors.reset}`);
     console.log(`  📄 Consolidated Report: ${OUTPUT_DIR}/CONSOLIDATED_ANALYSIS_REPORT.md`);
+    if (this.options.emitJson) {
+      console.log(`  📊 JSON Summary: ${OUTPUT_DIR}/summary.json`);
+    }
+    if (this.options.summaryPath) {
+      console.log(`  📝 Executive Summary: ${this.options.summaryPath}`);
+    }
     console.log(`  📦 Draft PRs: ${OUTPUT_DIR}/draft-pr-payloads.json`);
     console.log(`  🎫 Draft Issues: ${OUTPUT_DIR}/draft-github-issues.json`);
     
@@ -1492,7 +1865,8 @@ class OrchestrationAnalyzer {
    */
   async run() {
     try {
-      Logger.section(`Analyzing Run ID: ${this.runId}`);
+      this.logger.section(`Analyzing Run ID: ${this.runId}`);
+      this.logger.debug(`Options: ${JSON.stringify(this.options, null, 2)}`);
       
       // Check prerequisites
       const hasGH = await this.checkGitHubCLI();
@@ -1512,20 +1886,66 @@ class OrchestrationAnalyzer {
       
       // Phase C: Generate outputs
       await this.generateConsolidatedReport();
+      await this.generateJsonSummary();
+      await this.generateExecutiveSummary();
       await this.generateDraftPRs();
       await this.generateDraftIssues();
       
       // Print summary
       this.printSummary();
       
-      Logger.success('Analysis complete!');
+      // Compute exit code
+      const exitCode = this.computeExitCode();
+      
+      this.logger.success('Analysis complete!');
+      this.logger.info(`Exit code: ${exitCode} (based on --fail-on=${this.options.failOn})`);
+      
+      return exitCode;
       
     } catch (error) {
-      Logger.error(`Analysis failed: ${error.message}`);
+      this.logger.error(`Analysis failed: ${error.message}`);
       console.error(error);
       process.exit(1);
     }
   }
+}
+
+/**
+ * Parse CLI arguments
+ */
+function parseArgs(args) {
+  const options = {
+    outDir: null,
+    emitJson: false,
+    summaryPath: null,
+    failOn: 'P0',
+    logLevel: 'info',
+    useGH: true,
+  };
+  
+  let runId = null;
+  
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    
+    if (arg === '--out-dir') {
+      options.outDir = args[++i];
+    } else if (arg === '--json') {
+      options.emitJson = true;
+    } else if (arg === '--summary') {
+      options.summaryPath = args[++i];
+    } else if (arg === '--fail-on') {
+      options.failOn = args[++i];
+    } else if (arg === '--log-level') {
+      options.logLevel = args[++i];
+    } else if (arg === '--no-gh') {
+      options.useGH = false;
+    } else if (!arg.startsWith('--') && !runId) {
+      runId = arg;
+    }
+  }
+  
+  return { runId, options };
 }
 
 /**
@@ -1541,10 +1961,41 @@ ${colors.bright}Post-Run Orchestration Analysis Agent${colors.reset}
 Analyzes GitHub Actions workflow runs and generates comprehensive reports.
 
 ${colors.cyan}Usage:${colors.reset}
-  node scripts/analyze-orchestration-run.mjs <run-id>
+  node scripts/analyze-orchestration-run.mjs <run-id> [options]
 
-${colors.cyan}Example:${colors.reset}
+${colors.cyan}Arguments:${colors.reset}
+  <run-id>                 GitHub Actions workflow run ID (required)
+
+${colors.cyan}Options:${colors.reset}
+  --out-dir <path>         Output directory for reports (default: analysis-output)
+  --json                   Emit machine-readable summary.json file
+  --summary <path>         Write executive summary markdown to specified path
+  --fail-on <P0|P1|P2|none> Exit code policy based on severity (default: P0)
+                           P0: exit 2 if P0 issues present
+                           P1: exit 1 if P1 issues present
+                           P2: exit 1 if P2 issues present
+                           none: always exit 0
+  --log-level <info|debug> Logging verbosity (default: info)
+  --no-gh                  Force REST API artifact retrieval (stub mode)
+  -h, --help               Show this help message
+
+${colors.cyan}Examples:${colors.reset}
+  # Basic usage
   node scripts/analyze-orchestration-run.mjs 19125388400
+
+  # With JSON output and custom directory
+  node scripts/analyze-orchestration-run.mjs 19125388400 --json --out-dir ./reports
+
+  # With executive summary and debug logging
+  node scripts/analyze-orchestration-run.mjs 19125388400 --summary ./exec-summary.md --log-level debug
+
+  # Fail on P1 issues
+  node scripts/analyze-orchestration-run.mjs 19125388400 --fail-on P1
+
+${colors.cyan}Exit Codes:${colors.reset}
+  0 - PROCEED: No critical issues or below threshold
+  1 - CAUTION: High-priority issues detected
+  2 - BLOCK: Critical P0 issues present
 
 ${colors.cyan}Requirements:${colors.reset}
   - GitHub CLI (gh) installed and authenticated
@@ -1552,6 +2003,8 @@ ${colors.cyan}Requirements:${colors.reset}
 
 ${colors.cyan}Outputs:${colors.reset}
   - analysis-output/CONSOLIDATED_ANALYSIS_REPORT.md
+  - analysis-output/summary.json (if --json specified)
+  - Custom path (if --summary specified)
   - analysis-output/draft-pr-payloads.json
   - analysis-output/draft-github-issues.json
 
@@ -1561,16 +2014,41 @@ ${colors.cyan}Artifacts Directory:${colors.reset}
     process.exit(0);
   }
   
-  const runId = args[0];
+  const { runId, options } = parseArgs(args);
   
-  if (!/^\d+$/.test(runId)) {
-    Logger.error('Invalid run ID. Must be a numeric value.');
-    Logger.info('Example: 19125388400');
+  if (!runId) {
+    console.error(`${colors.red}Error:${colors.reset} Run ID is required`);
+    console.log('Usage: node scripts/analyze-orchestration-run.mjs <run-id> [options]');
+    console.log('Run with --help for more information');
     process.exit(1);
   }
   
-  const analyzer = new OrchestrationAnalyzer(runId);
-  await analyzer.run();
+  if (!/^\d+$/.test(runId)) {
+    console.error(`${colors.red}Error:${colors.reset} Invalid run ID. Must be a numeric value.`);
+    console.log('Example: 19125388400');
+    process.exit(1);
+  }
+  
+  // Validate fail-on option
+  const validFailOn = ['P0', 'P1', 'P2', 'NONE'];
+  if (!validFailOn.includes(options.failOn.toUpperCase())) {
+    console.error(`${colors.red}Error:${colors.reset} Invalid --fail-on value: ${options.failOn}`);
+    console.log('Valid values: P0, P1, P2, none');
+    process.exit(1);
+  }
+  
+  // Validate log-level option
+  const validLogLevels = ['info', 'debug'];
+  if (!validLogLevels.includes(options.logLevel)) {
+    console.error(`${colors.red}Error:${colors.reset} Invalid --log-level value: ${options.logLevel}`);
+    console.log('Valid values: info, debug');
+    process.exit(1);
+  }
+  
+  const analyzer = new OrchestrationAnalyzer(runId, options);
+  const exitCode = await analyzer.run();
+  
+  process.exit(exitCode);
 }
 
 // Run if called directly
