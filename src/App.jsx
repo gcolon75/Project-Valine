@@ -1,10 +1,8 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout.jsx';
 import MarketingLayout from './layouts/MarketingLayout.jsx';
-import Home from './pages/Home.jsx';
-import About from './pages/About.jsx';
-import Features from './pages/Features.jsx';
+import Landing from './pages/Landing.jsx';
 import Join from './pages/Join.jsx';
 import Login from './pages/Login.jsx';
 import SignupPage from './pages/SignupPage.jsx';
@@ -32,10 +30,11 @@ function App() {
     <Routes>
       {/* Marketing pages - Light mode forced via MarketingLayout */}
       <Route element={<MarketingLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/about-us" element={<About />} />
-        <Route path="/features" element={<Features />} />
+        <Route path="/" element={<Landing />} />
+        {/* Redirect legacy routes to anchors on landing page */}
+        <Route path="/features" element={<Navigate to="/#features" replace />} />
+        <Route path="/about" element={<Navigate to="/#about" replace />} />
+        <Route path="/about-us" element={<Navigate to="/#about" replace />} />
         <Route path="/join" element={<Join />} />
         <Route path="/signup" element={<Join />} />
         <Route path="/login" element={<Login />} />
