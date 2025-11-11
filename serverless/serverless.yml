@@ -18,6 +18,8 @@ provider:
     FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
     NODE_ENV: ${env:NODE_ENV, "development"}
     COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, ""}
+    REDIS_URL: ${env:REDIS_URL, ""}
+    RATE_LIMITING_ENABLED: ${env:RATE_LIMITING_ENABLED, "true"}
 
 package:
   patterns:
