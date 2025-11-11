@@ -74,3 +74,6 @@ UX_AUDIT_ROADMAP.md
 temp-artifacts/
 analysis-output/
 .env.local
+seo-report.json
+seo-report.md
+seo-landing-page.png
