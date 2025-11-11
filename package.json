@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "vite build",
+    "build": "npm run seo:generate && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -17,7 +17,11 @@
     "optimize:images": "node scripts/optimize-images.mjs",
     "ux:audit": "node scripts/ux-audit-agent.mjs",
     "ux:audit-to-issues": "node scripts/ux-audit-to-issues.mjs",
-    "verify:post-merge": "node scripts/post-merge-comprehensive-verification.js"
+    "verify:post-merge": "node scripts/post-merge-comprehensive-verification.js",
+    "seo:generate": "node scripts/seo/generate-og-image.mjs && node scripts/seo/generate-favicons.mjs",
+    "seo:build": "node scripts/seo/build-sitemap.mjs && node scripts/seo/build-robots.mjs",
+    "seo:audit": "node scripts/seo/lighthouse-report.mjs",
+    "postbuild": "npm run seo:build"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
