@@ -6,17 +6,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  password     String   // hashed password
-  displayName  String
-  bio          String?
-  avatar       String?
-  name         String?
-  role         String   @default("artist") // 'artist' | 'observer'
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
+  normalizedEmail String?  @unique // Lowercase normalized email for case-insensitive lookups
+  password        String   // hashed password
+  displayName     String
+  bio             String?
+  avatar          String?
+  name            String?
+  role            String   @default("artist") // 'artist' | 'observer'
+  emailVerified   Boolean  @default(false)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   scripts            Script[]
   auditions          Audition[]
@@ -35,6 +38,7 @@ model User {
   settings           UserSettings?
   sentReelRequests   ReelRequest[]       @relation("requester")
   receivedReelRequests ReelRequest[]     @relation("owner")
+  verificationTokens EmailVerificationToken[]
 
   @@map("users")
 }
@@ -302,4 +306,17 @@ model ReelRequest {
   @@index([mediaId])
   @@index([requesterId])
   @@index([ownerId, status])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verification_tokens")
+  @@index([userId])
+  @@index([token])
 }

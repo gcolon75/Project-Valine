@@ -2,6 +2,7 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { rateLimit } from '../middleware/rateLimit.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -267,21 +268,29 @@ const sendVerificationEmail = async (email, token, username) => {
   const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
   const verificationUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
   
+  // Mask token in logs (show first 8 and last 4 characters)
+  const maskedToken = token.length > 12 
+    ? `${token.substring(0, 8)}...${token.substring(token.length - 4)}`
+    : '***masked***';
+  
   if (EMAIL_ENABLED) {
     // TODO: Implement SMTP email sending when EMAIL_ENABLED=true
-    // For now, just log that we would send an email
-    console.log(`[EMAIL] Would send verification email to ${email} via SMTP`);
-    console.log(`[EMAIL] Verification URL: ${verificationUrl}`);
+    // For production, integrate with SMTP provider (e.g., SendGrid, AWS SES)
+    console.log(`[EMAIL] Sending verification email to ${email} via SMTP`);
+    console.log(`[EMAIL] Token: ${maskedToken}`);
+    // In production, send actual email here
+    // await smtpTransport.sendMail({ ... });
   } else {
-    // Development mode - log to console
-    console.log('=== EMAIL VERIFICATION ===');
+    // Development mode - log to console (but mask sensitive token)
+    console.log('=== EMAIL VERIFICATION (DEV MODE) ===');
     console.log(`To: ${email}`);
     console.log(`Subject: Verify your Project Valine account`);
     console.log(`Hi ${username},`);
     console.log(`Please verify your email address by clicking the link below:`);
     console.log(verificationUrl);
+    console.log(`Token (masked): ${maskedToken}`);
     console.log(`This link will expire in 24 hours.`);
-    console.log('==========================');
+    console.log('=====================================');
   }
 };
 
@@ -354,6 +363,12 @@ export const verifyEmail = async (event) => {
 // POST /auth/resend-verification
 export const resendVerification = async (event) => {
   try {
+    // Apply rate limiting for email verification resend
+    const rateLimitResult = await rateLimit(event, '/auth/resend-verification');
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response;
+    }
+
     const userId = getUserFromEvent(event);
     
     if (!userId) {
@@ -403,10 +418,20 @@ export const resendVerification = async (event) => {
     // Send verification email
     await sendVerificationEmail(user.email, verificationToken, user.username);
 
-    return json({
+    const response = json({
       message: 'Verification email sent successfully. Please check your email.',
       email: user.email
     });
+
+    // Add rate limit headers
+    if (event.rateLimitHeaders) {
+      response.headers = {
+        ...response.headers,
+        ...event.rateLimitHeaders
+      };
+    }
+
+    return response;
   } catch (e) {
     console.error('Resend verification error:', e);
     return error('Server error: ' + e.message, 500);

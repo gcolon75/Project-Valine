@@ -108,6 +108,12 @@ export const completeUpload = async (event) => {
       return error('Unauthorized', 401);
     }
 
+    // Require email verification for media uploads
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
+    }
+
     const body = JSON.parse(event.body || '{}');
     const { mediaId, width, height, fileSize } = body;
 

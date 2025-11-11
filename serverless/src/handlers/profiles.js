@@ -280,6 +280,12 @@ export const createProfile = async (event) => {
       return error('Unauthorized', 401);
     }
 
+    // Require email verification for profile creation
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
+    }
+
     const body = JSON.parse(event.body || '{}');
     const { vanityUrl, headline, bio, roles, location, tags, socialLinks } = body;
 
