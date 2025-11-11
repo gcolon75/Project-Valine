@@ -339,3 +339,32 @@ model RefreshToken {
   @@index([jti])
   @@index([userId, invalidatedAt])
 }
+
+model PRIntelligence {
+  id                   String   @id @default(uuid())
+  prNumber             Int
+  changedFilesCount    Int
+  sensitivePathsCount  Int
+  riskScore            Float
+  metadata             Json?    // Additional PR metadata
+  createdAt            DateTime @default(now())
+
+  @@map("pr_intelligence")
+  @@index([prNumber])
+  @@index([riskScore])
+}
+
+model TestRun {
+  id         String   @id @default(uuid())
+  suite      String
+  testName   String
+  status     String   // "passed" | "failed" | "skipped"
+  durationMs Int
+  runAt      DateTime @default(now())
+  metadata   Json?    // Additional test metadata
+
+  @@map("test_runs")
+  @@index([suite, testName])
+  @@index([runAt])
+  @@index([status])
+}

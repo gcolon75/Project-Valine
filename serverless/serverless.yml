@@ -17,6 +17,12 @@ provider:
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
+    PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
+    PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
+    FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
+    SCHEMA_DIFF_ENABLED: ${env:SCHEMA_DIFF_ENABLED, "false"}
+    SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
+    API_BASE_URL: ${env:API_BASE_URL, "http://localhost:3000"}
     FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
     NODE_ENV: ${env:NODE_ENV, "development"}
     COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, ""}
@@ -481,3 +487,46 @@ functions:
       - httpApi:
           path: /search/users
           method: get
+
+  # Internal tooling endpoints (Phases 4-7)
+  ingestPRIntel:
+    handler: src/handlers/prIntel.ingestPRIntel
+    events:
+      - httpApi:
+          path: /internal/pr-intel/ingest
+          method: post
+
+  getPRIntel:
+    handler: src/handlers/prIntel.getPRIntel
+    events:
+      - httpApi:
+          path: /internal/pr-intel/{prNumber}
+          method: get
+
+  ingestTestRuns:
+    handler: src/handlers/testIntel.ingestTestRuns
+    events:
+      - httpApi:
+          path: /internal/tests/ingest
+          method: post
+
+  getFlakyCandidates:
+    handler: src/handlers/testIntel.getFlakyCandidates
+    events:
+      - httpApi:
+          path: /internal/tests/flaky-candidates
+          method: get
+
+  analyzeSchemaDiff:
+    handler: src/handlers/schemaDiff.analyzeSchemaDiff
+    events:
+      - httpApi:
+          path: /internal/schema/diff
+          method: post
+
+  runSyntheticJourney:
+    handler: src/handlers/syntheticJourney.runSyntheticJourney
+    events:
+      - httpApi:
+          path: /internal/journey/run
+          method: post
