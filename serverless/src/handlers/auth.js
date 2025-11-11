@@ -2,6 +2,7 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { authenticator } from 'otplib';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { generateCsrfToken, generateCsrfCookie, clearCsrfCookie } from '../middleware/csrfMiddleware.js';
 import {
@@ -631,34 +632,35 @@ export const logout = async (event) => {
 // ========== 2FA Endpoints (Phase 2) ==========
 
 /**
- * Simple TOTP implementation for 2FA
- * In production, consider using a library like 'otplib' or 'speakeasy'
+ * Production TOTP implementation using otplib
+ * RFC 6238 compliant
  */
 
-// Generate base32 secret for TOTP
-const generateTOTPSecret = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let secret = '';
-  for (let i = 0; i < 32; i++) {
-    secret += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return secret;
+// Configure authenticator options
+authenticator.options = {
+  window: 1, // Allow 1 time step before/after for clock drift
+  step: 30, // 30-second time step (standard)
 };
 
-// Verify TOTP code (simplified - for production use a proper library)
+// Generate base32 secret for TOTP using otplib
+const generateTOTPSecret = () => {
+  return authenticator.generateSecret();
+};
+
+// Verify TOTP code using otplib
 const verifyTOTPCode = (secret, code) => {
-  // TODO: Implement proper TOTP verification with time-based counter
-  // For now, this is a placeholder that always returns true if TWO_FACTOR_ENABLED feature flag is off
-  // In production, use a library like 'otplib' or implement RFC 6238
   const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
   
   if (!TWO_FACTOR_ENABLED) {
     return true; // Feature flag disabled, bypass verification
   }
   
-  // Placeholder verification (replace with actual TOTP implementation)
-  console.warn('[2FA] TOTP verification not fully implemented. Use a library like otplib in production.');
-  return code && code.length === 6; // Basic validation
+  try {
+    return authenticator.verify({ token: code, secret });
+  } catch (err) {
+    console.error('[2FA] TOTP verification error:', err);
+    return false;
+  }
 };
 
 /**
@@ -699,12 +701,12 @@ export const setup2FA = async (event) => {
       return error('2FA is already enabled for this account', 400);
     }
 
-    // Generate new TOTP secret
+    // Generate new TOTP secret using otplib
     const secret = generateTOTPSecret();
     
-    // Generate otpauth URL for QR code
+    // Generate otpauth URL for QR code using otplib
     const appName = 'Project Valine';
-    const otpauthUrl = `otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${encodeURIComponent(appName)}`;
+    const otpauthUrl = authenticator.keyuri(user.email, appName, secret);
 
     // Store secret temporarily (not enabled yet)
     // TODO: Encrypt the secret before storing
