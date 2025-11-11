@@ -58,19 +58,19 @@ export const routeMetadata = {
   },
   '/signup-page': {
     title: `${SITE_NAME} — Sign Up`,
-    description: 'Create your Project Valine account.',
+    description: 'Create your Project Valine account to join our creative community. Connect with artists and seekers today.',
     canonicalSegment: 'signup-page',
     noIndex: true, // Auth pages typically not indexed
   },
   '/login-page': {
     title: `${SITE_NAME} — Log In`,
-    description: 'Log in to Project Valine.',
+    description: 'Log in to Project Valine to access your creative projects, collaborate with artists, and manage your account.',
     canonicalSegment: 'login-page',
     noIndex: true, // Auth pages typically not indexed
   },
   '/onboarding': {
     title: `${SITE_NAME} — Get Started`,
-    description: 'Complete your Project Valine profile setup.',
+    description: 'Complete your Project Valine profile setup to start discovering creative opportunities and connecting with talent.',
     canonicalSegment: 'onboarding',
     noIndex: true, // User onboarding not indexed
   },
