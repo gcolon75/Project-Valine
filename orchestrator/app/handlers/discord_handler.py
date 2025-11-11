@@ -29,6 +29,7 @@ from utils.admin_auth import AdminAuthenticator
 from utils.time_formatter import TimeFormatter
 from utils.trace_store import get_trace_store
 from utils.logger import redact_secrets, StructuredLogger
+from utils.rbac import get_permission_matrix
 from utils.agent_messenger import (
     get_agent_messenger, 
     AMADEUS, 
@@ -1900,6 +1901,25 @@ def handler(event, context):
         # Handle APPLICATION_COMMAND
         if interaction_type == 2:
             command_name = interaction.get('data', {}).get('name')
+            
+            # RBAC Check: Verify user has permission to execute this command
+            member = interaction.get('member', {})
+            user = member.get('user', {}) or interaction.get('user', {})
+            user_id = user.get('id', '')
+            user_roles = [role for role in member.get('roles', [])]
+            
+            permission_matrix = get_permission_matrix()
+            is_allowed, error_message = permission_matrix.check_permission(
+                f'/{command_name}',
+                user_id,
+                user_roles
+            )
+            
+            if not is_allowed:
+                return create_response(4, {
+                    'content': error_message,
+                    'flags': 64  # Ephemeral
+                })
 
             if command_name == 'plan':
                 return handle_plan_command(interaction)
