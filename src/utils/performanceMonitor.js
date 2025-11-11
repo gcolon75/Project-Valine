@@ -140,7 +140,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * Report metrics (to console in dev, to analytics in prod)
+   * Report metrics (to console in dev, to analytics/observability in prod)
    */
   reportMetrics() {
     const metrics = this.getMetrics();
@@ -165,8 +165,37 @@ class PerformanceMonitor {
       console.groupEnd();
     }
     
-    // In production, send to analytics service
-    // Example: analytics.track('performance', metrics);
+    // Send to observability backend
+    this.sendToObservability(metrics);
+  }
+
+  /**
+   * Send metrics to observability backend
+   * @param {object} metrics - Metrics to send
+   */
+  async sendToObservability(metrics) {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/internal/observability/metrics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'performance',
+          data: metrics,
+        }),
+      });
+
+      if (!response.ok && import.meta.env.DEV) {
+        console.warn('Failed to send metrics to observability backend:', response.status);
+      }
+    } catch (e) {
+      // Silently fail in production, log in dev
+      if (import.meta.env.DEV) {
+        console.warn('Error sending metrics to observability:', e.message);
+      }
+    }
   }
 
   /**

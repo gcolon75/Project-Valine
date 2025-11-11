@@ -22,6 +22,8 @@ provider:
     FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
     SCHEMA_DIFF_ENABLED: ${env:SCHEMA_DIFF_ENABLED, "false"}
     SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
+    SYNTHETIC_USE_REAL_REQUESTS: ${env:SYNTHETIC_USE_REAL_REQUESTS, "true"}
+    OBSERVABILITY_ENABLED: ${env:OBSERVABILITY_ENABLED, "true"}
     API_BASE_URL: ${env:API_BASE_URL, "http://localhost:3000"}
     FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
     NODE_ENV: ${env:NODE_ENV, "development"}
@@ -529,4 +531,40 @@ functions:
     events:
       - httpApi:
           path: /internal/journey/run
+          method: post
+
+  # Observability v2 endpoints
+  ingestMetrics:
+    handler: src/handlers/observability.ingestMetrics
+    events:
+      - httpApi:
+          path: /internal/observability/metrics
+          method: post
+
+  getMetrics:
+    handler: src/handlers/observability.getMetrics
+    events:
+      - httpApi:
+          path: /internal/observability/metrics
+          method: get
+
+  observabilityHealth:
+    handler: src/handlers/observability.healthCheck
+    events:
+      - httpApi:
+          path: /internal/observability/health
+          method: get
+
+  getStats:
+    handler: src/handlers/observability.getStats
+    events:
+      - httpApi:
+          path: /internal/observability/stats
+          method: get
+
+  logEvent:
+    handler: src/handlers/observability.logEvent
+    events:
+      - httpApi:
+          path: /internal/observability/log
           method: post
