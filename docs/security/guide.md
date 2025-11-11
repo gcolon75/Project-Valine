@@ -47,6 +47,23 @@ This guide covers the comprehensive security features implemented in Project Val
 
 ## Authentication
 
+### Serverless Backend Implementation
+
+Project Valine uses a **serverless architecture** for authentication, deployed on AWS Lambda with API Gateway. The implementation is in `/serverless/src/handlers/auth.js`.
+
+**Key Technologies:**
+- **bcrypt** - Password hashing (10 rounds)
+- **jsonwebtoken** - JWT token generation and validation
+- **PostgreSQL** - User data and verification tokens
+- **Email verification** - Crypto-based tokens with 24-hour expiry
+
+**Security Features:**
+- Passwords hashed with bcrypt before storage (never stored in plaintext)
+- JWT tokens signed with HS256 algorithm
+- Email verification tokens use crypto.randomBytes (32 bytes)
+- Protection against timing attacks (bcrypt.compare)
+- XSS prevention through JWT-only auth (no session cookies)
+
 ### Registration
 
 **Endpoint**: `POST /auth/register`
@@ -62,9 +79,40 @@ This guide covers the comprehensive security features implemented in Project Val
 
 **Features**:
 - Password hashing with bcrypt (10 rounds)
-- Automatic email verification token generation
-- Rate limited: 3 attempts per hour
+- Automatic email verification token generation (24-hour expiry)
+- Email format validation (RFC-compliant regex)
+- Password minimum length: 6 characters
+- Duplicate email/username detection
 - Returns JWT for immediate limited access
+- Default avatar generation (Dicebear API)
+
+**Validation:**
+- Email must be valid format (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`)
+- Password must be at least 6 characters
+- Username and displayName are required
+- Email is normalized (lowercase, trimmed)
+
+**Response (201 Created):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "message": "Registration successful. Please check your email to verify your account."
+}
+```
+
+**Error Responses:**
+- **400** - Missing required fields or validation failure
+- **409** - User with email or username already exists
+- **500** - Server error
 
 ### Login
 
@@ -73,29 +121,81 @@ This guide covers the comprehensive security features implemented in Project Val
 ```json
 {
   "email": "user@example.com",
-  "password": "SecurePassword123!",
-  "twoFactorCode": "123456" // Optional, required if 2FA enabled
+  "password": "SecurePassword123!"
 }
 ```
 
 **Features**:
-- Supports email or username login
-- Rate limited: 5 attempts per 15 minutes
-- Account-based and IP-based tracking
-- 2FA verification if enabled
-- Recovery code support
-- Audit log for all login attempts
+- Email-based authentication
+- bcrypt password comparison (constant-time)
+- Supports login with unverified email (status included in response)
+- JWT token generation (7-day expiry)
+- Password never returned in response
+- Audit logging (console logs for dev)
 
-### Logout
+**Response (200 OK):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "role": "USER",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
-**Endpoint**: `POST /auth/logout`
+**Error Responses:**
+- **400** - Missing email or password
+- **401** - Invalid email or password
+- **500** - Server error
+
+**Note:** Login currently allows access with unverified email. To enforce verification, add middleware check on protected routes.
+
+### Get Current User
+
+**Endpoint**: `GET /auth/me`
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Features**:
-- Session invalidation
-- Audit log entry
-- Clears server-side session if tracking enabled
+- JWT token verification
+- Returns user profile with aggregated counts
+- Does not expose password or sensitive fields
+- Includes post/reel/request statistics
+
+**Response (200 OK):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "bio": null,
+    "role": "USER",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "_count": {
+      "posts": 0,
+      "reels": 0,
+      "sentRequests": 0,
+      "receivedRequests": 0
+    }
+  }
+}
+```
+
+**Error Responses:**
+- **401** - Unauthorized (no token or invalid token)
+- **404** - User not found
+- **500** - Server error
 
 ## Two-Factor Authentication (2FA)
 
@@ -156,11 +256,46 @@ Returns recovery codes (save these securely!).
 
 ## Password Security
 
+### Serverless Backend Implementation
+
+Password security in the serverless backend uses industry-standard bcrypt hashing with proper salt rounds and protection against timing attacks.
+
+**Implementation Details:**
+- **Library:** bcryptjs (JavaScript implementation of bcrypt)
+- **Salt Rounds:** 10 (provides strong security with acceptable performance)
+- **Hashing:** `bcrypt.hash(password, 10)` - automatic salt generation
+- **Comparison:** `bcrypt.compare(password, hash)` - constant-time comparison
+- **Storage:** Only hashed password stored in database (never plaintext)
+
+**Security Features:**
+- Protection against rainbow table attacks (per-password salt)
+- Protection against timing attacks (constant-time comparison)
+- Adaptive hashing (can increase rounds as hardware improves)
+- No password in logs or error messages
+
+**Code Reference:** `/serverless/src/handlers/auth.js`
+
+### Current Password Requirements
+
+- **Minimum length:** 6 characters (enforced in registration)
+- **Validation:** Basic length check only
+- **Future Enhancements:** Consider adding complexity requirements (uppercase, lowercase, numbers, special characters)
+
+**Recommendation for Production:**
+- Minimum 12 characters
+- At least one uppercase, one lowercase, one number
+- Optional: Special character requirement
+- Password strength meter in frontend
+
 ### Password Reset Flow
+
+**Note:** Password reset functionality is not yet implemented in the serverless backend. Current implementation only includes registration, login, and email verification.
+
+**Planned Implementation:**
 
 **1. Request Reset**
 
-**Endpoint**: `POST /auth/request-password-reset`
+**Endpoint**: `POST /auth/request-password-reset` (not yet implemented)
 
 ```json
 {
@@ -168,13 +303,13 @@ Returns recovery codes (save these securely!).
 }
 ```
 
-- Always returns success (prevents user enumeration)
+- Should always return success (prevents user enumeration)
 - Token expires in 1 hour
 - Rate limited: 3 requests per hour
 
 **2. Complete Reset**
 
-**Endpoint**: `POST /auth/reset-password`
+**Endpoint**: `POST /auth/reset-password` (not yet implemented)
 
 ```json
 {
@@ -183,26 +318,39 @@ Returns recovery codes (save these securely!).
 }
 ```
 
-- Invalidates all existing sessions
-- Marks token as used
-- Logs audit event
+- Should invalidate all existing sessions
+- Mark token as used
+- Log audit event
+- Rehash password with bcrypt
 
-### Password Requirements
-
-- Minimum length: 8 characters (recommended: 12+)
-- Hashed with bcrypt (cost factor: 10)
-- Never logged or stored in plain text
-- Rotated on password reset
+**Implementation Priority:** Medium - add after 2FA and profile link validation are complete.
 
 ## Email Verification
+
+### Serverless Implementation
+
+Email verification is implemented in the serverless backend with crypto-based tokens and PostgreSQL storage.
+
+**Database Schema:**
+- Table: `EmailVerificationToken`
+- Fields: `id`, `userId`, `token`, `expiresAt`, `createdAt`
+- Token: 32-byte random hex string
+- Expiry: 24 hours from creation
+
+**Implementation Details:**
+- Token generation: `crypto.randomBytes(32).toString('hex')`
+- Tokens are single-use (deleted after verification)
+- Expired tokens are automatically rejected and cleaned up
+- Email sending: Console logs (dev) or SMTP (production with EMAIL_ENABLED=true)
 
 ### Verification Flow
 
 **1. Automatic on Registration**
 
 - Token generated with 24-hour expiration
-- Verification email sent automatically
-- User can login but has limited access
+- Verification email sent automatically (logged to console in dev)
+- User receives JWT and can login with limited access
+- Frontend should check `emailVerified` status
 
 **2. Verify Email**
 
@@ -210,7 +358,15 @@ Returns recovery codes (save these securely!).
 
 ```json
 {
-  "token": "verification-token-from-email"
+  "token": "abc123def456..."
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Email verified successfully",
+  "verified": true
 }
 ```
 
@@ -218,21 +374,44 @@ Returns recovery codes (save these securely!).
 
 **Endpoint**: `POST /auth/resend-verification`
 
-Rate limited: 3 requests per hour
+**Headers**: `Authorization: Bearer <token>`
+
+**Response (200 OK):**
+```json
+{
+  "message": "Verification email sent successfully. Please check your email.",
+  "email": "test@example.com"
+}
+```
+
+**Rate Limiting Recommendation:** Add rate limiting to prevent abuse (suggested: 3 requests per hour per user)
+
+### Email Configuration
+
+**Development Mode (EMAIL_ENABLED=false or undefined):**
+- Verification emails logged to console
+- Includes full email content and verification URL
+
+**Production Mode (EMAIL_ENABLED=true):**
+- Emails sent via SMTP (implementation required)
+- FRONTEND_URL environment variable used for verification links
 
 ### Unverified User Restrictions
 
-Add `requireEmailVerification` middleware to protect routes:
+Currently, users can login with unverified email. To restrict access, add middleware checks to protected routes:
 
 ```javascript
-import { requireEmailVerification } from './middleware/auth.js'
-
-router.post('/api/sensitive-action', 
-  authenticate, 
-  requireEmailVerification, 
-  handler
-)
+// Add middleware to protected routes in auth handler
+export const requireEmailVerification = async (event) => {
+  const userId = getUserFromEvent(event);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user.emailVerified) {
+    return error('Email verification required', 403);
+  }
+};
 ```
+
+**Recommended Approach:** Allow login but show banner prompting verification, with some features requiring verification.
 
 ## Session Management
 
@@ -474,6 +653,86 @@ curl -H "Authorization: Bearer <token>" \
 - IP addresses for fraud detection
 - Sensitive data (passwords) never logged
 - Users can view their own logs
+
+## Input Validation & XSS Prevention
+
+### Profile Link Validation
+
+The serverless backend implements strict validation for user profile links to prevent XSS attacks and ensure data quality.
+
+**Validation Rules (from `/serverless/src/handlers/profiles.js`):**
+
+1. **URL Format:** Must be valid HTTP/HTTPS URLs
+2. **Allowed Platforms:** Whitelist of approved social platforms
+3. **Maximum Links:** Limited to prevent abuse
+4. **Sanitization:** All URLs validated before storage
+
+**Supported Platforms:**
+- Instagram, Twitter/X, LinkedIn, Facebook
+- YouTube, TikTok, Vimeo
+- IMDb, Casting Networks, Actors Access
+- Personal website
+
+**Example Validation:**
+```javascript
+const validPlatforms = [
+  'instagram', 'twitter', 'linkedin', 'facebook',
+  'youtube', 'tiktok', 'vimeo', 'imdb',
+  'castingnetworks', 'actorsaccess', 'website'
+];
+
+// Each link validated for:
+// - Valid platform key
+// - Valid URL format
+// - Appropriate URL structure for platform
+```
+
+**Security Benefits:**
+- Prevents JavaScript injection via malicious URLs
+- Protects against phishing links
+- Ensures consistent data format
+- Limits attack surface
+
+### XSS Prevention Strategy
+
+**Backend (Serverless):**
+1. **JWT-Only Authentication:** No session cookies, reduces XSS attack surface
+2. **Input Validation:** All user inputs validated before storage
+3. **URL Sanitization:** Profile links, media URLs validated
+4. **No HTML in API:** All responses are JSON (Content-Type: application/json)
+5. **CORS Headers:** Proper origin validation
+
+**Frontend Responsibilities:**
+1. React's automatic XSS protection (JSX escaping)
+2. DOMPurify for any user-generated HTML (if needed)
+3. CSP headers (Content Security Policy)
+4. Never use `dangerouslySetInnerHTML` without sanitization
+
+**API Response Headers:**
+```javascript
+{
+  'Content-Type': 'application/json',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY'
+}
+```
+
+### String Length Validation
+
+All text fields have maximum length limits enforced in the backend:
+
+- **Username:** 30 characters
+- **Display Name:** 100 characters
+- **Bio:** 500 characters
+- **Headline:** 200 characters
+- **Location fields:** 100 characters each
+- **URLs:** 2048 characters (browser standard)
+
+**Benefits:**
+- Prevents database overflow
+- Limits payload size
+- Reduces DoS risk
+- Improves UI consistency
 
 ## Privacy Features
 

@@ -388,58 +388,445 @@ If issues occur:
 
 ## Usage Examples
 
-### Create a Profile
+### Authentication Flow
+
+#### Register a New User
 
 ```bash
-curl -X POST https://api-url/dev/profiles \
+export API_BASE="https://your-api-id.execute-api.us-west-2.amazonaws.com/dev"
+
+# Register user
+curl -X POST "$API_BASE/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane@example.com",
+    "password": "securePass123",
+    "username": "janedoe",
+    "displayName": "Jane Doe"
+  }'
+
+# Response includes user object and JWT token
+# {
+#   "user": { "id": "cm123...", "username": "janedoe", ... },
+#   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "message": "Registration successful. Please check your email..."
+# }
+
+# Save the token for subsequent requests
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+#### Login
+
+```bash
+# Login with email and password
+curl -X POST "$API_BASE/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jane@example.com",
+    "password": "securePass123"
+  }'
+
+# Response includes user and token
+# Save token for authenticated requests
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+#### Get Current User
+
+```bash
+# Get authenticated user profile
+curl "$API_BASE/auth/me" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response includes user profile with counts:
+# {
+#   "user": {
+#     "id": "cm123...",
+#     "username": "janedoe",
+#     "email": "jane@example.com",
+#     "displayName": "Jane Doe",
+#     "emailVerified": false,
+#     "_count": { "posts": 0, "reels": 0, ... }
+#   }
+# }
+```
+
+#### Verify Email
+
+```bash
+# Verify email with token from email
+curl -X POST "$API_BASE/auth/verify-email" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "abc123def456..."
+  }'
+
+# Response: {"message": "Email verified successfully", "verified": true}
+```
+
+#### Resend Verification Email
+
+```bash
+# Resend verification email (requires authentication)
+curl -X POST "$API_BASE/auth/resend-verification" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response: {"message": "Verification email sent successfully...", "email": "jane@example.com"}
+```
+
+### Profile Management
+
+#### Create a Profile
+
+```bash
+# Create profile for authenticated user
+curl -X POST "$API_BASE/profiles" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "vanityUrl": "johndoe",
+    "vanityUrl": "janedoe",
     "headline": "Actor & Director",
+    "bio": "Award-winning performer with 10 years experience",
     "roles": ["Actor", "Director"],
-    "location": {"city": "Los Angeles", "state": "CA"}
+    "location": {
+      "city": "Los Angeles",
+      "state": "CA",
+      "country": "USA"
+    },
+    "profileLinks": {
+      "instagram": "https://instagram.com/janedoe",
+      "imdb": "https://www.imdb.com/name/nm1234567/",
+      "website": "https://janedoe.com"
+    }
+  }'
+
+# Response includes created profile with ID
+# Save the profile ID for subsequent requests
+export PROFILE_ID="cm456..."
+```
+
+#### Get Profile by Vanity URL
+
+```bash
+# Get public profile (no auth required)
+curl "$API_BASE/profiles/janedoe"
+
+# Response includes profile with privacy filtering applied
+```
+
+#### Update Profile
+
+```bash
+# Update profile (requires auth and ownership)
+curl -X PUT "$API_BASE/profiles/id/$PROFILE_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headline": "Award-Winning Actor & Director",
+    "bio": "Updated bio with latest achievements",
+    "profileLinks": {
+      "instagram": "https://instagram.com/janedoe_official",
+      "twitter": "https://twitter.com/janedoe",
+      "website": "https://janedoe.com"
+    }
   }'
 ```
 
-### Upload Media
+### Media Upload Flow
+
+#### Upload Media (Complete Flow)
 
 ```bash
-# 1. Get upload URL
-RESPONSE=$(curl -X POST https://api-url/dev/profiles/$PROFILE_ID/media/upload-url \
+# 1. Request upload URL
+UPLOAD_RESPONSE=$(curl -s -X POST "$API_BASE/profiles/$PROFILE_ID/media/upload-url" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"type": "video", "title": "Demo Reel"}')
+  -d '{
+    "type": "video",
+    "title": "Demo Reel 2024",
+    "privacy": "public"
+  }')
 
-# 2. Extract URLs
-UPLOAD_URL=$(echo $RESPONSE | jq -r '.uploadUrl')
-MEDIA_ID=$(echo $RESPONSE | jq -r '.mediaId')
+# 2. Extract URLs and media ID from response
+UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.uploadUrl')
+MEDIA_ID=$(echo $UPLOAD_RESPONSE | jq -r '.mediaId')
+POSTER_URL=$(echo $UPLOAD_RESPONSE | jq -r '.posterUploadUrl')
 
-# 3. Upload file
+echo "Media ID: $MEDIA_ID"
+echo "Upload URL: $UPLOAD_URL"
+
+# 3. Upload video file directly to S3
 curl -X PUT "$UPLOAD_URL" \
   -H "Content-Type: video/mp4" \
-  --upload-file video.mp4
+  --upload-file demo-reel.mp4
 
-# 4. Complete
-curl -X POST https://api-url/dev/profiles/$PROFILE_ID/media/complete \
+# 4. (Optional) Upload poster/thumbnail
+curl -X PUT "$POSTER_URL" \
+  -H "Content-Type: image/jpeg" \
+  --upload-file thumbnail.jpg
+
+# 5. Complete upload and trigger processing
+curl -X POST "$API_BASE/profiles/$PROFILE_ID/media/complete" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"mediaId\": \"$MEDIA_ID\"}"
+  -d "{
+    \"mediaId\": \"$MEDIA_ID\",
+    \"metadata\": {
+      \"duration\": 120,
+      \"dimensions\": {\"width\": 1920, \"height\": 1080}
+    }
+  }"
+
+# Response: {"message": "Upload completed", "media": {...}}
 ```
 
-### Request Access to On-Request Media
+#### Update Media Privacy
 
 ```bash
-curl -X POST https://api-url/dev/reels/$MEDIA_ID/request \
+# Update media privacy setting
+curl -X PUT "$API_BASE/media/$MEDIA_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"message": "Would love to see your work!"}'
+  -d '{
+    "privacy": "on-request",
+    "title": "Updated Demo Reel Title"
+  }'
 ```
 
-### Search Profiles
+#### Delete Media
 
 ```bash
-curl "https://api-url/dev/search?query=actor&role=Actor&limit=10"
+# Delete media (requires ownership)
+curl -X DELETE "$API_BASE/media/$MEDIA_ID" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response: {"message": "Media deleted successfully"}
+```
+
+### Reel Request Workflow
+
+#### Request Access to On-Request Media
+
+```bash
+# Request access to someone's private reel
+curl -X POST "$API_BASE/reels/$MEDIA_ID/request" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Hi! I am casting for an upcoming project and would love to see your work."
+  }'
+
+# Response: {"message": "Request sent", "request": {...}}
+```
+
+#### View Received Requests
+
+```bash
+# Get reel requests you've received
+curl "$API_BASE/reel-requests?type=received&status=pending" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response: {"requests": [...], "total": 5}
+```
+
+#### Approve Request
+
+```bash
+# Approve a reel request
+curl -X POST "$API_BASE/reel-requests/$REQUEST_ID/approve" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Thanks for your interest! Here is the link..."
+  }'
+```
+
+#### Deny Request
+
+```bash
+# Deny a reel request
+curl -X POST "$API_BASE/reel-requests/$REQUEST_ID/deny" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Thank you for your interest, but this reel is not available at this time."
+  }'
+```
+
+### Search & Discovery
+
+#### Search Profiles
+
+```bash
+# Search profiles by query and filters
+curl "$API_BASE/search?query=actor&role=Actor&location=Los%20Angeles&limit=20" \
+  -H "Content-Type: application/json"
+
+# Response: {
+#   "results": [...],
+#   "total": 42,
+#   "hasMore": true,
+#   "cursor": "cm789..."
+# }
+```
+
+#### Search with Pagination
+
+```bash
+# Get next page using cursor
+curl "$API_BASE/search?query=actor&role=Actor&cursor=cm789...&limit=20"
+```
+
+#### Search Users by Username
+
+```bash
+# Search users by username or display name
+curl "$API_BASE/search/users?query=jane"
+
+# Response: {"users": [...]}
+```
+
+### Privacy & Account Management
+
+#### Export Account Data
+
+```bash
+# Export all account data (GDPR compliance)
+curl -X POST "$API_BASE/account/export" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response: Complete JSON export of user data
+# {
+#   "user": {...},
+#   "profile": {...},
+#   "media": [...],
+#   "posts": [...],
+#   "settings": {...},
+#   "exportedAt": "2024-01-15T10:30:00.000Z"
+# }
+```
+
+#### Delete Account
+
+```bash
+# Delete account and all associated data
+curl -X DELETE "$API_BASE/account" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "confirm": true,
+    "reason": "No longer needed"
+  }'
+
+# Response: {"message": "Account deletion in progress"}
+# Note: This will cascade delete all user data
+```
+
+### Credits Management
+
+#### Add Credit
+
+```bash
+# Add professional credit to profile
+curl -X POST "$API_BASE/profiles/$PROFILE_ID/credits" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "The Great Film",
+    "role": "Lead Actor",
+    "company": "Production Company Inc.",
+    "year": 2023,
+    "order": 1
+  }'
+```
+
+#### List Credits
+
+```bash
+# Get all credits for a profile
+curl "$API_BASE/profiles/$PROFILE_ID/credits"
+
+# Response: {"credits": [...]}
+```
+
+#### Update Credit
+
+```bash
+# Update existing credit
+curl -X PUT "$API_BASE/credits/$CREDIT_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "Lead Actor (updated)",
+    "year": 2024
+  }'
+```
+
+#### Delete Credit
+
+```bash
+# Delete credit
+curl -X DELETE "$API_BASE/credits/$CREDIT_ID" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Settings Management
+
+#### Get User Settings
+
+```bash
+# Get user settings and preferences
+curl "$API_BASE/settings" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Response: {
+#   "notificationPreferences": {...},
+#   "privacySettings": {...},
+#   "accountSettings": {...}
+# }
+```
+
+#### Update Settings
+
+```bash
+# Update user settings
+curl -X PUT "$API_BASE/settings" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "notificationPreferences": {
+      "emailNotifications": true,
+      "reelRequests": true,
+      "messages": false
+    },
+    "privacySettings": {
+      "profileVisibility": "public",
+      "showEmail": false
+    }
+  }'
+```
+
+## Testing the Deployment
+
+### Quick Health Check
+
+```bash
+# Test that API is responding
+curl "$API_BASE/health"
+
+# Expected: {"status": "ok", "timestamp": ..., "service": "Project Valine API"}
+```
+
+### Full Integration Test
+
+```bash
+# Run the comprehensive test script
+./scripts/deployment/test-endpoints.sh
+
+# Or set API_BASE and run specific tests
+export API_BASE="https://your-api-id.execute-api.us-west-2.amazonaws.com/dev"
+./scripts/deployment/smoke-test-staging.sh
 ```
 
 ## Known Limitations & Future Work

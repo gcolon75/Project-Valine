@@ -1,123 +1,305 @@
 # Security Implementation Summary
 
-> **📌 Backend Note:** Security features are implemented in the **Serverless backend** (`/serverless`). The Express server (`/server`) mentioned in some legacy sections is for local development only. See [Canonical Backend Decision](../backend/canonical-backend.md).
+> **📌 Backend Note:** Security features are implemented in the **Serverless backend** (`/serverless`). This is the canonical production API. See [Canonical Backend Decision](../backend/canonical-backend.md).
 
 ## Overview
 
-This document provides a high-level summary of the account security and privacy hardening implementation for Project Valine.
+This document provides a high-level summary of the account security and privacy hardening implementation for Project Valine's serverless backend.
 
 ## Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
-cd server
+cd serverless
 npm install
 ```
 
-### 2. Run Database Migration
+### 2. Generate Prisma Client
+
+```bash
+cd ../api
+npx prisma generate
+```
+
+### 3. Run Database Migration
 
 ```bash
 cd ../api
 npx prisma migrate deploy
 ```
 
-### 3. Configure Environment
+### 4. Configure Environment
 
-Copy and edit the environment file:
+Create a `.env` file in the project root:
 
 ```bash
-cd ../server
-cp .env.example .env
+# Required
+DATABASE_URL="postgresql://username:password@host:5432/valine_db"
+JWT_SECRET="$(openssl rand -base64 32)"
+
+# Optional
+EMAIL_ENABLED=false  # Set to true for production SMTP
+FRONTEND_URL=http://localhost:5173
+AWS_REGION=us-west-2
+STAGE=dev
 ```
 
-Required variables:
-- `JWT_SECRET` - Strong random string for JWT signing
-- `TOTP_ENCRYPTION_KEY` - Strong random string for 2FA secret encryption
+**Required variables:**
+- `JWT_SECRET` - Strong random string for JWT signing (32+ characters)
 - `DATABASE_URL` - PostgreSQL connection string
 
-Optional (disabled by default):
-- `CSRF_ENABLED=true` - Enable CSRF protection
-- `USE_SESSION_TRACKING=true` - Enable database session tracking
-- `FEATURE_2FA_ENABLED=true` - Enable two-factor authentication
-- `EMAIL_ENABLED=true` - Enable email sending (requires SMTP config)
+**Optional (disabled by default):**
+- `EMAIL_ENABLED=true` - Enable SMTP email sending (default: console logs)
+- `FRONTEND_URL` - Frontend URL for email verification links
+- `STAGE` - Deployment stage (dev, staging, prod)
 
-### 4. Start Server
+**Generate strong JWT_SECRET:**
+```bash
+openssl rand -base64 32
+```
+
+### 5. Deploy to AWS
 
 ```bash
-npm start
+cd serverless
+npx serverless deploy --stage dev
+```
+
+Or use the deployment script:
+```bash
+./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
 ## Features Implemented
 
 ### ✅ Email Verification
-- Tokens expire in 24 hours
-- Automatic email on registration
-- Resend verification endpoint
-- Middleware to restrict unverified users
+- **Status:** Fully implemented in serverless backend
+- Tokens expire in 24 hours (crypto-based, 32 bytes)
+- Automatic email on registration (console logs in dev, SMTP in prod)
+- Resend verification endpoint with auth required
+- Single-use tokens (deleted after verification)
+- Expired token cleanup
 
-### ✅ Password Reset
-- Time-bound tokens (1 hour expiration)
-- Secure token generation
-- Session invalidation on reset
-- Email templates included
+**Endpoints:**
+- `POST /auth/verify-email` - Verify email with token
+- `POST /auth/resend-verification` - Resend verification (requires auth)
 
-### ✅ Two-Factor Authentication (2FA)
-- TOTP-based (compatible with Google Authenticator, Authy, etc.)
-- QR code generation for easy setup
-- 8 recovery codes per enrollment
-- Feature flag controlled
+### ✅ Password Security
+- **Status:** Fully implemented with bcrypt
+- bcryptjs with 10 salt rounds
+- Constant-time comparison (protects against timing attacks)
+- Passwords never stored in plaintext or logs
+- Automatic salt generation per password
+- Minimum 6 characters (recommend increasing to 12+)
 
-### ✅ Session Management
-- JWT-based (default, stateless)
-- Optional database session tracking
-- Session revocation
-- IP and user agent tracking
+**Implementation:** `/serverless/src/handlers/auth.js`
 
-### ✅ CSRF Protection
-- Token generation and validation
-- Cookie + header verification
-- Safe method bypass
-- Feature flag controlled
+### ✅ JWT-Based Authentication
+- **Status:** Fully implemented
+- Token expiration: 7 days
+- HS256 algorithm (HMAC with SHA-256)
+- Stateless (no server-side session tracking)
+- Bearer token in Authorization header
+- User ID embedded in JWT payload
 
-### ✅ Rate Limiting
-- Authentication endpoints protected
-- IP-based and account-based tracking
-- Exponential backoff
-- Structured 429 responses
+**Endpoints:**
+- `POST /auth/register` - Register with auto JWT issuance
+- `POST /auth/login` - Login and receive JWT
+- `GET /auth/me` - Get current user (requires JWT)
+
+### ⏳ Password Reset
+- **Status:** Not yet implemented
+- Planned: Time-bound tokens (1 hour expiration)
+- Planned: Session invalidation on reset
+- Planned: Rate limiting
+
+**Future Endpoints:**
+- `POST /auth/request-password-reset` - Request reset token
+- `POST /auth/reset-password` - Complete password reset
+
+### ⏳ Two-Factor Authentication (2FA)
+- **Status:** Not yet implemented
+- Planned: TOTP-based (Google Authenticator compatible)
+- Planned: QR code generation
+- Planned: Recovery codes
+- Planned: Feature flag controlled
+
+**Future Endpoints:**
+- `POST /auth/2fa/enroll` - Start 2FA enrollment
+- `POST /auth/2fa/verify` - Verify 2FA code
+- `POST /auth/2fa/disable` - Disable 2FA
+
+### ⏳ Session Management
+- **Status:** JWT-only (stateless), no database tracking
+- Current: JWT expiration handles session lifecycle
+- Future: Optional database session tracking
+- Future: Session revocation endpoint
+
+### ⏳ CSRF Protection
+- **Status:** Not required for JWT-only auth
+- Note: CSRF protection primarily for cookie-based auth
+- JWT in Authorization header inherently CSRF-resistant
+- No implementation needed for current architecture
+
+### ⏳ Rate Limiting
+- **Status:** Not yet implemented in serverless
+- Recommended: AWS API Gateway rate limiting
+- Future: Distributed rate limiting with Redis/ElastiCache
+- Priority: High for auth endpoints
+
+**Recommended Limits:**
+- Registration: 3 per hour per IP
+- Login: 5 per 15 minutes per IP + account
+- Resend verification: 3 per hour per user
+- Password reset: 3 per hour per email
 
 ### ✅ Security Headers
-- Content Security Policy (CSP) - report-only by default
-- HTTP Strict Transport Security (HSTS)
-- X-Frame-Options: DENY
+- **Status:** Implemented in handler utilities
 - X-Content-Type-Options: nosniff
-- Referrer-Policy: strict-origin-when-cross-origin
-- Permissions-Policy
+- Content-Type: application/json
+- CORS headers via serverless.yml
+- API Gateway handles additional headers
 
-### ✅ Audit Logging
-- All security-sensitive actions logged
+**Implementation:** `/serverless/src/utils/headers.js`
+
+### ⏳ Audit Logging
+- **Status:** Basic console logging only
+- Current: Auth events logged to CloudWatch
+- Future: Structured audit log table
+- Future: User-accessible audit log endpoint
+
+**Future Features:**
+- Database audit log storage
 - IP and user agent tracking
-- 90-day retention (configurable)
-- User-accessible audit log endpoint
+- 90-day retention
+- User query endpoint
 
 ### ✅ Privacy Features
-- Complete data export (GDPR compliant)
-- Account deletion with confirmation
-- Optional grace period for deletion
-- Session management and revocation
+- **Status:** Export and delete implemented
+- Account data export (JSON format)
+- Account deletion with cascade
+- Privacy settings (GDPR compliant)
+
+**Endpoints:**
+- `POST /account/export` - Export all user data
+- `DELETE /account` - Delete account and data
+
+**Implementation:** `/serverless/src/handlers/settings.js`
+
+### ✅ Input Validation
+- **Status:** Implemented for profiles and auth
+- Email format validation (regex)
+- Password length enforcement (6+ chars)
+- Profile link URL validation
+- String length limits enforced
+- Platform whitelist for social links
+
+**Implementation:** 
+- `/serverless/src/handlers/auth.js` (auth validation)
+- `/serverless/src/handlers/profiles.js` (profile validation)
 
 ## API Endpoints
 
-### Authentication
+### Authentication (Implemented)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/register` | POST | Register new user with email verification |
-| `/auth/login` | POST | Login with optional 2FA |
-| `/auth/logout` | POST | Logout and invalidate session |
-| `/auth/verify-email` | POST | Verify email with token |
-| `/auth/resend-verification` | POST | Resend verification email |
-| `/auth/request-password-reset` | POST | Request password reset token |
+| Endpoint | Method | Status | Description |
+|----------|--------|--------|-------------|
+| `/auth/register` | POST | ✅ Implemented | Register new user with email verification |
+| `/auth/login` | POST | ✅ Implemented | Login and receive JWT token |
+| `/auth/me` | GET | ✅ Implemented | Get current user profile (requires JWT) |
+| `/auth/verify-email` | POST | ✅ Implemented | Verify email with token |
+| `/auth/resend-verification` | POST | ✅ Implemented | Resend verification email (requires JWT) |
+
+### Authentication (Planned)
+
+| Endpoint | Method | Status | Description |
+|----------|--------|--------|-------------|
+| `/auth/logout` | POST | ⏳ Planned | Logout (useful for audit logging) |
+| `/auth/request-password-reset` | POST | ⏳ Planned | Request password reset token |
+| `/auth/reset-password` | POST | ⏳ Planned | Complete password reset |
+| `/auth/2fa/enroll` | POST | ⏳ Planned | Start 2FA enrollment |
+| `/auth/2fa/verify` | POST | ⏳ Planned | Verify 2FA code |
+| `/auth/2fa/disable` | POST | ⏳ Planned | Disable 2FA |
+
+### Privacy (Implemented)
+
+| Endpoint | Method | Status | Description |
+|----------|--------|--------|-------------|
+| `/account/export` | POST | ✅ Implemented | Export all user data (GDPR) |
+| `/account` | DELETE | ✅ Implemented | Delete account and all data |
+
+### Privacy (Planned)
+
+| Endpoint | Method | Status | Description |
+|----------|--------|--------|-------------|
+| `/privacy/sessions` | GET | ⏳ Planned | List active sessions |
+| `/privacy/sessions/:id` | DELETE | ⏳ Planned | Revoke specific session |
+| `/privacy/audit-log` | GET | ⏳ Planned | View security audit log |
+
+## Implementation Files
+
+### Serverless Backend
+
+**Handlers (Implemented):**
+- **auth.js** - Registration, login, email verification (JWT + bcrypt)
+- **settings.js** - Account export, deletion, privacy settings
+- **profiles.js** - Profile management with input validation
+
+**Utilities:**
+- **headers.js** - Response helpers with security headers
+- **db/client.js** - Prisma client singleton
+
+**Configuration:**
+- **serverless.yml** - Function definitions and API Gateway routes
+- **handler.js** - Main entry point
+
+### Database Schema
+
+**Implemented Tables:**
+- `User` - User accounts with emailVerified, password hash
+- `EmailVerificationToken` - Email verification tokens (24h expiry)
+- `UserSettings` - Privacy and notification preferences
+- `Profile` - Extended user profiles
+
+**Planned Tables:**
+- `PasswordResetToken` - Password reset tokens (1h expiry)
+- `TwoFactorRecoveryCode` - 2FA recovery codes
+- `Session` - Optional session tracking
+- `AuditLog` - Security audit trail
+
+**User Model Fields:**
+- ✅ `email`, `normalizedEmail`
+- ✅ `password` (bcrypt hash)
+- ✅ `emailVerified`, `emailVerifiedAt`
+- ⏳ `twoFactorEnabled`, `twoFactorSecret` (planned)
+
+## Security Best Practices
+
+### Passwords (Implemented)
+- ✅ bcrypt hashing (10 salt rounds)
+- ✅ Never logged or stored in plain text
+- ✅ Constant-time comparison (bcrypt.compare)
+- ⏳ Strong password requirements (currently 6+ chars, should increase to 12+)
+
+### Tokens (Implemented)
+- ✅ Cryptographically secure random generation (crypto.randomBytes)
+- ✅ Time-bound expiration (24h for email verification)
+- ✅ Single-use for verification tokens (deleted after use)
+- ✅ Secure transmission (HTTPS required in production)
+
+### Sessions (Implemented)
+- ✅ JWT with 7-day expiration
+- ✅ Stateless authentication (no server-side session)
+- ✅ HS256 signing algorithm
+- ⏳ Refresh token rotation (not yet implemented)
+- ⏳ Session invalidation on sensitive changes (not yet implemented)
+
+### Rate Limiting (Recommended)
+- ⏳ Use AWS API Gateway throttling
+- ⏳ Per-endpoint limits (auth endpoints)
+- ⏳ Distributed rate limiting with Redis (future)
+- ⏳ IP-based and account-based tracking
 | `/auth/reset-password` | POST | Reset password with token |
 
 ### Two-Factor Authentication
