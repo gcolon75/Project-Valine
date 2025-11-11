@@ -1,8 +1,17 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateAccessTokenCookie,
+  generateRefreshTokenCookie,
+  generateClearCookieHeaders,
+  extractToken,
+  verifyToken,
+  getUserIdFromEvent
+} from '../utils/tokenManager.js';
 
 // Password hashing with bcrypt
 const hashPassword = async (password) => {
@@ -15,30 +24,8 @@ const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '7d';
-
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-};
-
-const verifyToken = (token) => {
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch (err) {
-    return null;
-  }
-};
-
-// Extract user from authorization header
-export const getUserFromEvent = (event) => {
-  const authHeader = event.headers?.authorization || event.headers?.Authorization;
-  if (!authHeader) return null;
-  
-  const token = authHeader.replace('Bearer ', '');
-  const decoded = verifyToken(token);
-  return decoded?.userId || null;
-};
+// Export for backward compatibility
+export const getUserFromEvent = getUserIdFromEvent;
 
 export const register = async (event) => {
   try {
@@ -118,14 +105,32 @@ export const register = async (event) => {
     // Send verification email (log in dev, SMTP in production)
     await sendVerificationEmail(user.email, verificationToken, user.username);
 
-    // Generate JWT token
-    const token = generateToken(user.id);
+    // Generate tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
-    return json({
-      user,
-      token,
-      message: 'Registration successful. Please check your email to verify your account.'
-    }, 201);
+    // Set HttpOnly cookies
+    const accessCookie = generateAccessTokenCookie(accessToken);
+    const refreshCookie = generateRefreshTokenCookie(refreshToken);
+
+    return {
+      statusCode: 201,
+      headers: {
+        'content-type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Set-Cookie': accessCookie,
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+      },
+      multiValueHeaders: {
+        'Set-Cookie': [accessCookie, refreshCookie]
+      },
+      body: JSON.stringify({
+        user,
+        message: 'Registration successful. Please check your email to verify your account.'
+      })
+    };
   } catch (e) {
     console.error('Register error:', e);
     return error('Server error: ' + e.message, 500);
@@ -182,13 +187,31 @@ export const login = async (event) => {
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
-    // Generate JWT token
-    const token = generateToken(user.id);
+    // Generate tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
-    return json({
-      user: userWithoutPassword,
-      token
-    });
+    // Set HttpOnly cookies
+    const accessCookie = generateAccessTokenCookie(accessToken);
+    const refreshCookie = generateRefreshTokenCookie(refreshToken);
+
+    return {
+      statusCode: 200,
+      headers: {
+        'content-type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Set-Cookie': accessCookie,
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+      },
+      multiValueHeaders: {
+        'Set-Cookie': [accessCookie, refreshCookie]
+      },
+      body: JSON.stringify({
+        user: userWithoutPassword
+      })
+    };
   } catch (e) {
     console.error('Login error:', e);
     return error('Server error: ' + e.message, 500);
@@ -386,6 +409,96 @@ export const resendVerification = async (event) => {
     });
   } catch (e) {
     console.error('Resend verification error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+// POST /auth/refresh - Refresh access token using refresh token
+export const refresh = async (event) => {
+  try {
+    // Extract refresh token from cookie
+    const refreshToken = extractToken(event, 'refresh');
+    
+    if (!refreshToken) {
+      return error('Refresh token required', 401);
+    }
+
+    // Verify refresh token
+    const decoded = verifyToken(refreshToken);
+    
+    if (!decoded || decoded.type !== 'refresh') {
+      return error('Invalid refresh token', 401);
+    }
+
+    const prisma = getPrisma();
+    
+    // Verify user still exists
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, email: true }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    // Generate new access token
+    const newAccessToken = generateAccessToken(user.id);
+    
+    // Rotate refresh token (generate new one for security)
+    const newRefreshToken = generateRefreshToken(user.id);
+
+    // Set new cookies
+    const accessCookie = generateAccessTokenCookie(newAccessToken);
+    const refreshCookie = generateRefreshTokenCookie(newRefreshToken);
+
+    return {
+      statusCode: 200,
+      headers: {
+        'content-type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Set-Cookie': accessCookie,
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+      },
+      multiValueHeaders: {
+        'Set-Cookie': [accessCookie, refreshCookie]
+      },
+      body: JSON.stringify({
+        message: 'Token refreshed successfully'
+      })
+    };
+  } catch (e) {
+    console.error('Refresh token error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+// POST /auth/logout - Clear authentication cookies
+export const logout = async (event) => {
+  try {
+    // Generate cookie clearing headers
+    const clearCookies = generateClearCookieHeaders();
+
+    return {
+      statusCode: 200,
+      headers: {
+        'content-type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+      },
+      multiValueHeaders: {
+        'Set-Cookie': clearCookies
+      },
+      body: JSON.stringify({
+        message: 'Logged out successfully'
+      })
+    };
+  } catch (e) {
+    console.error('Logout error:', e);
     return error('Server error: ' + e.message, 500);
   }
 };

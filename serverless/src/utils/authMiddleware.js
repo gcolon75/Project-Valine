@@ -4,6 +4,7 @@
 
 import { getPrisma } from '../db/client.js';
 import { error } from './headers.js';
+import { getUserIdFromEvent } from './tokenManager.js';
 
 /**
  * Check if user's email is verified
@@ -33,4 +34,13 @@ export async function requireEmailVerified(userId) {
   }
 
   return null; // User is verified, no error
+}
+
+/**
+ * Get authenticated user ID from event (cookie or header)
+ * @param {object} event - Lambda event object
+ * @returns {string|null} User ID or null
+ */
+export function getAuthenticatedUserId(event) {
+  return getUserIdFromEvent(event);
 }
