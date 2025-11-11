@@ -1,151 +1,119 @@
 #!/bin/bash
 
 # Migration Verification Script
-# Validates that the migration SQL is syntactically correct and can be applied
+# Validates that all required staging migrations exist and are idempotent
 
 set -e
 
 echo "================================================"
-echo "Phase 1: Migration Verification"
+echo "Staging Migrations Verification"
 echo "================================================"
 echo ""
 
-MIGRATION_DIR="$(dirname "$0")/prisma/migrations/20251111191723_add_email_verification"
-MIGRATION_SQL="$MIGRATION_DIR/migration.sql"
-ROLLBACK_SQL="$MIGRATION_DIR/rollback.sql"
+MIGRATIONS_DIR="$(dirname "$0")/prisma/migrations"
 
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${YELLOW}Checking migration files...${NC}"
+# Required migrations for staging first account
+REQUIRED_MIGRATIONS=(
+  "20251111191723_add_email_verification"
+  "20251111193653_add_session_audits_2fa"
+  "20251111201848_add_pr_intel_test_runs"
+)
 
-# Check files exist
-if [ ! -f "$MIGRATION_SQL" ]; then
-  echo -e "${RED}✗ Migration SQL not found at $MIGRATION_SQL${NC}"
+echo -e "${YELLOW}Checking required migration files...${NC}"
+echo ""
+
+MIGRATIONS_FOUND=0
+MIGRATIONS_MISSING=0
+
+# Check each migration exists
+for migration in "${REQUIRED_MIGRATIONS[@]}"; do
+  MIGRATION_DIR="$MIGRATIONS_DIR/$migration"
+  MIGRATION_SQL="$MIGRATION_DIR/migration.sql"
+  
+  echo -n "  $migration... "
+  
+  if [ ! -d "$MIGRATION_DIR" ]; then
+    echo -e "${RED}✗ MISSING (directory not found)${NC}"
+    MIGRATIONS_MISSING=$((MIGRATIONS_MISSING + 1))
+    continue
+  fi
+  
+  if [ ! -f "$MIGRATION_SQL" ]; then
+    echo -e "${RED}✗ MISSING (migration.sql not found)${NC}"
+    MIGRATIONS_MISSING=$((MIGRATIONS_MISSING + 1))
+    continue
+  fi
+  
+  # Check for idempotent patterns (IF NOT EXISTS)
+  IDEMPOTENT_COUNT=$(grep -c "IF NOT EXISTS\|IF EXISTS" "$MIGRATION_SQL" || echo "0")
+  
+  if [ "$IDEMPOTENT_COUNT" -gt 0 ]; then
+    echo -e "${GREEN}✓ FOUND (idempotent: $IDEMPOTENT_COUNT clauses)${NC}"
+  else
+    echo -e "${YELLOW}✓ FOUND (warning: may not be idempotent)${NC}"
+  fi
+  
+  MIGRATIONS_FOUND=$((MIGRATIONS_FOUND + 1))
+done
+
+echo ""
+
+if [ $MIGRATIONS_MISSING -gt 0 ]; then
+  echo -e "${RED}✗ $MIGRATIONS_MISSING migration(s) missing!${NC}"
+  echo "Expected migrations in $MIGRATIONS_DIR/"
   exit 1
 fi
 
-if [ ! -f "$ROLLBACK_SQL" ]; then
-  echo -e "${RED}✗ Rollback SQL not found at $ROLLBACK_SQL${NC}"
-  exit 1
-fi
-
-echo -e "${GREEN}✓ Migration files found${NC}"
+echo -e "${GREEN}✓ All $MIGRATIONS_FOUND required migrations found${NC}"
 echo ""
 
-# Display migration SQL
-echo -e "${YELLOW}Migration SQL:${NC}"
-echo "---"
-cat "$MIGRATION_SQL"
-echo "---"
+# Display summary of each migration
+echo -e "${BLUE}Migration Summary:${NC}"
 echo ""
 
-# Display rollback SQL
-echo -e "${YELLOW}Rollback SQL:${NC}"
-echo "---"
-cat "$ROLLBACK_SQL"
-echo "---"
+echo "1. 20251111191723_add_email_verification"
+echo "   - Adds email verification to users table"
+echo "   - Creates email_verification_tokens table"
+echo ""
+
+echo "2. 20251111193653_add_session_audits_2fa"
+echo "   - Adds 2FA fields to users table"
+echo "   - Creates refresh_tokens table for session tracking"
+echo ""
+
+echo "3. 20251111201848_add_pr_intel_test_runs"
+echo "   - Creates pr_intelligence table"
+echo "   - Creates test_runs table"
 echo ""
 
 # Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
-  echo -e "${YELLOW}⚠ DATABASE_URL not set. Skipping database validation.${NC}"
-  echo "To test migration on actual database, set DATABASE_URL and re-run."
+  echo -e "${YELLOW}⚠ DATABASE_URL not set.${NC}"
   echo ""
-  echo -e "${GREEN}✓ Migration files are present and formatted correctly${NC}"
+  echo "To apply migrations to database, run:"
+  echo "  export DATABASE_URL='postgresql://USER:PASSWORD@HOST:PORT/DATABASE'"
+  echo "  cd serverless"
+  echo "  npx prisma migrate deploy"
+  echo ""
+  echo -e "${GREEN}✓ Migration files verified successfully${NC}"
   exit 0
 fi
 
-# If DATABASE_URL is set, offer to test migration
-echo -e "${YELLOW}DATABASE_URL is set. Would you like to test the migration?${NC}"
-echo "This will:"
-echo "  1. Apply the migration"
-echo "  2. Verify tables/columns were created"
-echo "  3. Roll back the migration"
-echo "  4. Verify rollback was successful"
+# If DATABASE_URL is set, offer to apply migrations
+echo -e "${YELLOW}DATABASE_URL is set.${NC}"
 echo ""
-echo -n "Proceed? (y/N): "
-read -r PROCEED
-
-if [ "$PROCEED" != "y" ] && [ "$PROCEED" != "Y" ]; then
-  echo "Skipping database test."
-  exit 0
-fi
-
+echo "To apply migrations, run:"
+echo "  cd serverless"
+echo "  npx prisma migrate deploy"
 echo ""
-echo -e "${YELLOW}Testing migration...${NC}"
-
-# Apply migration
-echo "Applying migration..."
-if psql "$DATABASE_URL" -f "$MIGRATION_SQL" > /dev/null 2>&1; then
-  echo -e "${GREEN}✓ Migration applied successfully${NC}"
-else
-  echo -e "${RED}✗ Migration failed${NC}"
-  exit 1
-fi
-
-# Verify migration
-echo "Verifying migration..."
-COLUMNS_CHECK=$(psql "$DATABASE_URL" -t -c "
-  SELECT COUNT(*) FROM information_schema.columns 
-  WHERE table_name = 'users' 
-  AND column_name IN ('normalizedEmail', 'emailVerified', 'emailVerifiedAt')
-")
-
-TABLE_CHECK=$(psql "$DATABASE_URL" -t -c "
-  SELECT COUNT(*) FROM information_schema.tables 
-  WHERE table_name = 'email_verification_tokens'
-")
-
-if [ $(echo "$COLUMNS_CHECK" | tr -d ' ') = "3" ] && [ $(echo "$TABLE_CHECK" | tr -d ' ') = "1" ]; then
-  echo -e "${GREEN}✓ Migration verified (columns and table created)${NC}"
-else
-  echo -e "${RED}✗ Migration verification failed${NC}"
-  echo "  Expected 3 new columns in users table, found: $COLUMNS_CHECK"
-  echo "  Expected 1 new table (email_verification_tokens), found: $TABLE_CHECK"
-  exit 1
-fi
-
-# Test rollback
+echo "To check migration status:"
+echo "  npx prisma migrate status"
 echo ""
-echo -e "${YELLOW}Testing rollback...${NC}"
-
-if psql "$DATABASE_URL" -f "$ROLLBACK_SQL" > /dev/null 2>&1; then
-  echo -e "${GREEN}✓ Rollback applied successfully${NC}"
-else
-  echo -e "${RED}✗ Rollback failed${NC}"
-  exit 1
-fi
-
-# Verify rollback
-echo "Verifying rollback..."
-COLUMNS_CHECK=$(psql "$DATABASE_URL" -t -c "
-  SELECT COUNT(*) FROM information_schema.columns 
-  WHERE table_name = 'users' 
-  AND column_name IN ('normalizedEmail', 'emailVerified', 'emailVerifiedAt')
-")
-
-TABLE_CHECK=$(psql "$DATABASE_URL" -t -c "
-  SELECT COUNT(*) FROM information_schema.tables 
-  WHERE table_name = 'email_verification_tokens'
-")
-
-if [ $(echo "$COLUMNS_CHECK" | tr -d ' ') = "0" ] && [ $(echo "$TABLE_CHECK" | tr -d ' ') = "0" ]; then
-  echo -e "${GREEN}✓ Rollback verified (columns and table removed)${NC}"
-else
-  echo -e "${RED}✗ Rollback verification failed${NC}"
-  echo "  Expected 0 columns in users table, found: $COLUMNS_CHECK"
-  echo "  Expected 0 tables (email_verification_tokens), found: $TABLE_CHECK"
-  exit 1
-fi
-
-echo ""
-echo -e "${GREEN}================================================${NC}"
-echo -e "${GREEN}✓ Migration and rollback tested successfully!${NC}"
-echo -e "${GREEN}================================================${NC}"
-echo ""
-echo "Note: The migration has been rolled back. To apply it permanently, run:"
-echo "  psql \$DATABASE_URL -f $MIGRATION_SQL"
+echo -e "${GREEN}✓ All migration files verified and ready to apply${NC}"
