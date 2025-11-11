@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
+import { requireEmailVerified } from '../utils/authMiddleware.js';
 
 /**
  * GET /api/settings
@@ -61,6 +62,12 @@ export const updateSettings = async (event) => {
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error('Unauthorized', 401);
+    }
+
+    // Require email verification for updating settings
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -220,10 +227,25 @@ export const deleteAccount = async (event) => {
       return error('Password confirmation is required', 400);
     }
 
-    // TODO: Verify password before deletion
-    // For now, we'll skip password verification
-
     const prisma = getPrisma();
+
+    // Get user to verify password
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { password: true }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    // Verify password using bcrypt
+    const bcrypt = await import('bcryptjs');
+    const passwordMatch = await bcrypt.compare(confirmPassword, user.password);
+    
+    if (!passwordMatch) {
+      return error('Invalid password', 401);
+    }
 
     // In production, you might want to:
     // 1. Mark account for deletion (30-day grace period)

@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "description": "Permission matrix for Discord slash commands. Maps commands to allowed Discord role IDs.",
+  "version": "1.0.0",
+  "rbacEnabled": true,
+  "commands": {
+    "/deploy-client": {
+      "description": "Triggers Client Deploy workflow",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/ship": {
+      "description": "Triggers deployment with verification",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/triage": {
+      "description": "Triages failing workflow runs",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/triage-all": {
+      "description": "Triages all failing workflows",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/verify-run": {
+      "description": "Verifies a specific workflow run",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/set-frontend": {
+      "description": "Sets frontend base URL",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/set-api-base": {
+      "description": "Sets API base URL",
+      "requiresAuth": true,
+      "allowedRoleIds": [],
+      "allowedUserIds": [],
+      "bypassOnEnv": "development"
+    },
+    "/plan": {
+      "description": "Creates daily plan proposal",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/approve": {
+      "description": "Approves a plan",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/status": {
+      "description": "Shows recent workflow status",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/verify-latest": {
+      "description": "Verifies latest deployment",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/diagnose": {
+      "description": "Runs infrastructure diagnostics",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/agents": {
+      "description": "Lists available agents",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/status-digest": {
+      "description": "Shows health digest",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/update-summary": {
+      "description": "Updates project summary",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/uptime-check": {
+      "description": "Checks uptime status",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/debug-last": {
+      "description": "Debugs last workflow run",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/relay-send": {
+      "description": "Sends relay message",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/relay-dm": {
+      "description": "Sends relay DM",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    },
+    "/ux-update": {
+      "description": "Handles UX updates",
+      "requiresAuth": false,
+      "allowedRoleIds": [],
+      "allowedUserIds": []
+    }
+  },
+  "notes": [
+    "Set ADMIN_ROLE_IDS environment variable to comma-separated Discord role IDs for admin access",
+    "Set RBAC_ENABLED=false to disable RBAC enforcement (useful for development)",
+    "Commands with requiresAuth=true will check against allowedRoleIds",
+    "Empty allowedRoleIds means any authenticated user can execute",
+    "bypassOnEnv allows bypassing checks in specific environments (development/staging/production)"
+  ]
+}
