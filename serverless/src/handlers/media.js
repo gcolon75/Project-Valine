@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
+import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
@@ -22,6 +23,12 @@ export const getUploadUrl = async (event) => {
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error('Unauthorized', 401);
+    }
+
+    // Require email verification for media uploads
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
     }
 
     const body = JSON.parse(event.body || '{}');

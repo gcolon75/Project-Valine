@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
+import { requireEmailVerified } from '../utils/authMiddleware.js';
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -360,6 +361,12 @@ export const updateProfile = async (event) => {
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error('Unauthorized', 401);
+    }
+
+    // Require email verification for profile updates
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
     }
 
     const body = JSON.parse(event.body || '{}');
