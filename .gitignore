@@ -73,3 +73,4 @@ UX_AUDIT_ROADMAP.md
 # Orchestration analysis outputs (can be regenerated)
 temp-artifacts/
 analysis-output/
+.env.local
