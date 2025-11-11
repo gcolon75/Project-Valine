@@ -45,19 +45,43 @@ export const apiClient = axios.create({
   withCredentials: import.meta.env.VITE_ENABLE_AUTH === 'true' || import.meta.env.VITE_API_USE_CREDENTIALS === 'true' // Enable credentials for cookie auth
 });
 
+/**
+ * Get CSRF token from cookie
+ * Reads the XSRF-TOKEN cookie set by the backend
+ */
+const getCsrfToken = () => {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'XSRF-TOKEN') {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
 // Request interceptor - add auth token and CSRF protection
 apiClient.interceptors.request.use((config) => {
   // Add Authorization header for backward compatibility (when not using cookies)
   const enableAuth = import.meta.env.VITE_ENABLE_AUTH === 'true';
+  const csrfEnabled = import.meta.env.VITE_CSRF_ENABLED === 'true';
+  
   if (!enableAuth) {
     const token = localStorage.getItem('auth_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // Add CSRF protection for state-changing requests (when using cookies)
-  if (enableAuth && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
-    // SameSite=Lax provides basic CSRF protection
-    // Could add custom CSRF token header here if needed
+  // Add CSRF protection for state-changing requests
+  if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+    // Read XSRF-TOKEN cookie and send as X-CSRF-Token header
+    if (csrfEnabled || enableAuth) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+    
+    // Also add X-Requested-With for additional protection
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
   }
   

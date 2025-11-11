@@ -141,4 +141,78 @@ describe('API Client', () => {
       expect(apiClient.defaults.headers['Content-Type']).toBe('application/json');
     });
   });
+
+  describe('CSRF Protection', () => {
+    const originalEnv = import.meta.env.VITE_CSRF_ENABLED;
+    
+    beforeEach(() => {
+      // Enable CSRF for these tests
+      import.meta.env.VITE_CSRF_ENABLED = 'true';
+      
+      // Clear cookies - Note: jsdom doesn't fully support cookie APIs
+      // We need to mock document.cookie for testing
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: ''
+      });
+    });
+
+    afterEach(() => {
+      // Restore original env
+      import.meta.env.VITE_CSRF_ENABLED = originalEnv;
+    });
+
+    it('should include CSRF token header when XSRF-TOKEN cookie is present', async () => {
+      // Set XSRF-TOKEN cookie
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: 'XSRF-TOKEN=test-csrf-token-123'
+      });
+
+      let capturedCsrfHeader = null;
+      server.use(
+        http.post('http://localhost:4000/test-csrf', ({ request }) => {
+          capturedCsrfHeader = request.headers.get('x-csrf-token');
+          return HttpResponse.json({ success: true });
+        })
+      );
+
+      await apiClient.post('/test-csrf', { data: 'test' });
+
+      expect(capturedCsrfHeader).toBe('test-csrf-token-123');
+    });
+
+    it('should include X-Requested-With header on POST requests', async () => {
+      let capturedXRequestedWith = null;
+      server.use(
+        http.post('http://localhost:4000/test-xhr', ({ request }) => {
+          capturedXRequestedWith = request.headers.get('x-requested-with');
+          return HttpResponse.json({ success: true });
+        })
+      );
+
+      await apiClient.post('/test-xhr', { data: 'test' });
+
+      expect(capturedXRequestedWith).toBe('XMLHttpRequest');
+    });
+
+    it('should not include CSRF header on GET requests', async () => {
+      Object.defineProperty(document, 'cookie', {
+        writable: true,
+        value: 'XSRF-TOKEN=test-csrf-token-123'
+      });
+
+      let capturedCsrfHeader = null;
+      server.use(
+        http.get('http://localhost:4000/test-get', ({ request }) => {
+          capturedCsrfHeader = request.headers.get('x-csrf-token');
+          return HttpResponse.json({ success: true });
+        })
+      );
+
+      await apiClient.get('/test-get');
+
+      expect(capturedCsrfHeader).toBeNull();
+    });
+  });
 });

@@ -1,9 +1,9 @@
 // src/pages/Settings.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   User, Bell, Lock, Palette, Shield, Image, Download, 
   Trash2, Eye, Mail, Key, Smartphone, ExternalLink,
-  CreditCard, FileText, Share2, Loader2
+  CreditCard, FileText, Share2, Loader2, Monitor, MapPin, Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { exportAccountData, deleteAccount } from '../services/settingsService';
+import { getSessions, revokeSession, isSessionTrackingEnabled } from '../services/sessionsService';
+import { is2FAEnabled, get2FAStatus, enroll2FA, verifyEnrollment, disable2FA } from '../services/twoFactorService';
 
 export default function Settings() {
   const { theme } = useTheme();
@@ -22,6 +24,19 @@ export default function Settings() {
   const [editingSection, setEditingSection] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Sessions state
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [revokingSessionId, setRevokingSessionId] = useState(null);
+  
+  // 2FA state
+  const [twoFactorStatus, setTwoFactorStatus] = useState({ enabled: false });
+  const [twoFactorQR, setTwoFactorQR] = useState(null);
+  const [twoFactorSecret, setTwoFactorSecret] = useState(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState([]);
+  const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
   
   // Form states
   const [emailForm, setEmailForm] = useState({ email: user?.email || 'user@valine.com' });
@@ -39,6 +54,110 @@ export default function Settings() {
     mentions: true,
     pushEnabled: false
   });
+
+  // Load sessions on mount if enabled
+  useEffect(() => {
+    if (isSessionTrackingEnabled()) {
+      loadSessions();
+    }
+  }, []);
+
+  // Load 2FA status if enabled
+  useEffect(() => {
+    if (is2FAEnabled()) {
+      load2FAStatus();
+    }
+  }, []);
+
+  const loadSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const data = await getSessions();
+      setSessions(data.sessions || []);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+      toast.error('Failed to load sessions');
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId) => {
+    setRevokingSessionId(sessionId);
+    try {
+      await revokeSession(sessionId);
+      toast.success('Session terminated successfully');
+      // Reload sessions
+      await loadSessions();
+    } catch (error) {
+      console.error('Failed to revoke session:', error);
+      toast.error('Failed to terminate session');
+    } finally {
+      setRevokingSessionId(null);
+    }
+  };
+
+  const load2FAStatus = async () => {
+    try {
+      const status = await get2FAStatus();
+      setTwoFactorStatus(status);
+      setTwoFactorEnabled(status.enabled);
+    } catch (error) {
+      console.error('Failed to load 2FA status:', error);
+    }
+  };
+
+  const handleEnroll2FA = async () => {
+    setIsEnrolling2FA(true);
+    try {
+      const result = await enroll2FA();
+      setTwoFactorQR(result.qrCode);
+      setTwoFactorSecret(result.secret);
+      setActiveModal('setup-2fa');
+    } catch (error) {
+      console.error('Failed to start 2FA enrollment:', error);
+      toast.error(error.response?.data?.message || 'Failed to start 2FA enrollment');
+    } finally {
+      setIsEnrolling2FA(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!twoFactorCode || twoFactorCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    try {
+      const result = await verifyEnrollment(twoFactorCode);
+      setRecoveryCodes(result.recoveryCodes || []);
+      setTwoFactorEnabled(true);
+      toast.success('2FA enabled successfully!');
+      setActiveModal('show-recovery-codes');
+      setTwoFactorCode('');
+    } catch (error) {
+      console.error('Failed to verify 2FA code:', error);
+      toast.error(error.response?.data?.message || 'Invalid verification code');
+    }
+  };
+
+  const handleDisable2FA = async (password) => {
+    if (!password) {
+      toast.error('Password is required');
+      return;
+    }
+
+    try {
+      await disable2FA(password);
+      setTwoFactorEnabled(false);
+      setTwoFactorStatus({ enabled: false });
+      toast.success('2FA disabled successfully');
+      setActiveModal(null);
+    } catch (error) {
+      console.error('Failed to disable 2FA:', error);
+      toast.error(error.response?.data?.message || 'Failed to disable 2FA');
+    }
+  };
 
   const handleChangePassword = async (password) => {
     // TODO: Implement password change API call
@@ -179,20 +298,35 @@ export default function Settings() {
             </button>
           </SettingItem>
           
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <p className="font-medium text-neutral-900 dark:text-white">Two-Factor Authentication</p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                {twoFactorEnabled ? 'Enabled' : 'Add an extra layer of security'}
-              </p>
+          {is2FAEnabled() && (
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="font-medium text-neutral-900 dark:text-white">Two-Factor Authentication</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {twoFactorEnabled ? 'Enabled - Extra layer of security active' : 'Add an extra layer of security'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (twoFactorEnabled) {
+                    setActiveModal('disable-2fa');
+                  } else {
+                    handleEnroll2FA();
+                  }
+                }}
+                disabled={isEnrolling2FA}
+                className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isEnrolling2FA ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : twoFactorEnabled ? (
+                  'Disable'
+                ) : (
+                  'Setup'
+                )}
+              </button>
             </div>
-            <button
-              onClick={() => setActiveModal('setup-2fa')}
-              className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              {twoFactorEnabled ? 'Manage' : 'Setup'}
-            </button>
-          </div>
+          )}
           
           <SettingItem label="Connected Accounts">
             <button className="text-sm text-[#0CCE6B] hover:text-[#0BBE60] font-medium">
@@ -200,6 +334,65 @@ export default function Settings() {
             </button>
           </SettingItem>
         </SettingsSection>
+
+        {/* Active Sessions */}
+        {isSessionTrackingEnabled() && (
+          <SettingsSection
+            icon={Monitor}
+            title="Active Sessions"
+            description="Manage devices and locations where you're logged in"
+          >
+            {isLoadingSessions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center py-8 text-neutral-600 dark:text-neutral-400">
+                <Monitor className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No active sessions found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-start justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Monitor className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+                        <p className="font-medium text-neutral-900 dark:text-white text-sm">
+                          {session.userAgent || 'Unknown Device'}
+                        </p>
+                      </div>
+                      <div className="space-y-1 text-xs text-neutral-600 dark:text-neutral-400">
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{session.ipAddress || 'Unknown location'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Last active: {new Date(session.lastActivity || session.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRevokeSession(session.id)}
+                      disabled={revokingSessionId === session.id}
+                      className="ml-4 px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {revokingSessionId === session.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        'Terminate'
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SettingsSection>
+        )}
 
         {/* Privacy & Visibility */}
         <SettingsSection
@@ -389,6 +582,123 @@ export default function Settings() {
         title="Delete Account"
         message="This action cannot be undone. All your data, posts, and media will be permanently deleted."
         confirmText="Delete Account"
+        destructive={true}
+        requirePassword={true}
+      />
+
+      {/* 2FA Setup Modal */}
+      {activeModal === 'setup-2fa' && twoFactorQR && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-md w-full p-6 border border-neutral-200 dark:border-neutral-700">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
+              Setup Two-Factor Authentication
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                  Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
+                </p>
+                <div className="bg-white p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 flex justify-center">
+                  <img src={twoFactorQR} alt="2FA QR Code" className="w-48 h-48" />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
+                  Or enter this code manually:
+                </p>
+                <code className="block bg-neutral-100 dark:bg-neutral-800 px-3 py-2 rounded text-sm font-mono text-neutral-900 dark:text-white">
+                  {twoFactorSecret}
+                </code>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
+                  Enter the 6-digit code from your app:
+                </label>
+                <input
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white text-center text-2xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                  maxLength={6}
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={handleVerify2FA}
+                  disabled={twoFactorCode.length !== 6}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Verify & Enable
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveModal(null);
+                    setTwoFactorCode('');
+                    setTwoFactorQR(null);
+                    setTwoFactorSecret(null);
+                  }}
+                  className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recovery Codes Modal */}
+      {activeModal === 'show-recovery-codes' && recoveryCodes.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-md w-full p-6 border border-neutral-200 dark:border-neutral-700">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
+              Save Your Recovery Codes
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ Save these recovery codes in a safe place. You'll need them to access your account if you lose your authenticator device.
+                </p>
+              </div>
+
+              <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+                  {recoveryCodes.map((code, i) => (
+                    <div key={i} className="text-neutral-900 dark:text-white">
+                      {code}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setActiveModal(null);
+                  setRecoveryCodes([]);
+                }}
+                className="w-full px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold"
+              >
+                I've Saved My Codes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disable 2FA Modal */}
+      <ConfirmationModal
+        isOpen={activeModal === 'disable-2fa'}
+        onClose={() => setActiveModal(null)}
+        onConfirm={handleDisable2FA}
+        title="Disable Two-Factor Authentication"
+        message="Are you sure you want to disable 2FA? This will make your account less secure."
+        confirmText="Disable 2FA"
         destructive={true}
         requirePassword={true}
       />
