@@ -1,0 +1,621 @@
+{
+  "timestamp": "2025-11-11T21:39:00.107Z",
+  "featureFlags": [
+    {
+      "name": "EMAIL_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "TWO_FACTOR_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "CSRF_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "PR_INTEL_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "FLAKY_DETECTOR_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "SCHEMA_DIFF_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "SYNTHETIC_JOURNEY_ENABLED",
+      "defaultValue": "false",
+      "type": "boolean"
+    },
+    {
+      "name": "RATE_LIMITING_ENABLED",
+      "defaultValue": "true",
+      "type": "boolean"
+    }
+  ],
+  "endpoints": [
+    {
+      "function": "health",
+      "method": "GET",
+      "path": "/health",
+      "handler": "src/handlers/health.handler",
+      "requiresAuth": false,
+      "category": "Health & Meta"
+    },
+    {
+      "function": "meta",
+      "method": "GET",
+      "path": "/meta",
+      "handler": "src/handlers/meta.handler",
+      "requiresAuth": false,
+      "category": "Health & Meta"
+    },
+    {
+      "function": "register",
+      "method": "POST",
+      "path": "/auth/register",
+      "handler": "src/handlers/auth.register",
+      "requiresAuth": false,
+      "category": "Authentication"
+    },
+    {
+      "function": "login",
+      "method": "POST",
+      "path": "/auth/login",
+      "handler": "src/handlers/auth.login",
+      "requiresAuth": false,
+      "category": "Authentication"
+    },
+    {
+      "function": "me",
+      "method": "GET",
+      "path": "/auth/me",
+      "handler": "src/handlers/auth.me",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "verifyEmail",
+      "method": "POST",
+      "path": "/auth/verify-email",
+      "handler": "src/handlers/auth.verifyEmail",
+      "requiresAuth": false,
+      "category": "Authentication"
+    },
+    {
+      "function": "resendVerification",
+      "method": "POST",
+      "path": "/auth/resend-verification",
+      "handler": "src/handlers/auth.resendVerification",
+      "requiresAuth": false,
+      "category": "Authentication"
+    },
+    {
+      "function": "refresh",
+      "method": "POST",
+      "path": "/auth/refresh",
+      "handler": "src/handlers/auth.refresh",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "handler": "src/handlers/auth.logout",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "listSessions",
+      "method": "GET",
+      "path": "/auth/sessions",
+      "handler": "src/handlers/sessions.listSessions",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "logoutSession",
+      "method": "POST",
+      "path": "/auth/logout-session",
+      "handler": "src/handlers/sessions.logoutSession",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "setup2FA",
+      "method": "POST",
+      "path": "/auth/2fa/setup",
+      "handler": "src/handlers/auth.setup2FA",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "enable2FA",
+      "method": "POST",
+      "path": "/auth/2fa/enable",
+      "handler": "src/handlers/auth.enable2FA",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "verify2FA",
+      "method": "POST",
+      "path": "/auth/2fa/verify",
+      "handler": "src/handlers/auth.verify2FA",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "disable2FA",
+      "method": "POST",
+      "path": "/auth/2fa/disable",
+      "handler": "src/handlers/auth.disable2FA",
+      "requiresAuth": true,
+      "category": "Authentication"
+    },
+    {
+      "function": "createUser",
+      "method": "POST",
+      "path": "/users",
+      "handler": "src/handlers/users.createUser",
+      "requiresAuth": true,
+      "category": "Users"
+    },
+    {
+      "function": "getUser",
+      "method": "GET",
+      "path": "/users/{username}",
+      "handler": "src/handlers/users.getUser",
+      "requiresAuth": true,
+      "category": "Users"
+    },
+    {
+      "function": "updateUser",
+      "method": "PUT",
+      "path": "/users/{id}",
+      "handler": "src/handlers/users.updateUser",
+      "requiresAuth": true,
+      "category": "Users"
+    },
+    {
+      "function": "listReels",
+      "method": "GET",
+      "path": "/reels",
+      "handler": "src/handlers/reels.listReels",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "createReel",
+      "method": "POST",
+      "path": "/reels",
+      "handler": "src/handlers/reels.createReel",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "toggleLike",
+      "method": "POST",
+      "path": "/reels/{id}/like",
+      "handler": "src/handlers/reels.toggleLike",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "toggleBookmark",
+      "method": "POST",
+      "path": "/reels/{id}/bookmark",
+      "handler": "src/handlers/reels.toggleBookmark",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "getReelComments",
+      "method": "GET",
+      "path": "/reels/{id}/comments",
+      "handler": "src/handlers/reels.getComments",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "createReelComment",
+      "method": "POST",
+      "path": "/reels/{id}/comments",
+      "handler": "src/handlers/reels.createComment",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "createPost",
+      "method": "POST",
+      "path": "/posts",
+      "handler": "src/handlers/posts.createPost",
+      "requiresAuth": true,
+      "category": "Posts"
+    },
+    {
+      "function": "listPosts",
+      "method": "GET",
+      "path": "/posts",
+      "handler": "src/handlers/posts.listPosts",
+      "requiresAuth": true,
+      "category": "Posts"
+    },
+    {
+      "function": "getPost",
+      "method": "GET",
+      "path": "/posts/{id}",
+      "handler": "src/handlers/posts.getPost",
+      "requiresAuth": true,
+      "category": "Posts"
+    },
+    {
+      "function": "listConversations",
+      "method": "GET",
+      "path": "/conversations",
+      "handler": "src/handlers/conversations.listConversations",
+      "requiresAuth": true,
+      "category": "Messages"
+    },
+    {
+      "function": "createConversation",
+      "method": "POST",
+      "path": "/conversations",
+      "handler": "src/handlers/conversations.createConversation",
+      "requiresAuth": true,
+      "category": "Messages"
+    },
+    {
+      "function": "getMessages",
+      "method": "GET",
+      "path": "/conversations/{id}/messages",
+      "handler": "src/handlers/conversations.getMessages",
+      "requiresAuth": true,
+      "category": "Messages"
+    },
+    {
+      "function": "sendMessage",
+      "method": "POST",
+      "path": "/conversations/{id}/messages",
+      "handler": "src/handlers/conversations.sendMessage",
+      "requiresAuth": true,
+      "category": "Messages"
+    },
+    {
+      "function": "listNotifications",
+      "method": "GET",
+      "path": "/notifications",
+      "handler": "src/handlers/notifications.listNotifications",
+      "requiresAuth": true,
+      "category": "Notifications"
+    },
+    {
+      "function": "markNotificationRead",
+      "method": "PATCH",
+      "path": "/notifications/{id}/read",
+      "handler": "src/handlers/notifications.markAsRead",
+      "requiresAuth": true,
+      "category": "Notifications"
+    },
+    {
+      "function": "markAllNotificationsRead",
+      "method": "PATCH",
+      "path": "/notifications/mark-all",
+      "handler": "src/handlers/notifications.markAllAsRead",
+      "requiresAuth": true,
+      "category": "Notifications"
+    },
+    {
+      "function": "sendConnectionRequest",
+      "method": "POST",
+      "path": "/connections/request",
+      "handler": "src/handlers/connections.sendRequest",
+      "requiresAuth": true,
+      "category": "Connections"
+    },
+    {
+      "function": "listConnectionRequests",
+      "method": "GET",
+      "path": "/connections/requests",
+      "handler": "src/handlers/connections.listRequests",
+      "requiresAuth": true,
+      "category": "Connections"
+    },
+    {
+      "function": "approveConnectionRequest",
+      "method": "POST",
+      "path": "/connections/requests/{id}/approve",
+      "handler": "src/handlers/connections.approveRequest",
+      "requiresAuth": true,
+      "category": "Connections"
+    },
+    {
+      "function": "rejectConnectionRequest",
+      "method": "POST",
+      "path": "/connections/requests/{id}/reject",
+      "handler": "src/handlers/connections.rejectRequest",
+      "requiresAuth": true,
+      "category": "Connections"
+    },
+    {
+      "function": "getProfileByVanity",
+      "method": "GET",
+      "path": "/profiles/{vanityUrl}",
+      "handler": "src/handlers/profiles.getProfileByVanity",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "getProfileById",
+      "method": "GET",
+      "path": "/profiles/id/{id}",
+      "handler": "src/handlers/profiles.getProfileById",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "createProfile",
+      "method": "POST",
+      "path": "/profiles",
+      "handler": "src/handlers/profiles.createProfile",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "updateProfile",
+      "method": "PUT",
+      "path": "/profiles/id/{id}",
+      "handler": "src/handlers/profiles.updateProfile",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "deleteProfile",
+      "method": "DELETE",
+      "path": "/profiles/id/{id}",
+      "handler": "src/handlers/profiles.deleteProfile",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "getUploadUrl",
+      "method": "POST",
+      "path": "/profiles/{id}/media/upload-url",
+      "handler": "src/handlers/media.getUploadUrl",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "completeUpload",
+      "method": "POST",
+      "path": "/profiles/{id}/media/complete",
+      "handler": "src/handlers/media.completeUpload",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "updateMedia",
+      "method": "PUT",
+      "path": "/media/{id}",
+      "handler": "src/handlers/media.updateMedia",
+      "requiresAuth": true,
+      "category": "Media"
+    },
+    {
+      "function": "deleteMedia",
+      "method": "DELETE",
+      "path": "/media/{id}",
+      "handler": "src/handlers/media.deleteMedia",
+      "requiresAuth": true,
+      "category": "Media"
+    },
+    {
+      "function": "getAccessUrl",
+      "method": "GET",
+      "path": "/media/{id}/access-url",
+      "handler": "src/handlers/media.getAccessUrl",
+      "requiresAuth": true,
+      "category": "Media"
+    },
+    {
+      "function": "listCredits",
+      "method": "GET",
+      "path": "/profiles/{id}/credits",
+      "handler": "src/handlers/credits.listCredits",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "createCredit",
+      "method": "POST",
+      "path": "/profiles/{id}/credits",
+      "handler": "src/handlers/credits.createCredit",
+      "requiresAuth": true,
+      "category": "Profiles"
+    },
+    {
+      "function": "updateCredit",
+      "method": "PUT",
+      "path": "/credits/{id}",
+      "handler": "src/handlers/credits.updateCredit",
+      "requiresAuth": true,
+      "category": "Credits"
+    },
+    {
+      "function": "deleteCredit",
+      "method": "DELETE",
+      "path": "/credits/{id}",
+      "handler": "src/handlers/credits.deleteCredit",
+      "requiresAuth": true,
+      "category": "Credits"
+    },
+    {
+      "function": "getSettings",
+      "method": "GET",
+      "path": "/settings",
+      "handler": "src/handlers/settings.getSettings",
+      "requiresAuth": true,
+      "category": "Settings"
+    },
+    {
+      "function": "updateSettings",
+      "method": "PUT",
+      "path": "/settings",
+      "handler": "src/handlers/settings.updateSettings",
+      "requiresAuth": true,
+      "category": "Settings"
+    },
+    {
+      "function": "exportAccountData",
+      "method": "POST",
+      "path": "/account/export",
+      "handler": "src/handlers/settings.exportAccountData",
+      "requiresAuth": true,
+      "category": "Settings"
+    },
+    {
+      "function": "deleteAccount",
+      "method": "DELETE",
+      "path": "/account",
+      "handler": "src/handlers/settings.deleteAccount",
+      "requiresAuth": true,
+      "category": "Settings"
+    },
+    {
+      "function": "createReelRequest",
+      "method": "POST",
+      "path": "/reels/{id}/request",
+      "handler": "src/handlers/reelRequests.createReelRequest",
+      "requiresAuth": true,
+      "category": "Reels"
+    },
+    {
+      "function": "listReelRequests",
+      "method": "GET",
+      "path": "/reel-requests",
+      "handler": "src/handlers/reelRequests.listReelRequests",
+      "requiresAuth": true,
+      "category": "Reel Requests"
+    },
+    {
+      "function": "approveReelRequest",
+      "method": "POST",
+      "path": "/reel-requests/{id}/approve",
+      "handler": "src/handlers/reelRequests.approveReelRequest",
+      "requiresAuth": true,
+      "category": "Reel Requests"
+    },
+    {
+      "function": "denyReelRequest",
+      "method": "POST",
+      "path": "/reel-requests/{id}/deny",
+      "handler": "src/handlers/reelRequests.denyReelRequest",
+      "requiresAuth": true,
+      "category": "Reel Requests"
+    },
+    {
+      "function": "searchProfiles",
+      "method": "GET",
+      "path": "/search",
+      "handler": "src/handlers/search.searchProfiles",
+      "requiresAuth": true,
+      "category": "Search"
+    },
+    {
+      "function": "searchUsers",
+      "method": "GET",
+      "path": "/search/users",
+      "handler": "src/handlers/search.searchUsers",
+      "requiresAuth": true,
+      "category": "Search"
+    },
+    {
+      "function": "ingestPRIntel",
+      "method": "POST",
+      "path": "/internal/pr-intel/ingest",
+      "handler": "src/handlers/prIntel.ingestPRIntel",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    },
+    {
+      "function": "getPRIntel",
+      "method": "GET",
+      "path": "/internal/pr-intel/{prNumber}",
+      "handler": "src/handlers/prIntel.getPRIntel",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    },
+    {
+      "function": "ingestTestRuns",
+      "method": "POST",
+      "path": "/internal/tests/ingest",
+      "handler": "src/handlers/testIntel.ingestTestRuns",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    },
+    {
+      "function": "getFlakyCandidates",
+      "method": "GET",
+      "path": "/internal/tests/flaky-candidates",
+      "handler": "src/handlers/testIntel.getFlakyCandidates",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    },
+    {
+      "function": "analyzeSchemaDiff",
+      "method": "POST",
+      "path": "/internal/schema/diff",
+      "handler": "src/handlers/schemaDiff.analyzeSchemaDiff",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    },
+    {
+      "function": "runSyntheticJourney",
+      "method": "POST",
+      "path": "/internal/journey/run",
+      "handler": "src/handlers/syntheticJourney.runSyntheticJourney",
+      "requiresAuth": true,
+      "category": "Internal Tools"
+    }
+  ],
+  "summary": {
+    "totalEndpoints": 68,
+    "totalFlags": 8,
+    "endpointsByCategory": {
+      "Health & Meta": 2,
+      "Authentication": 13,
+      "Users": 3,
+      "Reels": 7,
+      "Posts": 3,
+      "Messages": 4,
+      "Notifications": 3,
+      "Connections": 4,
+      "Profiles": 9,
+      "Media": 3,
+      "Credits": 2,
+      "Settings": 4,
+      "Reel Requests": 3,
+      "Search": 2,
+      "Internal Tools": 6
+    },
+    "endpointsByMethod": {
+      "GET": 23,
+      "POST": 34,
+      "PUT": 5,
+      "PATCH": 2,
+      "DELETE": 4
+    },
+    "authRequired": 62,
+    "publicEndpoints": 6
+  }
+}
