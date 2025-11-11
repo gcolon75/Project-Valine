@@ -116,7 +116,7 @@ const TrendingCard = ({ delay }) => (
   >
     <div className="flex items-center space-x-2 mb-3">
       <Sparkles className="w-5 h-5 text-white" aria-hidden="true" />
-      <h2 className="text-white font-bold text-lg">Trending Now</h2>
+      <p className="text-white font-bold text-lg">Trending Now</p>
     </div>
     <p className="text-white/90 text-sm mb-4">
       Join thousands of voice actors sharing their latest projects and reels.
