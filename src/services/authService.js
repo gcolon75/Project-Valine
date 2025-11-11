@@ -1,17 +1,20 @@
 // src/services/authService.js
 import apiClient from './api';
 
+const ENABLE_AUTH = import.meta.env.VITE_ENABLE_AUTH === 'true';
+
 /**
  * Login with email and password
  * @param {string} email - User email
  * @param {string} password - User password
- * @returns {Promise<{user, token}>} User data and auth token
+ * @returns {Promise<{user}>} User data (token in HttpOnly cookie)
  */
 export const login = async (email, password) => {
   const { data } = await apiClient.post('/auth/login', { email, password });
   
-  // Store token
-  if (data.token) {
+  // When cookie auth is enabled, token is in HttpOnly cookie
+  // For backward compatibility, still handle token in response body
+  if (!ENABLE_AUTH && data.token) {
     localStorage.setItem('auth_token', data.token);
   }
   
@@ -25,13 +28,14 @@ export const login = async (email, password) => {
  * @param {string} userData.email - Email
  * @param {string} userData.password - Password
  * @param {string} userData.displayName - Display name
- * @returns {Promise<{user, token}>} User data and auth token
+ * @returns {Promise<{user}>} User data (token in HttpOnly cookie)
  */
 export const register = async (userData) => {
   const { data } = await apiClient.post('/auth/register', userData);
   
-  // Store token
-  if (data.token) {
+  // When cookie auth is enabled, token is in HttpOnly cookie
+  // For backward compatibility, still handle token in response body
+  if (!ENABLE_AUTH && data.token) {
     localStorage.setItem('auth_token', data.token);
   }
   
@@ -57,20 +61,24 @@ export const logout = async () => {
   } catch (err) {
     console.error('Logout API call failed:', err);
   } finally {
-    // Always clear local storage
-    localStorage.removeItem('auth_token');
+    // Clear local storage (for backward compatibility)
+    if (!ENABLE_AUTH) {
+      localStorage.removeItem('auth_token');
+    }
     localStorage.removeItem('valine-demo-user');
   }
 };
 
 /**
  * Refresh auth token
- * @returns {Promise<{token}>} New token
+ * @returns {Promise<{message}>} Success message (new token in HttpOnly cookie)
  */
 export const refreshToken = async () => {
   const { data } = await apiClient.post('/auth/refresh');
   
-  if (data.token) {
+  // When cookie auth is enabled, token is in HttpOnly cookie
+  // For backward compatibility, still handle token in response body
+  if (!ENABLE_AUTH && data.token) {
     localStorage.setItem('auth_token', data.token);
   }
   
@@ -79,17 +87,28 @@ export const refreshToken = async () => {
 
 /**
  * Check if user is authenticated (has valid token)
+ * When VITE_ENABLE_AUTH is true, relies on cookies (always returns true)
+ * Otherwise checks localStorage
  * @returns {boolean}
  */
 export const isAuthenticated = () => {
+  if (ENABLE_AUTH) {
+    // With cookie auth, we can't check from JS, so attempt to get current user
+    // This is handled by the AuthProvider
+    return true; // Optimistically return true
+  }
   return !!localStorage.getItem('auth_token');
 };
 
 /**
  * Get stored auth token
+ * When VITE_ENABLE_AUTH is true, returns null (token is HttpOnly)
  * @returns {string|null}
  */
 export const getAuthToken = () => {
+  if (ENABLE_AUTH) {
+    return null; // Token is in HttpOnly cookie, not accessible
+  }
   return localStorage.getItem('auth_token');
 };
 

@@ -42,13 +42,25 @@ export const apiClient = axios.create({
   baseURL: base,
   headers: { 'Content-Type': 'application/json' },
   timeout: 8000, // 8 second timeout (configurable)
-  withCredentials: import.meta.env.VITE_API_USE_CREDENTIALS === 'true' // Configurable via env
+  withCredentials: import.meta.env.VITE_ENABLE_AUTH === 'true' || import.meta.env.VITE_API_USE_CREDENTIALS === 'true' // Enable credentials for cookie auth
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token and CSRF protection
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Add Authorization header for backward compatibility (when not using cookies)
+  const enableAuth = import.meta.env.VITE_ENABLE_AUTH === 'true';
+  if (!enableAuth) {
+    const token = localStorage.getItem('auth_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Add CSRF protection for state-changing requests (when using cookies)
+  if (enableAuth && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+    // SameSite=Lax provides basic CSRF protection
+    // Could add custom CSRF token header here if needed
+    config.headers['X-Requested-With'] = 'XMLHttpRequest';
+  }
+  
   return config;
 }, (error) => {
   return Promise.reject(error);

@@ -16,6 +16,8 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
+    NODE_ENV: ${env:NODE_ENV, "development"}
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, ""}
 
 package:
   patterns:
@@ -75,6 +77,20 @@ functions:
     events:
       - httpApi:
           path: /auth/resend-verification
+          method: post
+  
+  refresh:
+    handler: src/handlers/auth.refresh
+    events:
+      - httpApi:
+          path: /auth/refresh
+          method: post
+  
+  logout:
+    handler: src/handlers/auth.logout
+    events:
+      - httpApi:
+          path: /auth/logout
           method: post
 
   # User endpoints
