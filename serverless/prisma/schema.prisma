@@ -18,6 +18,8 @@ model User {
   role            String   @default("artist") // 'artist' | 'observer'
   emailVerified   Boolean  @default(false)
   emailVerifiedAt DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?  // Encrypted or hashed TOTP secret
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -39,6 +41,7 @@ model User {
   sentReelRequests   ReelRequest[]       @relation("requester")
   receivedReelRequests ReelRequest[]     @relation("owner")
   verificationTokens EmailVerificationToken[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
 }
@@ -319,4 +322,20 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
   @@index([userId])
   @@index([token])
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jti           String    @unique // JWT ID for tracking
+  expiresAt     DateTime
+  invalidatedAt DateTime? // When token was invalidated (logout)
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime  @default(now())
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([jti])
+  @@index([userId, invalidatedAt])
 }

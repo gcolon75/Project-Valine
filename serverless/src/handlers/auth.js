@@ -162,6 +162,7 @@ export const login = async (event) => {
         role: true,
         password: true,
         emailVerified: true,
+        twoFactorEnabled: true,
         createdAt: true
       }
     });
@@ -186,11 +187,33 @@ export const login = async (event) => {
     }
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, twoFactorEnabled, ...userWithoutPassword } = user;
+
+    // TODO: If twoFactorEnabled is true, return 2FA challenge instead
+    // For now, we'll just proceed with normal login
 
     // Generate tokens
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
+
+    // Decode refresh token to get JTI
+    const decoded = verifyToken(refreshToken);
+    const jti = decoded?.jti;
+
+    if (jti) {
+      // Persist refresh token in database
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+      await prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          jti,
+          expiresAt,
+          lastUsedAt: new Date()
+        }
+      });
+    }
 
     // Set HttpOnly cookies
     const accessCookie = generateAccessTokenCookie(accessToken);
@@ -210,7 +233,8 @@ export const login = async (event) => {
         'Set-Cookie': [accessCookie, refreshCookie]
       },
       body: JSON.stringify({
-        user: userWithoutPassword
+        user: userWithoutPassword,
+        requiresTwoFactor: twoFactorEnabled && false // TODO: Implement 2FA flow
       })
     };
   } catch (e) {
@@ -457,6 +481,27 @@ export const refresh = async (event) => {
 
     const prisma = getPrisma();
     
+    // Check if refresh token exists and is not invalidated
+    const oldJti = decoded.jti;
+    if (oldJti) {
+      const storedToken = await prisma.refreshToken.findUnique({
+        where: { jti: oldJti }
+      });
+
+      if (!storedToken) {
+        return error('Invalid refresh token', 401);
+      }
+
+      if (storedToken.invalidatedAt) {
+        return error('Refresh token has been invalidated', 401);
+      }
+
+      // Check if expired
+      if (new Date() > storedToken.expiresAt) {
+        return error('Refresh token has expired', 401);
+      }
+    }
+    
     // Verify user still exists
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -472,6 +517,28 @@ export const refresh = async (event) => {
     
     // Rotate refresh token (generate new one for security)
     const newRefreshToken = generateRefreshToken(user.id);
+    const newDecoded = verifyToken(newRefreshToken);
+    const newJti = newDecoded?.jti;
+
+    // Database transaction: invalidate old token and create new one
+    if (oldJti && newJti) {
+      await prisma.$transaction([
+        // Invalidate old refresh token
+        prisma.refreshToken.update({
+          where: { jti: oldJti },
+          data: { invalidatedAt: new Date() }
+        }),
+        // Create new refresh token
+        prisma.refreshToken.create({
+          data: {
+            userId: user.id,
+            jti: newJti,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            lastUsedAt: new Date()
+          }
+        })
+      ]);
+    }
 
     // Set new cookies
     const accessCookie = generateAccessTokenCookie(newAccessToken);
@@ -500,9 +567,32 @@ export const refresh = async (event) => {
   }
 };
 
-// POST /auth/logout - Clear authentication cookies
+// POST /auth/logout - Clear authentication cookies and invalidate refresh token
 export const logout = async (event) => {
   try {
+    // Extract refresh token to invalidate it
+    const refreshToken = extractToken(event, 'refresh');
+    
+    if (refreshToken) {
+      const decoded = verifyToken(refreshToken);
+      const jti = decoded?.jti;
+      
+      if (jti) {
+        const prisma = getPrisma();
+        
+        // Invalidate the refresh token in database
+        try {
+          await prisma.refreshToken.update({
+            where: { jti },
+            data: { invalidatedAt: new Date() }
+          });
+        } catch (err) {
+          // Token might not exist in database, that's okay
+          console.log('Refresh token not found for invalidation:', jti);
+        }
+      }
+    }
+
     // Generate cookie clearing headers
     const clearCookies = generateClearCookieHeaders();
 
@@ -524,6 +614,298 @@ export const logout = async (event) => {
     };
   } catch (e) {
     console.error('Logout error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+// ========== 2FA Endpoints (Phase 2) ==========
+
+/**
+ * Simple TOTP implementation for 2FA
+ * In production, consider using a library like 'otplib' or 'speakeasy'
+ */
+
+// Generate base32 secret for TOTP
+const generateTOTPSecret = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let secret = '';
+  for (let i = 0; i < 32; i++) {
+    secret += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return secret;
+};
+
+// Verify TOTP code (simplified - for production use a proper library)
+const verifyTOTPCode = (secret, code) => {
+  // TODO: Implement proper TOTP verification with time-based counter
+  // For now, this is a placeholder that always returns true if TWO_FACTOR_ENABLED feature flag is off
+  // In production, use a library like 'otplib' or implement RFC 6238
+  const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
+  
+  if (!TWO_FACTOR_ENABLED) {
+    return true; // Feature flag disabled, bypass verification
+  }
+  
+  // Placeholder verification (replace with actual TOTP implementation)
+  console.warn('[2FA] TOTP verification not fully implemented. Use a library like otplib in production.');
+  return code && code.length === 6; // Basic validation
+};
+
+/**
+ * POST /auth/2fa/setup
+ * Generate provisional 2FA secret and QR code URL
+ */
+export const setup2FA = async (event) => {
+  try {
+    const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
+    
+    if (!TWO_FACTOR_ENABLED) {
+      return error('2FA feature is not enabled', 404);
+    }
+
+    const userId = getUserIdFromEvent(event);
+    
+    if (!userId) {
+      return error('Unauthorized - No valid token provided', 401);
+    }
+
+    const prisma = getPrisma();
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        twoFactorEnabled: true
+      }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    if (user.twoFactorEnabled) {
+      return error('2FA is already enabled for this account', 400);
+    }
+
+    // Generate new TOTP secret
+    const secret = generateTOTPSecret();
+    
+    // Generate otpauth URL for QR code
+    const appName = 'Project Valine';
+    const otpauthUrl = `otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${encodeURIComponent(appName)}`;
+
+    // Store secret temporarily (not enabled yet)
+    // TODO: Encrypt the secret before storing
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorSecret: secret }
+    });
+
+    return json({
+      secret,
+      otpauthUrl,
+      message: 'Scan the QR code with your authenticator app, then call /auth/2fa/enable with a verification code'
+    });
+  } catch (e) {
+    console.error('2FA setup error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+/**
+ * POST /auth/2fa/enable
+ * Enable 2FA after verifying a code
+ * Body: { code: string }
+ */
+export const enable2FA = async (event) => {
+  try {
+    const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
+    
+    if (!TWO_FACTOR_ENABLED) {
+      return error('2FA feature is not enabled', 404);
+    }
+
+    const userId = getUserIdFromEvent(event);
+    
+    if (!userId) {
+      return error('Unauthorized - No valid token provided', 401);
+    }
+
+    const { code } = JSON.parse(event.body || '{}');
+    
+    if (!code) {
+      return error('Verification code is required', 400);
+    }
+
+    const prisma = getPrisma();
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        twoFactorEnabled: true,
+        twoFactorSecret: true
+      }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    if (user.twoFactorEnabled) {
+      return error('2FA is already enabled', 400);
+    }
+
+    if (!user.twoFactorSecret) {
+      return error('No 2FA setup found. Call /auth/2fa/setup first.', 400);
+    }
+
+    // Verify the code
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    
+    if (!isValid) {
+      return error('Invalid verification code', 400);
+    }
+
+    // Enable 2FA
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true }
+    });
+
+    return json({
+      message: '2FA enabled successfully',
+      enabled: true
+    });
+  } catch (e) {
+    console.error('2FA enable error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+/**
+ * POST /auth/2fa/verify
+ * Verify 2FA code during login (called after password verification)
+ * Body: { code: string, userId: string (from temporary session) }
+ */
+export const verify2FA = async (event) => {
+  try {
+    const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
+    
+    if (!TWO_FACTOR_ENABLED) {
+      return error('2FA feature is not enabled', 404);
+    }
+
+    const { code, userId } = JSON.parse(event.body || '{}');
+    
+    if (!code || !userId) {
+      return error('code and userId are required', 400);
+    }
+
+    const prisma = getPrisma();
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        twoFactorEnabled: true,
+        twoFactorSecret: true
+      }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    if (!user.twoFactorEnabled) {
+      return error('2FA is not enabled for this user', 400);
+    }
+
+    // Verify the code
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    
+    if (!isValid) {
+      return error('Invalid verification code', 401);
+    }
+
+    return json({
+      message: '2FA verified successfully',
+      verified: true
+    });
+  } catch (e) {
+    console.error('2FA verify error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+/**
+ * POST /auth/2fa/disable
+ * Disable 2FA for the authenticated user
+ * Body: { code: string } - requires valid 2FA code to disable
+ */
+export const disable2FA = async (event) => {
+  try {
+    const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
+    
+    if (!TWO_FACTOR_ENABLED) {
+      return error('2FA feature is not enabled', 404);
+    }
+
+    const userId = getUserIdFromEvent(event);
+    
+    if (!userId) {
+      return error('Unauthorized - No valid token provided', 401);
+    }
+
+    const { code } = JSON.parse(event.body || '{}');
+    
+    if (!code) {
+      return error('Verification code is required to disable 2FA', 400);
+    }
+
+    const prisma = getPrisma();
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        twoFactorEnabled: true,
+        twoFactorSecret: true
+      }
+    });
+
+    if (!user) {
+      return error('User not found', 404);
+    }
+
+    if (!user.twoFactorEnabled) {
+      return error('2FA is not enabled', 400);
+    }
+
+    // Verify the code before disabling
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    
+    if (!isValid) {
+      return error('Invalid verification code', 401);
+    }
+
+    // Disable 2FA and clear secret
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        twoFactorEnabled: false,
+        twoFactorSecret: null
+      }
+    });
+
+    return json({
+      message: '2FA disabled successfully',
+      enabled: false
+    });
+  } catch (e) {
+    console.error('2FA disable error:', e);
     return error('Server error: ' + e.message, 500);
   }
 };
