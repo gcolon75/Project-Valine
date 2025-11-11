@@ -176,11 +176,25 @@ npx prisma migrate reset
 
 ## Environment-Specific Deployment
 
+### Required Environment Variables
+
+All deployments require these environment variables:
+
+- **DATABASE_URL** - PostgreSQL connection string (required)
+- **JWT_SECRET** - Secret key for JWT signing (production should use strong random value)
+- **AWS_REGION** - AWS region for deployment (default: us-west-2)
+- **STAGE** - Deployment stage: dev, staging, or prod
+
+Optional variables:
+- **EMAIL_ENABLED** - Set to `true` to enable SMTP email sending (default: false, logs to console)
+- **FRONTEND_URL** - Frontend URL for email verification links (default: http://localhost:5173)
+
 ### Development
 
 ```bash
 export STAGE=dev
 export DATABASE_URL="postgresql://localhost:5432/valine_dev"
+export JWT_SECRET="dev-secret-key-change-in-production"
 npx serverless deploy --stage dev
 ```
 
@@ -189,6 +203,7 @@ npx serverless deploy --stage dev
 ```bash
 export STAGE=staging
 export DATABASE_URL="postgresql://...staging_db"
+export JWT_SECRET="$(openssl rand -base64 32)"
 npx serverless deploy --stage staging
 ```
 
@@ -198,7 +213,14 @@ npx serverless deploy --stage staging
 export STAGE=prod
 export DATABASE_URL="postgresql://...prod_db"
 export JWT_SECRET="your-production-secret-key"
+export EMAIL_ENABLED=true
+export FRONTEND_URL="https://valine.app"
 npx serverless deploy --stage prod
+```
+
+**Security Note:** Always use a strong, randomly generated JWT_SECRET in staging and production. Generate one with:
+```bash
+openssl rand -base64 32
 ```
 
 ---
@@ -232,23 +254,167 @@ This will show all available endpoints.
 
 ### 3. Test Authentication
 
+The serverless backend implements a complete authentication system with email verification. All endpoints use JWT-based authentication with bcrypt password hashing.
+
+#### Available Auth Endpoints
+
+1. **POST /auth/register** - Register new user with email verification
+2. **POST /auth/login** - Login and receive JWT token
+3. **GET /auth/me** - Get current user profile (requires auth)
+4. **POST /auth/verify-email** - Verify email with token
+5. **POST /auth/resend-verification** - Resend verification email (requires auth)
+
+#### Example: Register a New User
+
 ```bash
-# Register a test user
 curl -X POST "$API_BASE/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
-    "password": "test123",
+    "password": "securePass123",
     "username": "testuser",
     "displayName": "Test User"
   }'
+```
 
-# Save the token from response
+**Response (201 Created):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "message": "Registration successful. Please check your email to verify your account."
+}
+```
+
+**Note:** A verification email will be logged to console (dev) or sent via SMTP (production). The user receives a limited-access JWT token immediately.
+
+#### Example: Login
+
+```bash
+curl -X POST "$API_BASE/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "securePass123"
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "role": "USER",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Note:** Login works even if email is not verified, but `emailVerified` field indicates status.
+
+#### Example: Get Current User
+
+```bash
+# Save the token from login/register response
 export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# Test protected endpoint
+# Get current user profile
 curl "$API_BASE/auth/me" \
   -H "Authorization: Bearer $TOKEN"
+```
+
+**Response (200 OK):**
+```json
+{
+  "user": {
+    "id": "cm123abc",
+    "username": "testuser",
+    "email": "test@example.com",
+    "displayName": "Test User",
+    "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser",
+    "bio": null,
+    "role": "USER",
+    "emailVerified": false,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "_count": {
+      "posts": 0,
+      "reels": 0,
+      "sentRequests": 0,
+      "receivedRequests": 0
+    }
+  }
+}
+```
+
+#### Example: Verify Email
+
+```bash
+# Token comes from verification email link
+curl -X POST "$API_BASE/auth/verify-email" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "abc123def456..."
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Email verified successfully",
+  "verified": true
+}
+```
+
+#### Example: Resend Verification Email
+
+```bash
+curl -X POST "$API_BASE/auth/resend-verification" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Verification email sent successfully. Please check your email.",
+  "email": "test@example.com"
+}
+```
+
+#### Error Responses
+
+**400 Bad Request** - Missing or invalid fields:
+```json
+{
+  "error": "email, password, username, and displayName are required"
+}
+```
+
+**401 Unauthorized** - Invalid credentials or token:
+```json
+{
+  "error": "Invalid email or password"
+}
+```
+
+**409 Conflict** - User already exists:
+```json
+{
+  "error": "User with this email or username already exists"
+}
 ```
 
 ### 4. Run Full Test Suite

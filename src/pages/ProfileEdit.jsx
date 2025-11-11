@@ -241,14 +241,15 @@ export default function ProfileEdit() {
       }
 
       // Validate all links before saving using the validation utility
-      const { validateProfileLink } = await import('../utils/urlValidation');
-      const invalidLinks = sanitizedData.profileLinks.filter(link => {
-        const validation = validateProfileLink(link);
-        return !validation.valid;
-      });
+      const { validateProfileLinks } = await import('../utils/urlValidation');
+      const linksValidation = validateProfileLinks(sanitizedData.profileLinks);
 
-      if (invalidLinks.length > 0) {
-        toast.error('Please fix validation errors in profile links before saving');
+      if (!linksValidation.valid) {
+        if (linksValidation.globalErrors.length > 0) {
+          toast.error(linksValidation.globalErrors[0]);
+        } else {
+          toast.error('Please fix validation errors in profile links before saving');
+        }
         return;
       }
       

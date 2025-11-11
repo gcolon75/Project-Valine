@@ -3,19 +3,25 @@ import { useState } from 'react';
 import { 
   User, Bell, Lock, Palette, Shield, Image, Download, 
   Trash2, Eye, Mail, Key, Smartphone, ExternalLink,
-  CreditCard, FileText, Share2
+  CreditCard, FileText, Share2, Loader2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { exportAccountData, deleteAccount } from '../services/settingsService';
 
 export default function Settings() {
   const { theme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   
   const [activeModal, setActiveModal] = useState(null);
   const [editingSection, setEditingSection] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Form states
   const [emailForm, setEmailForm] = useState({ email: user?.email || 'user@valine.com' });
@@ -42,14 +48,61 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async (password) => {
-    // TODO: Implement account deletion API call
-    console.log('Deleting account with password:', password);
-    setActiveModal(null);
+    if (!password) {
+      toast.error('Password is required');
+      return;
+    }
+
+    setIsDeleting(true);
+    
+    try {
+      await deleteAccount(password);
+      
+      toast.success('Account deleted successfully. We\'re sorry to see you go.');
+      
+      // Log out the user
+      logout();
+      
+      // Redirect to home page
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete account error:', error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to delete account. Please try again.';
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setActiveModal(null);
+    }
   };
 
-  const handleExportData = () => {
-    // TODO: Implement data export
-    console.log('Exporting user data...');
+  const handleExportData = async () => {
+    setIsExporting(true);
+    const toastId = toast.loading('Preparing your data export...');
+    
+    try {
+      await exportAccountData();
+      
+      toast.success('Your data has been downloaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Export data error:', error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to export data. Please try again.';
+      
+      toast.error(errorMessage, { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   return (
@@ -272,12 +325,19 @@ export default function Settings() {
           <div className="space-y-3">
             <button
               onClick={handleExportData}
-              className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+              disabled={isExporting}
+              className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center space-x-3">
-                <Download className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                {isExporting ? (
+                  <Loader2 className="w-5 h-5 text-neutral-600 dark:text-neutral-400 animate-spin" />
+                ) : (
+                  <Download className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+                )}
                 <div className="text-left">
-                  <p className="font-medium text-neutral-900 dark:text-white">Download Your Data</p>
+                  <p className="font-medium text-neutral-900 dark:text-white">
+                    {isExporting ? 'Exporting...' : 'Download Your Data'}
+                  </p>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     Export your profile, posts, and media
                   </p>
@@ -288,12 +348,19 @@ export default function Settings() {
             
             <button
               onClick={() => setActiveModal('delete-account')}
-              className="w-full flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-red-200 dark:border-red-800"
+              disabled={isDeleting}
+              className="w-full flex items-center justify-between px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-red-200 dark:border-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center space-x-3">
-                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                {isDeleting ? (
+                  <Loader2 className="w-5 h-5 text-red-600 dark:text-red-400 animate-spin" />
+                ) : (
+                  <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                )}
                 <div className="text-left">
-                  <p className="font-medium text-red-600 dark:text-red-400">Delete Account</p>
+                  <p className="font-medium text-red-600 dark:text-red-400">
+                    {isDeleting ? 'Deleting...' : 'Delete Account'}
+                  </p>
                   <p className="text-sm text-red-600/70 dark:text-red-400/70">
                     Permanently delete your account and all data
                   </p>

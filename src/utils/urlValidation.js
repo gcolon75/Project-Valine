@@ -90,6 +90,16 @@ export const validateProfileUrl = (url) => {
 };
 
 /**
+ * Valid link types for profile links (API spec)
+ */
+export const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other'];
+
+/**
+ * Maximum number of profile links allowed
+ */
+export const MAX_PROFILE_LINKS = 20;
+
+/**
  * Validates a link object for profile links
  * @param {{ label: string, url: string, type?: string }} link - The link object to validate
  * @returns {{ valid: boolean, errors: object }} - Validation result with field errors
@@ -104,6 +114,8 @@ export const validateProfileLink = (link) => {
   // Validate label (API spec: 1-40 characters)
   if (!link.label || typeof link.label !== 'string' || link.label.trim() === '') {
     errors.label = 'Label is required';
+  } else if (link.label.length < 1) {
+    errors.label = 'Label must be at least 1 character';
   } else if (link.label.length > 40) {
     errors.label = 'Label must be 40 characters or less';
   }
@@ -118,15 +130,48 @@ export const validateProfileLink = (link) => {
     }
   }
   
-  // Validate type (optional)
-  if (link.type && typeof link.type !== 'string') {
-    errors.type = 'Type must be a string';
-  } else if (link.type && link.type.length > 30) {
-    errors.type = 'Type must be 30 characters or less';
+  // Validate type (required, must be one of the valid types)
+  if (!link.type || typeof link.type !== 'string') {
+    errors.type = 'Type is required';
+  } else if (!VALID_LINK_TYPES.includes(link.type)) {
+    errors.type = `Type must be one of: ${VALID_LINK_TYPES.join(', ')}`;
   }
   
   return {
     valid: Object.keys(errors).length === 0,
     errors
+  };
+};
+
+/**
+ * Validates an array of profile links
+ * @param {Array} links - Array of link objects
+ * @returns {{ valid: boolean, errors: object, globalErrors: string[] }} - Validation result
+ */
+export const validateProfileLinks = (links) => {
+  const errors = {};
+  const globalErrors = [];
+  
+  if (!Array.isArray(links)) {
+    return { valid: false, errors: {}, globalErrors: ['Links must be an array'] };
+  }
+  
+  // Check max links constraint
+  if (links.length > MAX_PROFILE_LINKS) {
+    globalErrors.push(`Maximum of ${MAX_PROFILE_LINKS} links allowed (you have ${links.length})`);
+  }
+  
+  // Validate each link
+  links.forEach((link, index) => {
+    const validation = validateProfileLink(link);
+    if (!validation.valid) {
+      errors[index] = validation.errors;
+    }
+  });
+  
+  return {
+    valid: Object.keys(errors).length === 0 && globalErrors.length === 0,
+    errors,
+    globalErrors
   };
 };

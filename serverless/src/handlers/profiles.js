@@ -7,6 +7,87 @@ const headers = {
   'Access-Control-Allow-Credentials': true,
 };
 
+// Validation constants
+const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other'];
+const MAX_PROFILE_LINKS = 20;
+const MAX_LABEL_LENGTH = 40;
+const MAX_URL_LENGTH = 2048;
+
+/**
+ * Validate a single profile link
+ */
+function validateLink(link) {
+  const errors = {};
+  
+  if (!link || typeof link !== 'object') {
+    return { valid: false, errors: { _form: 'Invalid link object' } };
+  }
+  
+  // Validate label
+  if (!link.label || typeof link.label !== 'string' || link.label.trim() === '') {
+    errors.label = 'Label is required';
+  } else if (link.label.length < 1 || link.label.length > MAX_LABEL_LENGTH) {
+    errors.label = `Label must be 1-${MAX_LABEL_LENGTH} characters`;
+  }
+  
+  // Validate URL
+  if (!link.url || typeof link.url !== 'string' || link.url.trim() === '') {
+    errors.url = 'URL is required';
+  } else if (link.url.length > MAX_URL_LENGTH) {
+    errors.url = `URL must be ${MAX_URL_LENGTH} characters or less`;
+  } else {
+    try {
+      const parsed = new URL(link.url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        errors.url = 'URL must use http:// or https:// protocol';
+      }
+    } catch {
+      errors.url = 'Invalid URL format';
+    }
+  }
+  
+  // Validate type
+  if (!link.type || typeof link.type !== 'string') {
+    errors.type = 'Type is required';
+  } else if (!VALID_LINK_TYPES.includes(link.type)) {
+    errors.type = `Type must be one of: ${VALID_LINK_TYPES.join(', ')}`;
+  }
+  
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+
+/**
+ * Validate array of profile links
+ */
+function validateLinks(links) {
+  if (!Array.isArray(links)) {
+    return { valid: false, message: 'Links must be an array' };
+  }
+  
+  if (links.length > MAX_PROFILE_LINKS) {
+    return { 
+      valid: false, 
+      message: `Maximum of ${MAX_PROFILE_LINKS} links allowed (received ${links.length})` 
+    };
+  }
+  
+  // Validate each link
+  for (let i = 0; i < links.length; i++) {
+    const validation = validateLink(links[i]);
+    if (!validation.valid) {
+      return {
+        valid: false,
+        message: `Link ${i + 1} validation failed: ${JSON.stringify(validation.errors)}`
+      };
+    }
+  }
+  
+  return { valid: true };
+}
+
 /**
  * GET /api/profiles/:vanityUrl
  * Get profile by vanity URL with privacy filtering
@@ -31,6 +112,15 @@ export const getProfileByVanity = async (event) => {
             displayName: true,
             avatar: true,
             createdAt: true,
+          },
+        },
+        links: {
+          orderBy: { position: 'asc' },
+          select: {
+            id: true,
+            label: true,
+            url: true,
+            type: true,
           },
         },
         media: {
@@ -135,6 +225,16 @@ export const getProfileById = async (event) => {
             email: true,
             avatar: true,
             createdAt: true,
+          },
+        },
+        links: {
+          orderBy: { position: 'asc' },
+          select: {
+            id: true,
+            label: true,
+            url: true,
+            type: true,
+            position: true,
           },
         },
         media: {
@@ -263,13 +363,16 @@ export const updateProfile = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { vanityUrl, headline, bio, roles, location, tags, socialLinks, privacy } = body;
+    const { vanityUrl, headline, title, bio, roles, location, tags, socialLinks, privacy, links } = body;
 
     const prisma = getPrisma();
 
     // Check profile exists and user owns it
     const existingProfile = await prisma.profile.findUnique({
       where: { id },
+      include: {
+        links: true,
+      },
     });
 
     if (!existingProfile) {
@@ -291,40 +394,89 @@ export const updateProfile = async (event) => {
       });
 
       if (existingVanity) {
-        return error('Vanity URL is already taken', 400);
+        return error('Vanity URL is already taken', 409);
       }
     }
 
-    // Update profile
-    const updateData = {};
-    if (vanityUrl !== undefined) updateData.vanityUrl = vanityUrl;
-    if (headline !== undefined) updateData.headline = headline;
-    if (bio !== undefined) updateData.bio = bio;
-    if (roles !== undefined) updateData.roles = roles;
-    if (location !== undefined) updateData.location = location;
-    if (tags !== undefined) updateData.tags = tags;
-    if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
-    if (privacy !== undefined) updateData.privacy = privacy;
+    // Validate links if provided
+    if (links !== undefined) {
+      const linksValidation = validateLinks(links);
+      if (!linksValidation.valid) {
+        return error(linksValidation.message, 400);
+      }
+    }
 
-    const profile = await prisma.profile.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
+    // Update profile with transaction to handle links atomically
+    const profile = await prisma.$transaction(async (tx) => {
+      // Update profile fields
+      const updateData = {};
+      if (vanityUrl !== undefined) updateData.vanityUrl = vanityUrl;
+      if (headline !== undefined) updateData.headline = headline;
+      if (title !== undefined) updateData.title = title;
+      if (bio !== undefined) updateData.bio = bio;
+      if (roles !== undefined) updateData.roles = roles;
+      if (location !== undefined) updateData.location = location;
+      if (tags !== undefined) updateData.tags = tags;
+      if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
+      if (privacy !== undefined) updateData.privacy = privacy;
+
+      const updatedProfile = await tx.profile.update({
+        where: { id },
+        data: updateData,
+      });
+
+      // Handle links update if provided
+      if (links !== undefined) {
+        // Delete all existing links for this profile
+        await tx.profileLink.deleteMany({
+          where: { profileId: id },
+        });
+
+        // Create new links with positions
+        if (links.length > 0) {
+          await tx.profileLink.createMany({
+            data: links.map((link, index) => ({
+              profileId: id,
+              userId: userId,
+              label: link.label.trim(),
+              url: link.url.trim(),
+              type: link.type,
+              position: index,
+            })),
+          });
+        }
+      }
+
+      // Return updated profile with all relations
+      return tx.profile.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatar: true,
+            },
+          },
+          links: {
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              label: true,
+              url: true,
+              type: true,
+              position: true,
+            },
+          },
+          _count: {
+            select: {
+              media: true,
+              credits: true,
+            },
           },
         },
-        _count: {
-          select: {
-            media: true,
-            credits: true,
-          },
-        },
-      },
+      });
     });
 
     return json(profile);

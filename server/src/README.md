@@ -1,6 +1,25 @@
 # Project Valine Backend API
 
+> **⚠️ DEPRECATION NOTICE**
+> 
+> This Express server is **FOR LOCAL DEVELOPMENT ONLY**. 
+>
+> **The canonical production backend is the Serverless backend** in `/serverless`.
+> 
+> **Do not deploy this Express server to staging or production.**
+> 
+> See [Canonical Backend Decision](../../docs/backend/canonical-backend.md) for details.
+>
+> For deployment instructions, see [Serverless Deployment Guide](../../docs/deployment/serverless-guide.md).
+
 Backend API server for Project Valine, providing endpoints for user preferences, profiles, and dashboard statistics.
+
+This server is useful for:
+- **Local frontend development** without AWS credentials
+- **Quick API prototyping** and testing
+- **Contract test development** before serverless implementation
+
+For production features (authentication, media upload, privacy controls), use the serverless backend.
 
 ## Quick Start
 
