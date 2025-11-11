@@ -2,6 +2,7 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
+import { csrfProtection } from '../middleware/csrfMiddleware.js';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
@@ -15,6 +16,12 @@ const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valin
  */
 export const getUploadUrl = async (event) => {
   try {
+    // CSRF protection (Phase 3)
+    const csrfError = csrfProtection(event);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const { id: profileId } = event.pathParameters || {};
     if (!profileId) {
       return error('profileId is required', 400);
@@ -98,6 +105,12 @@ export const getUploadUrl = async (event) => {
  */
 export const completeUpload = async (event) => {
   try {
+    // CSRF protection (Phase 3)
+    const csrfError = csrfProtection(event);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const { id: profileId } = event.pathParameters || {};
     if (!profileId) {
       return error('profileId is required', 400);

@@ -3,6 +3,7 @@ import { json, error } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '../middleware/rateLimit.js';
+import { generateCsrfToken, generateCsrfCookie, clearCsrfCookie } from '../middleware/csrfMiddleware.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -219,6 +220,10 @@ export const login = async (event) => {
     const accessCookie = generateAccessTokenCookie(accessToken);
     const refreshCookie = generateRefreshTokenCookie(refreshToken);
 
+    // Generate CSRF token (Phase 3)
+    const csrfToken = generateCsrfToken();
+    const csrfCookie = generateCsrfCookie(csrfToken);
+
     return {
       statusCode: 200,
       headers: {
@@ -230,7 +235,7 @@ export const login = async (event) => {
         'referrer-policy': 'strict-origin-when-cross-origin'
       },
       multiValueHeaders: {
-        'Set-Cookie': [accessCookie, refreshCookie]
+        'Set-Cookie': [accessCookie, refreshCookie, csrfCookie]
       },
       body: JSON.stringify({
         user: userWithoutPassword,
@@ -543,6 +548,10 @@ export const refresh = async (event) => {
     // Set new cookies
     const accessCookie = generateAccessTokenCookie(newAccessToken);
     const refreshCookie = generateRefreshTokenCookie(newRefreshToken);
+    
+    // Generate new CSRF token (Phase 3)
+    const csrfToken = generateCsrfToken();
+    const csrfCookie = generateCsrfCookie(csrfToken);
 
     return {
       statusCode: 200,
@@ -555,7 +564,7 @@ export const refresh = async (event) => {
         'referrer-policy': 'strict-origin-when-cross-origin'
       },
       multiValueHeaders: {
-        'Set-Cookie': [accessCookie, refreshCookie]
+        'Set-Cookie': [accessCookie, refreshCookie, csrfCookie]
       },
       body: JSON.stringify({
         message: 'Token refreshed successfully'
@@ -595,6 +604,7 @@ export const logout = async (event) => {
 
     // Generate cookie clearing headers
     const clearCookies = generateClearCookieHeaders();
+    const clearCsrf = clearCsrfCookie();
 
     return {
       statusCode: 200,
@@ -606,7 +616,7 @@ export const logout = async (event) => {
         'referrer-policy': 'strict-origin-when-cross-origin'
       },
       multiValueHeaders: {
-        'Set-Cookie': clearCookies
+        'Set-Cookie': [...clearCookies, clearCsrf]
       },
       body: JSON.stringify({
         message: 'Logged out successfully'
