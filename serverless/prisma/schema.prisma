@@ -6,17 +6,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  password     String   // hashed password
-  displayName  String
-  bio          String?
-  avatar       String?
-  name         String?
-  role         String   @default("artist") // 'artist' | 'observer'
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
+  normalizedEmail String?  @unique // Lowercase normalized email for case-insensitive lookups
+  password        String   // hashed password
+  displayName     String
+  bio             String?
+  avatar          String?
+  name            String?
+  role            String   @default("artist") // 'artist' | 'observer'
+  emailVerified   Boolean  @default(false)
+  emailVerifiedAt DateTime?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?  // Encrypted or hashed TOTP secret
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   scripts            Script[]
   auditions          Audition[]
@@ -35,6 +40,8 @@ model User {
   settings           UserSettings?
   sentReelRequests   ReelRequest[]       @relation("requester")
   receivedReelRequests ReelRequest[]     @relation("owner")
+  verificationTokens EmailVerificationToken[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
 }
@@ -302,4 +309,62 @@ model ReelRequest {
   @@index([mediaId])
   @@index([requesterId])
   @@index([ownerId, status])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verification_tokens")
+  @@index([userId])
+  @@index([token])
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jti           String    @unique // JWT ID for tracking
+  expiresAt     DateTime
+  invalidatedAt DateTime? // When token was invalidated (logout)
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime  @default(now())
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([jti])
+  @@index([userId, invalidatedAt])
+}
+
+model PRIntelligence {
+  id                   String   @id @default(uuid())
+  prNumber             Int
+  changedFilesCount    Int
+  sensitivePathsCount  Int
+  riskScore            Float
+  metadata             Json?    // Additional PR metadata
+  createdAt            DateTime @default(now())
+
+  @@map("pr_intelligence")
+  @@index([prNumber])
+  @@index([riskScore])
+}
+
+model TestRun {
+  id         String   @id @default(uuid())
+  suite      String
+  testName   String
+  status     String   // "passed" | "failed" | "skipped"
+  durationMs Int
+  runAt      DateTime @default(now())
+  metadata   Json?    // Additional test metadata
+
+  @@map("test_runs")
+  @@index([suite, testName])
+  @@index([runAt])
+  @@index([status])
 }

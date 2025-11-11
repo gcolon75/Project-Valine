@@ -11,6 +11,13 @@ export const rateLimitConfig = {
     message: 'Too many authentication attempts. Please try again later.',
   },
 
+  // Email verification resend - very strict to prevent abuse
+  emailVerification: {
+    maxRequests: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour (5 per hour)
+    message: 'Too many verification email requests. Please try again later.',
+  },
+
   // Write endpoints (POST/PUT/DELETE) - moderate limits for authenticated users
   write: {
     maxRequests: 100,
@@ -33,6 +40,11 @@ export const rateLimitConfig = {
  * @returns {object} Rate limit configuration
  */
 export function getRateLimitConfig(path, method) {
+  // Email verification resend gets very strict limits
+  if (path === '/auth/resend-verification') {
+    return rateLimitConfig.emailVerification;
+  }
+
   // Auth endpoints get strict limits
   if (path.startsWith('/auth/')) {
     return rateLimitConfig.auth;

@@ -2,6 +2,7 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
+import { csrfProtection } from '../middleware/csrfMiddleware.js';
 
 /**
  * GET /api/settings
@@ -59,6 +60,12 @@ export const getSettings = async (event) => {
  */
 export const updateSettings = async (event) => {
   try {
+    // CSRF protection (Phase 3)
+    const csrfError = csrfProtection(event);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error('Unauthorized', 401);

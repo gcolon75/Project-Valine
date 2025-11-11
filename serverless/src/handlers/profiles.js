@@ -2,6 +2,7 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
+import { csrfProtection } from '../middleware/csrfMiddleware.js';
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -275,9 +276,21 @@ export const getProfileById = async (event) => {
  */
 export const createProfile = async (event) => {
   try {
+    // CSRF protection (Phase 3)
+    const csrfError = csrfProtection(event);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error('Unauthorized', 401);
+    }
+
+    // Require email verification for profile creation
+    const verificationError = await requireEmailVerified(userId);
+    if (verificationError) {
+      return verificationError;
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -353,6 +366,12 @@ export const createProfile = async (event) => {
  */
 export const updateProfile = async (event) => {
   try {
+    // CSRF protection (Phase 3)
+    const csrfError = csrfProtection(event);
+    if (csrfError) {
+      return csrfError;
+    }
+
     const { id } = event.pathParameters || {};
     if (!id) {
       return error('id is required', 400);
