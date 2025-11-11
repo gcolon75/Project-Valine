@@ -1,0 +1,63 @@
+name: Daily Health Snapshot
+
+on:
+  schedule:
+    # Run at 09:00 PST/PDT (16:00 UTC for PDT, 17:00 UTC for PST)
+    # Using 16:00 UTC to align with US West Coast Pacific Time
+    - cron: '0 16 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  post-health-snapshot:
+    name: Post Daily Health Snapshot
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: orchestrator
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Generate and post health snapshot
+        working-directory: orchestrator
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_STATUS_CHANNEL_ID: ${{ secrets.DISCORD_STATUS_CHANNEL_ID }}
+          FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'app')
+          from services.health_snapshot import HealthSnapshot
+          
+          health_service = HealthSnapshot()
+          success, metrics = health_service.generate_and_post_snapshot()
+          
+          if success:
+              print('✅ Health snapshot posted successfully')
+              print(f'Overall health: {metrics.get(\"summary\", {}).get(\"overall_health\", \"unknown\")}')
+          else:
+              print('❌ Failed to post health snapshot')
+              sys.exit(1)
+          "
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Daily health snapshot completed successfully"
+          else
+            echo "❌ Daily health snapshot failed"
+          fi

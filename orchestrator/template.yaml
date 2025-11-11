@@ -64,6 +64,12 @@ Parameters:
     NoEcho: true
     Default: ""
     Description: OpenAI API key for LLM parsing (optional, only used if UseLLMParsing is true)
+  
+  DiscordStatusChannelId:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Discord channel ID for posting daily health snapshots and status updates
 
 Resources:
   # DynamoDB table for storing orchestrator run state
@@ -115,6 +121,7 @@ Resources:
         Variables:
           DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
           DISCORD_BOT_TOKEN: !Ref DiscordBotToken
+          DISCORD_STATUS_CHANNEL_ID: !Ref DiscordStatusChannelId
           GITHUB_TOKEN: !Ref GitHubToken
           FRONTEND_BASE_URL: !Ref FrontendBaseUrl
           VITE_API_BASE: !Ref ViteApiBase

@@ -24,6 +24,7 @@ from services.github import GitHubService
 from services.github_actions_dispatcher import GitHubActionsDispatcher
 from services.discord import DiscordService
 from services.audit_store import AuditStore
+from services.health_snapshot import HealthSnapshot
 from utils.url_validator import URLValidator
 from utils.admin_auth import AdminAuthenticator
 from utils.time_formatter import TimeFormatter
@@ -812,113 +813,21 @@ def handle_agents_command(interaction):
 
 
 def handle_status_digest_command(interaction):
-    """Handle /status-digest command - show aggregated status digest for workflows."""
+    """Handle /status-digest command - show health snapshot with latency and error metrics."""
     try:
-        # Extract optional period parameter
-        options = interaction.get('data', {}).get('options', [])
-        period = 'daily'
+        # Initialize health snapshot service
+        health_service = HealthSnapshot()
         
-        for option in options:
-            if option.get('name') == 'period':
-                period = option.get('value', 'daily')
+        # Generate and get metrics
+        metrics = health_service.gather_metrics()
         
-        # Validate period
-        if period not in ['daily', 'weekly']:
-            return create_response(4, {
-                'content': '❌ Invalid period. Must be "daily" or "weekly".',
-                'flags': 64
-            })
+        # Create embed for Discord
+        embed = health_service.create_status_embed(metrics)
         
-        # Calculate time window
-        now = datetime.now(timezone.utc)
-        if period == 'daily':
-            cutoff = now - timedelta(days=1)
-            period_label = 'Last 24 Hours'
-        else:  # weekly
-            cutoff = now - timedelta(days=7)
-            period_label = 'Last 7 Days'
-        
-        # Initialize services
-        github_service = GitHubService()
-        dispatcher = GitHubActionsDispatcher(github_service)
-        formatter = TimeFormatter()
-        
-        # Get runs for both workflows (get more to aggregate)
-        client_deploy_runs = dispatcher.list_workflow_runs('Client Deploy', count=50)
-        diagnose_runs = dispatcher.list_workflow_runs('Diagnose on Demand', count=50)
-        
-        # Filter by time window and aggregate
-        def aggregate_runs(runs, cutoff_time):
-            """Aggregate runs within the time window."""
-            filtered_runs = []
-            for run in runs:
-                run_time = run.get('created_at')
-                if run_time:
-                    # Ensure timezone-aware
-                    if run_time.tzinfo is None:
-                        run_time = run_time.replace(tzinfo=timezone.utc)
-                    if run_time >= cutoff_time:
-                        filtered_runs.append(run)
-            
-            success_count = sum(1 for r in filtered_runs if r.get('conclusion') == 'success')
-            failure_count = sum(1 for r in filtered_runs if r.get('conclusion') == 'failure')
-            
-            # Calculate average duration
-            durations = [r.get('duration_seconds') for r in filtered_runs if r.get('duration_seconds')]
-            avg_duration = sum(durations) / len(durations) if durations else None
-            
-            # Get most recent run
-            latest_run = filtered_runs[0] if filtered_runs else None
-            
-            return {
-                'total': len(filtered_runs),
-                'success': success_count,
-                'failure': failure_count,
-                'avg_duration': avg_duration,
-                'latest_run': latest_run
-            }
-        
-        client_stats = aggregate_runs(client_deploy_runs, cutoff)
-        diagnose_stats = aggregate_runs(diagnose_runs, cutoff)
-        
-        # Build digest message
-        content = f'📊 **Status Digest - {period_label}**\n\n'
-        
-        # Client Deploy section
-        content += '**Client Deploy:**\n'
-        if client_stats['total'] > 0:
-            content += f"• Runs: {client_stats['total']} ({client_stats['success']} ✅ / {client_stats['failure']} ❌)\n"
-            if client_stats['avg_duration']:
-                avg_dur_str = formatter.format_duration_seconds(int(client_stats['avg_duration']))
-                content += f'• Avg duration: {avg_dur_str}\n'
-            else:
-                content += '• Avg duration: n/a\n'
-            
-            if client_stats['latest_run']:
-                latest = client_stats['latest_run']
-                ago = formatter.format_relative_time(latest.get('created_at'))
-                content += f"• Latest: [{latest.get('conclusion', 'unknown')}]({latest.get('html_url')}) ({ago})\n"
-        else:
-            content += '• No runs in this period\n'
-        
-        content += '\n**Diagnose on Demand:**\n'
-        if diagnose_stats['total'] > 0:
-            content += f"• Runs: {diagnose_stats['total']} ({diagnose_stats['success']} ✅ / {diagnose_stats['failure']} ❌)\n"
-            if diagnose_stats['avg_duration']:
-                avg_dur_str = formatter.format_duration_seconds(int(diagnose_stats['avg_duration']))
-                content += f'• Avg duration: {avg_dur_str}\n'
-            else:
-                content += '• Avg duration: n/a\n'
-            
-            if diagnose_stats['latest_run']:
-                latest = diagnose_stats['latest_run']
-                ago = formatter.format_relative_time(latest.get('created_at'))
-                content += f"• Latest: [{latest.get('conclusion', 'unknown')}]({latest.get('html_url')}) ({ago})\n"
-        else:
-            content += '• No runs in this period\n'
-        
+        # Return as ephemeral message to the user
         return create_response(4, {
-            'content': content
+            'embeds': [embed],
+            'flags': 64  # Ephemeral
         })
     
     except Exception as e:
@@ -926,7 +835,7 @@ def handle_status_digest_command(interaction):
         import traceback
         traceback.print_exc()
         return create_response(4, {
-            'content': f'❌ Error: {str(e)}',
+            'content': f'❌ Error generating health snapshot: {str(e)}',
             'flags': 64
         })
 
