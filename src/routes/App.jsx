@@ -1,11 +1,13 @@
 // src/routes/App.jsx
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useThemeSync } from "../hooks/useThemeSync";
 
 import MarketingLayout from "../layouts/MarketingLayout";
 import AppLayout from "../layouts/AppLayout";
+import ConsentBanner from "../analytics/ConsentBanner";
+import { initAnalytics, trackPageView } from "../analytics/client";
 
 /* Lazy pages */
 const HomePage = lazy(() => import("../pages/Home"));
@@ -58,8 +60,22 @@ export default function App() {
   // Sync theme with backend on login
   useThemeSync();
   
+  const location = useLocation();
+  
+  // Initialize analytics on mount
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+  
+  // Track page views on route changes
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+  
   return (
-    <Suspense fallback={<Fallback />}>
+    <>
+      <ConsentBanner />
+      <Suspense fallback={<Fallback />}>
       <Routes>
         {/* Marketing */}
         <Route element={<MarketingLayout />}>
@@ -205,5 +221,6 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
+    </>
   );
 }

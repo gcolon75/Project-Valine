@@ -44,6 +44,14 @@ provider:
     PROFANITY_LIST_PATH: ${env:PROFANITY_LIST_PATH, ""}
     PROFANITY_ACTION: ${env:PROFANITY_ACTION, "block"}
     REPORT_CATEGORY_ALLOWLIST: ${env:REPORT_CATEGORY_ALLOWLIST, "spam,abuse,unsafe_link,profanity,privacy,other"}
+    ANALYTICS_ENABLED: ${env:ANALYTICS_ENABLED, "false"}
+    ANALYTICS_REQUIRE_CONSENT: ${env:ANALYTICS_REQUIRE_CONSENT, "true"}
+    ANALYTICS_PERSIST_ENABLED: ${env:ANALYTICS_PERSIST_ENABLED, "true"}
+    ANALYTICS_STORAGE_DRIVER: ${env:ANALYTICS_STORAGE_DRIVER, "postgres"}
+    ANALYTICS_RETENTION_DAYS: ${env:ANALYTICS_RETENTION_DAYS, "30"}
+    ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
+    ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
+    ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
 
 package:
   patterns:
@@ -618,3 +626,25 @@ functions:
       - httpApi:
           path: /moderation/health
           method: get
+
+  # Analytics Privacy Stub endpoints
+  analyticsIngest:
+    handler: src/handlers/analytics.ingestEvents
+    events:
+      - httpApi:
+          path: /analytics/ingest
+          method: post
+
+  analyticsConfig:
+    handler: src/handlers/analytics.getConfig
+    events:
+      - httpApi:
+          path: /analytics/config
+          method: get
+
+  analyticsCleanup:
+    handler: src/handlers/analytics.cleanupOldEvents
+    events:
+      - httpApi:
+          path: /analytics/events/cleanup
+          method: delete

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as authService from "../services/authService";
 import { apiFallback } from "../hooks/useApiFallback";
+import { trackLogin, trackSignup, trackLogout } from "../analytics/client";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -74,7 +75,15 @@ export function AuthProvider({ children }) {
       );
       
       setUser(data.user);
+      
+      // Track successful login
+      trackLogin('password', true);
+      
       return data.user;
+    } catch (error) {
+      // Track failed login
+      trackLogin('password', false);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -98,7 +107,15 @@ export function AuthProvider({ children }) {
       );
       
       setUser(data.user);
+      
+      // Track successful signup
+      trackSignup('password', true);
+      
       return data.user;
+    } catch (error) {
+      // Track failed signup
+      trackSignup('password', false);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -109,6 +126,9 @@ export function AuthProvider({ children }) {
     try {
       await authService.logout();
       setUser(null);
+      
+      // Track logout
+      trackLogout();
     } finally {
       setLoading(false);
     }

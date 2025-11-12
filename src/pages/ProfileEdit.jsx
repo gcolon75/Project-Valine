@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 import { getProfile, updateProfile, batchUpdateProfileLinks } from '../services/profileService';
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
+import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
@@ -72,6 +73,16 @@ export default function ProfileEdit() {
     education: user?.education || [],
     skills: user?.skills || []
   });
+  
+  // Track initial form data for analytics
+  const [initialFormData, setInitialFormData] = useState(null);
+  
+  // Set initial data once on mount
+  useEffect(() => {
+    if (!initialFormData) {
+      setInitialFormData({...formData});
+    }
+  }, []);
 
   // Load profile from backend on mount if feature is enabled
   useEffect(() => {
@@ -173,6 +184,10 @@ export default function ProfileEdit() {
       const tempUrl = URL.createObjectURL(file);
       handleChange('banner', tempUrl);
 
+      // Track media upload
+      const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
+      trackMediaUpload('image', sizeBucket);
+
       toast.success('Banner uploaded successfully!', { id: toastId });
     } catch (error) {
       console.error('Banner upload failed:', error);
@@ -204,6 +219,10 @@ export default function ProfileEdit() {
       // For now, use a temporary URL
       const tempUrl = URL.createObjectURL(file);
       handleChange('primaryReel', tempUrl);
+
+      // Track media upload
+      const sizeBucket = file.size < 10 * 1024 * 1024 ? 'small' : file.size < 50 * 1024 * 1024 ? 'medium' : 'large';
+      trackMediaUpload('video', sizeBucket);
 
       toast.success('Reel uploaded successfully!', { id: toastId });
     } catch (error) {
@@ -283,6 +302,17 @@ export default function ProfileEdit() {
         
         // Success feedback
         toast.success('Profile saved!', { id: toastId });
+        
+        // Track profile update with changed fields
+        if (initialFormData) {
+          const changedFields = [];
+          Object.keys(sanitizedData).forEach(key => {
+            if (JSON.stringify(sanitizedData[key]) !== JSON.stringify(initialFormData[key])) {
+              changedFields.push(key);
+            }
+          });
+          trackProfileUpdate(changedFields);
+        }
         
         // Navigate back to profile after brief delay
         setTimeout(() => {

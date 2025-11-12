@@ -408,3 +408,17 @@ model ModerationAction {
   @@index([actorId])
   @@index([createdAt])
 }
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  event      String
+  anonId     String?      // random UUID per browser (cookie); no userId unless strictly needed
+  userId     String?      // optional: only if user is logged in AND consented (flag controlled)
+  sessionId  String?      // generated client-side ephemeral (no personal data)
+  properties Json?
+  createdAt  DateTime @default(now())
+
+  @@map("analytics_events")
+  @@index([event])
+  @@index([createdAt])
+}
