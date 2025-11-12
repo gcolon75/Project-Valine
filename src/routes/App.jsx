@@ -19,6 +19,11 @@ const VerifyEmailPage = lazy(() => import("../pages/VerifyEmail"));
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPassword"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPassword"));
 
+/* Legal pages */
+const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicy"));
+const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfService"));
+const CookieDisclosurePage = lazy(() => import("../pages/legal/CookieDisclosure"));
+
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const DiscoverPage = lazy(() => import("../pages/Discover"));
 const PostPage = lazy(() => import("../pages/Post"));
@@ -68,6 +73,10 @@ export default function App() {
           <Route path="signup-page" element={<SignupPage />} />
           <Route path="login-page" element={<LoginPageSkeleton />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />
+          {/* Legal pages */}
+          <Route path="legal/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="legal/terms" element={<TermsOfServicePage />} />
+          <Route path="legal/cookies" element={<CookieDisclosurePage />} />
         </Route>
 
         {/* Auth flows - standalone pages without layout */}
