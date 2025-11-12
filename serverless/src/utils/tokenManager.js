@@ -107,7 +107,11 @@ const parseCookies = (cookieHeader) => {
 export const generateAccessTokenCookie = (token) => {
   const maxAge = 30 * 60; // 30 minutes in seconds
   
-  let cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAge}`;
+  // Use SameSite=Strict in production for maximum CSRF protection
+  // Use SameSite=Lax in development for easier testing
+  const sameSite = IS_PRODUCTION ? 'Strict' : 'Lax';
+  
+  let cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
   if (IS_PRODUCTION) {
     cookie += '; Secure';
@@ -128,7 +132,11 @@ export const generateAccessTokenCookie = (token) => {
 export const generateRefreshTokenCookie = (token) => {
   const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
   
-  let cookie = `refresh_token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAge}`;
+  // Use SameSite=Strict in production for maximum CSRF protection
+  // Use SameSite=Lax in development for easier testing
+  const sameSite = IS_PRODUCTION ? 'Strict' : 'Lax';
+  
+  let cookie = `refresh_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
   if (IS_PRODUCTION) {
     cookie += '; Secure';

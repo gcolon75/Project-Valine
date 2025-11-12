@@ -32,21 +32,29 @@ export const getUserFromEvent = getUserIdFromEvent;
 
 export const register = async (event) => {
   try {
+    // Check if registration is enabled
+    const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
+    
+    if (!ENABLE_REGISTRATION) {
+      console.log('Registration attempt blocked: ENABLE_REGISTRATION=false');
+      return error('Registration is currently disabled', 403, { event });
+    }
+
     const { email, password, username, displayName } = JSON.parse(event.body || '{}');
     
     if (!email || !password || !username || !displayName) {
-      return error('email, password, username, and displayName are required', 400);
+      return error('email, password, username, and displayName are required', 400, { event });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return error('Invalid email format', 400);
+      return error('Invalid email format', 400, { event });
     }
 
     // Validate password length
     if (password.length < 6) {
-      return error('Password must be at least 6 characters', 400);
+      return error('Password must be at least 6 characters', 400, { event });
     }
 
     const prisma = getPrisma();
@@ -145,7 +153,7 @@ export const login = async (event) => {
     const { email, password } = JSON.parse(event.body || '{}');
     
     if (!email || !password) {
-      return error('email and password are required', 400);
+      return error('email and password are required', 400, { event });
     }
 
     const prisma = getPrisma();
@@ -170,14 +178,27 @@ export const login = async (event) => {
     });
 
     if (!user) {
-      return error('Invalid email or password', 401);
+      console.log(`Login attempt failed: User not found for email ${email}`);
+      return error('Invalid email or password', 401, { event });
     }
 
     // Compare password with bcrypt
     const passwordMatch = await comparePassword(password, user.password);
     
     if (!passwordMatch) {
-      return error('Invalid email or password', 401);
+      console.log(`Login attempt failed: Invalid password for email ${email}`);
+      return error('Invalid email or password', 401, { event });
+    }
+
+    // POST-AUTH ALLOWLIST CHECK: Enforce email allowlist if configured
+    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
+      .split(',')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+    
+    if (allowedEmails.length > 0 && !allowedEmails.includes(user.email)) {
+      console.log(`Login blocked: Email ${user.email} not in allowlist. Allowed: ${allowedEmails.join(', ')}`);
+      return error('Account not authorized for access', 403, { event });
     }
 
     // Check if email is verified (optional enforcement - can be enabled later)
