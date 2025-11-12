@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "npm run seo:generate && vite build",
+    "build": "node scripts/check-seo-flag.mjs && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -54,7 +54,7 @@
     "msw": "^2.11.6",
     "postcss": "^8.4.45",
     "prisma": "^6.18.0",
-    "sharp": "^0.34.4",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.10",
     "vite": "^7.1.12",
     "vitest": "^4.0.6"
