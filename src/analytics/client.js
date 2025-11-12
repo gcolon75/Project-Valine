@@ -24,6 +24,15 @@ function generateUUID() {
 }
 
 /**
+ * Get secure cookie flags based on environment
+ */
+function getSecureCookieFlags() {
+  // In production (HTTPS), add Secure flag
+  const isSecure = window.location.protocol === 'https:';
+  return isSecure ? '; Secure' : '';
+}
+
+/**
  * Get or create anonymous ID from cookie
  */
 function getAnonId() {
@@ -41,7 +50,7 @@ function getAnonId() {
   // Set cookie (30 days)
   const expires = new Date();
   expires.setDate(expires.getDate() + 30);
-  document.cookie = `${cookieName}=${anonId}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+  document.cookie = `${cookieName}=${anonId}; expires=${expires.toUTCString()}; path=/; SameSite=Strict${getSecureCookieFlags()}`;
   
   return anonId;
 }
@@ -83,11 +92,11 @@ export function setConsent(accepted) {
   // Set cookie (1 year)
   const expires = new Date();
   expires.setDate(expires.getDate() + 365);
-  document.cookie = `${cookieName}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=Strict`;
+  document.cookie = `${cookieName}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=Strict${getSecureCookieFlags()}`;
   
   // If declined, also remove the anonId cookie
   if (!accepted) {
-    document.cookie = 'analytics_uuid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = `analytics_uuid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${getSecureCookieFlags()}`;
     sessionId = null;
   }
 }
