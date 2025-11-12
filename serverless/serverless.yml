@@ -12,7 +12,6 @@ provider:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
-    AWS_REGION: ${env:AWS_REGION, "us-west-2"}
     JWT_SECRET: ${env:JWT_SECRET}
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
