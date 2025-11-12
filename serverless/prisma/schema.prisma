@@ -368,3 +368,43 @@ model TestRun {
   @@index([runAt])
   @@index([status])
 }
+
+model ModerationReport {
+  id           String   @id @default(cuid())
+  reporterId   String
+  targetType   String   // "user" | "profile" | "post" | "comment" | "link"
+  targetId     String
+  category     String   // from REPORT_CATEGORY_ALLOWLIST
+  description  String?  @db.Text
+  evidenceUrls String[] @default([])
+  status       String   @default("open") // "open" | "reviewed" | "actioned" | "dismissed"
+  severity     Int      @default(0) // 0=info,1=low,2=med,3=high
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  actions      ModerationAction[]
+
+  @@map("moderation_reports")
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model ModerationAction {
+  id          String   @id @default(cuid())
+  reportId    String
+  action      String   // "allow" | "remove" | "ban" | "warn"
+  reason      String?  @db.Text
+  actorId     String   // admin userId
+  createdAt   DateTime @default(now())
+
+  report      ModerationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("moderation_actions")
+  @@index([reportId])
+  @@index([actorId])
+  @@index([createdAt])
+}

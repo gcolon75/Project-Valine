@@ -18,6 +18,13 @@ export const rateLimitConfig = {
     message: 'Too many verification email requests. Please try again later.',
   },
 
+  // Moderation reports - strict limits to prevent spam
+  reports: {
+    maxRequests: parseInt(process.env.REPORTS_MAX_PER_HOUR || '5', 10),
+    windowMs: 60 * 60 * 1000, // 1 hour
+    message: 'Too many reports submitted. Please try again later.',
+  },
+
   // Write endpoints (POST/PUT/DELETE) - moderate limits for authenticated users
   write: {
     maxRequests: 100,
@@ -43,6 +50,11 @@ export function getRateLimitConfig(path, method) {
   // Email verification resend gets very strict limits
   if (path === '/auth/resend-verification') {
     return rateLimitConfig.emailVerification;
+  }
+
+  // Reports endpoint gets strict limits
+  if (path === '/reports' && method === 'POST') {
+    return rateLimitConfig.reports;
   }
 
   // Auth endpoints get strict limits
