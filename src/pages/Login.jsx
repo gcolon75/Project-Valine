@@ -93,13 +93,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       
-      {/* Header */}
-      
-
       {/* Content */}
-      <div className="pt-20 flex items-center justify-center px-4 py-12 min-h-screen">
+      <div className="flex items-center justify-center px-4 py-12 min-h-screen">
         <div className="w-full max-w-md animate-fade-in">
           
           {/* Page Header */}
@@ -263,11 +260,10 @@ const Login = () => {
             </Link>
           </p>
         </div>
-      </div>
-      </div>
 
-      {/* Footer */}
-          </div>
+        </div>
+      </div>
+    </main>
   );
 };
 

@@ -152,7 +152,7 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 flex items-center justify-center px-4 py-12">
+    <main className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         
         {/* Card */}
@@ -266,7 +266,7 @@ const VerifyEmail = () => {
           </p>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

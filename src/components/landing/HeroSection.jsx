@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
-    <section id="hero" className="relative px-4 py-16 md:py-20 lg:py-24 overflow-hidden">
+    <section id="hero" className="relative px-4 py-16 md:py-20 overflow-hidden" aria-labelledby="hero-heading">
       {/* Background Pattern - Light mode only */}
       <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5" aria-hidden="true" />
       
@@ -36,7 +36,7 @@ const HeroSection = () => {
                   </span>
                 </div>
                 
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
                   Connect. Create. Collaborate.
                 </h1>
                 
@@ -102,8 +102,10 @@ const StatCard = ({ number, label, delay }) => (
   <div 
     className="bg-white/90 backdrop-blur-sm border border-neutral-200 rounded-xl p-4 text-center hover:shadow-lg transition-all duration-200 animate-slide-up"
     style={{ animationDelay: delay }}
+    role="region"
+    aria-label={`${label} statistic`}
   >
-    <p className="text-3xl font-bold text-[#0CCE6B] mb-1">{number}</p>
+    <p className="text-3xl font-bold text-[#0CCE6B] mb-1" aria-label={`${number} ${label}`}>{number}</p>
     <p className="text-xs text-neutral-600 font-medium">{label}</p>
   </div>
 );

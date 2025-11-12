@@ -251,12 +251,15 @@ export default function Settings() {
           
           {editingSection === 'email' && (
             <div className="pl-4 pb-4 space-y-3 border-l-2 border-neutral-200 dark:border-neutral-700">
+              <label htmlFor="settings-email" className="sr-only">New email address</label>
               <input
+                id="settings-email"
                 type="email"
                 value={emailForm.email}
                 onChange={(e) => setEmailForm({ email: e.target.value })}
-                className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                 placeholder="New email address"
+                aria-label="New email address"
               />
               <div className="flex space-x-2">
                 <button

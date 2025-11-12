@@ -132,9 +132,103 @@ Add to your GitHub Actions workflow:
 
 ## 📚 Documentation
 
+- **Accessibility Guide:** `docs/a11y/README.md` - WCAG AA compliance documentation
+- **Whitespace Guide:** `docs/ui/WHITESPACE_GUIDE.md` - UI spacing standards
 - **Comprehensive Guide:** `tests/e2e/REGRESSION_SWEEP_README.md`
 - **Deliverables Summary:** `REGRESSION_SWEEP_DELIVERABLES.md`
 - **Task Requirements:** See PR description
+
+## 🧪 Accessibility Testing (A11y & Visual QA Phase)
+
+The A11y & Visual QA Sweep phase includes comprehensive accessibility testing:
+
+### Run All Accessibility Tests
+
+```bash
+# Run WCAG AA compliance + keyboard navigation tests
+npm run a11y:test
+
+# Generate accessibility reports (markdown + JSON)
+npm run a11y:report
+
+# Run visual regression tests
+npm run visual:test
+
+# Update visual baselines (after intentional UI changes)
+npm run visual:update
+```
+
+### Run Individual Test Suites
+
+```bash
+# WCAG AA compliance only
+npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts
+
+# Keyboard navigation only
+npx playwright test tests/e2e/keyboard-navigation.spec.ts
+
+# Visual QA only
+npx playwright test tests/e2e/visual-qa-phase.spec.ts
+
+# Run with headed browser (see what's happening)
+npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts --headed
+
+# Run specific test
+npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts -g "Landing page"
+```
+
+### View Test Results
+
+```bash
+# View interactive HTML report
+npx playwright show-report
+
+# View generated accessibility report
+cat accessibility-report.md
+
+# View JSON results
+cat accessibility-results.json
+```
+
+### Test Coverage
+
+**Pages Tested**:
+- Landing (Home)
+- About section (anchor)
+- FAQ section (anchor)
+- Login
+- Signup
+- Join
+- Settings (Sessions panel)
+
+**What's Validated**:
+- ✅ 0 critical WCAG violations
+- ✅ ≤3 serious violations per page
+- ✅ Semantic heading structure (H1 → H2 → H3)
+- ✅ Form accessibility (labels, aria-invalid, aria-describedby)
+- ✅ Focus management (visible 2px #0CCE6B focus rings)
+- ✅ Keyboard navigation (tab order, no traps, skip link)
+- ✅ Color contrast (4.5:1+ ratios)
+- ✅ ARIA landmarks and labels
+- ✅ Visual consistency (section padding, no horizontal scroll)
+
+### Expected Results
+
+**✅ Green (Pass)**:
+- Critical violations: 0
+- Serious violations: 0-3 per page
+- All keyboard navigation tests passing
+- Visual snapshots match baselines
+
+**⚠️ Review Needed**:
+- Serious violations: 4-6 (create tickets)
+- Visual diffs after intentional changes (update baselines with `npm run visual:update`)
+
+**❌ Blocking**:
+- Critical violations: >0 (fix immediately)
+- Keyboard traps or broken navigation
+
+---
 
 ## 🎬 What Happens During Execution
 

@@ -70,7 +70,7 @@ export default function MarketingLayout() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
+            <Link to="/" className="flex items-center space-x-2 group focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
               <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
                 <Mic className="w-6 h-6 text-white" aria-hidden="true" />
               </div>
@@ -83,7 +83,7 @@ export default function MarketingLayout() {
             <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
               <a 
                 href="/#features" 
-                className={`transition-colors ${
+                className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
                   isActive('#features') 
                     ? 'text-[#0CCE6B] font-medium' 
                     : 'text-neutral-600 hover:text-[#0CCE6B]'
@@ -93,7 +93,7 @@ export default function MarketingLayout() {
               </a>
               <a 
                 href="/#about" 
-                className={`transition-colors ${
+                className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
                   isActive('#about') 
                     ? 'text-[#0CCE6B] font-medium' 
                     : 'text-neutral-600 hover:text-[#0CCE6B]'
@@ -103,7 +103,7 @@ export default function MarketingLayout() {
               </a>
               <a 
                 href="/#faq" 
-                className={`transition-colors ${
+                className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
                   isActive('#faq') 
                     ? 'text-[#0CCE6B] font-medium' 
                     : 'text-neutral-600 hover:text-[#0CCE6B]'
@@ -117,13 +117,13 @@ export default function MarketingLayout() {
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors"
+                className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded"
               >
                 Sign In
               </Link>
               <Link
                 to="/join"
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md"
+                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
               >
                 Get Started
               </Link>

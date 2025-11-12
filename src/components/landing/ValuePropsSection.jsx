@@ -2,10 +2,10 @@ import { Target, Users, Zap } from 'lucide-react';
 
 const ValuePropsSection = () => {
   return (
-    <section id="about" className="px-4 py-16 md:py-20 bg-white/50 backdrop-blur-sm border-y border-neutral-200">
+    <section id="about" className="px-4 py-16 md:py-20 bg-white/50 backdrop-blur-sm border-y border-neutral-200" aria-labelledby="about-heading">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+          <h2 id="about-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
             Empowering voice actors and creative artists
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
