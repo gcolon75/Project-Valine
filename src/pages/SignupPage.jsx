@@ -115,7 +115,7 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-neutral-50">
+    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-neutral-50">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-neutral-900 mb-6">
@@ -150,6 +150,7 @@ const SignupPage = () => {
                 id="signup-email"
                 data-testid="signup-email"
                 type="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={handleChange('email')}
                 aria-invalid={errors.email ? 'true' : 'false'}
@@ -157,7 +158,7 @@ const SignupPage = () => {
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                   errors.email
                     ? 'border-red-300 focus:ring-red-500'
-                    : 'border-neutral-300 focus:ring-blue-500'
+                    : 'border-neutral-300 focus:ring-[#0CCE6B]'
                 }`}
                 placeholder="your@email.com"
               />
@@ -184,6 +185,7 @@ const SignupPage = () => {
                 id="signup-password"
                 data-testid="signup-password"
                 type="password"
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange('password')}
                 aria-invalid={errors.password ? 'true' : 'false'}
@@ -191,7 +193,7 @@ const SignupPage = () => {
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                   errors.password
                     ? 'border-red-300 focus:ring-red-500'
-                    : 'border-neutral-300 focus:ring-blue-500'
+                    : 'border-neutral-300 focus:ring-[#0CCE6B]'
                 }`}
                 placeholder="Enter password"
               />
@@ -221,6 +223,7 @@ const SignupPage = () => {
                 id="signup-confirm-password"
                 data-testid="signup-confirm-password"
                 type="password"
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={handleChange('confirmPassword')}
                 aria-invalid={errors.confirmPassword ? 'true' : 'false'}
@@ -228,7 +231,7 @@ const SignupPage = () => {
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                   errors.confirmPassword
                     ? 'border-red-300 focus:ring-red-500'
-                    : 'border-neutral-300 focus:ring-blue-500'
+                    : 'border-neutral-300 focus:ring-[#0CCE6B]'
                 }`}
                 placeholder="Re-enter password"
               />
@@ -248,7 +251,7 @@ const SignupPage = () => {
               type="submit"
               data-testid="signup-submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </button>
@@ -259,14 +262,14 @@ const SignupPage = () => {
             Already have an account?{' '}
             <Link 
               to="/login-page" 
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              className="text-[#0CCE6B] hover:text-[#0BBE60] font-medium focus:outline-none focus:underline"
             >
               Log in
             </Link>
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 
