@@ -3,6 +3,9 @@ import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
 
+// Import cache
+import { initCache } from './cache/index.js'
+
 // Import security middleware
 import { applySecurity } from './middleware/security.js'
 import { setCSRFToken } from './middleware/csrf.js'
@@ -19,6 +22,7 @@ import dashboardRouter from './routes/dashboard.js'
 import usersRouter from './routes/users.js'
 import accountAuthRouter from './routes/accountAuth.js'
 import legalRouter from './routes/legal.js'
+import cacheMetricsRouter from './routes/cacheMetrics.js'
 
 const app = express()
 
@@ -63,6 +67,7 @@ app.use('/api/privacy', privacyRouter)
 app.use('/api', preferencesRouter)
 app.use('/profiles', profilesRouter)
 app.use('/dashboard', dashboardRouter)
+app.use('/api/cache', cacheMetricsRouter)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -88,6 +93,15 @@ app.use((err, req, res, next) => {
   })
 })
 
+// Initialize cache on startup
+;(async () => {
+  try {
+    await initCache()
+  } catch (error) {
+    console.error('Failed to initialize cache:', error)
+  }
+})()
+
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`)
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
@@ -96,4 +110,5 @@ app.listen(PORT, () => {
   console.log(`  - Session Tracking: ${process.env.USE_SESSION_TRACKING === 'true' ? 'enabled' : 'disabled'}`)
   console.log(`  - 2FA: ${process.env.FEATURE_2FA_ENABLED === 'true' ? 'enabled' : 'disabled'}`)
   console.log(`  - Email Sending: ${process.env.EMAIL_ENABLED === 'true' ? 'enabled' : 'disabled (dev mode)'}`)
+  console.log(`  - Caching: ${process.env.CACHE_ENABLED === 'true' ? 'enabled' : 'disabled'}`)
 })

@@ -11,6 +11,8 @@ import {
 } from '../utils/validators.js'
 import { etagMiddleware } from '../middleware/etag.js'
 import { rateLimitMiddleware } from '../middleware/rateLimit.js'
+import * as cache from '../cache/index.js'
+import { buildProfileSummary, getProfileCacheKey } from '../cache/profileSummary.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -22,30 +24,71 @@ const VALID_SOCIAL_LINKS = ['website', 'instagram', 'imdb', 'linkedin', 'showree
  * GET /profiles/:userId
  * Get user profile including title, headline, and profile links
  * Supports ETag/caching via If-None-Match header
+ * Supports cache bypass via X-Cache-Bypass header
  */
 router.get('/:userId', etagMiddleware({ maxAge: 300 }), async (req, res) => {
   const { userId } = req.params
+  const bypassCache = req.headers['x-cache-bypass'] === 'true'
+  const startTime = Date.now()
   
   try {
-    // Fetch profile with links ordered by position, then createdAt
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      include: {
-        links: {
-          orderBy: [
-            { position: 'asc' },
-            { createdAt: 'asc' }
-          ]
-        }
+    let profile = null
+    let cacheHit = false
+
+    // Try cache first (unless bypassing)
+    if (!bypassCache) {
+      const cacheKey = getProfileCacheKey(userId)
+      const cached = await cache.get(cacheKey)
+      
+      if (cached) {
+        profile = cached
+        cacheHit = true
       }
-    })
-    
+    }
+
+    // Fetch from database if not in cache
     if (!profile) {
-      return res.status(404).json(
-        createError('PROFILE_NOT_FOUND', 'Profile not found', {
-          userId
-        })
-      )
+      profile = await prisma.profile.findUnique({
+        where: { userId },
+        include: {
+          user: {
+            select: {
+              avatar: true
+            }
+          },
+          links: {
+            orderBy: [
+              { position: 'asc' },
+              { createdAt: 'asc' }
+            ]
+          }
+        }
+      })
+      
+      if (!profile) {
+        return res.status(404).json(
+          createError('PROFILE_NOT_FOUND', 'Profile not found', {
+            userId
+          })
+        )
+      }
+
+      // Build and cache summary
+      if (!bypassCache) {
+        const summary = buildProfileSummary(profile)
+        const ttl = parseInt(process.env.CACHE_TTL_PROFILE || '300', 10)
+        const cacheKey = getProfileCacheKey(userId)
+        await cache.set(cacheKey, summary, ttl)
+        profile = summary
+      }
+    }
+    
+    const duration = Date.now() - startTime
+    
+    // Add cache metrics to response headers (for observability)
+    if (process.env.CACHE_ENABLED === 'true') {
+      res.setHeader('X-Cache-Hit', cacheHit ? 'true' : 'false')
+      res.setHeader('X-Response-Time', `${duration}ms`)
     }
     
     return res.json({ profile })
@@ -220,6 +263,14 @@ router.patch('/:userId', async (req, res) => {
       })
     })
     
+    // Invalidate cache after successful update
+    const cacheKey = getProfileCacheKey(userId)
+    await cache.del(cacheKey)
+    
+    // Also invalidate search cache (eventual consistency approach)
+    // Delete all search cache entries as profile may appear in search results
+    await cache.del('search:v1:*')
+    
     return res.json({
       success: true,
       profile: result
@@ -339,6 +390,10 @@ router.post('/:userId/links', rateLimitMiddleware({ windowMs: 60000, maxRequests
       }
     })
     
+    // Invalidate cache after successful link creation
+    const cacheKey = getProfileCacheKey(userId)
+    await cache.del(cacheKey)
+    
     return res.status(201).json({
       success: true,
       link
@@ -448,6 +503,10 @@ router.patch('/:userId/links/:linkId', async (req, res) => {
       data: updateData
     })
     
+    // Invalidate cache after successful link update
+    const cacheKey = getProfileCacheKey(userId)
+    await cache.del(cacheKey)
+    
     return res.json({
       success: true,
       link
@@ -492,6 +551,10 @@ router.delete('/:userId/links/:linkId', rateLimitMiddleware({ windowMs: 60000, m
     await prisma.profileLink.delete({
       where: { id: linkId }
     })
+    
+    // Invalidate cache after successful link deletion
+    const cacheKey = getProfileCacheKey(userId)
+    await cache.del(cacheKey)
     
     return res.json({
       success: true,

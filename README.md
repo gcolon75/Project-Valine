@@ -29,6 +29,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 - [Available Routes](#available-routes)
 - [Deployment & Verification](#deployment--verification)
 - [Documentation](#documentation)
+- [Performance Optimizations](#performance-optimizations)
 - [Contributing](#contributing)
 - [Development](#development)
 - [Technology Stack](#technology-stack)
@@ -580,12 +581,79 @@ See example configuration files:
 
 **Important**: Never commit actual `.env` files or credentials to the repository.
 
+## Performance Optimizations
+
+Project Valine implements a multi-layered caching strategy to minimize latency and improve user experience:
+
+### Caching Layer
+
+**Redis-based caching** with automatic fallback to in-memory cache for:
+
+- **Profile Summaries**: Cached for 5 minutes (configurable)
+- **Search Results**: Cached for 1 minute (configurable)
+- **Cache Hit Ratio**: Target ≥70% for profiles, ≥50% for search
+
+**Performance Improvements**:
+- p95 latency reduction: **≥15%** target (≥25% stretch goal)
+- Warm cache requests served in milliseconds
+- Graceful degradation if cache unavailable
+
+### Configuration
+
+```bash
+# Enable caching (disabled by default)
+CACHE_ENABLED=true
+
+# Redis connection (optional, falls back to in-memory)
+REDIS_URL=redis://localhost:6379
+
+# TTL settings (seconds)
+CACHE_TTL_PROFILE=300  # 5 minutes
+CACHE_TTL_SEARCH=60    # 1 minute
+```
+
+### Monitoring
+
+**Cache Metrics Endpoint**:
+```bash
+GET /api/cache/metrics
+```
+
+Returns hit/miss counts, hit ratio, and cache type.
+
+**Response Headers** (when caching enabled):
+- `X-Cache-Hit`: Indicates whether request was served from cache
+- `X-Response-Time`: Request duration in milliseconds
+
+### Documentation
+
+- **[Caching Layer Guide](docs/performance/CACHING_LAYER.md)** - Architecture, configuration, and best practices
+- **[Support & Operations](docs/performance/SUPPORT_CACHE_OPERATIONS.md)** - Troubleshooting and maintenance
+- **[Metrics Queries](docs/performance/METRICS_QUERIES.md)** - Performance measurement and analysis
+
+### Cache Invalidation
+
+Caches are automatically invalidated on:
+- Profile updates (title, headline, bio)
+- Profile link changes (create, update, delete)
+- User account operations
+
+**Manual invalidation**:
+```bash
+# Invalidate specific user profile
+node server/scripts/cache/invalidate-profile.mjs <userId>
+
+# Invalidate all search caches
+node server/scripts/cache/invalidate-profile.mjs --all-search
+```
+
 ## Technology Stack
 
 **Frontend**: React 18, Vite 5, Tailwind CSS 3, React Router v6  
 **Backend**: Node.js 20.x, Python 3.11, Serverless Framework v3, AWS SAM  
 **Database**: DynamoDB, Prisma ORM  
 **Infrastructure**: AWS (S3, CloudFront, Lambda, API Gateway, SSM)  
+**Caching**: Redis with in-memory fallback  
 **DevOps**: GitHub Actions, AWS OIDC  
 **Integrations**: Discord Bot API, GitHub API, Sanity CMS
 
