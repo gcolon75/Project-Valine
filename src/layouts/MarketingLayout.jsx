@@ -3,6 +3,8 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { Mic } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import MarketingFooter from '../components/MarketingFooter';
+import MetaInjector from '../seo/MetaInjector';
+import StructuredData from '../seo/StructuredData';
 
 /**
  * MarketingLayout - Forces light mode for all marketing pages
@@ -51,6 +53,10 @@ export default function MarketingLayout() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50">
+      {/* SEO Components - Inject metadata and structured data */}
+      <MetaInjector />
+      <StructuredData />
+      
       {/* Skip to main content link for accessibility */}
       <a 
         href="#main-content" 
