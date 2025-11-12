@@ -35,11 +35,14 @@ function App() {
         <Route path="/features" element={<Navigate to="/#features" replace />} />
         <Route path="/about" element={<Navigate to="/#about" replace />} />
         <Route path="/about-us" element={<Navigate to="/#about" replace />} />
-        <Route path="/join" element={<Join />} />
-        <Route path="/signup" element={<Join />} />
+        {import.meta.env.VITE_ENABLE_REGISTRATION === 'true' && (
+          <>
+            <Route path="/join" element={<Join />} />
+            <Route path="/signup" element={<Join />} />
+            <Route path="/signup-page" element={<SignupPage />} />
+          </>
+        )}
         <Route path="/login" element={<Login />} />
-        {/* New auth form skeleton pages */}
-        <Route path="/signup-page" element={<SignupPage />} />
         <Route path="/login-page" element={<LoginPage />} />
       </Route>
       {/* Onboarding - Standalone route for multi-step wizard */}
