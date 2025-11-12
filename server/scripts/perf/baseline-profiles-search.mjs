@@ -17,6 +17,8 @@ import { dirname } from 'path'
 
 const BASE_URL = process.env.API_URL || 'http://localhost:5000'
 const NUM_REQUESTS = 50
+// TEST_USER_ID and TEST_SEARCH_QUERY are non-sensitive test configuration values
+// They represent test data identifiers, not credentials or PII
 const TEST_USER_ID = process.env.TEST_USER_ID || 'test-user-123'
 const TEST_SEARCH_QUERY = process.env.TEST_SEARCH_QUERY || 'test'
 
@@ -72,6 +74,7 @@ async function runBaseline() {
   console.log('=' .repeat(50))
   console.log(`Base URL: ${BASE_URL}`)
   console.log(`Number of requests: ${NUM_REQUESTS}`)
+  // Note: TEST_USER_ID and TEST_SEARCH_QUERY are test configuration values, not sensitive data
   console.log(`Test User ID: ${TEST_USER_ID}`)
   console.log(`Test Search Query: ${TEST_SEARCH_QUERY}`)
   console.log('=' .repeat(50))

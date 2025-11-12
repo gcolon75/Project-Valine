@@ -190,7 +190,9 @@ async function del(key) {
     } else {
       // For in-memory cache, delete exact key or pattern
       if (key.includes('*')) {
-        const pattern = key.replace(/\*/g, '.*')
+        // Escape special regex characters except * which we want to use as wildcard
+        const escaped = key.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        const pattern = escaped.replace(/\*/g, '.*')
         const regex = new RegExp(`^${pattern}$`)
         const keysToDelete = []
         for (const k of memoryCache.keys()) {
