@@ -74,6 +74,25 @@ export const routeMetadata = {
     canonicalSegment: 'onboarding',
     noIndex: true, // User onboarding not indexed
   },
+  // Legal pages
+  '/legal/privacy': {
+    title: `${SITE_NAME} — Privacy Policy`,
+    description: 'Read our privacy policy to understand how we collect, use, and protect your personal information. Learn about your data rights and our security measures.',
+    canonicalSegment: 'legal/privacy',
+    noIndex: false,
+  },
+  '/legal/terms': {
+    title: `${SITE_NAME} — Terms of Service`,
+    description: 'Review the terms of service for using Project Valine. Understand your rights, responsibilities, and our policies as a member of our creative community.',
+    canonicalSegment: 'legal/terms',
+    noIndex: false,
+  },
+  '/legal/cookies': {
+    title: `${SITE_NAME} — Cookie & Session Disclosure`,
+    description: 'Learn about the cookies and session tokens we use on Project Valine. Understand how we protect your security and privacy through our cookie practices.',
+    canonicalSegment: 'legal/cookies',
+    noIndex: false,
+  },
   // Placeholders for future pages
   '/privacy': {
     title: `${SITE_NAME} — Privacy Policy`,

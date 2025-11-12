@@ -18,6 +18,7 @@ import profilesRouter from './routes/profiles.js'
 import dashboardRouter from './routes/dashboard.js'
 import usersRouter from './routes/users.js'
 import accountAuthRouter from './routes/accountAuth.js'
+import legalRouter from './routes/legal.js'
 
 const app = express()
 
@@ -42,6 +43,9 @@ app.use(setCSRFToken)
 
 // Health check (no auth required)
 app.use('/health', healthRouter)
+
+// Legal pages (no auth required)
+app.use('/legal', legalRouter)
 
 // Account creation and authentication routes
 app.use('/api', usersRouter)

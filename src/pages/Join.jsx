@@ -148,6 +148,19 @@ const Join = () => {
               />
             </div>
 
+            {/* Terms and Privacy Consent */}
+            <p className="text-xs text-neutral-600 text-center">
+              By signing up, you agree to our{' '}
+              <Link to="/legal/terms" className="text-[#0CCE6B] hover:underline">
+                Terms of Service
+              </Link>
+              {' '}and{' '}
+              <Link to="/legal/privacy" className="text-[#0CCE6B] hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+
             {/* Submit Button */}
             <button
               type="submit"

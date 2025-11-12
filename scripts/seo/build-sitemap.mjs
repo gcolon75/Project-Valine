@@ -51,6 +51,24 @@ const PUBLIC_ROUTES = [
     changefreq: 'monthly',
     includeInSitemap: true,
   },
+  { 
+    path: '/legal/privacy', 
+    priority: 0.5, 
+    changefreq: 'yearly',
+    includeInSitemap: true,
+  },
+  { 
+    path: '/legal/terms', 
+    priority: 0.5, 
+    changefreq: 'yearly',
+    includeInSitemap: true,
+  },
+  { 
+    path: '/legal/cookies', 
+    priority: 0.4, 
+    changefreq: 'yearly',
+    includeInSitemap: true,
+  },
   // Future pages - uncomment when implemented
   // { 
   //   path: '/privacy', 

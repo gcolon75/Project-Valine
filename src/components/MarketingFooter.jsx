@@ -75,14 +75,14 @@ const MarketingFooter = () => {
             <h3 id="footer-legal" className="font-semibold text-neutral-900 mb-4">Legal</h3>
             <ul className="space-y-3 text-sm text-neutral-600">
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <Link to="/legal/privacy" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Privacy Policy
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <Link to="/legal/terms" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Terms of Service
-                </span>
+                </Link>
               </li>
             </ul>
           </nav>
