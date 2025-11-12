@@ -497,13 +497,15 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 - ☁️ [Deployment Guides](docs/deployment/) - AWS, serverless, and quick deploy
 - 🔧 [Troubleshooting](docs/troubleshooting/) - Fix common issues
 - 📊 [CloudWatch Setup](docs/CLOUDWATCH_SETUP.md) - Monitoring and logging
+- 📋 [Operational Runbooks](docs/runbooks/) - Security operations, user management, deployments
 
 **Quality Assurance:**
 - 🔍 [CI/CD Overview](docs/qa/ci-overview.md) - Continuous integration workflows
 - ♿ [Accessibility Checklist](docs/qa/a11y-checklist.md) - WCAG 2.1 AA compliance guide
 - 🚀 [Lighthouse Guide](docs/qa/lighthouse.md) - Performance optimization
 - 📦 [Bundle Optimization](docs/qa/bundle-optimization.md) - Bundle size management
-- 🔒 [Security Best Practices](docs/qa/security.md) - Security guidelines
+- 🔒 [Security Policy](SECURITY.md) - Security policy, vulnerability reporting, access control
+- 📊 [Security Audit Report](SECURITY_AUDIT_REPORT.md) - Comprehensive security review and hardening
 
 **Orchestrator & Automation:**
 - 🤖 [Orchestrator Documentation](orchestrator/README.md) - Bot setup and agent management
