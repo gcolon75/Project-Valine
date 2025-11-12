@@ -16,13 +16,22 @@ export default defineConfig({
             throw new Error('VITE_API_BASE is required for production builds');
           }
           
+          // Parse the URL to extract hostname for validation
+          let hostname;
+          try {
+            const url = new URL(apiBase);
+            hostname = url.hostname;
+          } catch (e) {
+            throw new Error(`VITE_API_BASE is not a valid URL. Got: ${apiBase}`);
+          }
+          
           // Warn if pointing to CloudFront (should use API Gateway or /api/* proxy)
-          if (apiBase.includes('cloudfront.net') && !apiBase.includes('/api')) {
+          if (hostname.endsWith('.cloudfront.net') && !apiBase.includes('/api')) {
             console.warn('⚠️  WARNING: VITE_API_BASE points to CloudFront without /api prefix. POSTs may fail.');
           }
           
           // Error if pointing to localhost or example domains
-          if (apiBase.includes('localhost') || apiBase.includes('example.com') || apiBase.includes('127.0.0.1')) {
+          if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === 'example.com' || hostname.endsWith('.example.com')) {
             throw new Error(`VITE_API_BASE cannot be localhost or example.com in production. Got: ${apiBase}`);
           }
           
