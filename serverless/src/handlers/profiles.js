@@ -3,6 +3,16 @@ import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
+import {
+  isModerationEnabled,
+  scanProfilePayload,
+  scanLink,
+  formatIssuesForResponse,
+  getProfanityAction,
+  inferCategoryFromIssues,
+  getSeverityFromCategory,
+  redactPII,
+} from '../utils/moderation.js';
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -391,6 +401,69 @@ export const updateProfile = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const { vanityUrl, headline, title, bio, roles, location, tags, socialLinks, privacy, links } = body;
 
+    // Moderation scanning (if enabled)
+    if (isModerationEnabled()) {
+      const scanResult = scanProfilePayload({ headline, bio, socialLinks });
+      
+      if (!scanResult.ok) {
+        const action = getProfanityAction();
+        
+        if (action === 'block') {
+          // Block the update and return error
+          console.log('[Moderation] Profile update blocked:', {
+            userId: redactPII(userId),
+            issues: scanResult.issues,
+          });
+          
+          // Create a moderation report for this
+          try {
+            const category = inferCategoryFromIssues(scanResult.issues);
+            const severity = getSeverityFromCategory(category);
+            
+            await prisma.moderationReport.create({
+              data: {
+                reporterId: userId, // Self-report from system
+                targetType: 'profile',
+                targetId: id,
+                category,
+                description: `Automatic report: ${scanResult.issues.map(i => i.reason).join(', ')}`,
+                status: 'open',
+                severity,
+              },
+            });
+          } catch (reportErr) {
+            console.error('[Moderation] Failed to create auto-report:', reportErr);
+          }
+          
+          return json(formatIssuesForResponse(scanResult.issues), 422, headers);
+        } else {
+          // Warn mode: allow update but create low-severity report
+          console.log('[Moderation] Profile update warning:', {
+            userId: redactPII(userId),
+            issues: scanResult.issues,
+          });
+          
+          try {
+            const category = inferCategoryFromIssues(scanResult.issues);
+            
+            await prisma.moderationReport.create({
+              data: {
+                reporterId: userId, // Self-report from system
+                targetType: 'profile',
+                targetId: id,
+                category,
+                description: `Warning: ${scanResult.issues.map(i => i.reason).join(', ')}`,
+                status: 'open',
+                severity: 1, // Low severity for warnings
+              },
+            });
+          } catch (reportErr) {
+            console.error('[Moderation] Failed to create warning report:', reportErr);
+          }
+        }
+      }
+    }
+
     const prisma = getPrisma();
 
     // Check profile exists and user owns it
@@ -429,6 +502,34 @@ export const updateProfile = async (event) => {
       const linksValidation = validateLinks(links);
       if (!linksValidation.valid) {
         return error(linksValidation.message, 400);
+      }
+      
+      // Moderation scanning for links (if enabled)
+      if (isModerationEnabled()) {
+        for (let i = 0; i < links.length; i++) {
+          const linkScanResult = scanLink(links[i]);
+          
+          if (!linkScanResult.ok) {
+            const action = getProfanityAction();
+            
+            if (action === 'block') {
+              console.log('[Moderation] Link blocked:', {
+                userId: redactPII(userId),
+                linkIndex: i,
+                issues: linkScanResult.issues,
+              });
+              
+              return json(
+                {
+                  ...formatIssuesForResponse(linkScanResult.issues),
+                  message: `Link ${i + 1} blocked by moderation rules`,
+                },
+                422,
+                headers
+              );
+            }
+          }
+        }
       }
     }
 
