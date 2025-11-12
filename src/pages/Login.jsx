@@ -253,12 +253,14 @@ const Login = () => {
           )}
 
           {/* Footer */}
-          <p className="mt-6 text-center text-neutral-600 text-sm">
-            Don't have an account?{' '}
-            <Link to="/join" className="text-[#0CCE6B] font-semibold hover:underline">
-              Sign up
-            </Link>
-          </p>
+          {import.meta.env.VITE_ENABLE_REGISTRATION === 'true' && (
+            <p className="mt-6 text-center text-neutral-600 text-sm">
+              Don't have an account?{' '}
+              <Link to="/join" className="text-[#0CCE6B] font-semibold hover:underline">
+                Sign up
+              </Link>
+            </p>
+          )}
         </div>
 
         </div>
