@@ -21,6 +21,10 @@
     "seo:generate": "node scripts/seo/generate-og-image.mjs && node scripts/seo/generate-favicons.mjs",
     "seo:build": "node scripts/seo/build-sitemap.mjs && node scripts/seo/build-robots.mjs",
     "seo:audit": "node scripts/seo/lighthouse-report.mjs",
+    "a11y:test": "playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts tests/e2e/keyboard-navigation.spec.ts --reporter=html --reporter=json",
+    "a11y:report": "node scripts/a11y/generate-report.mjs",
+    "visual:test": "playwright test tests/e2e/visual-qa-phase.spec.ts --reporter=html",
+    "visual:update": "playwright test tests/e2e/visual-qa-phase.spec.ts --update-snapshots",
     "postbuild": "npm run seo:build"
   },
   "dependencies": {

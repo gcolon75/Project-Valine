@@ -30,10 +30,10 @@ const FAQSection = () => {
   ];
 
   return (
-    <section id="faq" className="px-4 py-16 md:py-20 bg-neutral-50">
+    <section id="faq" className="px-4 py-16 md:py-20 bg-neutral-50" aria-labelledby="faq-heading">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+          <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-neutral-600">
@@ -58,8 +58,9 @@ const FAQItem = ({ question, answer }) => {
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors"
+        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
         aria-expanded={isOpen}
+        aria-controls={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
       >
         <h3 className="font-semibold text-neutral-900 pr-4">{question}</h3>
         <ChevronDown 
@@ -68,7 +69,10 @@ const FAQItem = ({ question, answer }) => {
         />
       </button>
       {isOpen && (
-        <div className="px-6 pb-4">
+        <div 
+          id={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
+          className="px-6 pb-4"
+        >
           <p className="text-neutral-600">{answer}</p>
         </div>
       )}

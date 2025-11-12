@@ -5,13 +5,13 @@ const MarketingFooter = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-neutral-200 bg-white">
+    <footer className="border-t border-neutral-200 bg-white" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
         {/* Main Footer Grid - 4 columns */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {/* Product Column */}
-          <div>
-            <h3 className="font-semibold text-neutral-900 mb-4">Product</h3>
+          <nav aria-labelledby="footer-product">
+            <h3 id="footer-product" className="font-semibold text-neutral-900 mb-4">Product</h3>
             <ul className="space-y-3 text-sm text-neutral-600">
               <li>
                 <a href="#features" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
@@ -29,11 +29,11 @@ const MarketingFooter = () => {
                 </span>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Resources Column */}
-          <div>
-            <h3 className="font-semibold text-neutral-900 mb-4">Resources</h3>
+          <nav aria-labelledby="footer-resources">
+            <h3 id="footer-resources" className="font-semibold text-neutral-900 mb-4">Resources</h3>
             <ul className="space-y-3 text-sm text-neutral-600">
               <li>
                 <span className="text-neutral-400 cursor-not-allowed">
@@ -51,11 +51,11 @@ const MarketingFooter = () => {
                 </a>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Company Column */}
-          <div>
-            <h3 className="font-semibold text-neutral-900 mb-4">Company</h3>
+          <nav aria-labelledby="footer-company">
+            <h3 id="footer-company" className="font-semibold text-neutral-900 mb-4">Company</h3>
             <ul className="space-y-3 text-sm text-neutral-600">
               <li>
                 <a href="#about" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
@@ -68,11 +68,11 @@ const MarketingFooter = () => {
                 </span>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Legal Column */}
-          <div>
-            <h3 className="font-semibold text-neutral-900 mb-4">Legal</h3>
+          <nav aria-labelledby="footer-legal">
+            <h3 id="footer-legal" className="font-semibold text-neutral-900 mb-4">Legal</h3>
             <ul className="space-y-3 text-sm text-neutral-600">
               <li>
                 <span className="text-neutral-400 cursor-not-allowed">
@@ -85,7 +85,7 @@ const MarketingFooter = () => {
                 </span>
               </li>
             </ul>
-          </div>
+          </nav>
         </div>
 
         {/* Bottom Bar */}
