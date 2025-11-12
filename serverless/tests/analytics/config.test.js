@@ -8,7 +8,7 @@ import {
   isEventAllowed, 
   hasDisallowedProperties, 
   sanitizeProperties 
-} from '../../../serverless/src/config/analytics.js';
+} from '../../src/config/analytics.js';
 
 describe('Analytics Configuration', () => {
   describe('isEventAllowed', () => {

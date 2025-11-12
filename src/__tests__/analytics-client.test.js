@@ -11,10 +11,11 @@ import {
   trackPageView,
   trackLogin,
   trackSignup
-} from '../../analytics/client.js';
+} from '../analytics/client.js';
 
 // Mock fetch
-global.fetch = vi.fn();
+const fetchMock = vi.fn();
+fetchMock = fetchMock;
 
 // Mock document.cookie
 let cookieStore = '';
@@ -42,10 +43,10 @@ describe('Analytics Client', () => {
     cookieStore = '';
     
     // Reset fetch mock
-    global.fetch.mockReset();
+    fetchMock.mockReset();
     
     // Mock successful config response
-    global.fetch.mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
         enabled: true,
@@ -106,7 +107,7 @@ describe('Analytics Client', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Should have called fetch to send events
-      expect(global.fetch).toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalled();
     });
 
     it('should queue login event', async () => {
@@ -114,7 +115,7 @@ describe('Analytics Client', () => {
       
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      expect(global.fetch).toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalled();
     });
 
     it('should queue signup event', async () => {
@@ -122,14 +123,14 @@ describe('Analytics Client', () => {
       
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      expect(global.fetch).toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalled();
     });
   });
 
   describe('Sampling Rate', () => {
     it('should respect sampling rate < 1.0', async () => {
       // Mock config with low sampling rate
-      global.fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           enabled: true,
@@ -150,14 +151,14 @@ describe('Analytics Client', () => {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       // Should only have called fetch once for config, not for events
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Feature Flags', () => {
     it('should not queue events when analytics disabled', async () => {
       // Mock config with analytics disabled
-      global.fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           enabled: false,
@@ -174,7 +175,7 @@ describe('Analytics Client', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Should only have called fetch for config, not for events
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('should not queue events without consent when required', async () => {
@@ -184,7 +185,7 @@ describe('Analytics Client', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Should have loaded config but not sent events
-      const calls = global.fetch.mock.calls;
+      const calls = fetchMock.mock.calls;
       const eventCalls = calls.filter(call => call[0].includes('/analytics/ingest'));
       expect(eventCalls.length).toBe(0);
     });
@@ -198,7 +199,7 @@ describe('Analytics Client', () => {
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Should have loaded config but not sent the custom event
-      const calls = global.fetch.mock.calls;
+      const calls = fetchMock.mock.calls;
       const ingestCalls = calls.filter(call => call[0].includes('/analytics/ingest'));
       expect(ingestCalls.length).toBe(0);
     });

@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ingestEvents, getConfig, cleanupOldEvents } from '../../../serverless/src/handlers/analytics.js';
-import { analyticsConfig } from '../../../serverless/src/config/analytics.js';
+import { ingestEvents, getConfig, cleanupOldEvents } from '../../src/handlers/analytics.js';
+import { analyticsConfig } from '../../src/config/analytics.js';
 
 // Mock Prisma
 const mockPrismaClient = {
@@ -14,7 +14,7 @@ const mockPrismaClient = {
   }
 };
 
-vi.mock('../../../serverless/src/db/client.js', () => ({
+vi.mock('../../src/db/client.js', () => ({
   getPrisma: () => mockPrismaClient
 }));
 
