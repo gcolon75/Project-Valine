@@ -1,17 +1,22 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
   plugins: [
     react(),
     {
       name: 'validate-api-base',
       buildStart() {
-        const apiBase = process.env.VITE_API_BASE;
-        const isProduction = process.env.NODE_ENV === 'production';
+        const apiBase = env.VITE_API_BASE;
+        const isProduction = mode === 'production' || process.env.NODE_ENV === 'production';
 
         if (isProduction) {
           if (!apiBase) {
@@ -54,4 +59,4 @@ export default defineConfig({
   },
   server: { port: 3000, open: true },
   preview: { port: 3000 },
-});
+}});

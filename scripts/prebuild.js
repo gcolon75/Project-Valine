@@ -8,11 +8,48 @@
  * VITE_FRONTEND_URL contains production domains.
  */
 
-const devBypassEnabled = process.env.VITE_ENABLE_DEV_BYPASS === 'true';
-const frontendUrl = process.env.VITE_FRONTEND_URL || '';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const rootDir = join(__dirname, '..');
+
+// Load env vars from process.env first (from shell or .env)
+let devBypassEnabled = process.env.VITE_ENABLE_DEV_BYPASS === 'true';
+let frontendUrl = process.env.VITE_FRONTEND_URL || '';
+
+// If running production build, also check .env.production file
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+if (mode === 'production') {
+  try {
+    const envProdPath = join(rootDir, '.env.production');
+    const envProdContent = readFileSync(envProdPath, 'utf-8');
+    
+    // Parse simple KEY=value lines (ignore comments and empty lines)
+    envProdContent.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return;
+      
+      const match = line.match(/^VITE_ENABLE_DEV_BYPASS=(.+)$/);
+      if (match) {
+        devBypassEnabled = match[1] === 'true';
+      }
+      
+      const urlMatch = line.match(/^VITE_FRONTEND_URL=(.+)$/);
+      if (urlMatch) {
+        frontendUrl = urlMatch[1];
+      }
+    });
+  } catch (e) {
+    // .env.production doesn't exist, that's okay
+    console.log('   (No .env.production file found, using shell env vars)');
+  }
+}
 
 console.log('🔍 Running pre-build validation...');
-console.log(`   VITE_ENABLE_DEV_BYPASS: ${process.env.VITE_ENABLE_DEV_BYPASS}`);
+console.log(`   Mode: ${mode}`);
+console.log(`   VITE_ENABLE_DEV_BYPASS: ${devBypassEnabled}`);
 console.log(`   VITE_FRONTEND_URL: ${frontendUrl}`);
 
 if (devBypassEnabled) {
