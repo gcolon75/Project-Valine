@@ -1,5 +1,7 @@
 # Frontend Deployment Runbook
 
+> 📘 **Note**: This runbook covers frontend-specific deployment procedures. For comprehensive production operations including backend deployment, routing, WAF configuration, and security hardening, see the canonical **[Production Deployment & Routing Runbook](./prod-deploy-and-routing.md)**.
+
 ## Overview
 Production deployment checklist and procedures for Project Valine frontend application. This runbook covers environment configuration, build process, S3 deployment, CloudFront cache invalidation, and common deployment issues.
 

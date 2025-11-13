@@ -13,6 +13,7 @@
                     "test:ui":  "vitest --ui",
                     "test:run":  "vitest run",
                     "test:coverage":  "vitest run --coverage",
+                    "test:security":  "vitest run tests/dev-bypass-build-guard.test.mjs",
                     "perf:audit":  "node scripts/performance-audit.cjs",
                     "build:analyze":  "npm run build \u0026\u0026 npm run perf:audit",
                     "optimize:images":  "node scripts/optimize-images.mjs",

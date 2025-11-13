@@ -54,6 +54,7 @@ provider:
     ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
+    DEV_BYPASS_ENABLED: ${env:DEV_BYPASS_ENABLED, "false"}
 
 package:
   patterns:
