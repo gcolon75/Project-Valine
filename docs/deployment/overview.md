@@ -506,7 +506,13 @@ curl -X POST $API_BASE/users -d '...'       # Manual testing
 - `AWS_REGION` - AWS region
 
 **Frontend:**
-- `VITE_API_BASE` - API Gateway base URL
+- `VITE_API_BASE` - API Gateway base URL (required)
+- `VITE_API_STRIP_LEGACY_API_PREFIX` - Strip '/api' prefix from paths (default: false)
+- `VITE_ANALYTICS_ENABLED` - Enable analytics tracking (default: false)
+- `VITE_API_USE_CREDENTIALS` - Enable cookies for auth (default: false)
+- `VITE_ENABLE_AUTH` - Use HttpOnly cookie auth (default: false)
+- `VITE_ENABLE_REGISTRATION` - Show registration UI (default: false)
+- `VITE_ENABLE_DEV_BYPASS` - Enable dev bypass on localhost (default: false, must be false in production)
 
 **GitHub Actions:**
 - `VITE_API_BASE` - Secret/Variable for frontend API URL

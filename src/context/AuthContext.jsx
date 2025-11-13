@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as authService from "../services/authService";
-import { apiFallback } from "../hooks/useApiFallback";
 import { trackLogin, trackSignup, trackLogout } from "../analytics/client";
 
 const AuthCtx = createContext(null);
@@ -101,19 +100,8 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     setLoading(true);
     try {
-      // Try API register with fallback to demo mode
-      const data = await apiFallback(
-        () => authService.register(userData),
-        {
-          user: {
-            id: crypto.randomUUID?.() || String(Date.now()),
-            ...userData,
-            profileComplete: false
-          },
-          token: 'demo-token'
-        },
-        'AuthContext.register'
-      );
+      // Call API register directly - errors should be handled by the caller
+      const data = await authService.register(userData);
       
       setUser(data.user);
       
@@ -122,8 +110,17 @@ export function AuthProvider({ children }) {
       
       return data.user;
     } catch (error) {
+      // Log diagnostic info
+      console.error('[AuthContext.register] Registration failed:', {
+        status: error.response?.status,
+        message: error.message,
+        code: error.code
+      });
+      
       // Track failed signup
       trackSignup('password', false);
+      
+      // Re-throw error so UI can handle it (don't swallow with fallback)
       throw error;
     } finally {
       setLoading(false);
