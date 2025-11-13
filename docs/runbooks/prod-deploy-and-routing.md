@@ -16,17 +16,18 @@
 1. [Production Architecture](#1-production-architecture)
 2. [Infrastructure Components](#2-infrastructure-components)
 3. [Deployment Procedures](#3-deployment-procedures)
-4. [Routing & DNS Configuration](#4-routing--dns-configuration)
-5. [Security Hardening](#5-security-hardening)
-6. [WAF Configuration & IP Allowlist Management](#6-waf-configuration--ip-allowlist-management)
-7. [JWT Secret Rotation](#7-jwt-secret-rotation)
-8. [Monitoring & Alerting](#8-monitoring--alerting)
-9. [Incident Response](#9-incident-response)
-10. [Backup & Recovery](#10-backup--recovery)
-11. [Performance Optimization](#11-performance-optimization)
-12. [Local Dev Bypass](#12-local-dev-bypass)
-13. [WAF Detachment Procedures](#13-waf-detachment-procedures)
-14. [Post-Deployment Verification](#14-post-deployment-verification)
+4. [Frontend API Base Configuration](#4-frontend-api-base-configuration)
+5. [Routing & DNS Configuration](#5-routing--dns-configuration)
+6. [Security Hardening](#6-security-hardening)
+7. [WAF Configuration & IP Allowlist Management](#7-waf-configuration--ip-allowlist-management)
+8. [JWT Secret Rotation](#8-jwt-secret-rotation)
+9. [Monitoring & Alerting](#9-monitoring--alerting)
+10. [Incident Response](#10-incident-response)
+11. [Backup & Recovery](#11-backup--recovery)
+12. [Performance Optimization](#12-performance-optimization)
+13. [Local Dev Bypass](#13-local-dev-bypass)
+14. [WAF Detachment Procedures](#14-waf-detachment-procedures)
+15. [Post-Deployment Verification](#15-post-deployment-verification)
 
 ---
 
@@ -222,7 +223,139 @@ pg_dump -h <endpoint> -U <user> -d <dbname> > backup-$(date +%Y%m%d).sql
 
 ---
 
-## 4. Routing & DNS Configuration
+## 4. Frontend API Base Configuration
+
+### Overview
+
+The frontend React application connects to the backend API via the `VITE_API_BASE` environment variable. Proper configuration is critical for dev, staging, and production environments.
+
+### API Gateway URL Format
+
+**HTTP API (Current Production):**
+```
+https://{api-id}.execute-api.{region}.amazonaws.com
+```
+
+**Example:**
+```bash
+# Production API Gateway (HTTP API)
+VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+
+# Development (local serverless-offline)
+VITE_API_BASE=http://localhost:3001
+```
+
+**⚠️ Important Notes:**
+- HTTP APIs use `$default` stage (no `/prod` or `/dev` suffix in URL)
+- REST APIs use explicit stages like `/prod` or `/dev`
+- Do NOT include trailing slashes
+- Current production uses HTTP API (no stage suffix)
+
+### Environment Configuration
+
+**Development (.env.local):**
+```bash
+# Local backend
+VITE_API_BASE=http://localhost:3001
+
+# Or point to deployed dev API
+VITE_API_BASE=https://your-api-id.execute-api.us-west-2.amazonaws.com
+
+# Optional flags for development
+VITE_ANALYTICS_ENABLED=false
+VITE_API_STRIP_LEGACY_API_PREFIX=false
+VITE_ENABLE_DEV_BYPASS=true  # Localhost only
+```
+
+**Production (.env.production):**
+```bash
+VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_ANALYTICS_ENABLED=true
+VITE_API_STRIP_LEGACY_API_PREFIX=false
+VITE_ENABLE_DEV_BYPASS=false  # CRITICAL: Must be false
+VITE_ENABLE_REGISTRATION=false
+```
+
+### Optional Feature Flags
+
+**VITE_API_STRIP_LEGACY_API_PREFIX** (default: false)
+- Automatically strips `/api` prefix from request paths
+- Use when backend doesn't use `/api` prefix but frontend has legacy paths
+- Example: `/api/me/preferences` → `/me/preferences`
+
+**VITE_ANALYTICS_ENABLED** (default: false)
+- Controls analytics config fetching and event tracking
+- When false, prevents requests to `/analytics/config` endpoint
+- Recommended false for development to avoid spurious localhost:3000 fetches
+
+**VITE_API_USE_CREDENTIALS** (default: false)
+- Enables `withCredentials` on axios requests for cookie-based auth
+- Set to true if using HttpOnly cookies for authentication
+- Production should use VITE_ENABLE_AUTH=true instead
+
+### Dev Health Check
+
+In development mode, the app performs a non-blocking health check on startup:
+- Attempts GET `${VITE_API_BASE}/health` with 2s timeout
+- Logs result to console
+- Shows toast warning if unreachable
+- Does not block app from starting
+
+### Troubleshooting
+
+**Issue: "ERR_NAME_NOT_RESOLVED" in console**
+- API Gateway hostname doesn't exist or is mistyped
+- Check VITE_API_BASE value in .env.local
+- Verify API Gateway deployment status in AWS Console
+
+**Issue: "Network Error" or "ERR_NETWORK"**
+- Check console for enhanced diagnostic message
+- Verify VITE_API_BASE points to correct region
+- Test with curl: `curl ${VITE_API_BASE}/health`
+- Check CORS settings in backend
+
+**Issue: "403 Forbidden" after login**
+- Email may not be in ALLOWED_USER_EMAILS allowlist
+- Check backend environment variable
+- Verify user email matches exactly (case-sensitive)
+
+**Issue: Registration always succeeds (even with invalid data)**
+- Old issue: apiFallback wrapper masked errors
+- Fixed: register() now calls API directly, errors propagate
+
+### Verifying Configuration
+
+**Check current API base:**
+```javascript
+// Browser console
+console.log(import.meta.env.VITE_API_BASE)
+// Note: This only works in dev mode due to Vite restrictions
+```
+
+**Test API connectivity:**
+```bash
+# From terminal
+curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+
+# Expected: {"status":"healthy","timestamp":"..."}
+```
+
+**Check browser network tab:**
+1. Open DevTools → Network
+2. Login or refresh page
+3. Look for requests to `/auth/login`, `/auth/me`, etc.
+4. Verify Request URL matches VITE_API_BASE
+
+### Related Documentation
+
+- Frontend deployment: `docs/runbooks/frontend-deployment.md`
+- Backend endpoints: `serverless/serverless.yml`
+- Environment variables: `.env.example`
+- Deployment overview: `docs/deployment/overview.md`
+
+---
+
+## 5. Routing & DNS Configuration
 
 ### Current Setup
 
@@ -262,7 +395,7 @@ COOKIE_DOMAIN=.projectvaline.com
 
 ---
 
-## 5. Security Hardening
+## 6. Security Hardening
 
 ### Access Control Configuration
 
@@ -341,7 +474,7 @@ if (!allowedOrigins.includes(origin)) {
 
 ---
 
-## 6. WAF Configuration & IP Allowlist Management
+## 7. WAF Configuration & IP Allowlist Management
 
 ### Legacy IP Allowlist (Deprecated - See Section 13 for Removal)
 
@@ -429,7 +562,7 @@ aws wafv2 create-web-acl \
 
 ---
 
-## 7. JWT Secret Rotation
+## 8. JWT Secret Rotation
 
 **Frequency:** Every 90 days or after suspected compromise
 
@@ -454,7 +587,7 @@ serverless deploy function -f refresh --stage prod
 
 ---
 
-## 8. Monitoring & Alerting
+## 9. Monitoring & Alerting
 
 ### CloudWatch Metrics
 
@@ -525,7 +658,7 @@ aws cloudwatch put-metric-alarm \
 
 ---
 
-## 9. Incident Response
+## 10. Incident Response
 
 ### Severity Levels
 
@@ -576,7 +709,7 @@ aws cloudwatch put-metric-alarm \
 
 ---
 
-## 10. Backup & Recovery
+## 11. Backup & Recovery
 
 ### Database Backups
 
@@ -632,7 +765,7 @@ aws lambda update-function-code \
 
 ---
 
-## 11. Performance Optimization
+## 12. Performance Optimization
 
 ### CloudFront Caching
 
@@ -676,7 +809,7 @@ aws apigatewayv2 update-stage \
 
 ---
 
-## 12. Local Dev Bypass
+## 13. Local Dev Bypass
 
 ### Overview
 
@@ -804,7 +937,7 @@ DEV_BYPASS_ENABLED=false  # Always false, disabled by default
 
 ---
 
-## 13. WAF Detachment Procedures
+## 14. WAF Detachment Procedures
 
 This section documents how to retire the legacy static IP allowlist at the CloudFront and API Gateway layers, transitioning to application-level email allowlist enforcement.
 
@@ -932,7 +1065,7 @@ aws cloudfront update-distribution \
 
 ---
 
-## 14. Post-Deployment Verification
+## 15. Post-Deployment Verification
 
 ### Comprehensive Verification Checklist
 
