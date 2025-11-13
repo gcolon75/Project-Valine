@@ -1,13 +1,13 @@
 /**
  * SEO Metadata Configuration
  * Maps routes to their metadata: title, description, canonical, indexing rules
- * Pattern: "Project Valine — <Short Descriptor>" (max 60 chars)
+ * Pattern: "Joint — <Short Descriptor>" (max 60 chars)
  * Descriptions: 150-160 chars for optimal snippet display
  */
 
-const SITE_NAME = 'Project Valine';
+const SITE_NAME = 'Joint';
 const SITE_DOMAIN = 'https://projectvaline.com'; // Update with actual domain
-const DEFAULT_DESCRIPTION = 'Connect artists and seekers for collaborative creative projects. Join Project Valine to discover talent, share ideas, and bring creative visions to life.';
+const DEFAULT_DESCRIPTION = 'Connect artists and seekers for collaborative creative projects. Join Joint to discover talent, share ideas, and bring creative visions to life.';
 
 /**
  * Route-specific metadata configuration
@@ -16,7 +16,7 @@ const DEFAULT_DESCRIPTION = 'Connect artists and seekers for collaborative creat
 export const routeMetadata = {
   '/': {
     title: `${SITE_NAME} — Artists & Seekers Unite`,
-    description: 'Connect artists and seekers for collaborative creative projects. Join Project Valine to discover talent, share ideas, and bring creative visions to life.',
+    description: 'Connect artists and seekers for collaborative creative projects. Join Joint to discover talent, share ideas, and bring creative visions to life.',
     canonicalSegment: '',
     noIndex: false,
   },
@@ -28,49 +28,49 @@ export const routeMetadata = {
   },
   '/#about': {
     title: `${SITE_NAME} — About Us`,
-    description: 'Learn about Project Valine, the platform connecting creative professionals and enthusiasts. Our mission is to enable seamless artistic collaboration.',
+    description: 'Learn about Joint, the platform connecting creative professionals and enthusiasts. Our mission is to enable seamless artistic collaboration.',
     canonicalSegment: '#about',
     noIndex: false,
   },
   '/#faq': {
     title: `${SITE_NAME} — FAQ`,
-    description: 'Frequently asked questions about Project Valine. Get answers about features, pricing, account management, and creative collaboration tools.',
+    description: 'Frequently asked questions about Joint. Get answers about features, pricing, account management, and creative collaboration tools.',
     canonicalSegment: '#faq',
     noIndex: false,
   },
   '/join': {
     title: `${SITE_NAME} — Join Now`,
-    description: 'Create your free Project Valine account. Connect with artists, share scripts, discover auditions, and collaborate on creative projects today.',
+    description: 'Create your free Joint account. Connect with artists, share scripts, discover auditions, and collaborate on creative projects today.',
     canonicalSegment: 'join',
     noIndex: false,
   },
   '/signup': {
     title: `${SITE_NAME} — Sign Up`,
-    description: 'Sign up for Project Valine to start your creative collaboration journey. Free account with instant access to our artist and seeker community.',
+    description: 'Sign up for Joint to start your creative collaboration journey. Free account with instant access to our artist and seeker community.',
     canonicalSegment: 'signup',
     noIndex: false,
   },
   '/login': {
     title: `${SITE_NAME} — Log In`,
-    description: 'Log in to your Project Valine account to access your creative projects, messages, and network.',
+    description: 'Log in to your Joint account to access your creative projects, messages, and network.',
     canonicalSegment: 'login',
     noIndex: true, // Auth pages typically not indexed
   },
   '/signup-page': {
     title: `${SITE_NAME} — Sign Up`,
-    description: 'Create your Project Valine account to join our creative community. Connect with artists and seekers today.',
+    description: 'Create your Joint account to join our creative community. Connect with artists and seekers today.',
     canonicalSegment: 'signup-page',
     noIndex: true, // Auth pages typically not indexed
   },
   '/login-page': {
     title: `${SITE_NAME} — Log In`,
-    description: 'Log in to Project Valine to access your creative projects, collaborate with artists, and manage your account.',
+    description: 'Log in to Joint to access your creative projects, collaborate with artists, and manage your account.',
     canonicalSegment: 'login-page',
     noIndex: true, // Auth pages typically not indexed
   },
   '/onboarding': {
     title: `${SITE_NAME} — Get Started`,
-    description: 'Complete your Project Valine profile setup to start discovering creative opportunities and connecting with talent.',
+    description: 'Complete your Joint profile setup to start discovering creative opportunities and connecting with talent.',
     canonicalSegment: 'onboarding',
     noIndex: true, // User onboarding not indexed
   },
@@ -83,26 +83,26 @@ export const routeMetadata = {
   },
   '/legal/terms': {
     title: `${SITE_NAME} — Terms of Service`,
-    description: 'Review the terms of service for using Project Valine. Understand your rights, responsibilities, and our policies as a member of our creative community.',
+    description: 'Review the terms of service for using Joint. Understand your rights, responsibilities, and our policies as a member of our creative community.',
     canonicalSegment: 'legal/terms',
     noIndex: false,
   },
   '/legal/cookies': {
     title: `${SITE_NAME} — Cookie & Session Disclosure`,
-    description: 'Learn about the cookies and session tokens we use on Project Valine. Understand how we protect your security and privacy through our cookie practices.',
+    description: 'Learn about the cookies and session tokens we use on Joint. Understand how we protect your security and privacy through our cookie practices.',
     canonicalSegment: 'legal/cookies',
     noIndex: false,
   },
   // Placeholders for future pages
   '/privacy': {
     title: `${SITE_NAME} — Privacy Policy`,
-    description: 'Read our privacy policy to understand how we protect your data and respect your privacy on Project Valine.',
+    description: 'Read our privacy policy to understand how we protect your data and respect your privacy on Joint.',
     canonicalSegment: 'privacy',
     noIndex: false,
   },
   '/terms': {
     title: `${SITE_NAME} — Terms of Service`,
-    description: 'Review the terms of service for using Project Valine. Understand your rights and responsibilities as a member.',
+    description: 'Review the terms of service for using Joint. Understand your rights and responsibilities as a member.',
     canonicalSegment: 'terms',
     noIndex: false,
   },

@@ -98,14 +98,14 @@ const MarketingFooter = () => {
                   <Mic className="w-5 h-5 text-white" aria-hidden="true" />
                 </div>
                 <span className="text-sm font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
-                  Project Valine
+                  Joint
                 </span>
               </Link>
             </div>
 
             {/* Copyright */}
             <div className="text-sm text-neutral-600">
-              &copy; {currentYear} Project Valine. All rights reserved.
+              &copy; {currentYear} Joint. All rights reserved.
             </div>
 
             {/* Social Links */}

@@ -7,13 +7,13 @@ const SocialProofSection = () => {
             Loved by artists everywhere
           </h2>
           <p className="text-lg text-neutral-600">
-            Join thousands of voice actors who trust Project Valine
+            Join thousands of voice actors who trust Joint
           </p>
         </div>
         
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           <Testimonial
-            quote="Project Valine has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
+            quote="Joint has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
             author="Sarah Johnson"
             role="Voice Actor"
             avatar="https://i.pravatar.cc/150?img=1"

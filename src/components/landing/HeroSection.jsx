@@ -41,7 +41,7 @@ const HeroSection = () => {
                 </h1>
                 
                 <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                  Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
+                  Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
                 </p>
                 
                 {/* CTA Buttons */}
@@ -57,7 +57,7 @@ const HeroSection = () => {
                   <a
                     href="#about"
                     className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
-                    aria-label="Learn more about Project Valine"
+                    aria-label="Learn more about Joint"
                   >
                     Learn More
                   </a>
