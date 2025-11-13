@@ -420,6 +420,71 @@ ALLOWED_USER_EMAILS=owner@example.com,friend@example.com
 **To add a user:**
 See [`docs/runbooks/add-user.md`](./add-user.md)
 
+### Updating Email Allowlist via AWS Console
+
+For production environments where the allowlist needs to be updated without redeploying:
+
+**Step 1: Navigate to Lambda Console**
+1. Open AWS Console → Services → Lambda
+2. Set region to `us-west-2` (or your deployment region)
+3. Search for functions with prefix `pv-api-prod-`
+
+**Step 2: Update Environment Variables**
+
+You need to update `ALLOWED_USER_EMAILS` on **all** Lambda functions. Key functions include:
+- `pv-api-prod-login`
+- `pv-api-prod-register`
+- `pv-api-prod-me`
+
+For each function:
+1. Click the function name
+2. Go to "Configuration" tab → "Environment variables"
+3. Click "Edit"
+4. Find `ALLOWED_USER_EMAILS` variable
+5. Update value with comma-separated emails (e.g., `owner@example.com,friend@example.com`)
+6. Click "Save"
+
+**Step 3: Verify Changes**
+```bash
+# Test login with allowed email
+curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"owner@example.com","password":"test"}'
+
+# Expected: 200 OK (or 401 if password wrong)
+
+# Test login with non-allowed email
+curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"blocked@example.com","password":"test"}'
+
+# Expected: 403 Forbidden with message "Account not authorized for access"
+```
+
+**Alternative: Update via serverless.yml**
+
+To set allowlist at deployment time (recommended for consistency):
+
+1. Edit `serverless/serverless.yml`:
+   ```yaml
+   environment:
+     ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, ""}
+   ```
+
+2. Set environment variable before deploy:
+   ```bash
+   export ALLOWED_USER_EMAILS="owner@example.com,friend@example.com"
+   cd serverless
+   serverless deploy --stage prod
+   ```
+
+**Notes:**
+- Email comparison is case-sensitive and exact match
+- Whitespace is trimmed automatically
+- Empty allowlist (`""`) permits all authenticated users (not recommended for production)
+- Changes via Console take effect immediately (no deployment needed)
+- Changes via serverless.yml require redeployment but ensure consistency across all functions
+
 ### JWT Configuration
 
 **Token Lifetimes:**
