@@ -21,31 +21,49 @@ Project Valine is a LinkedIn-style collaborative platform for voice actors, writ
 
 ## Defense-in-Depth Access Control
 
-Project Valine implements a multi-layered security architecture with three independent protection levels:
+Project Valine implements a multi-layered security architecture with four independent protection levels:
 
-### Layer 1: Network Edge Protection
+### Layer 1: Edge Protection (CloudFront WAF)
 
-**CloudFront Global WAF + API Gateway Resource Policy**
+**⚠️ DEPRECATION NOTICE**: Static IP allowlisting at the network edge (CloudFront WAF + API Gateway Resource Policy) has been retired as of 2025-11-13. The platform now relies on application-level email allowlist enforcement for access control, providing better flexibility for remote access while maintaining security.
+
+**Current Edge Security (WAF Rate Limiting & DDoS Protection):**
+
+CloudFront WAF is configured for rate limiting and basic threat mitigation, NOT static IP gating:
 
 ```yaml
 # CloudFront Distribution: dkmxy676d3vgc
-# WAF Rule: IP Allowlist (Global)
-- Owner IP: /32 CIDR block
-- Action: BLOCK all requests from non-allowlisted IPs
+# WAF Configuration: Rate limiting only (optional)
+- Rate Limit: 100 requests/5 minutes per IP
+- Action: BLOCK excessive traffic
+- DDoS Protection: AWS Shield Standard (automatic)
 ```
 
-```yaml
-# API Gateway HTTP API: i72dxlcfcc (us-west-2)
-# Resource Policy: IP Allowlist
-- Owner IP: /32 CIDR block
-- Effect: Deny all requests except from allowlisted IPs
-```
+**Benefits of Removing Static IP Gating:**
+- ✅ Authorized users can access from any location (home, office, mobile)
+- ✅ No manual IP updates when users' ISPs change
+- ✅ VPN and mobile access supported
+- ✅ Better audit trail (CloudWatch logs show who logged in, not just IP)
+- ✅ Scales to multiple authorized users without infrastructure changes
 
-**Protection Benefits:**
-- Blocks malicious traffic before reaching application layer
-- Prevents DDoS and brute force attacks at the edge
-- Zero compute cost for blocked requests
-- No code changes required for IP updates
+**If you need to detach legacy IP restrictions:**  
+See `docs/runbooks/prod-deploy-and-routing.md` Section 13: WAF Detachment Procedures
+
+**API Gateway Resource Policy (Post-Detachment):**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "execute-api:Invoke",
+      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*"
+    }
+  ]
+}
+```
 
 ### Layer 2: Application-Level Enforcement
 
@@ -122,6 +140,58 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,           // CloudFront distribution
   'https://dkmxy676d3vgc.cloudfront.net'
 ];
+
+// Credentials only allowed for whitelisted origins
+cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy violation'));
+    }
+  },
+  credentials: true
+})
+```
+
+### Layer 4: Local Development Bypass (Localhost Only)
+
+**Dev Bypass - UX Iteration Tool**
+
+For rapid local development and UX iteration, a localhost-only "Dev Bypass" feature is available with multiple security gates:
+
+```bash
+# Environment flags
+VITE_ENABLE_DEV_BYPASS=false  # Must be 'true' to enable
+VITE_FRONTEND_URL=http://localhost:5173  # Must NOT contain production domains
+```
+
+**Triple-Gate Security:**
+1. **Hostname Check**: Button only renders when `window.location.hostname === 'localhost'`
+2. **Environment Flag**: Requires `VITE_ENABLE_DEV_BYPASS === 'true'`
+3. **Build Guard**: Build fails if enabled AND `VITE_FRONTEND_URL` contains `cloudfront.net` or `projectvaline.com`
+
+**Implementation:**
+- Dev Bypass button appears on login page only when all gates pass
+- Clicking creates mock user: `{ id: 'dev-user', email: 'dev@local', roles: ['DEV_BYPASS'] }`
+- Prominent banner displays: "DEV SESSION (NO REAL AUTH) - Localhost Only"
+- No backend token generated, pure frontend session
+- Automatically cleared on logout
+
+**Production Safety:**
+```javascript
+// scripts/prebuild.js validates before every build
+if (VITE_ENABLE_DEV_BYPASS === 'true' && 
+    /cloudfront\.net|projectvaline\.com/.test(VITE_FRONTEND_URL)) {
+  throw new Error('Dev bypass cannot be enabled in production!');
+}
+```
+
+⚠️ **CRITICAL**: `VITE_ENABLE_DEV_BYPASS` MUST be `false` in all production deployments.
+
+**Backend Dev Bypass Stub:**
+
+A disabled backend endpoint stub exists at `serverless/src/handlers/devBypass.js` for future expansion. It is **NOT wired** to API Gateway and requires `DEV_BYPASS_ENABLED=false` (default). See stub file for implementation guidance if server-side dev bypass is needed in the future.
 
 // Credentials only allowed for whitelisted origins
 cors({
@@ -362,7 +432,13 @@ JWT_SECRET_OLD=<current-secret>
 # 5. Rename JWT_SECRET_NEW → JWT_SECRET
 ```
 
-### 3. IP Allowlist Management
+### 3. Legacy IP Allowlist Management (Deprecated)
+
+**⚠️ DEPRECATION NOTICE**: IP allowlist management at CloudFront/API Gateway layer is deprecated. Use application-level email allowlist instead.
+
+**For WAF Detachment:** See `docs/runbooks/prod-deploy-and-routing.md` Section 13
+
+**Legacy Update Instructions (If Not Yet Detached):**
 
 **Update CloudFront WAF:**
 ```bash
@@ -446,6 +522,60 @@ Headers: { "X-CSRF-Token": "xyz123..." }
 - [ ] All `.env` files added to `.gitignore`
 - [ ] No secrets in CloudFormation/Serverless templates
 - [ ] Secrets encrypted at rest in AWS Parameter Store/Secrets Manager
+
+### 7. Post-WAF Detachment Validation Checklist
+
+After removing IP allowlist restrictions from CloudFront WAF and API Gateway, verify that security controls are functioning correctly:
+
+**Public Access (Edge Layer):**
+- [ ] Frontend accessible from non-allowlisted IP addresses
+- [ ] Login page loads without 403 errors from CloudFront
+- [ ] Static assets (JS, CSS, images) load correctly
+- [ ] No WAF IP block messages
+
+**Test Command:**
+```bash
+# From any IP (not owner IP)
+curl -I https://dkmxy676d3vgc.cloudfront.net
+# Expected: HTTP/2 200
+```
+
+**Application-Level Email Allowlist (Layer 2):**
+- [ ] Allowlisted user can log in successfully (200 OK)
+- [ ] Non-allowlisted user blocked after authentication (403 Forbidden)
+- [ ] Invalid credentials rejected before allowlist check (401 Unauthorized)
+- [ ] CloudWatch logs show "Login blocked: Email X not in allowlist" for denied users
+
+**Test Commands:**
+```bash
+# Allowlisted user (should succeed)
+curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"owner@example.com","password":"validpassword"}' \
+  -v
+# Expected: 200 OK, Set-Cookie headers
+
+# Non-allowlisted user (should fail at app layer)
+curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"unauthorized@example.com","password":"validpassword"}' \
+  -v
+# Expected: 403 Forbidden, "not authorized" message
+```
+
+**Session Security (Layer 3):**
+- [ ] Cookies have HttpOnly flag (not accessible via JavaScript)
+- [ ] Cookies have Secure flag (HTTPS only in production)
+- [ ] Cookies have SameSite=Strict or Lax flag
+- [ ] JWT tokens properly signed and validated
+
+**Dev Bypass Disabled (Layer 4):**
+- [ ] No "Dev Bypass" button on production login page
+- [ ] `VITE_ENABLE_DEV_BYPASS` is false or undefined in production
+- [ ] Build guard prevents accidental production builds with dev bypass
+
+**Detailed Manual Verification:**  
+See `docs/runbooks/verify-auth-hardening.md` for comprehensive step-by-step verification procedures.
 
 ---
 

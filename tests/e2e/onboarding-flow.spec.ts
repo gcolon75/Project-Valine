@@ -47,14 +47,19 @@ test.describe('Onboarding Flow E2E', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
 
-    // Try dev login if available
-    const devLoginButton = page.locator('button:has-text("Dev Login")');
-    const hasDevLogin = await devLoginButton.isVisible().catch(() => false);
+    // Try dev bypass if available
+    const devBypassButton = page.locator('button:has-text("Dev Bypass")');
+    const hasDevBypass = await devBypassButton.isVisible().catch(() => false);
 
-    if (hasDevLogin) {
-      console.log('Using dev login...');
-      await devLoginButton.click();
+    if (hasDevBypass) {
+      console.log('Using dev bypass...');
+      await devBypassButton.click();
       await page.waitForURL(/\/(dashboard|onboarding|profile)/, { timeout: 5000 });
+      
+      // Verify dev bypass banner is visible
+      const devBanner = page.locator('text=/DEV SESSION.*NO REAL AUTH/i');
+      await expect(devBanner).toBeVisible();
+      console.log('✓ Dev bypass banner visible');
     } else {
       console.log('Using signup form...');
       await page.goto('/signup');
@@ -283,15 +288,15 @@ test.describe('Onboarding Flow E2E', () => {
 
     // Login
     await page.goto('/login');
-    const devLoginButton = page.locator('button:has-text("Dev Login")');
-    const hasDevLogin = await devLoginButton.isVisible().catch(() => false);
+    const devBypassButton = page.locator('button:has-text("Dev Bypass")');
+    const hasDevBypass = await devBypassButton.isVisible().catch(() => false);
     
-    if (!hasDevLogin) {
-      console.log('Skipping: Dev login not available');
+    if (!hasDevBypass) {
+      console.log('Skipping: Dev bypass not available');
       return;
     }
     
-    await devLoginButton.click();
+    await devBypassButton.click();
     await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 5000 });
 
     // Navigate to onboarding
@@ -338,15 +343,15 @@ test.describe('Onboarding Flow E2E', () => {
 
     // Login and navigate to onboarding
     await page.goto('/login');
-    const devLoginButton = page.locator('button:has-text("Dev Login")');
-    const hasDevLogin = await devLoginButton.isVisible().catch(() => false);
+    const devBypassButton = page.locator('button:has-text("Dev Bypass")');
+    const hasDevBypass = await devBypassButton.isVisible().catch(() => false);
     
-    if (!hasDevLogin) {
-      console.log('Skipping: Dev login not available');
+    if (!hasDevBypass) {
+      console.log('Skipping: Dev bypass not available');
       return;
     }
     
-    await devLoginButton.click();
+    await devBypassButton.click();
     await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 5000 });
 
     await page.goto('/onboarding');
@@ -396,15 +401,15 @@ test.describe('Onboarding Flow E2E', () => {
 
     // Login
     await page.goto('/login');
-    const devLoginButton = page.locator('button:has-text("Dev Login")');
-    const hasDevLogin = await devLoginButton.isVisible().catch(() => false);
+    const devBypassButton = page.locator('button:has-text("Dev Bypass")');
+    const hasDevBypass = await devBypassButton.isVisible().catch(() => false);
     
-    if (!hasDevLogin) {
-      console.log('Skipping: Dev login not available');
+    if (!hasDevBypass) {
+      console.log('Skipping: Dev bypass not available');
       return;
     }
     
-    await devLoginButton.click();
+    await devBypassButton.click();
     await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 5000 });
 
     await page.goto('/onboarding');

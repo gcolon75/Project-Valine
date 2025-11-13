@@ -4,12 +4,12 @@ import { ChevronDown } from 'lucide-react';
 const FAQSection = () => {
   const faqs = [
     {
-      question: "What is Project Valine?",
-      answer: "Project Valine is a professional networking platform designed specifically for voice actors, writers, and creative artists. It provides tools for collaboration, portfolio showcasing, and discovering opportunities."
+      question: "What is Joint?",
+      answer: "Joint is a professional networking platform designed specifically for voice actors, writers, and creative artists. It provides tools for collaboration, portfolio showcasing, and discovering opportunities."
     },
     {
-      question: "Is Project Valine free to use?",
-      answer: "Yes! Project Valine offers a free tier that includes core features like creating a profile, connecting with other artists, sharing your work, and discovering opportunities."
+      question: "Is Joint free to use?",
+      answer: "Yes! Joint offers a free tier that includes core features like creating a profile, connecting with other artists, sharing your work, and discovering opportunities."
     },
     {
       question: "How do I get started?",
@@ -37,7 +37,7 @@ const FAQSection = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-lg text-neutral-600">
-            Everything you need to know about Project Valine
+            Everything you need to know about Joint
           </p>
         </div>
         
