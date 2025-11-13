@@ -13,8 +13,8 @@ import React from 'react';
  * outside of the authenticated app layout.
  */
 const Footer = () => (
-  <footer className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-    &copy; {new Date().getFullYear()} Project Valine. All rights reserved.
+  <footer className="py-8 text-center text-sm text-neutral-700 dark:text-neutral-300">
+    &copy; {new Date().getFullYear()} Joint. All rights reserved.
   </footer>
 );
 

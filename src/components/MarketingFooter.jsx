@@ -12,7 +12,7 @@ const MarketingFooter = () => {
           {/* Product Column */}
           <nav aria-labelledby="footer-product">
             <h3 id="footer-product" className="font-semibold text-neutral-900 mb-4">Product</h3>
-            <ul className="space-y-3 text-sm text-neutral-600">
+            <ul className="space-y-3 text-sm text-neutral-700">
               <li>
                 <a href="#features" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Features
@@ -34,7 +34,7 @@ const MarketingFooter = () => {
           {/* Resources Column */}
           <nav aria-labelledby="footer-resources">
             <h3 id="footer-resources" className="font-semibold text-neutral-900 mb-4">Resources</h3>
-            <ul className="space-y-3 text-sm text-neutral-600">
+            <ul className="space-y-3 text-sm text-neutral-700">
               <li>
                 <span className="text-neutral-400 cursor-not-allowed">
                   Documentation
@@ -56,7 +56,7 @@ const MarketingFooter = () => {
           {/* Company Column */}
           <nav aria-labelledby="footer-company">
             <h3 id="footer-company" className="font-semibold text-neutral-900 mb-4">Company</h3>
-            <ul className="space-y-3 text-sm text-neutral-600">
+            <ul className="space-y-3 text-sm text-neutral-700">
               <li>
                 <a href="#about" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   About
@@ -73,7 +73,7 @@ const MarketingFooter = () => {
           {/* Legal Column */}
           <nav aria-labelledby="footer-legal">
             <h3 id="footer-legal" className="font-semibold text-neutral-900 mb-4">Legal</h3>
-            <ul className="space-y-3 text-sm text-neutral-600">
+            <ul className="space-y-3 text-sm text-neutral-700">
               <li>
                 <Link to="/legal/privacy" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Privacy Policy
@@ -104,7 +104,7 @@ const MarketingFooter = () => {
             </div>
 
             {/* Copyright */}
-            <div className="text-sm text-neutral-600">
+            <div className="text-sm text-neutral-700">
               &copy; {currentYear} Joint. All rights reserved.
             </div>
 
