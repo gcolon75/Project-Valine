@@ -89,6 +89,41 @@ if (process.env.ALLOWED_USER_EMAILS) {
 }
 ```
 
+### Layer 4: Local Development Bypass (Localhost Only)
+
+**Dev Bypass - UX Iteration Tool**
+
+For rapid local development and UX iteration, a localhost-only "Dev Bypass" feature is available with multiple security gates:
+
+```bash
+# Environment flags
+VITE_ENABLE_DEV_BYPASS=false  # Must be 'true' to enable
+VITE_FRONTEND_URL=http://localhost:5173  # Must NOT contain production domains
+```
+
+**Triple-Gate Security:**
+1. **Hostname Check**: Button only renders when `window.location.hostname === 'localhost'`
+2. **Environment Flag**: Requires `VITE_ENABLE_DEV_BYPASS === 'true'`
+3. **Build Guard**: Build fails if enabled AND `VITE_FRONTEND_URL` contains `cloudfront.net` or `projectvaline.com`
+
+**Implementation:**
+- Dev Bypass button appears on login page only when all gates pass
+- Clicking creates mock user: `{ id: 'dev-user', email: 'dev@local', roles: ['DEV_BYPASS'] }`
+- Prominent banner displays: "DEV SESSION (NO REAL AUTH) - Localhost Only"
+- No backend token generated, pure frontend session
+- Automatically cleared on logout
+
+**Production Safety:**
+```javascript
+// scripts/prebuild.js validates before every build
+if (VITE_ENABLE_DEV_BYPASS === 'true' && 
+    /cloudfront\.net|projectvaline\.com/.test(VITE_FRONTEND_URL)) {
+  throw new Error('Dev bypass cannot be enabled in production!');
+}
+```
+
+⚠️ **CRITICAL**: `VITE_ENABLE_DEV_BYPASS` MUST be `false` in all production deployments.
+
 ### Layer 3: Session & Cookie Security
 
 **JWT Token Configuration**
