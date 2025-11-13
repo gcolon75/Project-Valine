@@ -3,11 +3,64 @@
  * Verifies that only allowed emails can login after authentication
  */
 
-import { login } from '../src/handlers/auth.js';
+import bcrypt from 'bcryptjs';
+
+// Mock getPrisma before importing login handler
+const mockPrisma = {
+  user: {
+    findFirst: null // Will be set in each test
+  },
+  refreshToken: {
+    create: async () => ({ id: 'mock-refresh-token-id' })
+  }
+};
+
+// Mock the db/client module
+const originalGetPrisma = await (async () => {
+  try {
+    const module = await import('../src/db/client.js');
+    return module.getPrisma;
+  } catch {
+    return null;
+  }
+})();
+
+// Create mock getPrisma factory
+function createMockPrisma(config = {}) {
+  return {
+    user: config.user || mockPrisma.user,
+    refreshToken: config.refreshToken || mockPrisma.refreshToken
+  };
+}
+
+// Helper to create a mock user with hashed password
+async function createMockUser(email, password, additionalProps = {}) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  return {
+    id: `user-${email}`,
+    email,
+    normalizedEmail: email.toLowerCase(),
+    password: hashedPassword,
+    username: email.split('@')[0],
+    displayName: `User ${email}`,
+    avatar: null,
+    role: 'USER',
+    emailVerified: true,
+    twoFactorEnabled: false,
+    createdAt: new Date(),
+    ...additionalProps
+  };
+}
 
 describe('Email Allowlist Tests', () => {
+  let login;
   const originalAllowedEmails = process.env.ALLOWED_USER_EMAILS;
-  const originalDb = process.env.DATABASE_URL;
+
+  beforeAll(async () => {
+    // Dynamically import and mock
+    const authModule = await import('../src/handlers/auth.js');
+    login = authModule.login;
+  });
 
   afterEach(() => {
     // Restore original environment
@@ -16,19 +69,23 @@ describe('Email Allowlist Tests', () => {
     } else {
       delete process.env.ALLOWED_USER_EMAILS;
     }
-    if (originalDb !== undefined) {
-      process.env.DATABASE_URL = originalDb;
-    }
+    
+    // Reset mock
+    mockPrisma.user.findFirst = null;
   });
 
-  // Mock successful password verification
-  beforeEach(() => {
-    // Note: These tests will need a test database or mocks
-    // For now, they demonstrate the expected behavior
-  });
-
-  test('should block login when email not in allowlist', async () => {
+  test('should return 403 when email not in allowlist (valid password)', async () => {
     process.env.ALLOWED_USER_EMAILS = 'owner@example.com,friend@example.com';
+    
+    const mockUser = await createMockUser('hacker@evil.com', 'correctpassword');
+    
+    // Mock Prisma to return the user
+    mockPrisma.user.findFirst = async () => mockUser;
+    
+    // Temporarily replace getPrisma
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
 
     const event = {
       body: JSON.stringify({
@@ -40,17 +97,26 @@ describe('Email Allowlist Tests', () => {
       }
     };
 
-    // Note: This test requires database mocking
-    // Expected behavior: login should check allowlist AFTER password verification
-    // and return 403 for unauthorized email
+    const response = await login(event);
     
-    // Placeholder - actual test needs DB mock
-    expect(process.env.ALLOWED_USER_EMAILS).toContain('owner@example.com');
-    expect(process.env.ALLOWED_USER_EMAILS).not.toContain('hacker@evil.com');
+    // Restore original
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(403);
+    const body = JSON.parse(response.body);
+    expect(body.error).toContain('not authorized');
   });
 
-  test('should allow login when email is in allowlist', async () => {
+  test('should return 200 when email is in allowlist (valid password)', async () => {
     process.env.ALLOWED_USER_EMAILS = 'owner@example.com,friend@example.com';
+    
+    const mockUser = await createMockUser('owner@example.com', 'correctpassword');
+    
+    mockPrisma.user.findFirst = async () => mockUser;
+    
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
 
     const event = {
       body: JSON.stringify({
@@ -62,54 +128,133 @@ describe('Email Allowlist Tests', () => {
       }
     };
 
-    // Placeholder - actual test needs DB mock
-    const allowedEmails = process.env.ALLOWED_USER_EMAILS.split(',');
-    expect(allowedEmails).toContain('owner@example.com');
+    const response = await login(event);
+    
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.user).toBeDefined();
+    expect(body.user.email).toBe('owner@example.com');
+    expect(body.user.password).toBeUndefined(); // Password should not be in response
   });
 
-  test('should allow all users when allowlist is empty', async () => {
-    process.env.ALLOWED_USER_EMAILS = '';
+  test('should return 401 when password is invalid (regardless of allowlist)', async () => {
+    process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
+    
+    const mockUser = await createMockUser('owner@example.com', 'correctpassword');
+    
+    mockPrisma.user.findFirst = async () => mockUser;
+    
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
 
     const event = {
       body: JSON.stringify({
-        email: 'anyone@example.com',
-        password: 'correctpassword'
+        email: 'owner@example.com',
+        password: 'wrongpassword'
       }),
       headers: {
         origin: 'http://localhost:5173'
       }
     };
 
-    // When allowlist is empty, no restriction should apply
-    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
-      .split(',')
-      .map(e => e.trim())
-      .filter(e => e.length > 0);
+    const response = await login(event);
     
-    expect(allowedEmails.length).toBe(0);
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(401);
+    const body = JSON.parse(response.body);
+    expect(body.error).toContain('Invalid email or password');
+  });
+
+  test('should allow any user when allowlist is empty', async () => {
+    process.env.ALLOWED_USER_EMAILS = '';
+    
+    const mockUser = await createMockUser('anyone@example.com', 'password123');
+    
+    mockPrisma.user.findFirst = async () => mockUser;
+    
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
+
+    const event = {
+      body: JSON.stringify({
+        email: 'anyone@example.com',
+        password: 'password123'
+      }),
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    };
+
+    const response = await login(event);
+    
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.user.email).toBe('anyone@example.com');
   });
 
   test('should handle allowlist with extra whitespace', async () => {
     process.env.ALLOWED_USER_EMAILS = ' owner@example.com , friend@example.com ';
+    
+    const mockUser = await createMockUser('friend@example.com', 'password123');
+    
+    mockPrisma.user.findFirst = async () => mockUser;
+    
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
 
-    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
-      .split(',')
-      .map(e => e.trim())
-      .filter(e => e.length > 0);
+    const event = {
+      body: JSON.stringify({
+        email: 'friend@example.com',
+        password: 'password123'
+      }),
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    };
 
-    expect(allowedEmails).toContain('owner@example.com');
-    expect(allowedEmails).toContain('friend@example.com');
-    expect(allowedEmails.length).toBe(2);
+    const response = await login(event);
+    
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.user.email).toBe('friend@example.com');
   });
 
-  test('should be case-sensitive for email comparison', async () => {
+  test('should return 401 when user does not exist', async () => {
     process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
+    
+    mockPrisma.user.findFirst = async () => null; // User not found
+    
+    const dbClient = await import('../src/db/client.js');
+    const originalFn = dbClient.getPrisma;
+    dbClient.getPrisma = () => mockPrisma;
 
-    const allowedEmails = process.env.ALLOWED_USER_EMAILS.split(',').map(e => e.trim());
+    const event = {
+      body: JSON.stringify({
+        email: 'nonexistent@example.com',
+        password: 'anypassword'
+      }),
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    };
 
-    // Email comparison should be case-sensitive (emails are stored lowercase in DB)
-    expect(allowedEmails).toContain('owner@example.com');
-    expect(allowedEmails).not.toContain('Owner@Example.com');
+    const response = await login(event);
+    
+    dbClient.getPrisma = originalFn;
+
+    expect(response.statusCode).toBe(401);
+    const body = JSON.parse(response.body);
+    expect(body.error).toContain('Invalid email or password');
   });
 });
 
