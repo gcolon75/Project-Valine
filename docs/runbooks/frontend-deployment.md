@@ -18,6 +18,7 @@ Production deployment checklist and procedures for Project Valine frontend appli
 - [Common Issues](#common-issues)
 - [Rollback Procedures](#rollback-procedures)
 - [Troubleshooting](#troubleshooting)
+- [12. Local Dev Bypass](#12-local-dev-bypass)
 
 ---
 
@@ -839,6 +840,177 @@ echo "💾 Backup: s3://valine-frontend-backups/backup-${BACKUP_DATE}/"
 chmod +x deploy-frontend.sh
 ./deploy-frontend.sh
 ```
+
+---
+
+## 12. Local Dev Bypass
+
+### Overview
+
+The **Dev Bypass** feature enables rapid UX iteration during local development by bypassing authentication. This is a **localhost-only** feature with multiple security safeguards to prevent accidental production exposure.
+
+⚠️ **CRITICAL**: Dev Bypass MUST be disabled in all production deployments.
+
+---
+
+### Enabling Dev Bypass
+
+**Step 1: Set Environment Variables**
+
+Create or update `.env.local`:
+
+```bash
+# Enable dev bypass (localhost only)
+VITE_ENABLE_DEV_BYPASS=true
+
+# Frontend URL (must be localhost for dev bypass)
+VITE_FRONTEND_URL=http://localhost:5173
+```
+
+**Step 2: Start Development Server**
+
+```bash
+npm run dev
+# or
+npm start
+```
+
+**Step 3: Access Login Page**
+
+Navigate to `http://localhost:5173/login`
+
+You should see a purple/pink gradient "Dev Bypass" button below the login form.
+
+---
+
+### Security Safeguards
+
+Dev Bypass has **three layers of protection** to prevent production exposure:
+
+#### 1. Hostname Check (Runtime)
+```javascript
+window.location.hostname === 'localhost'
+```
+Button only renders on localhost. If you access via IP (127.0.0.1) or domain, button is hidden.
+
+#### 2. Environment Flag (Runtime)
+```javascript
+import.meta.env.VITE_ENABLE_DEV_BYPASS === 'true'
+```
+Must explicitly set flag in environment. Default is `false`.
+
+#### 3. Build Guard (Build Time)
+```javascript
+// scripts/prebuild.js
+if (VITE_ENABLE_DEV_BYPASS === 'true' && 
+    /cloudfront\.net|projectvaline\.com/.test(VITE_FRONTEND_URL)) {
+  throw new Error('Build failed: Dev bypass enabled for production domain!');
+}
+```
+Build **fails** if dev bypass is enabled AND `VITE_FRONTEND_URL` contains:
+- `cloudfront.net`
+- `projectvaline.com`
+
+---
+
+### How It Works
+
+**When Dev Bypass Button Clicked:**
+
+1. Creates mock user object:
+```javascript
+{
+  id: 'dev-user',
+  email: 'dev@local',
+  username: 'dev-bypass',
+  displayName: 'Dev Bypass User',
+  onboardingComplete: true,
+  profileComplete: true,
+  emailVerified: true,
+  roles: ['DEV_BYPASS'], // Special role for banner
+  avatar: 'https://i.pravatar.cc/150?img=68'
+}
+```
+
+2. Saves to `localStorage` under key `devUserSession`
+
+3. No backend token generated (pure frontend session)
+
+4. Redirects to `/dashboard`
+
+5. Shows prominent warning banner:
+   - Purple/pink gradient
+   - "DEV SESSION (NO REAL AUTH) - Localhost Only"
+   - Visible on all authenticated pages
+
+**On Logout:**
+- Clears `devUserSession` from localStorage
+- Returns to login page
+
+**On Page Reload:**
+- Dev session restored from localStorage (if on localhost)
+- Banner reappears automatically
+
+---
+
+### Pre-Production Checklist
+
+Before deploying to production, verify:
+
+- [ ] `VITE_ENABLE_DEV_BYPASS=false` in `.env.production`
+- [ ] `VITE_FRONTEND_URL` points to production domain (CloudFront or projectvaline.com)
+- [ ] Run `npm run build` locally to test prebuild guard
+- [ ] Verify no "Dev Bypass" button appears in production build preview
+- [ ] Check that DEV SESSION banner never appears in production
+
+---
+
+### Troubleshooting
+
+**Problem**: Dev Bypass button not showing on localhost
+
+**Solutions**:
+1. Verify `VITE_ENABLE_DEV_BYPASS=true` in `.env.local`
+2. Ensure accessing via `http://localhost:5173` (not `http://127.0.0.1:5173`)
+3. Restart dev server: `npm run dev`
+4. Clear browser cache and localStorage
+
+---
+
+**Problem**: Build fails with "Dev bypass enabled for production domain"
+
+**Solution**:
+Set `VITE_ENABLE_DEV_BYPASS=false` in your environment file.
+
+---
+
+**Problem**: DEV SESSION banner stuck after disabling dev bypass
+
+**Solution**:
+1. Go to browser DevTools → Application → Local Storage
+2. Delete `devUserSession` key
+3. Reload page
+
+---
+
+### Removal Instructions (if deprecating feature)
+
+1. Remove env vars from `.env.example`:
+   - `VITE_ENABLE_DEV_BYPASS`
+   - `VITE_FRONTEND_URL`
+
+2. Remove dev bypass code:
+   - `scripts/prebuild.js`
+   - Dev bypass button in `src/pages/Login.jsx`
+   - `devBypass()` function in `src/context/AuthContext.jsx`
+   - Banner logic in `src/layouts/AppLayout.jsx`
+
+3. Remove from package.json:
+   - `prebuild` script
+   - Update `build` script to just `vite build`
+
+4. Update tests:
+   - Remove dev bypass checks in `tests/e2e/onboarding-flow.spec.ts`
 
 ---
 
