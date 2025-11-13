@@ -23,8 +23,8 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Main Content: Text + Hero Image */}
-          <div className="lg:col-span-8 order-2">
+          {/* Main Content: Text + Hero Image - Now takes full width without Trending card */}
+          <div className="lg:col-span-10 order-2">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
               
               {/* Text Content */}
@@ -84,13 +84,6 @@ const HeroSection = () => {
               </div>
             </div>
           </div>
-
-          {/* Right Sidebar: Trending */}
-          <div className="lg:col-span-2 order-3">
-            <div className="lg:sticky lg:top-24">
-              <TrendingCard delay="0.3s" />
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -107,30 +100,6 @@ const StatCard = ({ number, label, delay }) => (
   >
     <p className="text-3xl font-bold text-[#0CCE6B] mb-1" aria-label={`${number} ${label}`}>{number}</p>
     <p className="text-xs text-neutral-600 font-medium">{label}</p>
-  </div>
-);
-
-// Trending Card Component
-const TrendingCard = ({ delay }) => (
-  <div 
-    className="bg-gradient-to-br from-[#0CCE6B] to-[#0BBE60] rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-200 animate-slide-up"
-    style={{ animationDelay: delay }}
-  >
-    <div className="flex items-center space-x-2 mb-3">
-      <Sparkles className="w-5 h-5 text-white" aria-hidden="true" />
-      <p className="text-white font-bold text-lg">Trending Now</p>
-    </div>
-    <p className="text-white/90 text-sm mb-4">
-      Join thousands of voice actors sharing their latest projects and reels.
-    </p>
-    <Link 
-      to="/reels"
-      className="inline-flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-      aria-label="Explore trending reels"
-    >
-      <span>Explore Reels</span>
-      <ArrowRight className="w-4 h-4" aria-hidden="true" />
-    </Link>
   </div>
 );
 

@@ -2,7 +2,7 @@ import { Play, Mic } from 'lucide-react';
 
 const ProductVisualSection = () => {
   return (
-    <section className="px-4 py-16 md:py-20 bg-gradient-to-br from-neutral-50 to-white" aria-labelledby="product-visual-heading">
+    <section id="about" className="px-4 py-16 md:py-20 bg-gradient-to-br from-neutral-50 to-white" aria-labelledby="product-visual-heading">
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Text Content */}

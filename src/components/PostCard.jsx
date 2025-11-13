@@ -8,6 +8,9 @@ import CommentList from "./CommentList";
 export default function PostCard({ post }) {
   const { likePost, toggleSave } = useFeed();
   const [open, setOpen] = useState(false);
+  
+  // Image fallback: use post image if available, otherwise use placeholder
+  const imageUrl = post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
 
   return (
     <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
@@ -24,7 +27,19 @@ export default function PostCard({ post }) {
       </div>
 
       {/* Media */}
-      <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800" />
+      <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden">
+        {imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt={post.title || "Post image"}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // If image fails to load, hide it and show gradient background
+              e.target.style.display = 'none';
+            }}
+          />
+        )}
+      </div>
 
       {/* Body */}
       <div className="px-4 py-3">

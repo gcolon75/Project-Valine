@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Video, Eye, TrendingUp, Image, Mic, Users, Heart } from "lucide-react";
+import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart } from "lucide-react";
 import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
@@ -9,25 +9,6 @@ import EmptyState from "../components/EmptyState";
 import { Card, Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
-
-const StatCard = ({ icon: Icon, label, value, trend, trendUp }) => (
-  <Card padding="default" hover className="min-h-[140px]">
-    <div className="flex items-center justify-between mb-3">
-      <div className="w-12 h-12 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center shadow-sm">
-        <Icon className="w-6 h-6 text-white" aria-hidden="true" />
-      </div>
-      <span className={`text-sm font-semibold ${trendUp ? 'text-[#0CCE6B]' : 'text-red-500'}`} aria-label={`Trend: ${trend}`}>
-        {trend}
-      </span>
-    </div>
-    <p className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">
-      {value}
-    </p>
-    <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-      {label}
-    </p>
-  </Card>
-);
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -99,7 +80,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 max-w-7xl">
       <h1 className="sr-only">Dashboard</h1>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px] animate-fade-in">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] animate-fade-in">
           {/* LEFT COLUMN */}
           <aside className="hidden lg:block space-y-4">
             <Card padding="default">
@@ -122,36 +103,6 @@ export default function Dashboard() {
                 <div>
                   3.2k <span className="block text-xs text-neutral-500">Views</span>
                 </div>
-              </div>
-            </Card>
-
-            {/* Quick links */}
-            <Card title="Quick links" padding="default">
-              <div className="grid gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                <Link 
-                  className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded" 
-                  to="/profile"
-                >
-                  My Profile
-                </Link>
-                <Link 
-                  className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded" 
-                  to="/bookmarks"
-                >
-                  Bookmarks
-                </Link>
-                <Link 
-                  className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded" 
-                  to="/requests"
-                >
-                  Requests
-                </Link>
-                <Link 
-                  className="hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded" 
-                  to="/settings"
-                >
-                  Settings
-                </Link>
               </div>
             </Card>
 
@@ -199,57 +150,41 @@ export default function Dashboard() {
           </aside>
 
           {/* CENTER COLUMN */}
-          <section className="space-y-4">
+          <section className="space-y-4 lg:border-x lg:border-[#0CCE6B]/10 lg:px-4">
             <PostComposer />
 
-            {/* Stats Overview - Improved spacing and prominence */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              <StatCard
-                icon={Users}
-                label="Connections"
-                value="248"
-                trend="+12"
-                trendUp={true}
-              />
-              <StatCard
-                icon={Heart}
-                label="Total Likes"
-                value="1.2K"
-                trend="+45"
-                trendUp={true}
-              />
-              <StatCard
-                icon={Eye}
-                label="Profile Views"
-                value="3.4K"
-                trend="+8%"
-                trendUp={true}
-              />
-              <StatCard
-                icon={TrendingUp}
-                label="Engagement"
-                value="24.5%"
-                trend="+2.3%"
-                trendUp={true}
-              />
-            </div>
-
-            {/* Reels CTA Banner */}
+            {/* Stats Overview in Hero Bubble - Replaces "Check out Reels" CTA */}
             <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-6 sm:p-8 text-white animate-slide-up">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold mb-2">Check out Reels</h2>
-                  <p className="text-white/90">Short-form videos from artists in the community</p>
+              <h2 className="text-xl font-bold mb-6">Your Stats</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Users className="w-5 h-5 mr-2" aria-hidden="true" />
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold mb-1">248</p>
+                  <p className="text-sm text-white/90">Connections</p>
                 </div>
-                <Button
-                  as={Link}
-                  to="/reels"
-                  variant="secondary"
-                  startIcon={<Video className="w-5 h-5" />}
-                  className="!bg-white hover:!bg-neutral-100 !text-[#474747] whitespace-nowrap"
-                >
-                  Watch Reels
-                </Button>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Heart className="w-5 h-5 mr-2" aria-hidden="true" />
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold mb-1">1.2K</p>
+                  <p className="text-sm text-white/90">Total Likes</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Eye className="w-5 h-5 mr-2" aria-hidden="true" />
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold mb-1">3.4K</p>
+                  <p className="text-sm text-white/90">Profile Views</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <TrendingUp className="w-5 h-5 mr-2" aria-hidden="true" />
+                  </div>
+                  <p className="text-2xl md:text-3xl font-bold mb-1">24.5%</p>
+                  <p className="text-sm text-white/90">Engagement</p>
+                </div>
               </div>
             </div>
 
