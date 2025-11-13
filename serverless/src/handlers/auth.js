@@ -32,14 +32,6 @@ export const getUserFromEvent = getUserIdFromEvent;
 
 export const register = async (event) => {
   try {
-    // Check if registration is enabled
-    const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
-    
-    if (!ENABLE_REGISTRATION) {
-      console.log('Registration attempt blocked: ENABLE_REGISTRATION=false');
-      return error('Registration is currently disabled', 403, { event });
-    }
-
     const { email, password, username, displayName } = JSON.parse(event.body || '{}');
     
     if (!email || !password || !username || !displayName) {
@@ -50,6 +42,28 @@ export const register = async (event) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return error('Invalid email format', 400, { event });
+    }
+
+    // Check email allowlist first
+    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
+      .split(',')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+    
+    // If ENABLE_REGISTRATION is false, only allow registration for allowlisted emails
+    const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
+    
+    if (!ENABLE_REGISTRATION) {
+      // Registration disabled: only allow if email is in allowlist
+      if (allowedEmails.length === 0 || !allowedEmails.includes(email)) {
+        console.log(`Registration blocked: ENABLE_REGISTRATION=false and email ${email} not in allowlist`);
+        return error('Registration is currently disabled', 403, { event });
+      }
+      console.log(`Registration allowed for allowlisted email: ${email}`);
+    } else if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
+      // Registration enabled but allowlist exists: must be in allowlist
+      console.log(`Registration blocked: Email ${email} not in allowlist. Allowed: ${allowedEmails.join(', ')}`);
+      return error('Registration not permitted for this email address', 403, { event });
     }
 
     // Validate password length
