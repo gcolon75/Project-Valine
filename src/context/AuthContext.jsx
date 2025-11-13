@@ -7,11 +7,26 @@ const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
 
 const LS_KEY = "valine-demo-user";
+const DEV_USER_KEY = "devUserSession";
 const IS_DEV = import.meta.env.DEV;
 const AUTH_ENABLED = import.meta.env.VITE_ENABLE_AUTH === 'true';
+const DEV_BYPASS_ENABLED = import.meta.env.VITE_ENABLE_DEV_BYPASS === 'true';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    // Check for dev bypass session first (only on localhost)
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && DEV_BYPASS_ENABLED) {
+      const devUser = localStorage.getItem(DEV_USER_KEY);
+      if (devUser) {
+        try {
+          return JSON.parse(devUser);
+        } catch (e) {
+          console.error('Failed to parse dev user session:', e);
+        }
+      }
+    }
+    
+    // Otherwise check normal user session
     const raw = localStorage.getItem(LS_KEY);
     return raw ? JSON.parse(raw) : null;
   });
@@ -56,23 +71,8 @@ export function AuthProvider({ children }) {
   const login = async (email, password, role = "artist") => {
     setLoading(true);
     try {
-      // Try API login with fallback to demo mode
-      const data = await apiFallback(
-        () => authService.login(email, password),
-        {
-          user: {
-            id: crypto.randomUUID?.() || String(Date.now()),
-            email,
-            role,
-            name: role === "artist" ? "Demo Artist" : "Demo Observer",
-            displayName: role === "artist" ? "Demo Artist" : "Demo Observer",
-            username: email.split('@')[0],
-            profileComplete: false
-          },
-          token: 'demo-token'
-        },
-        'AuthContext.login'
-      );
+      // Call API login directly - errors should be handled by the caller
+      const data = await authService.login(email, password);
       
       setUser(data.user);
       
@@ -81,8 +81,17 @@ export function AuthProvider({ children }) {
       
       return data.user;
     } catch (error) {
+      // Log diagnostic info
+      console.error('[AuthContext.login] Login failed:', {
+        status: error.response?.status,
+        message: error.message,
+        code: error.code
+      });
+      
       // Track failed login
       trackLogin('password', false);
+      
+      // Re-throw error so UI can handle it (don't swallow with fallback)
       throw error;
     } finally {
       setLoading(false);
@@ -127,6 +136,9 @@ export function AuthProvider({ children }) {
       await authService.logout();
       setUser(null);
       
+      // Clear dev bypass session if exists
+      localStorage.removeItem(DEV_USER_KEY);
+      
       // Track logout
       trackLogout();
     } finally {
@@ -138,7 +150,40 @@ export function AuthProvider({ children }) {
     setUser((prev) => ({ ...prev, ...updates }));
   };
 
-  // Dev-only bypass function
+  // Dev Bypass function - localhost only, explicit flag required
+  const devBypass = () => {
+    // Triple-gate security check
+    if (typeof window === 'undefined' || window.location.hostname !== 'localhost') {
+      console.warn('[devBypass] Only available on localhost');
+      return;
+    }
+    
+    if (!DEV_BYPASS_ENABLED) {
+      console.warn('[devBypass] VITE_ENABLE_DEV_BYPASS must be "true"');
+      return;
+    }
+    
+    const devUser = {
+      id: 'dev-user',
+      email: 'dev@local',
+      username: 'dev-bypass',
+      displayName: 'Dev Bypass User',
+      name: 'Dev Bypass User',
+      role: 'artist',
+      onboardingComplete: true,
+      profileComplete: true,
+      emailVerified: true,
+      roles: ['DEV_BYPASS'], // Special role to show banner
+      avatar: 'https://i.pravatar.cc/150?img=68'
+    };
+    
+    setUser(devUser);
+    localStorage.setItem(DEV_USER_KEY, JSON.stringify(devUser));
+    console.log('[devBypass] Dev session activated - NO REAL AUTH');
+    return devUser;
+  };
+
+  // Legacy dev login (kept for backward compatibility but now calls devBypass)
   const devLogin = () => {
     // Only allow dev login if auth is not enforced and we're in dev mode
     if (AUTH_ENABLED) {
@@ -149,6 +194,11 @@ export function AuthProvider({ children }) {
     if (!IS_DEV) {
       console.warn('Dev login is only available in development mode');
       return;
+    }
+    
+    // Use the new devBypass function if available
+    if (DEV_BYPASS_ENABLED) {
+      return devBypass();
     }
     
     const demoUser = {
@@ -177,6 +227,7 @@ export function AuthProvider({ children }) {
       logout, 
       updateUser,
       devLogin: (IS_DEV && !AUTH_ENABLED) ? devLogin : undefined,
+      devBypass: (DEV_BYPASS_ENABLED && typeof window !== 'undefined' && window.location?.hostname === 'localhost') ? devBypass : undefined,
       isAuthenticated: !!user,
       authEnabled: AUTH_ENABLED
     }}>
