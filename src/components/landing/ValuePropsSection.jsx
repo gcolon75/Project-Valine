@@ -9,7 +9,7 @@ const ValuePropsSection = () => {
             Empowering voice actors and creative artists
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Project Valine is a professional networking platform designed specifically for the voice acting community.
+            Joint is a professional networking platform designed specifically for the voice acting community.
           </p>
         </div>
         
