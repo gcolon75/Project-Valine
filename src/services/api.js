@@ -60,15 +60,24 @@ const getCsrfToken = () => {
   return null;
 };
 
-// Request interceptor - add auth token and CSRF protection
+// Request interceptor - add auth token, CSRF protection, and path normalization
 apiClient.interceptors.request.use((config) => {
   // Add Authorization header for backward compatibility (when not using cookies)
   const enableAuth = import.meta.env.VITE_ENABLE_AUTH === 'true';
   const csrfEnabled = import.meta.env.VITE_CSRF_ENABLED === 'true';
+  const stripLegacyPrefix = import.meta.env.VITE_API_STRIP_LEGACY_API_PREFIX === 'true';
   
   if (!enableAuth) {
     const token = localStorage.getItem('auth_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Strip legacy /api prefix if enabled
+  if (stripLegacyPrefix && config.url && config.url.startsWith('/api/')) {
+    config.url = config.url.substring(4); // Remove '/api' prefix
+    if (import.meta.env.DEV) {
+      console.log(`[API Client] Stripped /api prefix: ${config.url}`);
+    }
   }
   
   // Add CSRF protection for state-changing requests
@@ -134,11 +143,24 @@ apiClient.interceptors.response.use(
     
     // Log failed requests for debugging
     if (import.meta.env.DEV) {
+      // Enhanced diagnostics for network errors
+      if (error.code === 'ERR_NETWORK' && !error.response) {
+        const fullUrl = config?.baseURL + (config?.url || '');
+        console.warn(
+          `[API Client] Network Error - DNS or connection failed.\n` +
+          `  Attempted URL: ${fullUrl}\n` +
+          `  Check VITE_API_BASE (current: ${import.meta.env.VITE_API_BASE || 'not set'})\n` +
+          `  Tip: Ensure API Gateway URL is correct or start local backend.`
+        );
+      }
+      
       console.error('[API Client] Request failed:', {
         method: config?.method,
         url: config?.url,
+        fullUrl: config?.baseURL + (config?.url || ''),
         status: error.response?.status,
         message: error.message,
+        code: error.code,
         retries: config._retryCount
       });
     }

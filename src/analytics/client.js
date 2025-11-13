@@ -122,8 +122,25 @@ export function shouldShowConsentBanner() {
  * Load analytics configuration from backend
  */
 async function loadConfig() {
+  // Check if analytics is enabled via environment variable
+  const analyticsEnabled = import.meta.env.VITE_ANALYTICS_ENABLED === 'true';
+  
+  if (!analyticsEnabled) {
+    if (import.meta.env.DEV) {
+      console.log('[Analytics] Analytics disabled via VITE_ANALYTICS_ENABLED flag');
+    }
+    analyticsConfig = {
+      enabled: false,
+      requireConsent: true,
+      allowedEvents: [],
+      samplingRate: 1.0,
+      consentCookie: 'analytics_consent'
+    };
+    return;
+  }
+  
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const apiUrl = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
     const response = await fetch(`${apiUrl}/analytics/config`, {
       method: 'GET',
       credentials: 'include'
