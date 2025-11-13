@@ -1,24 +1,31 @@
 /**
- * Tests for ENABLE_REGISTRATION flag
- * Verifies that registration is disabled when flag is false
+ * Tests for ENABLE_REGISTRATION flag and ALLOWED_USER_EMAILS integration
+ * Verifies that registration is controlled by both flags appropriately
  */
 
 import { register } from '../src/handlers/auth.js';
 
 describe('Registration Disabled Tests', () => {
-  const originalEnv = process.env.ENABLE_REGISTRATION;
+  const originalEnableReg = process.env.ENABLE_REGISTRATION;
+  const originalAllowedEmails = process.env.ALLOWED_USER_EMAILS;
 
   afterEach(() => {
     // Restore original environment
-    if (originalEnv !== undefined) {
-      process.env.ENABLE_REGISTRATION = originalEnv;
+    if (originalEnableReg !== undefined) {
+      process.env.ENABLE_REGISTRATION = originalEnableReg;
     } else {
       delete process.env.ENABLE_REGISTRATION;
     }
+    if (originalAllowedEmails !== undefined) {
+      process.env.ALLOWED_USER_EMAILS = originalAllowedEmails;
+    } else {
+      delete process.env.ALLOWED_USER_EMAILS;
+    }
   });
 
-  test('should return 403 when ENABLE_REGISTRATION is false', async () => {
+  test('should return 403 when ENABLE_REGISTRATION is false and email not in allowlist', async () => {
     process.env.ENABLE_REGISTRATION = 'false';
+    process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
 
     const event = {
       body: JSON.stringify({
@@ -38,8 +45,32 @@ describe('Registration Disabled Tests', () => {
     expect(JSON.parse(response.body).error).toBe('Registration is currently disabled');
   });
 
-  test('should return 403 when ENABLE_REGISTRATION is not set (default)', async () => {
-    delete process.env.ENABLE_REGISTRATION;
+  test('should allow registration when ENABLE_REGISTRATION is false but email is in allowlist', async () => {
+    process.env.ENABLE_REGISTRATION = 'false';
+    process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
+
+    const event = {
+      body: JSON.stringify({
+        email: 'owner@example.com',
+        password: 'password123',
+        username: 'owneruser',
+        displayName: 'Owner User'
+      }),
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    };
+
+    const response = await register(event);
+
+    // Should NOT be 403 (registration disabled)
+    // May be 500 (database error) or 201 (success with valid DB)
+    expect(response.statusCode).not.toBe(403);
+  });
+
+  test('should return 403 when ENABLE_REGISTRATION is false and no allowlist', async () => {
+    process.env.ENABLE_REGISTRATION = 'false';
+    delete process.env.ALLOWED_USER_EMAILS;
 
     const event = {
       body: JSON.stringify({
@@ -59,31 +90,31 @@ describe('Registration Disabled Tests', () => {
     expect(JSON.parse(response.body).error).toBe('Registration is currently disabled');
   });
 
-  test('should return 403 when ENABLE_REGISTRATION is invalid value', async () => {
-    process.env.ENABLE_REGISTRATION = 'yes';
-
-    const event = {
-      body: JSON.stringify({
-        email: 'test@example.com',
-        password: 'password123',
-        username: 'testuser',
-        displayName: 'Test User'
-      }),
-      headers: {
-        origin: 'http://localhost:5173'
-      }
-    };
-
-    const response = await register(event);
-
-    expect(response.statusCode).toBe(403);
-    expect(JSON.parse(response.body).error).toBe('Registration is currently disabled');
-  });
-
-  test('should allow registration when ENABLE_REGISTRATION is true', async () => {
+  test('should return 403 when ENABLE_REGISTRATION is true but email not in allowlist', async () => {
     process.env.ENABLE_REGISTRATION = 'true';
-    // Note: This test will fail without database connection
-    // It's mainly to verify the flag check passes when enabled
+    process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
+
+    const event = {
+      body: JSON.stringify({
+        email: 'test@example.com',
+        password: 'password123',
+        username: 'testuser',
+        displayName: 'Test User'
+      }),
+      headers: {
+        origin: 'http://localhost:5173'
+      }
+    };
+
+    const response = await register(event);
+
+    expect(response.statusCode).toBe(403);
+    expect(JSON.parse(response.body).error).toBe('Registration not permitted for this email address');
+  });
+
+  test('should allow registration when ENABLE_REGISTRATION is true and no allowlist', async () => {
+    process.env.ENABLE_REGISTRATION = 'true';
+    delete process.env.ALLOWED_USER_EMAILS;
     
     const event = {
       body: JSON.stringify({

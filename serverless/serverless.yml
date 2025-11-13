@@ -25,10 +25,10 @@ provider:
     SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
     SYNTHETIC_USE_REAL_REQUESTS: ${env:SYNTHETIC_USE_REAL_REQUESTS, "true"}
     OBSERVABILITY_ENABLED: ${env:OBSERVABILITY_ENABLED, "true"}
-    API_BASE_URL: ${env:API_BASE_URL, "http://localhost:3000"}
-    FRONTEND_URL: ${env:FRONTEND_URL, "http://localhost:5173"}
-    NODE_ENV: ${env:NODE_ENV, "development"}
-    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, ""}
+    API_BASE_URL: ${env:API_BASE_URL, "https://dkmxy676d3vgc.cloudfront.net/api"}
+    FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
+    NODE_ENV: ${env:NODE_ENV, "production"}
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, "dkmxy676d3vgc.cloudfront.net"}
     REDIS_URL: ${env:REDIS_URL, ""}
     RATE_LIMITING_ENABLED: ${env:RATE_LIMITING_ENABLED, "true"}
     MODERATION_ENABLED: ${env:MODERATION_ENABLED, "false"}

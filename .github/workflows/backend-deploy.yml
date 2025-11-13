@@ -21,6 +21,11 @@ jobs:
       - run: npm i -g serverless@3
       - run: serverless -v
       - run: ls -la && ls -la serverless
+      - name: Install dependencies and generate Prisma client
+        working-directory: serverless
+        run: |
+          npm ci
+          npx prisma generate
       - name: Deploy
         working-directory: serverless
         run: serverless deploy --stage prod --region us-west-2 --verbose
