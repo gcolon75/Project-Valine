@@ -1,0 +1,21 @@
+# 1) Set the secrets in THIS shell for the deploy step
+$Env:DATABASE_URL = '<paste your Postgres connection URL>'
+$Env:JWT_SECRET   = '<paste your JWT secret>'
+
+# 2) Ensure dependencies and generate Prisma client (you already did this; harmless to re-run)
+npm ci
+npx prisma generate
+
+# 3) Optional: package and verify Prisma is included
+npx serverless package --stage prod
+
+# Verify the login function artifact contains Prisma client and engines
+$zip = Get-ChildItem .serverless\*.zip | Where-Object { $_.Name -like '*login*' } | Select-Object -First 1
+$dest = Join-Path $env:TEMP "pv-login-unpacked"
+if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+Expand-Archive -Path $zip.FullName -DestinationPath $dest
+Get-ChildItem -Recurse (Join-Path $dest 'node_modules\@prisma\client') | Select-Object -First 5
+Get-ChildItem -Recurse (Join-Path $dest 'node_modules\.prisma\client') | Select-Object -First 5
+
+# 4) Deploy
+npx serverless deploy --stage prod
