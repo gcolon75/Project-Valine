@@ -20,6 +20,8 @@ const LoginPageSkeleton = lazy(() => import("../pages/LoginPage"));
 const VerifyEmailPage = lazy(() => import("../pages/VerifyEmail"));
 const ForgotPasswordPage = lazy(() => import("../pages/ForgotPassword"));
 const ResetPasswordPage = lazy(() => import("../pages/ResetPassword"));
+// Add near the other lazy pages at the top:
+const OnboardingPage = lazy(() => import("../pages/Onboarding"));
 
 /* Legal pages */
 const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicy"));
@@ -97,6 +99,7 @@ export default function App() {
 
         {/* Auth flows - standalone pages without layout */}
         <Route path="verify-email" element={<VerifyEmailPage />} />
+        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
 

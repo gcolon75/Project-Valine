@@ -8,13 +8,18 @@ import { isValidEmail } from '../utils/validation';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, devLogin, loading } = useAuth();
+  const { login, devLogin, devBypass, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+
+  // Check if dev bypass should be shown (localhost + env flag)
+  const showDevBypass = typeof window !== 'undefined' && 
+                        window.location.hostname === 'localhost' && 
+                        import.meta.env.VITE_ENABLE_DEV_BYPASS === 'true';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +88,16 @@ const Login = () => {
     }
   };
 
-  // DEV BYPASS - Only available in development mode
+  // DEV BYPASS - Only available on localhost when VITE_ENABLE_DEV_BYPASS=true
+  const handleDevBypass = () => {
+    if (devBypass) {
+      devBypass();
+      toast.success('🚀 Dev Bypass Activated - NO REAL AUTH');
+      navigate('/dashboard');
+    }
+  };
+
+  // Legacy DEV LOGIN - For backward compatibility
   const handleDevLogin = () => {
     if (devLogin) {
       devLogin();
@@ -236,8 +250,24 @@ const Login = () => {
             </button>
           </form>
 
-          {/* DEV MODE BUTTON */}
-          {import.meta.env.DEV && (
+          {/* DEV BYPASS BUTTON - Only on localhost with VITE_ENABLE_DEV_BYPASS=true */}
+          {showDevBypass && (
+            <div className="mt-6 pt-6 border-t border-neutral-200">
+              <button
+                onClick={handleDevBypass}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
+              >
+                <Code className="w-5 h-5" />
+                <span>Dev Bypass</span>
+              </button>
+              <p className="text-xs text-neutral-500 text-center mt-2">
+                ⚠️ Localhost only - No real authentication
+              </p>
+            </div>
+          )}
+
+          {/* Legacy DEV MODE BUTTON - For backward compatibility when auth disabled */}
+          {!showDevBypass && import.meta.env.DEV && devLogin && (
             <div className="mt-6 pt-6 border-t border-neutral-200">
               <button
                 onClick={handleDevLogin}
