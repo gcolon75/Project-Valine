@@ -40,7 +40,6 @@ export const register = async (event) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!ENABLE_REGISTRATION) {
-      // Global registration disabled: only allow if allowlisted
       if (allowedEmails.length === 0 || !allowedEmails.includes(normalizedEmail)) {
         console.log(`Registration blocked: ENABLE_REGISTRATION=false; ${normalizedEmail} not allowlisted`);
         return error('Registration is currently disabled', 403, { event });
