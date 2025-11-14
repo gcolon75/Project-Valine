@@ -53,6 +53,7 @@ export const register = async (event) => {
     }
 
     // Allowlist + registration gating
+        // POST-auth allowlist
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
