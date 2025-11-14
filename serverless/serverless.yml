@@ -10,6 +10,7 @@ provider:
     cors:
       allowedOrigins:
         - https://dkmxy676d3vgc.cloudfront.net
+        # Optional for local dev preflights (does not affect prod site):
         - http://localhost:5173
       allowedHeaders:
         - Content-Type
