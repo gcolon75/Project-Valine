@@ -87,6 +87,9 @@ custom:
       - aws-sdk
       - '@prisma/client'
       - '.prisma/client'
+    exclude:                    # ← ADD THIS
+      - '@prisma/client'        # ← ADD THIS
+      - '.prisma/client'        # ← ADD THIS
     keepOutputDirectory: true
 
 layers:
