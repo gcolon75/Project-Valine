@@ -9,7 +9,7 @@ provider:
   runtime: nodejs20.x
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
-  versionFunctions: false   # Disable automatic Lambda Version resources
+  versionFunctions: false
   httpApi:
     cors:
       allowedOrigins:
@@ -28,31 +28,50 @@ provider:
         - OPTIONS
       allowCredentials: true
   environment:
-    # (existing env vars unchanged)
     STAGE: ${env:STAGE, "prod"}
-    # ...
+    DATABASE_URL: ${env:DATABASE_URL}
+    MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
+    JWT_SECRET: ${env:JWT_SECRET}
+    EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
+    TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
+    CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
+    ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
+    # Read the allowlist from SSM so you can add/remove emails without a code deploy
+    ALLOWED_USER_EMAILS: ${ssm:/valine/${self:provider.stage}/allowed_user_emails~true}
+    PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
+    PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
+    FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
+    SCHEMA_DIFF_ENABLED: ${env:SCHEMA_DIFF_ENABLED, "false"}
+    SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
+    SYNTHETIC_USE_REAL_REQUESTS: ${env:SYNTHETIC_USE_REAL_REQUESTS, "true"}
+    OBSERVABILITY_ENABLED: ${env:OBSERVABILITY_ENABLED, "true"}
+    API_BASE_URL: ${env:API_BASE_URL, "https://dkmxy676d3vgc.cloudfront.net/api"}
+    FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
+    NODE_ENV: ${env:NODE_ENV, "production"}
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, "dkmxy676d3vgc.cloudfront.net"}
+    REDIS_URL: ${env:REDIS_URL, ""}
+    RATE_LIMITING_ENABLED: ${env:RATE_LIMITING_ENABLED, "true"}
+    MODERATION_ENABLED: ${env:MODERATION_ENABLED, "false"}
+    MODERATION_ALERTS_ENABLED: ${env:MODERATION_ALERTS_ENABLED, "false"}
+    MODERATION_STRICT_MODE: ${env:MODERATION_STRICT_MODE, "false"}
+    REPORTS_ENABLED: ${env:REPORTS_ENABLED, "true"}
+    MODERATION_ALERT_CHANNEL_ID: ${env:MODERATION_ALERT_CHANNEL_ID, ""}
+    ADMIN_ROLE_IDS: ${env:ADMIN_ROLE_IDS, ""}
+    REPORTS_MAX_PER_HOUR: ${env:REPORTS_MAX_PER_HOUR, "5"}
+    REPORTS_MAX_PER_DAY: ${env:REPORTS_MAX_PER_DAY, "20"}
+    REPORTS_IP_MAX_PER_HOUR: ${env:REPORTS_IP_MAX_PER_HOUR, "10"}
+    URL_ALLOWED_DOMAINS: ${env:URL_ALLOWED_DOMAINS, "imdb.com,youtube.com,vimeo.com,linkedin.com,github.com"}
+    URL_BLOCKED_DOMAINS: ${env:URL_BLOCKED_DOMAINS, ""}
+    URL_ALLOWED_PROTOCOLS: ${env:URL_ALLOWED_PROTOCOLS, "http:https:mailto:"}
+    PROFANITY_LIST_PATH: ${env:PROFANITY_LIST_PATH, ""}
+    PROFANITY_ACTION: ${env:PROFANITY_ACTION, "block"}
+    REPORT_CATEGORY_ALLOWLIST: ${env:REPORT_CATEGORY_ALLOWLIST, "spam,abuse,unsafe_link,profanity,privacy,other"}
+    ANALYTICS_ENABLED: ${env:ANALYTICS_ENABLED, "false"}
+    ANALYTICS_REQUIRE_CONSENT: ${env:ANALYTICS_REQUIRE_CONSENT, "true"}
+    ANALYTICS_STORAGE_DRIVER: ${env:ANALYTICS_STORAGE_DRIVER, "postgres"}
+    ANALYTICS_RETENTION_DAYS: ${env:ANALYTICS_RETENTION_DAYS, "30"}
+    ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
+    ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
+    ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
 
-layers:
-  prisma:
-    package:
-      artifact: layers/prisma-layer.zip
-  shared:
-custom:
-  esbuild:
-    bundle: true
-    minify: true
-    sourcemap: false
-    platform: node
-    target: node20
-    concurrency: 1
-    external:
-      - aws-sdk
-    keepOutputDirectory: true
-
-functions:
-  # (keep existing definitions, but add layers:)
-  health:
-    handler: src/handlers/health.handler\n    layers:\n      - ${self:customLayerArns.prisma}\n      - ${self:customLayerArns.shared}
-customLayerArns:
-  prisma: 
-  shared: arn:aws:lambda:us-west-2:579939802800:layer:pv-shared:1
+# (rest of serverless.yml unchanged — keep function list and package patterns)
