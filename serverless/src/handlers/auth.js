@@ -47,25 +47,23 @@ function redactEmail(e) {
 
 /**
  * Attach Set-Cookie headers to response.
- * AWS HTTP API: multiValueHeaders not used; supply array under "cookies" OR combine in headers.
- * We use "cookies" array for clarity; if your integration expects headers['Set-Cookie'] adjust accordingly.
+ * AWS HTTP API: use "cookies" array for multiple Set-Cookie values.
  */
 function response(statusCode, bodyObj, cookieHeaders = []) {
   return {
     statusCode,
     headers: buildHeaders({ 'Content-Type': 'application/json' }),
-    cookies: cookieHeaders, // Each element is a full Set-Cookie string
+    cookies: cookieHeaders,
     body: JSON.stringify(bodyObj)
   };
 }
 
 /* ---------------------- LOGIN ---------------------- */
 
-export async function login(event) {
+async function login(event) {
   const start = nowSeconds();
   try {
-    // Basic rate limiting (optional)
-    const rlResult = await rateLimit(event, 'login', 10, 60); // 10 attempts / 60s
+    const rlResult = await rateLimit(event, 'login', 10, 60);
     if (!rlResult.allowed) {
       console.warn('[LOGIN] Rate limit exceeded');
       return error(429, 'Too many login attempts');
@@ -113,7 +111,6 @@ export async function login(event) {
       return error(401, 'Invalid credentials');
     }
 
-    // Optional 2FA flow
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
         console.warn('[LOGIN] 2FA required but code missing');
@@ -129,11 +126,8 @@ export async function login(event) {
       }
     }
 
-    // Tokens
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
-
-    // CSRF token (for subsequent state-changing requests)
     const csrfToken = generateCsrfToken();
 
     const cookies = [
@@ -162,11 +156,8 @@ export async function login(event) {
 }
 
 /* ---------------------- REGISTER ---------------------- */
-/**
- * Registration logic honoring ALLOWED_USER_EMAILS env variable.
- * If ALLOWED_USER_EMAILS is set (comma-separated), only those emails may register.
- */
-export async function register(event) {
+
+async function register(event) {
   try {
     const rawBody = event?.body || '';
     console.log(`[REGISTER] Raw body length: ${rawBody.length}`);
@@ -226,9 +217,9 @@ export async function register(event) {
   }
 }
 
-/* ---------------------- ME (fetch user from access token) ---------------------- */
+/* ---------------------- ME ---------------------- */
 
-export async function me(event) {
+async function me(event) {
   try {
     const userId = getUserIdFromEvent(event);
     if (!userId) {
@@ -253,11 +244,11 @@ export async function me(event) {
   }
 }
 
-/* ---------------------- REFRESH TOKEN ---------------------- */
+/* ---------------------- REFRESH ---------------------- */
 
-export async function refresh(event) {
+async function refresh(event) {
   try {
-    const refresh = extractToken(event, 'refresh'); // depends on implementation
+    const refresh = extractToken(event, 'refresh');
     if (!refresh) {
       return error(401, 'Missing refresh token');
     }
@@ -284,10 +275,10 @@ export async function refresh(event) {
 
 /* ---------------------- LOGOUT ---------------------- */
 
-export async function logout(_event) {
+async function logout(_event) {
   try {
     const cookies = [
-      ...generateClearCookieHeaders(), // clears access & refresh
+      ...generateClearCookieHeaders(),
       clearCsrfCookie()
     ];
     return response(200, { ok: true }, cookies);
@@ -299,7 +290,7 @@ export async function logout(_event) {
 
 /* ---------------------- ENABLE 2FA ---------------------- */
 
-export async function enable2fa(event) {
+async function enable2fa(event) {
   try {
     const userId = getUserIdFromEvent(event);
     if (!userId) return error(401, 'Unauthorized');
@@ -313,7 +304,6 @@ export async function enable2fa(event) {
     }
 
     const secret = authenticator.generateSecret();
-    // Usually you'd store secret temporarily until verified; for simplicity:
     await prisma.user.update({
       where: { id: user.id },
       data: { twoFactorSecret: secret }
@@ -330,9 +320,9 @@ export async function enable2fa(event) {
   }
 }
 
-/* ---------------------- VERIFY 2FA (finalize enabling) ---------------------- */
+/* ---------------------- VERIFY 2FA ---------------------- */
 
-export async function verify2fa(event) {
+async function verify2fa(event) {
   try {
     const userId = getUserIdFromEvent(event);
     if (!userId) return error(401, 'Unauthorized');
@@ -376,7 +366,6 @@ export async function verify2fa(event) {
 /* ---------------------- EXPORT ALL ---------------------- */
 
 export {
-  // already exported individually above, but ensure they are all accessible
   login,
   register,
   me,
