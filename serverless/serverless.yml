@@ -10,6 +10,8 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   versionFunctions: false
+  layers:
+    - { Ref: PrismaLambdaLayer }
   httpApi:
     cors:
       allowedOrigins:
@@ -86,30 +88,21 @@ custom:
       - '@prisma/client'
       - '.prisma/client'
     packager: npm
-    packagePath: ../package.json    # <- use root package.json (important)
+    packagePath: ../package.json
     keepOutputDirectory: true
 
 layers:
   prisma:
-    path: layers/prisma
-    description: Prisma Client with native binaries for Lambda
-    compatibleRuntimes:
-      - nodejs20.x
-    retain: false
+    package:
+      artifact: layers/prisma-layer.zip
   shared:
-    path: layers/shared
-    description: Shared utilities layer
-    compatibleRuntimes:
-      - nodejs20.x
-    retain: false
+    package:
+      artifact: layers/shared-layer.zip
 
 package:
   individually: true
   excludeDevDependencies: true
   patterns:
-    - .esbuild/.build/**
-    - package.json
-    - '!node_modules/**'
     - '!**/*.map'
     - '!**/tests/**'
     - '!**/__tests__/**'
@@ -118,7 +111,6 @@ package:
     - '!**/.vscode/**'
 
 functions:
-  # (keep all function definitions as they already are in your repo)
   health:
     handler: src/handlers/health.handler
     events:
