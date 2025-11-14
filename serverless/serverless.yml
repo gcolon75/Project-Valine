@@ -24,7 +24,7 @@ package:
     - .esbuild/.build/**
     - package.json
     - prisma/schema.prisma
-    - node_modules/.prisma/client/**
+    - node_modules/@prisma/client/**
     - node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node
     - '!node_modules/.prisma/client/*windows*'
     - '!node_modules/.prisma/client/*darwin*'
