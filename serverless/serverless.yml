@@ -10,6 +10,8 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   versionFunctions: false
+  layers:
+    - { Ref: PrismaLambdaLayer }
   httpApi:
     cors:
       allowedOrigins:
@@ -72,6 +74,15 @@ provider:
     ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
+
+layers:
+  prisma:
+    path: layers/prisma
+    name: ${self:service}-prisma-${self:provider.stage}
+    description: Prisma Client with native binaries for Lambda
+    compatibleRuntimes:
+      - nodejs20.x
+    retain: false
 
 custom:
   esbuild:
