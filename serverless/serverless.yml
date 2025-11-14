@@ -50,6 +50,10 @@ custom:
     concurrency: 1
     external:
       - aws-sdk
+      - '@prisma/client'
+      - '.prisma/client'
+    packager: npm
+    packagePath: package.json
     keepOutputDirectory: true
 
 package:
@@ -59,6 +63,8 @@ package:
     - .esbuild/.build/**
     - package.json
     - prisma/schema.prisma
+    - node_modules/.prisma/client/**
+    - node_modules/@prisma/client/**
     - '!**/*.map'
     - '!**/tests/**'
     - '!**/__tests__/**'
@@ -75,17 +81,8 @@ package:
     - '!node_modules/@prisma/client/runtime/query_compiler_bg.*.wasm.*'
 
 functions:
-  # (keep existing definitions, but add layers:)
   health:
-    handler: src/handlers/health.handler\n    layers:\n      - ${self:customLayerArns.prisma}\n      - ${self:customLayerArns.shared}
-    layers:
-      - { Ref: PrismaLambdaLayer }    # CloudFormation logical name from layer publish
-      - { Ref: SharedLambdaLayer }
-  # (repeat layers list for each function or define a variable & YAML anchor)
-
-functions:
-  health:
-    handler: src/handlers/health.handler\n    layers:\n      - ${self:customLayerArns.prisma}\n      - ${self:customLayerArns.shared}
+    handler: src/handlers/health.handler
     events:
       - httpApi:
           path: /health
