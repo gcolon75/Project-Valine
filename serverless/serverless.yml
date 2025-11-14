@@ -1,7 +1,6 @@
 service: pv-api
 frameworkVersion: "3"
 
-# Plugins MUST be top-level (not nested inside provider)
 plugins:
   - serverless-esbuild
 
@@ -104,79 +103,49 @@ provider:
     REPORT_CATEGORY_ALLOWLIST: ${env:REPORT_CATEGORY_ALLOWLIST, "spam,abuse,unsafe_link,profanity,privacy,other"}
     ANALYTICS_ENABLED: ${env:ANALYTICS_ENABLED, "false"}
     ANALYTICS_REQUIRE_CONSENT: ${env:ANALYTICS_REQUIRE_CONSENT, "true"}
-    ANALYTICS_PERSIST_ENABLED: ${env:ANALYTICS_PERSIST_ENABLED, "true"}
     ANALYTICS_STORAGE_DRIVER: ${env:ANALYTICS_STORAGE_DRIVER, "postgres"}
     ANALYTICS_RETENTION_DAYS: ${env:ANALYTICS_RETENTION_DAYS, "30"}
     ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
 
-# Slim packaging; esbuild will bundle handlers, we still include node_modules for external deps (e.g. @prisma/client).
-package:
-  individually: true
-  excludeDevDependencies: true
-  patterns:
-    - src/**                # handler code
-    - package.json
-    - node_modules/**       # production + external prisma client
-    # Exclusions to keep size down:
-    - '!**/*.md'
-    - '!docs/**'
-    - '!tests/**'
-    - '!test/**'
-    - '!orchestrator/**'
-    - '!infra/**'
-    - '!public/**'
-    - '!scripts/**'
-    - '!sanity/**'
-    - '!**/.git/**'
-    - '!**/.github/**'
-
 functions:
-  # Health & Meta endpoints
   health:
     handler: src/handlers/health.handler
     events:
       - httpApi:
           path: /health
           method: get
-
   meta:
     handler: src/handlers/meta.handler
     events:
       - httpApi:
           path: /meta
           method: get
-
-  # Authentication endpoints
   register:
     handler: src/handlers/auth.register
     events:
       - httpApi:
           path: /auth/register
           method: post
-
   login:
     handler: src/handlers/auth.login
     events:
       - httpApi:
           path: /auth/login
           method: post
-
   me:
     handler: src/handlers/auth.me
     events:
       - httpApi:
           path: /auth/me
           method: get
-
   verifyEmail:
     handler: src/handlers/auth.verifyEmail
     events:
       - httpApi:
           path: /auth/verify-email
           method: post
-
   resendVerification:
     handler: src/handlers/auth.resendVerification
     events:
@@ -707,3 +676,6 @@ functions:
       - httpApi:
           path: /analytics/events/cleanup
           method: delete
+
+plugins:
+  - serverless-esbuild
