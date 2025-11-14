@@ -39,9 +39,17 @@ export const getUserFromEvent = getUserIdFromEvent;
 /* ============================= REGISTER ============================= */
 
 export const register = async (event) => {
+  let payload;
   try {
-    const { email, password, username, displayName } = JSON.parse(event.body || '{}');
-    
+    payload = JSON.parse(event.body || '{}');
+  } catch (parseErr) {
+    console.error('[REGISTER] JSON parse error. Raw body:', event.body);
+    return error('Invalid JSON payload', 400, { event });
+  }
+
+  const { email, password, username, displayName } = payload;
+
+  try {
     if (!email || !password || !username || !displayName) {
       return error('email, password, username, and displayName are required', 400, { event });
     }
@@ -53,18 +61,10 @@ export const register = async (event) => {
     }
 
     // Allowlist + registration gating
-        // POST-auth allowlist
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
       .filter(e => e.length > 0);
-
-    const userEmailNormalized = user.email.toLowerCase();
-
-    if (allowedEmails.length > 0 && !allowedEmails.includes(userEmailNormalized)) {
-      console.log(`Login blocked (allowlist mismatch): ${user.email}`);
-      return error('Account not authorized for access', 403, { event });
-    }
 
     const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
     const normalizedEmail = email.toLowerCase().trim();
@@ -87,12 +87,13 @@ export const register = async (event) => {
     }
 
     const prisma = getPrisma();
-    
+
     // Check if user already exists (by email or username)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
           { email },
+          { normalizedEmail },
           { username }
         ]
       }
@@ -104,7 +105,7 @@ export const register = async (event) => {
 
     // Create user
     const hashedPassword = await hashPassword(password);
-    
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -177,17 +178,38 @@ export const register = async (event) => {
 /* ============================= LOGIN ============================= */
 
 export const login = async (event) => {
-  try {
-    const { email, password } = JSON.parse(event.body || '{}');
-    
-    if (!email || !password) {
-      return error('email and password are required', 400, { event });
-    }
+  const rawBody = event.body || '';
+  console.log('[LOGIN] Raw body length:', rawBody.length, 'body snippet:', rawBody.substring(0, 120));
 
+  // Safe JSON parse
+  let parsed;
+  try {
+    parsed = JSON.parse(rawBody || '{}');
+  } catch (parseErr) {
+    console.error('[LOGIN] JSON parse error. Raw body:', rawBody);
+    return error('Invalid JSON payload', 400, { event });
+  }
+
+  let { email, password } = parsed;
+
+  if (!email || !password) {
+    return error('email and password are required', 400, { event });
+  }
+
+  email = email.trim().toLowerCase();
+  password = password.trim();
+
+  try {
     const prisma = getPrisma();
-    
+
+    // Allow lookup by either stored email or normalizedEmail
     const user = await prisma.user.findFirst({
-      where: { email },
+      where: {
+        OR: [
+          { email },
+          { normalizedEmail: email }
+        ]
+      },
       select: {
         id: true,
         username: true,
@@ -213,13 +235,15 @@ export const login = async (event) => {
       return error('Invalid email or password', 401, { event });
     }
 
-    // POST-auth allowlist
+    // Allowlist enforcement
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
       .split(',')
-      .map(e => e.trim())
+      .map(e => e.trim().toLowerCase())
       .filter(e => e.length > 0);
 
-    if (allowedEmails.length > 0 && !allowedEmails.includes(user.email)) {
+    const userEmailNormalized = user.email.toLowerCase();
+
+    if (allowedEmails.length > 0 && !allowedEmails.includes(userEmailNormalized)) {
       console.log(`Login blocked (allowlist): ${user.email}`);
       return error('Account not authorized for access', 403, { event });
     }
