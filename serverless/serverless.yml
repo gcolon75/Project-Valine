@@ -87,7 +87,6 @@ custom:
       - aws-sdk
       - '@prisma/client'
       - '.prisma/client'
-    packExternalModules: false
     keepOutputDirectory: true
 
 layers:
