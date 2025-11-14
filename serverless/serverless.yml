@@ -689,9 +689,3 @@ functions:
       - httpApi:
           path: /analytics/events/cleanup
           method: delete
-
-
-# Layer ARNs
-customLayerArns:
-  prisma: 
-  shared: arn:aws:lambda:us-west-2:579939802800:layer:pv-shared:1
