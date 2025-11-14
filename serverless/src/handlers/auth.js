@@ -163,6 +163,7 @@ async function login(event) {
 
 /* ---------------------- REGISTER ---------------------- */
 
+// (modified register function only; rest of file unchanged)
 async function register(event) {
   try {
     const rawBody = event?.body || '';
@@ -180,6 +181,64 @@ async function register(event) {
     if (!email || !password) {
       return error(400, 'email and password are required');
     }
+
+    // Enforce registration gating:
+    // If ENABLE_REGISTRATION !== 'true' then only allow emails in ALLOWED_USER_EMAILS
+    const enableRegistration = (process.env.ENABLE_REGISTRATION || 'false') === 'true';
+    const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
+    const allowed = allowListRaw
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (!enableRegistration) {
+      // registration closed to public — require email in allowlist
+      if (allowed.length === 0) {
+        console.warn('[REGISTER] Registration closed and no allowlist configured');
+        return error(403, 'Registration not permitted');
+      }
+      if (!allowed.includes(email.toLowerCase())) {
+        console.warn('[REGISTER] Email not allowlisted');
+        return error(403, 'Registration not permitted');
+      }
+    } else {
+      // If registration is open, optionally still respect an allowlist if configured:
+      if (allowed.length > 0 && !allowed.includes(email.toLowerCase())) {
+        // If you want open registration to ignore allowlist, remove this block.
+        console.warn('[REGISTER] Registration open but email not in experimental allowlist');
+        // allow through if you prefer; for now we let open registration accept any email
+      }
+    }
+
+    const prisma = getPrisma();
+    const existing = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+    if (existing) {
+      return error(409, 'Email already registered');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash
+      }
+    });
+
+    console.log(`[REGISTER] Created userId=${user.id}`);
+    return response(201, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (e) {
+    console.error('[REGISTER] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
     const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
     if (allowListRaw.trim().length > 0) {
