@@ -24,6 +24,18 @@ provider:
         - DELETE
         - OPTIONS
       allowCredentials: true
+      
+  plugins:
+    - serverless-esbuild
+
+  custom:
+    esbuild:
+      bundle: true
+      minify: true
+      exclude: ['@prisma/client']      # or others you want layered
+      platform: node
+      target: node20
+
   environment:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}

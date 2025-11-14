@@ -12,7 +12,7 @@
   "devDependencies": {
     "prisma": "^6.19.0",
     "serverless": "^3.40.0",
-    "serverless-esbuild": "^1.52.1"
+    "serverless-esbuild": "^1.55.2"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.637.0",
