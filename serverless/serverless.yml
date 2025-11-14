@@ -103,7 +103,7 @@ package:
     - '!**/__tests__/**'
     - '!**/*.md'
     - '!**/.git/**'
-    - '!**/.vscode/**
+    - '!**/.vscode/**'
 
 functions:
   health:
