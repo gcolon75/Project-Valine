@@ -37,7 +37,7 @@ provider:
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
     # Read the allowlist from SSM so you can add/remove emails without a code deploy
-    ALLOWED_USER_EMAILS: ${ssm:/valine/prod/allowed_user_emails~true}
+    ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, "ghawk075@gmail.com,valinejustin@gmail.com"}
     PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
     PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
     FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
