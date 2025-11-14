@@ -1,1 +1,89 @@
-var a=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var g=Object.getOwnPropertyNames;var h=Object.prototype.hasOwnProperty;var y=(r,e)=>{for(var t in e)a(r,t,{get:e[t],enumerable:!0})},f=(r,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let n of g(e))!h.call(r,n)&&n!==t&&a(r,n,{get:()=>e[n],enumerable:!(s=m(e,n))||s.enumerable});return r};var O=r=>f(a({},"__esModule",{value:!0}),r);var P={};y(P,{approveRequest:()=>N,listRequests:()=>C,rejectRequest:()=>S,sendRequest:()=>R});module.exports=O(P);var d=require("@prisma/client"),u;function c(){return u||(u=new d.PrismaClient),u}var q=process.env.FRONTEND_URL||"http://localhost:5173",w=process.env.NODE_ENV||"development",p=w==="production",A=()=>{let r=[q];return p&&r.push("https://dkmxy676d3vgc.cloudfront.net"),p||r.push("http://localhost:3000","http://localhost:5173"),r},v=r=>{let e=A(),t=r?.headers?.origin||r?.headers?.Origin||"";return{"Access-Control-Allow-Origin":e.includes(t)?t:e[0],"Access-Control-Allow-Credentials":"true","Access-Control-Allow-Methods":"GET,POST,PUT,DELETE,PATCH,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization,X-CSRF-Token","Access-Control-Max-Age":"86400"}};function i(r,e=200,t={}){let s=v(t.event);return delete t.event,{statusCode:e,headers:{"content-type":"application/json",...s,"x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=()","strict-transport-security":"max-age=63072000; includeSubDomains; preload",...t},body:JSON.stringify(r)}}function o(r,e=400,t={}){return i({error:r},e,t)}var R=async r=>{try{let{senderId:e,receiverId:t,message:s}=JSON.parse(r.body||"{}");if(!e||!t)return o("senderId and receiverId are required",400);let l=await c().connectionRequest.create({data:{senderId:e,receiverId:t,message:s},include:{sender:!0,receiver:!0}});return i(l,201)}catch(e){return console.error(e),o("Server error: "+e.message,500)}},C=async r=>{try{let{userId:e}=r.queryStringParameters||{};if(!e)return o("userId is required",400);let s=await c().connectionRequest.findMany({where:{receiverId:e,status:"pending"},include:{sender:!0},orderBy:{createdAt:"desc"}});return i(s)}catch(e){return console.error(e),o("Server error: "+e.message,500)}},N=async r=>{try{let e=r.pathParameters?.id;if(!e)return o("id is required",400);let s=await c().connectionRequest.update({where:{id:e},data:{status:"accepted"}});return i(s)}catch(e){return console.error(e),o("Server error: "+e.message,500)}},S=async r=>{try{let e=r.pathParameters?.id;if(!e)return o("id is required",400);let s=await c().connectionRequest.update({where:{id:e},data:{status:"rejected"}});return i(s)}catch(e){return console.error(e),o("Server error: "+e.message,500)}};0&&(module.exports={approveRequest,listRequests,rejectRequest,sendRequest});
+import { getPrisma } from '../db/client.js';
+import { json, error } from '../utils/headers.js';
+
+const headers = { 'Access-Control-Allow-Origin': '*' };
+
+export const sendRequest = async (event) => {
+  try {
+    const { senderId, receiverId, message } = JSON.parse(event.body || '{}');
+    
+    if (!senderId || !receiverId) {
+      return error('senderId and receiverId are required', 400);
+    }
+
+    const prisma = getPrisma();
+    const request = await prisma.connectionRequest.create({
+      data: { senderId, receiverId, message },
+      include: { sender: true, receiver: true },
+    });
+    
+    return json(request, 201);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const listRequests = async (event) => {
+  try {
+    const { userId } = event.queryStringParameters || {};
+    
+    if (!userId) {
+      return error('userId is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const requests = await prisma.connectionRequest.findMany({
+      where: { receiverId: userId, status: 'pending' },
+      include: { sender: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    return json(requests);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const approveRequest = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const request = await prisma.connectionRequest.update({
+      where: { id },
+      data: { status: 'accepted' },
+    });
+    
+    return json(request);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const rejectRequest = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const request = await prisma.connectionRequest.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+    
+    return json(request);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};

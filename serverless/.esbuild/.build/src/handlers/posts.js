@@ -1,1 +1,81 @@
-var c=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var h=Object.getOwnPropertyNames;var g=Object.prototype.hasOwnProperty;var y=(e,r)=>{for(var t in r)c(e,t,{get:r[t],enumerable:!0})},f=(e,r,t,o)=>{if(r&&typeof r=="object"||typeof r=="function")for(let s of h(r))!g.call(e,s)&&s!==t&&c(e,s,{get:()=>r[s],enumerable:!(o=m(r,s))||o.enumerable});return e};var O=e=>f(c({},"__esModule",{value:!0}),e);var T={};y(T,{createPost:()=>C,getPost:()=>S,listPosts:()=>v});module.exports=O(T);var l=require("@prisma/client"),u;function a(){return u||(u=new l.PrismaClient),u}var A=process.env.FRONTEND_URL||"http://localhost:5173",w=process.env.NODE_ENV||"development",p=w==="production",N=()=>{let e=[A];return p&&e.push("https://dkmxy676d3vgc.cloudfront.net"),p||e.push("http://localhost:3000","http://localhost:5173"),e},P=e=>{let r=N(),t=e?.headers?.origin||e?.headers?.Origin||"";return{"Access-Control-Allow-Origin":r.includes(t)?t:r[0],"Access-Control-Allow-Credentials":"true","Access-Control-Allow-Methods":"GET,POST,PUT,DELETE,PATCH,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization,X-CSRF-Token","Access-Control-Max-Age":"86400"}};function i(e,r=200,t={}){let o=P(t.event);return delete t.event,{statusCode:r,headers:{"content-type":"application/json",...o,"x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=()","strict-transport-security":"max-age=63072000; includeSubDomains; preload",...t},body:JSON.stringify(e)}}function n(e,r=400,t={}){return i({error:e},r,t)}var C=async e=>{try{let{content:r,media:t,authorId:o}=JSON.parse(e.body||"{}");if(!r||!o)return n("content and authorId are required",400);let d=await a().post.create({data:{content:r,media:t||[],authorId:o},include:{author:{select:{id:!0,username:!0,displayName:!0,avatar:!0}}}});return i(d,201)}catch(r){return console.error(r),n("Server error: "+r.message,500)}},v=async e=>{try{let{limit:r="20",cursor:t}=e.queryStringParameters||{},s=await a().post.findMany({take:parseInt(r),...t&&{cursor:{id:t},skip:1},orderBy:{createdAt:"desc"},include:{author:{select:{id:!0,username:!0,displayName:!0,avatar:!0}}}});return i(s)}catch(r){return console.error(r),n("Server error: "+r.message,500)}},S=async e=>{try{let r=e.pathParameters?.id;if(!r)return n("id is required",400);let o=await a().post.findUnique({where:{id:r},include:{author:{select:{id:!0,username:!0,displayName:!0,avatar:!0}}}});return o?i(o):n("Post not found",404)}catch(r){return console.error(r),n("Server error: "+r.message,500)}};0&&(module.exports={createPost,getPost,listPosts});
+import { getPrisma } from '../db/client.js';
+import { json, error } from '../utils/headers.js';
+
+const headers = { 'Access-Control-Allow-Origin': '*' };
+
+export const createPost = async (event) => {
+  try {
+    const { content, media, authorId } = JSON.parse(event.body || '{}');
+    
+    if (!content || !authorId) {
+      return error('content and authorId are required', 400);
+    }
+
+    const prisma = getPrisma();
+    const post = await prisma.post.create({
+      data: { content, media: media || [], authorId },
+      include: { 
+        author: { 
+          select: { id: true, username: true, displayName: true, avatar: true } 
+        } 
+      },
+    });
+    
+    return json(post, 201);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const listPosts = async (event) => {
+  try {
+    const { limit = '20', cursor } = event.queryStringParameters || {};
+    
+    const prisma = getPrisma();
+    const posts = await prisma.post.findMany({
+      take: parseInt(limit),
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: 'desc' },
+      include: { 
+        author: { 
+          select: { id: true, username: true, displayName: true, avatar: true } 
+        } 
+      },
+    });
+    
+    return json(posts);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const getPost = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: { 
+        author: { 
+          select: { id: true, username: true, displayName: true, avatar: true } 
+        } 
+      },
+    });
+    
+    if (!post) {
+      return error('Post not found', 404);
+    }
+    
+    return json(post);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};

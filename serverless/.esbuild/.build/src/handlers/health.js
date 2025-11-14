@@ -1,1 +1,10 @@
-var s=Object.defineProperty;var l=Object.getOwnPropertyDescriptor;var a=Object.getOwnPropertyNames;var p=Object.prototype.hasOwnProperty;var d=(o,e)=>{for(var t in e)s(o,t,{get:e[t],enumerable:!0})},u=(o,e,t,n)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of a(e))!p.call(o,r)&&r!==t&&s(o,r,{get:()=>e[r],enumerable:!(n=l(e,r))||n.enumerable});return o};var g=o=>u(s({},"__esModule",{value:!0}),o);var N={};d(N,{handler:()=>C});module.exports=g(N);var h=process.env.FRONTEND_URL||"http://localhost:5173",O=process.env.NODE_ENV||"development",i=O==="production",A=()=>{let o=[h];return i&&o.push("https://dkmxy676d3vgc.cloudfront.net"),i||o.push("http://localhost:3000","http://localhost:5173"),o},m=o=>{let e=A(),t=o?.headers?.origin||o?.headers?.Origin||"";return{"Access-Control-Allow-Origin":e.includes(t)?t:e[0],"Access-Control-Allow-Credentials":"true","Access-Control-Allow-Methods":"GET,POST,PUT,DELETE,PATCH,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization,X-CSRF-Token","Access-Control-Max-Age":"86400"}};function c(o,e=200,t={}){let n=m(t.event);return delete t.event,{statusCode:e,headers:{"content-type":"application/json",...n,"x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=()","strict-transport-security":"max-age=63072000; includeSubDomains; preload",...t},body:JSON.stringify(o)}}var C=async()=>c({status:"ok",timestamp:Date.now(),service:"Project Valine API",version:"1.0.0"});0&&(module.exports={handler});
+import { json } from '../utils/headers.js';
+
+export const handler = async () => {
+  return json({
+    status: 'ok',
+    timestamp: Date.now(),
+    service: 'Project Valine API',
+    version: '1.0.0'
+  });
+};

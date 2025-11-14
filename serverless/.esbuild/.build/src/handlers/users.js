@@ -1,1 +1,74 @@
-var l=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var y=Object.getOwnPropertyNames;var f=Object.prototype.hasOwnProperty;var O=(e,r)=>{for(var t in r)l(e,t,{get:r[t],enumerable:!0})},w=(e,r,t,o)=>{if(r&&typeof r=="object"||typeof r=="function")for(let s of y(r))!f.call(e,s)&&s!==t&&l(e,s,{get:()=>r[s],enumerable:!(o=h(r,s))||o.enumerable});return e};var A=e=>w(l({},"__esModule",{value:!0}),e);var x={};O(x,{createUser:()=>E,getUser:()=>P,updateUser:()=>v});module.exports=A(x);var d=require("@prisma/client"),p;function a(){return p||(p=new d.PrismaClient),p}var N=process.env.FRONTEND_URL||"http://localhost:5173",C=process.env.NODE_ENV||"development",m=C==="production",S=()=>{let e=[N];return m&&e.push("https://dkmxy676d3vgc.cloudfront.net"),m||e.push("http://localhost:3000","http://localhost:5173"),e},T=e=>{let r=S(),t=e?.headers?.origin||e?.headers?.Origin||"";return{"Access-Control-Allow-Origin":r.includes(t)?t:r[0],"Access-Control-Allow-Credentials":"true","Access-Control-Allow-Methods":"GET,POST,PUT,DELETE,PATCH,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization,X-CSRF-Token","Access-Control-Max-Age":"86400"}};function i(e,r=200,t={}){let o=T(t.event);return delete t.event,{statusCode:r,headers:{"content-type":"application/json",...o,"x-content-type-options":"nosniff","referrer-policy":"strict-origin-when-cross-origin","permissions-policy":"camera=(), microphone=(), geolocation=()","strict-transport-security":"max-age=63072000; includeSubDomains; preload",...t},body:JSON.stringify(e)}}function n(e,r=400,t={}){return i({error:e},r,t)}var E=async e=>{try{let{username:r,email:t,displayName:o,bio:s,avatar:u,role:c}=JSON.parse(e.body||"{}");if(!r||!t||!o)return n("username, email, and displayName are required",400);let g=await a().user.create({data:{username:r,email:t,displayName:o,bio:s,avatar:u,role:c}});return i(g,201)}catch(r){return console.error(r),n("Server error: "+r.message,500)}},P=async e=>{try{let r=e.pathParameters?.username;if(!r)return n("username is required",400);let o=await a().user.findUnique({where:{username:r},include:{posts:{orderBy:{createdAt:"desc"},take:20},_count:{select:{posts:!0}}}});return o?i(o):n("User not found",404)}catch(r){return console.error(r),n("Server error: "+r.message,500)}},v=async e=>{try{let r=e.pathParameters?.id,{displayName:t,bio:o,avatar:s}=JSON.parse(e.body||"{}");if(!r)return n("id is required",400);let c=await a().user.update({where:{id:r},data:{displayName:t,bio:o,avatar:s}});return i(c)}catch(r){return console.error(r),n("Server error: "+r.message,500)}};0&&(module.exports={createUser,getUser,updateUser});
+import { getPrisma } from '../db/client.js';
+import { json, error } from '../utils/headers.js';
+
+const headers = { 'Access-Control-Allow-Origin': '*' };
+
+export const createUser = async (event) => {
+  try {
+    const { username, email, displayName, bio, avatar, role } = JSON.parse(event.body || '{}');
+    
+    if (!username || !email || !displayName) {
+      return error('username, email, and displayName are required', 400);
+    }
+
+    const prisma = getPrisma();
+    const user = await prisma.user.create({
+      data: { username, email, displayName, bio, avatar, role },
+    });
+    
+    return json(user, 201);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const getUser = async (event) => {
+  try {
+    const username = event.pathParameters?.username;
+    
+    if (!username) {
+      return error('username is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { username },
+      include: { 
+        posts: { orderBy: { createdAt: 'desc' }, take: 20 },
+        _count: { select: { posts: true } }
+      },
+    });
+    
+    if (!user) {
+      return error('User not found', 404);
+    }
+    
+    return json(user);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+export const updateUser = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    const { displayName, bio, avatar } = JSON.parse(event.body || '{}');
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    const user = await prisma.user.update({
+      where: { id },
+      data: { displayName, bio, avatar },
+    });
+    
+    return json(user);
+  } catch (e) {
+    console.error(e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
