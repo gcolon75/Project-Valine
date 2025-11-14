@@ -9,17 +9,38 @@ custom:
   esbuild:
     bundle: true
     minify: true
-    target: node20
-    platform: node
-    format: cjs
     sourcemap: false
-    concurrency: 5
-    keepOutputDirectory: false
-    exclude: ['@prisma/client']      # keep Prisma client unbundled
-    external: ['@prisma/client']     # treat as external dependency
-    # If you later add a layer for prisma engines, keep this exclude/external
-    # Define entryPoints only if you want to override automatic handler detection:
-    # entryPoints: []
+    platform: node
+    target: node20
+    concurrency: 1
+    external:
+      - aws-sdk
+    keepOutputDirectory: true
+
+package:
+  individually: true
+  excludeDevDependencies: true
+  patterns:
+    - .esbuild/.build/**
+    - package.json
+    - prisma/schema.prisma
+    - node_modules/.prisma/client/**
+    - node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node
+    - '!node_modules/.prisma/client/*windows*'
+    - '!node_modules/.prisma/client/*darwin*'
+    - '!node_modules/.prisma/client/*debian*'
+    - '!node_modules/.prisma/client/*arm*'
+    - '!node_modules/aws-sdk/**'
+    - '!**/*.map'
+    - '!**/tests/**'
+    - '!**/__tests__/**'
+    - '!**/*.md'
+    - '!**/.git/**'
+    - '!**/.vscode/**'
+    - '!**/login_unpack/**'
+    - '!node_modules/@types/**'
+    - '!node_modules/*/docs/**'
+    - '!node_modules/*/examples/**'
 
 provider:
   name: aws
