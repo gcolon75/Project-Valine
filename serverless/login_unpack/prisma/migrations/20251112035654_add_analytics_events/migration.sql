@@ -1,0 +1,18 @@
+-- CreateTable
+CREATE TABLE "analytics_events" (
+    "id" TEXT NOT NULL,
+    "event" TEXT NOT NULL,
+    "anonId" TEXT,
+    "userId" TEXT,
+    "sessionId" TEXT,
+    "properties" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "analytics_events_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "analytics_events_event_idx" ON "analytics_events"("event");
+
+-- CreateIndex
+CREATE INDEX "analytics_events_createdAt_idx" ON "analytics_events"("createdAt");
