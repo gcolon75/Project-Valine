@@ -4,6 +4,42 @@ frameworkVersion: "3"
 plugins:
   - serverless-esbuild
 
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${env:AWS_REGION, "us-west-2"}
+  stage: ${env:STAGE, "prod"}
+  versionFunctions: false   # Disable automatic Lambda Version resources
+  httpApi:
+    cors:
+      allowedOrigins:
+        - https://dkmxy676d3vgc.cloudfront.net
+        - http://localhost:5173
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-CSRF-Token
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+  environment:
+    # (existing env vars unchanged)
+    STAGE: ${env:STAGE, "prod"}
+    # ...
+
+layers:
+  prisma:
+    package:
+      artifact: layers/prisma-layer.zip
+  shared:
+    package:
+      artifact: layers/shared-layer.zip
+
 custom:
   esbuild:
     bundle: true
@@ -17,29 +53,35 @@ custom:
     keepOutputDirectory: true
 
 package:
-  individually: true
+  individually: false         # single artifact (or set true after layering)
   excludeDevDependencies: true
   patterns:
     - .esbuild/.build/**
     - package.json
     - prisma/schema.prisma
-    - node_modules/@prisma/client/**
-    - node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node
-    - '!node_modules/.prisma/client/*windows*'
-    - '!node_modules/.prisma/client/*darwin*'
-    - '!node_modules/.prisma/client/*debian*'
-    - '!node_modules/.prisma/client/*arm*'
-    - '!node_modules/aws-sdk/**'
     - '!**/*.map'
     - '!**/tests/**'
     - '!**/__tests__/**'
     - '!**/*.md'
     - '!**/.git/**'
     - '!**/.vscode/**'
-    - '!**/login_unpack/**'
     - '!node_modules/@types/**'
     - '!node_modules/*/docs/**'
     - '!node_modules/*/examples/**'
+    # Exclude Prisma WASM query & compiler bundles (retain native engine in layer)
+    - '!node_modules/@prisma/client/runtime/query_engine_bg.*.wasm'
+    - '!node_modules/@prisma/client/runtime/query_compiler_bg.*.wasm'
+    - '!node_modules/@prisma/client/runtime/query_engine_bg.*.wasm.*'
+    - '!node_modules/@prisma/client/runtime/query_compiler_bg.*.wasm.*'
+
+functions:
+  # (keep existing definitions, but add layers:)
+  health:
+    handler: src/handlers/health.handler
+    layers:
+      - { Ref: PrismaLambdaLayer }    # CloudFormation logical name from layer publish
+      - { Ref: SharedLambdaLayer }
+  # (repeat layers list for each function or define a variable & YAML anchor)
 
 provider:
   name: aws
