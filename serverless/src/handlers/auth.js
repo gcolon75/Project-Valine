@@ -58,6 +58,13 @@ export const register = async (event) => {
       .map(e => e.trim().toLowerCase())
       .filter(e => e.length > 0);
 
+    const userEmailNormalized = user.email.toLowerCase();
+
+    if (allowedEmails.length > 0 && !allowedEmails.includes(userEmailNormalized)) {
+      console.log(`Login blocked (allowlist mismatch): ${user.email}`);
+      return error('Account not authorized for access', 403, { event });
+    }
+
     const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
     const normalizedEmail = email.toLowerCase().trim();
 

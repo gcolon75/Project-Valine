@@ -7,7 +7,22 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   httpApi:
-    cors: true
+    cors:
+      allowedOrigins:
+        - https://dkmxy676d3vgc.cloudfront.net
+        - http://localhost:5173
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-CSRF-Token
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
   environment:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
@@ -17,7 +32,8 @@ provider:
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
-    ALLOWED_USER_EMAILS: ghawk075@gmail.com,Valinejustin@gmail.com
+    # Lowercase, no spaces
+    ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
     PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
     PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
     FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
@@ -55,6 +71,9 @@ provider:
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
     DEV_BYPASS_ENABLED: ${env:DEV_BYPASS_ENABLED, "false"}
+
+# (Functions section unchanged below...)
+# Keep rest of file as-is.
 
 package:
   patterns:
