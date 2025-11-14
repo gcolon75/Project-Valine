@@ -1,688 +1,516 @@
-service: pv-api
-frameworkVersion: "3"
+/**
+ * Authentication & session handlers for Project Valine (Lambda HTTP API v2).
+ * Single final export block (no per-function export keywords) to avoid duplicate export errors.
+ *
+ * Packaging Notes:
+ *  - Use `npm ci --omit=dev` before deploying to keep node_modules small.
+ *  - With serverless-esbuild bundling, only external deps (e.g. @prisma/client) remain in node_modules.
+ */
 
-# Plugins MUST be top-level (not nested inside provider)
-plugins:
-  - serverless-esbuild
+import { getPrisma } from '../db/client.js';
+import { json, error, getCorsHeaders } from '../utils/headers.js';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { authenticator } from 'otplib';
+import {
+  generateCsrfToken,
+  generateCsrfCookie,
+  clearCsrfCookie
+} from '../middleware/csrfMiddleware.js';
+import { rateLimit } from '../middleware/rateLimit.js';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateAccessTokenCookie,
+  generateRefreshTokenCookie,
+  generateClearCookieHeaders,
+  extractToken,
+  verifyToken,
+  getUserIdFromEvent
+} from '../utils/tokenManager.js';
 
-custom:
-  esbuild:
-    bundle: true
-    minify: true
-    target: node20
-    platform: node
-    format: cjs
-    sourcemap: false
-    concurrency: 5
-    keepOutputDirectory: false
-    exclude: ['@prisma/client']      # keep Prisma client unbundled
-    external: ['@prisma/client']     # treat as external dependency
-    # If you later add a layer for prisma engines, keep this exclude/external
-    # Define entryPoints only if you want to override automatic handler detection:
-    # entryPoints: []
+/* ---------------------- Helpers ---------------------- */
 
-provider:
-  name: aws
-  runtime: nodejs20.x
-  region: ${env:AWS_REGION, "us-west-2"}
-  stage: ${env:STAGE, "prod"}
-  httpApi:
-    cors:
-      allowedOrigins:
-        - https://dkmxy676d3vgc.cloudfront.net
-        - http://localhost:5173
-      allowedHeaders:
-        - Content-Type
-        - Authorization
-        - X-CSRF-Token
-      allowedMethods:
-        - GET
-        - POST
-        - PUT
-        - PATCH
-        - DELETE
-        - OPTIONS
-      allowCredentials: true
-  environment:
-    STAGE: ${env:STAGE, "prod"}
-    DATABASE_URL: ${env:DATABASE_URL}
-    MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
-    JWT_SECRET: ${env:JWT_SECRET}
-    EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
-    TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
-    CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
-    ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
-    ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
-    PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
-    PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
-    FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}
-    SCHEMA_DIFF_ENABLED: ${env:SCHEMA_DIFF_ENABLED, "false"}
-    SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
-    SYNTHETIC_USE_REAL_REQUESTS: ${env:SYNTHETIC_USE_REAL_REQUESTS, "true"}
-    OBSERVABILITY_ENABLED: ${env:OBSERVABILITY_ENABLED, "true"}
-    API_BASE_URL: ${env:API_BASE_URL, "https://dkmxy676d3vgc.cloudfront.net/api"}
-    FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
-    NODE_ENV: ${env:NODE_ENV, "production"}
-    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, "dkmxy676d3vgc.cloudfront.net"}
-    REDIS_URL: ${env:REDIS_URL, ""}
-    RATE_LIMITING_ENABLED: ${env:RATE_LIMITING_ENABLED, "true"}
-    MODERATION_ENABLED: ${env:MODERATION_ENABLED, "false"}
-    MODERATION_ALERTS_ENABLED: ${env:MODERATION_ALERTS_ENABLED, "false"}
-    MODERATION_STRICT_MODE: ${env:MODERATION_STRICT_MODE, "false"}
-    REPORTS_ENABLED: ${env:REPORTS_ENABLED, "true"}
-    MODERATION_ALERT_CHANNEL_ID: ${env:MODERATION_ALERT_CHANNEL_ID, ""}
-    ADMIN_ROLE_IDS: ${env:ADMIN_ROLE_IDS, ""}
-    REPORTS_MAX_PER_HOUR: ${env:REPORTS_MAX_PER_HOUR, "5"}
-    REPORTS_MAX_PER_DAY: ${env:REPORTS_MAX_PER_DAY, "20"}
-    REPORTS_IP_MAX_PER_HOUR: ${env:REPORTS_IP_MAX_PER_HOUR, "10"}
-    URL_ALLOWED_DOMAINS: ${env:URL_ALLOWED_DOMAINS, "imdb.com,youtube.com,vimeo.com,linkedin.com,github.com"}
-    URL_BLOCKED_DOMAINS: ${env:URL_BLOCKED_DOMAINS, ""}
-    URL_ALLOWED_PROTOCOLS: ${env:URL_ALLOWED_PROTOCOLS, "http:https:mailto:"}
-    PROFANITY_LIST_PATH: ${env:PROFANITY_LIST_PATH, ""}
-    PROFANITY_ACTION: ${env:PROFANITY_ACTION, "block"}
-    REPORT_CATEGORY_ALLOWLIST: ${env:REPORT_CATEGORY_ALLOWLIST, "spam,abuse,unsafe_link,profanity,privacy,other"}
-    ANALYTICS_ENABLED: ${env:ANALYTICS_ENABLED, "false"}
-    ANALYTICS_REQUIRE_CONSENT: ${env:ANALYTICS_REQUIRE_CONSENT, "true"}
-    ANALYTICS_PERSIST_ENABLED: ${env:ANALYTICS_PERSIST_ENABLED, "true"}
-    ANALYTICS_STORAGE_DRIVER: ${env:ANALYTICS_STORAGE_DRIVER, "postgres"}
-    ANALYTICS_RETENTION_DAYS: ${env:ANALYTICS_RETENTION_DAYS, "30"}
-    ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
-    ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
-    ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
+function buildHeaders(extra = {}) {
+  return {
+    ...getCorsHeaders(),
+    ...extra
+  };
+}
 
-# Slim packaging; esbuild will bundle handlers, we still include node_modules for external deps (e.g. @prisma/client).
-package:
-  individually: true
-  excludeDevDependencies: true
-  patterns:
-    - src/**                # handler code
-    - package.json
-    - node_modules/**       # production + external prisma client
-    # Exclusions to keep size down:
-    - '!**/*.md'
-    - '!docs/**'
-    - '!tests/**'
-    - '!test/**'
-    - '!orchestrator/**'
-    - '!infra/**'
-    - '!public/**'
-    - '!scripts/**'
-    - '!sanity/**'
-    - '!**/.git/**'
-    - '!**/.github/**'
+function nowSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
 
-functions:
-  # Health & Meta endpoints
-  health:
-    handler: src/handlers/health.handler
-    events:
-      - httpApi:
-          path: /health
-          method: get
+function redactEmail(e) {
+  if (!e || typeof e !== 'string') return '';
+  const [user, domain] = e.split('@');
+  if (!domain) return e;
+  return `${user.slice(0, 2)}***@${domain}`;
+}
 
-  meta:
-    handler: src/handlers/meta.handler
-    events:
-      - httpApi:
-          path: /meta
-          method: get
+/**
+ * Unified JSON response with optional cookies array (HTTP API v2).
+ */
+function response(statusCode, bodyObj, cookieHeaders = []) {
+  return {
+    statusCode,
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+    cookies: cookieHeaders,
+    body: JSON.stringify(bodyObj)
+  };
+}
 
-  # Authentication endpoints
-  register:
-    handler: src/handlers/auth.register
-    events:
-      - httpApi:
-          path: /auth/register
-          method: post
+/* ---------------------- LOGIN ---------------------- */
 
-  login:
-    handler: src/handlers/auth.login
-    events:
-      - httpApi:
-          path: /auth/login
-          method: post
+async function login(event) {
+  const start = nowSeconds();
+  try {
+    const rlResult = await rateLimit(event, 'login', 10, 60);
+    if (!rlResult.allowed) {
+      console.warn('[LOGIN] Rate limit exceeded');
+      return error(429, 'Too many login attempts');
+    }
 
-  me:
-    handler: src/handlers/auth.me
-    events:
-      - httpApi:
-          path: /auth/me
-          method: get
+    const rawBody = event?.body || '';
+    console.log(`[LOGIN] Raw body length: ${rawBody.length}`);
 
-  verifyEmail:
-    handler: src/handlers/auth.verifyEmail
-    events:
-      - httpApi:
-          path: /auth/verify-email
-          method: post
+    let creds = {};
+    if (rawBody) {
+      try {
+        creds = JSON.parse(rawBody);
+      } catch (e) {
+        console.error('[LOGIN] JSON parse error:', e);
+        return error(400, 'Invalid JSON body');
+      }
+    }
 
-  resendVerification:
-    handler: src/handlers/auth.resendVerification
-    events:
-      - httpApi:
-          path: /auth/resend-verification
-          method: post
+    const { email, password, twoFactorCode } = creds || {};
+    if (!email || !password) {
+      console.warn('[LOGIN] Missing email/password');
+      return error(400, 'email and password are required');
+    }
 
-  refresh:
-    handler: src/handlers/auth.refresh
-    events:
-      - httpApi:
-          path: /auth/refresh
-          method: post
+    console.log(`[LOGIN] Attempt for email=${redactEmail(email)}`);
 
-  logout:
-    handler: src/handlers/auth.logout
-    events:
-      - httpApi:
-          path: /auth/logout
-          method: post
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
 
-  # 2FA endpoints
-  setup2FA:
-    handler: src/handlers/auth.setup2FA
-    events:
-      - httpApi:
-          path: /auth/2fa/setup
-          method: post
+    if (!user) {
+      console.warn('[LOGIN] User not found');
+      return error(401, 'Invalid credentials');
+    }
+    if (!user.passwordHash) {
+      console.error('[LOGIN] User missing password hash');
+      return error(500, 'Server error');
+    }
 
-  enable2FA:
-    handler: src/handlers/auth.enable2FA
-    events:
-      - httpApi:
-          path: /auth/2fa/enable
-          method: post
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      console.warn('[LOGIN] Invalid password');
+      return error(401, 'Invalid credentials');
+    }
 
-  verify2FA:
-    handler: src/handlers/auth.verify2FA
-    events:
-      - httpApi:
-          path: /auth/2fa/verify
-          method: post
+    if (user.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        console.warn('[LOGIN] 2FA required but code missing');
+        return error(401, 'Two-factor code required');
+      }
+      const ok = authenticator.verify({
+        token: twoFactorCode,
+        secret: user.twoFactorSecret
+      });
+      if (!ok) {
+        console.warn('[LOGIN] 2FA code invalid');
+        return error(401, 'Invalid two-factor code');
+      }
+    }
 
-  disable2FA:
-    handler: src/handlers/auth.disable2FA
-    events:
-      - httpApi:
-          path: /auth/2fa/disable
-          method: post
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+    const csrfToken = generateCsrfToken();
 
-  # (Remaining function definitions below are unchanged – keep existing user, reels, posts, conversations, notifications, connections, profiles, media, credits, settings, reelRequests, search, internal tooling, analytics, moderation & observability endpoints)
-  # COPY THE REST OF YOUR ORIGINAL FUNCTIONS SECTION HERE WITHOUT MODIFICATION.
+    const cookies = [
+      generateAccessTokenCookie(accessToken),
+      generateRefreshTokenCookie(refreshToken),
+      generateCsrfCookie(csrfToken)
+    ];
 
-  # User endpoints
-  createUser:
-    handler: src/handlers/users.createUser
-    events:
-      - httpApi:
-          path: /users
-          method: post
-  
-  getUser:
-    handler: src/handlers/users.getUser
-    events:
-      - httpApi:
-          path: /users/{username}
-          method: get
-  
-  updateUser:
-    handler: src/handlers/users.updateUser
-    events:
-      - httpApi:
-          path: /users/{id}
-          method: put
-  
-  # Reels endpoints
-  listReels:
-    handler: src/handlers/reels.listReels
-    events:
-      - httpApi:
-          path: /reels
-          method: get
-  
-  createReel:
-    handler: src/handlers/reels.createReel
-    events:
-      - httpApi:
-          path: /reels
-          method: post
-  
-  toggleLike:
-    handler: src/handlers/reels.toggleLike
-    events:
-      - httpApi:
-          path: /reels/{id}/like
-          method: post
-  
-  toggleBookmark:
-    handler: src/handlers/reels.toggleBookmark
-    events:
-      - httpApi:
-          path: /reels/{id}/bookmark
-          method: post
-  
-  getReelComments:
-    handler: src/handlers/reels.getComments
-    events:
-      - httpApi:
-          path: /reels/{id}/comments
-          method: get
-  
-  createReelComment:
-    handler: src/handlers/reels.createComment
-    events:
-      - httpApi:
-          path: /reels/{id}/comments
-          method: post
-  
-  # Post endpoints (legacy)
-  createPost:
-    handler: src/handlers/posts.createPost
-    events:
-      - httpApi:
-          path: /posts
-          method: post
-  
-  listPosts:
-    handler: src/handlers/posts.listPosts
-    events:
-      - httpApi:
-          path: /posts
-          method: get
-  
-  getPost:
-    handler: src/handlers/posts.getPost
-    events:
-      - httpApi:
-          path: /posts/{id}
-          method: get
-  
-  # Conversation endpoints
-  listConversations:
-    handler: src/handlers/conversations.listConversations
-    events:
-      - httpApi:
-          path: /conversations
-          method: get
-  
-  createConversation:
-    handler: src/handlers/conversations.createConversation
-    events:
-      - httpApi:
-          path: /conversations
-          method: post
-  
-  getMessages:
-    handler: src/handlers/conversations.getMessages
-    events:
-      - httpApi:
-          path: /conversations/{id}/messages
-          method: get
-  
-  sendMessage:
-    handler: src/handlers/conversations.sendMessage
-    events:
-      - httpApi:
-          path: /conversations/{id}/messages
-          method: post
-  
-  # Notification endpoints
-  listNotifications:
-    handler: src/handlers/notifications.listNotifications
-    events:
-      - httpApi:
-          path: /notifications
-          method: get
-  
-  markNotificationRead:
-    handler: src/handlers/notifications.markAsRead
-    events:
-      - httpApi:
-          path: /notifications/{id}/read
-          method: patch
-  
-  markAllNotificationsRead:
-    handler: src/handlers/notifications.markAllAsRead
-    events:
-      - httpApi:
-          path: /notifications/mark-all
-          method: patch
-  
-  # Connection endpoints
-  sendConnectionRequest:
-    handler: src/handlers/connections.sendRequest
-    events:
-      - httpApi:
-          path: /connections/request
-          method: post
-  
-  listConnectionRequests:
-    handler: src/handlers/connections.listRequests
-    events:
-      - httpApi:
-          path: /connections/requests
-          method: get
-  
-  approveConnectionRequest:
-    handler: src/handlers/connections.approveRequest
-    events:
-      - httpApi:
-          path: /connections/requests/{id}/approve
-          method: post
-  
-  rejectConnectionRequest:
-    handler: src/handlers/connections.rejectRequest
-    events:
-      - httpApi:
-          path: /connections/requests/{id}/reject
-          method: post
+    console.log(
+      `[LOGIN] Success userId=${user.id} latency=${nowSeconds() - start}s`
+    );
 
-  # Profile endpoints
-  getProfileByVanity:
-    handler: src/handlers/profiles.getProfileByVanity
-    events:
-      - httpApi:
-          path: /profiles/{vanityUrl}
-          method: get
-  
-  getProfileById:
-    handler: src/handlers/profiles.getProfileById
-    events:
-      - httpApi:
-          path: /profiles/id/{id}
-          method: get
-  
-  createProfile:
-    handler: src/handlers/profiles.createProfile
-    events:
-      - httpApi:
-          path: /profiles
-          method: post
-  
-  updateProfile:
-    handler: src/handlers/profiles.updateProfile
-    events:
-      - httpApi:
-          path: /profiles/id/{id}
-          method: put
-  
-  deleteProfile:
-    handler: src/handlers/profiles.deleteProfile
-    events:
-      - httpApi:
-          path: /profiles/id/{id}
-          method: delete
+    return response(
+      200,
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          createdAt: user.createdAt,
+          twoFactorEnabled: user.twoFactorEnabled || false
+        },
+        csrfToken
+      },
+      cookies
+    );
+  } catch (e) {
+    console.error('[LOGIN] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  # Media endpoints
-  getUploadUrl:
-    handler: src/handlers/media.getUploadUrl
-    events:
-      - httpApi:
-          path: /profiles/{id}/media/upload-url
-          method: post
-  
-  completeUpload:
-    handler: src/handlers/media.completeUpload
-    events:
-      - httpApi:
-          path: /profiles/{id}/media/complete
-          method: post
-  
-  updateMedia:
-    handler: src/handlers/media.updateMedia
-    events:
-      - httpApi:
-          path: /media/{id}
-          method: put
-  
-  deleteMedia:
-    handler: src/handlers/media.deleteMedia
-    events:
-      - httpApi:
-          path: /media/{id}
-          method: delete
-  
-  getAccessUrl:
-    handler: src/handlers/media.getAccessUrl
-    events:
-      - httpApi:
-          path: /media/{id}/access-url
-          method: get
+/* ---------------------- REGISTER ---------------------- */
 
-  # Credits endpoints
-  listCredits:
-    handler: src/handlers/credits.listCredits
-    events:
-      - httpApi:
-          path: /profiles/{id}/credits
-          method: get
-  
-  createCredit:
-    handler: src/handlers/credits.createCredit
-    events:
-      - httpApi:
-          path: /profiles/{id}/credits
-          method: post
-  
-  updateCredit:
-    handler: src/handlers/credits.updateCredit
-    events:
-      - httpApi:
-          path: /credits/{id}
-          method: put
-  
-  deleteCredit:
-    handler: src/handlers/credits.deleteCredit
-    events:
-      - httpApi:
-          path: /credits/{id}
-          method: delete
+async function register(event) {
+  try {
+    const rawBody = event?.body || '';
+    console.log(`[REGISTER] Raw body length: ${rawBody.length}`);
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch (e) {
+        console.error('[REGISTER] JSON parse error:', e);
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { email, password } = data;
+    if (!email || !password) {
+      return error(400, 'email and password are required');
+    }
 
-  # Settings endpoints
-  getSettings:
-    handler: src/handlers/settings.getSettings
-    events:
-      - httpApi:
-          path: /settings
-          method: get
-  
-  updateSettings:
-    handler: src/handlers/settings.updateSettings
-    events:
-      - httpApi:
-          path: /settings
-          method: put
-  
-  exportAccountData:
-    handler: src/handlers/settings.exportAccountData
-    events:
-      - httpApi:
-          path: /account/export
-          method: post
-  
-  deleteAccount:
-    handler: src/handlers/settings.deleteAccount
-    events:
-      - httpApi:
-          path: /account
-          method: delete
+    const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
+    if (allowListRaw.trim().length > 0) {
+      const allowed = allowListRaw
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
+      if (!allowed.includes(email.toLowerCase())) {
+        console.warn('[REGISTER] Email not allowlisted');
+        return error(403, 'Registration not permitted');
+      }
+    }
 
-  # Reel Request endpoints
-  createReelRequest:
-    handler: src/handlers/reelRequests.createReelRequest
-    events:
-      - httpApi:
-          path: /reels/{id}/request
-          method: post
-  
-  listReelRequests:
-    handler: src/handlers/reelRequests.listReelRequests
-    events:
-      - httpApi:
-          path: /reel-requests
-          method: get
-  
-  approveReelRequest:
-    handler: src/handlers/reelRequests.approveReelRequest
-    events:
-      - httpApi:
-          path: /reel-requests/{id}/approve
-          method: post
-  
-  denyReelRequest:
-    handler: src/handlers/reelRequests.denyReelRequest
-    events:
-      - httpApi:
-          path: /reel-requests/{id}/deny
-          method: post
+    const prisma = getPrisma();
+    const existing = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+    if (existing) {
+      return error(409, 'Email already registered');
+    }
 
-  # Search endpoints
-  searchProfiles:
-    handler: src/handlers/search.searchProfiles
-    events:
-      - httpApi:
-          path: /search
-          method: get
-  
-  searchUsers:
-    handler: src/handlers/search.searchUsers
-    events:
-      - httpApi:
-          path: /search/users
-          method: get
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash
+      }
+    });
 
-  # Internal tooling endpoints (Phases 4-7)
-  ingestPRIntel:
-    handler: src/handlers/prIntel.ingestPRIntel
-    events:
-      - httpApi:
-          path: /internal/pr-intel/ingest
-          method: post
+    console.log(`[REGISTER] Created userId=${user.id}`);
+    return response(201, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (e) {
+    console.error('[REGISTER] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  getPRIntel:
-    handler: src/handlers/prIntel.getPRIntel
-    events:
-      - httpApi:
-          path: /internal/pr-intel/{prNumber}
-          method: get
+/* ---------------------- ME ---------------------- */
 
-  ingestTestRuns:
-    handler: src/handlers/testIntel.ingestTestRuns
-    events:
-      - httpApi:
-          path: /internal/tests/ingest
-          method: post
+async function me(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return error(404, 'Not found');
+    }
+    return response(200, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+        twoFactorEnabled: user.twoFactorEnabled || false
+      }
+    });
+  } catch (e) {
+    console.error('[ME] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  getFlakyCandidates:
-    handler: src/handlers/testIntel.getFlakyCandidates
-    events:
-      - httpApi:
-          path: /internal/tests/flaky-candidates
-          method: get
+/* ---------------------- REFRESH ---------------------- */
 
-  analyzeSchemaDiff:
-    handler: src/handlers/schemaDiff.analyzeSchemaDiff
-    events:
-      - httpApi:
-          path: /internal/schema/diff
-          method: post
+async function refresh(event) {
+  try {
+    const refreshTok = extractToken(event, 'refresh');
+    if (!refreshTok) {
+      return error(401, 'Missing refresh token');
+    }
+    const payload = verifyToken(refreshTok, 'refresh');
+    if (!payload) {
+      return error(401, 'Invalid refresh token');
+    }
 
-  runSyntheticJourney:
-    handler: src/handlers/syntheticJourney.runSyntheticJourney
-    events:
-      - httpApi:
-          path: /internal/journey/run
-          method: post
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) {
+      return error(401, 'Invalid user');
+    }
 
-  # Observability v2 endpoints
-  ingestMetrics:
-    handler: src/handlers/observability.ingestMetrics
-    events:
-      - httpApi:
-          path: /internal/observability/metrics
-          method: post
+    const newAccess = generateAccessToken(user.id);
+    const accessCookie = generateAccessTokenCookie(newAccess);
 
-  getMetrics:
-    handler: src/handlers/observability.getMetrics
-    events:
-      - httpApi:
-          path: /internal/observability/metrics
-          method: get
+    return response(200, { ok: true }, [accessCookie]);
+  } catch (e) {
+    console.error('[REFRESH] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  observabilityHealth:
-    handler: src/handlers/observability.healthCheck
-    events:
-      - httpApi:
-          path: /internal/observability/health
-          method: get
+/* ---------------------- LOGOUT ---------------------- */
 
-  getStats:
-    handler: src/handlers/observability.getStats
-    events:
-      - httpApi:
-          path: /internal/observability/stats
-          method: get
+async function logout(_event) {
+  try {
+    const cookies = [
+      ...generateClearCookieHeaders(),
+      clearCsrfCookie()
+    ];
+    return response(200, { ok: true }, cookies);
+  } catch (e) {
+    console.error('[LOGOUT] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  logEvent:
-    handler: src/handlers/observability.logEvent
-    events:
-      - httpApi:
-          path: /internal/observability/log
-          method: post
+/* ---------------------- EMAIL VERIFICATION (stubs) ---------------------- */
 
-  # Moderation endpoints
-  createReport:
-    handler: src/handlers/reports.createReport
-    events:
-      - httpApi:
-          path: /reports
-          method: post
+async function verifyEmail(event) {
+  try {
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { token } = data;
+    if (!token) return error(400, 'token is required');
 
-  listReports:
-    handler: src/handlers/reports.listReports
-    events:
-      - httpApi:
-          path: /reports
-          method: get
+    console.log('[VERIFY_EMAIL] Not yet implemented');
+    return response(200, { verified: true });
+  } catch (e) {
+    console.error('[VERIFY_EMAIL] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  getReport:
-    handler: src/handlers/reports.getReport
-    events:
-      - httpApi:
-          path: /reports/{id}
-          method: get
+async function resendVerification(event) {
+  try {
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { email } = data;
+    if (!email) return error(400, 'email is required');
 
-  makeDecision:
-    handler: src/handlers/moderation.makeDecision
-    events:
-      - httpApi:
-          path: /moderation/decision
-          method: post
+    console.log('[RESEND_VERIFICATION] Not yet implemented');
+    return response(200, { sent: true });
+  } catch (e) {
+    console.error('[RESEND_VERIFICATION] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-  moderationHealth:
-    handler: src/handlers/moderation.getHealth
-    events:
-      - httpApi:
-          path: /moderation/health
-          method: get
+/* ---------------------- 2FA HANDLERS ---------------------- */
 
-  # Analytics Privacy Stub endpoints
-  analyticsIngest:
-    handler: src/handlers/analytics.ingestEvents
-    events:
-      - httpApi:
-          path: /analytics/ingest
-          method: post
+async function setup2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
 
-  analyticsConfig:
-    handler: src/handlers/analytics.getConfig
-    events:
-      - httpApi:
-          path: /analytics/config
-          method: get
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return error(404, 'Not found');
 
-  analyticsCleanup:
-    handler: src/handlers/analytics.cleanupOldEvents
-    events:
-      - httpApi:
-          path: /analytics/events/cleanup
-          method: delete
+    if (user.twoFactorEnabled) {
+      return error(400, 'Already enabled');
+    }
+
+    const secret = authenticator.generateSecret();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorSecret: secret }
+    });
+
+    const otpauth = authenticator.keyuri(user.email, 'ProjectValine', secret);
+    return response(200, { secret, otpauth });
+  } catch (e) {
+    console.error('[SETUP2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+async function enable2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { code } = data;
+    if (!code) return error(400, 'code is required');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorSecret) {
+      return error(400, '2FA not initialized');
+    }
+
+    const ok = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret
+    });
+    if (!ok) return error(401, 'Invalid code');
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorEnabled: true }
+    });
+
+    return response(200, { twoFactorEnabled: true });
+  } catch (e) {
+    console.error('[ENABLE2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+async function verify2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { code } = data;
+    if (!code) return error(400, 'code is required');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorSecret) {
+      return error(400, '2FA not initialized');
+    }
+
+    const ok = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret
+    });
+    if (!ok) return error(401, 'Invalid code');
+
+    return response(200, { verified: true });
+  } catch (e) {
+    console.error('[VERIFY2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+async function disable2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return error(404, 'Not found');
+
+    if (!user.twoFactorEnabled) {
+      return error(400, '2FA not enabled');
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null
+      }
+    });
+
+    return response(200, { twoFactorEnabled: false });
+  } catch (e) {
+    console.error('[DISABLE2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- Legacy 2FA aliases ---------------------- */
+
+async function enable2fa(event) {
+  return enable2FA(event);
+}
+async function verify2fa(event) {
+  return verify2FA(event);
+}
+
+/* ---------------------- USER EXTRACTION (compat wrapper) ---------------------- */
+/**
+ * Compatibility helper used by other handlers (reels, conversations, etc.).
+ * Wraps getUserIdFromEvent and returns userId or null without throwing.
+ */
+function getUserFromEvent(event) {
+  try {
+    return getUserIdFromEvent(event) || null;
+  } catch {
+    return null;
+  }
+}
+
+/* ---------------------- EXPORT ALL ---------------------- */
+
+export {
+  login,
+  register,
+  me,
+  refresh,
+  logout,
+  verifyEmail,
+  resendVerification,
+  setup2FA,
+  enable2FA,
+  verify2FA,
+  disable2FA,
+  enable2fa,
+  verify2fa,
+  getUserFromEvent
+};
