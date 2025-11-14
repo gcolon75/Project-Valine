@@ -1,6 +1,6 @@
-﻿generator client {
+generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["rhel-openssl-3.0.x"]
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 datasource db {
   provider = "postgresql"
@@ -13,7 +13,7 @@ model User {
   normalizedEmail String   @unique // lowercase, trimmed for deduplication
   emailVerified   Boolean  @default(false) // Email verification status
   emailVerifiedAt DateTime? // When email was verified
-  password        String   // hashed password (bcryptjs)
+  passwordHash    String   // hashed password (bcryptjs)
   displayName     String
   bio             String?
   avatar          String?

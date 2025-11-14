@@ -12,6 +12,8 @@ dist
 serverless/.serverless/
 serverless/login.zip
 serverless/login_unpack/
+.esbuild/
+serverless/.esbuild/
 
 # Orchestrator secrets and build artifacts
 orchestrator/samconfig.toml

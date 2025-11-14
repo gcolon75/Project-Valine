@@ -9,7 +9,7 @@ provider:
   runtime: nodejs20.x
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
-  versionFunctions: false
+  versionFunctions: false   # Disable automatic Lambda Version resources
   httpApi:
     cors:
       allowedOrigins:
@@ -74,4 +74,624 @@ provider:
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
 
-# (rest of serverless.yml unchanged â€” keep function list and package patterns)
+layers:
+  prisma:
+    package:
+      artifact: layers/prisma-layer.zip
+  shared:
+    package:
+      artifact: layers/shared-layer.zip
+
+custom:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    platform: node
+    target: node20
+    concurrency: 1
+    external:
+      - aws-sdk
+      - '@prisma/client'
+      - '.prisma/client'
+    packager: npm
+    packagePath: package.json
+    keepOutputDirectory: true
+
+package:
+  individually: false         # single artifact (or set true after layering)
+  excludeDevDependencies: true
+  patterns:
+    - .esbuild/.build/**
+    - package.json
+    - prisma/schema.prisma
+    - node_modules/.prisma/client/**
+    - node_modules/@prisma/client/**
+    - '!**/*.map'
+    - '!**/tests/**'
+    - '!**/__tests__/**'
+    - '!**/*.md'
+    - '!**/.git/**'
+    - '!**/.vscode/**'
+    - '!node_modules/@types/**'
+    - '!node_modules/*/docs/**'
+    - '!node_modules/*/examples/**'
+    # Exclude Prisma WASM query & compiler bundles (retain native engine in layer)
+    - '!node_modules/@prisma/client/runtime/query_engine_bg.*.wasm'
+    - '!node_modules/@prisma/client/runtime/query_compiler_bg.*.wasm'
+    - '!node_modules/@prisma/client/runtime/query_engine_bg.*.wasm.*'
+    - '!node_modules/@prisma/client/runtime/query_compiler_bg.*.wasm.*'
+
+functions:
+  health:
+    handler: src/handlers/health.handler
+    events:
+      - httpApi:
+          path: /health
+          method: get
+  meta:
+    handler: src/handlers/meta.handler
+    events:
+      - httpApi:
+          path: /meta
+          method: get
+  register:
+    handler: src/handlers/auth.register
+    events:
+      - httpApi:
+          path: /auth/register
+          method: post
+  login:
+    handler: src/handlers/auth.login
+    events:
+      - httpApi:
+          path: /auth/login
+          method: post
+  me:
+    handler: src/handlers/auth.me
+    events:
+      - httpApi:
+          path: /auth/me
+          method: get
+  verifyEmail:
+    handler: src/handlers/auth.verifyEmail
+    events:
+      - httpApi:
+          path: /auth/verify-email
+          method: post
+  resendVerification:
+    handler: src/handlers/auth.resendVerification
+    events:
+      - httpApi:
+          path: /auth/resend-verification
+          method: post
+
+  refresh:
+    handler: src/handlers/auth.refresh
+    events:
+      - httpApi:
+          path: /auth/refresh
+          method: post
+
+  logout:
+    handler: src/handlers/auth.logout
+    events:
+      - httpApi:
+          path: /auth/logout
+          method: post
+
+  # 2FA endpoints
+  setup2FA:
+    handler: src/handlers/auth.setup2FA
+    events:
+      - httpApi:
+          path: /auth/2fa/setup
+          method: post
+
+  enable2FA:
+    handler: src/handlers/auth.enable2FA
+    events:
+      - httpApi:
+          path: /auth/2fa/enable
+          method: post
+
+  verify2FA:
+    handler: src/handlers/auth.verify2FA
+    events:
+      - httpApi:
+          path: /auth/2fa/verify
+          method: post
+
+  disable2FA:
+    handler: src/handlers/auth.disable2FA
+    events:
+      - httpApi:
+          path: /auth/2fa/disable
+          method: post
+
+  # (Remaining function definitions below are unchanged – keep existing user, reels, posts, conversations, notifications, connections, profiles, media, credits, settings, reelRequests, search, internal tooling, analytics, moderation & observability endpoints)
+  # COPY THE REST OF YOUR ORIGINAL FUNCTIONS SECTION HERE WITHOUT MODIFICATION.
+
+  # User endpoints
+  createUser:
+    handler: src/handlers/users.createUser
+    events:
+      - httpApi:
+          path: /users
+          method: post
+  
+  getUser:
+    handler: src/handlers/users.getUser
+    events:
+      - httpApi:
+          path: /users/{username}
+          method: get
+  
+  updateUser:
+    handler: src/handlers/users.updateUser
+    events:
+      - httpApi:
+          path: /users/{id}
+          method: put
+  
+  # Reels endpoints
+  listReels:
+    handler: src/handlers/reels.listReels
+    events:
+      - httpApi:
+          path: /reels
+          method: get
+  
+  createReel:
+    handler: src/handlers/reels.createReel
+    events:
+      - httpApi:
+          path: /reels
+          method: post
+  
+  toggleLike:
+    handler: src/handlers/reels.toggleLike
+    events:
+      - httpApi:
+          path: /reels/{id}/like
+          method: post
+  
+  toggleBookmark:
+    handler: src/handlers/reels.toggleBookmark
+    events:
+      - httpApi:
+          path: /reels/{id}/bookmark
+          method: post
+  
+  getReelComments:
+    handler: src/handlers/reels.getComments
+    events:
+      - httpApi:
+          path: /reels/{id}/comments
+          method: get
+  
+  createReelComment:
+    handler: src/handlers/reels.createComment
+    events:
+      - httpApi:
+          path: /reels/{id}/comments
+          method: post
+  
+  # Post endpoints (legacy)
+  createPost:
+    handler: src/handlers/posts.createPost
+    events:
+      - httpApi:
+          path: /posts
+          method: post
+  
+  listPosts:
+    handler: src/handlers/posts.listPosts
+    events:
+      - httpApi:
+          path: /posts
+          method: get
+  
+  getPost:
+    handler: src/handlers/posts.getPost
+    events:
+      - httpApi:
+          path: /posts/{id}
+          method: get
+  
+  # Conversation endpoints
+  listConversations:
+    handler: src/handlers/conversations.listConversations
+    events:
+      - httpApi:
+          path: /conversations
+          method: get
+  
+  createConversation:
+    handler: src/handlers/conversations.createConversation
+    events:
+      - httpApi:
+          path: /conversations
+          method: post
+  
+  getMessages:
+    handler: src/handlers/conversations.getMessages
+    events:
+      - httpApi:
+          path: /conversations/{id}/messages
+          method: get
+  
+  sendMessage:
+    handler: src/handlers/conversations.sendMessage
+    events:
+      - httpApi:
+          path: /conversations/{id}/messages
+          method: post
+  
+  # Notification endpoints
+  listNotifications:
+    handler: src/handlers/notifications.listNotifications
+    events:
+      - httpApi:
+          path: /notifications
+          method: get
+  
+  markNotificationRead:
+    handler: src/handlers/notifications.markAsRead
+    events:
+      - httpApi:
+          path: /notifications/{id}/read
+          method: patch
+  
+  markAllNotificationsRead:
+    handler: src/handlers/notifications.markAllAsRead
+    events:
+      - httpApi:
+          path: /notifications/mark-all
+          method: patch
+  
+  # Connection endpoints
+  sendConnectionRequest:
+    handler: src/handlers/connections.sendRequest
+    events:
+      - httpApi:
+          path: /connections/request
+          method: post
+  
+  listConnectionRequests:
+    handler: src/handlers/connections.listRequests
+    events:
+      - httpApi:
+          path: /connections/requests
+          method: get
+  
+  approveConnectionRequest:
+    handler: src/handlers/connections.approveRequest
+    events:
+      - httpApi:
+          path: /connections/requests/{id}/approve
+          method: post
+  
+  rejectConnectionRequest:
+    handler: src/handlers/connections.rejectRequest
+    events:
+      - httpApi:
+          path: /connections/requests/{id}/reject
+          method: post
+
+  # Profile endpoints
+  getProfileByVanity:
+    handler: src/handlers/profiles.getProfileByVanity
+    events:
+      - httpApi:
+          path: /profiles/{vanityUrl}
+          method: get
+  
+  getProfileById:
+    handler: src/handlers/profiles.getProfileById
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: get
+  
+  createProfile:
+    handler: src/handlers/profiles.createProfile
+    events:
+      - httpApi:
+          path: /profiles
+          method: post
+  
+  updateProfile:
+    handler: src/handlers/profiles.updateProfile
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: put
+  
+  deleteProfile:
+    handler: src/handlers/profiles.deleteProfile
+    events:
+      - httpApi:
+          path: /profiles/id/{id}
+          method: delete
+
+  # Media endpoints
+  getUploadUrl:
+    handler: src/handlers/media.getUploadUrl
+    events:
+      - httpApi:
+          path: /profiles/{id}/media/upload-url
+          method: post
+  
+  completeUpload:
+    handler: src/handlers/media.completeUpload
+    events:
+      - httpApi:
+          path: /profiles/{id}/media/complete
+          method: post
+  
+  updateMedia:
+    handler: src/handlers/media.updateMedia
+    events:
+      - httpApi:
+          path: /media/{id}
+          method: put
+  
+  deleteMedia:
+    handler: src/handlers/media.deleteMedia
+    events:
+      - httpApi:
+          path: /media/{id}
+          method: delete
+  
+  getAccessUrl:
+    handler: src/handlers/media.getAccessUrl
+    events:
+      - httpApi:
+          path: /media/{id}/access-url
+          method: get
+
+  # Credits endpoints
+  listCredits:
+    handler: src/handlers/credits.listCredits
+    events:
+      - httpApi:
+          path: /profiles/{id}/credits
+          method: get
+  
+  createCredit:
+    handler: src/handlers/credits.createCredit
+    events:
+      - httpApi:
+          path: /profiles/{id}/credits
+          method: post
+  
+  updateCredit:
+    handler: src/handlers/credits.updateCredit
+    events:
+      - httpApi:
+          path: /credits/{id}
+          method: put
+  
+  deleteCredit:
+    handler: src/handlers/credits.deleteCredit
+    events:
+      - httpApi:
+          path: /credits/{id}
+          method: delete
+
+  # Settings endpoints
+  getSettings:
+    handler: src/handlers/settings.getSettings
+    events:
+      - httpApi:
+          path: /settings
+          method: get
+  
+  updateSettings:
+    handler: src/handlers/settings.updateSettings
+    events:
+      - httpApi:
+          path: /settings
+          method: put
+  
+  exportAccountData:
+    handler: src/handlers/settings.exportAccountData
+    events:
+      - httpApi:
+          path: /account/export
+          method: post
+  
+  deleteAccount:
+    handler: src/handlers/settings.deleteAccount
+    events:
+      - httpApi:
+          path: /account
+          method: delete
+
+  # Reel Request endpoints
+  createReelRequest:
+    handler: src/handlers/reelRequests.createReelRequest
+    events:
+      - httpApi:
+          path: /reels/{id}/request
+          method: post
+  
+  listReelRequests:
+    handler: src/handlers/reelRequests.listReelRequests
+    events:
+      - httpApi:
+          path: /reel-requests
+          method: get
+  
+  approveReelRequest:
+    handler: src/handlers/reelRequests.approveReelRequest
+    events:
+      - httpApi:
+          path: /reel-requests/{id}/approve
+          method: post
+  
+  denyReelRequest:
+    handler: src/handlers/reelRequests.denyReelRequest
+    events:
+      - httpApi:
+          path: /reel-requests/{id}/deny
+          method: post
+
+  # Search endpoints
+  searchProfiles:
+    handler: src/handlers/search.searchProfiles
+    events:
+      - httpApi:
+          path: /search
+          method: get
+  
+  searchUsers:
+    handler: src/handlers/search.searchUsers
+    events:
+      - httpApi:
+          path: /search/users
+          method: get
+
+  # Internal tooling endpoints (Phases 4-7)
+  ingestPRIntel:
+    handler: src/handlers/prIntel.ingestPRIntel
+    events:
+      - httpApi:
+          path: /internal/pr-intel/ingest
+          method: post
+
+  getPRIntel:
+    handler: src/handlers/prIntel.getPRIntel
+    events:
+      - httpApi:
+          path: /internal/pr-intel/{prNumber}
+          method: get
+
+  ingestTestRuns:
+    handler: src/handlers/testIntel.ingestTestRuns
+    events:
+      - httpApi:
+          path: /internal/tests/ingest
+          method: post
+
+  getFlakyCandidates:
+    handler: src/handlers/testIntel.getFlakyCandidates
+    events:
+      - httpApi:
+          path: /internal/tests/flaky-candidates
+          method: get
+
+  analyzeSchemaDiff:
+    handler: src/handlers/schemaDiff.analyzeSchemaDiff
+    events:
+      - httpApi:
+          path: /internal/schema/diff
+          method: post
+
+  runSyntheticJourney:
+    handler: src/handlers/syntheticJourney.runSyntheticJourney
+    events:
+      - httpApi:
+          path: /internal/journey/run
+          method: post
+
+  # Observability v2 endpoints
+  ingestMetrics:
+    handler: src/handlers/observability.ingestMetrics
+    events:
+      - httpApi:
+          path: /internal/observability/metrics
+          method: post
+
+  getMetrics:
+    handler: src/handlers/observability.getMetrics
+    events:
+      - httpApi:
+          path: /internal/observability/metrics
+          method: get
+
+  observabilityHealth:
+    handler: src/handlers/observability.healthCheck
+    events:
+      - httpApi:
+          path: /internal/observability/health
+          method: get
+
+  getStats:
+    handler: src/handlers/observability.getStats
+    events:
+      - httpApi:
+          path: /internal/observability/stats
+          method: get
+
+  logEvent:
+    handler: src/handlers/observability.logEvent
+    events:
+      - httpApi:
+          path: /internal/observability/log
+          method: post
+
+  # Moderation endpoints
+  createReport:
+    handler: src/handlers/reports.createReport
+    events:
+      - httpApi:
+          path: /reports
+          method: post
+
+  listReports:
+    handler: src/handlers/reports.listReports
+    events:
+      - httpApi:
+          path: /reports
+          method: get
+
+  getReport:
+    handler: src/handlers/reports.getReport
+    events:
+      - httpApi:
+          path: /reports/{id}
+          method: get
+
+  makeDecision:
+    handler: src/handlers/moderation.makeDecision
+    events:
+      - httpApi:
+          path: /moderation/decision
+          method: post
+
+  moderationHealth:
+    handler: src/handlers/moderation.getHealth
+    events:
+      - httpApi:
+          path: /moderation/health
+          method: get
+
+  # Analytics Privacy Stub endpoints
+  analyticsIngest:
+    handler: src/handlers/analytics.ingestEvents
+    events:
+      - httpApi:
+          path: /analytics/ingest
+          method: post
+
+  analyticsConfig:
+    handler: src/handlers/analytics.getConfig
+    events:
+      - httpApi:
+          path: /analytics/config
+          method: get
+
+  analyticsCleanup:
+    handler: src/handlers/analytics.cleanupOldEvents
+    events:
+      - httpApi:
+          path: /analytics/events/cleanup
+          method: delete
+
+
+# Layer ARNs
+customLayerArns:
+  prisma: 
+  shared: arn:aws:lambda:us-west-2:579939802800:layer:pv-shared:1
