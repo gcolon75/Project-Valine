@@ -10,6 +10,8 @@ dist
 # Serverless artifacts
 .serverless/
 serverless/.serverless/
+serverless/login.zip
+serverless/login_unpack/
 
 # Orchestrator secrets and build artifacts
 orchestrator/samconfig.toml

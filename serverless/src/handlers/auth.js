@@ -288,9 +288,59 @@ async function logout(_event) {
   }
 }
 
-/* ---------------------- ENABLE 2FA ---------------------- */
+/* ---------------------- EMAIL VERIFICATION ---------------------- */
 
-async function enable2fa(event) {
+async function verifyEmail(event) {
+  try {
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { token } = data;
+    if (!token) return error(400, 'token is required');
+
+    // TODO: Implement email verification logic
+    // For now, just return success
+    console.log('[VERIFY_EMAIL] Email verification not yet implemented');
+    return response(200, { verified: true });
+  } catch (e) {
+    console.error('[VERIFY_EMAIL] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+async function resendVerification(event) {
+  try {
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { email } = data;
+    if (!email) return error(400, 'email is required');
+
+    // TODO: Implement resend verification logic
+    // For now, just return success
+    console.log('[RESEND_VERIFICATION] Resend verification not yet implemented');
+    return response(200, { sent: true });
+  } catch (e) {
+    console.error('[RESEND_VERIFICATION] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- 2FA HANDLERS ---------------------- */
+
+async function setup2FA(event) {
   try {
     const userId = getUserIdFromEvent(event);
     if (!userId) return error(401, 'Unauthorized');
@@ -315,14 +365,12 @@ async function enable2fa(event) {
       otpauth
     });
   } catch (e) {
-    console.error('[ENABLE2FA] Unhandled error:', e);
+    console.error('[SETUP2FA] Unhandled error:', e);
     return error(500, 'Server error');
   }
 }
 
-/* ---------------------- VERIFY 2FA ---------------------- */
-
-async function verify2fa(event) {
+async function enable2FA(event) {
   try {
     const userId = getUserIdFromEvent(event);
     if (!userId) return error(401, 'Unauthorized');
@@ -358,10 +406,88 @@ async function verify2fa(event) {
 
     return response(200, { twoFactorEnabled: true });
   } catch (e) {
+    console.error('[ENABLE2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+async function verify2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { code } = data;
+    if (!code) return error(400, 'code is required');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorSecret) {
+      return error(400, '2FA not initialized');
+    }
+
+    const ok = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret
+    });
+    if (!ok) return error(401, 'Invalid code');
+
+    return response(200, { verified: true });
+  } catch (e) {
     console.error('[VERIFY2FA] Unhandled error:', e);
     return error(500, 'Server error');
   }
 }
+
+async function disable2FA(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return error(404, 'Not found');
+
+    if (!user.twoFactorEnabled) {
+      return error(400, '2FA not enabled');
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null
+      }
+    });
+
+    return response(200, { twoFactorEnabled: false });
+  } catch (e) {
+    console.error('[DISABLE2FA] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- LEGACY 2FA (lowercase) ---------------------- */
+
+async function enable2fa(event) {
+  // Alias to enable2FA for backward compatibility
+  return enable2FA(event);
+}
+
+async function verify2fa(event) {
+  // Alias to verify2FA for backward compatibility
+  return verify2FA(event);
+}
+
+
 
 /* ---------------------- EXPORT ALL ---------------------- */
 
@@ -371,6 +497,12 @@ export {
   me,
   refresh,
   logout,
+  verifyEmail,
+  resendVerification,
+  setup2FA,
+  enable2FA,
+  verify2FA,
+  disable2FA,
   enable2fa,
   verify2fa
 };
