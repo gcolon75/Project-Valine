@@ -677,5 +677,3 @@ functions:
           path: /analytics/events/cleanup
           method: delete
 
-plugins:
-  - serverless-esbuild
