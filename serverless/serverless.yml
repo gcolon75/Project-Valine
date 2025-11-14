@@ -1,4 +1,4 @@
-service: pv-api
+﻿service: pv-api
 frameworkVersion: "3"
 
 plugins:
@@ -74,4 +74,4 @@ provider:
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
 
-# (rest of serverless.yml unchanged — keep function list and package patterns)
+# (rest of serverless.yml unchanged â€” keep function list and package patterns)
