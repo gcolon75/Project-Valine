@@ -1,11 +1,10 @@
 /**
  * Authentication & session handlers for Project Valine (Lambda HTTP API v2).
- * Ensure this file is the one packaged into the Lambda zip.
+ * Single final export block (no per-function export keywords) to avoid duplicate export errors.
  *
- * Packaging Notes (keep bundle small):
- * - Only production dependencies should be installed (use `npm ci --omit=dev`).
- * - Exclude docs/tests/unused folders via serverless.yml `package.patterns`.
- * - This file intentionally uses a single export block at bottom (no per-function `export` keywords).
+ * Packaging Notes:
+ *  - Use `npm ci --omit=dev` before deploying to keep node_modules small.
+ *  - With serverless-esbuild bundling, only external deps (e.g. @prisma/client) remain in node_modules.
  */
 
 import { getPrisma } from '../db/client.js';
@@ -30,7 +29,7 @@ import {
   getUserIdFromEvent
 } from '../utils/tokenManager.js';
 
-/* ---------------------- Helper / shared functions ---------------------- */
+/* ---------------------- Helpers ---------------------- */
 
 function buildHeaders(extra = {}) {
   return {
@@ -51,8 +50,7 @@ function redactEmail(e) {
 }
 
 /**
- * Attach Set-Cookie headers to response.
- * AWS HTTP API: use "cookies" array for multiple Set-Cookie values.
+ * Unified JSON response with optional cookies array (HTTP API v2).
  */
 function response(statusCode, bodyObj, cookieHeaders = []) {
   return {
@@ -104,7 +102,6 @@ async function login(event) {
       console.warn('[LOGIN] User not found');
       return error(401, 'Invalid credentials');
     }
-
     if (!user.passwordHash) {
       console.error('[LOGIN] User missing password hash');
       return error(500, 'Server error');
@@ -297,7 +294,7 @@ async function logout(_event) {
   }
 }
 
-/* ---------------------- EMAIL VERIFICATION ---------------------- */
+/* ---------------------- EMAIL VERIFICATION (stubs) ---------------------- */
 
 async function verifyEmail(event) {
   try {
@@ -313,8 +310,7 @@ async function verifyEmail(event) {
     const { token } = data;
     if (!token) return error(400, 'token is required');
 
-    // Placeholder implementation
-    console.log('[VERIFY_EMAIL] Email verification not yet implemented');
+    console.log('[VERIFY_EMAIL] Not yet implemented');
     return response(200, { verified: true });
   } catch (e) {
     console.error('[VERIFY_EMAIL] Unhandled error:', e);
@@ -336,8 +332,7 @@ async function resendVerification(event) {
     const { email } = data;
     if (!email) return error(400, 'email is required');
 
-    // Placeholder implementation
-    console.log('[RESEND_VERIFICATION] Resend verification not yet implemented');
+    console.log('[RESEND_VERIFICATION] Not yet implemented');
     return response(200, { sent: true });
   } catch (e) {
     console.error('[RESEND_VERIFICATION] Unhandled error:', e);
@@ -367,10 +362,7 @@ async function setup2FA(event) {
     });
 
     const otpauth = authenticator.keyuri(user.email, 'ProjectValine', secret);
-    return response(200, {
-      secret,
-      otpauth
-    });
+    return response(200, { secret, otpauth });
   } catch (e) {
     console.error('[SETUP2FA] Unhandled error:', e);
     return error(500, 'Server error');
@@ -482,16 +474,26 @@ async function disable2FA(event) {
   }
 }
 
-/* ---------------------- LEGACY 2FA (lowercase) ---------------------- */
+/* ---------------------- Legacy 2FA aliases ---------------------- */
 
 async function enable2fa(event) {
-  // Alias to enable2FA for backward compatibility
   return enable2FA(event);
 }
-
 async function verify2fa(event) {
-  // Alias to verify2FA for backward compatibility
   return verify2FA(event);
+}
+
+/* ---------------------- USER EXTRACTION (compat wrapper) ---------------------- */
+/**
+ * Compatibility helper used by other handlers (reels, conversations, etc.).
+ * Wraps getUserIdFromEvent and returns userId or null without throwing.
+ */
+function getUserFromEvent(event) {
+  try {
+    return getUserIdFromEvent(event) || null;
+  } catch {
+    return null;
+  }
 }
 
 /* ---------------------- EXPORT ALL ---------------------- */
@@ -509,5 +511,6 @@ export {
   verify2FA,
   disable2FA,
   enable2fa,
-  verify2fa
+  verify2fa,
+  getUserFromEvent
 };
