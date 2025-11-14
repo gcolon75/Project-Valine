@@ -1,6 +1,11 @@
 /**
  * Authentication & session handlers for Project Valine (Lambda HTTP API v2).
  * Ensure this file is the one packaged into the Lambda zip.
+ *
+ * Packaging Notes (keep bundle small):
+ * - Only production dependencies should be installed (use `npm ci --omit=dev`).
+ * - Exclude docs/tests/unused folders via serverless.yml `package.patterns`.
+ * - This file intentionally uses a single export block at bottom (no per-function `export` keywords).
  */
 
 import { getPrisma } from '../db/client.js';
@@ -140,15 +145,19 @@ async function login(event) {
       `[LOGIN] Success userId=${user.id} latency=${nowSeconds() - start}s`
     );
 
-    return response(200, {
-      user: {
-        id: user.id,
-        email: user.email,
-        createdAt: user.createdAt,
-        twoFactorEnabled: user.twoFactorEnabled || false
+    return response(
+      200,
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          createdAt: user.createdAt,
+          twoFactorEnabled: user.twoFactorEnabled || false
+        },
+        csrfToken
       },
-      csrfToken
-    }, cookies);
+      cookies
+    );
   } catch (e) {
     console.error('[LOGIN] Unhandled error:', e);
     return error(500, 'Server error');
@@ -248,11 +257,11 @@ async function me(event) {
 
 async function refresh(event) {
   try {
-    const refresh = extractToken(event, 'refresh');
-    if (!refresh) {
+    const refreshTok = extractToken(event, 'refresh');
+    if (!refreshTok) {
       return error(401, 'Missing refresh token');
     }
-    const payload = verifyToken(refresh, 'refresh');
+    const payload = verifyToken(refreshTok, 'refresh');
     if (!payload) {
       return error(401, 'Invalid refresh token');
     }
@@ -304,8 +313,7 @@ async function verifyEmail(event) {
     const { token } = data;
     if (!token) return error(400, 'token is required');
 
-    // TODO: Implement email verification logic
-    // For now, just return success
+    // Placeholder implementation
     console.log('[VERIFY_EMAIL] Email verification not yet implemented');
     return response(200, { verified: true });
   } catch (e) {
@@ -328,8 +336,7 @@ async function resendVerification(event) {
     const { email } = data;
     if (!email) return error(400, 'email is required');
 
-    // TODO: Implement resend verification logic
-    // For now, just return success
+    // Placeholder implementation
     console.log('[RESEND_VERIFICATION] Resend verification not yet implemented');
     return response(200, { sent: true });
   } catch (e) {
@@ -486,8 +493,6 @@ async function verify2fa(event) {
   // Alias to verify2FA for backward compatibility
   return verify2FA(event);
 }
-
-
 
 /* ---------------------- EXPORT ALL ---------------------- */
 
