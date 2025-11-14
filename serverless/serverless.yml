@@ -88,16 +88,12 @@ custom:
       - '@prisma/client'
       - '.prisma/client'
     packager: npm
-    packagePath: ../package.json
     keepOutputDirectory: true
 
 layers:
   prisma:
     package:
       artifact: layers/prisma-layer.zip
-  shared:
-    package:
-      artifact: layers/shared-layer.zip
 
 package:
   individually: true
