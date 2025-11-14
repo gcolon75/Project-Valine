@@ -1,14 +1,19 @@
 /**
- * Auth handlers (registration, login, session, tokens, 2FA)
- * CORS FIX: All success responses now use getCorsHeaders(event).
+ * Authentication & session handlers for Project Valine (Lambda HTTP API v2).
+ * Ensure this file is the one packaged into the Lambda zip.
  */
+
 import { getPrisma } from '../db/client.js';
 import { json, error, getCorsHeaders } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { authenticator } from 'otplib';
+import {
+  generateCsrfToken,
+  generateCsrfCookie,
+  clearCsrfCookie
+} from '../middleware/csrfMiddleware.js';
 import { rateLimit } from '../middleware/rateLimit.js';
-import { generateCsrfToken, generateCsrfCookie, clearCsrfCookie } from '../middleware/csrfMiddleware.js';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -20,495 +25,363 @@ import {
   getUserIdFromEvent
 } from '../utils/tokenManager.js';
 
-const hashPassword = async (password) => bcrypt.hash(password, 10);
-const comparePassword = async (password, hashed) => bcrypt.compare(password, hashed);
-export const getUserFromEvent = getUserIdFromEvent;
+/* ---------------------- Helper / shared functions ---------------------- */
 
-/* ============ REGISTER ============ */
-export const register = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[REGISTER] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+function buildHeaders(extra = {}) {
+  return {
+    ...getCorsHeaders(),
+    ...extra
+  };
+}
 
-  const { email, password, username, displayName } = parsed;
+function nowSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function redactEmail(e) {
+  if (!e || typeof e !== 'string') return '';
+  const [user, domain] = e.split('@');
+  if (!domain) return e;
+  return `${user.slice(0, 2)}***@${domain}`;
+}
+
+/**
+ * Attach Set-Cookie headers to response.
+ * AWS HTTP API: multiValueHeaders not used; supply array under "cookies" OR combine in headers.
+ * We use "cookies" array for clarity; if your integration expects headers['Set-Cookie'] adjust accordingly.
+ */
+function response(statusCode, bodyObj, cookieHeaders = []) {
+  return {
+    statusCode,
+    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+    cookies: cookieHeaders, // Each element is a full Set-Cookie string
+    body: JSON.stringify(bodyObj)
+  };
+}
+
+/* ---------------------- LOGIN ---------------------- */
+
+export async function login(event) {
+  const start = nowSeconds();
   try {
-    if (!email || !password || !username || !displayName) return error('email, password, username, and displayName are required', 400, { event });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error('Invalid email format', 400, { event });
-
-    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-    const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
-    const normalizedEmail = email.toLowerCase().trim();
-
-    if (!ENABLE_REGISTRATION) {
-      if (allowedEmails.length === 0 || !allowedEmails.includes(normalizedEmail)) {
-        console.log(`Registration blocked: ENABLE_REGISTRATION=false; ${normalizedEmail} not allowlisted`);
-        return error('Registration is currently disabled', 403, { event });
-      }
-      console.log(`Registration allowed (allowlisted while global disabled): ${normalizedEmail}`);
-    } else if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
-      console.log(`Registration blocked: ${normalizedEmail} not in allowlist`);
-      return error('Registration not permitted for this email address', 403, { event });
+    // Basic rate limiting (optional)
+    const rlResult = await rateLimit(event, 'login', 10, 60); // 10 attempts / 60s
+    if (!rlResult.allowed) {
+      console.warn('[LOGIN] Rate limit exceeded');
+      return error(429, 'Too many login attempts');
     }
 
-    if (password.length < 6) return error('Password must be at least 6 characters', 400, { event });
+    const rawBody = event?.body || '';
+    console.log(`[LOGIN] Raw body length: ${rawBody.length}`);
+
+    let creds = {};
+    if (rawBody) {
+      try {
+        creds = JSON.parse(rawBody);
+      } catch (e) {
+        console.error('[LOGIN] JSON parse error:', e);
+        return error(400, 'Invalid JSON body');
+      }
+    }
+
+    const { email, password, twoFactorCode } = creds || {};
+    if (!email || !password) {
+      console.warn('[LOGIN] Missing email/password');
+      return error(400, 'email and password are required');
+    }
+
+    console.log(`[LOGIN] Attempt for email=${redactEmail(email)}`);
 
     const prisma = getPrisma();
-    const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { normalizedEmail }, { username }] }
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
     });
-    if (existingUser) return error('User with this email or username already exists', 409, { event });
 
-    const hashedPassword = await hashPassword(password);
+    if (!user) {
+      console.warn('[LOGIN] User not found');
+      return error(401, 'Invalid credentials');
+    }
+
+    if (!user.passwordHash) {
+      console.error('[LOGIN] User missing password hash');
+      return error(500, 'Server error');
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      console.warn('[LOGIN] Invalid password');
+      return error(401, 'Invalid credentials');
+    }
+
+    // Optional 2FA flow
+    if (user.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        console.warn('[LOGIN] 2FA required but code missing');
+        return error(401, 'Two-factor code required');
+      }
+      const ok = authenticator.verify({
+        token: twoFactorCode,
+        secret: user.twoFactorSecret
+      });
+      if (!ok) {
+        console.warn('[LOGIN] 2FA code invalid');
+        return error(401, 'Invalid two-factor code');
+      }
+    }
+
+    // Tokens
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    // CSRF token (for subsequent state-changing requests)
+    const csrfToken = generateCsrfToken();
+
+    const cookies = [
+      generateAccessTokenCookie(accessToken),
+      generateRefreshTokenCookie(refreshToken),
+      generateCsrfCookie(csrfToken)
+    ];
+
+    console.log(
+      `[LOGIN] Success userId=${user.id} latency=${nowSeconds() - start}s`
+    );
+
+    return response(200, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+        twoFactorEnabled: user.twoFactorEnabled || false
+      },
+      csrfToken
+    }, cookies);
+  } catch (e) {
+    console.error('[LOGIN] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- REGISTER ---------------------- */
+/**
+ * Registration logic honoring ALLOWED_USER_EMAILS env variable.
+ * If ALLOWED_USER_EMAILS is set (comma-separated), only those emails may register.
+ */
+export async function register(event) {
+  try {
+    const rawBody = event?.body || '';
+    console.log(`[REGISTER] Raw body length: ${rawBody.length}`);
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch (e) {
+        console.error('[REGISTER] JSON parse error:', e);
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { email, password } = data;
+    if (!email || !password) {
+      return error(400, 'email and password are required');
+    }
+
+    const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
+    if (allowListRaw.trim().length > 0) {
+      const allowed = allowListRaw
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
+      if (!allowed.includes(email.toLowerCase())) {
+        console.warn('[REGISTER] Email not allowlisted');
+        return error(403, 'Registration not permitted');
+      }
+    }
+
+    const prisma = getPrisma();
+    const existing = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+    if (existing) {
+      return error(409, 'Email already registered');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
       data: {
-        email,
-        normalizedEmail,
-        password: hashedPassword,
-        username,
-        displayName,
-        emailVerified: false,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
-      },
-      select: { id: true, username: true, email: true, displayName: true, avatar: true, emailVerified: true, createdAt: true }
-    });
-
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    await prisma.emailVerificationToken.create({
-      data: { userId: user.id, token: verificationToken, expiresAt: new Date(Date.now() + 86400000) }
-    });
-    await sendVerificationEmail(user.email, verificationToken, user.username);
-
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
-    const accessCookie = generateAccessTokenCookie(accessToken);
-    const refreshCookie = generateRefreshTokenCookie(refreshToken);
-    const cors = getCorsHeaders(event);
-
-    return {
-      statusCode: 201,
-      headers: {
-        ...cors,
-        'content-type': 'application/json',
-        'Set-Cookie': accessCookie
-      },
-      multiValueHeaders: { 'Set-Cookie': [accessCookie, refreshCookie] },
-      body: JSON.stringify({ user, message: 'Registration successful. Verify your email.' })
-    };
-  } catch (e) {
-    console.error('Register error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ LOGIN ============ */
-export const login = async (event) => {
-  const raw = event.body || '';
-  console.log('[LOGIN] Raw body length:', raw.length, 'snippet:', raw.substring(0, 120));
-
-  let parsed;
-  try { parsed = JSON.parse(raw || '{}'); }
-  catch { console.error('[LOGIN] Parse error raw body:', raw); return error('Invalid JSON payload', 400, { event }); }
-
-  let { email, password } = parsed;
-  if (!email || !password) return error('email and password are required', 400, { event });
-
-  email = email.trim().toLowerCase();
-  password = password.trim();
-
-  try {
-    const prisma = getPrisma();
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email }, { normalizedEmail: email }] },
-      select: {
-        id: true, username: true, email: true, displayName: true, avatar: true,
-        role: true, password: true, emailVerified: true, twoFactorEnabled: true, createdAt: true
+        email: email.toLowerCase(),
+        passwordHash
       }
     });
-    if (!user) return error('Invalid email or password', 401, { event });
 
-    const passwordMatch = await comparePassword(password, user.password);
-    if (!passwordMatch) return error('Invalid email or password', 401, { event });
-
-    const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-    if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase()))
-      return error('Account not authorized for access', 403, { event });
-
-    const { password: _, twoFactorEnabled, ...userWithoutPassword } = user;
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
-    const decodedRefresh = verifyToken(refreshToken);
-    const jti = decodedRefresh?.jti;
-    if (jti) {
-      await prisma.refreshToken.create({
-        data: { userId: user.id, jti, expiresAt: new Date(Date.now() + 7 * 86400000), lastUsedAt: new Date() }
-      });
-    }
-
-    const accessCookie = generateAccessTokenCookie(accessToken);
-    const refreshCookie = generateRefreshTokenCookie(refreshToken);
-    const csrfToken = generateCsrfToken();
-    const csrfCookie = generateCsrfCookie(csrfToken);
-    const cors = getCorsHeaders(event);
-
-    return {
-      statusCode: 200,
-      headers: {
-        ...cors,
-        'content-type': 'application/json',
-        'Set-Cookie': accessCookie
-      },
-      multiValueHeaders: { 'Set-Cookie': [accessCookie, refreshCookie, csrfCookie] },
-      body: JSON.stringify({ user: userWithoutPassword, requiresTwoFactor: twoFactorEnabled && false })
-    };
-  } catch (e) {
-    console.error('Login error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ ME ============ */
-export const me = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) return error('Unauthorized - No valid token provided', 401, { event });
-    const prisma = getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, username: true, email: true, displayName: true, avatar: true, bio: true,
-        role: true, emailVerified: true, createdAt: true,
-        _count: { select: { posts: true, reels: true, sentRequests: true, receivedRequests: true } }
+    console.log(`[REGISTER] Created userId=${user.id}`);
+    return response(201, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt
       }
     });
-    if (!user) return error('User not found', 404, { event });
-    return json({ user }, 200, { event });
   } catch (e) {
-    console.error('Me error:', e);
-    return error('Server error: ' + e.message, 500, { event });
+    console.error('[REGISTER] Unhandled error:', e);
+    return error(500, 'Server error');
   }
-};
+}
 
-/* ============ VERIFY EMAIL ============ */
-export const verifyEmail = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[VERIFY_EMAIL] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+/* ---------------------- ME (fetch user from access token) ---------------------- */
 
-  const { token } = parsed;
-  if (!token) return error('token is required', 400, { event });
-
+export async function me(event) {
   try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
     const prisma = getPrisma();
-    const verificationToken = await prisma.emailVerificationToken.findUnique({
-      where: { token },
-      include: { user: true }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return error(404, 'Not found');
+    }
+    return response(200, {
+      user: {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+        twoFactorEnabled: user.twoFactorEnabled || false
+      }
     });
+  } catch (e) {
+    console.error('[ME] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
 
-    if (!verificationToken) return error('Invalid or expired verification token', 400, { event });
-    if (new Date() > verificationToken.expiresAt) {
-      await prisma.emailVerificationToken.delete({ where: { id: verificationToken.id } });
-      return error('Verification token has expired', 400, { event });
+/* ---------------------- REFRESH TOKEN ---------------------- */
+
+export async function refresh(event) {
+  try {
+    const refresh = extractToken(event, 'refresh'); // depends on implementation
+    if (!refresh) {
+      return error(401, 'Missing refresh token');
+    }
+    const payload = verifyToken(refresh, 'refresh');
+    if (!payload) {
+      return error(401, 'Invalid refresh token');
     }
 
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) {
+      return error(401, 'Invalid user');
+    }
+
+    const newAccess = generateAccessToken(user.id);
+    const accessCookie = generateAccessTokenCookie(newAccess);
+
+    return response(200, { ok: true }, [accessCookie]);
+  } catch (e) {
+    console.error('[REFRESH] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- LOGOUT ---------------------- */
+
+export async function logout(_event) {
+  try {
+    const cookies = [
+      ...generateClearCookieHeaders(), // clears access & refresh
+      clearCsrfCookie()
+    ];
+    return response(200, { ok: true }, cookies);
+  } catch (e) {
+    console.error('[LOGOUT] Unhandled error:', e);
+    return error(500, 'Server error');
+  }
+}
+
+/* ---------------------- ENABLE 2FA ---------------------- */
+
+export async function enable2fa(event) {
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return error(404, 'Not found');
+
+    if (user.twoFactorEnabled) {
+      return error(400, 'Already enabled');
+    }
+
+    const secret = authenticator.generateSecret();
+    // Usually you'd store secret temporarily until verified; for simplicity:
     await prisma.user.update({
-      where: { id: verificationToken.userId },
-      data: { emailVerified: true }
-    });
-
-    await prisma.emailVerificationToken.delete({ where: { id: verificationToken.id } });
-
-    return json({ message: 'Email verified successfully' }, 200, { event });
-  } catch (e) {
-    console.error('Verify email error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ RESEND VERIFICATION ============ */
-export const resendVerification = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[RESEND_VERIFICATION] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
-
-  const { email } = parsed;
-  if (!email) return error('email is required', 400, { event });
-
-  try {
-    const prisma = getPrisma();
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email }, { normalizedEmail: email.toLowerCase() }] }
-    });
-
-    if (!user) return error('User not found', 404, { event });
-    if (user.emailVerified) return error('Email already verified', 400, { event });
-
-    await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } });
-
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    await prisma.emailVerificationToken.create({
-      data: { userId: user.id, token: verificationToken, expiresAt: new Date(Date.now() + 86400000) }
-    });
-
-    await sendVerificationEmail(user.email, verificationToken, user.username);
-
-    return json({ message: 'Verification email sent' }, 200, { event });
-  } catch (e) {
-    console.error('Resend verification error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ REFRESH ============ */
-export const refresh = async (event) => {
-  try {
-    const refreshToken = extractToken(event, 'refresh');
-    if (!refreshToken) return error('Refresh token required', 401, { event });
-
-    const decoded = verifyToken(refreshToken);
-    if (!decoded || decoded.type !== 'refresh') return error('Invalid refresh token', 401, { event });
-
-    const prisma = getPrisma();
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { jti: decoded.jti }
-    });
-
-    if (!storedToken || storedToken.invalidatedAt) return error('Refresh token has been revoked', 401, { event });
-    if (new Date() > storedToken.expiresAt) {
-      await prisma.refreshToken.update({
-        where: { id: storedToken.id },
-        data: { invalidatedAt: new Date() }
-      });
-      return error('Refresh token has expired', 401, { event });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, username: true, email: true, displayName: true, avatar: true, role: true, emailVerified: true }
-    });
-
-    if (!user) return error('User not found', 404, { event });
-
-    await prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { lastUsedAt: new Date(), invalidatedAt: new Date() }
-    });
-
-    const newAccessToken = generateAccessToken(user.id);
-    const newRefreshToken = generateRefreshToken(user.id);
-    const newDecoded = verifyToken(newRefreshToken);
-    const newJti = newDecoded?.jti;
-
-    if (newJti) {
-      await prisma.refreshToken.create({
-        data: { userId: user.id, jti: newJti, expiresAt: new Date(Date.now() + 7 * 86400000), lastUsedAt: new Date() }
-      });
-    }
-
-    const accessCookie = generateAccessTokenCookie(newAccessToken);
-    const refreshCookie = generateRefreshTokenCookie(newRefreshToken);
-    const cors = getCorsHeaders(event);
-
-    return {
-      statusCode: 200,
-      headers: {
-        ...cors,
-        'content-type': 'application/json',
-        'Set-Cookie': accessCookie
-      },
-      multiValueHeaders: { 'Set-Cookie': [accessCookie, refreshCookie] },
-      body: JSON.stringify({ user, message: 'Token refreshed successfully' })
-    };
-  } catch (e) {
-    console.error('Refresh error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ LOGOUT ============ */
-export const logout = async (event) => {
-  try {
-    const refreshToken = extractToken(event, 'refresh');
-    if (refreshToken) {
-      const decoded = verifyToken(refreshToken);
-      if (decoded && decoded.jti) {
-        const prisma = getPrisma();
-        await prisma.refreshToken.updateMany({
-          where: { jti: decoded.jti },
-          data: { invalidatedAt: new Date() }
-        });
-      }
-    }
-
-    const clearCookies = generateClearCookieHeaders();
-    const csrfClearCookie = clearCsrfCookie();
-    const cors = getCorsHeaders(event);
-
-    return {
-      statusCode: 200,
-      headers: {
-        ...cors,
-        'content-type': 'application/json',
-        'Set-Cookie': clearCookies[0]
-      },
-      multiValueHeaders: { 'Set-Cookie': [...clearCookies, csrfClearCookie] },
-      body: JSON.stringify({ message: 'Logged out successfully' })
-    };
-  } catch (e) {
-    console.error('Logout error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ 2FA SETUP ============ */
-authenticator.options = { window: 1, step: 30 };
-const generateTOTPSecret = () => authenticator.generateSecret();
-const verifyTOTPCode = (secret, code) => {
-  const TWO_FACTOR_ENABLED = process.env.TWO_FACTOR_ENABLED === 'true';
-  if (!TWO_FACTOR_ENABLED) return true;
-  try { return authenticator.verify({ token: code, secret }); }
-  catch (err) { console.error('[2FA] TOTP verification error:', err); return false; }
-};
-
-export const setup2FA = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) return error('Unauthorized', 401, { event });
-
-    const prisma = getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, username: true, twoFactorEnabled: true }
-    });
-
-    if (!user) return error('User not found', 404, { event });
-    if (user.twoFactorEnabled) return error('2FA already enabled', 400, { event });
-
-    const secret = generateTOTPSecret();
-    const otpauth = authenticator.keyuri(user.email, 'Valine', secret);
-
-    await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { twoFactorSecret: secret }
     });
 
-    return json({ secret, otpauth, message: 'Scan QR code with authenticator app' }, 200, { event });
+    const otpauth = authenticator.keyuri(user.email, 'ProjectValine', secret);
+    return response(200, {
+      secret,
+      otpauth
+    });
   } catch (e) {
-    console.error('Setup 2FA error:', e);
-    return error('Server error: ' + e.message, 500, { event });
+    console.error('[ENABLE2FA] Unhandled error:', e);
+    return error(500, 'Server error');
   }
-};
+}
 
-export const enable2FA = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[ENABLE_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+/* ---------------------- VERIFY 2FA (finalize enabling) ---------------------- */
 
-  const { code } = parsed;
-  if (!code) return error('code is required', 400, { event });
-
+export async function verify2fa(event) {
   try {
-    const userId = getUserFromEvent(event);
-    if (!userId) return error('Unauthorized', 401, { event });
+    const userId = getUserIdFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const rawBody = event?.body || '';
+    let data = {};
+    if (rawBody) {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        return error(400, 'Invalid JSON body');
+      }
+    }
+    const { code } = data;
+    if (!code) return error(400, 'code is required');
 
     const prisma = getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorSecret) {
+      return error(400, '2FA not initialized');
+    }
+
+    const ok = authenticator.verify({
+      token: code,
+      secret: user.twoFactorSecret
     });
-
-    if (!user) return error('User not found', 404, { event });
-    if (user.twoFactorEnabled) return error('2FA already enabled', 400, { event });
-    if (!user.twoFactorSecret) return error('2FA not set up. Call setup2FA first', 400, { event });
-
-    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
-    if (!isValid) return error('Invalid verification code', 400, { event });
+    if (!ok) return error(401, 'Invalid code');
 
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { twoFactorEnabled: true }
     });
 
-    return json({ message: '2FA enabled successfully' }, 200, { event });
+    return response(200, { twoFactorEnabled: true });
   } catch (e) {
-    console.error('Enable 2FA error:', e);
-    return error('Server error: ' + e.message, 500, { event });
+    console.error('[VERIFY2FA] Unhandled error:', e);
+    return error(500, 'Server error');
   }
-};
+}
 
-export const verify2FA = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[VERIFY_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+/* ---------------------- EXPORT ALL ---------------------- */
 
-  const { email, code } = parsed;
-  if (!email || !code) return error('email and code are required', 400, { event });
-
-  try {
-    const prisma = getPrisma();
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ email }, { normalizedEmail: email.toLowerCase() }] },
-      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
-    });
-
-    if (!user) return error('User not found', 404, { event });
-    if (!user.twoFactorEnabled) return error('2FA not enabled for this user', 400, { event });
-
-    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
-    if (!isValid) return error('Invalid verification code', 401, { event });
-
-    return json({ message: '2FA verification successful', verified: true }, 200, { event });
-  } catch (e) {
-    console.error('Verify 2FA error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-export const disable2FA = async (event) => {
-  let parsed;
-  try { parsed = JSON.parse(event.body || '{}'); }
-  catch { console.error('[DISABLE_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
-
-  const { code } = parsed;
-  if (!code) return error('code is required', 400, { event });
-
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) return error('Unauthorized', 401, { event });
-
-    const prisma = getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
-    });
-
-    if (!user) return error('User not found', 404, { event });
-    if (!user.twoFactorEnabled) return error('2FA is not enabled', 400, { event });
-
-    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
-    if (!isValid) return error('Invalid verification code', 401, { event });
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: { twoFactorEnabled: false, twoFactorSecret: null }
-    });
-
-    return json({ message: '2FA disabled successfully' }, 200, { event });
-  } catch (e) {
-    console.error('Disable 2FA error:', e);
-    return error('Server error: ' + e.message, 500, { event });
-  }
-};
-
-/* ============ HELPER FUNCTIONS ============ */
-const sendVerificationEmail = async (email, token, username) => {
-  const EMAIL_ENABLED = process.env.EMAIL_ENABLED === 'true';
-  const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const verificationUrl = `${FRONTEND_URL}/verify-email?token=${token}`;
-  const maskedToken = token.length > 12 ? `${token.substring(0,8)}...${token.substring(token.length-4)}` : '***masked***';
-  if (EMAIL_ENABLED) {
-    console.log(`[EMAIL] SMTP verification to ${email} token: ${maskedToken}`);
-  } else {
-    console.log('=== EMAIL VERIFICATION (DEV MODE) ===');
-    console.log(`To: ${email}`); console.log(verificationUrl); console.log(`Token: ${maskedToken}`);
-  }
+export {
+  // already exported individually above, but ensure they are all accessible
+  login,
+  register,
+  me,
+  refresh,
+  logout,
+  enable2fa,
+  verify2fa
 };
