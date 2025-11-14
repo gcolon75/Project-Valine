@@ -327,6 +327,10 @@ export const refresh = async (event) => {
 export const logout = async (event) => {
   try {
     const refreshToken = extractToken(event, 'refresh');
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 1861db48e6ca2bcfa29272864986fe8b140e1143
     if (refreshToken) {
       const decoded = verifyToken(refreshToken);
       if (decoded && decoded.jti) {
@@ -484,7 +488,11 @@ export const disable2FA = async (event) => {
     if (!user.twoFactorEnabled) return error('2FA is not enabled', 400, { event });
 
     const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+<<<<<<< HEAD
     if (!isValid) return error('Invalid verification code', 401, { event });
+=======
+    if (!isValid) return error('Invalid verification code', 400, { event });
+>>>>>>> 1861db48e6ca2bcfa29272864986fe8b140e1143
 
     await prisma.user.update({
       where: { id: userId },
