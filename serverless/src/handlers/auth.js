@@ -22,45 +22,40 @@ import {
   getUserIdFromEvent
 } from '../utils/tokenManager.js';
 
-// Password hashing with bcrypt
 const hashPassword = async (password) => {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
 };
 
-// Password comparison with bcrypt
 const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
-// Export for backward compatibility
 export const getUserFromEvent = getUserIdFromEvent;
 
 /* ============================= REGISTER ============================= */
 
 export const register = async (event) => {
-  let payload;
+  let parsed;
   try {
-    payload = JSON.parse(event.body || '{}');
-  } catch (parseErr) {
-    console.error('[REGISTER] JSON parse error. Raw body:', event.body);
+    parsed = JSON.parse(event.body || '{}');
+  } catch (err) {
+    console.error('[REGISTER] JSON parse error raw body:', event.body);
     return error('Invalid JSON payload', 400, { event });
   }
 
-  const { email, password, username, displayName } = payload;
+  const { email, password, username, displayName } = parsed;
 
   try {
     if (!email || !password || !username || !displayName) {
       return error('email, password, username, and displayName are required', 400, { event });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return error('Invalid email format', 400, { event });
     }
 
-    // Allowlist + registration gating
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
@@ -70,9 +65,8 @@ export const register = async (event) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!ENABLE_REGISTRATION) {
-      // Registration disabled globally; only allow allowlisted emails
       if (allowedEmails.length === 0 || !allowedEmails.includes(normalizedEmail)) {
-        console.log(`Registration blocked: ENABLE_REGISTRATION=false and email ${normalizedEmail} not in allowlist`);
+        console.log(`Registration blocked: ENABLE_REGISTRATION=false; ${normalizedEmail} not allowlisted`);
         return error('Registration is currently disabled', 403, { event });
       }
       console.log(`Registration allowed (allowlisted): ${normalizedEmail}`);
@@ -81,14 +75,12 @@ export const register = async (event) => {
       return error('Registration not permitted for this email address', 403, { event });
     }
 
-    // Validate password length
     if (password.length < 6) {
       return error('Password must be at least 6 characters', 400, { event });
     }
 
     const prisma = getPrisma();
 
-    // Check if user already exists (by email or username)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -103,7 +95,6 @@ export const register = async (event) => {
       return error('User with this email or username already exists', 409, { event });
     }
 
-    // Create user
     const hashedPassword = await hashPassword(password);
 
     const user = await prisma.user.create({
@@ -127,9 +118,8 @@ export const register = async (event) => {
       }
     });
 
-    // Email verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await prisma.emailVerificationToken.create({
       data: {
         userId: user.id,
@@ -138,16 +128,13 @@ export const register = async (event) => {
       }
     });
 
-    // Send verification (console / SMTP)
     await sendVerificationEmail(user.email, verificationToken, user.username);
 
-    // Generate auth tokens & cookies
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
     const accessCookie = generateAccessTokenCookie(accessToken);
     const refreshCookie = generateRefreshTokenCookie(refreshToken);
 
-    // CORS headers (FIX)
     const cors = getCorsHeaders(event);
 
     return {
@@ -178,15 +165,14 @@ export const register = async (event) => {
 /* ============================= LOGIN ============================= */
 
 export const login = async (event) => {
-  const rawBody = event.body || '';
-  console.log('[LOGIN] Raw body length:', rawBody.length, 'body snippet:', rawBody.substring(0, 120));
+  const raw = event.body || '';
+  console.log('[LOGIN] Raw body length:', raw.length, 'snippet:', raw.substring(0, 120));
 
-  // Safe JSON parse
   let parsed;
   try {
-    parsed = JSON.parse(rawBody || '{}');
-  } catch (parseErr) {
-    console.error('[LOGIN] JSON parse error. Raw body:', rawBody);
+    parsed = JSON.parse(raw || '{}');
+  } catch (err) {
+    console.error('[LOGIN] JSON parse error raw body:', raw);
     return error('Invalid JSON payload', 400, { event });
   }
 
@@ -202,7 +188,6 @@ export const login = async (event) => {
   try {
     const prisma = getPrisma();
 
-    // Allow lookup by either stored email or normalizedEmail
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -235,14 +220,12 @@ export const login = async (event) => {
       return error('Invalid email or password', 401, { event });
     }
 
-    // Allowlist enforcement
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
       .filter(e => e.length > 0);
 
     const userEmailNormalized = user.email.toLowerCase();
-
     if (allowedEmails.length > 0 && !allowedEmails.includes(userEmailNormalized)) {
       console.log(`Login blocked (allowlist): ${user.email}`);
       return error('Account not authorized for access', 403, { event });
@@ -254,26 +237,18 @@ export const login = async (event) => {
 
     const { password: _, twoFactorEnabled, ...userWithoutPassword } = user;
 
-    // Generate tokens
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
 
-    // Persist refresh token
     const decodedRefresh = verifyToken(refreshToken);
     const jti = decodedRefresh?.jti;
     if (jti) {
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await prisma.refreshToken.create({
-        data: {
-          userId: user.id,
-          jti,
-          expiresAt,
-          lastUsedAt: new Date()
-        }
+        data: { userId: user.id, jti, expiresAt, lastUsedAt: new Date() }
       });
     }
 
-    // Cookies
     const accessCookie = generateAccessTokenCookie(accessToken);
     const refreshCookie = generateRefreshTokenCookie(refreshToken);
     const csrfToken = generateCsrfToken();
@@ -501,7 +476,6 @@ export const refresh = async (event) => {
     });
     if (!user) return error('User not found', 404, { event });
 
-    // Rotate tokens
     const newAccessToken = generateAccessToken(user.id);
     const newRefreshToken = generateRefreshToken(user.id);
     const newDecoded = verifyToken(newRefreshToken);
@@ -565,7 +539,7 @@ export const logout = async (event) => {
             where: { jti },
             data: { invalidatedAt: new Date() }
           });
-        } catch (err) {
+        } catch {
           console.log('Refresh token not found for invalidation:', jti);
         }
       }
@@ -599,11 +573,7 @@ export const logout = async (event) => {
 
 /* ============================= 2FA (Phase 2) ============================= */
 
-authenticator.options = {
-  window: 1,
-  step: 30
-};
-
+authenticator.options = { window: 1, step: 30 };
 const generateTOTPSecret = () => authenticator.generateSecret();
 
 const verifyTOTPCode = (secret, code) => {
