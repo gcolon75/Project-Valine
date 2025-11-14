@@ -32,7 +32,6 @@ provider:
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
-    # Lowercase, no spaces
     ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
     PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
     PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
@@ -70,8 +69,8 @@ provider:
     ANALYTICS_ALLOWED_EVENTS: ${env:ANALYTICS_ALLOWED_EVENTS, "page_view,signup,login,profile_update,media_upload,logout"}
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
-    DEV_BYPASS_ENABLED: ${env:DEV_BYPASS_ENABLED, "false"}
 
+# Functions section unchanged below.
 # (Functions section unchanged below...)
 # Keep rest of file as-is.
 
