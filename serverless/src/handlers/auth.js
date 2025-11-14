@@ -187,7 +187,179 @@ export const me = async (event) => {
   }
 };
 
-/* Remaining handlers unchanged below (verifyEmail, resendVerification, refresh, logout, 2FA). */
+/* ============ VERIFY EMAIL ============ */
+export const verifyEmail = async (event) => {
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); }
+  catch { console.error('[VERIFY_EMAIL] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+
+  const { token } = parsed;
+  if (!token) return error('token is required', 400, { event });
+
+  try {
+    const prisma = getPrisma();
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { token },
+      include: { user: true }
+    });
+
+    if (!verificationToken) return error('Invalid or expired verification token', 400, { event });
+    if (new Date() > verificationToken.expiresAt) {
+      await prisma.emailVerificationToken.delete({ where: { id: verificationToken.id } });
+      return error('Verification token has expired', 400, { event });
+    }
+
+    await prisma.user.update({
+      where: { id: verificationToken.userId },
+      data: { emailVerified: true }
+    });
+
+    await prisma.emailVerificationToken.delete({ where: { id: verificationToken.id } });
+
+    return json({ message: 'Email verified successfully' }, 200, { event });
+  } catch (e) {
+    console.error('Verify email error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+/* ============ RESEND VERIFICATION ============ */
+export const resendVerification = async (event) => {
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); }
+  catch { console.error('[RESEND_VERIFICATION] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+
+  const { email } = parsed;
+  if (!email) return error('email is required', 400, { event });
+
+  try {
+    const prisma = getPrisma();
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email }, { normalizedEmail: email.toLowerCase() }] }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+    if (user.emailVerified) return error('Email already verified', 400, { event });
+
+    await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id } });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await prisma.emailVerificationToken.create({
+      data: { userId: user.id, token: verificationToken, expiresAt: new Date(Date.now() + 86400000) }
+    });
+
+    await sendVerificationEmail(user.email, verificationToken, user.username);
+
+    return json({ message: 'Verification email sent' }, 200, { event });
+  } catch (e) {
+    console.error('Resend verification error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+/* ============ REFRESH ============ */
+export const refresh = async (event) => {
+  try {
+    const refreshToken = extractToken(event, 'refresh');
+    if (!refreshToken) return error('Refresh token required', 401, { event });
+
+    const decoded = verifyToken(refreshToken);
+    if (!decoded || decoded.type !== 'refresh') return error('Invalid refresh token', 401, { event });
+
+    const prisma = getPrisma();
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { jti: decoded.jti }
+    });
+
+    if (!storedToken || storedToken.invalidatedAt) return error('Refresh token has been revoked', 401, { event });
+    if (new Date() > storedToken.expiresAt) {
+      await prisma.refreshToken.update({
+        where: { id: storedToken.id },
+        data: { invalidatedAt: new Date() }
+      });
+      return error('Refresh token has expired', 401, { event });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, username: true, email: true, displayName: true, avatar: true, role: true, emailVerified: true }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+
+    await prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { lastUsedAt: new Date(), invalidatedAt: new Date() }
+    });
+
+    const newAccessToken = generateAccessToken(user.id);
+    const newRefreshToken = generateRefreshToken(user.id);
+    const newDecoded = verifyToken(newRefreshToken);
+    const newJti = newDecoded?.jti;
+
+    if (newJti) {
+      await prisma.refreshToken.create({
+        data: { userId: user.id, jti: newJti, expiresAt: new Date(Date.now() + 7 * 86400000), lastUsedAt: new Date() }
+      });
+    }
+
+    const accessCookie = generateAccessTokenCookie(newAccessToken);
+    const refreshCookie = generateRefreshTokenCookie(newRefreshToken);
+    const cors = getCorsHeaders(event);
+
+    return {
+      statusCode: 200,
+      headers: {
+        ...cors,
+        'content-type': 'application/json',
+        'Set-Cookie': accessCookie
+      },
+      multiValueHeaders: { 'Set-Cookie': [accessCookie, refreshCookie] },
+      body: JSON.stringify({ user, message: 'Token refreshed successfully' })
+    };
+  } catch (e) {
+    console.error('Refresh error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+/* ============ LOGOUT ============ */
+export const logout = async (event) => {
+  try {
+    const refreshToken = extractToken(event, 'refresh');
+    
+    if (refreshToken) {
+      const decoded = verifyToken(refreshToken);
+      if (decoded && decoded.jti) {
+        const prisma = getPrisma();
+        await prisma.refreshToken.updateMany({
+          where: { jti: decoded.jti },
+          data: { invalidatedAt: new Date() }
+        });
+      }
+    }
+
+    const clearCookies = generateClearCookieHeaders();
+    const csrfClearCookie = clearCsrfCookie();
+    const cors = getCorsHeaders(event);
+
+    return {
+      statusCode: 200,
+      headers: {
+        ...cors,
+        'content-type': 'application/json',
+        'Set-Cookie': clearCookies[0]
+      },
+      multiValueHeaders: { 'Set-Cookie': [...clearCookies, csrfClearCookie] },
+      body: JSON.stringify({ message: 'Logged out successfully' })
+    };
+  } catch (e) {
+    console.error('Logout error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+/* ============ 2FA SETUP ============ */
 authenticator.options = { window: 1, step: 30 };
 const generateTOTPSecret = () => authenticator.generateSecret();
 const verifyTOTPCode = (secret, code) => {
@@ -196,6 +368,138 @@ const verifyTOTPCode = (secret, code) => {
   try { return authenticator.verify({ token: code, secret }); }
   catch (err) { console.error('[2FA] TOTP verification error:', err); return false; }
 };
+
+export const setup2FA = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) return error('Unauthorized', 401, { event });
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, username: true, twoFactorEnabled: true }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+    if (user.twoFactorEnabled) return error('2FA already enabled', 400, { event });
+
+    const secret = generateTOTPSecret();
+    const otpauth = authenticator.keyuri(user.email, 'Valine', secret);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorSecret: secret }
+    });
+
+    return json({ secret, otpauth, message: 'Scan QR code with authenticator app' }, 200, { event });
+  } catch (e) {
+    console.error('Setup 2FA error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+export const enable2FA = async (event) => {
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); }
+  catch { console.error('[ENABLE_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+
+  const { code } = parsed;
+  if (!code) return error('code is required', 400, { event });
+
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) return error('Unauthorized', 401, { event });
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+    if (user.twoFactorEnabled) return error('2FA already enabled', 400, { event });
+    if (!user.twoFactorSecret) return error('2FA not set up. Call setup2FA first', 400, { event });
+
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    if (!isValid) return error('Invalid verification code', 400, { event });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true }
+    });
+
+    return json({ message: '2FA enabled successfully' }, 200, { event });
+  } catch (e) {
+    console.error('Enable 2FA error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+export const verify2FA = async (event) => {
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); }
+  catch { console.error('[VERIFY_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+
+  const { email, code } = parsed;
+  if (!email || !code) return error('email and code are required', 400, { event });
+
+  try {
+    const prisma = getPrisma();
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ email }, { normalizedEmail: email.toLowerCase() }] },
+      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+    if (!user.twoFactorEnabled) return error('2FA not enabled for this user', 400, { event });
+
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    if (!isValid) return error('Invalid verification code', 401, { event });
+
+    return json({ message: '2FA verification successful', verified: true }, 200, { event });
+  } catch (e) {
+    console.error('Verify 2FA error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+export const disable2FA = async (event) => {
+  let parsed;
+  try { parsed = JSON.parse(event.body || '{}'); }
+  catch { console.error('[DISABLE_2FA] Parse error raw body:', event.body); return error('Invalid JSON payload', 400, { event }); }
+
+  const { code } = parsed;
+  if (!code) return error('code is required', 400, { event });
+
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) return error('Unauthorized', 401, { event });
+
+    const prisma = getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, twoFactorSecret: true, twoFactorEnabled: true }
+    });
+
+    if (!user) return error('User not found', 404, { event });
+    if (!user.twoFactorEnabled) return error('2FA is not enabled', 400, { event });
+
+    const isValid = verifyTOTPCode(user.twoFactorSecret, code);
+    if (!isValid) return error('Invalid verification code', 400, { event });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: false, twoFactorSecret: null }
+    });
+
+    return json({ message: '2FA disabled successfully' }, 200, { event });
+  } catch (e) {
+    console.error('Disable 2FA error:', e);
+    return error('Server error: ' + e.message, 500, { event });
+  }
+};
+
+/* ============ HELPER FUNCTIONS ============ */
 const sendVerificationEmail = async (email, token, username) => {
   const EMAIL_ENABLED = process.env.EMAIL_ENABLED === 'true';
   const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -208,4 +512,3 @@ const sendVerificationEmail = async (email, token, username) => {
     console.log(`To: ${email}`); console.log(verificationUrl); console.log(`Token: ${maskedToken}`);
   }
 };
-// (verifyEmail, resendVerification, refresh, logout, setup2FA, enable2FA, verify2FA, disable2FA kept same as prior corrected version)
