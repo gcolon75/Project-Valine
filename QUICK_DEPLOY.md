@@ -17,12 +17,13 @@ curl -X POST https://YOUR-API-URL/auth/register \
 
 **Expected Result**: HTTP 201 Created ✅
 
-## What Was Fixed
+## What Was Fixed (Latest)
 
-- ✅ Schema field name (password → passwordHash)
-- ✅ Prisma client with Linux binaries
-- ✅ serverless.yml YAML errors
-- ✅ Package configuration
+- ✅ **JSON parse error** during deployment (version mismatch)
+- ✅ **Prisma layer rebuilt**: 90MB → 8.1MB (91% reduction)
+- ✅ Removed `packagePath: ../package.json` from serverless.yml
+- ✅ Removed shared-layer.zip reference (doesn't exist)
+- ✅ Prisma version consistency: 6.19.0 everywhere
 
 ## Current Allowlist
 
@@ -63,11 +64,14 @@ Then redeploy.
 - Tail logs: `aws logs tail /aws/lambda/pv-api-prod-register --follow`
 
 ### Package too large
-- Current: 150MB (under 250MB limit) ✅
-- If needed in future: Use Lambda Layers
+- **Latest fix**: Layer rebuilt from 90MB to 8.1MB ✅
+- No longer an issue after removing unnecessary binaries
+- See `SERVERLESS_DEPLOYMENT_FIX.md` for layer rebuild steps
 
 ## Full Documentation
 
+- `SERVERLESS_DEPLOYMENT_FIX.md` - **Complete deployment fix guide** (NEW)
+- `DEPLOYMENT_FIX_SUMMARY.md` - **Executive summary** (NEW)
 - `ALLOWLIST_DEPLOYMENT_GUIDE.md` - Complete instructions
 - `EXECUTION_SUMMARY.md` - What was fixed and why
 
