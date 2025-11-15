@@ -142,6 +142,55 @@ export const markAllAsRead = async (event) => {
   }
 };
 
+// Get unread counts for notifications and messages
+export const getUnreadCounts = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    
+    // If user not authenticated, return zeros (not an error - public endpoint behavior)
+    if (!userId) {
+      return json({
+        notifications: 0,
+        messages: 0
+      });
+    }
+
+    const prisma = getPrisma();
+
+    // Get unread notifications count
+    const notificationsCount = await prisma.notification.count({
+      where: {
+        recipientId: userId,
+        isRead: false
+      }
+    });
+
+    // Get unread messages count (if you have a messages table)
+    // If not, set to 0 for now
+    let messagesCount = 0;
+    try {
+      // Try to count unread messages if the table exists
+      messagesCount = await prisma.message.count({
+        where: {
+          recipientId: userId,
+          isRead: false
+        }
+      });
+    } catch (e) {
+      // If messages table doesn't exist yet, just use 0
+      console.debug('Messages table not available yet, returning 0');
+    }
+
+    return json({
+      notifications: notificationsCount,
+      messages: messagesCount
+    });
+  } catch (e) {
+    console.error('[getUnreadCounts] Error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
 // Helper function to create a notification (can be used by other handlers)
 export const createNotification = async (prisma, { type, message, recipientId, triggererId, metadata }) => {
   try {
