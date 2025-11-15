@@ -577,7 +577,7 @@ functions:
       - httpApi:
           path: /analytics/config
           method: get
-analyticsCleanup:
+  analyticsCleanup:
     handler: src/handlers/analytics.cleanupOldEvents
     events:
       - httpApi:
