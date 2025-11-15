@@ -11,7 +11,7 @@ model User {
   username        String   @unique
   email           String   @unique
   normalizedEmail String?  @unique // Lowercase normalized email for case-insensitive lookups
-  password        String   // hashed password
+  passwordHash    String   // hashed password
   displayName     String
   bio             String?
   avatar          String?

@@ -176,10 +176,15 @@ async function register(event) {
         return error(400, 'Invalid JSON body');
       }
     }
-    const { email, password } = data;
+    const { email, password, username, displayName } = data;
     if (!email || !password) {
       return error(400, 'email and password are required');
     }
+
+    // Generate username from email if not provided
+    const finalUsername = username || email.split('@')[0];
+    // Generate displayName from email if not provided
+    const finalDisplayName = displayName || email.split('@')[0];
 
     // Enforce registration gating:
     // If ENABLE_REGISTRATION !== 'true' then only allow emails in ALLOWED_USER_EMAILS
@@ -212,13 +217,13 @@ async function register(event) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-  data: {
-    email: body.email,
-    username: body.username,  // ← ADD THIS LINE
-    passwordHash: hashedPassword,
-    displayName: body.displayName,
-  }
-});
+      data: {
+        email: email.toLowerCase(),
+        username: finalUsername,
+        passwordHash: passwordHash,
+        displayName: finalDisplayName,
+      }
+    });
 
     console.log(`[REGISTER] Created userId=${user.id}`);
     return response(201, {
