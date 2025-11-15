@@ -2,7 +2,30 @@
 
 This directory contains the AWS Lambda-based serverless backend for Project Valine, built with the Serverless Framework and Prisma ORM.
 
-## 🚀 Quick Start
+## 🚀 Quick Deploy (Production)
+
+**For production deployment with allowlist-only registration:**
+
+```bash
+# 1. Validate configuration
+bash validate-config.sh
+
+# 2. Deploy (uses .env.prod file)
+bash deploy.sh
+```
+
+Or manually:
+```bash
+# Install dependencies
+npm install
+
+# Deploy to production
+npx serverless deploy --stage prod --region us-west-2 --force
+```
+
+**Important:** The `.env.prod` file contains production credentials. See `DEPLOYMENT_SUCCESS.md` in the root directory for complete deployment instructions and verification steps.
+
+## 🔧 Development Setup
 
 ```bash
 # 1. Set environment variables
@@ -16,7 +39,7 @@ npm install
 # 3. Generate Prisma Client
 cd ../api && npx prisma generate && cd ../serverless
 
-# 4. Deploy
+# 4. Deploy to dev
 npx serverless deploy --stage dev --region us-west-2
 ```
 
