@@ -17,10 +17,12 @@ provider:
       allowedOrigins:
         - https://dkmxy676d3vgc.cloudfront.net
         - http://localhost:5173
+        - http://localhost:3000
       allowedHeaders:
         - Content-Type
         - Authorization
         - X-CSRF-Token
+        - X-Requested-With
       allowedMethods:
         - GET
         - POST
@@ -29,6 +31,7 @@ provider:
         - DELETE
         - OPTIONS
       allowCredentials: true
+      maxAge: 86400  # Cache preflight requests for 24 hours
   environment:
     STAGE: ${env:STAGE, "prod"}
     DATABASE_URL: ${env:DATABASE_URL}
@@ -46,10 +49,10 @@ provider:
     SYNTHETIC_JOURNEY_ENABLED: ${env:SYNTHETIC_JOURNEY_ENABLED, "false"}
     SYNTHETIC_USE_REAL_REQUESTS: ${env:SYNTHETIC_USE_REAL_REQUESTS, "true"}
     OBSERVABILITY_ENABLED: ${env:OBSERVABILITY_ENABLED, "true"}
-    API_BASE_URL: ${env:API_BASE_URL, "https://dkmxy676d3vgc.cloudfront.net/api"}
+    API_BASE_URL: ${env:API_BASE_URL, "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"}
     FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
     NODE_ENV: ${env:NODE_ENV, "production"}
-    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, "dkmxy676d3vgc.cloudfront.net"}
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, ".cloudfront.net"}
     REDIS_URL: ${env:REDIS_URL, ""}
     RATE_LIMITING_ENABLED: ${env:RATE_LIMITING_ENABLED, "true"}
     MODERATION_ENABLED: ${env:MODERATION_ENABLED, "false"}
@@ -87,9 +90,9 @@ custom:
       - aws-sdk
       - '@prisma/client'
       - '.prisma/client'
-    exclude:                    # ? ADD THIS
-      - '@prisma/client'        # ? ADD THIS
-      - '.prisma/client'        # ? ADD THIS
+    exclude:
+      - '@prisma/client'
+      - '.prisma/client'
     keepOutputDirectory: true
 
 layers:
@@ -121,6 +124,8 @@ functions:
       - httpApi:
           path: /meta
           method: get
+  
+  # ========== AUTH ==========
   register:
     handler: src/handlers/auth.register
     events:
@@ -187,6 +192,8 @@ functions:
       - httpApi:
           path: /auth/2fa/disable
           method: post
+
+  # ========== USERS ==========
   createUser:
     handler: src/handlers/users.createUser
     events:
@@ -205,6 +212,8 @@ functions:
       - httpApi:
           path: /users/{id}
           method: put
+
+  # ========== REELS ==========
   listReels:
     handler: src/handlers/reels.listReels
     events:
@@ -241,6 +250,8 @@ functions:
       - httpApi:
           path: /reels/{id}/comments
           method: post
+
+  # ========== POSTS ==========
   createPost:
     handler: src/handlers/posts.createPost
     events:
@@ -259,6 +270,8 @@ functions:
       - httpApi:
           path: /posts/{id}
           method: get
+
+  # ========== CONVERSATIONS ==========
   listConversations:
     handler: src/handlers/conversations.listConversations
     events:
@@ -283,6 +296,8 @@ functions:
       - httpApi:
           path: /conversations/{id}/messages
           method: post
+
+  # ========== NOTIFICATIONS ==========
   listNotifications:
     handler: src/handlers/notifications.listNotifications
     events:
@@ -301,6 +316,16 @@ functions:
       - httpApi:
           path: /notifications/mark-all
           method: patch
+  
+  # ========== NEW: UNREAD COUNTS ==========
+  getUnreadCounts:
+    handler: src/handlers/notifications.getUnreadCounts
+    events:
+      - httpApi:
+          path: /unread-counts
+          method: get
+
+  # ========== CONNECTIONS ==========
   sendConnectionRequest:
     handler: src/handlers/connections.sendRequest
     events:
@@ -325,6 +350,8 @@ functions:
       - httpApi:
           path: /connections/requests/{id}/reject
           method: post
+
+  # ========== PROFILES ==========
   getProfileByVanity:
     handler: src/handlers/profiles.getProfileByVanity
     events:
@@ -355,6 +382,8 @@ functions:
       - httpApi:
           path: /profiles/id/{id}
           method: delete
+
+  # ========== MEDIA ==========
   getUploadUrl:
     handler: src/handlers/media.getUploadUrl
     events:
@@ -385,6 +414,8 @@ functions:
       - httpApi:
           path: /media/{id}/access-url
           method: get
+
+  # ========== CREDITS ==========
   listCredits:
     handler: src/handlers/credits.listCredits
     events:
@@ -409,6 +440,8 @@ functions:
       - httpApi:
           path: /credits/{id}
           method: delete
+
+  # ========== SETTINGS ==========
   getSettings:
     handler: src/handlers/settings.getSettings
     events:
@@ -433,6 +466,8 @@ functions:
       - httpApi:
           path: /account
           method: delete
+
+  # ========== REEL REQUESTS ==========
   createReelRequest:
     handler: src/handlers/reelRequests.createReelRequest
     events:
@@ -457,6 +492,8 @@ functions:
       - httpApi:
           path: /reel-requests/{id}/deny
           method: post
+
+  # ========== SEARCH ==========
   searchProfiles:
     handler: src/handlers/search.searchProfiles
     events:
@@ -469,6 +506,8 @@ functions:
       - httpApi:
           path: /search/users
           method: get
+
+  # ========== INTERNAL/ADMIN ==========
   ingestPRIntel:
     handler: src/handlers/prIntel.ingestPRIntel
     events:
@@ -505,6 +544,8 @@ functions:
       - httpApi:
           path: /internal/journey/run
           method: post
+
+  # ========== OBSERVABILITY ==========
   ingestMetrics:
     handler: src/handlers/observability.ingestMetrics
     events:
@@ -535,6 +576,8 @@ functions:
       - httpApi:
           path: /internal/observability/log
           method: post
+
+  # ========== REPORTS & MODERATION ==========
   createReport:
     handler: src/handlers/reports.createReport
     events:
@@ -565,6 +608,8 @@ functions:
       - httpApi:
           path: /moderation/health
           method: get
+
+  # ========== ANALYTICS ==========
   analyticsIngest:
     handler: src/handlers/analytics.ingestEvents
     events:
