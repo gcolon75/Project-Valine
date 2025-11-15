@@ -87,9 +87,9 @@ custom:
       - aws-sdk
       - '@prisma/client'
       - '.prisma/client'
-    exclude:                    # ← ADD THIS
-      - '@prisma/client'        # ← ADD THIS
-      - '.prisma/client'        # ← ADD THIS
+    exclude:                    # ? ADD THIS
+      - '@prisma/client'        # ? ADD THIS
+      - '.prisma/client'        # ? ADD THIS
     keepOutputDirectory: true
 
 layers:
@@ -577,7 +577,7 @@ functions:
       - httpApi:
           path: /analytics/config
           method: get
-  analyticsCleanup:
+analyticsCleanup:
     handler: src/handlers/analytics.cleanupOldEvents
     events:
       - httpApi:
