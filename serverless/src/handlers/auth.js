@@ -212,11 +212,13 @@ async function register(event) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash
-      }
-    });
+  data: {
+    email: body.email,
+    username: body.username,  // ← ADD THIS LINE
+    passwordHash: hashedPassword,
+    displayName: body.displayName,
+  }
+});
 
     console.log(`[REGISTER] Created userId=${user.id}`);
     return response(201, {
