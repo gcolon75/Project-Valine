@@ -27,7 +27,7 @@
                     "a11y:report":  "node scripts/a11y/generate-report.mjs",
                     "visual:test":  "playwright test tests/e2e/visual-qa-phase.spec.ts --reporter=html",
                     "visual:update":  "playwright test tests/e2e/visual-qa-phase.spec.ts --update-snapshots",
-                    "postbuild":  "npm run seo:build"
+                    "postbuild":  "npm run seo:build && node scripts/postbuild-validate.js"
                 },
     "dependencies":  {
                          "@prisma/client":  "^6.18.0",
