@@ -57,6 +57,17 @@ export default defineConfig(({ mode }) => {
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  build: {
+    sourcemap: true, // Enable source maps for debugging production issues
+    rollupOptions: {
+      output: {
+        // Ensure consistent naming for easier debugging
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
+    }
+  },
   server: { port: 3000, open: true },
   preview: { port: 3000 },
 }});

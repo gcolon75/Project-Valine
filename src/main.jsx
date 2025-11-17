@@ -8,6 +8,7 @@ import { FeedProvider } from "./context/FeedContext";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { UnreadProvider } from "./context/UnreadContext";
 import ToastProvider from "./components/ToastProvider";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import "./index.css";
 import "./styles/theme.css"; // NEW: load AFTER index.css so colors win
@@ -73,17 +74,19 @@ if (import.meta.env.DEV) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <ToastProvider />
-      <BrowserRouter>
-        <AuthProvider>
-          <UnreadProvider>
-            <FeedProvider>
-              <App />
-            </FeedProvider>
-          </UnreadProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ToastProvider />
+        <BrowserRouter>
+          <AuthProvider>
+            <UnreadProvider>
+              <FeedProvider>
+                <App />
+              </FeedProvider>
+            </UnreadProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

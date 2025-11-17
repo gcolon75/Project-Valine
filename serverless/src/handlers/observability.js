@@ -266,14 +266,69 @@ export const getStats = async (event) => {
 /**
  * POST /internal/observability/log
  * Log structured events for debugging and monitoring
- * Body: { level: string, message: string, context?: object }
+ * Body: { 
+ *   level?: string, 
+ *   message?: string, 
+ *   context?: object,
+ *   source?: string,
+ *   errors?: array // For batched client errors
+ * }
  */
 export const logEvent = async (event) => {
   try {
     const body = JSON.parse(event.body || '{}');
-    const { level, message, context } = body;
+    const { level, message, context, source, errors, timestamp, url, userAgent } = body;
 
+    // Handle batched client-side errors
+    if (source === 'client' && errors && Array.isArray(errors)) {
+      console.log(JSON.stringify({
+        timestamp: timestamp || new Date().toISOString(),
+        source: 'client',
+        url,
+        userAgent,
+        errorCount: errors.length,
+        errors: errors.map(err => ({
+          type: err.type,
+          message: err.message,
+          filename: err.filename,
+          lineno: err.lineno,
+          colno: err.colno,
+          stack: err.stack,
+          timestamp: err.timestamp,
+          context: err.context
+        }))
+      }));
+
+      // Store in metrics for monitoring
+      errors.forEach(err => {
+        metricsStore.errors.push({
+          timestamp: err.timestamp || Date.now(),
+          type: 'client_error',
+          data: {
+            errorType: err.type,
+            message: err.message,
+            url,
+            userAgent
+          }
+        });
+      });
+
+      return json({
+        success: true,
+        logged: {
+          count: errors.length,
+          timestamp: timestamp || new Date().toISOString()
+        }
+      }, 204);
+    }
+
+    // Handle single log event (original behavior)
     if (!level || !message) {
+      // For client errors without level/message, return success anyway
+      if (source === 'client') {
+        console.log(JSON.stringify({ source: 'client', body }));
+        return json({ success: true }, 204);
+      }
       return error('level and message are required', 400);
     }
 
@@ -282,6 +337,7 @@ export const logEvent = async (event) => {
       level: level.toUpperCase(),
       message,
       context: context || {},
+      source: source || 'server'
     };
 
     // In production, send to logging service (CloudWatch, Datadog, etc.)
@@ -299,9 +355,10 @@ export const logEvent = async (event) => {
     return json({
       success: true,
       logged: logEntry,
-    });
+    }, 204);
   } catch (e) {
     console.error('Log event error:', e);
-    return error('Server error: ' + e.message, 500);
+    // Don't fail client error reporting due to server errors
+    return json({ success: false, error: e.message }, 204);
   }
 };
