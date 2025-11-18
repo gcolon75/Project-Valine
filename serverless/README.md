@@ -2,28 +2,69 @@
 
 This directory contains the AWS Lambda-based serverless backend for Project Valine, built with the Serverless Framework and Prisma ORM.
 
-## 🚀 Quick Deploy (Production)
+## 🚀 Quick Start
 
-**For production deployment with allowlist-only registration:**
+**For complete deployment instructions, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)**
+
+### Prerequisites
+
+1. AWS credentials configured
+2. PostgreSQL database URL
+3. JWT secret generated
+
+### Quick Deploy
 
 ```bash
-# 1. Validate configuration
-bash validate-config.sh
+# 1. Install dependencies
+npm ci
 
-# 2. Deploy (uses .env.prod file)
-bash deploy.sh
+# 2. Build Prisma layer (first time only)
+./build-prisma-layer.sh
+
+# 3. Validate configuration
+./validate-deployment.sh
+
+# 4. Set environment variables
+export DATABASE_URL="postgresql://user:pass@host:5432/db"
+export JWT_SECRET="your-jwt-secret"
+
+# 5. Deploy
+npx serverless deploy --stage prod --region us-west-2
 ```
 
-Or manually:
+## 🔐 Allowlist-Based Registration
+
+By default, only these emails can register:
+- `ghawk075@gmail.com`
+- `valinejustin@gmail.com`
+
+### Managing the Allowlist
+
 ```bash
-# Install dependencies
-npm install
+# Update allowed emails
+export ALLOWED_USER_EMAILS="email1@example.com,email2@example.com"
 
-# Deploy to production
-npx serverless deploy --stage prod --region us-west-2 --force
+# Redeploy
+npx serverless deploy --stage prod --region us-west-2
 ```
 
-**Important:** The `.env.prod` file contains production credentials. See `DEPLOYMENT_SUCCESS.md` in the root directory for complete deployment instructions and verification steps.
+Or update directly in AWS Lambda Console without redeployment.
+
+### Opening Public Registration
+
+```bash
+export ENABLE_REGISTRATION="true"
+npx serverless deploy --stage prod --region us-west-2
+```
+
+## 📋 Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `build-prisma-layer.sh` | Builds Prisma Lambda layer with Linux binaries |
+| `validate-deployment.sh` | Validates configuration before deployment |
+| `deploy.sh` | Quick deployment script (uses .env.prod) |
+| `validate-config.sh` | Legacy config validation |
 
 ## 🔧 Development Setup
 
