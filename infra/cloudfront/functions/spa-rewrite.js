@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-﻿function handler(event) {
-  var req = event.request;
-  var uri = req.uri;
-  if (uri.startsWith('/api/') || uri.startsWith('/assets/') || uri === '/favicon.ico') return req;
-  if (uri.indexOf('.') !== -1) return req;
-=======
 /**
  * CloudFront Function: SPA Rewrite
  * 
@@ -52,7 +45,6 @@ function handler(event) {
   if (uri.indexOf('.') !== -1) return req;
   
   // Rewrite to index.html for SPA routing
->>>>>>> 386ca05ae08d7f2b844367784e7352d6ec29297a
   req.uri = '/index.html';
   return req;
 }

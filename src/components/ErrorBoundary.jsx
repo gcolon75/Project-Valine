@@ -56,6 +56,18 @@ class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
+  handleClearCacheAndReload = () => {
+    // Clear localStorage, sessionStorage, and reload with cache bypass
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear storage:', e);
+    }
+    // Force reload from server, bypassing cache
+    window.location.reload(true);
+  };
+
   render() {
     if (this.state.hasError) {
       // Fallback UI
@@ -110,7 +122,16 @@ class ErrorBoundary extends React.Component {
                 onClick={this.handleReload}
                 className="px-6 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
               >
-                Reload Page
+                Reload
+              </button>
+            </div>
+
+            <div className="mt-3">
+              <button
+                onClick={this.handleClearCacheAndReload}
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+              >
+                Clear cache & reload
               </button>
             </div>
 

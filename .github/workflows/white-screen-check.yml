@@ -1,0 +1,144 @@
+name: White Screen Diagnostic Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain to test (e.g., example.com)'
+        required: true
+        type: string
+      bucket:
+        description: 'S3 bucket name (optional, for S3 metadata checks)'
+        required: false
+        type: string
+      distribution_id:
+        description: 'CloudFront distribution ID (optional, for config checks)'
+        required: false
+        type: string
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Run White Screen Diagnostics
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Configure AWS credentials (if available)
+        if: ${{ inputs.bucket != '' || inputs.distribution_id != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+        continue-on-error: true
+      
+      - name: Run diagnostic script
+        id: diagnose
+        run: |
+          echo "::group::Running white screen diagnostics"
+          
+          ARGS="--domain ${{ inputs.domain }}"
+          
+          if [ -n "${{ inputs.bucket }}" ]; then
+            ARGS="$ARGS --bucket ${{ inputs.bucket }}"
+          fi
+          
+          if [ -n "${{ inputs.distribution_id }}" ]; then
+            ARGS="$ARGS --distribution-id ${{ inputs.distribution_id }}"
+          fi
+          
+          if [ "${{ inputs.verbose }}" = "true" ]; then
+            ARGS="$ARGS --verbose"
+          fi
+          
+          node scripts/diagnose-white-screen.js $ARGS
+          
+          echo "::endgroup::"
+        continue-on-error: true
+      
+      - name: Check CloudFront config (if distribution ID provided)
+        if: ${{ inputs.distribution_id != '' }}
+        run: |
+          echo "::group::Checking CloudFront configuration"
+          
+          # Check if AWS CLI is available
+          if ! command -v aws &> /dev/null; then
+            echo "⚠️  AWS CLI not available, skipping CloudFront config check"
+            exit 0
+          fi
+          
+          # Check if credentials are configured
+          if ! aws sts get-caller-identity &> /dev/null; then
+            echo "⚠️  AWS credentials not configured, skipping CloudFront config check"
+            echo "ℹ️  To enable this check, add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets"
+            exit 0
+          fi
+          
+          # Run config check (convert from PowerShell to bash equivalent)
+          aws cloudfront get-distribution-config \
+            --id ${{ inputs.distribution_id }} \
+            --query 'DistributionConfig.DefaultCacheBehavior.FunctionAssociations.Items[?EventType==`viewer-request`]' \
+            --output json > /tmp/viewer-request-check.json
+          
+          if [ "$(cat /tmp/viewer-request-check.json)" = "[]" ]; then
+            echo "❌ No viewer-request function attached (SPA routing will fail)"
+            exit 1
+          else
+            echo "✅ Viewer-request function is attached"
+          fi
+          
+          echo "::endgroup::"
+        continue-on-error: true
+      
+      - name: Report results
+        if: always()
+        run: |
+          echo "::notice::White screen diagnostic check completed. Review the output above for details."
+          
+          if [ "${{ steps.diagnose.outcome }}" = "failure" ]; then
+            echo "::error::One or more diagnostic checks failed. See white-screen-runbook.md for troubleshooting."
+            exit 1
+          else
+            echo "::notice::All diagnostic checks passed!"
+          fi
+      
+      - name: Comment on workflow run
+        if: always()
+        run: |
+          echo "## 🔍 White Screen Diagnostic Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Domain:** ${{ inputs.domain }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "${{ inputs.bucket }}" ]; then
+            echo "**S3 Bucket:** ${{ inputs.bucket }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -n "${{ inputs.distribution_id }}" ]; then
+            echo "**CloudFront Distribution:** ${{ inputs.distribution_id }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.diagnose.outcome }}" = "success" ]; then
+            echo "✅ **Status:** All checks passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📖 See [White Screen Runbook](../docs/white-screen-runbook.md) for troubleshooting steps." >> $GITHUB_STEP_SUMMARY
+          fi
