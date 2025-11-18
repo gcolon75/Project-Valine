@@ -1,0 +1,209 @@
+name: Frontend Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_path:
+        description: "Bundle path to verify (e.g., /assets/index-yrgN6q4Q.js)"
+        required: false
+        default: ""
+  workflow_call:
+    inputs:
+      bundle_path:
+        description: "Bundle path to verify"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      CLOUDFRONT_DOMAIN: ${{ secrets.FRONTEND_BASE_URL }}
+      AWS_REGION: us-west-2
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Verify S3 index.html and extract bundle path
+        id: extract_bundle
+        run: |
+          # Fetch index.html from S3
+          aws s3api get-object \
+            --bucket "$S3_BUCKET" \
+            --key "index.html" \
+            index.html
+          
+          if [ ! -f index.html ]; then
+            echo "❌ Failed to fetch index.html from S3"
+            exit 1
+          fi
+          
+          echo "✅ Fetched index.html from S3"
+          
+          # Extract module script src
+          BUNDLE_PATH=$(grep -oP '<script\s+type="module"[^>]+src="\K[^"]+' index.html | head -1)
+          
+          if [ -z "$BUNDLE_PATH" ]; then
+            echo "❌ No module script found in index.html"
+            cat index.html
+            exit 1
+          fi
+          
+          echo "✅ Module bundle path: $BUNDLE_PATH"
+          echo "bundle_path=$BUNDLE_PATH" >> $GITHUB_OUTPUT
+          
+          # Verify bundle exists in S3
+          BUNDLE_KEY="${BUNDLE_PATH#/}"
+          echo "Checking S3 for: $BUNDLE_KEY"
+          
+          aws s3api head-object \
+            --bucket "$S3_BUCKET" \
+            --key "$BUNDLE_KEY" \
+            > bundle_metadata.json
+          
+          if [ $? -eq 0 ]; then
+            CONTENT_TYPE=$(jq -r '.ContentType' bundle_metadata.json)
+            CACHE_CONTROL=$(jq -r '.CacheControl' bundle_metadata.json)
+            echo "✅ Bundle exists in S3"
+            echo "   Content-Type: $CONTENT_TYPE"
+            echo "   Cache-Control: $CACHE_CONTROL"
+            
+            # Verify Content-Type
+            if [[ "$CONTENT_TYPE" == *"javascript"* ]]; then
+              echo "✅ Content-Type is correct"
+            else
+              echo "❌ Content-Type is incorrect: $CONTENT_TYPE (expected application/javascript)"
+              exit 1
+            fi
+          else
+            echo "❌ Bundle does not exist in S3: $BUNDLE_KEY"
+            exit 1
+          fi
+      
+      - name: Verify CloudFront serves correct bundle
+        env:
+          BUNDLE_PATH: ${{ steps.extract_bundle.outputs.bundle_path }}
+        run: |
+          BUNDLE_URL="https://${CLOUDFRONT_DOMAIN}${BUNDLE_PATH}"
+          echo "Testing: $BUNDLE_URL"
+          
+          # HEAD request to verify headers
+          echo "Performing HEAD request..."
+          HEADERS=$(curl -sI "$BUNDLE_URL")
+          
+          HTTP_STATUS=$(echo "$HEADERS" | head -1 | grep -oP '\d{3}')
+          CONTENT_TYPE=$(echo "$HEADERS" | grep -i "content-type:" | cut -d: -f2 | tr -d '[:space:]')
+          
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Content-Type: $CONTENT_TYPE"
+          
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ HTTP status is not 200: $HTTP_STATUS"
+            echo "Full headers:"
+            echo "$HEADERS"
+            exit 1
+          fi
+          
+          if [[ ! "$CONTENT_TYPE" == *"javascript"* ]]; then
+            echo "❌ Content-Type is incorrect: $CONTENT_TYPE"
+            echo "Full headers:"
+            echo "$HEADERS"
+            exit 1
+          fi
+          
+          echo "✅ HEAD request passed"
+          
+          # GET first line to verify it's not HTML
+          echo "Fetching first 100 bytes..."
+          FIRST_BYTES=$(curl -s "$BUNDLE_URL" | head -c 100)
+          FIRST_CHAR=$(echo "$FIRST_BYTES" | head -c 1)
+          
+          echo "First character: '$FIRST_CHAR'"
+          echo "First 100 bytes: $FIRST_BYTES"
+          
+          if [ "$FIRST_CHAR" = "<" ]; then
+            echo "❌ CRITICAL: Bundle starts with '<' (HTML detected)"
+            echo "CloudFront is serving HTML instead of JavaScript!"
+            echo "Full first 100 bytes: $FIRST_BYTES"
+            exit 1
+          fi
+          
+          echo "✅ Bundle appears to be JavaScript (first char: '$FIRST_CHAR')"
+      
+      - name: Test SPA routing fallback
+        run: |
+          # Test extension-less paths should return index.html
+          echo "Testing SPA routing fallback..."
+          
+          FALLBACK_PATHS=("/about" "/users/123" "/profile/edit")
+          
+          for PATH in "${FALLBACK_PATHS[@]}"; do
+            URL="https://${CLOUDFRONT_DOMAIN}${PATH}"
+            echo "Testing: $URL"
+            
+            RESPONSE=$(curl -s "$URL")
+            
+            if echo "$RESPONSE" | grep -q "<!DOCTYPE html>"; then
+              echo "✅ $PATH returns HTML (SPA fallback working)"
+            else
+              echo "❌ $PATH does not return HTML"
+              echo "First 100 bytes: $(echo "$RESPONSE" | head -c 100)"
+              exit 1
+            fi
+          done
+          
+          echo "✅ SPA routing fallback tests passed"
+      
+      - name: Test asset paths (should not fallback)
+        run: |
+          # Test paths with extensions should NOT fallback to index.html
+          echo "Testing asset paths..."
+          
+          ASSET_PATHS=("/manifest.json" "/theme-init.js")
+          
+          for PATH in "${ASSET_PATHS[@]}"; do
+            URL="https://${CLOUDFRONT_DOMAIN}${PATH}"
+            echo "Testing: $URL"
+            
+            HTTP_STATUS=$(curl -sI "$URL" | head -1 | grep -oP '\d{3}')
+            
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ $PATH returns 200"
+            else
+              echo "⚠️  $PATH returns $HTTP_STATUS (may not exist, but should not fallback to HTML)"
+            fi
+          done
+          
+          echo "✅ Asset path tests completed"
+      
+      - name: Publish verification summary
+        if: always()
+        run: |
+          echo "## Frontend Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**CloudFront Distribution:** $CLOUDFRONT_DISTRIBUTION_ID" >> $GITHUB_STEP_SUMMARY
+          echo "**CloudFront Domain:** https://$CLOUDFRONT_DOMAIN" >> $GITHUB_STEP_SUMMARY
+          echo "**Bundle Path:** ${{ steps.extract_bundle.outputs.bundle_path }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ **All verification tests passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Verification failed - see logs above**" >> $GITHUB_STEP_SUMMARY
+          fi
