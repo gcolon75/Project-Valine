@@ -1,4 +1,4 @@
-﻿{
+{
     "ETag":  "E1NRFCTZ6YGP1B",
     "DistributionConfig":  {
                                "CallerReference":  "9c652cbf-15ba-47c4-a8c5-fef4cacc536d",
@@ -157,7 +157,15 @@
                                                                 ]
                                                   },
                                "CustomErrorResponses":  {
-                                                            "Quantity":  0
+                                                            "Quantity":  1,
+                                                            "Items":  [
+                                                                          {
+                                                                              "ErrorCode":  404,
+                                                                              "ResponsePagePath":  "/index.html",
+                                                                              "ResponseCode":  "200",
+                                                                              "ErrorCachingMinTTL":  0
+                                                                          }
+                                                                      ]
                                                         },
                                "Comment":  "",
                                "Logging":  {
