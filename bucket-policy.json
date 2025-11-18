@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowCloudFrontServicePrincipalList",
+      "Effect": "Allow",
+      "Principal": { "Service": "cloudfront.amazonaws.com" },
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::valine-frontend-prod",
+      "Condition": { "StringEquals": { "AWS:SourceArn": "arn:aws:cloudfront::579939802800:distribution/E16LPJDBIL5DEE" } }
+    },
+    {
+      "Sid": "AllowCloudFrontServicePrincipalGet",
+      "Effect": "Allow",
+      "Principal": { "Service": "cloudfront.amazonaws.com" },
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::valine-frontend-prod/*",
+      "Condition": { "StringEquals": { "AWS:SourceArn": "arn:aws:cloudfront::579939802800:distribution/E16LPJDBIL5DEE" } }
+    }
+  ]
+}
