@@ -93,7 +93,7 @@
                                                               "Items":  [
                                                                             {
                                                                                 "EventType":  "viewer-request",
-                                                                                "FunctionARN":  null
+                                                                                "FunctionARN":  "None"
                                                                             }
                                                                         ]
                                                           },
