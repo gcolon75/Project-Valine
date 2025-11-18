@@ -178,7 +178,7 @@
                                                 "Quantity":  0
                                             }
                      },
-    "WebACLId":  "arn:aws:wafv2:us-east-1:579939802800:global/webacl/AllowOnlyMyIP-CloudFront/136aae39-43db-4bf4-a93a-8e8c63cce450",
+    "WebACLId":  "",
     "HttpVersion":  "http2",
     "IsIPV6Enabled":  true,
     "ContinuousDeploymentPolicyId":  "",
