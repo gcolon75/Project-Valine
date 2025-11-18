@@ -28,6 +28,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 - [Project Structure](#project-structure)
 - [Available Routes](#available-routes)
 - [Deployment & Verification](#deployment--verification)
+- [CloudFront & SPA Routing](#cloudfront--spa-routing)
 - [Documentation](#documentation)
 - [Performance Optimizations](#performance-optimizations)
 - [Contributing](#contributing)
@@ -473,6 +474,56 @@ cd orchestrator/scripts
 ```
 
 See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehensive verification procedures.
+
+## CloudFront & SPA Routing
+
+### Overview
+
+Project Valine uses CloudFront for content delivery with proper SPA (Single Page Application) routing. The infrastructure ensures:
+- Extension-less routes (e.g., `/about`, `/users/123`) fallback to `index.html` for client-side routing
+- Asset requests (`.js`, `.css`, etc.) are served with correct MIME types and never substituted with HTML
+- Previous bundle versions are retained during deployments to prevent 404s for cached users
+
+### Key Components
+
+1. **CloudFront Function** (`infra/cloudfront/functions/spaRewrite.js`): Viewer-request function that rewrites extension-less paths to `/index.html` while preserving actual file requests
+2. **Deployment Scripts** (`scripts/deploy-frontend.{ps1,js}`): Automated deployment with bundle retention and pruning
+3. **Diagnostic Tools** (`scripts/check-cloudfront.{ps1,js}`): Check distribution status and asset delivery
+4. **CI/CD Verification** (`.github/workflows/frontend-verify.yml`): Automated post-deployment validation
+
+### Quick Start
+
+**Deploy frontend with bundle retention**:
+```bash
+# PowerShell
+.\scripts\deploy-frontend.ps1 -S3Bucket "valine-frontend-prod" -CloudFrontDistributionId "E16LPJDBIL5DEE"
+
+# Node.js (alternative)
+node scripts/deploy-frontend.js --bucket valine-frontend-prod --distribution E16LPJDBIL5DEE
+```
+
+**Verify deployment**:
+```bash
+# Run diagnostic check
+node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE --domain dkmxy676d3vgc.cloudfront.net
+
+# Or trigger CI/CD verification
+gh workflow run frontend-verify.yml
+```
+
+### Documentation
+
+📖 **Complete CloudFront & SPA Routing Documentation**: [CLOUDFRONT_SPA_ROUTING.md](CLOUDFRONT_SPA_ROUTING.md)
+
+This comprehensive guide covers:
+- Problem summary and solution components
+- Manual CloudFront configuration steps
+- Deployment workflow and best practices
+- Bundle retention policy
+- Troubleshooting common issues
+- Security considerations
+- Monitoring and alerts
+- Migration checklist
 
 ## Documentation
 

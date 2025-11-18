@@ -1,0 +1,16 @@
+{
+  "name": "valine-cloudfront-infra",
+  "version": "1.0.0",
+  "description": "CloudFront infrastructure for Project Valine",
+  "type": "module",
+  "scripts": {
+    "cdk": "cdk"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.100.0",
+    "constructs": "^10.0.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.100.0"
+  }
+}
