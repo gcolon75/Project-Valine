@@ -486,12 +486,23 @@ Project Valine uses CloudFront for content delivery with proper SPA (Single Page
 
 ### Key Components
 
-1. **CloudFront Function** (`infra/cloudfront/functions/spaRewrite.js`): Viewer-request function that rewrites extension-less paths to `/index.html` while preserving actual file requests
-2. **Deployment Scripts** (`scripts/deploy-frontend.{ps1,js}`): Automated deployment with bundle retention and pruning
-3. **Diagnostic Tools** (`scripts/check-cloudfront.{ps1,js}`): Check distribution status and asset delivery
-4. **CI/CD Verification** (`.github/workflows/frontend-verify.yml`): Automated post-deployment validation
+1. **CloudFront Function** (`infra/cloudfront/functions/spa-rewrite.js`): Viewer-request function that rewrites extension-less paths to `/index.html` while preserving actual file requests
+2. **Association Helper** (`scripts/cloudfront-associate-spa-function.ps1`): Automated script to create, publish, and associate the CloudFront Function
+3. **Deployment Scripts** (`scripts/deploy-frontend.{ps1,js}`): Automated deployment with bundle retention and dynamic invalidation
+4. **Verification Scripts**: Local testing (`scripts/verify-spa-rewrite.js`) and header validation (`scripts/assert-headers.js`)
+5. **Diagnostic Tools** (`scripts/check-cloudfront.{ps1,js}`): Check distribution status and asset delivery
+6. **CI/CD Verification** (`.github/workflows/frontend-verify.yml`): Automated post-deployment validation
 
 ### Quick Start
+
+**Associate CloudFront Function (one-time setup)**:
+```powershell
+# Create, publish, and associate the spa-rewrite function
+.\scripts\cloudfront-associate-spa-function.ps1 -DistributionId E16LPJDBIL5DEE
+
+# Test function logic locally before deploying
+node scripts/verify-spa-rewrite.js
+```
 
 **Deploy frontend with bundle retention**:
 ```bash
@@ -504,6 +515,9 @@ node scripts/deploy-frontend.js --bucket valine-frontend-prod --distribution E16
 
 **Verify deployment**:
 ```bash
+# Verify headers and MIME types
+node scripts/assert-headers.js --domain dkmxy676d3vgc.cloudfront.net --bundle /assets/index-<hash>.js
+
 # Run diagnostic check
 node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE --domain dkmxy676d3vgc.cloudfront.net
 
@@ -513,16 +527,23 @@ gh workflow run frontend-verify.yml
 
 ### Documentation
 
-📖 **Complete CloudFront & SPA Routing Documentation**: [CLOUDFRONT_SPA_ROUTING.md](CLOUDFRONT_SPA_ROUTING.md)
+📖 **CloudFront & SPA Routing Guides**:
+- **[Migration Status & Setup](docs/cloudfront-spa-migration-status.md)** - Implementation checklist, verification procedures, and dynamic bundle parsing
+- **[Complete Technical Guide](CLOUDFRONT_SPA_ROUTING.md)** - Problem summary, solution components, deployment workflow, troubleshooting
 
-This comprehensive guide covers:
-- Problem summary and solution components
+**Migration Status Guide** covers:
+- CloudFront Function association checklist with verification commands
+- Dynamic bundle name extraction (no hard-coded hashes)
+- Helper script usage and options
+- Temporary fallback procedure (404 custom error responses)
+- Step-by-step troubleshooting for common issues
+
+**Technical Guide** covers:
+- Architecture and implementation details
 - Manual CloudFront configuration steps
-- Deployment workflow and best practices
-- Bundle retention policy
-- Troubleshooting common issues
-- Security considerations
-- Monitoring and alerts
+- Bundle retention policy and pruning
+- Security considerations and monitoring
+- Alert configuration
 - Migration checklist
 
 ## Documentation
