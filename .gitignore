@@ -5,6 +5,9 @@ dist
 .env.prod
 .env.*.local
 
+# Deployment artifacts
+deploy-report.json
+
 # Backup files
 *.backup
 *~
