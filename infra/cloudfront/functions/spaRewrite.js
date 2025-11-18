@@ -47,3 +47,22 @@ function handler(event) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { handler };
 }
+
+function handler(event) {
+  var req = event.request;
+  var uri = req.uri;
+
+  // Do not rewrite API, assets, or favicon
+  if (uri.startsWith('/api/') || uri.startsWith('/assets/') || uri === '/favicon.ico') {
+    return req;
+  }
+
+  // If URI contains a dot, treat as a file request (do not rewrite)
+  if (uri.indexOf('.') !== -1) {
+    return req;
+  }
+
+  // Rewrite extension-less routes to SPA shell
+  req.uri = '/index.html';
+  return req;
+}

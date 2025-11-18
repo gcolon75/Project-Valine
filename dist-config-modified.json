@@ -1,0 +1,189 @@
+﻿{
+    "ETag":  "E1NRFCTZ6YGP1B",
+    "DistributionConfig":  {
+                               "CallerReference":  "9c652cbf-15ba-47c4-a8c5-fef4cacc536d",
+                               "Aliases":  {
+                                               "Quantity":  0
+                                           },
+                               "DefaultRootObject":  "index.html",
+                               "Origins":  {
+                                               "Quantity":  2,
+                                               "Items":  [
+                                                             {
+                                                                 "Id":  "valine-frontend-prod.s3.us-west-1.amazonaws.com-mgsdhrbtr40",
+                                                                 "DomainName":  "valine-frontend-prod.s3.us-west-1.amazonaws.com",
+                                                                 "OriginPath":  "",
+                                                                 "CustomHeaders":  {
+                                                                                       "Quantity":  0
+                                                                                   },
+                                                                 "S3OriginConfig":  {
+                                                                                        "OriginAccessIdentity":  "",
+                                                                                        "OriginReadTimeout":  30
+                                                                                    },
+                                                                 "ConnectionAttempts":  3,
+                                                                 "ConnectionTimeout":  10,
+                                                                 "OriginShield":  {
+                                                                                      "Enabled":  false
+                                                                                  },
+                                                                 "OriginAccessControlId":  "E1PT224NIQ2YRB"
+                                                             },
+                                                             {
+                                                                 "Id":  "i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
+                                                                 "DomainName":  "i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
+                                                                 "OriginPath":  "",
+                                                                 "CustomHeaders":  {
+                                                                                       "Quantity":  0
+                                                                                   },
+                                                                 "CustomOriginConfig":  {
+                                                                                            "HTTPPort":  80,
+                                                                                            "HTTPSPort":  443,
+                                                                                            "OriginProtocolPolicy":  "https-only",
+                                                                                            "OriginSslProtocols":  {
+                                                                                                                       "Quantity":  1,
+                                                                                                                       "Items":  [
+                                                                                                                                     "TLSv1.2"
+                                                                                                                                 ]
+                                                                                                                   },
+                                                                                            "OriginReadTimeout":  30,
+                                                                                            "OriginKeepaliveTimeout":  5,
+                                                                                            "IpAddressType":  "ipv4"
+                                                                                        },
+                                                                 "ConnectionAttempts":  3,
+                                                                 "ConnectionTimeout":  10,
+                                                                 "OriginShield":  {
+                                                                                      "Enabled":  false
+                                                                                  },
+                                                                 "OriginAccessControlId":  ""
+                                                             }
+                                                         ]
+                                           },
+                               "OriginGroups":  {
+                                                    "Quantity":  0
+                                                },
+                               "DefaultCacheBehavior":  {
+                                                            "TargetOriginId":  "valine-frontend-prod.s3.us-west-1.amazonaws.com-mgsdhrbtr40",
+                                                            "TrustedSigners":  {
+                                                                                   "Enabled":  false,
+                                                                                   "Quantity":  0
+                                                                               },
+                                                            "TrustedKeyGroups":  {
+                                                                                     "Enabled":  false,
+                                                                                     "Quantity":  0
+                                                                                 },
+                                                            "ViewerProtocolPolicy":  "redirect-to-https",
+                                                            "AllowedMethods":  {
+                                                                                   "Quantity":  2,
+                                                                                   "Items":  [
+                                                                                                 "HEAD",
+                                                                                                 "GET"
+                                                                                             ],
+                                                                                   "CachedMethods":  {
+                                                                                                         "Quantity":  2,
+                                                                                                         "Items":  [
+                                                                                                                       "HEAD",
+                                                                                                                       "GET"
+                                                                                                                   ]
+                                                                                                     }
+                                                                               },
+                                                            "SmoothStreaming":  false,
+                                                            "Compress":  true,
+                                                            "LambdaFunctionAssociations":  {
+                                                                                               "Quantity":  0
+                                                                                           },
+                                                            "FunctionAssociations":  {
+                                                                                         "Quantity":  0
+                                                                                     },
+                                                            "FieldLevelEncryptionId":  "",
+                                                            "CachePolicyId":  "658327ea-f89d-4fab-a63d-7e88639e58f6",
+                                                            "GrpcConfig":  {
+                                                                               "Enabled":  false
+                                                                           }
+                                                        },
+                               "CacheBehaviors":  {
+                                                      "Quantity":  1,
+                                                      "Items":  [
+                                                                    {
+                                                                        "PathPattern":  "/api/*",
+                                                                        "TargetOriginId":  "i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
+                                                                        "TrustedSigners":  {
+                                                                                               "Enabled":  false,
+                                                                                               "Quantity":  0
+                                                                                           },
+                                                                        "TrustedKeyGroups":  {
+                                                                                                 "Enabled":  false,
+                                                                                                 "Quantity":  0
+                                                                                             },
+                                                                        "ViewerProtocolPolicy":  "redirect-to-https",
+                                                                        "AllowedMethods":  {
+                                                                                               "Quantity":  7,
+                                                                                               "Items":  [
+                                                                                                             "HEAD",
+                                                                                                             "DELETE",
+                                                                                                             "POST",
+                                                                                                             "GET",
+                                                                                                             "OPTIONS",
+                                                                                                             "PUT",
+                                                                                                             "PATCH"
+                                                                                                         ],
+                                                                                               "CachedMethods":  {
+                                                                                                                     "Quantity":  2,
+                                                                                                                     "Items":  [
+                                                                                                                                   "HEAD",
+                                                                                                                                   "GET"
+                                                                                                                               ]
+                                                                                                                 }
+                                                                                           },
+                                                                        "SmoothStreaming":  false,
+                                                                        "Compress":  true,
+                                                                        "LambdaFunctionAssociations":  {
+                                                                                                           "Quantity":  0
+                                                                                                       },
+                                                                        "FunctionAssociations":  {
+                                                                                                     "Quantity":  1,
+                                                                                                     "Items":  [
+                                                                                                                   {
+                                                                                                                       "FunctionARN":  "arn:aws:cloudfront::579939802800:function/stripApiPrefix",
+                                                                                                                       "EventType":  "viewer-request"
+                                                                                                                   }
+                                                                                                               ]
+                                                                                                 },
+                                                                        "FieldLevelEncryptionId":  "",
+                                                                        "CachePolicyId":  "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+                                                                        "OriginRequestPolicyId":  "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+                                                                        "GrpcConfig":  {
+                                                                                           "Enabled":  false
+                                                                                       }
+                                                                    }
+                                                                ]
+                                                  },
+                               "CustomErrorResponses":  {
+                                                            "Quantity":  0
+                                                        },
+                               "Comment":  "",
+                               "Logging":  {
+                                               "Enabled":  false,
+                                               "IncludeCookies":  false,
+                                               "Bucket":  "",
+                                               "Prefix":  ""
+                                           },
+                               "PriceClass":  "PriceClass_All",
+                               "Enabled":  true,
+                               "ViewerCertificate":  {
+                                                         "CloudFrontDefaultCertificate":  true,
+                                                         "SSLSupportMethod":  "vip",
+                                                         "MinimumProtocolVersion":  "TLSv1",
+                                                         "CertificateSource":  "cloudfront"
+                                                     },
+                               "Restrictions":  {
+                                                    "GeoRestriction":  {
+                                                                           "RestrictionType":  "none",
+                                                                           "Quantity":  0
+                                                                       }
+                                                },
+                               "WebACLId":  "",
+                               "HttpVersion":  "http2",
+                               "IsIPV6Enabled":  true,
+                               "ContinuousDeploymentPolicyId":  "",
+                               "Staging":  false
+                           }
+}
