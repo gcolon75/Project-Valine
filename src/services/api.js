@@ -165,6 +165,53 @@ apiClient.interceptors.response.use(
       });
     }
     
+    // Enhanced DEBUG logging (opt-in via VITE_DEBUG_API env var)
+    // This provides additional diagnostics without exposing sensitive info in production
+    if (import.meta.env.VITE_DEBUG_API === 'true') {
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        request: {
+          method: config?.method,
+          url: config?.url,
+          baseURL: config?.baseURL,
+          fullUrl: config?.baseURL + (config?.url || ''),
+          headers: config?.headers
+        },
+        error: {
+          code: error.code,
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText
+        },
+        retry: {
+          attempt: config._retryCount || 0,
+          maxRetries: RETRY_CONFIG.maxRetries
+        }
+      };
+      
+      // Try to resolve hostname to diagnose DNS issues
+      if (error.code === 'ERR_NETWORK' && config?.baseURL) {
+        try {
+          const hostname = new URL(config.baseURL).hostname;
+          debugInfo.dns = {
+            hostname: hostname,
+            note: 'DNS resolution happens at browser/system level. Check network tab for actual resolution.',
+            recommendation: `Run: node scripts/check-auth-backend.js --domain ${hostname}`
+          };
+        } catch (e) {
+          debugInfo.dns = { error: 'Could not parse baseURL' };
+        }
+      }
+      
+      console.group('[API DEBUG] Request Failure Details');
+      console.table(debugInfo.request);
+      console.table(debugInfo.error);
+      if (debugInfo.dns) {
+        console.log('DNS Info:', debugInfo.dns);
+      }
+      console.groupEnd();
+    }
+    
     return Promise.reject(error);
   }
 );

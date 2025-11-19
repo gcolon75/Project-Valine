@@ -1,0 +1,144 @@
+name: Auth Backend Diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'API Gateway domain to test'
+        required: true
+        default: 'fb9pxd6m09.execute-api.us-west-2.amazonaws.com'
+        type: string
+      timeout:
+        description: 'Request timeout in milliseconds'
+        required: false
+        default: '10000'
+        type: string
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write  # Required to upload artifacts
+
+jobs:
+  diagnose:
+    name: Run Auth Backend Diagnostics
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run diagnostics
+        id: diagnostics
+        continue-on-error: true
+        run: |
+          echo "Starting auth backend diagnostics..."
+          echo "Target: ${{ inputs.domain }}"
+          echo "Timeout: ${{ inputs.timeout }}ms"
+          echo ""
+          
+          if [ "${{ inputs.verbose }}" = "true" ]; then
+            node scripts/check-auth-backend.js \
+              --domain "${{ inputs.domain }}" \
+              --timeout "${{ inputs.timeout }}" \
+              --verbose
+          else
+            node scripts/check-auth-backend.js \
+              --domain "${{ inputs.domain }}" \
+              --timeout "${{ inputs.timeout }}"
+          fi
+          
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          exit $EXIT_CODE
+      
+      - name: Generate diagnostic report
+        if: always()
+        run: |
+          mkdir -p diagnostic-output
+          
+          cat > diagnostic-output/summary.md << 'EOF'
+          # Auth Backend Diagnostic Report
+          
+          **Workflow Run:** ${{ github.run_id }}
+          **Triggered by:** ${{ github.actor }}
+          **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ## Configuration
+          
+          - **Domain:** ${{ inputs.domain }}
+          - **Timeout:** ${{ inputs.timeout }}ms
+          - **Verbose:** ${{ inputs.verbose }}
+          
+          ## Results
+          
+          Exit Code: ${{ steps.diagnostics.outputs.exit_code }}
+          
+          ### Exit Code Meanings
+          
+          - `0` - All checks passed
+          - `1` - DNS resolution failure
+          - `2` - TCP connection failure
+          - `3` - HTTP request failure
+          
+          ## Next Steps
+          
+          Based on the exit code:
+          
+          - **If exit code is 1 (DNS failure):**
+            1. Check `VITE_API_BASE` environment variable in deployment
+            2. Verify API Gateway endpoint exists in AWS Console
+            3. Check Route53 DNS records if using custom domain
+            4. Verify the domain name is spelled correctly
+          
+          - **If exit code is 2 (TCP failure):**
+            1. Check security groups allow outbound HTTPS (port 443)
+            2. Verify API Gateway is deployed and active
+            3. Check WAF rules if using CloudFront
+            4. Test from a different network/location
+          
+          - **If exit code is 3 (HTTP failure):**
+            1. Check API Gateway stage deployment
+            2. Verify backend Lambda functions are working
+            3. Check CloudWatch logs for errors
+            4. Verify CORS configuration
+          
+          For detailed troubleshooting, see: [docs/AUTH_BACKEND_INVESTIGATION.md](../docs/AUTH_BACKEND_INVESTIGATION.md)
+          
+          ---
+          
+          **Note:** Some HTTP failures may be expected (e.g., 401 Unauthorized on /auth/me when not authenticated).
+          The key is that the endpoint is reachable and responding.
+          EOF
+      
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-diagnostic-report-${{ github.run_id }}
+          path: diagnostic-output/
+          retention-days: 30
+      
+      - name: Comment on workflow status
+        if: always()
+        run: |
+          echo "::notice title=Diagnostic Complete::Auth backend diagnostics completed with exit code ${{ steps.diagnostics.outputs.exit_code }}"
+          
+          if [ "${{ steps.diagnostics.outputs.exit_code }}" = "0" ]; then
+            echo "::notice title=Success::All diagnostics passed! Backend is reachable."
+          elif [ "${{ steps.diagnostics.outputs.exit_code }}" = "1" ]; then
+            echo "::error title=DNS Failure::DNS resolution failed. Check domain configuration."
+          elif [ "${{ steps.diagnostics.outputs.exit_code }}" = "2" ]; then
+            echo "::error title=TCP Failure::TCP connection failed. Check network/firewall."
+          elif [ "${{ steps.diagnostics.outputs.exit_code }}" = "3" ]; then
+            echo "::warning title=HTTP Issues::Some HTTP checks failed. Review details in artifact."
+          fi
