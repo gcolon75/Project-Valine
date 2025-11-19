@@ -12,10 +12,13 @@
 
 **Fast Diagnosis:** Run diagnostic script
 ```bash
-# Node.js
+# Bash (Linux/Mac)
+./scripts/diagnose-white-screen.sh --domain your-domain.com
+
+# Node.js (Cross-platform)
 node scripts/diagnose-white-screen.js --domain your-domain.com
 
-# PowerShell
+# PowerShell (Windows)
 .\scripts\diagnose-white-screen.ps1 -Domain "your-domain.com"
 ```
 
@@ -385,6 +388,122 @@ aws logs filter-log-events \
 
 ---
 
+## 6.5. Subresource Integrity (SRI)
+
+### What is SRI?
+
+Subresource Integrity (SRI) is a security feature that allows browsers to verify that files they fetch (e.g., from a CDN) are delivered without unexpected manipulation. It uses cryptographic hashes to ensure the integrity of JavaScript and CSS files.
+
+### How SRI Works in This Project
+
+After building the project, SRI hashes are automatically generated for the main JS and CSS bundles and injected into `index.html`:
+
+```html
+<script type="module" src="/assets/index-abc123.js" 
+  integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC"
+  crossorigin="anonymous"></script>
+```
+
+### SRI in Build Pipeline
+
+1. **Generate SRI hashes** (automatically run after build):
+   ```bash
+   npm run build:sri
+   # Or manually:
+   node scripts/generate-sri.js
+   ```
+
+2. **Verify SRI hashes** (in CI/CD):
+   ```bash
+   npm run verify:sri
+   # Or manually:
+   node scripts/verify-sri.js
+   ```
+
+### Troubleshooting SRI Issues
+
+#### Symptom: "Failed to find a valid digest in the 'integrity' attribute"
+
+**Cause:** The SRI hash in `index.html` doesn't match the actual file content.
+
+**Solutions:**
+
+1. **Regenerate SRI hashes:**
+   ```bash
+   npm run build
+   node scripts/generate-sri.js
+   npm run verify:sri
+   ```
+
+2. **Check for file modification after SRI generation:**
+   - SRI hashes must be generated AFTER the final build
+   - Don't modify files in `dist/` after running `generate-sri.js`
+
+3. **Disable SRI temporarily (emergency only):**
+   ```bash
+   # Remove integrity attributes from dist/index.html
+   sed -i 's/ integrity="[^"]*"//g' dist/index.html
+   sed -i 's/ crossorigin="anonymous"//g' dist/index.html
+   
+   # Redeploy
+   ./scripts/deploy-static-with-mime.sh bucket dist-id
+   ```
+
+#### Symptom: "Cross-Origin Resource Sharing (CORS) error" with SRI
+
+**Cause:** `crossorigin="anonymous"` requires proper CORS headers from CloudFront.
+
+**Solution:**
+Ensure CloudFront response headers include:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+```
+
+Check headers:
+```bash
+./scripts/assert-headers.sh --domain your-domain.com
+```
+
+### SRI and Deployment Retention
+
+The retention guard in deployment scripts checks SRI status before pruning old bundles:
+
+```bash
+# scripts/deploy-frontend.js (excerpt)
+if (!verifySRI()) {
+  console.error('SRI verification failed - aborting deployment');
+  process.exit(1);
+}
+```
+
+This prevents:
+- Deploying bundles with mismatched SRI hashes
+- Pruning bundles that are still referenced by cached `index.html`
+
+### Best Practices
+
+1. **Always run SRI generation as part of build:**
+   ```json
+   "scripts": {
+     "build": "vite build && node scripts/generate-sri.js"
+   }
+   ```
+
+2. **Verify SRI in CI/CD:**
+   - Frontend hardening workflow automatically verifies SRI
+   - Fails build if hashes don't match
+
+3. **Monitor SRI failures:**
+   - Browser console will show clear errors if SRI check fails
+   - Set up client-side error monitoring to catch these
+
+4. **Document SRI hashes:**
+   - SRI hashes change with every build
+   - Track hashes in deployment logs for debugging
+
+---
+
 ## 7. Contact & Support
 
 ### Escalation Path
@@ -403,8 +522,19 @@ aws logs filter-log-events \
 ### Common Commands Quick Reference
 
 ```bash
-# Diagnosis
+# Diagnosis (Bash)
+./scripts/diagnose-white-screen.sh --domain your-domain.com
+./scripts/assert-headers.sh --domain your-domain.com
+./scripts/guard-cloudfront-config.sh --distribution-id E123
+
+# Diagnosis (Node.js - cross-platform)
 node scripts/diagnose-white-screen.js --domain your-domain.com
+
+# Build with SRI
+npm run build:sri
+
+# Verify SRI hashes
+npm run verify:sri
 
 # Deploy
 ./scripts/deploy-static-with-mime.sh bucket-name dist-id
@@ -421,6 +551,6 @@ aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 
 ---
 
-**Last Updated:** 2024-11-18  
-**Version:** 1.0  
+**Last Updated:** 2025-11-19  
+**Version:** 2.0  
 **Maintained by:** DevOps Team

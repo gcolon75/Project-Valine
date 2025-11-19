@@ -129,8 +129,31 @@ if (!SKIP_BUILD) {
     error('Build failed');
     process.exit(1);
   }
+  
+  // Generate SRI hashes
+  info('Generating SRI hashes...');
+  try {
+    execSync('node scripts/generate-sri.js', { stdio: 'inherit' });
+    success('✓ SRI hashes generated');
+  } catch (err) {
+    error('SRI generation failed');
+    process.exit(1);
+  }
+  
+  // Verify SRI hashes
+  info('Verifying SRI hashes...');
+  try {
+    execSync('node scripts/verify-sri.js', { stdio: 'inherit' });
+    success('✓ SRI verification passed');
+  } catch (err) {
+    error('❌ SRI verification failed - deployment aborted');
+    error('   This prevents deploying bundles with mismatched integrity hashes');
+    error('   Fix: Ensure build is complete and files are not modified after SRI generation');
+    process.exit(1);
+  }
 } else {
   warn('⚠ Skipping build (--skip-build flag set)');
+  warn('⚠ SRI verification skipped - ensure hashes are current');
 }
 
 // Verify dist directory exists

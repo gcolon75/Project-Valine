@@ -1,14 +1,26 @@
 // src/components/__tests__/ErrorBoundary.test.jsx
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { useEffect, useState } from 'react';
 import ErrorBoundary from '../ErrorBoundary';
 
-// Component that throws an error
+// Component that throws an error during render
 const ThrowError = ({ shouldThrow }) => {
   if (shouldThrow) {
     throw new Error('Test error');
   }
   return <div>No error</div>;
+};
+
+// Component that throws an error in useEffect
+const ThrowEffectError = ({ shouldThrow }) => {
+  useEffect(() => {
+    if (shouldThrow) {
+      throw new Error('Effect error');
+    }
+  }, [shouldThrow]);
+  
+  return <div>Component rendered</div>;
 };
 
 describe('ErrorBoundary', () => {
@@ -50,7 +62,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/We've encountered an unexpected error/i)).toBeInTheDocument();
   });
 
-  it('shows Try Again and Reload Page buttons when error occurs', () => {
+  it('shows Try Again and Reload buttons when error occurs', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
@@ -58,7 +70,7 @@ describe('ErrorBoundary', () => {
     );
 
     expect(screen.getByText('Try Again')).toBeInTheDocument();
-    expect(screen.getByText('Reload Page')).toBeInTheDocument();
+    expect(screen.getByText('Reload')).toBeInTheDocument();
   });
 
   it('shows Back to Home link when error occurs', () => {
@@ -110,7 +122,7 @@ describe('ErrorBoundary', () => {
     expect(container).toBeInTheDocument();
   });
 
-  it('calls window.location.reload when Reload Page is clicked', () => {
+  it('calls window.location.reload when Reload is clicked', () => {
     const reloadMock = vi.fn();
     const originalLocation = window.location;
     
@@ -123,11 +135,77 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    fireEvent.click(screen.getByText('Reload Page'));
+    fireEvent.click(screen.getByText('Reload'));
 
     expect(reloadMock).toHaveBeenCalled();
 
     // Restore
     window.location = originalLocation;
+  });
+
+  it('catches errors thrown in useEffect', () => {
+    // Note: useEffect errors ARE caught by ErrorBoundary when they cause rendering issues
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    
+    render(
+      <ErrorBoundary>
+        <ThrowEffectError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    // The useEffect error is caught and the error boundary fallback is shown
+    expect(screen.getByText(/Oops! Something went wrong/i)).toBeInTheDocument();
+    
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('calls clear cache and reload when clear cache button is clicked', () => {
+    const reloadMock = vi.fn();
+    const originalLocation = window.location;
+    const originalLocalStorage = window.localStorage;
+    const originalSessionStorage = window.sessionStorage;
+    
+    const localStorageClearMock = vi.fn();
+    const sessionStorageClearMock = vi.fn();
+    
+    delete window.location;
+    window.location = { ...originalLocation, reload: reloadMock };
+    
+    Object.defineProperty(window, 'localStorage', {
+      value: { clear: localStorageClearMock },
+      writable: true,
+      configurable: true
+    });
+    
+    Object.defineProperty(window, 'sessionStorage', {
+      value: { clear: sessionStorageClearMock },
+      writable: true,
+      configurable: true
+    });
+
+    render(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    fireEvent.click(screen.getByText(/Clear cache & reload/i));
+
+    expect(localStorageClearMock).toHaveBeenCalled();
+    expect(sessionStorageClearMock).toHaveBeenCalled();
+    expect(reloadMock).toHaveBeenCalledWith(true);
+
+    // Restore
+    window.location = originalLocation;
+    Object.defineProperty(window, 'localStorage', {
+      value: originalLocalStorage,
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(window, 'sessionStorage', {
+      value: originalSessionStorage,
+      writable: true,
+      configurable: true
+    });
   });
 });

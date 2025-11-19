@@ -562,6 +562,142 @@ See the [White Screen Runbook](docs/white-screen-runbook.md) for detailed troubl
 - Alert configuration
 - Migration checklist
 
+## Subresource Integrity (SRI)
+
+### Overview
+
+Subresource Integrity (SRI) ensures that JavaScript and CSS bundles loaded from CDN haven't been tampered with. After build, cryptographic hashes (SHA384) are computed for main assets and injected into `index.html` as `integrity` attributes.
+
+### Usage
+
+```bash
+# Build with SRI (recommended)
+npm run build:sri
+
+# Or separately
+npm run build
+node scripts/generate-sri.js
+
+# Verify SRI hashes match built files
+npm run verify:sri
+```
+
+### What It Does
+
+1. **Generate**: Computes SHA384 hash for main JS and CSS bundles in `dist/`
+2. **Inject**: Adds `integrity="sha384-..."` and `crossorigin="anonymous"` to script/link tags in `index.html`
+3. **Verify**: Confirms generated hashes match actual file content
+
+### Example
+
+```html
+<!-- Before SRI -->
+<script type="module" src="/assets/index-abc123.js"></script>
+
+<!-- After SRI -->
+<script type="module" src="/assets/index-abc123.js" 
+  integrity="sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC"
+  crossorigin="anonymous"></script>
+```
+
+### CI/CD Integration
+
+The `frontend-harden.yml` workflow automatically:
+- Runs build
+- Generates SRI hashes
+- Verifies integrity attributes exist
+- Fails CI if hashes mismatch
+
+### Troubleshooting
+
+**"Failed to find a valid digest"**: Hash mismatch detected
+```bash
+# Regenerate SRI
+node scripts/generate-sri.js
+npm run verify:sri
+
+# Emergency disable (NOT recommended for production)
+sed -i 's/ integrity="[^"]*"//g' dist/index.html
+```
+
+See [White Screen Runbook § SRI](docs/white-screen-runbook.md#65-subresource-integrity-sri) for detailed troubleshooting.
+
+## Diagnostic Scripts
+
+### Cross-Platform Tools
+
+Project Valine includes diagnostic scripts in multiple languages for maximum compatibility:
+
+**Bash** (Linux/macOS):
+```bash
+./scripts/diagnose-white-screen.sh --domain your-domain.com
+./scripts/assert-headers.sh --domain your-domain.com
+./scripts/guard-cloudfront-config.sh --distribution-id E123
+```
+
+**PowerShell** (Windows):
+```powershell
+.\scripts\diagnose-white-screen.ps1 -Domain "your-domain.com"
+.\scripts\guard-cloudfront-config.ps1 -DistributionId "E123"
+```
+
+**Node.js** (Cross-platform):
+```bash
+node scripts/diagnose-white-screen.js --domain your-domain.com
+node scripts/assert-headers.js --domain your-domain.com
+```
+
+All scripts include:
+- Help text (`--help` or `-Help`)
+- Color-coded output
+- Graceful degradation when AWS credentials absent
+- Exit codes for CI/CD integration
+
+## WAF Reattachment Plan
+
+### Overview
+
+AWS WAF (Web Application Firewall) was temporarily disabled during white screen troubleshooting. The reattachment plan ensures safe restoration of security protection without blocking legitimate traffic.
+
+### Status
+
+- **Current**: WAF detached
+- **Next Step**: Staged reattachment with allow rules
+- **Documentation**: `infra/waf/README.md` and `docs/waf-reattachment-checklist.md`
+
+### Allow Rules (Planned)
+
+To prevent false positives, the following paths will be explicitly allowed:
+- `/assets/*` - Static assets (JS, CSS, images)
+- `/theme-init.js` - Theme initialization script
+- `/favicon*`, `/manifest.json` - Browser-requested files
+- `/robots.txt`, `/sitemap.xml` - SEO
+- `/api/*` - API endpoints (with rate limiting)
+- `/`, `/index.html` - SPA entry points
+
+### Preview Tool
+
+```powershell
+# Dry-run preview (no changes made)
+.\scripts\waf-attach-plan.ps1 -DistributionId E123 -WebAclArn arn:aws:wafv2:...
+
+# Shows current vs planned WebACL association
+```
+
+### Phased Rollout
+
+1. **Phase 1**: Create WebACL with allow rules (no attachment)
+2. **Phase 2**: Attach in COUNT mode, monitor 24-48 hours
+3. **Phase 3**: Enable BLOCK mode for attack patterns, monitor 24 hours
+4. **Phase 4**: Full enforcement with CloudWatch alarms
+
+### Resources
+
+- **Plan**: `infra/waf/README.md` - Allow rules, block rules, monitoring
+- **Checklist**: `docs/waf-reattachment-checklist.md` - Step-by-step rollout
+- **IaC**: `infra/waf/terraform-stub.tf` - Infrastructure as Code template
+- **Script**: `scripts/waf-attach-plan.ps1` - Dry-run preview tool
+
 ## Documentation
 
 📚 **Complete Documentation**: See **[docs/](docs/)** for the full documentation index
