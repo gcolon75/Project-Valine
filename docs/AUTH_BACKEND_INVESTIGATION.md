@@ -614,6 +614,7 @@ If issue persists after following this runbook:
 
 ## Related Documentation
 
+- [API Base Validation Guide](./API_BASE_VALIDATION.md) - Validate and troubleshoot API configuration
 - [White Screen Runbook](./white-screen-runbook.md) - Frontend loading issues
 - [Deployment Guide](./deployment/deployment-guide.md) - Deployment procedures
 - [API Reference](./api/reference.md) - API endpoint documentation
@@ -625,6 +626,7 @@ If issue persists after following this runbook:
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2025-11-19 | 1.1 | Added API Base Validation Guide reference |
 | 2025-11-19 | 1.0 | Initial runbook creation |
 
 **Maintained by:** DevOps Team  

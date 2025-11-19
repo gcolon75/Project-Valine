@@ -704,6 +704,15 @@ To prevent false positives, the following paths will be explicitly allowed:
 
 > 📖 **Documentation reorganized 2025-11-04** - All docs now organized in the `docs/` directory for better discoverability. See [docs/SUMMARY.md](docs/SUMMARY.md) for complete index.
 
+### Essential Guides
+
+- **[API Base Validation Guide](docs/API_BASE_VALIDATION.md)** - Validate and troubleshoot API configuration
+- **[Deployment Overview](docs/deployment/overview.md)** - Complete deployment documentation
+- **[Quick Start](docs/quickstart/README.md)** - Get started in minutes
+- **[Troubleshooting](docs/troubleshooting/)** - Common issues and solutions
+- **[White Screen Runbook](docs/white-screen-runbook.md)** - Diagnose and fix white screen issues
+- **[Auth Backend Investigation](docs/AUTH_BACKEND_INVESTIGATION.md)** - Authentication diagnostics
+
 ### Quick Links
 
 **Getting Started:**

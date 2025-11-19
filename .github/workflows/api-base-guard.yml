@@ -1,0 +1,199 @@
+name: API Base Configuration Guard
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      allow_dns_failure:
+        description: 'Allow DNS resolution failure (use only in restricted networks)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  api-base-scan:
+    name: Scan for Stale API Hosts
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run API base scan
+        run: node scripts/scan-api-base.js
+        continue-on-error: false
+      
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-base-scan-results
+          path: |
+            reports/api-base-*.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+  api-base-validate:
+    name: Validate API Base Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Validate API base URL
+        run: node scripts/validate-api-base.js
+        env:
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          ALLOW_API_BASE_DNS_FAILURE: ${{ github.event.inputs.allow_dns_failure || 'false' }}
+        continue-on-error: false
+      
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-base-validation-results
+          path: |
+            reports/*.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+  api-base-history:
+    name: Analyze API Base History
+    runs-on: ubuntu-latest
+    # Only run on pull requests or manual trigger
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Analyze API base history
+        run: node scripts/analyze-api-base-history.js --count=25
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # Don't fail build if history analysis fails
+      
+      - name: Upload history report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-base-history-report
+          path: reports/api-base-history.md
+          retention-days: 90
+          if-no-files-found: ignore
+
+  bundle-diff:
+    name: Bundle API Host Diff
+    runs-on: ubuntu-latest
+    # Only run if dist directory exists (after build)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          NODE_ENV: production
+      
+      - name: Diff bundle API hosts
+        run: |
+          if [ -d "dist/assets" ]; then
+            node scripts/diff-bundles-api-base.js || echo "Bundle diff skipped (less than 2 bundles)"
+          else
+            echo "No dist directory found, skipping bundle diff"
+          fi
+        continue-on-error: true
+      
+      - name: Upload bundle diff report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-host-diff-report
+          path: reports/bundle-host-diff.md
+          retention-days: 90
+          if-no-files-found: ignore
+
+  summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [api-base-scan, api-base-validate]
+    if: always()
+    
+    steps:
+      - name: Check job status
+        run: |
+          echo "## API Base Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.api-base-scan.result }}" == "success" ]; then
+            echo "✅ **Scan**: No stale API hosts detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Scan**: Failed - stale hosts detected or error occurred" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.api-base-validate.result }}" == "success" ]; then
+            echo "✅ **Validate**: API base configuration is valid" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Validate**: API base validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.api-base-scan.result }}" != "success" ] || [ "${{ needs.api-base-validate.result }}" != "success" ]; then
+            echo "1. Review the job logs above for details" >> $GITHUB_STEP_SUMMARY
+            echo "2. Check \`reports/\` artifacts for detailed reports" >> $GITHUB_STEP_SUMMARY
+            echo "3. See [API Base Validation Guide](docs/API_BASE_VALIDATION.md) for recovery steps" >> $GITHUB_STEP_SUMMARY
+            echo "4. Run \`node scripts/scan-api-base.js\` locally to diagnose" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "All validations passed! ✅" >> $GITHUB_STEP_SUMMARY
+          fi

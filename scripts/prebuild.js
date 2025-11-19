@@ -3,14 +3,20 @@
 /**
  * Pre-build validation script
  * 
- * Ensures dev bypass is never accidentally deployed to production.
+ * Performs multiple validation checks:
+ * 1. Ensures dev bypass is never accidentally deployed to production
+ * 2. Validates API base configuration and DNS resolution
+ * 
  * Fails the build if VITE_ENABLE_DEV_BYPASS=true AND 
  * VITE_FRONTEND_URL contains production domains.
+ * 
+ * Also validates VITE_API_BASE configuration.
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -77,4 +83,22 @@ if (devBypassEnabled) {
   console.log('⚠️  Dev Bypass is ENABLED - this build should only be used locally');
 }
 
-console.log('✅ Pre-build validation passed\n');
+console.log('✅ Pre-build validation passed');
+
+// Run API base validation
+console.log('\n📡 Validating API base configuration...\n');
+
+const validateScript = join(__dirname, 'validate-api-base.js');
+if (existsSync(validateScript)) {
+  try {
+    execSync(`node "${validateScript}"`, { stdio: 'inherit' });
+  } catch (err) {
+    console.error('\n❌ API base validation failed');
+    process.exit(1);
+  }
+} else {
+  console.log('   (validate-api-base.js not found, skipping API validation)');
+}
+
+console.log('\n✅ All pre-build validations passed\n');
+
