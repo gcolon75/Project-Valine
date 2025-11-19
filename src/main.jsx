@@ -90,3 +90,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Signal successful mount to boot watchdog
+if (window.__appMounted) {
+  window.__appMounted();
+}

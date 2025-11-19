@@ -530,6 +530,22 @@ gh workflow run frontend-verify.yml
 📖 **CloudFront & SPA Routing Guides**:
 - **[Migration Status & Setup](docs/cloudfront-spa-migration-status.md)** - Implementation checklist, verification procedures, and dynamic bundle parsing
 - **[Complete Technical Guide](CLOUDFRONT_SPA_ROUTING.md)** - Problem summary, solution components, deployment workflow, troubleshooting
+- **[White Screen Runbook](docs/white-screen-runbook.md)** - ⚡ Fast troubleshooting guide for blank screen issues with decision tree and quick fixes
+
+**White Screen Troubleshooting**:
+If users experience blank screens or "Unexpected token '<'" errors:
+```bash
+# Quick diagnosis
+node scripts/diagnose-white-screen.js --domain your-domain.com
+
+# Or via PowerShell
+.\scripts\diagnose-white-screen.ps1 -Domain "your-domain.com"
+
+# Check CloudFront config
+.\scripts\guard-cloudfront-config.ps1 -DistributionId "E123..."
+```
+
+See the [White Screen Runbook](docs/white-screen-runbook.md) for detailed troubleshooting steps.
 
 **Migration Status Guide** covers:
 - CloudFront Function association checklist with verification commands

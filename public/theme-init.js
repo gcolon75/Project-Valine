@@ -184,4 +184,92 @@
       queueError(errorData);
     }
   };
+
+  // ============================================================================
+  // Boot Watchdog - Detect if app fails to mount
+  // ============================================================================
+  
+  var BOOT_TIMEOUT_MS = 8000; // 8 seconds
+  var bootTimer = null;
+  var appMounted = false;
+
+  // API for app to signal successful mount
+  window.__appMounted = function() {
+    appMounted = true;
+    if (bootTimer) {
+      clearTimeout(bootTimer);
+      bootTimer = null;
+    }
+    console.log('[Boot Watchdog] ✅ App mounted successfully');
+  };
+
+  // Start boot watchdog
+  bootTimer = setTimeout(function() {
+    if (!appMounted) {
+      console.error('[Boot Watchdog] ⚠️ App failed to mount within ' + BOOT_TIMEOUT_MS + 'ms');
+      console.error('[Boot Watchdog] Common causes:');
+      console.error('  1. JavaScript bundle failed to load (check Network tab for 404s)');
+      console.error('  2. Module returned HTML instead of JavaScript (MIME type issue)');
+      console.error('  3. Cached broken bundle (try hard refresh: Ctrl+Shift+R)');
+      console.error('  4. JavaScript syntax error in bundle');
+      console.error('[Boot Watchdog] Environment:');
+      console.error('  - URL:', window.location.href);
+      console.error('  - User Agent:', navigator.userAgent);
+      
+      // Try to detect the bundle name from the page
+      var scripts = document.querySelectorAll('script[type="module"]');
+      if (scripts.length > 0) {
+        console.error('  - Module scripts found:', scripts.length);
+        for (var i = 0; i < scripts.length; i++) {
+          console.error('    - ' + scripts[i].src);
+        }
+      } else {
+        console.error('  - No module scripts found (build may be corrupted)');
+      }
+
+      // Show overlay with helpful message
+      showBootFailureOverlay();
+    }
+  }, BOOT_TIMEOUT_MS);
+
+  function showBootFailureOverlay() {
+    var overlay = document.createElement('div');
+    overlay.id = 'boot-failure-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    
+    var content = document.createElement('div');
+    content.style.cssText = 'background:white;border-radius:8px;padding:32px;max-width:500px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);';
+    content.innerHTML = 
+      '<div style="text-align:center;">' +
+      '<svg style="margin:0 auto 16px;width:48px;height:48px;color:#ef4444;" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>' +
+      '</svg>' +
+      '<h1 style="font-size:24px;font-weight:bold;color:#111;margin-bottom:8px;">Failed to Load</h1>' +
+      '<p style="color:#666;margin-bottom:24px;">The app is taking longer than expected to start. This might be due to:</p>' +
+      '<ul style="text-align:left;color:#666;margin-bottom:24px;padding-left:20px;">' +
+      '<li>Network connectivity issues</li>' +
+      '<li>Cached outdated files</li>' +
+      '<li>Browser extension conflicts</li>' +
+      '</ul>' +
+      '<button id="boot-retry-btn" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:6px;font-weight:500;cursor:pointer;margin-right:8px;">Retry</button>' +
+      '<button id="boot-clear-cache-btn" style="background:#6b7280;color:white;padding:12px 24px;border:none;border-radius:6px;font-weight:500;cursor:pointer;">Clear Cache & Retry</button>' +
+      '</div>';
+    
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    document.getElementById('boot-retry-btn').onclick = function() {
+      window.location.reload();
+    };
+
+    document.getElementById('boot-clear-cache-btn').onclick = function() {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear storage:', e);
+      }
+      window.location.reload(true);
+    };
+  }
 })();
