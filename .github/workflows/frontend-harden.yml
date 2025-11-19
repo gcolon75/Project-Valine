@@ -1,0 +1,227 @@
+name: Frontend Hardening
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'scripts/generate-sri.js'
+      - 'scripts/verify-sri.js'
+      - 'scripts/diagnose-white-screen.*'
+      - 'scripts/assert-headers.*'
+      - 'scripts/guard-cloudfront-config.*'
+      - '.github/workflows/frontend-harden.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'scripts/**'
+      - '.github/workflows/frontend-harden.yml'
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain to test diagnostics against (optional)'
+        required: false
+        type: string
+      distribution_id:
+        description: 'CloudFront distribution ID to check (optional)'
+        required: false
+        type: string
+
+jobs:
+  test-error-boundary:
+    name: Test ErrorBoundary & Boot Watchdog
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ErrorBoundary tests
+        run: npm test -- src/components/__tests__/ErrorBoundary.test.jsx --run
+      
+      - name: Run boot watchdog tests
+        run: npm test -- src/components/__tests__/boot-watchdog.test.ts --run
+  
+  build-and-sri:
+    name: Build & Verify SRI
+    runs-on: ubuntu-latest
+    needs: test-error-boundary
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Generate SRI hashes
+        run: node scripts/generate-sri.js
+      
+      - name: Verify SRI hashes
+        run: node scripts/verify-sri.js
+      
+      - name: Check that index.html has integrity attributes
+        run: |
+          if ! grep -q 'integrity="sha384-' dist/index.html; then
+            echo "❌ No SRI integrity attributes found in dist/index.html"
+            exit 1
+          fi
+          echo "✅ SRI integrity attributes found in dist/index.html"
+      
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-with-sri
+          path: dist/
+          retention-days: 7
+  
+  test-diagnostics:
+    name: Test Diagnostic Scripts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test diagnose-white-screen (Bash)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          chmod +x scripts/diagnose-white-screen.sh
+          # Test help output
+          ./scripts/diagnose-white-screen.sh --help
+          
+          # Test with a known good domain (GitHub)
+          # Note: This will fail on CloudFront checks but should pass basic connectivity
+          ./scripts/diagnose-white-screen.sh --domain github.com || true
+      
+      - name: Test diagnose-white-screen (PowerShell)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Test help output
+          .\scripts\diagnose-white-screen.ps1 -Help
+          
+          # Test with a known good domain
+          # .\scripts\diagnose-white-screen.ps1 -Domain "github.com" || echo "Expected to fail on some checks"
+      
+      - name: Test assert-headers (Bash)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          chmod +x scripts/assert-headers.sh
+          # Test help output
+          ./scripts/assert-headers.sh --help
+          
+          # Test with a known good domain
+          ./scripts/assert-headers.sh --domain github.com || true
+      
+      - name: Test assert-headers (PowerShell)
+        if: matrix.os == 'windows-latest' && github.event_name == 'workflow_dispatch' && github.event.inputs.domain != ''
+        shell: pwsh
+        run: |
+          # Test help output
+          if (Test-Path .\scripts\assert-headers.ps1) {
+            .\scripts\assert-headers.ps1 -Help
+          } else {
+            Write-Host "assert-headers.ps1 not yet implemented (Bash version exists)"
+          }
+      
+      - name: Test guard-cloudfront-config (Bash)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          chmod +x scripts/guard-cloudfront-config.sh
+          # Test help output
+          ./scripts/guard-cloudfront-config.sh --help
+          
+          # Test with local config file if exists
+          if [ -f "dist-config.json" ]; then
+            ./scripts/guard-cloudfront-config.sh --file dist-config.json || true
+          fi
+  
+  test-with-real-domain:
+    name: Test Diagnostics with Real Domain
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.domain != ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Test against provided domain
+        run: |
+          chmod +x scripts/diagnose-white-screen.sh
+          chmod +x scripts/assert-headers.sh
+          
+          echo "Testing diagnostics against: ${{ github.event.inputs.domain }}"
+          
+          ./scripts/diagnose-white-screen.sh --domain "${{ github.event.inputs.domain }}" || true
+          ./scripts/assert-headers.sh --domain "${{ github.event.inputs.domain }}" || true
+      
+      - name: Test CloudFront config guard
+        if: github.event.inputs.distribution_id != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+        run: |
+          chmod +x scripts/guard-cloudfront-config.sh
+          
+          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+            ./scripts/guard-cloudfront-config.sh --distribution-id "${{ github.event.inputs.distribution_id }}" || true
+          else
+            echo "⚠️  AWS credentials not configured, skipping CloudFront check"
+          fi
+  
+  summary:
+    name: Hardening Summary
+    runs-on: ubuntu-latest
+    needs: [test-error-boundary, build-and-sri, test-diagnostics]
+    if: always()
+    
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "## Frontend Hardening Summary"
+          echo ""
+          echo "- ErrorBoundary Tests: ${{ needs.test-error-boundary.result }}"
+          echo "- Build & SRI: ${{ needs.build-and-sri.result }}"
+          echo "- Diagnostic Scripts: ${{ needs.test-diagnostics.result }}"
+          echo ""
+          
+          if [ "${{ needs.test-error-boundary.result }}" != "success" ] || \
+             [ "${{ needs.build-and-sri.result }}" != "success" ] || \
+             [ "${{ needs.test-diagnostics.result }}" != "success" ]; then
+            echo "❌ Some checks failed"
+            exit 1
+          else
+            echo "✅ All checks passed"
+          fi
