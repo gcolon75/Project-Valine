@@ -20,6 +20,8 @@ jobs:
   api-base-scan:
     name: Scan for Stale API Hosts
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -51,6 +53,8 @@ jobs:
   api-base-validate:
     name: Validate API Base Configuration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
@@ -85,6 +89,8 @@ jobs:
   api-base-history:
     name: Analyze API Base History
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # Only run on pull requests or manual trigger
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     
@@ -121,6 +127,8 @@ jobs:
   bundle-diff:
     name: Bundle API Host Diff
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # Only run if dist directory exists (after build)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     
@@ -164,6 +172,8 @@ jobs:
   summary:
     name: Generate Summary
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [api-base-scan, api-base-validate]
     if: always()
     
