@@ -1,289 +1,212 @@
-# Frontend Deployment Script with Asset Retention
-# 
-# Purpose: Deploy frontend build to S3 with proper MIME types and retain previous bundles
-# 
-# Usage:
-#   .\scripts\deploy-frontend.ps1 -S3Bucket "bucket-name" -CloudFrontDistributionId "E1234567890ABC"
-#   or use environment variables S3_BUCKET and CLOUDFRONT_DISTRIBUTION_ID
-#
-# Features:
-# - Builds frontend (npm ci && npm run build)
-# - Parses dist/index.html for module script and stylesheet
-# - Uploads with correct Content-Type & Cache-Control
-# - Retains previous JS/CSS bundles for RETENTION_DAYS (default 7)
-# - Prunes bundles older than retention period
-# - Optional CloudFront invalidation
-# - Generates deploy-report.json
+<#
+Deploy Frontend Script (Windows PowerShell 5.1 compatible)
+
+Usage:
+  .\scripts\deploy-frontend.ps1 -Bucket valine-frontend-prod -DistributionId E16LPJDBIL5DEE
+Optional:
+  -SkipBuild       (skips npm build / SRI steps if already built)
+  -RetentionDays 7 (change retention window)
+  -DryRun          (show intended actions only)
+  -InvalidateAll   (use "/*" instead of targeted invalidation)
+  -Profile myAwsProfile (AWS CLI --profile usage)
+#>
 
 param(
-    [string]$S3Bucket = $env:S3_BUCKET,
-    [string]$CloudFrontDistributionId = $env:CLOUDFRONT_DISTRIBUTION_ID,
-    [string]$DistDir = "dist",
-    [int]$RetentionDays = 7,
-    [switch]$SkipBuild,
-    [switch]$SkipInvalidation,
-    [string]$AwsProfile = $env:AWS_PROFILE
+  [Parameter(Mandatory = $true)][string]$Bucket,
+  [Parameter(Mandatory = $true)][string]$DistributionId,
+  [int]$RetentionDays = 7,
+  [switch]$SkipBuild,
+  [switch]$DryRun,
+  [switch]$InvalidateAll,
+  [string]$Profile
 )
 
-# Colors for output
-function Write-Success { Write-Host $args[0] -ForegroundColor Green }
-function Write-Info { Write-Host $args[0] -ForegroundColor Cyan }
-function Write-Warning { Write-Host $args[0] -ForegroundColor Yellow }
-function Write-Error { Write-Host $args[0] -ForegroundColor Red }
+$ErrorActionPreference = 'Stop'
 
-Write-Success "========================================"
-Write-Success "Frontend Deployment Script"
-Write-Success "========================================"
-Write-Info "Retention Policy: $RetentionDays days"
-Write-Host ""
+function Write-Info($msg)  { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
+function Write-Warn($msg)  { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
+function Write-Err($msg)   { Write-Host "[ERROR] $msg" -ForegroundColor Red }
 
-# Validate required parameters
-if ([string]::IsNullOrWhiteSpace($S3Bucket)) {
-    Write-Error "Error: S3 bucket name is required"
-    Write-Host "Usage: .\deploy-frontend.ps1 -S3Bucket <bucket-name> [-CloudFrontDistributionId <id>]"
-    Write-Host "   or: Set environment variables S3_BUCKET and CLOUDFRONT_DISTRIBUTION_ID"
-    exit 1
+function Run-Cmd($cmd, $failMessage) {
+  Write-Info $cmd
+  $exit = 0
+  cmd /c $cmd
+  $exit = $LASTEXITCODE
+  if ($exit -ne 0) {
+    throw "$failMessage (exit $exit)"
+  }
 }
 
-Write-Success "✓ S3 Bucket: $S3Bucket"
-if (-not [string]::IsNullOrWhiteSpace($CloudFrontDistributionId)) {
-    Write-Success "✓ CloudFront Distribution: $CloudFrontDistributionId"
-} else {
-    Write-Warning "⚠ No CloudFront distribution ID (invalidation will be skipped)"
-}
-Write-Host ""
+# Resolve AWS CLI profile flag
+$ProfileFlag = ""
+if ($Profile) { $ProfileFlag = "--profile $Profile" }
 
-# Build AWS CLI profile argument
-$awsProfileArgs = @()
-if (-not [string]::IsNullOrWhiteSpace($AwsProfile)) {
-    $awsProfileArgs = @("--profile", $AwsProfile)
-    Write-Info "Using AWS profile: $AwsProfile"
-}
-
-# Step 1: Build frontend (unless skipped)
+# 1. Build + SRI (unless skipped)
 if (-not $SkipBuild) {
-    Write-Info "Step 1: Building frontend..."
-    
-    # Check if node_modules exists, if not run npm ci
-    if (-not (Test-Path "node_modules")) {
-        Write-Info "Installing dependencies..."
-        npm ci
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "npm ci failed"
-            exit 1
-        }
-    }
-    
-    # Build
-    npm run build
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Build failed"
-        exit 1
-    }
-    Write-Success "✓ Build completed"
+  Write-Info "Running build + SRI generation"
+  if (-not $DryRun) {
+    Run-Cmd "npm run build:sri" "Build/SRI failed"
+    Run-Cmd "npm run verify:sri" "SRI verification failed"
+  } else {
+    Write-Info "DryRun: would run 'npm run build:sri' and 'npm run verify:sri'"
+  }
 } else {
-    Write-Warning "⚠ Skipping build (--SkipBuild flag set)"
+  Write-Warn "Skipping build (SkipBuild specified)"
 }
 
-# Verify dist directory exists
+$DistDir = Join-Path (Get-Location) "dist"
 if (-not (Test-Path $DistDir)) {
-    Write-Error "Error: $DistDir directory not found"
-    exit 1
+  Write-Err "Dist directory not found: $DistDir"
+  exit 1
 }
 
-# Step 2: Parse dist/index.html for bundle names
-Write-Info "Step 2: Parsing index.html for bundles..."
-$indexHtmlPath = Join-Path $DistDir "index.html"
-if (-not (Test-Path $indexHtmlPath)) {
-    Write-Error "Error: index.html not found in $DistDir"
-    exit 1
+# 2. Extract current main JS bundle & CSS from index.html
+$IndexPath = Join-Path $DistDir "index.html"
+if (-not (Test-Path $IndexPath)) {
+  Write-Err "index.html not found at $IndexPath"
+  exit 1
 }
 
-$indexHtml = Get-Content $indexHtmlPath -Raw
+$indexHtml = Get-Content -Path $IndexPath -Raw
+$bundleMatch = Select-String -InputObject $indexHtml -Pattern '/assets/index-[A-Za-z0-9_-]+\.js' -AllMatches
+$cssMatch    = Select-String -InputObject $indexHtml -Pattern '/assets/index-[A-Za-z0-9_-]+\.css' -AllMatches
 
-# Extract module script src
-$moduleScriptMatch = [regex]::Match($indexHtml, '<script\s+type="module"[^>]+src="([^"]+)"')
-if (-not $moduleScriptMatch.Success) {
-    Write-Error "Error: Could not find module script in index.html"
-    exit 1
+if ($bundleMatch.Matches.Count -eq 0) {
+  Write-Err "No JS bundle match found in index.html"
+  exit 1
 }
-$moduleBundle = $moduleScriptMatch.Groups[1].Value
-Write-Success "✓ Module bundle: $moduleBundle"
+$MainJs = $bundleMatch.Matches[0].Value
+Write-Info "Main JS bundle: $MainJs"
 
-# Extract stylesheet href
-$stylesheetMatch = [regex]::Match($indexHtml, '<link\s+rel="stylesheet"[^>]+href="([^"]+)"')
-$mainCss = if ($stylesheetMatch.Success) { $stylesheetMatch.Groups[1].Value } else { "" }
-if ($mainCss) {
-    Write-Success "✓ Main CSS: $mainCss"
-}
-
-# Step 3: List existing bundles in S3 for retention management
-Write-Info "Step 3: Checking existing bundles in S3..."
-$existingBundles = @()
-try {
-    $s3ListOutput = aws s3api list-objects-v2 --bucket $S3Bucket --prefix "assets/index-" @awsProfileArgs --output json 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        $s3Objects = $s3ListOutput | ConvertFrom-Json
-        if ($s3Objects.Contents) {
-            $existingBundles = $s3Objects.Contents | ForEach-Object {
-                @{
-                    Key = $_.Key
-                    LastModified = [DateTime]::Parse($_.LastModified)
-                }
-            }
-            Write-Info "Found $($existingBundles.Count) existing bundle(s) in S3"
-        }
-    }
-} catch {
-    Write-Warning "⚠ Could not list existing bundles: $_"
-}
-
-# Step 4: Upload files with correct Content-Type and Cache-Control
-Write-Info "Step 4: Uploading files to S3..."
-
-# Define content type mappings
-$contentTypes = @{
-    '.html' = 'text/html; charset=utf-8'
-    '.js' = 'application/javascript; charset=utf-8'
-    '.css' = 'text/css; charset=utf-8'
-    '.json' = 'application/json; charset=utf-8'
-    '.png' = 'image/png'
-    '.jpg' = 'image/jpeg'
-    '.jpeg' = 'image/jpeg'
-    '.svg' = 'image/svg+xml'
-    '.ico' = 'image/x-icon'
-    '.webp' = 'image/webp'
-    '.woff' = 'font/woff'
-    '.woff2' = 'font/woff2'
-    '.ttf' = 'font/ttf'
-    '.xml' = 'application/xml'
-    '.txt' = 'text/plain'
-}
-
-# Upload files
-Get-ChildItem -Path $DistDir -Recurse -File | ForEach-Object {
-    $file = $_
-    $relativePath = $file.FullName.Substring((Resolve-Path $DistDir).Path.Length + 1).Replace('\', '/')
-    $s3Key = $relativePath
-    
-    # Determine content type
-    $ext = $file.Extension.ToLower()
-    $contentType = if ($contentTypes.ContainsKey($ext)) { $contentTypes[$ext] } else { 'application/octet-stream' }
-    
-    # Determine cache control
-    $cacheControl = if ($ext -eq '.html') {
-        'no-cache, no-store, must-revalidate'
-    } elseif ($ext -eq '.json' -and $file.Name -eq 'manifest.json') {
-        'public, max-age=300'
-    } elseif ($ext -eq '.js' -or $ext -eq '.css') {
-        'public, max-age=31536000, immutable'
-    } else {
-        'public, max-age=31536000, immutable'
-    }
-    
-    # Upload
-    $uploadArgs = @(
-        "s3api", "put-object",
-        "--bucket", $S3Bucket,
-        "--key", $s3Key,
-        "--body", $file.FullName,
-        "--content-type", $contentType,
-        "--cache-control", $cacheControl
-    ) + $awsProfileArgs
-    
-    aws @uploadArgs | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Info "  ✓ $s3Key ($contentType, $cacheControl)"
-    } else {
-        Write-Error "  ✗ Failed to upload $s3Key"
-    }
-}
-
-Write-Success "✓ Upload completed"
-
-# Step 5: Prune old bundles
-Write-Info "Step 5: Pruning old bundles (retention: $RetentionDays days)..."
-$cutoffDate = (Get-Date).AddDays(-$RetentionDays)
-$currentBundleKey = $moduleBundle.TrimStart('/')
-$prunedBundles = @()
-
-foreach ($bundle in $existingBundles) {
-    $bundleKey = $bundle.Key
-    $bundleAge = $bundle.LastModified
-    
-    # Don't delete the current bundle
-    if ($bundleKey -eq $currentBundleKey) {
-        Write-Info "  → Keeping current bundle: $bundleKey"
-        continue
-    }
-    
-    # Delete if older than retention period
-    if ($bundleAge -lt $cutoffDate) {
-        Write-Warning "  ✗ Deleting old bundle: $bundleKey (age: $([int]((Get-Date) - $bundleAge).TotalDays) days)"
-        aws s3api delete-object --bucket $S3Bucket --key $bundleKey @awsProfileArgs | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            $prunedBundles += $bundleKey
-        }
-    } else {
-        Write-Info "  → Keeping bundle: $bundleKey (age: $([int]((Get-Date) - $bundleAge).TotalDays) days)"
-    }
-}
-
-if ($prunedBundles.Count -gt 0) {
-    Write-Success "✓ Pruned $($prunedBundles.Count) old bundle(s)"
+if ($cssMatch.Matches.Count -eq 0) {
+  Write-Warn "No CSS bundle found (continuing)"
+  $MainCss = $null
 } else {
-    Write-Info "No bundles to prune"
+  $MainCss = $cssMatch.Matches[0].Value
+  Write-Info "Main CSS bundle: $MainCss"
 }
 
-# Step 6: Invalidate CloudFront (optional)
-if (-not $SkipInvalidation -and -not [string]::IsNullOrWhiteSpace($CloudFrontDistributionId)) {
-    Write-Info "Step 6: Invalidating CloudFront cache..."
-    
-    # Invalidate critical paths
-    $pathsToInvalidate = @('/index.html', '/theme-init.js', $moduleBundle)
-    if ($mainCss) {
-        $pathsToInvalidate += $mainCss
+# 3. Upload dist files
+Write-Info "Uploading dist files to s3://$Bucket"
+# Content-Type mapping helper
+function Get-ContentType($file) {
+  $ext = ([System.IO.Path]::GetExtension($file)).ToLower()
+  switch ($ext) {
+    ".html" { "text/html; charset=utf-8" }
+    ".js"   { "application/javascript; charset=utf-8" }
+    ".css"  { "text/css; charset=utf-8" }
+    ".json" { "application/json; charset=utf-8" }
+    ".txt"  { "text/plain; charset=utf-8" }
+    ".svg"  { "image/svg+xml" }
+    ".png"  { "image/png" }
+    ".jpg"  { "image/jpeg" }
+    ".jpeg" { "image/jpeg" }
+    ".webp" { "image/webp" }
+    ".ico"  { "image/x-icon" }
+    default { "binary/octet-stream" }
+  }
+}
+
+# Cache-Control rules:
+# index.html: no-cache
+# hashed assets: immutable
+# others: public,max-age=3600
+function Get-CacheControl($file) {
+  $name = [System.IO.Path]::GetFileName($file)
+  if ($name -eq "index.html") { return "no-cache, must-revalidate" }
+  if ($name -match 'index-[A-Za-z0-9_-]+\.(js|css)') { return "public, max-age=31536000, immutable" }
+  return "public, max-age=3600"
+}
+
+$uploads = Get-ChildItem -Path $DistDir -Recurse -File
+foreach ($f in $uploads) {
+  $rel = $f.FullName.Substring($DistDir.Length).TrimStart('\','/')
+  $ct = Get-ContentType $f.FullName
+  $cc = Get-CacheControl $rel
+  Write-Info "Upload: $rel  CT=$ct  CC=$cc"
+
+  if ($DryRun) {
+    Write-Info "DryRun: would run aws s3api copy-object / put-object for $rel"
+    continue
+  }
+
+  # Use put-object (simpler; file is local)
+  aws s3api put-object `
+    --bucket $Bucket `
+    --key "$rel" `
+    --body "$($f.FullName)" `
+    --content-type "$ct" `
+    --cache-control "$cc" `
+    $ProfileFlag | Out-Null
+}
+
+# 4. Retention Pruning (exclude current main bundles)
+Write-Info "Retention pruning (older than $RetentionDays days)"
+$cutoff = (Get-Date).AddDays(-$RetentionDays)
+$allBundles = aws s3api list-objects-v2 --bucket $Bucket --prefix assets/index- --query "Contents[].{Key:Key,LastModified:LastModified}" --output json $ProfileFlag | ConvertFrom-Json
+
+if ($null -eq $allBundles) {
+  Write-Warn "No bundles returned from S3 listing"
+  $allBundles = @()
+}
+
+$currentSet = @()
+$currentSet += ($MainJs.TrimStart('/'))
+if ($MainCss) { $currentSet += ($MainCss.TrimStart('/')) }
+
+$pruneList = @()
+foreach ($b in $allBundles) {
+  $lm = Get-Date $b.LastModified
+  $key = $b.Key
+  if ($currentSet -contains $key) { continue }
+  if ($lm -lt $cutoff) { $pruneList += $key }
+}
+
+if ($pruneList.Count -gt 0) {
+  Write-Info "Prunable bundles (excluding current):"
+  $pruneList | ForEach-Object { Write-Host "  $_" }
+  if (-not $DryRun) {
+    foreach ($p in $pruneList) {
+      Write-Info "Deleting old bundle: $p"
+      aws s3api delete-object --bucket $Bucket --key "$p" $ProfileFlag | Out-Null
     }
-    
-    $invalidationPaths = $pathsToInvalidate -join ' '
-    $invalidationArgs = @(
-        "cloudfront", "create-invalidation",
-        "--distribution-id", $CloudFrontDistributionId,
-        "--paths"
-    ) + $pathsToInvalidate + $awsProfileArgs
-    
-    aws @invalidationArgs | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "✓ CloudFront invalidation created for: $invalidationPaths"
-    } else {
-        Write-Error "✗ CloudFront invalidation failed"
-    }
+  } else {
+    Write-Info "DryRun: skipping deletion"
+  }
 } else {
-    Write-Warning "⚠ Skipping CloudFront invalidation"
+  Write-Info "No bundles eligible for pruning"
 }
 
-# Step 7: Generate deployment report
-Write-Info "Step 7: Generating deployment report..."
-$report = @{
-    timestamp = (Get-Date).ToString("o")
-    s3Bucket = $S3Bucket
-    moduleBundle = $moduleBundle
-    mainCss = $mainCss
-    prunedBundles = $prunedBundles
-    retentionDays = $RetentionDays
-    cloudFrontDistribution = $CloudFrontDistributionId
-} | ConvertTo-Json -Depth 10
+# 5. CloudFront invalidation
+Write-Info "Creating CloudFront invalidation"
+$paths = @("/index.html", $MainJs)
+if ($MainCss) { $paths += $MainCss }
+$paths += "/theme-init.js"
 
-$reportPath = "deploy-report.json"
-$report | Out-File -FilePath $reportPath -Encoding UTF8
-Write-Success "✓ Deployment report: $reportPath"
-
-Write-Host ""
-Write-Success "========================================"
-Write-Success "Deployment completed successfully!"
-Write-Success "========================================"
-Write-Info "Module bundle: $moduleBundle"
-if ($mainCss) {
-    Write-Info "Main CSS: $mainCss"
+if ($InvalidateAll) {
+  Write-Warn "InvalidateAll specified: invalidating /* (expensive)"
+  $paths = @("/*")
 }
-Write-Info "Pruned bundles: $($prunedBundles.Count)"
+
+Write-Info "Paths to invalidate:"
+$paths | ForEach-Object { Write-Host "  $_" }
+
+if (-not $DryRun) {
+  $pathsJson = ($paths | ForEach-Object { '"' + $_ + '"' }) -join ", "
+  $invPayload = "{""Paths"":{""Quantity"":$($paths.Count),""Items"":[ $pathsJson ]},""CallerReference"":""deploy-$(Get-Random)""}"
+  $tmpFile = [System.IO.Path]::GetTempFileName()
+  [System.IO.File]::WriteAllText($tmpFile, $invPayload, (New-Object System.Text.UTF8Encoding($false)))
+
+  aws cloudfront create-invalidation `
+    --distribution-id $DistributionId `
+    --invalidation-batch "file://$tmpFile" `
+    $ProfileFlag | Out-Null
+
+  Remove-Item $tmpFile -ErrorAction SilentlyContinue
+  Write-Info "Invalidation created."
+} else {
+  Write-Info "DryRun: skipping invalidation"
+}
+
+Write-Info "Deploy complete."
+exit 0
