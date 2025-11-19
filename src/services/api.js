@@ -2,6 +2,36 @@ import axios from 'axios';
 
 const base = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
 
+// Deprecated/stale API hosts that should never be used
+const DEPRECATED_HOSTS = [
+  'https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com',
+  'fb9pxd6m09.execute-api.us-west-2.amazonaws.com'
+];
+
+// Debug mode validation - check for deprecated hosts
+if (import.meta.env.VITE_DEBUG_API === 'true' || import.meta.env.DEV) {
+  console.log('[API Client] Initializing with base URL:', base);
+  
+  // Check if using a deprecated host
+  const isDeprecated = DEPRECATED_HOSTS.some(deprecated => 
+    base.includes(deprecated)
+  );
+  
+  if (isDeprecated) {
+    console.error(
+      '❌ CRITICAL: API client is configured with a DEPRECATED host!\n' +
+      `   Current: ${base}\n` +
+      '   This host is no longer valid and requests will fail.\n' +
+      '   Action required:\n' +
+      '   1. Update VITE_API_BASE in .env.production to the correct host\n' +
+      '   2. Rebuild and redeploy the application\n' +
+      '   3. Clear browser cache and CloudFront distribution\n' +
+      '   For validation, run: node scripts/validate-api-base.js'
+    );
+  }
+}
+
+
 // Retry configuration
 const RETRY_CONFIG = {
   maxRetries: 3,

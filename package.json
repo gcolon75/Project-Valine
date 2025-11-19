@@ -29,7 +29,11 @@
                     "visual:update":  "playwright test tests/e2e/visual-qa-phase.spec.ts --update-snapshots",
                     "build:sri":  "npm run build && node scripts/generate-sri.js",
                     "verify:sri":  "node scripts/verify-sri.js",
-                    "postbuild":  "npm run seo:build && node scripts/postbuild-validate.js"
+                    "postbuild":  "npm run seo:build && node scripts/postbuild-validate.js",
+                    "api:scan":  "node scripts/scan-api-base.js",
+                    "api:validate":  "node scripts/validate-api-base.js",
+                    "api:history":  "node scripts/analyze-api-base-history.js",
+                    "api:diff-bundles":  "node scripts/diff-bundles-api-base.js"
                 },
     "dependencies":  {
                          "@prisma/client":  "^6.18.0",

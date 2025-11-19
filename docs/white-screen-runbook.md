@@ -568,6 +568,14 @@ aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 
 ---
 
+## Related Documentation
+
+- [API Base Validation Guide](API_BASE_VALIDATION.md) - Validate API configuration
+- [Auth Backend Investigation](AUTH_BACKEND_INVESTIGATION.md) - Authentication diagnostics
+- [Deployment Guide](DEPLOYMENT.md) - Full deployment procedures
+
+---
+
 **Last Updated:** 2025-11-19  
-**Version:** 2.0  
+**Version:** 2.1  
 **Maintained by:** DevOps Team

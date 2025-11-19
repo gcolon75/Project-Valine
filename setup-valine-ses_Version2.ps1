@@ -23,7 +23,7 @@ Notes:
 #>
 
 param(
-    [string]$ApiBase = "https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com",
+    [string]$ApiBase = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
     [string]$FrontendUrl = "https://dkmxy676d3vgc.cloudfront.net",
     [string]$ServerlessEnvPath = ".\serverless\.env",
     [switch]$WriteLocal,
@@ -58,8 +58,27 @@ function AwsCliExists { return (Get-Command aws -ErrorAction SilentlyContinue) -
 Write-Host "`n=== Project Valine: SES/SMTP wiring & E2E tester (PowerShell) ===`n"
 
 # Prompt for values
-$ApiBase = Read-Host "API base URL (press Enter to accept default $ApiBase)" -ErrorAction SilentlyContinue
-if ([string]::IsNullOrWhiteSpace($ApiBase)) { $ApiBase = "https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com" }
+$ApiBaseInput = Read-Host "API base URL (press Enter to accept default $ApiBase)" -ErrorAction SilentlyContinue
+if (-not [string]::IsNullOrWhiteSpace($ApiBaseInput)) { $ApiBase = $ApiBaseInput }
+if ([string]::IsNullOrWhiteSpace($ApiBase)) { $ApiBase = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com" }
+
+# Validate API base URL DNS resolution (warning only)
+Write-Host ""
+Write-Host "Validating API base URL..." -ForegroundColor Cyan
+try {
+    $hostname = ([System.Uri]$ApiBase).Host
+    $resolved = [System.Net.Dns]::GetHostAddresses($hostname)
+    if ($resolved.Count -gt 0) {
+        Write-Host "✓ DNS resolution successful: $hostname -> $($resolved[0])" -ForegroundColor Green
+    } else {
+        Write-Warning "⚠ Could not resolve hostname: $hostname"
+        Write-Warning "  The API may not be reachable. Verify the URL is correct."
+    }
+} catch {
+    Write-Warning "⚠ Could not validate API URL: $_"
+    Write-Warning "  Proceeding anyway, but the API may not be reachable."
+}
+Write-Host ""
 
 $FrontendUrl = Read-Host "FRONTEND URL (press Enter to accept default $FrontendUrl)" -ErrorAction SilentlyContinue
 if ([string]::IsNullOrWhiteSpace($FrontendUrl)) { $FrontendUrl = "https://dkmxy676d3vgc.cloudfront.net" }

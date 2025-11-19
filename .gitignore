@@ -90,3 +90,7 @@ analysis-output/
 seo-report.json
 seo-report.md
 seo-landing-page.png
+
+# API base validation reports (can be regenerated)
+reports/api-base-history.md
+reports/bundle-host-diff.md
