@@ -120,15 +120,36 @@ function Get-CacheControl($file) {
 
 $uploads = Get-ChildItem -Path $DistDir -Recurse -File
 foreach ($f in $uploads) {
+  # Relative file path from dist\
   $rel = $f.FullName.Substring($DistDir.Length).TrimStart('\','/')
+  # Normalize to forward slashes for S3 keys
+  $key = ($rel -replace '\\','/')
+
   $ct = Get-ContentType $f.FullName
-  $cc = Get-CacheControl $rel
-  Write-Info "Upload: $rel  CT=$ct  CC=$cc"
+  $cc = Get-CacheControl $key
+  Write-Info ("Upload: {0}  CT={1}  CC={2}" -f $key, $ct, $cc)
 
   if ($DryRun) {
-    Write-Info "DryRun: would run aws s3api copy-object / put-object for $rel"
-    continue
+    Write-Info "DryRun: would upload $key"
+  } else {
+    aws s3api put-object `
+      --bucket $Bucket `
+      --key "$key" `
+      --body "$($f.FullName)" `
+      --content-type "$ct" `
+      --cache-control "$cc" `
+      $ProfileFlag | Out-Null
   }
+}
+
+# Retention (ensure current set uses normalized forward-slash keys)
+$currentSet = @()
+$currentSet += ($MainJs.TrimStart('/'))
+if ($MainCss) { $currentSet += ($MainCss.TrimStart('/')) }
+# Normalize current set too (defensive)
+$currentSet = $currentSet | ForEach-Object { $_ -replace '\\','/' }
+
+
 
   # Use put-object (simpler; file is local)
   aws s3api put-object `
