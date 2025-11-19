@@ -2,6 +2,89 @@
 
 This directory contains utility scripts for Project-Valine deployment, verification, and maintenance.
 
+## Auth Backend Diagnostics
+
+### check-auth-backend.js
+
+**Purpose**: Diagnose auth backend connectivity issues (DNS resolution, TCP connection, HTTP endpoints).
+
+**Quick Start**:
+```bash
+# Basic usage
+node scripts/check-auth-backend.js --domain fb9pxd6m09.execute-api.us-west-2.amazonaws.com
+
+# With custom timeout and verbose output
+node scripts/check-auth-backend.js --domain api.valine.com --timeout 5000 --verbose
+
+# Show help
+node scripts/check-auth-backend.js --help
+```
+
+**What it checks**:
+- ✓ DNS resolution (dns.lookup, IPv4, IPv6)
+- ✓ TCP connection to port 443 (HTTPS)
+- ✓ HTTPS HEAD request to root (/)
+- ✓ HTTPS GET request to /auth/me
+- ✓ HTTPS OPTIONS request to /auth/login (CORS check)
+
+**Exit Codes**:
+- `0` - All checks passed
+- `1` - DNS resolution failure
+- `2` - TCP connection failure
+- `3` - HTTP request failure
+
+**Documentation**: See [docs/AUTH_BACKEND_INVESTIGATION.md](../docs/AUTH_BACKEND_INVESTIGATION.md) for detailed troubleshooting.
+
+### check-auth-backend.ps1
+
+**Purpose**: PowerShell version of auth backend diagnostics for Windows users.
+
+**Quick Start**:
+```powershell
+# Basic usage
+.\scripts\check-auth-backend.ps1 -Domain "fb9pxd6m09.execute-api.us-west-2.amazonaws.com"
+
+# With custom timeout and verbose output
+.\scripts\check-auth-backend.ps1 -Domain "api.valine.com" -Timeout 5 -Verbose
+```
+
+**What it checks**: Same as Node.js version (DNS, TCP, HTTP)
+
+### test-auth-login.sh
+
+**Purpose**: Test authentication by attempting login with test credentials.
+
+**Quick Start**:
+```bash
+# Set credentials via environment variables
+export TEST_EMAIL="user@example.com"
+export TEST_PASSWORD="password123"
+export API_BASE="https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com"
+
+# Run test
+./scripts/test-auth-login.sh
+```
+
+**Security Warning**: Never commit credentials! Only use in secure local/CI environments.
+
+### test-auth-login.ps1
+
+**Purpose**: PowerShell version of auth login tester for Windows users.
+
+**Quick Start**:
+```powershell
+# Set credentials
+$env:TEST_EMAIL = "user@example.com"
+$env:TEST_PASSWORD = "password123"
+$env:API_BASE = "https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com"
+
+# Run test
+.\scripts\test-auth-login.ps1
+
+# Or use parameters
+.\scripts\test-auth-login.ps1 -Email "user@example.com" -Password "password123" -ApiBase "https://api.valine.com"
+```
+
 ## Verification Scripts
 
 ### verify-deployment.sh
