@@ -8,58 +8,69 @@
 #
 # Usage:
 #   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC"
-#   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC" -Strict
+#   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC" -Strict -Verbose
+#
+# Notes:
+# - ASCII-only output (Windows PowerShell 5.1 safe)
+# - Handles missing/null JSON sections gracefully
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$DistributionId,
-    
-    [switch]$Strict,  # Fail on warnings
-    [switch]$Verbose
+
+    [switch]$Strict,   # Fail on warnings
+    [switch]$Verbose   # Show extra details
 )
 
 $ErrorActionPreference = "Stop"
 
-function Write-Success { param($msg) Write-Host "✅ $msg" -ForegroundColor Green }
-function Write-Fail { param($msg) Write-Host "❌ $msg" -ForegroundColor Red }
-function Write-Warn { param($msg) Write-Host "⚠️  $msg" -ForegroundColor Yellow }
-function Write-Info { param($msg) Write-Host "ℹ️  $msg" -ForegroundColor Cyan }
-function Write-VerboseMsg { param($msg) if ($Verbose) { Write-Host "   $msg" -ForegroundColor Gray } }
+function Write-Success { param($msg) Write-Host "[OK]    $msg" -ForegroundColor Green }
+function Write-Fail    { param($msg) Write-Host "[FAIL]  $msg" -ForegroundColor Red }
+function Write-Warn    { param($msg) Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
+function Write-Info    { param($msg) Write-Host "[INFO]  $msg" -ForegroundColor Cyan }
+function Write-Detail  { param($msg) if ($Verbose) { Write-Host "        $msg" -ForegroundColor Gray } }
 
 $passed = $true
 $warnings = 0
 
 Write-Host ""
-Write-Host "🔒 CloudFront Configuration Safety Guard" -ForegroundColor Cyan
+Write-Host "CloudFront Configuration Safety Guard" -ForegroundColor Cyan
 Write-Host ""
 Write-Host ("=" * 60)
 Write-Host "Distribution ID: $DistributionId"
 Write-Host ("=" * 60)
 Write-Host ""
 
+# Ensure AWS CLI exists
+try {
+    $null = aws --version 2>$null
+} catch {
+    Write-Fail "AWS CLI not found. Please install and configure AWS CLI."
+    exit 1
+}
+
 # Fetch distribution config
 Write-Info "Fetching distribution configuration..."
 try {
-    $output = aws cloudfront get-distribution-config --id $DistributionId 2>&1
-    
-    if ($LASTEXITCODE -ne 0) {
+    $raw = aws cloudfront get-distribution-config --id $DistributionId --output json 2>&1
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) {
         Write-Fail "Failed to fetch distribution config"
-        Write-Host "  Error: $output"
+        if (-not [string]::IsNullOrWhiteSpace($raw)) { Write-Detail $raw }
         exit 1
     }
-    
-    $config = $output | ConvertFrom-Json
+
+    $config = $raw | ConvertFrom-Json
     $distConfig = $config.DistributionConfig
-    
+
     if (-not $distConfig) {
-        Write-Fail "Invalid distribution config received"
+        Write-Fail "Invalid distribution config received (no DistributionConfig node)"
         exit 1
     }
-    
+
     Write-Success "Distribution config retrieved"
     Write-Host ""
 } catch {
-    Write-Fail "Error fetching distribution config: $($_.Exception.Message)"
+    Write-Fail ("Error fetching distribution config: {0}" -f $_.Exception.Message)
     exit 1
 }
 
@@ -68,13 +79,13 @@ Write-Info "Checking DefaultRootObject..."
 $defaultRootObject = $distConfig.DefaultRootObject
 
 if ($defaultRootObject -eq "index.html") {
-    Write-Success "DefaultRootObject is 'index.html' ✓"
+    Write-Success "DefaultRootObject is 'index.html'"
 } elseif ([string]::IsNullOrEmpty($defaultRootObject)) {
     Write-Warn "DefaultRootObject is not set (should be 'index.html')"
     $warnings++
     if ($Strict) { $passed = $false }
 } else {
-    Write-Fail "DefaultRootObject is '$defaultRootObject' (should be 'index.html')"
+    Write-Fail ("DefaultRootObject is '{0}' (should be 'index.html')" -f $defaultRootObject)
     $passed = $false
 }
 Write-Host ""
@@ -82,89 +93,97 @@ Write-Host ""
 # Check 2: Default Cache Behavior - Viewer Request Function
 Write-Info "Checking default cache behavior for viewer-request function..."
 $defaultBehavior = $distConfig.DefaultCacheBehavior
-
 if (-not $defaultBehavior) {
-    Write-Fail "No default cache behavior found"
+    Write-Fail "No DefaultCacheBehavior found"
     $passed = $false
-    exit 1
+    Write-Host ""
+    goto Summary
 }
 
-$functionAssociations = $defaultBehavior.FunctionAssociations.Items
-$viewerRequestFunctions = $functionAssociations | Where-Object { $_.EventType -eq "viewer-request" }
+$fa = $defaultBehavior.FunctionAssociations
+$hasViewerRequest = $false
+$spaNameLikely = $false
+$attachedArns = @()
 
-if ($viewerRequestFunctions) {
-    Write-Success "Viewer-request function attached ✓"
-    foreach ($func in $viewerRequestFunctions) {
-        $funcArn = $func.FunctionARN
-        Write-VerboseMsg "  Function ARN: $funcArn"
-        
-        # Check if it's likely the SPA rewrite function
-        if ($funcArn -like "*spa*" -or $funcArn -like "*rewrite*") {
-            Write-VerboseMsg "  Appears to be SPA rewrite function"
+if ($fa -and $fa.Quantity -gt 0 -and $fa.Items) {
+    foreach ($item in $fa.Items) {
+        if ($item.EventType -eq "viewer-request") {
+            $hasViewerRequest = $true
+            $arn = $item.FunctionARN
+            if ($arn) { $attachedArns += $arn }
+            if ($arn -match 'function/spaRewrite$' -or $arn -match '(?i)spa.*rewrite|rewrite.*spa') {
+                $spaNameLikely = $true
+            }
         }
+    }
+}
+
+if ($hasViewerRequest) {
+    Write-Success "Viewer-request function attached on DefaultCacheBehavior"
+    if ($attachedArns.Count -gt 0) {
+        foreach ($a in $attachedArns) { Write-Detail ("Function ARN: {0}" -f $a) }
+    }
+    if (-not $spaNameLikely) {
+        Write-Warn "Viewer-request function is present but does not look like 'spaRewrite' by name/ARN"
+        $warnings++
+        if ($Strict) { $passed = $false }
     }
 } else {
     Write-Fail "No viewer-request function attached (SPA deep links will fail)"
-    Write-Host "  Expected: CloudFront Function for SPA path rewriting"
-    Write-Host "  Fix: Run .\scripts\cloudfront-associate-spa-function.ps1"
+    Write-Info "Expected: CloudFront Function for SPA path rewriting"
+    Write-Info "Fix: Run .\scripts\cloudfront-associate-spa-function.ps1"
     $passed = $false
 }
 Write-Host ""
 
 # Check 3: CustomErrorResponses
 Write-Info "Checking CustomErrorResponses..."
-$errorResponses = $distConfig.CustomErrorResponses.Items
+$cer = $distConfig.CustomErrorResponses
+$problematic = @()
 
-if ($errorResponses -and $errorResponses.Count -gt 0) {
-    Write-Warn "CustomErrorResponses are configured ($($errorResponses.Count) rules)"
-    
-    $problematic = @()
-    
-    foreach ($response in $errorResponses) {
-        $errorCode = $response.ErrorCode
-        $responsePage = $response.ResponsePagePath
-        $responseCode = $response.ResponseCode
-        
-        Write-VerboseMsg "  $errorCode → $responsePage (status: $responseCode)"
-        
-        # Check for 403/404 mapping to index.html
+if ($cer -and $cer.Quantity -gt 0 -and $cer.Items) {
+    Write-Detail ("CustomErrorResponses count: {0}" -f $cer.Quantity)
+    foreach ($resp in $cer.Items) {
+        $errorCode   = $resp.ErrorCode
+        $responsePage= $resp.ResponsePagePath
+        $responseCode= $resp.ResponseCode
+        Write-Detail ("Error {0} -> {1} (status {2})" -f $errorCode, $responsePage, $responseCode)
+
         if (($errorCode -eq 403 -or $errorCode -eq 404) -and $responsePage -eq "/index.html") {
-            $problematic += $response
+            $problematic += $resp
         }
     }
-    
+
     if ($problematic.Count -gt 0) {
-        Write-Warn "Found 403/404 → /index.html error mappings (should use viewer-request function instead)"
-        Write-Host "  These mappings can mask real errors and cause confusion"
-        Write-Host "  Recommendation: Remove error mappings and rely on viewer-request function"
+        Write-Warn "Found 403/404 mapped to /index.html (masks real errors; prefer viewer-request function)"
         $warnings++
         if ($Strict) { $passed = $false }
     } else {
-        Write-Success "No problematic error response mappings found"
+        Write-Success "No problematic CustomErrorResponses detected"
     }
 } else {
-    Write-Success "No CustomErrorResponses configured (good - using viewer-request function)"
+    Write-Success "No CustomErrorResponses configured (good for SPA routing)"
 }
 Write-Host ""
 
 # Check 4: Origin Configuration
 Write-Info "Checking origin configuration..."
-$origins = $distConfig.Origins.Items
-
-if ($origins -and $origins.Count -gt 0) {
-    $primaryOrigin = $origins[0]
+$origins = $distConfig.Origins
+if ($origins -and $origins.Quantity -gt 0 -and $origins.Items) {
+    $primaryOrigin = $origins.Items[0]
     $originPath = $primaryOrigin.OriginPath
     $domainName = $primaryOrigin.DomainName
-    
-    Write-VerboseMsg "  Origin domain: $domainName"
-    Write-VerboseMsg "  Origin path: '$originPath'"
-    
+
+    Write-Detail ("Origin domain: {0}" -f $domainName)
+    Write-Detail ("Origin path: '{0}'" -f $originPath)
+
     if ([string]::IsNullOrEmpty($originPath)) {
-        Write-Success "OriginPath is empty (assets served from bucket root) ✓"
+        Write-Success "OriginPath is empty (assets served from bucket root)"
     } else {
-        Write-Warn "OriginPath is '$originPath' (usually should be empty)"
-        Write-Host "  Ensure assets are deployed to bucket root, not a subdirectory"
+        Write-Warn ("OriginPath is '{0}' (usually should be empty)" -f $originPath)
+        Write-Info "Ensure assets are deployed to bucket root, not a subdirectory"
         $warnings++
+        if ($Strict) { $passed = $false }
     }
 } else {
     Write-Fail "No origins configured"
@@ -173,55 +192,65 @@ if ($origins -and $origins.Count -gt 0) {
 Write-Host ""
 
 # Check 5: Cache behavior for /assets/*
-Write-Info "Checking cache behavior for assets..."
-$cacheBehaviors = $distConfig.CacheBehaviors.Items
-$assetsPattern = $cacheBehaviors | Where-Object { $_.PathPattern -like "*assets*" -or $_.PathPattern -eq "/assets/*" }
+Write-Info "Checking cache behavior for /assets/*..."
+$cb = $distConfig.CacheBehaviors
+$assetsBehaviorFound = $false
+$assetsPatternText = $null
 
-if ($assetsPattern) {
-    Write-Success "Found dedicated cache behavior for assets ✓"
-    Write-VerboseMsg "  Pattern: $($assetsPattern.PathPattern)"
+if ($cb -and $cb.Quantity -gt 0 -and $cb.Items) {
+    foreach ($beh in $cb.Items) {
+        $pattern = $beh.PathPattern
+        if ($pattern -eq "/assets/*" -or $pattern -like "*assets*") {
+            $assetsBehaviorFound = $true
+            $assetsPatternText = $pattern
+            break
+        }
+    }
+}
+
+if ($assetsBehaviorFound) {
+    Write-Success ("Found dedicated cache behavior: {0}" -f $assetsPatternText)
+    Write-Detail "Consider long TTL and immutable caching for assets."
 } else {
-    Write-Warn "No dedicated cache behavior for /assets/* path"
-    Write-Host "  Consider adding a cache behavior for /assets/* with longer TTL"
+    Write-Warn "No dedicated cache behavior for /assets/*"
+    Write-Info "Recommendation: Add a cache behavior for /assets/* with longer TTL and immutable caching."
     $warnings++
+    if ($Strict) { $passed = $false }
 }
 Write-Host ""
 
+:Summary
 # Summary
 Write-Host ("=" * 60)
 Write-Host ""
 
 if ($passed -and ($warnings -eq 0 -or -not $Strict)) {
     if ($warnings -gt 0) {
-        Write-Host "📊 Status: " -NoNewline
-        Write-Host "PASSED " -ForegroundColor Green -NoNewline
-        Write-Host "with $warnings warning(s)" -ForegroundColor Yellow
+        Write-Host "[STATUS] PASSED with warnings ($warnings)" -ForegroundColor Yellow
         Write-Host ""
-        Write-Success "Configuration is safe for deployment (with minor recommendations)"
+        Write-Success "Configuration is safe for deployment (with recommendations)."
         Write-Host ""
-        Write-Host "💡 Recommended actions:" -ForegroundColor Yellow
-        Write-Host "  - Review warnings above and consider addressing them"
-        Write-Host "  - Test deployment with: .\scripts\diagnose-white-screen.ps1"
+        Write-Info "Recommended follow-ups:"
+        Write-Host "  - Review warnings above and address when convenient."
+        Write-Host "  - Test routes/assets with: .\scripts\diagnose-white-screen.ps1"
     } else {
-        Write-Host "📊 Status: " -NoNewline
-        Write-Success "PASSED"
+        Write-Host "[STATUS] PASSED" -ForegroundColor Green
         Write-Host ""
-        Write-Success "Configuration looks good! ✨"
+        Write-Success "Configuration looks good."
     }
     exit 0
 } else {
-    Write-Host "📊 Status: " -NoNewline
-    Write-Fail "FAILED"
+    Write-Host "[STATUS] FAILED" -ForegroundColor Red
     Write-Host ""
-    Write-Fail "Configuration has issues that need to be fixed"
+    Write-Fail "Configuration has issues that must be fixed."
     Write-Host ""
-    Write-Host "🔧 Required fixes:" -ForegroundColor Red
-    Write-Host "  1. Ensure viewer-request function is attached for SPA routing"
-    Write-Host "  2. Set DefaultRootObject to 'index.html'"
-    Write-Host "  3. Remove 403/404 → /index.html error response mappings"
+    Write-Info "Required fixes:"
+    Write-Host "  1) Ensure viewer-request function 'spaRewrite' is attached on DefaultCacheBehavior."
+    Write-Host "  2) Set DefaultRootObject to 'index.html'."
+    Write-Host "  3) Remove 403/404 -> /index.html error response mappings."
     Write-Host ""
-    Write-Host "📚 Documentation:" -ForegroundColor Yellow
-    Write-Host "  - See docs/white-screen-runbook.md for detailed guidance"
-    Write-Host "  - Run: .\scripts\cloudfront-associate-spa-function.ps1"
+    Write-Info "Docs:"
+    Write-Host "  - docs/white-screen-runbook.md"
+    Write-Host "  - scripts/cloudfront-associate-spa-function.ps1"
     exit 1
 }
