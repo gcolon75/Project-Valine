@@ -269,6 +269,8 @@ Deployment guides, CI/CD setup, monitoring, and operational runbooks.
 - [2FA Enablement](runbooks/2fa-enablement.md) - Enable two-factor authentication
 - [Email Verification](runbooks/email-verification.md) - Email verification flow
 - [Password Reset](runbooks/password-reset.md) - Password reset process
+- **[Auth Backend Investigation](AUTH_BACKEND_INVESTIGATION.md)** - Troubleshoot auth connectivity issues (DNS, network errors)
+- **[White Screen Runbook](white-screen-runbook.md)** - Diagnose and fix frontend loading issues
 
 ### Troubleshooting
 - [Troubleshooting README](troubleshooting/README.md) - Common issues

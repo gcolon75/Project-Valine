@@ -514,10 +514,27 @@ This prevents:
 5. Open incident ticket with diagnostic output
 
 ### Useful Links
+- **Auth Backend Investigation:** `docs/AUTH_BACKEND_INVESTIGATION.md` - Diagnose auth endpoint connectivity issues
 - Deployment Guide: `docs/DEPLOYMENT.md`
 - Testing Guide: `docs/WHITE_SCREEN_FIX_TESTING.md`
 - CloudFront SPA Migration: `docs/cloudfront-spa-migration-status.md`
 - Frontend Deployment Runbook: `docs/runbooks/frontend-deployment.md`
+
+### Auth Backend Issues
+
+If you're experiencing authentication failures with `net::ERR_NAME_NOT_RESOLVED` errors:
+
+```bash
+# Run auth backend diagnostics
+node scripts/check-auth-backend.js --domain fb9pxd6m09.execute-api.us-west-2.amazonaws.com
+
+# Test login credentials
+export TEST_EMAIL="user@example.com"
+export TEST_PASSWORD="password123"
+./scripts/test-auth-login.sh
+```
+
+See the **[Auth Backend Investigation Runbook](./AUTH_BACKEND_INVESTIGATION.md)** for detailed troubleshooting steps.
 
 ### Common Commands Quick Reference
 
