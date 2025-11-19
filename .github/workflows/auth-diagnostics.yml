@@ -19,6 +19,10 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+  actions: write  # Required to upload artifacts
+
 jobs:
   diagnose:
     name: Run Auth Backend Diagnostics
