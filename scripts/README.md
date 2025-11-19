@@ -2,6 +2,130 @@
 
 This directory contains utility scripts for Project-Valine deployment, verification, and maintenance.
 
+## Table of Contents
+
+- [API Base Validation](#api-base-validation)
+- [Auth Backend Diagnostics](#auth-backend-diagnostics)
+- [Verification Scripts](#verification-scripts)
+- [Deployment Scripts](#deployment-scripts)
+- [Build & Test Scripts](#build--test-scripts)
+
+## API Base Validation
+
+### scan-api-base.js
+
+**Purpose**: Scan source code and built assets for stale or hard-coded API hosts.
+
+**Quick Start**:
+```bash
+# Run scan
+node scripts/scan-api-base.js
+
+# Or via npm
+npm run api:scan
+```
+
+**What it checks**:
+- ✓ Known stale hosts (e.g., `fb9pxd6m09.execute-api.us-west-2.amazonaws.com`)
+- ✓ Hard-coded execute-api host patterns
+- ✓ Fallback patterns using `||` or ternary operators
+- ✓ Environment variable usage tracking
+
+**Exit Codes**:
+- `0` - No stale hosts found
+- `1` - Stale host detected or error
+
+**Documentation**: See [docs/API_BASE_VALIDATION.md](../docs/API_BASE_VALIDATION.md) for complete guide.
+
+### validate-api-base.js
+
+**Purpose**: Validate API base configuration before build (DNS resolution, format check).
+
+**Quick Start**:
+```bash
+# Run validation (uses VITE_API_BASE from .env.production)
+node scripts/validate-api-base.js
+
+# Or via npm
+npm run api:validate
+
+# With environment variable override
+VITE_API_BASE=https://your-api.execute-api.us-west-2.amazonaws.com \
+  node scripts/validate-api-base.js
+
+# Allow DNS failure (for restricted networks)
+ALLOW_API_BASE_DNS_FAILURE=true node scripts/validate-api-base.js
+
+# Cross-check with expected API ID
+STACK_API_ID=i72dxlcfcc node scripts/validate-api-base.js
+```
+
+**What it checks**:
+- ✓ `VITE_API_BASE` is set
+- ✓ URL format is valid
+- ✓ DNS resolution succeeds
+- ✓ Optional API Gateway ID match
+
+**Exit Codes**:
+- `0` - Validation passed
+- `1` - Validation failed
+
+**Integrated into**: Automatically runs during `npm run build` via prebuild script.
+
+### analyze-api-base-history.js
+
+**Purpose**: Analyze PR history for API base configuration changes.
+
+**Quick Start**:
+```bash
+# Analyze last 25 merged PRs (default)
+node scripts/analyze-api-base-history.js
+
+# Or via npm
+npm run api:history
+
+# Analyze last 50 PRs
+node scripts/analyze-api-base-history.js --count=50
+
+# With GitHub token for higher rate limits
+GITHUB_TOKEN=ghp_your_token node scripts/analyze-api-base-history.js
+```
+
+**Output**:
+- Generates `reports/api-base-history.md`
+- Lists PRs that modified `VITE_API_BASE`
+- Identifies stale host references
+- Summarizes execute-api occurrences
+
+**Environment Variables**:
+- `GITHUB_TOKEN` - GitHub personal access token (optional, increases rate limit)
+
+### diff-bundles-api-base.js
+
+**Purpose**: Compare production bundles to detect API hostname changes.
+
+**Quick Start**:
+```bash
+# Auto-detect latest two bundles in dist/assets
+node scripts/diff-bundles-api-base.js
+
+# Or via npm
+npm run api:diff-bundles
+
+# Explicit bundle paths
+node scripts/diff-bundles-api-base.js \
+  dist/assets/index-abc123.js \
+  dist/assets/index-def456.js
+```
+
+**Output**:
+- JSON summary to stdout
+- Markdown report at `reports/bundle-host-diff.md`
+- Lists added, removed, and common execute-api hosts
+
+**Use case**: Verify no stale hosts made it into production bundles after deployment.
+
+
 ## Auth Backend Diagnostics
 
 ### check-auth-backend.js
