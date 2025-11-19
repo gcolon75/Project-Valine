@@ -15,7 +15,10 @@
  * 
  * Usage:
  *   node scripts/diagnose-white-screen.js --domain example.com
+ *   node scripts/diagnose-white-screen.js --domain example.com --bundle /assets/index-xyz.js
  *   node scripts/diagnose-white-screen.js --domain example.com --bucket my-bucket --distribution-id E123
+ * 
+ * Note: If --bundle is omitted, the script will auto-detect the bundle path from the remote index.html
  */
 
 import https from 'https';
@@ -25,6 +28,7 @@ import { spawn } from 'child_process';
 const args = process.argv.slice(2);
 const config = {
   domain: getArg('--domain'),
+  bundle: getArg('--bundle'),
   bucket: getArg('--bucket'),
   distributionId: getArg('--distribution-id'),
   verbose: args.includes('--verbose') || args.includes('-v')
@@ -250,9 +254,12 @@ async function testBundle(domain, bundlePath) {
     
     let bundleOk = true;
     
-    // Check MIME type
-    if (contentType.includes('application/javascript') || contentType.includes('text/javascript')) {
+    // Check MIME type - accept both application/javascript and text/javascript but warn about text/javascript
+    if (contentType.includes('application/javascript')) {
       logVerbose(`Bundle MIME type: ${contentType} ✓`);
+    } else if (contentType.includes('text/javascript')) {
+      log(`Bundle → MIME type is text/javascript (prefer application/javascript): ${contentType}`, 'warning');
+      logVerbose(`Note: Both are valid, but application/javascript is the modern standard`);
     } else if (contentType.includes('text/html')) {
       log(`Bundle → Wrong MIME type (HTML instead of JS): ${contentType}`, 'error');
       bundleOk = false;
@@ -387,9 +394,11 @@ async function main() {
     console.error('❌ Error: --domain is required');
     console.error('\nUsage:');
     console.error('  node diagnose-white-screen.js --domain example.com');
+    console.error('  node diagnose-white-screen.js --domain example.com --bundle /assets/index-xyz.js');
     console.error('  node diagnose-white-screen.js --domain example.com --bucket my-bucket --distribution-id E123');
     console.error('\nOptions:');
     console.error('  --domain <domain>              Domain to test (required)');
+    console.error('  --bundle <path>                Bundle path (optional, auto-detected from remote index.html if omitted)');
     console.error('  --bucket <bucket>              S3 bucket name (optional, enables S3 checks)');
     console.error('  --distribution-id <id>         CloudFront distribution ID (optional)');
     console.error('  --verbose, -v                  Verbose output');
@@ -416,7 +425,14 @@ async function main() {
   
   // Test 3: Bundle
   console.log('📦 Testing JavaScript bundle...');
-  const bundlePath = await extractBundleUrl(config.domain);
+  let bundlePath = config.bundle;
+  
+  // Auto-detect bundle path from remote index.html if not provided
+  if (!bundlePath) {
+    logVerbose('Bundle path not provided, attempting auto-detection from remote index.html');
+    bundlePath = await extractBundleUrl(config.domain);
+  }
+  
   if (bundlePath) {
     await testBundle(config.domain, bundlePath);
     

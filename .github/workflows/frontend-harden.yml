@@ -31,8 +31,12 @@ on:
         description: 'Domain to test diagnostics against (optional)'
         required: false
         type: string
-      distribution_id:
+      distributionId:
         description: 'CloudFront distribution ID to check (optional)'
+        required: false
+        type: string
+      bundlePath:
+        description: 'Bundle path to test (optional, auto-detected if omitted)'
         required: false
         type: string
 
@@ -151,8 +155,14 @@ jobs:
           # Test help output
           if (Test-Path .\scripts\assert-headers.ps1) {
             .\scripts\assert-headers.ps1 -Help
+            
+            # Test with provided domain if available
+            if ("${{ github.event.inputs.domain }}" -ne "") {
+              .\scripts\assert-headers.ps1 -Domain "${{ github.event.inputs.domain }}" || echo "Expected to fail on some checks"
+            }
           } else {
-            Write-Host "assert-headers.ps1 not yet implemented (Bash version exists)"
+            Write-Host "assert-headers.ps1 not found"
+            exit 1
           }
       
       - name: Test guard-cloudfront-config (Bash)
@@ -187,7 +197,7 @@ jobs:
           ./scripts/assert-headers.sh --domain "${{ github.event.inputs.domain }}" || true
       
       - name: Test CloudFront config guard
-        if: github.event.inputs.distribution_id != ''
+        if: github.event.inputs.distributionId != ''
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -196,7 +206,7 @@ jobs:
           chmod +x scripts/guard-cloudfront-config.sh
           
           if [ -n "$AWS_ACCESS_KEY_ID" ]; then
-            ./scripts/guard-cloudfront-config.sh --distribution-id "${{ github.event.inputs.distribution_id }}" || true
+            ./scripts/guard-cloudfront-config.sh --distribution-id "${{ github.event.inputs.distributionId }}" || true
           else
             echo "⚠️  AWS credentials not configured, skipping CloudFront check"
           fi

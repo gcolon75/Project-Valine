@@ -8,7 +8,7 @@
 #
 # Usage:
 #   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC"
-#   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC" -Strict -Verbose
+#   .\scripts\guard-cloudfront-config.ps1 -DistributionId "E1234567890ABC" -Strict -ShowDetails
 #
 # Notes:
 # - ASCII-only output (Windows PowerShell 5.1 safe)
@@ -19,7 +19,7 @@ param(
     [string]$DistributionId,
 
     [switch]$Strict,   # Fail on warnings
-    [switch]$Verbose   # Show extra details
+    [switch]$ShowDetails   # Show extra details
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,7 +28,7 @@ function Write-Success { param($msg) Write-Host "[OK]    $msg" -ForegroundColor 
 function Write-Fail    { param($msg) Write-Host "[FAIL]  $msg" -ForegroundColor Red }
 function Write-Warn    { param($msg) Write-Host "[WARN]  $msg" -ForegroundColor Yellow }
 function Write-Info    { param($msg) Write-Host "[INFO]  $msg" -ForegroundColor Cyan }
-function Write-Detail  { param($msg) if ($Verbose) { Write-Host "        $msg" -ForegroundColor Gray } }
+function Write-Detail  { param($msg) if ($ShowDetails) { Write-Host "        $msg" -ForegroundColor Gray } }
 
 $passed = $true
 $warnings = 0
