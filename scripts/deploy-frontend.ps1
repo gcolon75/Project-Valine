@@ -8,6 +8,7 @@ Optional:
   -RetentionDays 7 (change retention window)
   -DryRun          (show intended actions only)
   -InvalidateAll   (use "/*" instead of targeted invalidation)
+  -RepairHeaders   (repair metadata for existing hashed bundles in S3)
   -Profile myAwsProfile (AWS CLI --profile usage)
 #>
 
@@ -18,6 +19,7 @@ param(
   [switch]$SkipBuild,
   [switch]$DryRun,
   [switch]$InvalidateAll,
+  [switch]$RepairHeaders,
   [string]$Profile
 )
 
@@ -26,6 +28,7 @@ $ErrorActionPreference = 'Stop'
 function Write-Info($msg)  { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
 function Write-Warn($msg)  { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
 function Write-Err($msg)   { Write-Host "[ERROR] $msg" -ForegroundColor Red }
+function Write-Success($msg) { Write-Host "[OK] $msg" -ForegroundColor Green }
 
 function Run-Cmd($cmd, $failMessage) {
   Write-Info $cmd
@@ -149,16 +152,25 @@ if ($MainCss) { $currentSet += ($MainCss.TrimStart('/')) }
 # Normalize current set too (defensive)
 $currentSet = $currentSet | ForEach-Object { $_ -replace '\\','/' }
 
-
-
-  # Use put-object (simpler; file is local)
-  aws s3api put-object `
-    --bucket $Bucket `
-    --key "$rel" `
-    --body "$($f.FullName)" `
-    --content-type "$ct" `
-    --cache-control "$cc" `
-    $ProfileFlag | Out-Null
+# Safety guard: verify current bundle exists in S3 before pruning
+Write-Info "Verifying current bundle exists in S3..."
+$mainJsKey = $MainJs.TrimStart('/')
+try {
+  if (-not $DryRun) {
+    $headResult = aws s3api head-object --bucket $Bucket --key "$mainJsKey" $ProfileFlag 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Write-Err "Current main JS bundle not found in S3: $mainJsKey"
+      Write-Err "Aborting pruning to avoid deleting wrong bundles"
+      Write-Err "This may indicate a mismatch between dist/index.html and S3 state"
+      exit 1
+    }
+    Write-Success "Current bundle verified in S3: $mainJsKey"
+  } else {
+    Write-Info "DryRun: would verify bundle existence"
+  }
+} catch {
+  Write-Err "Failed to verify current bundle: $_"
+  exit 1
 }
 
 # 4. Retention Pruning (exclude current main bundles)
@@ -196,6 +208,40 @@ if ($pruneList.Count -gt 0) {
   }
 } else {
   Write-Info "No bundles eligible for pruning"
+}
+
+# Optional: Repair headers for existing bundles
+if ($RepairHeaders) {
+  Write-Info "RepairHeaders mode: fixing metadata for existing hashed bundles"
+  $repairList = aws s3api list-objects-v2 --bucket $Bucket --prefix assets/index- --query "Contents[].Key" --output json $ProfileFlag | ConvertFrom-Json
+  
+  if ($null -eq $repairList) {
+    Write-Warn "No bundles found to repair"
+  } else {
+    foreach ($key in $repairList) {
+      if ($key -match 'index-[A-Za-z0-9_-]+\.(js|css)$') {
+        $ext = $key.Substring($key.LastIndexOf('.'))
+        $ct = if ($ext -eq ".js") { "application/javascript; charset=utf-8" } else { "text/css; charset=utf-8" }
+        $cc = "public, max-age=31536000, immutable"
+        
+        Write-Info "Repairing: $key -> CT=$ct, CC=$cc"
+        if (-not $DryRun) {
+          aws s3api copy-object `
+            --bucket $Bucket `
+            --copy-source "$Bucket/$key" `
+            --key "$key" `
+            --content-type "$ct" `
+            --cache-control "$cc" `
+            --metadata-directive REPLACE `
+            $ProfileFlag | Out-Null
+        } else {
+          Write-Info "DryRun: would repair $key"
+        }
+      }
+    }
+    Write-Success "Header repair complete"
+  }
+  Write-Host ""
 }
 
 # 5. CloudFront invalidation
