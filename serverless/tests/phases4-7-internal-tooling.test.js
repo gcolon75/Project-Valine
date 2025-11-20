@@ -3,7 +3,7 @@
  * Tests for PR Intelligence, Flaky Test Detector, Schema Diff, and Synthetic Journey
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 
 describe('Phase 4: PR Intelligence Backend Hook', () => {

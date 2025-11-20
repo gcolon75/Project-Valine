@@ -15,7 +15,7 @@ import { getUserIdFromEvent } from './tokenManager.js';
  */
 export async function requireEmailVerified(userId) {
   if (!userId) {
-    return error('Unauthorized - No valid token provided', 401);
+    return error(401, 'Unauthorized - No valid token provided');
   }
 
   const prisma = getPrisma();
@@ -26,11 +26,11 @@ export async function requireEmailVerified(userId) {
   });
 
   if (!user) {
-    return error('User not found', 404);
+    return error(404, 'User not found');
   }
 
   if (!user.emailVerified) {
-    return error('Email verification required. Please verify your email address to access this resource.', 403);
+    return error(403, 'Email verification required. Please verify your email address to access this resource.');
   }
 
   return null; // User is verified, no error

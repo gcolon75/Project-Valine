@@ -3,7 +3,7 @@
  * Tests for refresh token rotation, session listing, and 2FA functionality
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 describe('Phase 2: Session Management & 2FA', () => {
   let testUser = null;

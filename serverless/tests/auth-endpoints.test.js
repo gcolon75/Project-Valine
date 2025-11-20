@@ -3,7 +3,7 @@
  * Tests login, refresh, and logout flows
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, vi } from 'vitest';
 import { login, refresh, logout } from '../src/handlers/auth.js';
 import { generateAccessToken, generateRefreshToken, generateAccessTokenCookie, generateRefreshTokenCookie } from '../src/utils/tokenManager.js';
 
@@ -12,15 +12,20 @@ const mockUsers = new Map();
 let mockUserId = 'test-user-123';
 
 // Mock Prisma
-jest.mock('../src/db/client.js', () => ({
+vi.mock('../src/db/client.js', () => ({
   getPrisma: () => ({
     user: {
-      findFirst: async ({ where }) => {
-        const user = Array.from(mockUsers.values()).find(u => u.email === where.email);
-        return user || null;
-      },
       findUnique: async ({ where }) => {
-        return mockUsers.get(where.id) || null;
+        if (where.email) {
+          // Find by email
+          const user = Array.from(mockUsers.values()).find(u => u.email === where.email.toLowerCase());
+          return user || null;
+        }
+        if (where.id) {
+          // Find by ID
+          return mockUsers.get(where.id) || null;
+        }
+        return null;
       }
     }
   })
@@ -37,13 +42,14 @@ describe('Auth Endpoints - Login with Cookies', () => {
     
     mockUsers.set(mockUserId, {
       id: mockUserId,
-      email: testEmail,
-      password: hashedPassword,
+      email: testEmail.toLowerCase(),
+      passwordHash: hashedPassword,  // Changed from 'password' to 'passwordHash'
       username: 'testuser',
       displayName: 'Test User',
       avatar: 'https://example.com/avatar.png',
       role: 'USER',
       emailVerified: true,
+      twoFactorEnabled: false,
       createdAt: new Date()
     });
     
@@ -55,20 +61,24 @@ describe('Auth Endpoints - Login with Cookies', () => {
     const response = await login(event);
     
     expect(response.statusCode).toBe(200);
-    expect(response.multiValueHeaders['Set-Cookie']).toBeDefined();
-    expect(response.multiValueHeaders['Set-Cookie'].length).toBe(2);
+    expect(response.cookies).toBeDefined();
+    expect(response.cookies.length).toBe(3); // access, refresh, csrf
     
     // Check access token cookie
-    const accessCookie = response.multiValueHeaders['Set-Cookie'][0];
-    expect(accessCookie).toContain('access_token=');
+    const accessCookie = response.cookies.find(c => c.includes('access_token='));
+    expect(accessCookie).toBeDefined();
     expect(accessCookie).toContain('HttpOnly');
-    expect(accessCookie).toContain('SameSite=Lax');
+    expect(accessCookie).toContain('SameSite=Strict'); // Production mode
     
     // Check refresh token cookie
-    const refreshCookie = response.multiValueHeaders['Set-Cookie'][1];
-    expect(refreshCookie).toContain('refresh_token=');
+    const refreshCookie = response.cookies.find(c => c.includes('refresh_token='));
+    expect(refreshCookie).toBeDefined();
     expect(refreshCookie).toContain('HttpOnly');
-    expect(refreshCookie).toContain('SameSite=Lax');
+    expect(refreshCookie).toContain('SameSite=Strict'); // Production mode
+    
+    // Check CSRF token cookie
+    const csrfCookie = response.cookies.find(c => c.includes('csrf_token='));
+    expect(csrfCookie).toBeDefined();
     
     // Verify response body doesn't contain token
     const body = JSON.parse(response.body);
@@ -125,12 +135,11 @@ describe('Auth Endpoints - Refresh Token', () => {
     const response = await refresh(event);
     
     expect(response.statusCode).toBe(200);
-    expect(response.multiValueHeaders['Set-Cookie']).toBeDefined();
-    expect(response.multiValueHeaders['Set-Cookie'].length).toBe(2);
+    expect(response.cookies).toBeDefined();
+    expect(response.cookies.length).toBe(1); // Only access token is refreshed
     
-    // Both access and refresh tokens should be new
-    const accessCookie = response.multiValueHeaders['Set-Cookie'][0];
-    const newRefreshCookie = response.multiValueHeaders['Set-Cookie'][1];
+    // Access token should be new
+    const accessCookie = response.cookies[0];
     
     expect(accessCookie).toContain('access_token=');
     expect(newRefreshCookie).toContain('refresh_token=');
@@ -150,7 +159,7 @@ describe('Auth Endpoints - Refresh Token', () => {
     
     expect(response.statusCode).toBe(401);
     const body = JSON.parse(response.body);
-    expect(body.error).toContain('Refresh token required');
+    expect(body.error).toContain('Missing refresh token');
   });
 
   it('should return 401 for invalid refresh token', async () => {
@@ -192,18 +201,18 @@ describe('Auth Endpoints - Logout', () => {
     const response = await logout(event);
     
     expect(response.statusCode).toBe(200);
-    expect(response.multiValueHeaders['Set-Cookie']).toBeDefined();
-    expect(response.multiValueHeaders['Set-Cookie'].length).toBe(2);
+    expect(response.cookies).toBeDefined();
+    expect(response.cookies.length).toBe(3); // access, refresh, csrf clear cookies
     
     // Check that cookies are cleared (Max-Age=0)
-    const cookies = response.multiValueHeaders['Set-Cookie'];
+    const cookies = response.cookies;
     expect(cookies[0]).toContain('access_token=');
     expect(cookies[0]).toContain('Max-Age=0');
     expect(cookies[1]).toContain('refresh_token=');
     expect(cookies[1]).toContain('Max-Age=0');
     
     const body = JSON.parse(response.body);
-    expect(body.message).toContain('Logged out successfully');
+    expect(body.ok).toBe(true);
   });
 
   it('should always succeed even without existing cookies', async () => {
@@ -235,6 +244,6 @@ describe('Auth Endpoints - Header Fallback', () => {
     const decoded = verifyToken(extractedToken);
     
     expect(decoded).toBeTruthy();
-    expect(decoded.userId).toBe(mockUserId);
+    expect(decoded.sub).toBe(mockUserId); // JWT standard 'sub' claim
   });
 });

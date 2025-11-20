@@ -3,7 +3,7 @@
  * Covers Redis mode, in-memory fallback, and various rate limit scenarios
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { rateLimit, withRateLimit, closeRedis } from '../src/middleware/rateLimit.js';
 
 // Helper to create mock Lambda event

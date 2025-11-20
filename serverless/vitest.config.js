@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    css: false,
+    setupFiles: ['./tests/setup-env.js'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -27,5 +29,8 @@ export default defineConfig({
         '**/login_unpack/**',
       ],
     },
+  },
+  css: {
+    postcss: null,
   },
 });

@@ -3,39 +3,39 @@
  * Tests report creation, admin endpoints, and rate limiting
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createReport, listReports, getReport } from '../src/handlers/reports.js';
 import { makeDecision, getHealth } from '../src/handlers/moderation.js';
 
 // Mock Prisma client
 const mockPrisma = {
   moderationReport: {
-    create: jest.fn(),
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    update: jest.fn(),
+    create: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
   },
   moderationAction: {
-    create: jest.fn(),
+    create: vi.fn(),
   },
   user: {
-    findUnique: jest.fn(),
+    findUnique: vi.fn(),
   },
 };
 
-jest.mock('../src/db/client.js', () => ({
+vi.mock('../src/db/client.js', () => ({
   getPrisma: () => mockPrisma,
 }));
 
 // Mock rate limit middleware
-jest.mock('../src/middleware/rateLimit.js', () => ({
-  rateLimit: jest.fn(async () => ({ allowed: true })),
+vi.mock('../src/middleware/rateLimit.js', () => ({
+  rateLimit: vi.fn(async () => ({ allowed: true })),
 }));
 
 // Mock Discord alerts
-jest.mock('../src/utils/discord.js', () => ({
-  sendNewReportAlert: jest.fn(),
-  sendActionAlert: jest.fn(),
+vi.mock('../src/utils/discord.js', () => ({
+  sendNewReportAlert: vi.fn(),
+  sendActionAlert: vi.fn(),
 }));
 
 // Helper to create mock event
@@ -60,7 +60,7 @@ function createMockEvent(options = {}) {
 describe('Moderation Endpoints', () => {
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Set default environment
     process.env.REPORTS_ENABLED = 'true';

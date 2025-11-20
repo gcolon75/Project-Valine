@@ -112,7 +112,8 @@ describe('Analytics Configuration', () => {
 
   describe('analyticsConfig', () => {
     it('should have correct default values', () => {
-      expect(analyticsConfig.enabled).toBe(false);
+      // Note: enabled is true in test environment (set in setup-env.js)
+      expect(analyticsConfig.enabled).toBe(true);
       expect(analyticsConfig.requireConsent).toBe(true);
       expect(analyticsConfig.persistEnabled).toBe(true);
       expect(analyticsConfig.retentionDays).toBe(30);
