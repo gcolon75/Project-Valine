@@ -97,25 +97,34 @@ async function login(event) {
     }
 
     const rawBody = event?.body || '';
-    console.log(`[LOGIN] Raw body length: ${rawBody.length}`);
+    logStructured(correlationId, 'login_attempt', {
+      bodyLength: rawBody.length
+    }, 'info');
 
     let creds = {};
     if (rawBody) {
       try {
         creds = JSON.parse(rawBody);
       } catch (e) {
-        console.error('[LOGIN] JSON parse error:', e);
-        return error(400, 'Invalid JSON body');
+        logStructured(correlationId, 'login_json_parse_error', {
+          error: e.message
+        }, 'error');
+        return error(400, 'Invalid JSON body', { correlationId });
       }
     }
 
     const { email, password, twoFactorCode } = creds || {};
     if (!email || !password) {
-      console.warn('[LOGIN] Missing email/password');
-      return error(400, 'email and password are required');
+      logStructured(correlationId, 'login_missing_credentials', {
+        hasEmail: !!email,
+        hasPassword: !!password
+      }, 'warn');
+      return error(400, 'email and password are required', { correlationId });
     }
 
-    console.log(`[LOGIN] Attempt for email=${redactEmail(email)}`);
+    logStructured(correlationId, 'login_credentials_received', {
+      email: redactEmail(email)
+    }, 'info');
 
     // Defense-in-depth: Check allowlist before DB lookup
     const allowlist = getActiveAllowlist();
@@ -128,15 +137,37 @@ async function login(event) {
       return error(403, 'Access denied: email not in allowlist', { correlationId });
     }
 
+    logStructured(correlationId, 'login_allowlist_passed', {
+      email: redactEmail(email)
+    }, 'info');
+
     const prisma = getPrisma();
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+    } catch (dbError) {
+      logStructured(correlationId, 'login_db_error', {
+        email: redactEmail(email),
+        error: dbError.message
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
+    }
 
     if (!user) {
-      console.warn('[LOGIN] User not found');
-      return error(401, 'Invalid credentials');
+      logStructured(correlationId, 'login_user_not_found', {
+        email: redactEmail(email)
+      }, 'warn');
+      return error(401, 'Invalid credentials', { correlationId });
     }
+    
+    logStructured(correlationId, 'login_user_found', {
+      userId: user.id,
+      email: redactEmail(user.email),
+      hasPasswordHash: !!user.passwordHash,
+      hasLegacyPassword: !!user.password
+    }, 'info');
     
     /**
      * Transitional legacy password support:
@@ -144,20 +175,45 @@ async function login(event) {
      * TODO: Remove after patch-legacy-passwords.mjs migration is executed.
      */
     if (!user.passwordHash && user.password) {
-      console.warn('[LOGIN] Legacy password column detected; using as passwordHash fallback');
+      logStructured(correlationId, 'login_using_legacy_password', {
+        userId: user.id,
+        email: redactEmail(user.email)
+      }, 'warn');
       user.passwordHash = user.password; // assume bcrypt hash
     }
     
     if (!user.passwordHash) {
-      console.error('[LOGIN] User missing password hash (no legacy fallback available)');
-      return error(500, 'Server error');
+      logStructured(correlationId, 'login_no_password_hash', {
+        userId: user.id,
+        email: redactEmail(user.email)
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
-      console.warn('[LOGIN] Invalid password');
-      return error(401, 'Invalid credentials');
+    let valid;
+    try {
+      valid = await bcrypt.compare(password, user.passwordHash);
+    } catch (bcryptError) {
+      logStructured(correlationId, 'login_bcrypt_error', {
+        userId: user.id,
+        email: redactEmail(user.email),
+        error: bcryptError.message
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
     }
+    
+    if (!valid) {
+      logStructured(correlationId, 'login_invalid_password', {
+        userId: user.id,
+        email: redactEmail(user.email)
+      }, 'warn');
+      return error(401, 'Invalid credentials', { correlationId });
+    }
+
+    logStructured(correlationId, 'login_password_verified', {
+      userId: user.id,
+      email: redactEmail(user.email)
+    }, 'info');
 
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
@@ -193,9 +249,11 @@ async function login(event) {
       generateCsrfCookie(csrfToken)
     ];
 
-    console.log(
-      `[LOGIN] Success userId=${user.id} latency=${nowSeconds() - start}s`
-    );
+    logStructured(correlationId, 'login_success', {
+      userId: user.id,
+      email: redactEmail(user.email),
+      latencySeconds: nowSeconds() - start
+    }, 'info');
 
     return response(
       200,
@@ -211,8 +269,11 @@ async function login(event) {
       cookies
     );
   } catch (e) {
-    console.error('[LOGIN] Unhandled error:', e);
-    return error(500, 'Server error');
+    logStructured(correlationId, 'login_unhandled_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    return error(500, 'Server error', { correlationId });
   }
 }
 
@@ -308,16 +369,48 @@ async function register(event) {
 /* ---------------------- ME ---------------------- */
 
 async function me(event) {
+  const correlationId = generateCorrelationId();
+  
   try {
+    logStructured(correlationId, 'me_request_received', {}, 'info');
+    
     const userId = getUserIdFromEvent(event);
     if (!userId) {
-      return error(401, 'Unauthorized');
+      logStructured(correlationId, 'me_no_token', {
+        hasAuthHeader: !!(event.headers?.authorization || event.headers?.Authorization),
+        hasCookie: !!(event.headers?.cookie || event.headers?.Cookie)
+      }, 'warn');
+      return error(401, 'Unauthorized', { correlationId });
     }
+    
+    logStructured(correlationId, 'me_token_decoded', {
+      userId
+    }, 'info');
+    
     const prisma = getPrisma();
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return error(404, 'Not found');
+    let user;
+    try {
+      user = await prisma.user.findUnique({ where: { id: userId } });
+    } catch (dbError) {
+      logStructured(correlationId, 'me_db_error', {
+        userId,
+        error: dbError.message
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
     }
+    
+    if (!user) {
+      logStructured(correlationId, 'me_user_not_found', {
+        userId
+      }, 'warn');
+      return error(404, 'User not found', { correlationId });
+    }
+    
+    logStructured(correlationId, 'me_success', {
+      userId: user.id,
+      email: redactEmail(user.email)
+    }, 'info');
+    
     return response(200, {
       user: {
         id: user.id,
@@ -327,8 +420,11 @@ async function me(event) {
       }
     });
   } catch (e) {
-    console.error('[ME] Unhandled error:', e);
-    return error(500, 'Server error');
+    logStructured(correlationId, 'me_unhandled_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    return error(500, 'Server error', { correlationId });
   }
 }
 
