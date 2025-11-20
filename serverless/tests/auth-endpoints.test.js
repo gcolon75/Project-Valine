@@ -3,7 +3,7 @@
  * Tests login, refresh, and logout flows
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { login, refresh, logout } from '../src/handlers/auth.js';
 import { generateAccessToken, generateRefreshToken, generateAccessTokenCookie, generateRefreshTokenCookie } from '../src/utils/tokenManager.js';
 

@@ -3,7 +3,7 @@
  * Covers profanity detection, URL validation, and content scanning
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   checkProfanity,
   validateUrl,

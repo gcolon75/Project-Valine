@@ -3,7 +3,7 @@
  * Tests Phase C: HttpOnly Cookie Auth + Refresh
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   generateAccessToken,
   generateRefreshToken,

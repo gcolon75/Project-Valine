@@ -3,7 +3,7 @@
  * Tests for CSRF token generation and validation
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 describe('Phase 3: CSRF Token Enforcement', () => {
   let testUser = null;

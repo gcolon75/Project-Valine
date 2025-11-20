@@ -53,13 +53,13 @@ export async function requireAdmin(event) {
   const userId = getAuthenticatedUserId(event);
   
   if (!userId) {
-    return error('Unauthorized - Authentication required', 401);
+    return error(401, 'Unauthorized - Authentication required');
   }
   
   const isAdminUser = await isAdmin(userId);
   
   if (!isAdminUser) {
-    return error('Forbidden - Admin access required', 403);
+    return error(403, 'Forbidden - Admin access required');
   }
   
   return null; // User is admin, no error

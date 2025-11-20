@@ -71,6 +71,6 @@ export function json(data, statusCode = 200, extra = {}) {
   };
 }
 
-export function error(message, statusCode = 400, extra = {}) {
+export function error(statusCode = 400, message = 'Bad Request', extra = {}) {
   return json({ error: message }, statusCode, extra);
 }
