@@ -255,6 +255,79 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
    npm run test:coverage     # Run with coverage report
    ```
 
+## Access Control & Security
+
+### Email Allowlist Enforcement
+
+**Project Valine uses an email-based allowlist to restrict account creation and application access to pre-approved users only.**
+
+This security measure ensures that only authorized individuals can register, authenticate, and access protected features. The allowlist is enforced at multiple layers for defense in depth.
+
+#### Current Configuration
+
+The platform is restricted to **two authorized emails**:
+- ghawk075@gmail.com
+- valinejustin@gmail.com
+
+#### How It Works
+
+1. **Backend Enforcement** (Primary Security)
+   - Registration attempts for non-allowlisted emails return `403 Forbidden`
+   - Login attempts for non-allowlisted accounts are blocked
+   - Enforcement happens BEFORE database writes
+   - Structured logging tracks all denial events
+
+2. **Frontend Gating** (UX Enhancement)
+   - "Get Started" button hidden from marketing pages when allowlist active
+   - `/join` route shows friendly restriction notice
+   - Client-side validation prevents unnecessary API calls
+   - Unauthenticated users don't trigger background polling
+
+3. **Build-Time Validation**
+   - `npm run build` validates allowlist configuration
+   - Fails if required emails are missing
+   - Prevents accidental misconfiguration in production
+
+#### Configuration
+
+**Backend** (`serverless.yml`):
+```yaml
+environment:
+  ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, "ghawk075@gmail.com,valinejustin@gmail.com"}
+```
+
+**Frontend** (`.env.production`):
+```bash
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
+```
+
+**Local Development** (`.env`):
+```bash
+# Optional in dev - leave empty for open registration
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
+```
+
+#### Health Check
+
+The `/health` endpoint reports allowlist status:
+```bash
+curl https://your-api.execute-api.us-west-2.amazonaws.com/health
+```
+
+Response includes:
+```json
+{
+  "allowlistActive": true,
+  "allowlistCount": 2,
+  "allowlistMisconfigured": false
+}
+```
+
+#### Documentation
+
+For complete details on configuration, testing, rollback procedures, and troubleshooting:
+- **[Access Control Allowlist Guide](docs/ACCESS_CONTROL_ALLOWLIST.md)** - Comprehensive documentation
+
 ### Backend Deployment
 
 > **📌 Deployment Note:** Deploy the **Serverless backend** (`/serverless` directory) to staging and production. The Express server in `/server` is for local development only.

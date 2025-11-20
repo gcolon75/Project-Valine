@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { usePolling } from '../hooks/usePolling';
 import { getUnreadCounts } from '../services/notificationsService';
+import { useAuth } from './AuthContext';
 
 const UnreadContext = createContext(null);
 
@@ -14,6 +15,7 @@ export const useUnread = () => {
 };
 
 export function UnreadProvider({ children }) {
+  const { isAuthenticated } = useAuth();
   const [unreadCounts, setUnreadCounts] = useState({
     notifications: 0,
     messages: 0
@@ -33,13 +35,13 @@ export function UnreadProvider({ children }) {
     }
   }, []);
 
-  // Poll for unread counts every 30 seconds
+  // Poll for unread counts every 30 seconds - ONLY when authenticated
   usePolling(
     fetchUnreadCounts,
     30000, // 30 seconds
     { 
       immediate: true,
-      enabled: true,
+      enabled: isAuthenticated, // Only poll when user is authenticated
       onError: (err) => {
         console.debug('Polling error for unread counts:', err.message);
       }

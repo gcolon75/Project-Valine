@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as authService from "../services/authService";
 import { trackLogin, trackSignup, trackLogout } from "../analytics/client";
+import { isEmailAllowed, isAllowlistActive } from "../utils/allowlistConfig";
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -70,6 +71,11 @@ export function AuthProvider({ children }) {
   const login = async (email, password, role = "artist") => {
     setLoading(true);
     try {
+      // Client-side allowlist check (actual enforcement on backend)
+      if (isAllowlistActive() && !isEmailAllowed(email)) {
+        throw new Error('Account not authorized for access');
+      }
+
       // Call API login directly - errors should be handled by the caller
       const data = await authService.login(email, password);
       
@@ -100,6 +106,11 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     setLoading(true);
     try {
+      // Client-side allowlist check (actual enforcement on backend)
+      if (isAllowlistActive() && !isEmailAllowed(userData.email)) {
+        throw new Error('Registration is restricted to pre-approved accounts only');
+      }
+
       // Call API register directly - errors should be handled by the caller
       const data = await authService.register(userData);
       
