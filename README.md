@@ -87,6 +87,71 @@ Project Valine is a **LinkedIn-style collaborative platform** specifically desig
 - ✅ Dev bypass for testing (development only)
 - **Developer Tools**: Diagnostics logging, analytics tracking, API fallback monitoring
 
+### Current Repository Mode
+
+**Authentication Mode**: Owner-Only (Production)
+
+The repository is configured for **owner-only** authentication mode, where:
+- ✅ Registration restricted to allowlisted email addresses
+- ✅ Email verification enforcement (partial stub)
+- ✅ Analytics with privacy constraints (opt-in, limited events)
+- ✅ SPA routing preserved (CloudFront function from PR #245)
+- ✅ Structured logging with correlation IDs
+- ✅ Diagnostic headers (X-Correlation-ID, X-Service-Version, X-Auth-Mode)
+
+**Configuration**:
+```bash
+ENABLE_REGISTRATION=false
+ALLOWED_USER_EMAILS=ghawk075@gmail.com,approved-users@example.com
+STRICT_ALLOWLIST=1  # Production: requires 2+ emails
+```
+
+**Documentation**:
+- [AUTH_MODE_OWNER_ONLY.md](./AUTH_MODE_OWNER_ONLY.md) - Comprehensive deployment guide
+- [AUTH_RECOVERY_CHECKLIST.md](./AUTH_RECOVERY_CHECKLIST.md) - Troubleshooting guide
+- [ALLOWLIST_DEPLOYMENT_GUIDE.md](./ALLOWLIST_DEPLOYMENT_GUIDE.md) - Allowlist configuration
+
+### Test Failure Triage Workflow
+
+**Quick Triage**:
+```bash
+# Run tests with JSON reporter
+cd serverless
+npm test -- --reporter=json > test-results.json
+
+# Analyze failures by category
+node ../scripts/analyze-test-failures.mjs test-results.json
+```
+
+**Output Example**:
+```
+═══════════════════════════════════════
+        TEST FAILURE ANALYSIS          
+═══════════════════════════════════════
+
+Total Failures: 48
+
+Failures by Category:
+─────────────────────────────────────
+  MODERATION              22 failures
+  AUTH                    15 failures
+  VERIFICATION            8 failures
+  ANALYTICS               3 failures
+
+Top 3 Recurring Assertion Failures:
+─────────────────────────────────────
+  1. [12x] expected 401 to be 403
+  2. [8x] expected 'Unauthorized' to be 'Access denied'
+  3. [5x] Mock function not called
+```
+
+**Test Status** (Current):
+- Total: 336 tests
+- Passing: 278 tests
+- Failing: 51 tests (pre-existing, unrelated to Phase 2)
+
+**Categories**: auth, moderation, analytics, rate-limit, verification, orchestration, security
+
 ### Quick Links
 
 - **[👉 Next Steps Guide](docs/guides/next-steps.md)** - Manual actions required for deployment
@@ -341,19 +406,49 @@ For complete details on configuration, testing, rollback procedures, and trouble
 
 **Automated Deployment (Recommended):**
 ```bash
-# 1. Setup database (Supabase free tier recommended for dev)
+# 1. Pre-deployment validation
+node scripts/verify-predeploy.mjs
+
+# 2. Optimize Prisma for production
+node scripts/prisma-optimize.mjs --prod
+cd serverless && npm run prisma:generate && cd ..
+
+# 3. Setup database (Supabase free tier recommended for dev)
 export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
 ./scripts/deployment/setup-database.sh
 
-# 2. Deploy backend to AWS
+# 4. One-time: Migrate legacy passwords (if upgrading)
+DATABASE_URL=$DATABASE_URL node scripts/patch-legacy-passwords.mjs
+
+# 5. Deploy backend to AWS
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
-# 3. Test all API endpoints
+# 6. Test all API endpoints
 export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 
-# 4. Configure frontend
+# 7. Configure frontend
 ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
+```
+
+**Phase 2 Automation Scripts**:
+```bash
+# Pre-deployment checks (error() signature, JWT secret, Prisma targets)
+node scripts/verify-predeploy.mjs
+
+# Optimize Prisma binaries (prod: Linux only, dev: all platforms)
+node scripts/prisma-optimize.mjs --prod
+node scripts/prisma-optimize.mjs --dev
+
+# Migrate legacy password column (one-time)
+DATABASE_URL=postgresql://... node scripts/patch-legacy-passwords.mjs
+
+# Analyze test failures by category
+npm test -- --reporter=json > results.json
+node scripts/analyze-test-failures.mjs results.json
+
+# Lint serverless code
+cd serverless && npm run lint:serverless
 ```
 
 **Manual Deployment:**
