@@ -192,9 +192,8 @@ export function isInsecureDefault(key, value) {
       'dev-secret-key-change-in-production',
       'your-super-secret-jwt-key-change-this-in-production',
       'change-me',
-      'secret',
-      'password',
-      '12345'
+      'change-this',
+      'your-jwt-secret'
     ],
     DATABASE_URL: [
       'postgresql://username:password@host:5432/valine_db',
@@ -203,8 +202,7 @@ export function isInsecureDefault(key, value) {
     ],
     SMTP_PASS: [
       'your-smtp-password-or-api-key',
-      'password',
-      '12345'
+      'change-me'
     ],
     DISCORD_BOT_TOKEN: [
       'your-discord-bot-token',
@@ -223,11 +221,14 @@ export function isInsecureDefault(key, value) {
     return false;
   }
   
-  // Check if value matches any insecure pattern
+  // Check if value matches any insecure pattern (exact match or very close)
   const normalizedValue = value.toLowerCase().trim();
-  return patterns.some(pattern => 
-    normalizedValue.includes(pattern.toLowerCase())
-  );
+  return patterns.some(pattern => {
+    const normalizedPattern = pattern.toLowerCase();
+    // Exact match or value starts with the pattern
+    return normalizedValue === normalizedPattern || 
+           normalizedValue.startsWith(normalizedPattern);
+  });
 }
 
 /**
