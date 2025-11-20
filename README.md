@@ -16,7 +16,10 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ---
 
-> 📖 **New to Project Valine?** Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for current readiness, security posture, QA coverage, and next steps. See also [docs/](docs/README.md) for complete documentation index.
+> 📖 **New to Project Valine?** Start with:
+> - **[WORKING_STATE_SUMMARY.md](WORKING_STATE_SUMMARY.md)** - Current working state (frontend, auth, health)
+> - **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Readiness, security posture, QA coverage
+> - **[docs/](docs/README.md)** - Complete documentation index
 
 ## Table of Contents
 
@@ -1038,10 +1041,35 @@ docs/
 ├── troubleshooting/  # Troubleshooting guides
 ├── guides/           # Development guides
 ├── reference/        # Reference documentation
-└── archive/          # Historical documents
+└── archive/          # Historical documents (PHASE_* implementation docs)
 ```
 
 See **[docs/README.md](docs/README.md)** or **[docs/SUMMARY.md](docs/SUMMARY.md)** for the complete documentation index.
+
+### Repository Structure
+
+The repository has been recently reorganized (2025-11-20) for better clarity:
+
+**Core Documentation** (Repository Root):
+- `README.md` - Main documentation
+- `WORKING_STATE_SUMMARY.md` - Current working state ⭐ NEW
+- `SECRETS_MANAGEMENT.md` - Environment variables & secrets guide
+- `AUTH_RECOVERY_CHECKLIST.md` - Authentication troubleshooting
+- `PROJECT_STATUS.md` - Current readiness & QA status
+- `SECURITY.md` - Security policies
+- `CONTRIBUTING.md` - Contribution guidelines
+- `CHANGELOG.md` - Version history
+
+**Active Scripts** (`scripts/`):
+- Core utilities: `admin-set-password.mjs`, `secret-audit.mjs`, `verify-env-contract.mjs`
+- Build/test scripts: `prebuild.js`, `postbuild-validate.js`, `verify-sri.js`
+- Diagnostics: `diagnose-white-screen.js`, `check-auth-backend.js`, `check-cloudfront.js`
+- See `scripts/archive/README.md` for archived scripts
+
+**Archived Files** (`archive/`):
+- `old-configs/` - Historical CloudFront configs, bucket policies
+- `old-scripts/` - Superseded deployment and test scripts
+- See `archive/README.md` for details
 
 ## Contributing
 
