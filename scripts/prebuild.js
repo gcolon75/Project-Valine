@@ -102,3 +102,20 @@ if (existsSync(validateScript)) {
 
 console.log('\n✅ All pre-build validations passed\n');
 
+// Run allowlist validation
+console.log('🔐 Validating allowlist configuration...\n');
+
+const allowlistScript = join(__dirname, 'validate-allowlist.js');
+if (existsSync(allowlistScript)) {
+  try {
+    execSync(`node "${allowlistScript}"`, { stdio: 'inherit' });
+  } catch (err) {
+    console.error('\n❌ Allowlist validation failed');
+    process.exit(1);
+  }
+} else {
+  console.log('   (validate-allowlist.js not found, skipping allowlist validation)');
+}
+
+console.log('\n✅ All pre-build validations completed successfully\n');
+

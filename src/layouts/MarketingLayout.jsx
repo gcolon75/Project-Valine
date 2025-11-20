@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import MarketingFooter from '../components/MarketingFooter';
 import MetaInjector from '../seo/MetaInjector';
 import StructuredData from '../seo/StructuredData';
+import { isAllowlistActive } from '../utils/allowlistConfig';
 
 /**
  * MarketingLayout - Forces light mode for all marketing pages
@@ -14,6 +15,7 @@ import StructuredData from '../seo/StructuredData';
 export default function MarketingLayout() {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
+  const allowlistActive = isAllowlistActive();
   
   // Force light mode on marketing pages and restore on unmount
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function MarketingLayout() {
               </a>
             </nav>
 
-            {/* CTA Buttons - Single primary CTA */}
+            {/* CTA Buttons - Hide Join/Get Started when allowlist is active */}
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
@@ -121,12 +123,14 @@ export default function MarketingLayout() {
               >
                 Sign In
               </Link>
-              <Link
-                to="/join"
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
-              >
-                Get Started
-              </Link>
+              {!allowlistActive && (
+                <Link
+                  to="/join"
+                  className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+                >
+                  Get Started
+                </Link>
+              )}
             </div>
           </div>
         </div>

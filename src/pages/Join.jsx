@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Sparkles, Code } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { isEmailAllowed, isAllowlistActive } from '../utils/allowlistConfig';
+import RestrictedRegistrationNotice from '../components/RestrictedRegistrationNotice';
 
 const Join = () => {
   const navigate = useNavigate();
@@ -14,12 +16,22 @@ const Join = () => {
     displayName: '',
   });
 
+  // Show restriction notice if allowlist is active
+  // (actual enforcement happens on backend, this is just UX improvement)
+  const allowlistActive = isAllowlistActive();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Basic validation
     if (!formData.username || !formData.email || !formData.password || !formData.displayName) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Client-side allowlist check (for better UX, actual enforcement on backend)
+    if (allowlistActive && !isEmailAllowed(formData.email)) {
+      toast.error('Registration is restricted to pre-approved accounts only.');
       return;
     }
     
@@ -65,6 +77,11 @@ const Join = () => {
       navigate('/onboarding');
     }
   };
+
+  // If allowlist is active, show restriction notice instead of form
+  if (allowlistActive) {
+    return <RestrictedRegistrationNotice />;
+  }
 
   return (
     <div className="min-h-screen">

@@ -35,18 +35,21 @@ export const register = async (event) => {
     if (!email || !password || !username || !displayName) return error('email, password, username, and displayName are required', 400, { event });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error('Invalid email format', 400, { event });
 
+    // ALLOWLIST ENFORCEMENT - Check before any DB operations
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-    const ENABLE_REGISTRATION = process.env.ENABLE_REGISTRATION === 'true';
     const normalizedEmail = email.toLowerCase().trim();
 
-    if (!ENABLE_REGISTRATION) {
-      if (allowedEmails.length === 0 || !allowedEmails.includes(normalizedEmail)) {
-        console.log(`Registration blocked: ENABLE_REGISTRATION=false; ${normalizedEmail} not allowlisted`);
-        return error('Registration is currently disabled', 403, { event });
-      }
-    } else if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
-      console.log(`Registration blocked: ${normalizedEmail} not in allowlist`);
-      return error('Registration not permitted for this email address', 403, { event });
+    // If allowlist is configured, strictly enforce it
+    if (allowedEmails.length > 0 && !allowedEmails.includes(normalizedEmail)) {
+      // Structured logging for registration denial
+      console.log(JSON.stringify({
+        event: 'registration_denied',
+        email: normalizedEmail,
+        reason: 'email_not_in_allowlist',
+        timestamp: new Date().toISOString(),
+        allowlistCount: allowedEmails.length
+      }));
+      return error('Access denied: email not in allowlist', 403, { event });
     }
 
     if (password.length < 6) return error('Password must be at least 6 characters', 400, { event });
@@ -128,9 +131,19 @@ export const login = async (event) => {
     const passwordMatch = await comparePassword(password, user.password);
     if (!passwordMatch) return error('Invalid email or password', 401, { event });
 
+    // ALLOWLIST ENFORCEMENT - Defense in depth for existing non-allowlisted users
     const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-    if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase()))
+    if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
+      // Structured logging for login denial
+      console.log(JSON.stringify({
+        event: 'login_denied',
+        email: user.email.toLowerCase(),
+        reason: 'email_not_in_allowlist',
+        timestamp: new Date().toISOString(),
+        allowlistCount: allowedEmails.length
+      }));
       return error('Account not authorized for access', 403, { event });
+    }
 
     const { password: _, twoFactorEnabled, ...userWithoutPassword } = user;
     const accessToken = generateAccessToken(user.id);
