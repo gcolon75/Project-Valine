@@ -2,8 +2,12 @@
 /**
  * Admin utility to set/reset user passwords via CLI
  * 
- * Usage:
+ * Usage (from repository root):
  *   DATABASE_URL=postgresql://... node scripts/admin-set-password.mjs "email@example.com" "NewPassword123!"
+ * 
+ * Usage (from serverless directory):
+ *   cd serverless
+ *   DATABASE_URL=postgresql://... node ../scripts/admin-set-password.mjs "email@example.com" "NewPassword123!"
  * 
  * Security:
  * - Requires DATABASE_URL environment variable
