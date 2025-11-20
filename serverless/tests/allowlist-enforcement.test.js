@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { register, login } from '../login_unpack/src/handlers/auth.js';
+import { register, login } from '../src/handlers/auth.js';
 
 describe('Allowlist Access Control', () => {
   let originalEnv;

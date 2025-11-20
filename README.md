@@ -683,6 +683,32 @@ The `frontend-harden.yml` workflow automatically:
 
 ### Troubleshooting
 
+**Email Allowlist Issues**:
+
+If the `/health` endpoint doesn't show allowlist fields (`allowlistActive`, `allowlistCount`, `allowlistMisconfigured`):
+
+```bash
+# Check health endpoint
+curl https://your-api/health
+
+# Expected: Should include allowlist fields
+# If missing, backend code needs updating/redeployment
+```
+
+**Registration blocked for allowed emails**:
+```bash
+# Verify environment variables are set
+aws lambda get-function-configuration --function-name pv-api-prod-register | grep ALLOWED_USER_EMAILS
+
+# Run audit script
+pwsh scripts/audit-allowlist.ps1
+
+# Emergency patch if missing
+pwsh scripts/patch-allowlist-env.ps1 -Emails "ghawk075@gmail.com,valinejustin@gmail.com"
+```
+
+See [Allowlist Deployment Runbook](docs/ALLOWLIST_DEPLOYMENT_RUNBOOK.md) for complete troubleshooting guide.
+
 **"Failed to find a valid digest"**: Hash mismatch detected
 ```bash
 # Regenerate SRI
