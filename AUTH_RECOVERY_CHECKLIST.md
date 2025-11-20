@@ -142,6 +142,136 @@ return error(403, 'Access denied');  // ✓ statusCode first
 return error('Access denied', 403);  // ✗ OLD - wrong order
 ```
 
+## Secret Hygiene & Security Validation
+
+### Automated Secret Scanning
+
+**Run before committing:**
+```bash
+# Scan repository for accidentally committed secrets
+node scripts/secret-audit.mjs
+
+# Install pre-commit hook for automatic scanning
+cp scripts/hooks/pre-commit-secret-scan.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**What it detects:**
+- AWS access keys (AKIA*, ASIA*)
+- GitHub tokens (ghp_*, github_pat_*)
+- Discord bot tokens
+- High-entropy strings (possible secrets)
+- Database connection strings with credentials
+- JWT tokens and private keys
+
+**Allowlist false positives:**
+Add to `.secret-allowlist` file:
+```
+# Format: file:line:match or file:* for entire file
+.env.example:*
+docs/example-config.md:*
+```
+
+### Environment Contract Validation
+
+**Validate configuration before deployment:**
+```bash
+# Check required variables, insecure defaults, naming conformity
+node scripts/verify-env-contract.mjs
+
+# JSON output for CI/CD
+node scripts/verify-env-contract.mjs --json
+```
+
+**Checks performed:**
+- Required production variables set (JWT_SECRET, DATABASE_URL, FRONTEND_URL, ALLOWED_USER_EMAILS)
+- No test-only variables in production (TEST_USER_PASSWORD)
+- No insecure default values (dev-secret-key-change-in-production)
+- Variable naming conformity (FRONTEND_URL vs deprecated FRONTEND_BASE_URL)
+
+### Health Endpoint Secret Status
+
+**Check secrets configuration:**
+```bash
+curl https://api.your-domain.com/health | jq '.secretsStatus'
+```
+
+**Response example:**
+```json
+{
+  "jwtSecretValid": true,
+  "discordConfigured": true,
+  "smtpConfigured": false,
+  "databaseConfigured": true,
+  "insecureDefaults": []
+}
+```
+
+**Important:** Health endpoint returns only boolean flags and never exposes actual secret values.
+
+### Secret Rotation Checklist
+
+When rotating secrets:
+
+1. **Generate new secret** (use cryptographically secure random generator)
+   ```bash
+   # Example for JWT_SECRET
+   openssl rand -base64 32
+   ```
+
+2. **Update in environment**
+   - GitHub Secrets (for CI/CD)
+   - AWS Parameter Store (for production Lambda)
+   - Local .env files (for development)
+
+3. **Verify deployment**
+   ```bash
+   # Check health endpoint
+   curl https://api.your-domain.com/health
+
+   # Verify no warnings
+   node scripts/verify-env-contract.mjs
+   ```
+
+4. **Test authentication flow** 
+   - Login with existing account
+   - Create new account (if registration enabled)
+   - Verify token refresh works
+
+5. **Revoke old secret** after 24-hour grace period
+
+### Deprecated Variables Migration
+
+**FRONTEND_BASE_URL → FRONTEND_URL:**
+
+The application now uses `FRONTEND_URL` as the canonical variable. `FRONTEND_BASE_URL` is deprecated but supported via compatibility shim.
+
+**Migration steps:**
+1. Set `FRONTEND_URL` to your frontend domain
+2. Remove `FRONTEND_BASE_URL` from GitHub Secrets
+3. Update any deployment scripts or documentation
+4. Verify no deprecation warnings in logs
+
+**Compatibility:** Code automatically falls back to `FRONTEND_BASE_URL` if `FRONTEND_URL` is not set, but logs a deprecation warning.
+
+### Rotation Schedule
+
+| Secret Type | Frequency | Notes |
+|-------------|-----------|-------|
+| JWT_SECRET | 90 days | Rotate on security incident |
+| DATABASE_URL | 90 days | Coordinate with DB admin |
+| DISCORD_BOT_TOKEN | 90 days | Regenerate in Discord portal |
+| PAT/ORCHESTRATION_BOT_PAT | 90 days | Regenerate in GitHub settings |
+| SMTP_PASS | 90 days | Provider-specific process |
+| TEST_USER_PASSWORD | 90 days | After major test cycles |
+
+### References
+
+- [SECRETS_MANAGEMENT.md](./SECRETS_MANAGEMENT.md) - Complete secrets documentation
+- [scripts/secret-audit.mjs](./scripts/secret-audit.mjs) - Secret scanning tool
+- [scripts/verify-env-contract.mjs](./scripts/verify-env-contract.mjs) - Environment validation
+- [.github/workflows/secret-hygiene.yml](./.github/workflows/secret-hygiene.yml) - CI secret scanning
+
 ## Test-Specific Issues
 
 ### Allowlist Tests Failing

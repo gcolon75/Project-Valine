@@ -19,10 +19,14 @@ function validateJwtSecret() {
   if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-key-change-in-production') {
     const errorLog = {
       timestamp: new Date().toISOString(),
-      event: 'jwt_secret_invalid',
+      correlationId: crypto.randomUUID(),
+      event: 'secret_misconfiguration',
       level: 'error',
-      message: 'Default JWT secret detected in production environment',
-      environment: process.env.NODE_ENV
+      details: {
+        type: 'jwt_secret_invalid',
+        environment: process.env.NODE_ENV,
+        message: 'Default JWT secret detected in production environment'
+      }
     };
     console.error(JSON.stringify(errorLog));
     throw new Error('SECURITY ERROR: Default JWT_SECRET must not be used in production. Set a secure JWT_SECRET environment variable.');

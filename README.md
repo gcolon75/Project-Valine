@@ -24,6 +24,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 - [Current Status](#current-status)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
+- [Secrets & Configuration](#secrets--configuration)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
 - [Available Routes](#available-routes)
@@ -543,6 +544,77 @@ node scripts/analyze-orchestration-run.mjs <run-id> \
 - [Analysis CLI Guide](scripts/ORCHESTRATION_ANALYSIS_CLI_GUIDE.md)
 - [Security Documentation](scripts/ORCHESTRATION_ANALYSIS_SECURITY.md)
 - [Quick Reference](scripts/ORCHESTRATION_ANALYSIS_QUICKREF.md)
+
+## Secrets & Configuration
+
+Project Valine uses environment variables for configuration across frontend, backend, and CI/CD. Proper secrets management is critical for security and operational stability.
+
+### 📚 Complete Documentation
+
+**See [SECRETS_MANAGEMENT.md](./SECRETS_MANAGEMENT.md) for comprehensive guidance on:**
+
+- Complete environment variables inventory (purpose, scope, rotation policy)
+- Secrets rotation schedule and process
+- Automated secret scanning and detection
+- Runtime validation and guardrails
+- Best practices for development and production
+
+### Quick Reference
+
+**Critical Secrets (Must be set in production):**
+- `JWT_SECRET` - JWT signing key (32+ characters, never use default)
+- `DATABASE_URL` - PostgreSQL connection string with credentials
+- `ALLOWED_USER_EMAILS` - Email allowlist for owner-only mode
+
+**Configuration Variables:**
+- `FRONTEND_URL` - Frontend base URL (canonical, replaces deprecated `FRONTEND_BASE_URL`)
+- `VITE_API_BASE` - API Gateway endpoint URL
+- `NODE_ENV` - Environment mode (development/staging/production)
+
+**Deprecated Variables:**
+- ⚠️ `FRONTEND_BASE_URL` - Use `FRONTEND_URL` instead (compatibility shim logs warning)
+
+### Validation & Scanning
+
+**Pre-deployment validation:**
+```bash
+# Validate environment contract (required vars, no insecure defaults)
+node scripts/verify-env-contract.mjs
+
+# Scan for accidentally committed secrets
+node scripts/secret-audit.mjs
+```
+
+**Health endpoint** (`GET /health`) includes `secretsStatus`:
+```json
+{
+  "status": "ok",
+  "secretsStatus": {
+    "jwtSecretValid": true,
+    "discordConfigured": true,
+    "smtpConfigured": false,
+    "databaseConfigured": true,
+    "insecureDefaults": []
+  }
+}
+```
+
+**Developer Pre-commit Hook:**
+```bash
+# Install secret scanning hook
+cp scripts/hooks/pre-commit-secret-scan.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**CI/CD:** The `secret-hygiene` workflow runs automatically on PRs and push to scan for secrets, validate environment contracts, and enforce security policies.
+
+### Security Notes
+
+- Never commit secrets to version control
+- Use GitHub Secrets for CI/CD variables
+- Use AWS Parameter Store for production Lambda secrets  
+- Rotate secrets every 90 days or on suspected compromise
+- Health endpoint never exposes actual secret values (boolean flags only)
 
 ## Project Structure
 
