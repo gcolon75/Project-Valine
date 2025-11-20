@@ -89,7 +89,7 @@ test.describe('Onboarding Flow E2E', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify we're on onboarding page
-    await expect(page.locator('h1, h2')).toContainText(/Complete Your Profile|Welcome to Project Valine/i);
+    await expect(page.locator('h1, h2')).toContainText(/Complete Your Profile|Welcome to Joint/i);
     console.log('✓ Onboarding page loaded');
 
     // ============================================

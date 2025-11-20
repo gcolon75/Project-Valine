@@ -499,7 +499,7 @@ export default function Settings() {
         <SettingsSection
           icon={Palette}
           title="Appearance"
-          description="Customize how Project Valine looks"
+          description="Customize how Joint looks"
         >
           <div className="flex items-center justify-between py-4">
             <div>

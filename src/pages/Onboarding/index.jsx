@@ -139,7 +139,7 @@ export default function Onboarding() {
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
 
       // Show success message
-      toast.success('Profile completed! Welcome to Project Valine 🎉');
+      toast.success('Profile completed! Welcome to Joint 🎉');
 
       // Navigate to dashboard
       setTimeout(() => {
@@ -156,7 +156,7 @@ export default function Onboarding() {
   const getStepTitle = () => {
     switch (currentStep) {
       case 1:
-        return 'Welcome to Project Valine';
+        return 'Welcome to Joint';
       case 2:
         return 'Tell us about yourself';
       case 3:

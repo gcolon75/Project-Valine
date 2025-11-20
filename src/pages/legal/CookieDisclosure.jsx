@@ -3,12 +3,12 @@ import { useEffect } from 'react';
 
 /**
  * Cookie & Session Disclosure Page
- * Details about cookies and session tokens used by Project Valine
+ * Details about cookies and session tokens used by Joint
  * Status: Subject to legal counsel review
  */
 export default function CookieDisclosure() {
   useEffect(() => {
-    document.title = 'Cookie & Session Disclosure — Project Valine';
+    document.title = 'Cookie & Session Disclosure — Joint';
   }, []);
 
   return (
@@ -43,7 +43,7 @@ export default function CookieDisclosure() {
               Cookies are small text files stored on your device when you visit a website. They help websites remember your preferences, keep you logged in, and protect your account from security threats.
             </p>
             <p className="text-neutral-700 leading-relaxed">
-              Project Valine uses cookies primarily for authentication and security purposes. We do not use third-party advertising or tracking cookies.
+              Joint uses cookies primarily for authentication and security purposes. We do not use third-party advertising or tracking cookies.
             </p>
           </section>
 
@@ -194,7 +194,7 @@ export default function CookieDisclosure() {
               <strong>We do not use third-party cookies</strong> for advertising or tracking at this time.
             </p>
             <p className="text-neutral-700 leading-relaxed">
-              Our platform is designed to respect your privacy and minimize data collection. All cookies are first-party cookies set by Project Valine for essential functionality and security.
+              Our platform is designed to respect your privacy and minimize data collection. All cookies are first-party cookies set by Joint for essential functionality and security.
             </p>
           </section>
 

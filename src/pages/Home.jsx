@@ -45,7 +45,7 @@ const Home = () => {
                   </h1>
                   
                   <p className="text-xl text-neutral-600 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                    Project Valine is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
+                    Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
                   </p>
                   
                   {/* CTA Buttons */}
@@ -61,7 +61,7 @@ const Home = () => {
                     <Link
                       to="/about"
                       className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
-                      aria-label="Learn more about Project Valine"
+                      aria-label="Learn more about Joint"
                     >
                       Learn More
                     </Link>
@@ -139,7 +139,7 @@ const Home = () => {
           
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             <Testimonial
-              quote="Project Valine has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
+              quote="Joint has completely changed how I connect with other voice actors. It's the perfect platform for collaboration."
               author="Sarah Johnson"
               role="Voice Actor"
               avatar="https://i.pravatar.cc/150?img=1"

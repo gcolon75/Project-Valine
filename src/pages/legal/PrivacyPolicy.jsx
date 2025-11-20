@@ -8,7 +8,7 @@ import { useEffect } from 'react';
  */
 export default function PrivacyPolicy() {
   useEffect(() => {
-    document.title = 'Privacy Policy — Project Valine';
+    document.title = 'Privacy Policy — Joint';
   }, []);
 
   return (
@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Introduction / Scope</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              Project Valine ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
+              Joint ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
             </p>
             <p className="text-neutral-700 leading-relaxed">
               By creating an account or using our services, you agree to the collection and use of information in accordance with this policy. If you do not agree with our policies and practices, please do not use our services.
@@ -208,7 +208,7 @@ export default function PrivacyPolicy() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">International Users</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              Project Valine is based in the United States. If you access our services from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers are located.
+              Joint is based in the United States. If you access our services from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers are located.
             </p>
             <p className="text-neutral-700 leading-relaxed">
               <strong>Future Enhancements:</strong> We plan to add region-specific compliance features (GDPR for EU, CCPA for California) in future releases. Internationalization (i18n) support is also planned.

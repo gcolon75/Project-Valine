@@ -35,7 +35,7 @@ describe('MetaInjector', () => {
       </BrowserRouter>
     );
     expect(document.title).toBeTruthy();
-    expect(document.title).toContain('Project Valine');
+    expect(document.title).toContain('Joint');
   });
 
   it('should set meta description', () => {
