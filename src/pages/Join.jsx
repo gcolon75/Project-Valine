@@ -15,6 +15,7 @@ const Join = () => {
     password: '',
     displayName: '',
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Show restriction notice if allowlist is active
   // (actual enforcement happens on backend, this is just UX improvement)
@@ -26,6 +27,12 @@ const Join = () => {
     // Basic validation
     if (!formData.username || !formData.email || !formData.password || !formData.displayName) {
       toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Check Terms acceptance
+    if (!acceptedTerms) {
+      toast.error('You must agree to the Terms of Service and acknowledge the Privacy Policy');
       return;
     }
 
@@ -84,7 +91,7 @@ const Join = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen text-[1.1rem]">
       
       {/* Header */}
       
@@ -98,7 +105,7 @@ const Join = () => {
             <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-4">
               <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
               <span className="text-sm font-medium text-[#0CCE6B]">
-                Join Project Valine
+                Join Joint
               </span>
             </div>
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">
@@ -166,22 +173,38 @@ const Join = () => {
             </div>
 
             {/* Terms and Privacy Consent */}
-            <p className="text-xs text-neutral-600 text-center">
-              By signing up, you agree to our{' '}
-              <Link to="/legal/terms" className="text-[#0CCE6B] hover:underline">
-                Terms of Service
-              </Link>
-              {' '}and{' '}
-              <Link to="/legal/privacy" className="text-[#0CCE6B] hover:underline">
-                Privacy Policy
-              </Link>
-              .
-            </p>
+            <div className="border border-neutral-300 rounded-lg p-4 bg-neutral-50">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-neutral-400 bg-white text-emerald-600 focus:ring-emerald-600 focus:ring-offset-white"
+                  required
+                />
+                <span className="text-sm text-neutral-700">
+                  I agree to the{' '}
+                  <Link to="/legal/terms" className="text-[#0CCE6B] hover:underline" target="_blank" rel="noopener noreferrer">
+                    Terms of Service
+                  </Link>
+                  {' '}and acknowledge the{' '}
+                  <Link to="/legal/privacy" className="text-[#0CCE6B] hover:underline" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+              {!acceptedTerms && (
+                <p className="text-xs text-red-600 mt-2" role="alert">
+                  You must agree to continue
+                </p>
+              )}
+            </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !acceptedTerms}
               className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
             >
               {loading ? (

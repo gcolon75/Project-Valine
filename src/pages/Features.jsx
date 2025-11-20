@@ -24,7 +24,7 @@ const Features = () => {
               Everything You Need to Succeed
             </h1>
             <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Project Valine provides voice actors with powerful tools to connect, collaborate, and grow their careers.
+              Joint provides voice actors with powerful tools to connect, collaborate, and grow their careers.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ const Features = () => {
               Ready to Get Started?
             </h2>
             <p className="text-xl text-white/90 mb-8">
-              Join thousands of voice actors on Project Valine today
+              Join thousands of voice actors on Joint today
             </p>
             <Link
               to="/join"

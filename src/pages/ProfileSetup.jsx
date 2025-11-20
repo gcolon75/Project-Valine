@@ -50,7 +50,7 @@ export default function ProfileSetup() {
           id="discipline"
           value={form.discipline}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -61,7 +61,7 @@ export default function ProfileSetup() {
           id="skills"
           value={form.skills}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -72,7 +72,7 @@ export default function ProfileSetup() {
           id="unionStatus"
           value={form.unionStatus}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
     </>
@@ -88,7 +88,7 @@ export default function ProfileSetup() {
           id="title"
           value={form.title}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -99,7 +99,7 @@ export default function ProfileSetup() {
           id="company"
           value={form.company}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -110,7 +110,7 @@ export default function ProfileSetup() {
           id="interests"
           value={form.interests}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -121,7 +121,7 @@ export default function ProfileSetup() {
           id="budgetRange"
           value={form.budgetRange}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
       <div>
@@ -132,17 +132,17 @@ export default function ProfileSetup() {
           id="showreel"
           value={form.showreel}
           onChange={handleChange}
-          className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         />
       </div>
     </>
   );
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="p-6 md:p-10 min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 text-[1.1rem]">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl md:text-3xl font-bold">Complete Your Profile</h1>
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
           Welcome to Joint, {user.role === 'artist' ? 'artist' : 'observer'}! We just need a few details to customise your experience.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -155,7 +155,7 @@ export default function ProfileSetup() {
               required
               value={form.displayName}
               onChange={handleChange}
-              className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -166,7 +166,7 @@ export default function ProfileSetup() {
               id="pronouns"
               value={form.pronouns}
               onChange={handleChange}
-              className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -177,7 +177,7 @@ export default function ProfileSetup() {
               id="location"
               value={form.location}
               onChange={handleChange}
-              className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           <div>
@@ -188,7 +188,7 @@ export default function ProfileSetup() {
               rows={4}
               value={form.bio}
               onChange={handleChange}
-              className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600 resize-y"
+              className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600 resize-y"
             />
           </div>
           <div>
@@ -200,7 +200,7 @@ export default function ProfileSetup() {
               placeholder="https://linkedin.com/in/your-profile"
               value={form.linkedIn}
               onChange={handleChange}
-              className="w-full rounded-md bg-neutral-900 border border-neutral-700 p-2 text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+              className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
           {user.role === 'artist' ? renderArtistFields() : renderObserverFields()}
@@ -210,7 +210,7 @@ export default function ProfileSetup() {
           </div>
           
           {/* Terms of Use */}
-          <div className="border border-neutral-700 dark:border-neutral-600 rounded-lg p-4 bg-neutral-900/50">
+          <div className="border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 bg-white/50 dark:bg-neutral-900/50">
             <div className="flex items-start gap-3 mb-3">
               <img 
                 src="/terms-icon.png" 
@@ -221,8 +221,8 @@ export default function ProfileSetup() {
                 }}
               />
               <div className="flex-1">
-                <h3 className="text-sm font-semibold mb-1 text-neutral-100">Terms of Use</h3>
-                <p className="text-xs text-neutral-400 mb-2">
+                <h3 className="text-sm font-semibold mb-1 text-neutral-900 dark:text-neutral-100">Terms of Use</h3>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
                   Please review and accept our terms of use to continue using Joint.
                 </p>
                 <a 
@@ -240,9 +240,9 @@ export default function ProfileSetup() {
                 type="checkbox"
                 checked={acceptedTerms}
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="w-4 h-4 rounded border-neutral-600 bg-neutral-800 text-emerald-600 focus:ring-emerald-600 focus:ring-offset-neutral-900"
+                className="w-4 h-4 rounded border-neutral-400 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-emerald-600 focus:ring-emerald-600 focus:ring-offset-white dark:focus:ring-offset-neutral-900"
               />
-              <span className="text-sm text-neutral-300">
+              <span className="text-sm text-neutral-700 dark:text-neutral-300">
                 I have read and accept the Terms of Use
               </span>
             </label>
@@ -257,7 +257,7 @@ export default function ProfileSetup() {
               Save & Continue
             </button>
             {!acceptedTerms && (
-              <p className="text-xs text-neutral-500 mt-2">
+              <p className="text-xs text-neutral-600 dark:text-neutral-500 mt-2">
                 You must accept the Terms of Use to continue
               </p>
             )}

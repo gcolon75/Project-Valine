@@ -78,7 +78,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl">
+    <div className="container mx-auto px-4 max-w-7xl text-[1.1rem]">
       <h1 className="sr-only">Dashboard</h1>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] animate-fade-in">
           {/* LEFT COLUMN */}
@@ -105,6 +105,41 @@ export default function Dashboard() {
                 </div>
               </div>
             </Card>
+
+            {/* Merged Your Stats - Green Gradient Card */}
+            <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-4 text-white">
+              <h2 className="text-lg font-bold mb-4">Your Stats</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Users className="w-4 h-4 mr-1" aria-hidden="true" />
+                  </div>
+                  <p className="text-xl font-bold mb-0.5">248</p>
+                  <p className="text-xs text-white/90">Connections</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Heart className="w-4 h-4 mr-1" aria-hidden="true" />
+                  </div>
+                  <p className="text-xl font-bold mb-0.5">1.2K</p>
+                  <p className="text-xs text-white/90">Total Likes</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <Eye className="w-4 h-4 mr-1" aria-hidden="true" />
+                  </div>
+                  <p className="text-xl font-bold mb-0.5">3.4K</p>
+                  <p className="text-xs text-white/90">Profile Views</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-1">
+                    <TrendingUp className="w-4 h-4 mr-1" aria-hidden="true" />
+                  </div>
+                  <p className="text-xl font-bold mb-0.5">24.5%</p>
+                  <p className="text-xs text-white/90">Engagement</p>
+                </div>
+              </div>
+            </div>
 
             {/* Saved tags */}
             <Card title="Saved tags" padding="default">
@@ -152,41 +187,6 @@ export default function Dashboard() {
           {/* CENTER COLUMN */}
           <section className="space-y-4 lg:border-x lg:border-[#0CCE6B]/10 lg:px-4">
             <PostComposer />
-
-            {/* Stats Overview in Hero Bubble - Replaces "Check out Reels" CTA */}
-            <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-6 sm:p-8 text-white animate-slide-up">
-              <h2 className="text-xl font-bold mb-6">Your Stats</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Users className="w-5 h-5 mr-2" aria-hidden="true" />
-                  </div>
-                  <p className="text-2xl md:text-3xl font-bold mb-1">248</p>
-                  <p className="text-sm text-white/90">Connections</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Heart className="w-5 h-5 mr-2" aria-hidden="true" />
-                  </div>
-                  <p className="text-2xl md:text-3xl font-bold mb-1">1.2K</p>
-                  <p className="text-sm text-white/90">Total Likes</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <Eye className="w-5 h-5 mr-2" aria-hidden="true" />
-                  </div>
-                  <p className="text-2xl md:text-3xl font-bold mb-1">3.4K</p>
-                  <p className="text-sm text-white/90">Profile Views</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <TrendingUp className="w-5 h-5 mr-2" aria-hidden="true" />
-                  </div>
-                  <p className="text-2xl md:text-3xl font-bold mb-1">24.5%</p>
-                  <p className="text-sm text-white/90">Engagement</p>
-                </div>
-              </div>
-            </div>
 
             {activeTag && (
               <div className="flex items-center gap-2 text-sm">

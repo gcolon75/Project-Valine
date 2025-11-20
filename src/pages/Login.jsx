@@ -107,7 +107,7 @@ const Login = () => {
   };
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen text-[1.1rem]">
       
       {/* Content */}
       <div className="flex items-center justify-center px-4 py-12 min-h-screen">
@@ -125,7 +125,7 @@ const Login = () => {
               Sign in to your account
             </h1>
             <p className="text-neutral-600">
-              Continue your journey with Project Valine
+              Continue your journey with Joint
             </p>
           </div>
 
