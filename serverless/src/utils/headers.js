@@ -3,6 +3,27 @@
  * Includes CORS, security headers, and content-type helpers
  */
 
+// Service version from package.json (can be set via env var in deployment)
+const SERVICE_VERSION = process.env.SERVICE_VERSION || '0.0.1';
+
+/**
+ * Get auth mode from environment configuration
+ * @returns {string} Current auth mode
+ */
+const getAuthMode = () => {
+  const registrationEnabled = process.env.ENABLE_REGISTRATION === 'true';
+  const hasAllowlist = (process.env.ALLOWED_USER_EMAILS || '').trim().length > 0;
+  
+  if (!registrationEnabled && hasAllowlist) {
+    return 'owner-only';
+  } else if (!registrationEnabled) {
+    return 'registration-disabled';
+  } else if (hasAllowlist) {
+    return 'allowlist-restricted';
+  }
+  return 'open';
+};
+
 /**
  * Get allowed CORS origins based on environment
  * @returns {string[]} List of allowed origins
@@ -54,17 +75,30 @@ export function json(data, statusCode = 200, extra = {}) {
   const corsHeaders = getCorsHeaders(extra.event);
   delete extra.event; // Remove event from extra headers
   
+  // Extract correlationId if provided
+  const correlationId = extra.correlationId;
+  delete extra.correlationId; // Remove from headers
+  
+  const headers = {
+    'content-type': 'application/json',
+    ...corsHeaders,
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+    'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+    'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+    'x-service-version': SERVICE_VERSION,
+    'x-auth-mode': getAuthMode(),
+    ...extra,
+  };
+  
+  // Add correlation ID header if provided
+  if (correlationId) {
+    headers['x-correlation-id'] = correlationId;
+  }
+  
   return {
     statusCode,
-    headers: {
-      'content-type': 'application/json',
-      ...corsHeaders,
-      'x-content-type-options': 'nosniff',
-      'referrer-policy': 'strict-origin-when-cross-origin',
-      'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-      'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
-      ...extra,
-    },
+    headers,
     body: JSON.stringify(data),
   };
 }

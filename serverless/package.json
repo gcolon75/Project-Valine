@@ -7,11 +7,13 @@
     "remove": "serverless remove",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint:serverless": "eslint src --ext .js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy"
   },
   "devDependencies": {
+    "eslint": "^8.57.0",
     "prisma": "^6.19.0",
     "serverless": "^3.40.0",
     "serverless-esbuild": "^1.55.2",

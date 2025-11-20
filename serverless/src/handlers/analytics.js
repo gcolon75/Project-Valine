@@ -52,6 +52,15 @@ function checkRateLimit(identifier) {
 /**
  * POST /analytics/ingest
  * Ingests analytics events with validation and privacy controls
+ * 
+ * Status Code Contract:
+ *   200: All events valid and persisted successfully
+ *   207: Partial success - some events rejected or properties sanitized
+ *   202: Accepted but persistence disabled (ANALYTICS_PERSIST=false)
+ *   204: Analytics globally disabled (ANALYTICS_ENABLED=false)
+ *   400: Invalid batch size or malformed input
+ *   429: Rate limit exceeded
+ *   500: Internal server error
  */
 export async function ingestEvents(event) {
   const headers = {
@@ -157,9 +166,11 @@ export async function ingestEvents(event) {
         statusCode: 202,
         headers,
         body: JSON.stringify({ 
+          received: events.length,
           accepted: validEvents.length,
           rejected: errors.length,
-          persisted: false
+          persisted: 0,
+          message: 'Accepted but persistence disabled'
         })
       };
     }
@@ -178,8 +189,11 @@ export async function ingestEvents(event) {
       statusCode: errors.length > 0 ? 207 : 200, // Multi-status if there were errors
       headers,
       body: JSON.stringify({
+        received: events.length,
         accepted: stored,
         rejected: errors.length,
+        persisted: stored,
+        sanitized: errors.filter(e => e.error.includes('sanitized')).length,
         errors: errors.length > 0 ? errors : undefined
       })
     };
