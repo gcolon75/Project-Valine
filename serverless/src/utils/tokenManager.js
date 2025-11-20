@@ -30,7 +30,7 @@ const getCookieDomain = () => process.env.COOKIE_DOMAIN || undefined;
  * @returns {string} JWT access token
  */
 export const generateAccessToken = (userId) => {
-  return jwt.sign({ userId, type: 'access' }, JWT_SECRET, { 
+  return jwt.sign({ sub: userId, type: 'access' }, JWT_SECRET, { 
     expiresIn: ACCESS_TOKEN_EXPIRES_IN 
   });
 };
@@ -43,7 +43,7 @@ export const generateAccessToken = (userId) => {
 export const generateRefreshToken = (userId) => {
   // Add random jti (JWT ID) for token rotation tracking
   const jti = crypto.randomBytes(16).toString('hex');
-  return jwt.sign({ userId, type: 'refresh', jti }, JWT_SECRET, { 
+  return jwt.sign({ sub: userId, type: 'refresh', jti }, JWT_SECRET, { 
     expiresIn: REFRESH_TOKEN_EXPIRES_IN 
   });
 };
@@ -186,5 +186,5 @@ export const getUserIdFromEvent = (event) => {
   const decoded = verifyToken(token);
   if (!decoded || decoded.type !== 'access') return null;
   
-  return decoded.userId || null;
+  return decoded.sub || null; // Use standard JWT 'sub' claim
 };
