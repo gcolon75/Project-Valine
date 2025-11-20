@@ -108,9 +108,9 @@ STRICT_ALLOWLIST=1  # Production: requires 2+ emails
 ```
 
 **Documentation**:
-- [AUTH_MODE_OWNER_ONLY.md](./AUTH_MODE_OWNER_ONLY.md) - Comprehensive deployment guide
 - [AUTH_RECOVERY_CHECKLIST.md](./AUTH_RECOVERY_CHECKLIST.md) - Troubleshooting guide
-- [ALLOWLIST_DEPLOYMENT_GUIDE.md](./ALLOWLIST_DEPLOYMENT_GUIDE.md) - Allowlist configuration
+- [WORKING_STATE_SUMMARY.md](./WORKING_STATE_SUMMARY.md) - Current system status and working state
+- See [docs/archive/](docs/archive/) for historical deployment guides
 
 ### Test Failure Triage Workflow
 
@@ -968,7 +968,15 @@ To prevent false positives, the following paths will be explicitly allowed:
 
 📚 **Complete Documentation**: See **[docs/](docs/)** for the full documentation index
 
-> 📖 **Documentation reorganized 2025-11-04** - All docs now organized in the `docs/` directory for better discoverability. See [docs/SUMMARY.md](docs/SUMMARY.md) for complete index.
+> 📖 **Documentation reorganized 2025-11-20** - All docs now organized in the `docs/` directory for better discoverability. See [docs/SUMMARY.md](docs/SUMMARY.md) for complete index. Historical documentation moved to [docs/archive/](docs/archive/).
+
+### Current Working State
+
+**🟢 SYSTEM STATUS**: ✅ **Production-Ready** - Frontend delivery and owner authentication fully operational
+
+- **[WORKING_STATE_SUMMARY.md](./WORKING_STATE_SUMMARY.md)** - **START HERE** - Current working state, what's deployed, how to test
+- **[AUTH_RECOVERY_CHECKLIST.md](./AUTH_RECOVERY_CHECKLIST.md)** - Authentication troubleshooting guide
+- **[SECRETS_MANAGEMENT.md](./SECRETS_MANAGEMENT.md)** - Environment variables and secrets reference
 
 ### Essential Guides
 
@@ -1004,7 +1012,7 @@ To prevent false positives, the following paths will be explicitly allowed:
 - 🚀 [Lighthouse Guide](docs/qa/lighthouse.md) - Performance optimization
 - 📦 [Bundle Optimization](docs/qa/bundle-optimization.md) - Bundle size management
 - 🔒 [Security Policy](SECURITY.md) - Security policy, vulnerability reporting, access control
-- 📊 [Security Audit Report](SECURITY_AUDIT_REPORT.md) - Comprehensive security review and hardening
+- 📊 [Security Audit Report](docs/archive/SECURITY_AUDIT_REPORT.md) - Comprehensive security review and hardening
 
 **Orchestrator & Automation:**
 - 🤖 [Orchestrator Documentation](orchestrator/README.md) - Bot setup and agent management
