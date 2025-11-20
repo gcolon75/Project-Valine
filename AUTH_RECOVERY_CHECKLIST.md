@@ -297,9 +297,136 @@ npm test -- tests/allowlist-enforcement.test.js
 npm test -- tests/analytics/
 ```
 
+## Phase 2 Enhancements (Stabilization & Refinement)
+
+### New Correlation ID Logging
+
+All authentication operations now include a correlation ID for request tracing:
+
+```bash
+# Check CloudWatch logs for correlation ID
+aws logs filter-log-events \
+  --log-group-name /aws/lambda/pv-api-prod-login \
+  --filter-pattern '{ $.correlationId = * }'
+```
+
+**Structured Log Format**:
+```json
+{
+  "timestamp": "2025-11-20T02:00:00.000Z",
+  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+  "event": "login_denied",
+  "email": "te***@example.com",
+  "reason": "email_not_in_allowlist"
+}
+```
+
+**Response Headers**:
+- `X-Correlation-ID`: Same as log correlationId for request tracing
+- `X-Service-Version`: Service version for deployment tracking
+- `X-Auth-Mode`: Current authentication mode (owner-only, open, etc.)
+
+### JWT Secret Validation
+
+The application now fails-fast if deployed to production with the default JWT secret:
+
+**Error Message**:
+```
+SECURITY ERROR: Default JWT_SECRET must not be used in production. 
+Set a secure JWT_SECRET environment variable.
+```
+
+**Structured Log**:
+```json
+{
+  "timestamp": "...",
+  "event": "jwt_secret_invalid",
+  "level": "error",
+  "message": "Default JWT secret detected in production environment",
+  "environment": "production"
+}
+```
+
+**Fix**: Set `JWT_SECRET` environment variable to a strong secret (32+ characters).
+
+### Legacy Password Column Support
+
+For users created before the `passwordHash` column was standardized:
+
+**Symptom**: Login returns `500 Server error` with log: `[LOGIN] User missing password hash`
+
+**Automatic Fallback**: Auth handler now checks legacy `password` column automatically.
+
+**Permanent Fix**: Run migration script once:
+```bash
+cd /home/runner/work/Project-Valine/Project-Valine
+DATABASE_URL=postgresql://... node scripts/patch-legacy-passwords.mjs
+```
+
+**After Migration**: Remove fallback code from `src/handlers/auth.js` (search for "Transitional legacy password support").
+
+### Token Claim Backward Compatibility
+
+JWT tokens now use standard `sub` claim, with automatic fallback for legacy `userId` tokens:
+
+**Current Tokens**: `{ sub: "user-id-123", type: "access", ... }`
+
+**Legacy Tokens**: `{ userId: "user-id-123", type: "access", ... }` ← Still supported
+
+**Code Example**:
+```javascript
+import { getUserIdFromDecoded } from './utils/tokenManager.js';
+
+const decoded = verifyToken(token);
+const userId = getUserIdFromDecoded(decoded); // Works with both formats
+```
+
+### 2FA API Changes
+
+**BREAKING CHANGE**: Legacy lowercase 2FA aliases removed:
+
+- ❌ `enable2fa` (removed)
+- ❌ `verify2fa` (removed)
+- ✅ `enable2FA` (use this)
+- ✅ `verify2FA` (use this)
+
+**Migration**: Update any client code or serverless.yml references from `enable2fa`/`verify2fa` to `enable2FA`/`verify2FA`.
+
+### Pre-Deployment Validation
+
+Run preflight checks before deploying:
+
+```bash
+# Verify configuration
+node scripts/verify-predeploy.mjs
+
+# Optimize Prisma for production
+node scripts/prisma-optimize.mjs --prod
+cd serverless && npm run prisma:generate
+
+# Analyze test failures
+npm test -- --reporter=json > test-results.json
+node scripts/analyze-test-failures.mjs test-results.json
+```
+
+### Cookie Domain Normalization
+
+Cookie domains are now automatically normalized:
+
+**Input Examples**:
+- ` Example.COM ` → `.example.com`
+- `...example.com` → `.example.com`
+- `localhost` → `localhost` (no dot prefix)
+- `192.168.1.1` → `192.168.1.1` (no dot prefix)
+
+**Benefit**: Prevents misconfiguration due to whitespace or casing issues.
+
 ## References
 
 - [OWNER_ONLY_AUTH_DEPLOYMENT.md](./OWNER_ONLY_AUTH_DEPLOYMENT.md) - Production deployment guide
 - [ALLOWLIST_DEPLOYMENT_GUIDE.md](./ALLOWLIST_DEPLOYMENT_GUIDE.md) - Allowlist configuration
 - [Prisma Documentation](https://www.prisma.io/docs/) - Database client docs
 - [JWT.io](https://jwt.io/) - JWT token debugger
+- [scripts/patch-legacy-passwords.mjs](./scripts/patch-legacy-passwords.mjs) - Password migration script
+- [scripts/verify-predeploy.mjs](./scripts/verify-predeploy.mjs) - Pre-deployment checks
+- [scripts/prisma-optimize.mjs](./scripts/prisma-optimize.mjs) - Prisma binary optimization

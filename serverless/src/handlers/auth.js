@@ -556,15 +556,6 @@ async function disable2FA(event) {
   }
 }
 
-/* ---------------------- Legacy 2FA aliases ---------------------- */
-
-async function enable2fa(event) {
-  return enable2FA(event);
-}
-async function verify2fa(event) {
-  return verify2FA(event);
-}
-
 /* ---------------------- USER EXTRACTION (compat wrapper) ---------------------- */
 function getUserFromEvent(event) {
   try {
@@ -588,7 +579,5 @@ export {
   enable2FA,
   verify2FA,
   disable2FA,
-  enable2fa,
-  verify2fa,
   getUserFromEvent
 };

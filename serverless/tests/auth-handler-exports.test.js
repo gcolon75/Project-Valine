@@ -19,8 +19,6 @@ describe('Auth Handler Exports', () => {
     'enable2FA',
     'verify2FA',
     'disable2FA',
-    'enable2fa',
-    'verify2fa',
     'getUserFromEvent' // Helper function for compatibility
   ];
 
@@ -36,14 +34,10 @@ describe('Auth Handler Exports', () => {
     expect(exportedKeys.length).toBe(requiredHandlers.length);
   });
 
-  it('should have lowercase 2FA aliases that work', () => {
-    // Verify lowercase versions exist
-    expect(authModule.enable2fa).toBeDefined();
-    expect(authModule.verify2fa).toBeDefined();
-    
-    // Verify they're functions
-    expect(typeof authModule.enable2fa).toBe('function');
-    expect(typeof authModule.verify2fa).toBe('function');
+  it('should NOT export legacy lowercase 2FA aliases', () => {
+    // Legacy aliases removed in Phase 2 (PR #XXX)
+    expect(authModule.enable2fa).toBeUndefined();
+    expect(authModule.verify2fa).toBeUndefined();
   });
 
   it('should have camelCase 2FA handlers', () => {
