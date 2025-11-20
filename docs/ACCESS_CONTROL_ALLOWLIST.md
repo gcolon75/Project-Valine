@@ -306,6 +306,10 @@ fields @timestamp, @message
 
 If allowlist causes issues:
 
+### Quick Reference
+
+For detailed rollback procedures, see the [Allowlist Deployment Runbook](ALLOWLIST_DEPLOYMENT_RUNBOOK.md#rollback).
+
 ### Immediate Rollback (Backend Only)
 
 1. **Remove allowlist env var**:
@@ -378,11 +382,14 @@ npm run test:run
 
 ## References
 
+- **Deployment Runbook**: [ALLOWLIST_DEPLOYMENT_RUNBOOK.md](ALLOWLIST_DEPLOYMENT_RUNBOOK.md) - Complete deployment and troubleshooting guide
 - Backend: `serverless/login_unpack/src/handlers/auth.js`
 - Frontend: `src/utils/allowlistConfig.js`
 - Validation: `scripts/validate-allowlist.js`
 - Health: `serverless/login_unpack/src/handlers/health.js`
 - Environment: `.env.example`, `serverless.yml`
+- Deployment Scripts: `scripts/deploy-backend.ps1`, `scripts/deploy-backend.sh`
+- Audit Tools: `scripts/audit-allowlist.ps1`, `scripts/patch-allowlist-env.ps1`
 
 ## Support
 

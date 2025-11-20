@@ -29,6 +29,22 @@ import {
   getUserIdFromEvent
 } from '../utils/tokenManager.js';
 
+/* ---------------------- Allowlist Cache (cold-start optimization) ---------------------- */
+
+let cachedAllowlist = null;
+
+function getActiveAllowlist() {
+  if (cachedAllowlist !== null) {
+    return cachedAllowlist;
+  }
+  const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
+  cachedAllowlist = allowListRaw
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+  return cachedAllowlist;
+}
+
 /* ---------------------- Helpers ---------------------- */
 
 function buildHeaders(extra = {}) {
@@ -92,6 +108,19 @@ async function login(event) {
     }
 
     console.log(`[LOGIN] Attempt for email=${redactEmail(email)}`);
+
+    // Defense-in-depth: Check allowlist before DB lookup
+    const allowlist = getActiveAllowlist();
+    if (allowlist.length > 0 && !allowlist.includes(email.toLowerCase())) {
+      console.warn(JSON.stringify({
+        event: 'login_denied',
+        email: redactEmail(email),
+        reason: 'email_not_in_allowlist',
+        allowlistCount: allowlist.length,
+        ts: new Date().toISOString()
+      }));
+      return error(403, 'Access denied: email not in allowlist');
+    }
 
     const prisma = getPrisma();
     const user = await prisma.user.findUnique({
@@ -186,24 +215,37 @@ async function register(event) {
     // Generate displayName from email if not provided
     const finalDisplayName = displayName || email.split('@')[0];
 
-    // Enforce registration gating:
-    // If ENABLE_REGISTRATION !== 'true' then only allow emails in ALLOWED_USER_EMAILS
+    // Enforce allowlist early (before database operations)
+    const allowlist = getActiveAllowlist();
     const enableRegistration = (process.env.ENABLE_REGISTRATION || 'false') === 'true';
-    const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
-    const allowed = allowListRaw
-      .split(',')
-      .map(s => s.trim().toLowerCase())
-      .filter(Boolean);
+    const strictAllowlist = (process.env.STRICT_ALLOWLIST || '0') === '1';
+
+    // Check if allowlist is misconfigured when strict mode is enabled
+    if (strictAllowlist && allowlist.length < 2) {
+      console.error(JSON.stringify({
+        event: 'allowlist_misconfigured',
+        allowlistCount: allowlist.length,
+        requiredCount: 2,
+        ts: new Date().toISOString()
+      }));
+      return error(503, 'Service temporarily unavailable: configuration error');
+    }
 
     if (!enableRegistration) {
-      // registration closed to public — require email in allowlist
-      if (allowed.length === 0) {
+      // Registration closed to public — require email in allowlist
+      if (allowlist.length === 0) {
         console.warn('[REGISTER] Registration closed and no allowlist configured');
         return error(403, 'Registration not permitted');
       }
-      if (!allowed.includes(email.toLowerCase())) {
-        console.warn('[REGISTER] Email not allowlisted');
-        return error(403, 'Registration not permitted');
+      if (!allowlist.includes(email.toLowerCase())) {
+        console.warn(JSON.stringify({
+          event: 'registration_denied',
+          email: redactEmail(email),
+          reason: 'email_not_in_allowlist',
+          allowlistCount: allowlist.length,
+          ts: new Date().toISOString()
+        }));
+        return error(403, 'Access denied: email not in allowlist');
       }
     }
 

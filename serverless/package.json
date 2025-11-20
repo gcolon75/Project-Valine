@@ -5,6 +5,8 @@
   "scripts": {
     "deploy": "serverless deploy",
     "remove": "serverless remove",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy"
@@ -12,7 +14,8 @@
   "devDependencies": {
     "prisma": "^6.19.0",
     "serverless": "^3.40.0",
-    "serverless-esbuild": "^1.55.2"
+    "serverless-esbuild": "^1.55.2",
+    "vitest": "^1.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.637.0",
