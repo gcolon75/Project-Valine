@@ -2,7 +2,7 @@ import { Users, FileText, Mic, Video, MessageCircle, Search, Award, Shield } fro
 
 const FeatureGridSection = () => {
   return (
-    <section id="features" className="px-4 py-16 md:py-20" aria-labelledby="features-heading">
+    <section id="features" className="px-4 py-16 md:py-20 bg-gradient-to-b from-white to-neutral-50/30 shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="features-heading">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="features-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">

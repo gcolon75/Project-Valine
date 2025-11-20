@@ -2,7 +2,7 @@ import { Target, Users, Zap } from 'lucide-react';
 
 const ValuePropsSection = () => {
   return (
-    <section id="about" className="px-4 py-16 md:py-20 bg-white/50 backdrop-blur-sm border-y border-neutral-200" aria-labelledby="about-heading">
+    <section id="about" className="px-4 py-16 md:py-20 bg-white/50 backdrop-blur-sm border-y border-neutral-200 shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="about-heading">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="about-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">

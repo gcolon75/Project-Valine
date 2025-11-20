@@ -30,7 +30,7 @@ const FAQSection = () => {
   ];
 
   return (
-    <section id="faq" className="px-4 py-16 md:py-20 bg-neutral-50" aria-labelledby="faq-heading">
+    <section id="faq" className="px-4 py-16 md:py-20 bg-neutral-50 shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="faq-heading">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">

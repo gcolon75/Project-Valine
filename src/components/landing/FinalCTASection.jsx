@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const FinalCTASection = () => {
   return (
-    <section className="px-4 py-16 md:py-20 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747]" aria-labelledby="final-cta-heading">
+    <section className="px-4 py-16 md:py-20 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] shadow-[0_8px_30px_-5px_rgba(0,0,0,0.12)]" aria-labelledby="final-cta-heading">
       <div className="max-w-4xl mx-auto text-center">
         <h2 id="final-cta-heading" className="text-3xl md:text-5xl font-bold text-white mb-6">
           Ready to join the community?

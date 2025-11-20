@@ -12,78 +12,67 @@ const HeroSection = () => {
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#474747]/5 rounded-full blur-3xl" aria-hidden="true" />
       
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Centered Main Content */}
+        <div className="flex flex-col items-center text-center mb-12">
+          <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6 animate-slide-up">
+            <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
+            <span className="text-sm font-medium text-[#0CCE6B]">
+              The Professional Network for Voice Actors
+            </span>
+          </div>
           
-          {/* Left Sidebar: Stats Cards */}
-          <div className="lg:col-span-2 order-1">
-            <div className="space-y-4 lg:sticky lg:top-24">
-              <StatCard number="10K+" label="Artists" delay="0s" />
-              <StatCard number="50K+" label="Posts" delay="0.1s" />
-              <StatCard number="5K+" label="Projects" delay="0.2s" />
-            </div>
+          <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
+            Connect. Create. Collaborate.
+          </h1>
+          
+          <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>
+            Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
+          </p>
+          
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.3s' }}>
+            <Link
+              to="/join"
+              className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+              aria-label="Get started with a free account"
+            >
+              <span>Get Started Free</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+            </Link>
+            <a
+              href="#about"
+              className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
+              aria-label="Learn more about Joint"
+            >
+              Learn More
+            </a>
           </div>
 
-          {/* Main Content: Text + Hero Image - Now takes full width without Trending card */}
-          <div className="lg:col-span-10 order-2">
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
-              
-              {/* Text Content */}
-              <div>
-                <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6 animate-slide-up">
-                  <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
-                  <span className="text-sm font-medium text-[#0CCE6B]">
-                    The Professional Network for Voice Actors
-                  </span>
-                </div>
-                
-                <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                  Connect. Create. Collaborate.
-                </h1>
-                
-                <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                  Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
-                </p>
-                
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                  <Link
-                    to="/join"
-                    className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
-                    aria-label="Get started with a free account"
-                  >
-                    <span>Get Started Free</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                  </Link>
-                  <a
-                    href="#about"
-                    className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
-                    aria-label="Learn more about Joint"
-                  >
-                    Learn More
-                  </a>
-                </div>
+          {/* Hero Visual - Centered */}
+          <div className="relative animate-slide-up max-w-2xl w-full" style={{ animationDelay: '0.4s' }}>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
+              <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
+                <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
               </div>
-
-              {/* Hero Image */}
-              <div className="relative animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
-                  <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
-                    <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
-                  </div>
+            </div>
+            
+            {/* Floating "New!" badge */}
+            <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
-                
-                {/* Floating "New!" badge */}
-                <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
-                    </div>
-                    <span className="text-sm font-semibold text-neutral-900">New!</span>
-                  </div>
-                </div>
+                <span className="text-sm font-semibold text-neutral-900">New!</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Stats Cards Below - Centered in a Row */}
+        <div className="flex flex-wrap justify-center gap-6 mt-16 animate-slide-up" style={{ animationDelay: '0.5s' }}>
+          <StatCard number="10K+" label="Artists" delay="0s" />
+          <StatCard number="50K+" label="Posts" delay="0.1s" />
+          <StatCard number="5K+" label="Projects" delay="0.2s" />
         </div>
       </div>
     </section>
