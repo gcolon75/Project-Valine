@@ -19,7 +19,7 @@
  * requiring duplicate installations at the repository root.
  */
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 
@@ -31,13 +31,17 @@ let PrismaClient, bcrypt;
 try {
   // Try importing from serverless node_modules first
   const serverlessNodeModules = join(__dirname, '..', 'serverless', 'node_modules');
-  const prismaPath = join(serverlessNodeModules, '@prisma/client/index.js');
-  const bcryptPath = join(serverlessNodeModules, 'bcryptjs/index.js');
+  const prismaPath = join(serverlessNodeModules, '@prisma/client', 'index.js');
+  const bcryptPath = join(serverlessNodeModules, 'bcryptjs', 'index.js');
   
   if (existsSync(prismaPath) && existsSync(bcryptPath)) {
-    const prismaModule = await import(prismaPath);
+    // Convert paths to file URLs for Windows compatibility
+    const prismaUrl = pathToFileURL(prismaPath).href;
+    const bcryptUrl = pathToFileURL(bcryptPath).href;
+    
+    const prismaModule = await import(prismaUrl);
     PrismaClient = prismaModule.PrismaClient;
-    const bcryptModule = await import(bcryptPath);
+    const bcryptModule = await import(bcryptUrl);
     bcrypt = bcryptModule.default;
   } else {
     // Fall back to trying root-level dependencies
