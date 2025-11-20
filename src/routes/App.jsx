@@ -10,7 +10,7 @@ import ConsentBanner from "../analytics/ConsentBanner";
 import { initAnalytics, trackPageView } from "../analytics/client";
 
 /* Lazy pages */
-const HomePage = lazy(() => import("../pages/Home"));
+const LandingPage = lazy(() => import("../pages/Landing"));
 const AboutPage = lazy(() => import("../pages/About"));
 const FeaturesPage = lazy(() => import("../pages/Features"));
 const JoinPage = lazy(() => import("../pages/Join"));
@@ -81,9 +81,10 @@ export default function App() {
       <Routes>
         {/* Marketing */}
         <Route element={<MarketingLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="about-us" element={<AboutPage />} />
-          <Route path="features" element={<FeaturesPage />} />
+          <Route index element={<LandingPage />} />
+          <Route path="about-us" element={<Navigate to="/#about" replace />} />
+          <Route path="about" element={<Navigate to="/#about" replace />} />
+          <Route path="features" element={<Navigate to="/#features" replace />} />
           <Route path="join" element={<JoinPage />} />
           <Route path="signup" element={<JoinPage />} />
           <Route path="login" element={<LoginPage />} />
