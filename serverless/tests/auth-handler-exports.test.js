@@ -20,7 +20,8 @@ describe('Auth Handler Exports', () => {
     'verify2FA',
     'disable2FA',
     'enable2fa',
-    'verify2fa'
+    'verify2fa',
+    'getUserFromEvent' // Helper function for compatibility
   ];
 
   it('should export all required handlers', () => {

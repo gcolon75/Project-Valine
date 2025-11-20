@@ -270,8 +270,8 @@ describe('Analytics Endpoints', () => {
       const response1 = await ingestEvents(event1);
       expect(response1.statusCode).toBe(200);
 
-      // Send many more batches to exceed rate limit
-      for (let i = 0; i < 20; i++) {
+      // Send many more batches to exceed rate limit (need 100+ requests)
+      for (let i = 0; i < 100; i++) {
         const event = {
           body: JSON.stringify({
             events: [
