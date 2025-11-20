@@ -2,22 +2,63 @@
 /**
  * Admin utility to set/reset user passwords via CLI
  * 
- * Usage (from repository root):
+ * Usage (RECOMMENDED - uses serverless dependencies):
  *   DATABASE_URL=postgresql://... node scripts/admin-set-password.mjs "email@example.com" "NewPassword123!"
  * 
- * Usage (from serverless directory):
- *   cd serverless
- *   DATABASE_URL=postgresql://... node ../scripts/admin-set-password.mjs "email@example.com" "NewPassword123!"
+ * Alternative (requires installing dependencies at root):
+ *   npm install bcryptjs @prisma/client
+ *   DATABASE_URL=postgresql://... node scripts/admin-set-password.mjs "email@example.com" "NewPassword123!"
  * 
  * Security:
  * - Requires DATABASE_URL environment variable
  * - Hashes password with bcrypt (cost factor 12)
  * - Updates passwordHash field in database
  * - Validates inputs before database operations
+ * 
+ * Note: This script imports dependencies from serverless/node_modules to avoid
+ * requiring duplicate installations at the repository root.
  */
 
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Dynamically import dependencies with error handling
+let PrismaClient, bcrypt;
+try {
+  // Try importing from serverless node_modules first
+  const serverlessNodeModules = join(__dirname, '..', 'serverless', 'node_modules');
+  const prismaPath = join(serverlessNodeModules, '@prisma/client/index.js');
+  const bcryptPath = join(serverlessNodeModules, 'bcryptjs/index.js');
+  
+  if (existsSync(prismaPath) && existsSync(bcryptPath)) {
+    const prismaModule = await import(prismaPath);
+    PrismaClient = prismaModule.PrismaClient;
+    const bcryptModule = await import(bcryptPath);
+    bcrypt = bcryptModule.default;
+  } else {
+    // Fall back to trying root-level dependencies
+    const prismaModule = await import('@prisma/client');
+    PrismaClient = prismaModule.PrismaClient;
+    const bcryptModule = await import('bcryptjs');
+    bcrypt = bcryptModule.default;
+  }
+} catch (error) {
+  console.error('[ERROR] Missing required dependencies.');
+  console.error('');
+  console.error('Please install dependencies in the serverless directory:');
+  console.error('  cd serverless');
+  console.error('  npm install');
+  console.error('');
+  console.error('Or install dependencies at the repository root:');
+  console.error('  npm install @prisma/client bcryptjs');
+  console.error('');
+  console.error('Error details:', error.message);
+  process.exit(1);
+}
 
 const prisma = new PrismaClient();
 
