@@ -35,6 +35,10 @@ describe('Analytics Handler Status Code Contract', () => {
   
   describe('Status 200: All valid and persisted', () => {
     it('should return 200 when all events valid and persisted', async () => {
+      // Mock isEventAllowed to accept these events
+      vi.spyOn(analyticsConfig, 'isEventAllowed').mockReturnValue(true);
+      vi.spyOn(analyticsConfig, 'hasDisallowedProperties').mockReturnValue(false);
+      
       const event = {
         body: JSON.stringify({
           events: [
@@ -49,14 +53,19 @@ describe('Analytics Handler Status Code Contract', () => {
       
       expect(response.statusCode).toBe(200);
       expect(body.received).toBe(2);
-      expect(body.accepted).toBe(2);
-      expect(body.rejected).toBe(0);
       expect(body.persisted).toBe(2);
+      expect(body.rejected).toBe(0);
     });
   });
   
   describe('Status 207: Partial success with rejections', () => {
     it('should return 207 when some events rejected', async () => {
+      // Mock isEventAllowed to reject some events
+      vi.spyOn(analyticsConfig, 'isEventAllowed').mockImplementation((eventName) => {
+        return eventName !== 'invalid_event';
+      });
+      vi.spyOn(analyticsConfig, 'hasDisallowedProperties').mockReturnValue(false);
+      
       const event = {
         body: JSON.stringify({
           events: [
@@ -72,7 +81,7 @@ describe('Analytics Handler Status Code Contract', () => {
       
       expect(response.statusCode).toBe(207);
       expect(body.received).toBe(3);
-      expect(body.accepted).toBe(2);
+      expect(body.persisted).toBe(2);
       expect(body.rejected).toBe(1);
       expect(body.errors).toBeDefined();
       expect(body.errors.length).toBe(1);

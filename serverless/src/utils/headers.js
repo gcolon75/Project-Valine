@@ -3,8 +3,8 @@
  * Includes CORS, security headers, and content-type helpers
  */
 
-// Service version from package.json (can be set via env var in deployment)
-const SERVICE_VERSION = process.env.SERVICE_VERSION || '0.0.1';
+// Service version - re-evaluated each time to allow tests to change it
+const getServiceVersion = () => process.env.SERVICE_VERSION || '0.0.1';
 
 /**
  * Get auth mode from environment configuration
@@ -71,24 +71,28 @@ export const getCorsHeaders = (event) => {
 };
 
 export function json(data, statusCode = 200, extra = {}) {
-  // Merge CORS headers with extra headers
-  const corsHeaders = getCorsHeaders(extra.event);
-  delete extra.event; // Remove event from extra headers
-  
-  // Extract correlationId if provided
+  // Extract and remove special properties
+  const event = extra.event;
   const correlationId = extra.correlationId;
-  delete extra.correlationId; // Remove from headers
+  
+  // Create clean extra object without special properties
+  const cleanExtra = { ...extra };
+  delete cleanExtra.event;
+  delete cleanExtra.correlationId;
+  
+  // Merge CORS headers with extra headers
+  const corsHeaders = getCorsHeaders(event);
   
   const headers = {
     'content-type': 'application/json',
-    ...corsHeaders,
+    ...cleanExtra, // Spread extra first so it can be overridden
+    ...corsHeaders, // Then CORS headers (higher priority)
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
     'permissions-policy': 'camera=(), microphone=(), geolocation=()',
     'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
-    'x-service-version': SERVICE_VERSION,
+    'x-service-version': getServiceVersion(),
     'x-auth-mode': getAuthMode(),
-    ...extra,
   };
   
   // Add correlation ID header if provided

@@ -139,10 +139,12 @@ describe('Health & Diagnostic Headers', () => {
   
   describe('Headers do not interfere with other headers', () => {
     it('should preserve CORS headers', () => {
-      const response = json({ test: 'data' });
+      const event = { headers: { origin: process.env.FRONTEND_URL || 'http://localhost:5173' } };
+      const response = json({ test: 'data' }, 200, { event });
       
-      expect(response.headers['access-control-allow-origin']).toBeDefined();
-      expect(response.headers['access-control-allow-credentials']).toBe('true');
+      // CORS headers use capital letters
+      expect(response.headers['Access-Control-Allow-Origin']).toBeDefined();
+      expect(response.headers['Access-Control-Allow-Credentials']).toBe('true');
     });
     
     it('should preserve security headers', () => {
