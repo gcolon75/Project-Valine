@@ -33,7 +33,7 @@ jobs:
       DISCORD_DEPLOY_WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK }}
       DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
       DISCORD_TARGET_CHANNEL_ID: ${{ vars.DISCORD_TARGET_CHANNEL_ID }}
-      FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
+      FRONTEND_URL: ${{ secrets.FRONTEND_URL || secrets.FRONTEND_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -76,15 +76,15 @@ jobs:
             --paths "/*"
       - name: Deployment summary
         run: |
-          if [ -n "${{ env.FRONTEND_BASE_URL }}" ]; then
-            echo "Frontend: https://${{ env.FRONTEND_BASE_URL }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ env.FRONTEND_URL }}" ]; then
+            echo "Frontend: https://${{ env.FRONTEND_URL }}" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "API base: ${{ env.VITE_API_BASE }}" >> "$GITHUB_STEP_SUMMARY"
       - name: Notify Discord via Webhook
         if: ${{ env.DISCORD_DEPLOY_WEBHOOK != '' }}
         run: |
           WEBHOOK_URL="${{ env.DISCORD_DEPLOY_WEBHOOK }}"
-          FRONTEND_URL="${{ env.FRONTEND_BASE_URL }}"
+          FRONTEND_URL="${{ env.FRONTEND_URL }}"
           API_BASE="${{ env.VITE_API_BASE }}"
           COMMIT_SHA="${{ github.sha }}"
           COMMIT_SHORT="${COMMIT_SHA:0:7}"
@@ -138,7 +138,7 @@ jobs:
         run: |
           BOT_TOKEN="${{ env.DISCORD_BOT_TOKEN }}"
           CHANNEL_ID="${{ env.DISCORD_TARGET_CHANNEL_ID }}"
-          FRONTEND_URL="${{ env.FRONTEND_BASE_URL }}"
+          FRONTEND_URL="${{ env.FRONTEND_URL }}"
           API_BASE="${{ env.VITE_API_BASE }}"
           
           # Build message content

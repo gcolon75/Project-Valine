@@ -37,7 +37,7 @@ jobs:
           echo "STAGING_DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
           echo "STAGING_GITHUB_TOKEN=${{ secrets.STAGING_GITHUB_TOKEN }}" >> $GITHUB_ENV
           echo "STAGING_GITHUB_WEBHOOK_SECRET=${{ secrets.STAGING_GITHUB_WEBHOOK_SECRET }}" >> $GITHUB_ENV
-          echo "FRONTEND_BASE_URL=${{ secrets.FRONTEND_BASE_URL }}" >> $GITHUB_ENV
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL || secrets.FRONTEND_BASE_URL }}" >> $GITHUB_ENV
           echo "VITE_API_BASE=${{ secrets.VITE_API_BASE }}" >> $GITHUB_ENV
           # For Discord notifications (optional)
           echo "DISCORD_BOT_TOKEN=${{ secrets.STAGING_DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
@@ -93,7 +93,7 @@ jobs:
               "DiscordBotToken=${STAGING_DISCORD_BOT_TOKEN}" \
               "GitHubToken=${STAGING_GITHUB_TOKEN}" \
               "GitHubWebhookSecret=${STAGING_GITHUB_WEBHOOK_SECRET}" \
-              "FrontendBaseUrl=${FRONTEND_BASE_URL}" \
+              "FrontendBaseUrl=${FRONTEND_URL}" \
               "ViteApiBase=${VITE_API_BASE}" 2>&1 | tee /tmp/deploy-output.log; then
             echo "✅ Deploy completed successfully!"
             echo "deploy_result=success" >> $GITHUB_OUTPUT

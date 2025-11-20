@@ -100,7 +100,15 @@ router.post('/users', signupRateLimiter, async (req, res) => {
     });
     
     // For MVP: Log verification URL and write to file for E2E tests
-    const verificationUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
+    // Use FRONTEND_URL (canonical) with fallback to deprecated FRONTEND_BASE_URL
+    let frontendUrl = process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    
+    // Log deprecation warning if using legacy variable
+    if (!process.env.FRONTEND_URL && process.env.FRONTEND_BASE_URL) {
+      console.warn('[DEPRECATION WARNING] FRONTEND_BASE_URL is deprecated. Please migrate to FRONTEND_URL.');
+    }
+    
+    const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
     
     console.log('='.repeat(80));
     console.log('EMAIL VERIFICATION TOKEN (MVP - Not sent via email)');
