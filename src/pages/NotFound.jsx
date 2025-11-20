@@ -15,7 +15,7 @@ const NotFound = () => {
                 <Mic className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
-                Project Valine
+                Joint
               </span>
             </Link>
 

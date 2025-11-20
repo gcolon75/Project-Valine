@@ -11,7 +11,7 @@ const About = () => {
           <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-8">
             <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
             <span className="text-sm font-medium text-[#0CCE6B]">
-              About Project Valine
+              About Joint
             </span>
           </div>
           
@@ -20,7 +20,7 @@ const About = () => {
           </h1>
           
           <p className="text-xl text-neutral-600 mb-8">
-            Project Valine is a professional networking platform designed specifically for the voice acting community. We bring together artists, writers, and creators to collaborate, share, and grow together.
+            Joint is a professional networking platform designed specifically for the voice acting community. We bring together artists, writers, and creators to collaborate, share, and grow together.
           </p>
         </div>
       </section>
@@ -53,7 +53,7 @@ const About = () => {
             Ready to get started?
           </h2>
           <p className="text-xl text-white/80 mb-8">
-            Join thousands of voice actors already on Project Valine
+            Join thousands of voice actors already on Joint
           </p>
           <Link
             to="/join"

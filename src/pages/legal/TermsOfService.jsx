@@ -8,7 +8,7 @@ import { useEffect } from 'react';
  */
 export default function TermsOfService() {
   useEffect(() => {
-    document.title = 'Terms of Service — Project Valine';
+    document.title = 'Terms of Service — Joint';
   }, []);
 
   return (
@@ -40,7 +40,7 @@ export default function TermsOfService() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Acceptance of Terms</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              By accessing or using Project Valine ("the Service," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.
+              By accessing or using Joint ("the Service," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.
             </p>
             <p className="text-neutral-700 leading-relaxed">
               These Terms apply to all visitors, users, and others who access or use the Service. By using the Service, you represent that you are at least 13 years of age.
@@ -51,7 +51,7 @@ export default function TermsOfService() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">User Responsibilities</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              By using Project Valine, you agree to:
+              By using Joint, you agree to:
             </p>
             <ul className="list-disc pl-6 text-neutral-700 space-y-2">
               <li><strong>Provide Accurate Information:</strong> Ensure all account information is accurate, complete, and up-to-date</li>
@@ -90,12 +90,12 @@ export default function TermsOfService() {
             
             <h3 className="text-xl font-semibold text-neutral-900 mb-3">Platform Content</h3>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              The Service and its original content, features, and functionality are owned by Project Valine and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+              The Service and its original content, features, and functionality are owned by Joint and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
             </p>
 
             <h3 className="text-xl font-semibold text-neutral-900 mb-3">User-Submitted Content</h3>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              You retain ownership of content you submit to the Service (posts, profiles, scripts, media). By submitting content, you grant Project Valine a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, adapt, publish, and display your content for the purpose of operating and improving the Service.
+              You retain ownership of content you submit to the Service (posts, profiles, scripts, media). By submitting content, you grant Joint a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, adapt, publish, and display your content for the purpose of operating and improving the Service.
             </p>
             <p className="text-neutral-700 leading-relaxed">
               You represent and warrant that you have all necessary rights to submit the content and grant us this license.
@@ -171,7 +171,7 @@ export default function TermsOfService() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Indemnification</h2>
             <p className="text-neutral-700 leading-relaxed">
-              You agree to indemnify, defend, and hold harmless Project Valine, its affiliates, officers, directors, employees, and agents from any claims, damages, liabilities, costs, or expenses (including reasonable attorneys' fees) arising from:
+              You agree to indemnify, defend, and hold harmless Joint, its affiliates, officers, directors, employees, and agents from any claims, damages, liabilities, costs, or expenses (including reasonable attorneys' fees) arising from:
             </p>
             <ul className="list-disc pl-6 text-neutral-700 space-y-2 mt-4">
               <li>Your use of the Service</li>
@@ -237,7 +237,7 @@ export default function TermsOfService() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Entire Agreement</h2>
             <p className="text-neutral-700 leading-relaxed">
-              These Terms, together with our <Link to="/legal/privacy" className="text-[#0CCE6B] hover:underline">Privacy Policy</Link> and <Link to="/legal/cookies" className="text-[#0CCE6B] hover:underline">Cookie Disclosure</Link>, constitute the entire agreement between you and Project Valine regarding the use of the Service, superseding any prior agreements.
+              These Terms, together with our <Link to="/legal/privacy" className="text-[#0CCE6B] hover:underline">Privacy Policy</Link> and <Link to="/legal/cookies" className="text-[#0CCE6B] hover:underline">Cookie Disclosure</Link>, constitute the entire agreement between you and Joint regarding the use of the Service, superseding any prior agreements.
             </p>
           </section>
 

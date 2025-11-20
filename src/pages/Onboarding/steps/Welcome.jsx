@@ -30,7 +30,7 @@ export default function Welcome({ userData, onUpdate }) {
           <Sparkles className="w-8 h-8 text-white" />
         </div>
         <p className="text-lg text-neutral-700 dark:text-neutral-300 max-w-2xl mx-auto">
-          Welcome to Project Valine! Let's set up your professional profile in just a few steps.
+          Welcome to Joint! Let's set up your professional profile in just a few steps.
         </p>
       </div>
 
