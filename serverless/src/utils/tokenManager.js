@@ -12,10 +12,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-productio
 const ACCESS_TOKEN_EXPIRES_IN = '30m'; // 30 minutes
 const REFRESH_TOKEN_EXPIRES_IN = '7d'; // 7 days
 
-// Cookie configuration
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined; // undefined for same-domain
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const IS_PRODUCTION = NODE_ENV === 'production';
+/**
+ * Helper to check if we're in production mode
+ * Re-evaluated each time to allow tests to change NODE_ENV
+ */
+const isProduction = () => process.env.NODE_ENV === 'production';
+
+/**
+ * Helper to get cookie domain
+ * Re-evaluated each time to allow tests to change COOKIE_DOMAIN
+ */
+const getCookieDomain = () => process.env.COOKIE_DOMAIN || undefined;
 
 /**
  * Generate access token (short-lived)
@@ -109,16 +116,17 @@ export const generateAccessTokenCookie = (token) => {
   
   // Use SameSite=Strict in production for maximum CSRF protection
   // Use SameSite=Lax in development for easier testing
-  const sameSite = IS_PRODUCTION ? 'Strict' : 'Lax';
+  const sameSite = isProduction() ? 'Strict' : 'Lax';
   
   let cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
-  if (IS_PRODUCTION) {
+  if (isProduction()) {
     cookie += '; Secure';
   }
   
-  if (COOKIE_DOMAIN) {
-    cookie += `; Domain=${COOKIE_DOMAIN}`;
+  const cookieDomain = getCookieDomain();
+  if (cookieDomain) {
+    cookie += `; Domain=${cookieDomain}`;
   }
   
   return cookie;
@@ -134,16 +142,17 @@ export const generateRefreshTokenCookie = (token) => {
   
   // Use SameSite=Strict in production for maximum CSRF protection
   // Use SameSite=Lax in development for easier testing
-  const sameSite = IS_PRODUCTION ? 'Strict' : 'Lax';
+  const sameSite = isProduction() ? 'Strict' : 'Lax';
   
   let cookie = `refresh_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
-  if (IS_PRODUCTION) {
+  if (isProduction()) {
     cookie += '; Secure';
   }
   
-  if (COOKIE_DOMAIN) {
-    cookie += `; Domain=${COOKIE_DOMAIN}`;
+  const cookieDomain = getCookieDomain();
+  if (cookieDomain) {
+    cookie += `; Domain=${cookieDomain}`;
   }
   
   return cookie;
@@ -155,8 +164,9 @@ export const generateRefreshTokenCookie = (token) => {
  */
 export const generateClearCookieHeaders = () => {
   const baseCookie = 'Path=/; SameSite=Lax; Max-Age=0';
-  const secureSuffix = IS_PRODUCTION ? '; Secure' : '';
-  const domainSuffix = COOKIE_DOMAIN ? `; Domain=${COOKIE_DOMAIN}` : '';
+  const secureSuffix = isProduction() ? '; Secure' : '';
+  const cookieDomain = getCookieDomain();
+  const domainSuffix = cookieDomain ? `; Domain=${cookieDomain}` : '';
   
   return [
     `access_token=; ${baseCookie}${secureSuffix}${domainSuffix}`,

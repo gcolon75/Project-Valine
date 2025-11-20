@@ -3,24 +3,22 @@
  * Includes CORS, security headers, and content-type helpers
  */
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const NODE_ENV = process.env.NODE_ENV || 'development';
-const IS_PRODUCTION = NODE_ENV === 'production';
-
 /**
  * Get allowed CORS origins based on environment
  * @returns {string[]} List of allowed origins
  */
 const getAllowedOrigins = () => {
-  const origins = [FRONTEND_URL];
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const isProduction = process.env.NODE_ENV === 'production';
+  const origins = [frontendUrl];
   
   // Add CloudFront distribution in production
-  if (IS_PRODUCTION) {
+  if (isProduction) {
     origins.push('https://dkmxy676d3vgc.cloudfront.net');
   }
   
   // Allow localhost in development
-  if (!IS_PRODUCTION) {
+  if (!isProduction) {
     origins.push('http://localhost:3000', 'http://localhost:5173');
   }
   
