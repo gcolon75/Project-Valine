@@ -1,6 +1,6 @@
 const SocialProofSection = () => {
   return (
-    <section className="px-4 py-16 md:py-20 bg-white" aria-labelledby="social-proof-heading">
+    <section className="px-4 py-16 md:py-20 bg-white shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="social-proof-heading">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="social-proof-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">

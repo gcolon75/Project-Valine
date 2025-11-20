@@ -19,12 +19,12 @@ const MarketingFooter = () => {
                 </a>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
                   Changelog
                 </span>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
                   Roadmap
                 </span>
               </li>
@@ -36,12 +36,12 @@ const MarketingFooter = () => {
             <h3 id="footer-resources" className="font-semibold text-neutral-900 mb-4">Resources</h3>
             <ul className="space-y-3 text-sm text-neutral-700">
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
                   Documentation
                 </span>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
                   Support
                 </span>
               </li>
@@ -63,7 +63,7 @@ const MarketingFooter = () => {
                 </a>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed">
+                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
                   Contact
                 </span>
               </li>
@@ -97,7 +97,7 @@ const MarketingFooter = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
                   <Mic className="w-5 h-5 text-white" aria-hidden="true" />
                 </div>
-                <span className="text-sm font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
+                <span className="text-sm font-bold text-neutral-900">
                   Joint
                 </span>
               </Link>

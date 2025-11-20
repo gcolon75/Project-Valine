@@ -10,14 +10,14 @@ describe('FAQSection', () => {
 
   it('renders FAQ questions', () => {
     render(<FAQSection />);
-    expect(screen.getByText(/What is Project Valine\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/Is Project Valine free to use\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/What is Joint\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Is Joint free to use\?/i)).toBeInTheDocument();
     expect(screen.getByText(/How do I get started\?/i)).toBeInTheDocument();
   });
 
   it('expands FAQ answer when clicked', () => {
     render(<FAQSection />);
-    const question = screen.getByText(/What is Project Valine\?/i);
+    const question = screen.getByText(/What is Joint\?/i);
     
     // Answer should not be visible initially
     expect(screen.queryByText(/professional networking platform designed specifically/i)).not.toBeInTheDocument();
@@ -31,7 +31,7 @@ describe('FAQSection', () => {
 
   it('collapses FAQ answer when clicked again', () => {
     render(<FAQSection />);
-    const question = screen.getByText(/What is Project Valine\?/i);
+    const question = screen.getByText(/What is Joint\?/i);
     
     // Expand
     fireEvent.click(question);

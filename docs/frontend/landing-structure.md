@@ -48,9 +48,13 @@ src/
 - Main headline with gradient animation
 - Tagline badge
 - Dual CTAs (primary: "Get Started Free", secondary: "Learn More")
-- Stats cards (10K+ Artists, 50K+ Posts, 5K+ Projects)
-- Hero visual placeholder
-- Trending sidebar card
+- Centered hero visual placeholder
+- Stats cards (10K+ Artists, 50K+ Posts, 5K+ Projects) displayed below hero content
+
+**Design Notes:**
+- Fully centered layout for visual balance
+- Stats positioned below main content in a responsive horizontal row
+- Enhanced shadows for depth and section separation
 
 **Future Expansion:**
 - Replace placeholder with product screenshot/video
@@ -158,6 +162,13 @@ JavaScript smooth scrolling is enabled via CSS: `scroll-behavior: smooth`
 
 ## Spacing & Typography
 
+### Section Shadows & Visual Separation
+All landing sections now include refined shadow styling for better visual depth and separation:
+- Shadow utility: `shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]`
+- Applied to: ValuePropsSection, FeatureGridSection, ProductVisualSection, SocialProofSection, FAQSection
+- FinalCTASection uses slightly heavier shadow: `shadow-[0_8px_30px_-5px_rgba(0,0,0,0.12)]`
+- Shadows remain subtle, accessible, and performant
+
 ### Vertical Rhythm
 Sections use consistent padding:
 - **Desktop:** `py-16 md:py-20` (64-80px)
@@ -180,19 +191,25 @@ Sections use consistent padding:
 ### MarketingFooter (4-column layout)
 
 **Columns:**
-1. **Product:** Features, Changelog (placeholder), Roadmap (placeholder)
-2. **Resources:** Documentation (placeholder), Support (placeholder), FAQ (anchor link)
-3. **Company:** About (anchor link), Contact (placeholder)
-4. **Legal:** Privacy Policy (placeholder), Terms of Service (placeholder)
+1. **Product:** Features, Changelog (disabled), Roadmap (disabled)
+2. **Resources:** Documentation (disabled), Support (disabled), FAQ (anchor link)
+3. **Company:** About (anchor link), Contact (disabled)
+4. **Legal:** Privacy Policy, Terms of Service
+
+**Typography & Color Normalization:**
+- Column headings: `text-neutral-900` with `font-semibold`
+- Active links: `text-neutral-700` with hover to `text-[#0CCE6B]`
+- Disabled items: `text-neutral-500` with `aria-disabled="true"` for better contrast and accessibility
+- Brand logo text: `text-neutral-900` (consistent, no gradient effect in footer)
 
 **Bottom Bar:**
-- Brand logo & name
+- Brand logo & name (consistent neutral-900 text)
 - Copyright notice with dynamic year
 - Social links (Twitter, LinkedIn, GitHub)
 
 **Future Expansion:**
 - Add newsletter signup
-- Enable all placeholder links
+- Enable all disabled placeholder links
 - Add locale selector
 - Mobile app links
 
@@ -310,6 +327,14 @@ For questions about the landing page structure, contact:
 - Marketing for conversion optimization
 
 ## Changelog
+
+### 2025-11-20 - Design Refinement & Visual Polish
+- Centered HeroSection layout with stats below main content
+- Removed Trending sidebar card (design simplification)
+- Added enhanced section shadows for better visual separation
+- Normalized footer typography: disabled items now neutral-500, consistent brand text
+- Verified all anchor IDs present and functional (#features, #about, #faq)
+- Updated tests to reflect new centered layout
 
 ### 2025-11-11 - Initial Consolidation
 - Merged Home, About, Features into single Landing page
