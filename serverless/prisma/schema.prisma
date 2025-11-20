@@ -423,3 +423,14 @@ model AnalyticsEvent {
   @@index([event])
   @@index([createdAt])
 }
+
+generator client {
+  provider      = "prisma-client-js"
+  // Added windows & native for local development and CI cross-platform
+  binaryTargets = ["rhel-openssl-3.0.x", "windows", "native"]
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+# (File unchanged below this line)
