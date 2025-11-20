@@ -26,8 +26,10 @@ import {
   generateClearCookieHeaders,
   extractToken,
   verifyToken,
-  getUserIdFromEvent
+  getUserIdFromEvent,
+  getUserIdFromDecoded
 } from '../utils/tokenManager.js';
+import { generateCorrelationId, logStructured } from '../utils/correlationId.js';
 
 /* ---------------------- Allowlist Cache (cold-start optimization) ---------------------- */
 
@@ -81,11 +83,17 @@ function response(statusCode, bodyObj, cookieHeaders = []) {
 
 async function login(event) {
   const start = nowSeconds();
+  const correlationId = generateCorrelationId();
+  
   try {
     const rlResult = await rateLimit(event, 'login', 10, 60);
     if (!rlResult.allowed) {
-      console.warn('[LOGIN] Rate limit exceeded');
-      return error(429, 'Too many login attempts');
+      logStructured(correlationId, 'rate_limit_exceeded', {
+        endpoint: 'login',
+        limit: 10,
+        window: 60
+      }, 'warn');
+      return error(429, 'Too many login attempts', { correlationId });
     }
 
     const rawBody = event?.body || '';
@@ -112,14 +120,12 @@ async function login(event) {
     // Defense-in-depth: Check allowlist before DB lookup
     const allowlist = getActiveAllowlist();
     if (allowlist.length > 0 && !allowlist.includes(email.toLowerCase())) {
-      console.warn(JSON.stringify({
-        event: 'login_denied',
+      logStructured(correlationId, 'login_denied', {
         email: redactEmail(email),
         reason: 'email_not_in_allowlist',
-        allowlistCount: allowlist.length,
-        ts: new Date().toISOString()
-      }));
-      return error(403, 'Access denied: email not in allowlist');
+        allowlistCount: allowlist.length
+      }, 'warn');
+      return error(403, 'Access denied: email not in allowlist', { correlationId });
     }
 
     const prisma = getPrisma();
@@ -131,8 +137,19 @@ async function login(event) {
       console.warn('[LOGIN] User not found');
       return error(401, 'Invalid credentials');
     }
+    
+    /**
+     * Transitional legacy password support:
+     * Handles users created before passwordHash column was standardized.
+     * TODO: Remove after patch-legacy-passwords.mjs migration is executed.
+     */
+    if (!user.passwordHash && user.password) {
+      console.warn('[LOGIN] Legacy password column detected; using as passwordHash fallback');
+      user.passwordHash = user.password; // assume bcrypt hash
+    }
+    
     if (!user.passwordHash) {
-      console.error('[LOGIN] User missing password hash');
+      console.error('[LOGIN] User missing password hash (no legacy fallback available)');
       return error(500, 'Server error');
     }
 
@@ -144,17 +161,26 @@ async function login(event) {
 
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
-        console.warn('[LOGIN] 2FA required but code missing');
-        return error(401, 'Two-factor code required');
+        logStructured(correlationId, '2fa_code_missing', {
+          userId: user.id,
+          email: redactEmail(user.email)
+        }, 'warn');
+        return error(401, 'Two-factor code required', { correlationId });
       }
       const ok = authenticator.verify({
         token: twoFactorCode,
         secret: user.twoFactorSecret
       });
       if (!ok) {
-        console.warn('[LOGIN] 2FA code invalid');
-        return error(401, 'Invalid two-factor code');
+        logStructured(correlationId, '2fa_code_invalid', {
+          userId: user.id,
+          email: redactEmail(user.email)
+        }, 'warn');
+        return error(401, 'Invalid two-factor code', { correlationId });
       }
+      logStructured(correlationId, '2fa_verified', {
+        userId: user.id
+      }, 'info');
     }
 
     const accessToken = generateAccessToken(user.id);
@@ -193,6 +219,8 @@ async function login(event) {
 /* ---------------------- REGISTER ---------------------- */
 
 async function register(event) {
+  const correlationId = generateCorrelationId();
+  
   try {
     const rawBody = event?.body || '';
     console.log(`[REGISTER] Raw body length: ${rawBody.length}`);
@@ -222,13 +250,11 @@ async function register(event) {
 
     // Check if allowlist is misconfigured when strict mode is enabled
     if (strictAllowlist && allowlist.length < 2) {
-      console.error(JSON.stringify({
-        event: 'allowlist_misconfigured',
+      logStructured(correlationId, 'allowlist_misconfigured', {
         allowlistCount: allowlist.length,
-        requiredCount: 2,
-        ts: new Date().toISOString()
-      }));
-      return error(503, 'Service temporarily unavailable: configuration error');
+        requiredCount: 2
+      }, 'error');
+      return error(503, 'Service temporarily unavailable: configuration error', { correlationId });
     }
 
     if (!enableRegistration) {
@@ -238,14 +264,12 @@ async function register(event) {
         return error(403, 'Registration not permitted');
       }
       if (!allowlist.includes(email.toLowerCase())) {
-        console.warn(JSON.stringify({
-          event: 'registration_denied',
+        logStructured(correlationId, 'registration_denied', {
           email: redactEmail(email),
           reason: 'email_not_in_allowlist',
-          allowlistCount: allowlist.length,
-          ts: new Date().toISOString()
-        }));
-        return error(403, 'Access denied: email not in allowlist');
+          allowlistCount: allowlist.length
+        }, 'warn');
+        return error(403, 'Access denied: email not in allowlist', { correlationId });
       }
     }
 
@@ -532,15 +556,6 @@ async function disable2FA(event) {
   }
 }
 
-/* ---------------------- Legacy 2FA aliases ---------------------- */
-
-async function enable2fa(event) {
-  return enable2FA(event);
-}
-async function verify2fa(event) {
-  return verify2FA(event);
-}
-
 /* ---------------------- USER EXTRACTION (compat wrapper) ---------------------- */
 function getUserFromEvent(event) {
   try {
@@ -564,7 +579,5 @@ export {
   enable2FA,
   verify2FA,
   disable2FA,
-  enable2fa,
-  verify2fa,
   getUserFromEvent
 };

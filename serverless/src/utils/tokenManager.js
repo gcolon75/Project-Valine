@@ -13,16 +13,59 @@ const ACCESS_TOKEN_EXPIRES_IN = '30m'; // 30 minutes
 const REFRESH_TOKEN_EXPIRES_IN = '7d'; // 7 days
 
 /**
+ * Validate JWT secret on startup - fail-fast for default secrets in production
+ */
+function validateJwtSecret() {
+  if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-key-change-in-production') {
+    const errorLog = {
+      timestamp: new Date().toISOString(),
+      event: 'jwt_secret_invalid',
+      level: 'error',
+      message: 'Default JWT secret detected in production environment',
+      environment: process.env.NODE_ENV
+    };
+    console.error(JSON.stringify(errorLog));
+    throw new Error('SECURITY ERROR: Default JWT_SECRET must not be used in production. Set a secure JWT_SECRET environment variable.');
+  }
+}
+
+// Run validation on module load
+validateJwtSecret();
+
+/**
  * Helper to check if we're in production mode
  * Re-evaluated each time to allow tests to change NODE_ENV
  */
 const isProduction = () => process.env.NODE_ENV === 'production';
 
 /**
+ * Normalize cookie domain - trim, lowercase, ensure single leading dot
+ * @param {string} domain - Raw domain value
+ * @returns {string|undefined} Normalized domain or undefined
+ */
+function normalizeCookieDomain(domain) {
+  if (!domain) return undefined;
+  
+  let normalized = domain.trim().toLowerCase();
+  
+  // Remove all leading dots first
+  while (normalized.startsWith('.')) {
+    normalized = normalized.substring(1);
+  }
+  
+  // Add single leading dot if it's a domain (not localhost or IP)
+  if (normalized && !normalized.match(/^localhost$|^\d+\.\d+\.\d+\.\d+$/)) {
+    normalized = '.' + normalized;
+  }
+  
+  return normalized || undefined;
+}
+
+/**
  * Helper to get cookie domain
  * Re-evaluated each time to allow tests to change COOKIE_DOMAIN
  */
-const getCookieDomain = () => process.env.COOKIE_DOMAIN || undefined;
+const getCookieDomain = () => normalizeCookieDomain(process.env.COOKIE_DOMAIN);
 
 /**
  * Generate access token (short-lived)
@@ -175,6 +218,18 @@ export const generateClearCookieHeaders = () => {
 };
 
 /**
+ * Extract user ID from decoded token payload with backward compatibility
+ * Supports both new 'sub' claim (post PR#253) and legacy 'userId' claim
+ * @param {object} tokenPayload - Decoded JWT payload
+ * @returns {string|null} User ID or null
+ */
+export const getUserIdFromDecoded = (tokenPayload) => {
+  if (!tokenPayload) return null;
+  // Prefer standard 'sub' claim, fallback to legacy 'userId' for compatibility
+  return tokenPayload.sub || tokenPayload.userId || null;
+};
+
+/**
  * Get user ID from event (cookie or header)
  * @param {object} event - Lambda event object
  * @returns {string|null} User ID or null
@@ -186,5 +241,5 @@ export const getUserIdFromEvent = (event) => {
   const decoded = verifyToken(token);
   if (!decoded || decoded.type !== 'access') return null;
   
-  return decoded.sub || null; // Use standard JWT 'sub' claim
+  return getUserIdFromDecoded(decoded);
 };

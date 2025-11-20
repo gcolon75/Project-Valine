@@ -3,6 +3,27 @@
  * Includes CORS, security headers, and content-type helpers
  */
 
+// Service version - re-evaluated each time to allow tests to change it
+const getServiceVersion = () => process.env.SERVICE_VERSION || '0.0.1';
+
+/**
+ * Get auth mode from environment configuration
+ * @returns {string} Current auth mode
+ */
+const getAuthMode = () => {
+  const registrationEnabled = process.env.ENABLE_REGISTRATION === 'true';
+  const hasAllowlist = (process.env.ALLOWED_USER_EMAILS || '').trim().length > 0;
+  
+  if (!registrationEnabled && hasAllowlist) {
+    return 'owner-only';
+  } else if (!registrationEnabled) {
+    return 'registration-disabled';
+  } else if (hasAllowlist) {
+    return 'allowlist-restricted';
+  }
+  return 'open';
+};
+
 /**
  * Get allowed CORS origins based on environment
  * @returns {string[]} List of allowed origins
@@ -50,21 +71,38 @@ export const getCorsHeaders = (event) => {
 };
 
 export function json(data, statusCode = 200, extra = {}) {
+  // Extract and remove special properties
+  const event = extra.event;
+  const correlationId = extra.correlationId;
+  
+  // Create clean extra object without special properties
+  const cleanExtra = { ...extra };
+  delete cleanExtra.event;
+  delete cleanExtra.correlationId;
+  
   // Merge CORS headers with extra headers
-  const corsHeaders = getCorsHeaders(extra.event);
-  delete extra.event; // Remove event from extra headers
+  const corsHeaders = getCorsHeaders(event);
+  
+  const headers = {
+    'content-type': 'application/json',
+    ...cleanExtra, // Spread extra first so it can be overridden
+    ...corsHeaders, // Then CORS headers (higher priority)
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+    'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+    'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+    'x-service-version': getServiceVersion(),
+    'x-auth-mode': getAuthMode(),
+  };
+  
+  // Add correlation ID header if provided
+  if (correlationId) {
+    headers['x-correlation-id'] = correlationId;
+  }
   
   return {
     statusCode,
-    headers: {
-      'content-type': 'application/json',
-      ...corsHeaders,
-      'x-content-type-options': 'nosniff',
-      'referrer-policy': 'strict-origin-when-cross-origin',
-      'permissions-policy': 'camera=(), microphone=(), geolocation=()',
-      'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
-      ...extra,
-    },
+    headers,
     body: JSON.stringify(data),
   };
 }
