@@ -1,4 +1,4 @@
-# Project Valine
+# Joint
 
 A collaborative platform for voice actors, writers, and artists to create and share scripts, auditions, and creative content.
 
@@ -16,7 +16,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ---
 
-> 📖 **New to Project Valine?** Start with:
+> 📖 **New to Joint?** Start with:
 > - **[WORKING_STATE_SUMMARY.md](WORKING_STATE_SUMMARY.md)** - Current working state (frontend, auth, health)
 > - **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Readiness, security posture, QA coverage
 > - **[docs/](docs/README.md)** - Complete documentation index
@@ -41,7 +41,7 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ## Overview
 
-Project Valine is a **LinkedIn-style collaborative platform** specifically designed for voice actors, writers, and artists. The platform enables creative professionals to create and share scripts, auditions, and creative content while managing collaboration workflows through an AWS-hosted serverless infrastructure with AI-powered automation via Discord bots.
+Joint is a **LinkedIn-style collaborative platform** specifically designed for voice actors, writers, and artists. The platform enables creative professionals to create and share scripts, auditions, and creative content while managing collaboration workflows through an AWS-hosted serverless infrastructure with AI-powered automation via Discord bots.
 
 ### High-Level Goals
 
@@ -172,7 +172,7 @@ Top 3 Recurring Assertion Failures:
 
 ### For All Users (Public Pages)
 - ✅ Browse landing page with feature showcase
-- ✅ Read about Project Valine and view features
+- ✅ Read about Joint and view features
 - ✅ Switch between light/dark themes
 - ✅ Create new account or sign in
 
@@ -328,7 +328,7 @@ Top 3 Recurring Assertion Failures:
 
 ### Email Allowlist Enforcement
 
-**Project Valine uses an email-based allowlist to restrict account creation and application access to pre-approved users only.**
+**Joint uses an email-based allowlist to restrict account creation and application access to pre-approved users only.**
 
 This security measure ensures that only authorized individuals can register, authenticate, and access protected features. The allowlist is enforced at multiple layers for defense in depth.
 
@@ -550,7 +550,7 @@ node scripts/analyze-orchestration-run.mjs <run-id> \
 
 ## Secrets & Configuration
 
-Project Valine uses environment variables for configuration across frontend, backend, and CI/CD. Proper secrets management is critical for security and operational stability.
+Joint uses environment variables for configuration across frontend, backend, and CI/CD. Proper secrets management is critical for security and operational stability.
 
 ### 📚 Complete Documentation
 
@@ -722,7 +722,7 @@ See [scripts/VERIFICATION_GUIDE.md](scripts/VERIFICATION_GUIDE.md) for comprehen
 
 ### Overview
 
-Project Valine uses CloudFront for content delivery with proper SPA (Single Page Application) routing. The infrastructure ensures:
+Joint uses CloudFront for content delivery with proper SPA (Single Page Application) routing. The infrastructure ensures:
 - Extension-less routes (e.g., `/about`, `/users/123`) fallback to `index.html` for client-side routing
 - Asset requests (`.js`, `.css`, etc.) are served with correct MIME types and never substituted with HTML
 - Previous bundle versions are retained during deployments to prevent 404s for cached users
@@ -895,7 +895,7 @@ See [White Screen Runbook § SRI](docs/white-screen-runbook.md#65-subresource-in
 
 ### Cross-Platform Tools
 
-Project Valine includes diagnostic scripts in multiple languages for maximum compatibility:
+Joint includes diagnostic scripts in multiple languages for maximum compatibility:
 
 **Bash** (Linux/macOS):
 ```bash
@@ -1120,7 +1120,7 @@ See example configuration files:
 
 ## Performance Optimizations
 
-Project Valine implements a multi-layered caching strategy to minimize latency and improve user experience:
+Joint implements a multi-layered caching strategy to minimize latency and improve user experience:
 
 ### Caching Layer
 
