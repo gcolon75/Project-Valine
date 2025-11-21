@@ -47,10 +47,10 @@ export default function ConsentBanner() {
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex-1">
           <h3 id="consent-banner-title" className="font-semibold mb-1">
-            Help improve Project Valine
+            Help improve Joint
           </h3>
           <p id="consent-banner-description" className="text-sm text-gray-300">
-            Help improve Project Valine by allowing anonymous usage analytics. No personal data collected.
+            Help improve Joint by allowing anonymous usage analytics. No personal data collected.
           </p>
         </div>
         

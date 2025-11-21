@@ -1,6 +1,6 @@
 # UI Component Library
 
-This directory contains reusable, accessible UI components for the Project Valine design system.
+This directory contains reusable, accessible UI components for the Joint design system.
 
 ## Components
 

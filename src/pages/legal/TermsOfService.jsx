@@ -151,7 +151,7 @@ export default function TermsOfService() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Limitation of Liability</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, PROJECT VALINE SHALL NOT BE LIABLE FOR:
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, JOINT SHALL NOT BE LIABLE FOR:
             </p>
             <ul className="list-disc pl-6 text-neutral-700 space-y-2">
               <li>Any indirect, incidental, special, consequential, or punitive damages</li>
