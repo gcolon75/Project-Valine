@@ -8,6 +8,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// Core User & Authentication
+// ============================================
+
 model User {
   id                 String    @id @default(uuid())
   username           String    @unique
@@ -15,20 +19,21 @@ model User {
   normalizedEmail    String    @unique // lowercase, trimmed for deduplication
   emailVerified      Boolean   @default(false) // Email verification status
   emailVerifiedAt    DateTime? // When email was verified
-  passwordHash       String // hashed password (bcryptjs)
-  displayName        String
+  passwordHash       String // bcrypt hashed password (NOT 'password')
+  displayName        String?
   bio                String?
   avatar             String?
-  name               String?
+  name               String? // Full legal name (optional)
   role               String    @default("artist") // 'artist' | 'observer'
-  status             String    @default("pending") // 'pending' | 'active' | 'suspended'
-  theme              String? // 'light' | 'dark' - theme preference
-  onboardingComplete Boolean   @default(false) // Onboarding completion status
+  status             String    @default("active") // 'pending' | 'active' | 'suspended'
+  theme              String?   @default("light") // 'light' | 'dark' - theme preference
+  onboardingComplete Boolean   @default(false) // Onboarding completion status (PR #262)
   twoFactorEnabled   Boolean   @default(false) // 2FA enrollment status
   twoFactorSecret    String? // TOTP secret (encrypted)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
+  // Relations
   scripts                 Script[]
   auditions               Audition[]
   posts                   Post[]
@@ -53,36 +58,59 @@ model User {
   sessions                Session[]
   auditLogs               AuditLog[]
 
+  @@index([email])
+  @@index([normalizedEmail])
+  @@index([username])
+  @@index([status])
+  @@index([createdAt])
   @@map("users")
 }
+
+// ============================================
+// Content Models
+// ============================================
 
 model Script {
   id        String   @id @default(cuid())
   title     String
-  summary   String
+  summary   String   @db.Text
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("scripts")
 }
 
 model Audition {
   id        String   @id @default(cuid())
   title     String
-  summary   String
+  summary   String   @db.Text
   hostId    String
-  host      User     @relation(fields: [hostId], references: [id])
+  host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hostId])
+  @@index([createdAt])
+  @@map("auditions")
 }
 
 model Post {
   id        String   @id @default(uuid())
   content   String   @db.Text
-  media     String[]
+  media     String[] // Array of S3 keys or URLs
+  tags      String[] // PR #262: Curated tags (max 5)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([authorId])
+  @@index([createdAt])
+  @@index([tags])
   @@map("posts")
 }
 
@@ -91,9 +119,11 @@ model Reel {
   videoUrl  String
   thumbnail String?
   caption   String?  @db.Text
+  tags      String[] // PR #262: Curated tags (max 5)
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   comments  Comment[]
   likes     Like[]
@@ -101,6 +131,7 @@ model Reel {
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([tags])
   @@map("reels")
 }
 
@@ -112,9 +143,11 @@ model Comment {
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([reelId])
   @@index([authorId])
+  @@index([createdAt])
   @@map("comments")
 }
 
@@ -146,6 +179,10 @@ model Bookmark {
   @@map("bookmarks")
 }
 
+// ============================================
+// Messaging & Notifications
+// ============================================
+
 model Conversation {
   id            String    @id @default(uuid())
   title         String?
@@ -157,6 +194,7 @@ model Conversation {
   participants ConversationParticipant[]
   messages     Message[]
 
+  @@index([lastMessageAt])
   @@map("conversations")
 }
 
@@ -170,6 +208,7 @@ model ConversationParticipant {
 
   @@unique([conversationId, userId])
   @@index([userId])
+  @@index([conversationId])
   @@map("conversation_participants")
 }
 
@@ -184,12 +223,13 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([createdAt])
   @@map("messages")
 }
 
 model Notification {
   id          String   @id @default(uuid())
-  type        String // 'like', 'comment', 'follow', 'message'
+  type        String // 'like' | 'comment' | 'follow' | 'message' | 'reel_request'
   message     String   @db.Text
   recipientId String
   recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
@@ -201,35 +241,43 @@ model Notification {
 
   @@index([recipientId, isRead])
   @@index([createdAt])
+  @@index([type])
   @@map("notifications")
 }
 
 model ConnectionRequest {
   id         String   @id @default(uuid())
   senderId   String
-  sender     User     @relation("sender", fields: [senderId], references: [id])
+  sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId String
-  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
-  status     String   @default("pending")
-  message    String?
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     String   @default("pending") // 'pending' | 'accepted' | 'rejected'
+  message    String?  @db.Text
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
   @@map("connection_requests")
 }
+
+// ============================================
+// Profile & Portfolio
+// ============================================
 
 model Profile {
   id          String   @id @default(uuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vanityUrl   String   @unique
-  headline    String?
-  title       String? // Professional title (e.g., "Senior Voice Actor")
+  headline    String? // Short professional headline
   bio         String?  @db.Text
-  roles       String[] // ["Actor", "Director", "Writer"]
+  roles       String[] // PR #262: ["Voice Actor", "Director", "Writer"] - from curated list
+  tags        String[] // PR #262: Curated tags (max 5 from 30-tag taxonomy)
   location    Json? // { city: "Los Angeles", state: "CA", country: "USA" }
   privacy     Json     @default("{}") // { visibility: "public|network|private", showEmail: false, showPhone: false }
-  tags        String[] // searchable tags
   socialLinks Json? // { website: "", instagram: "", imdb: "", linkedin: "", showreel: "" }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -239,7 +287,9 @@ model Profile {
   links   ProfileLink[]
 
   @@index([vanityUrl])
+  @@index([userId])
   @@index([roles])
+  @@index([tags])
   @@map("profiles")
 }
 
@@ -266,18 +316,18 @@ model Media {
   id              String   @id @default(uuid())
   profileId       String
   profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  type            String // "image" | "video" | "pdf"
+  type            String // "image" | "video" | "pdf" | "audio"
   s3Key           String // S3 object key
   posterS3Key     String? // For videos - thumbnail/poster frame
   title           String?
   description     String?  @db.Text
-  duration        Int? // For videos in seconds
-  width           Int?
-  height          Int?
+  duration        Int? // For videos/audio in seconds
+  width           Int? // For images/videos
+  height          Int? // For images/videos
   fileSize        Int? // In bytes
   privacy         String   @default("public") // "public" | "on-request" | "private"
   processedStatus String   @default("pending") // "pending" | "processing" | "complete" | "failed"
-  metadata        Json? // Additional metadata like tags, derivatives, etc.
+  metadata        Json? // Additional metadata like tags, derivatives, codec info, etc.
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -287,6 +337,7 @@ model Media {
   @@index([type])
   @@index([privacy])
   @@index([processedStatus])
+  @@index([createdAt])
   @@map("media")
 }
 
@@ -300,12 +351,13 @@ model Credit {
   year        Int?
   description String?  @db.Text
   orderIndex  Int      @default(0) // For custom ordering
-  metadata    Json? // Additional fields like genre, awards, etc.
+  metadata    Json? // Additional fields like genre, awards, links, etc.
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([profileId])
   @@index([year])
+  @@index([profileId, orderIndex])
   @@map("credits")
 }
 
@@ -381,7 +433,7 @@ model TwoFactorRecoveryCode {
   id        String    @id @default(uuid())
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      String // hashed recovery code
+  code      String // bcrypt hashed recovery code (PR #255: Never store plaintext)
   used      Boolean   @default(false)
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -395,9 +447,9 @@ model Session {
   id           String   @id @default(uuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String   @unique // Session token or JWT ID
+  token        String   @unique // Session token or JWT ID (jti claim)
   ipAddress    String?
-  userAgent    String?
+  userAgent    String?  @db.Text
   expiresAt    DateTime
   lastActivity DateTime @default(now())
   createdAt    DateTime @default(now())
@@ -413,17 +465,18 @@ model AuditLog {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action     String // "profile.update", "email.change", "password.change", etc.
-  resource   String // Resource type: "profile", "user", "settings"
+  action     String // "profile.update" | "email.change" | "password.change" | "2fa.enable" | etc.
+  resource   String // Resource type: "profile" | "user" | "settings" | "media"
   resourceId String? // ID of the affected resource
-  changes    Json? // Before/after values
+  changes    Json? // Before/after values (redacted per PR #255)
   ipAddress  String?
-  userAgent  String?
+  userAgent  String?  @db.Text
   metadata   Json? // Additional context
   createdAt  DateTime @default(now())
 
   @@index([userId])
   @@index([action])
+  @@index([resource])
   @@index([createdAt])
   @@index([userId, createdAt])
   @@map("audit_logs")
