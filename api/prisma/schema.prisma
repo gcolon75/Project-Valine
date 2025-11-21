@@ -1,54 +1,57 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
-  email           String   @unique
-  normalizedEmail String   @unique // lowercase, trimmed for deduplication
-  emailVerified   Boolean  @default(false) // Email verification status
-  emailVerifiedAt DateTime? // When email was verified
-  passwordHash    String   // hashed password (bcryptjs)
-  displayName     String
-  bio             String?
-  avatar          String?
-  name            String?
-  role            String   @default("artist") // 'artist' | 'observer'
-  status          String   @default("pending") // 'pending' | 'active' | 'suspended'
-  theme           String?  // 'light' | 'dark' - theme preference
-  twoFactorEnabled Boolean @default(false) // 2FA enrollment status
-  twoFactorSecret  String? // TOTP secret (encrypted)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 
-  scripts            Script[]
-  auditions          Audition[]
-  posts              Post[]
-  reels              Reel[]
-  comments           Comment[]
-  likes              Like[]
-  bookmarks          Bookmark[]
-  sentRequests       ConnectionRequest[] @relation("sender")
-  receivedRequests   ConnectionRequest[] @relation("receiver")
-  sentMessages       Message[]           @relation("sender")
-  conversations      ConversationParticipant[]
-  notifications      Notification[]      @relation("recipient")
-  triggeredNotifs    Notification[]      @relation("triggerer")
-  profile            Profile?
-  settings           UserSettings?
-  sentReelRequests   ReelRequest[]       @relation("requester")
-  receivedReelRequests ReelRequest[]     @relation("owner")
-  profileLinks       ProfileLink[]
+model User {
+  id                 String    @id @default(uuid())
+  username           String    @unique
+  email              String    @unique
+  normalizedEmail    String    @unique // lowercase, trimmed for deduplication
+  emailVerified      Boolean   @default(false) // Email verification status
+  emailVerifiedAt    DateTime? // When email was verified
+  passwordHash       String // hashed password (bcryptjs)
+  displayName        String
+  bio                String?
+  avatar             String?
+  name               String?
+  role               String    @default("artist") // 'artist' | 'observer'
+  status             String    @default("pending") // 'pending' | 'active' | 'suspended'
+  theme              String? // 'light' | 'dark' - theme preference
+  onboardingComplete Boolean   @default(false) // Onboarding completion status
+  twoFactorEnabled   Boolean   @default(false) // 2FA enrollment status
+  twoFactorSecret    String? // TOTP secret (encrypted)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  scripts                 Script[]
+  auditions               Audition[]
+  posts                   Post[]
+  reels                   Reel[]
+  comments                Comment[]
+  likes                   Like[]
+  bookmarks               Bookmark[]
+  sentRequests            ConnectionRequest[]       @relation("sender")
+  receivedRequests        ConnectionRequest[]       @relation("receiver")
+  sentMessages            Message[]                 @relation("sender")
+  conversations           ConversationParticipant[]
+  notifications           Notification[]            @relation("recipient")
+  triggeredNotifs         Notification[]            @relation("triggerer")
+  profile                 Profile?
+  settings                UserSettings?
+  sentReelRequests        ReelRequest[]             @relation("requester")
+  receivedReelRequests    ReelRequest[]             @relation("owner")
+  profileLinks            ProfileLink[]
   emailVerificationTokens EmailVerificationToken[]
-  passwordResetTokens PasswordResetToken[]
-  twoFactorRecoveryCodes TwoFactorRecoveryCode[]
-  sessions           Session[]
-  auditLogs          AuditLog[]
+  passwordResetTokens     PasswordResetToken[]
+  twoFactorRecoveryCodes  TwoFactorRecoveryCode[]
+  sessions                Session[]
+  auditLogs               AuditLog[]
 
   @@map("users")
 }
@@ -61,6 +64,7 @@ model Script {
   author    User     @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
 }
+
 model Audition {
   id        String   @id @default(cuid())
   title     String
@@ -78,26 +82,26 @@ model Post {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@map("posts")
   @@index([authorId])
+  @@map("posts")
 }
 
 model Reel {
-  id          String   @id @default(uuid())
-  videoUrl    String
-  thumbnail   String?
-  caption     String?  @db.Text
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  
-  comments    Comment[]
-  likes       Like[]
-  bookmarks   Bookmark[]
+  id        String   @id @default(uuid())
+  videoUrl  String
+  thumbnail String?
+  caption   String?  @db.Text
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  @@map("reels")
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
   @@index([authorId])
   @@index([createdAt])
+  @@map("reels")
 }
 
 model Comment {
@@ -109,9 +113,9 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@map("comments")
   @@index([reelId])
   @@index([authorId])
+  @@map("comments")
 }
 
 model Like {
@@ -122,10 +126,10 @@ model Like {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@map("likes")
   @@unique([reelId, userId])
   @@index([reelId])
   @@index([userId])
+  @@map("likes")
 }
 
 model Bookmark {
@@ -136,19 +140,19 @@ model Bookmark {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@map("bookmarks")
   @@unique([reelId, userId])
   @@index([reelId])
   @@index([userId])
+  @@map("bookmarks")
 }
 
 model Conversation {
-  id           String   @id @default(uuid())
-  title        String?
-  lastMessage  String?  @db.Text
+  id            String    @id @default(uuid())
+  title         String?
+  lastMessage   String?   @db.Text
   lastMessageAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   participants ConversationParticipant[]
   messages     Message[]
@@ -164,9 +168,9 @@ model ConversationParticipant {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt       DateTime     @default(now())
 
-  @@map("conversation_participants")
   @@unique([conversationId, userId])
   @@index([userId])
+  @@map("conversation_participants")
 }
 
 model Message {
@@ -178,26 +182,26 @@ model Message {
   sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
 
-  @@map("messages")
   @@index([conversationId])
   @@index([senderId])
+  @@map("messages")
 }
 
 model Notification {
   id          String   @id @default(uuid())
-  type        String   // 'like', 'comment', 'follow', 'message'
+  type        String // 'like', 'comment', 'follow', 'message'
   message     String   @db.Text
   recipientId String
   recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
   triggererId String?
   triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id], onDelete: SetNull)
   isRead      Boolean  @default(false)
-  metadata    Json?    // Additional data like reelId, commentId, etc.
+  metadata    Json? // Additional data like reelId, commentId, etc.
   createdAt   DateTime @default(now())
 
-  @@map("notifications")
   @@index([recipientId, isRead])
   @@index([createdAt])
+  @@map("notifications")
 }
 
 model ConnectionRequest {
@@ -210,8 +214,8 @@ model ConnectionRequest {
   message    String?
   createdAt  DateTime @default(now())
 
-  @@map("connection_requests")
   @@unique([senderId, receiverId])
+  @@map("connection_requests")
 }
 
 model Profile {
@@ -220,23 +224,23 @@ model Profile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vanityUrl   String   @unique
   headline    String?
-  title       String?  // Professional title (e.g., "Senior Voice Actor")
+  title       String? // Professional title (e.g., "Senior Voice Actor")
   bio         String?  @db.Text
   roles       String[] // ["Actor", "Director", "Writer"]
-  location    Json?    // { city: "Los Angeles", state: "CA", country: "USA" }
+  location    Json? // { city: "Los Angeles", state: "CA", country: "USA" }
   privacy     Json     @default("{}") // { visibility: "public|network|private", showEmail: false, showPhone: false }
   tags        String[] // searchable tags
-  socialLinks Json?    // { website: "", instagram: "", imdb: "", linkedin: "", showreel: "" }
+  socialLinks Json? // { website: "", instagram: "", imdb: "", linkedin: "", showreel: "" }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  media       Media[]
-  credits     Credit[]
-  links       ProfileLink[]
+  media   Media[]
+  credits Credit[]
+  links   ProfileLink[]
 
-  @@map("profiles")
   @@index([vanityUrl])
   @@index([roles])
+  @@map("profiles")
 }
 
 model ProfileLink {
@@ -245,76 +249,76 @@ model ProfileLink {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   profileId String
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  label     String   // 1-40 characters
+  label     String // 1-40 characters
   url       String   @db.Text
-  type      String   // "website" | "imdb" | "showreel" | "other"
+  type      String // "website" | "imdb" | "showreel" | "other"
   position  Int      @default(0) // Order/position for custom sorting
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("profile_links")
   @@index([userId])
   @@index([profileId])
   @@index([userId, position])
+  @@map("profile_links")
 }
 
 model Media {
   id              String   @id @default(uuid())
   profileId       String
   profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  type            String   // "image" | "video" | "pdf"
-  s3Key           String   // S3 object key
-  posterS3Key     String?  // For videos - thumbnail/poster frame
+  type            String // "image" | "video" | "pdf"
+  s3Key           String // S3 object key
+  posterS3Key     String? // For videos - thumbnail/poster frame
   title           String?
   description     String?  @db.Text
-  duration        Int?     // For videos in seconds
+  duration        Int? // For videos in seconds
   width           Int?
   height          Int?
-  fileSize        Int?     // In bytes
+  fileSize        Int? // In bytes
   privacy         String   @default("public") // "public" | "on-request" | "private"
   processedStatus String   @default("pending") // "pending" | "processing" | "complete" | "failed"
-  metadata        Json?    // Additional metadata like tags, derivatives, etc.
+  metadata        Json? // Additional metadata like tags, derivatives, etc.
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  reelRequests    ReelRequest[]
+  reelRequests ReelRequest[]
 
-  @@map("media")
   @@index([profileId])
   @@index([type])
   @@index([privacy])
   @@index([processedStatus])
+  @@map("media")
 }
 
 model Credit {
   id          String   @id @default(uuid())
   profileId   String
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  title       String   // Project/show title
-  role        String   // Character or position
-  company     String?  // Production company
+  title       String // Project/show title
+  role        String // Character or position
+  company     String? // Production company
   year        Int?
   description String?  @db.Text
   orderIndex  Int      @default(0) // For custom ordering
-  metadata    Json?    // Additional fields like genre, awards, etc.
+  metadata    Json? // Additional fields like genre, awards, etc.
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("credits")
   @@index([profileId])
   @@index([year])
+  @@map("credits")
 }
 
 model UserSettings {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notifications     Json     @default("{}") // { email: true, push: true, reelRequests: true, messages: true }
-  accountSecurity   Json     @default("{}") // { twoFactorEnabled: false, loginNotifications: true }
-  privacy           Json     @default("{}") // { showActivity: true, allowMessagesFrom: "everyone" }
-  billing           Json?    // Reference to billing info (not stored directly for PCI compliance)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications   Json     @default("{}") // { email: true, push: true, reelRequests: true, messages: true }
+  accountSecurity Json     @default("{}") // { twoFactorEnabled: false, loginNotifications: true }
+  privacy         Json     @default("{}") // { showActivity: true, allowMessagesFrom: "everyone" }
+  billing         Json? // Reference to billing info (not stored directly for PCI compliance)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("user_settings")
 }
@@ -333,11 +337,11 @@ model ReelRequest {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("reel_requests")
   @@unique([mediaId, requesterId])
   @@index([mediaId])
   @@index([requesterId])
   @@index([ownerId, status])
+  @@map("reel_requests")
 }
 
 // ============================================
@@ -352,10 +356,10 @@ model EmailVerificationToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  @@map("email_verification_tokens")
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 model PasswordResetToken {
@@ -367,24 +371,24 @@ model PasswordResetToken {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@map("password_reset_tokens")
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model TwoFactorRecoveryCode {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      String   // hashed recovery code
-  used      Boolean  @default(false)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String // hashed recovery code
+  used      Boolean   @default(false)
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
-  @@map("two_factor_recovery_codes")
   @@index([userId])
   @@index([userId, used])
+  @@map("two_factor_recovery_codes")
 }
 
 model Session {
@@ -398,31 +402,29 @@ model Session {
   lastActivity DateTime @default(now())
   createdAt    DateTime @default(now())
 
-  @@map("sessions")
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
   @@index([userId, expiresAt])
+  @@map("sessions")
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    String   // "profile.update", "email.change", "password.change", etc.
-  resource  String   // Resource type: "profile", "user", "settings"
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String // "profile.update", "email.change", "password.change", etc.
+  resource   String // Resource type: "profile", "user", "settings"
   resourceId String? // ID of the affected resource
-  changes   Json?    // Before/after values
-  ipAddress String?
-  userAgent String?
-  metadata  Json?    // Additional context
-  createdAt DateTime @default(now())
+  changes    Json? // Before/after values
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json? // Additional context
+  createdAt  DateTime @default(now())
 
-  @@map("audit_logs")
   @@index([userId])
   @@index([action])
   @@index([createdAt])
   @@index([userId, createdAt])
+  @@map("audit_logs")
 }
-
-

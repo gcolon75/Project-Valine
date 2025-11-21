@@ -613,6 +613,312 @@ export const updateProfile = async (event) => {
   }
 };
 
+// Allowed roles for profile updates (from spec Phase 6)
+const ALLOWED_ROLES = [
+  'Voice Actor',
+  'Writer',
+  'Director',
+  'Producer',
+  'Editor',
+  'Sound Designer',
+  'Casting Director',
+];
+
+// Allowed tags (copied from src/constants/tags.js for reliability in serverless environment)
+const ALLOWED_TAGS = [
+  // Performance Types
+  'Monologue',
+  'Drama',
+  'Comedy',
+  'Improv',
+  'Character',
+  'Stage',
+  // Genres
+  'SciFi',
+  'Fantasy',
+  'Horror',
+  'Romance',
+  'Thriller',
+  'Action',
+  // Formats
+  'Narration',
+  'Animation',
+  'Commercial',
+  'Audiobook',
+  'Podcast',
+  'VoiceOver',
+  // Content Types
+  'Reading',
+  'Reel',
+  'ShortFilm',
+  'Feature',
+  'Pilot',
+  'ColdRead',
+  // Skills
+  'Dialect',
+  'Playwriting',
+  'Directing',
+  'Producing',
+  'Editing',
+  'Casting',
+];
+
+const MAX_TAGS = 5;
+
+/**
+ * PATCH /api/me/profile - Update current user's profile
+ * 
+ * This endpoint is designed for onboarding flow and profile updates.
+ * It updates both User and Profile records for the authenticated user.
+ * 
+ * Supported fields:
+ * - displayName (User): string, required
+ * - username (User): 3-30 chars, alphanumeric + underscore/hyphen, unique
+ * - headline (Profile): max 100 chars
+ * - bio (Profile): max 500 chars
+ * - roles (Profile): array, must be in ALLOWED_ROLES
+ * - tags (Profile): array, max 5, validated against ALLOWED_TAGS
+ * - avatarUrl (User): string, URL to avatar image
+ * - bannerUrl (Profile): string, URL to banner image
+ */
+export const updateMyProfile = async (event) => {
+  try {
+    // Get authenticated user ID
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    console.log('[updateMyProfile] User ID:', userId);
+
+    // Parse request body
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (err) {
+      return error(400, 'Invalid JSON');
+    }
+
+    const { 
+      displayName, 
+      username, 
+      headline, 
+      bio, 
+      roles, 
+      tags, 
+      avatarUrl, 
+      bannerUrl 
+    } = body;
+
+    console.log('[updateMyProfile] Update fields:', Object.keys(body));
+
+    // Validation
+    const errors = [];
+
+    // Username validation
+    if (username !== undefined) {
+      // Check alphanumeric + underscore/hyphen
+      if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username)) {
+        errors.push('Username must be 3-30 characters (alphanumeric, underscore, hyphen)');
+      } else {
+        // Check uniqueness
+        const prisma = getPrisma();
+        const existing = await prisma.user.findFirst({
+          where: { 
+            username, 
+            id: { not: userId } 
+          },
+        });
+        
+        if (existing) {
+          errors.push('Username already taken');
+        }
+      }
+    }
+
+    // Headline validation
+    if (headline !== undefined && headline !== null && headline.length > 100) {
+      errors.push('Headline must be 100 characters or less');
+    }
+
+    // Bio validation
+    if (bio !== undefined && bio !== null && bio.length > 500) {
+      errors.push('Bio must be 500 characters or less');
+    }
+
+    // Roles validation
+    if (roles !== undefined) {
+      if (!Array.isArray(roles)) {
+        errors.push('Roles must be an array');
+      } else {
+        const invalidRoles = roles.filter(r => !ALLOWED_ROLES.includes(r));
+        if (invalidRoles.length > 0) {
+          errors.push(`Invalid roles: ${invalidRoles.join(', ')}`);
+        }
+      }
+    }
+
+    // Tags validation
+    if (tags !== undefined) {
+      if (!Array.isArray(tags)) {
+        errors.push('Tags must be an array');
+      } else if (tags.length > MAX_TAGS) {
+        errors.push(`Maximum ${MAX_TAGS} tags allowed`);
+      } else {
+        // Validate each tag against allowed list
+        const invalidTags = tags.filter(tag => !ALLOWED_TAGS.includes(tag));
+        if (invalidTags.length > 0) {
+          errors.push(`Invalid tags: ${invalidTags.join(', ')}`);
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      console.log('[updateMyProfile] Validation errors:', errors);
+      return error(400, 'Validation failed', { errors });
+    }
+
+    // Check allowlist (owner-only mode)
+    const strictAllowlist = process.env.STRICT_ALLOWLIST === '1';
+    if (strictAllowlist) {
+      const prisma = getPrisma();
+      const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim());
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      
+      if (!allowedEmails.includes(user.email)) {
+        console.log('[updateMyProfile] User not in allowlist:', user.email);
+        return error(403, 'Access denied - not in allowlist');
+      }
+    }
+
+    // Update user and profile
+    const prisma = getPrisma();
+    
+    try {
+      // Prepare user update data
+      const userUpdateData = {};
+      if (username !== undefined) userUpdateData.username = username;
+      if (displayName !== undefined) userUpdateData.displayName = displayName;
+      if (avatarUrl !== undefined) userUpdateData.avatar = avatarUrl;
+
+      // Update user if there are changes
+      let updatedUser;
+      if (Object.keys(userUpdateData).length > 0) {
+        console.log('[updateMyProfile] Updating user fields:', Object.keys(userUpdateData));
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: userUpdateData,
+        });
+      } else {
+        updatedUser = await prisma.user.findUnique({ where: { id: userId } });
+      }
+
+      // Prepare profile update data
+      const profileUpdateData = {};
+      if (headline !== undefined) profileUpdateData.headline = headline;
+      if (bio !== undefined) profileUpdateData.bio = bio;
+      if (roles !== undefined) profileUpdateData.roles = roles;
+      if (tags !== undefined) profileUpdateData.tags = tags;
+      // Note: bannerUrl would need a field in the Profile schema
+      // For now, we'll skip it or store in metadata
+
+      // Get or create profile
+      let profile = await prisma.profile.findUnique({
+        where: { userId },
+        include: {
+          links: {
+            orderBy: { position: 'asc' },
+          },
+        },
+      });
+
+      if (!profile) {
+        // Create profile if it doesn't exist
+        console.log('[updateMyProfile] Creating new profile for user');
+        profile = await prisma.profile.create({
+          data: {
+            userId,
+            vanityUrl: updatedUser.username,
+            headline: headline || '',
+            bio: bio || '',
+            roles: roles || [],
+            tags: tags || [],
+          },
+          include: {
+            links: {
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+      } else if (Object.keys(profileUpdateData).length > 0) {
+        // Update profile
+        console.log('[updateMyProfile] Updating profile fields:', Object.keys(profileUpdateData));
+        profile = await prisma.profile.update({
+          where: { userId },
+          data: profileUpdateData,
+          include: {
+            links: {
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+      }
+
+      // Check if onboarding should be marked complete
+      // Criteria: has displayName, username, and at least one of headline/bio/roles/tags
+      const hasBasicInfo = updatedUser.displayName && updatedUser.username;
+      const hasProfileInfo = profile.headline || profile.bio || 
+                            (profile.roles && profile.roles.length > 0) || 
+                            (profile.tags && profile.tags.length > 0);
+      
+      const shouldMarkOnboardingComplete = hasBasicInfo && hasProfileInfo;
+      
+      // Update onboardingComplete if needed
+      if (shouldMarkOnboardingComplete && !updatedUser.onboardingComplete) {
+        console.log('[updateMyProfile] Marking onboarding as complete');
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: { onboardingComplete: true },
+        });
+      }
+
+      // Return combined profile data
+      const response = {
+        id: profile.id,
+        userId: updatedUser.id,
+        username: updatedUser.username,
+        displayName: updatedUser.displayName,
+        avatar: updatedUser.avatar,
+        vanityUrl: profile.vanityUrl,
+        headline: profile.headline,
+        bio: profile.bio,
+        roles: profile.roles,
+        tags: profile.tags,
+        links: profile.links,
+        onboardingComplete: updatedUser.onboardingComplete,
+      };
+
+      console.log('[updateMyProfile] Update successful');
+      return json(response);
+
+    } catch (dbError) {
+      console.error('[updateMyProfile] Database error:', dbError);
+      
+      // Handle specific Prisma errors
+      if (dbError.code === 'P2002') {
+        // Unique constraint violation
+        return error(409, 'Username or vanity URL already taken');
+      }
+      
+      throw dbError;
+    }
+
+  } catch (e) {
+    console.error('[updateMyProfile] Error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
 /**
  * DELETE /api/profiles/:id
  * Delete profile (owner only)

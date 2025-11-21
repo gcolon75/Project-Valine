@@ -377,6 +377,12 @@ functions:
       - httpApi:
           path: /profiles/id/{id}
           method: put
+  updateMyProfile:
+    handler: src/handlers/profiles.updateMyProfile
+    events:
+      - httpApi:
+          path: /me/profile
+          method: patch
   deleteProfile:
     handler: src/handlers/profiles.deleteProfile
     events:
