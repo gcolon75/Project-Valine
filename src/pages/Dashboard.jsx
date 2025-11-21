@@ -2,7 +2,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart } from "lucide-react";
-import PostComposer from "../components/PostComposer";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
@@ -106,39 +105,39 @@ export default function Dashboard() {
               </div>
             </Card>
 
-            {/* Merged Your Stats - Green Gradient Card */}
-            <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-4 text-white">
-              <h2 className="text-lg font-bold mb-4">Your Stats</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <Users className="w-4 h-4 mr-1" aria-hidden="true" />
-                  </div>
-                  <p className="text-xl font-bold mb-0.5">248</p>
-                  <p className="text-xs text-white/90">Connections</p>
+            {/* Subscription CTA - Replacing Your Stats */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">Unlock Full Stats</h3>
+                  <p className="text-emerald-50 text-sm">
+                    Get detailed analytics with Emerald
+                  </p>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <Heart className="w-4 h-4 mr-1" aria-hidden="true" />
-                  </div>
-                  <p className="text-xl font-bold mb-0.5">1.2K</p>
-                  <p className="text-xs text-white/90">Total Likes</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <Eye className="w-4 h-4 mr-1" aria-hidden="true" />
-                  </div>
-                  <p className="text-xl font-bold mb-0.5">3.4K</p>
-                  <p className="text-xs text-white/90">Profile Views</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-1">
-                    <TrendingUp className="w-4 h-4 mr-1" aria-hidden="true" />
-                  </div>
-                  <p className="text-xl font-bold mb-0.5">24.5%</p>
-                  <p className="text-xs text-white/90">Engagement</p>
-                </div>
+                <TrendingUp className="w-12 h-12 text-emerald-200" aria-hidden="true" />
               </div>
+              
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center text-sm">
+                  <Users className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Track connections growth
+                </li>
+                <li className="flex items-center text-sm">
+                  <Heart className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Monitor likes &amp; engagement
+                </li>
+                <li className="flex items-center text-sm">
+                  <Eye className="w-4 h-4 mr-2" aria-hidden="true" />
+                  View detailed analytics
+                </li>
+              </ul>
+              
+              <Link 
+                to="/pricing"
+                className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
+              >
+                Get Emerald
+              </Link>
             </div>
 
             {/* Saved tags */}
@@ -186,7 +185,25 @@ export default function Dashboard() {
 
           {/* CENTER COLUMN */}
           <section className="space-y-4 lg:border-x lg:border-[#0CCE6B]/10 lg:px-4">
-            <PostComposer />
+            {/* Callout Card - Replacing Post Composer */}
+            <Card padding="default">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    Ready to share your work?
+                  </h3>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                    Create scripts, auditions, readings, and reels
+                  </p>
+                </div>
+                <Link 
+                  to="/post"
+                  className="btn-primary px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold"
+                >
+                  Create Post
+                </Link>
+              </div>
+            </Card>
 
             {activeTag && (
               <div className="flex items-center gap-2 text-sm">
