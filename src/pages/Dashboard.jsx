@@ -8,6 +8,7 @@ import EmptyState from "../components/EmptyState";
 import { Card, Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
+import { ALLOWED_TAGS } from "../constants/tags";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -50,14 +51,10 @@ export default function Dashboard() {
   // Use API posts if available, otherwise fall back to context posts
   const displayPosts = apiPosts.length > 0 ? apiPosts : posts;
 
-  const [savedTags, setSavedTags] = useState([
-    "#SciFi",
-    "#Comedy",
-    "#Audition",
-    "#Script",
-    "#ShortFilm",
-  ]);
-  const [newTag, setNewTag] = useState("");
+  // Use curated tags from ALLOWED_TAGS - first 8 as trending/saved
+  const [savedTags, setSavedTags] = useState(
+    ALLOWED_TAGS.slice(0, 8)
+  );
   const [activeTag, setActiveTag] = useState("");
 
   const results = useMemo(() => {
@@ -67,14 +64,6 @@ export default function Dashboard() {
       (p.tags || []).some((t) => t.toLowerCase() === needle)
     );
   }, [displayPosts, activeTag]);
-
-  const addSavedTag = () => {
-    const raw = newTag.trim();
-    if (!raw) return;
-    const tag = raw.startsWith("#") ? raw : `#${raw}`;
-    if (!savedTags.includes(tag)) setSavedTags((x) => [...x, tag]);
-    setNewTag("");
-  };
 
   return (
     <div className="container mx-auto px-4 max-w-7xl text-[1.1rem]">
@@ -141,7 +130,7 @@ export default function Dashboard() {
             </div>
 
             {/* Saved tags */}
-            <Card title="Saved tags" padding="default">
+            <Card title="Trending tags" padding="default">
               <div className="flex flex-wrap gap-2">
                 {savedTags.map((t) => (
                   <button
@@ -159,26 +148,6 @@ export default function Dashboard() {
                     {t}
                   </button>
                 ))}
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), addSavedTag())
-                  }
-                  placeholder="Add tag"
-                  aria-label="Add new tag"
-                  className="flex-1 rounded-full bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 px-3 py-1.5 text-xs text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500 focus-visible:ring-2 focus-visible:ring-brand"
-                />
-                <Button 
-                  onClick={addSavedTag}
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Add tag"
-                >
-                  Add
-                </Button>
               </div>
             </Card>
           </aside>
