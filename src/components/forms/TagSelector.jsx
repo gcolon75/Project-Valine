@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ALLOWED_TAGS, MAX_TAGS, TAG_CATEGORIES } from '../../constants/tags';
 import { X, Search } from 'lucide-react';
 
@@ -8,18 +8,22 @@ export default function TagSelector({ value = [], onChange, error }) {
   const containerRef = useRef(null);
   
   // Filter tags based on search query
-  const filteredTags = ALLOWED_TAGS.filter(tag =>
-    tag.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTags = useMemo(() => {
+    return ALLOWED_TAGS.filter(tag =>
+      tag.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
   
   // Group filtered tags by category
-  const groupedTags = Object.entries(TAG_CATEGORIES).reduce((acc, [category, tags]) => {
-    const filtered = tags.filter(tag => filteredTags.includes(tag));
-    if (filtered.length > 0) {
-      acc[category] = filtered;
-    }
-    return acc;
-  }, {});
+  const groupedTags = useMemo(() => {
+    return Object.entries(TAG_CATEGORIES).reduce((acc, [category, tags]) => {
+      const filtered = tags.filter(tag => filteredTags.includes(tag));
+      if (filtered.length > 0) {
+        acc[category] = filtered;
+      }
+      return acc;
+    }, {});
+  }, [filteredTags]);
   
   const handleToggleTag = (tag) => {
     if (value.includes(tag)) {

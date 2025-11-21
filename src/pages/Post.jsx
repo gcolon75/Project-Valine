@@ -69,9 +69,16 @@ export default function Post() {
     e.preventDefault();
     
     if (!validateForm()) {
-      // Focus first error field
+      // Focus first error field with better targeting
       const firstErrorField = Object.keys(errors)[0];
-      document.querySelector(`[name="${firstErrorField}"]`)?.focus();
+      if (firstErrorField === 'contentType') {
+        // Focus first content type button
+        document.querySelector('[aria-pressed]')?.focus();
+      } else {
+        // Focus input/textarea by name or id
+        const element = document.querySelector(`[name="${firstErrorField}"], #${firstErrorField}`);
+        element?.focus();
+      }
       return;
     }
     
