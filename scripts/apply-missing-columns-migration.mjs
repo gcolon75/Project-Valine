@@ -8,10 +8,13 @@
 import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const MIGRATION_NAME = '20251122012600_fix_missing_user_columns';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -26,7 +29,7 @@ if (!DATABASE_URL) {
 
 const MIGRATION_FILE = path.join(
   __dirname, 
-  '../api/prisma/migrations/20251122012600_fix_missing_user_columns/migration.sql'
+  `../api/prisma/migrations/${MIGRATION_NAME}/migration.sql`
 );
 
 async function applyMigration() {
@@ -82,16 +85,15 @@ async function applyMigration() {
     
     // Mark migration as applied in Prisma's migration table
     // Calculate checksum of migration file for Prisma's tracking
-    const crypto = await import('crypto');
     const checksum = crypto.createHash('sha256').update(sql).digest('hex');
     
     await client.query(`
       INSERT INTO "_prisma_migrations" 
         (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
       VALUES 
-        (gen_random_uuid(), $1, NOW(), '20251122012600_fix_missing_user_columns', '', NULL, NOW(), 1)
+        (gen_random_uuid(), $1, NOW(), $2, '', NULL, NOW(), 1)
       ON CONFLICT (migration_name) DO NOTHING;
-    `, [checksum]);
+    `, [checksum, MIGRATION_NAME]);
     
     console.log('✅ Migration marked as applied in Prisma history\n');
     console.log('🎉 Migration completed successfully!\n');
