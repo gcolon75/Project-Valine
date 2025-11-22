@@ -53,9 +53,9 @@ npx prisma generate
 ### 7. Test User Creation
 ```bash
 node scripts/admin-upsert-user.mjs \
-  --email "ghawk075@gmail.com" \
-  --password "Test123!" \
-  --display-name "Gabriel Colon"
+  --email "user@example.com" \
+  --password "YourSecurePassword123!" \
+  --display-name "Test User"
 ```
 
 ## Expected Output
