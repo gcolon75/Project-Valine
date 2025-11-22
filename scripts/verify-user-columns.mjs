@@ -18,9 +18,14 @@ if (!DATABASE_URL) {
 }
 
 async function verifyColumns() {
+  // Configure SSL based on environment
+  const sslConfig = process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: true }  // Strict SSL validation in production
+    : { rejectUnauthorized: false }; // Relaxed for development/testing
+  
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {

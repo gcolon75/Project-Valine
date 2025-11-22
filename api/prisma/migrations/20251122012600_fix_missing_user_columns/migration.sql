@@ -22,7 +22,7 @@ BEGIN
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'users' AND column_name = 'status'
   ) THEN
-    ALTER TABLE users ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'active';
+    ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
   END IF;
 END $$;
 
@@ -36,7 +36,7 @@ BEGIN
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'users' AND column_name = 'theme'
   ) THEN
-    ALTER TABLE users ADD COLUMN theme VARCHAR(255);
+    ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'light';
   END IF;
 END $$;
 

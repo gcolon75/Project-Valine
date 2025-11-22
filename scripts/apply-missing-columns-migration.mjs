@@ -32,9 +32,14 @@ const MIGRATION_FILE = path.join(
 async function applyMigration() {
   console.log('🔄 Applying missing columns migration...\n');
   
+  // Configure SSL based on environment
+  const sslConfig = process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: true }  // Strict SSL validation in production
+    : { rejectUnauthorized: false }; // Relaxed for development/testing
+  
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {
@@ -78,7 +83,7 @@ async function applyMigration() {
     // Mark migration as applied in Prisma's migration table
     // Calculate checksum of migration file for Prisma's tracking
     const crypto = await import('crypto');
-    const checksum = crypto.createHash('sha256').update(sql).digest('hex').substring(0, 64);
+    const checksum = crypto.createHash('sha256').update(sql).digest('hex');
     
     await client.query(`
       INSERT INTO "_prisma_migrations" 
