@@ -13,8 +13,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATABASE_URL = process.env.DATABASE_URL || 
-  'postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require';
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error('❌ ERROR: DATABASE_URL environment variable is required');
+  console.error('');
+  console.error('Please set DATABASE_URL with your PostgreSQL connection string:');
+  console.error('  export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"');
+  console.error('');
+  process.exit(1);
+}
 
 const MIGRATION_FILE = path.join(
   __dirname, 
@@ -68,13 +76,17 @@ async function applyMigration() {
     }
     
     // Mark migration as applied in Prisma's migration table
+    // Calculate checksum of migration file for Prisma's tracking
+    const crypto = await import('crypto');
+    const checksum = crypto.createHash('sha256').update(sql).digest('hex').substring(0, 64);
+    
     await client.query(`
       INSERT INTO "_prisma_migrations" 
         (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
       VALUES 
-        (gen_random_uuid(), '', NOW(), '20251122012600_fix_missing_user_columns', '', NULL, NOW(), 1)
+        (gen_random_uuid(), $1, NOW(), '20251122012600_fix_missing_user_columns', '', NULL, NOW(), 1)
       ON CONFLICT (migration_name) DO NOTHING;
-    `);
+    `, [checksum]);
     
     console.log('✅ Migration marked as applied in Prisma history\n');
     console.log('🎉 Migration completed successfully!\n');

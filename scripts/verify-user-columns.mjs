@@ -6,8 +6,16 @@
 
 import pg from 'pg';
 
-const DATABASE_URL = process.env.DATABASE_URL || 
-  'postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require';
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error('❌ ERROR: DATABASE_URL environment variable is required');
+  console.error('');
+  console.error('Please set DATABASE_URL with your PostgreSQL connection string:');
+  console.error('  export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"');
+  console.error('');
+  process.exit(1);
+}
 
 async function verifyColumns() {
   const client = new pg.Client({

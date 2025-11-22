@@ -19,8 +19,10 @@ npm install pg
 
 ### 2. Set Database URL
 ```bash
-export DATABASE_URL="postgresql://ValineColon_75:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+export DATABASE_URL="postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
 ```
+
+Replace the placeholders with your actual database connection details.
 
 ### 3. Verify Current State (Optional)
 ```bash
@@ -109,7 +111,8 @@ ALTER TABLE users DROP COLUMN IF EXISTS theme;
 
 ## Security Notes
 
-- The default connection string in the scripts is for **development purposes only**
-- Always use environment variables for credentials in production
-- The password shown in the problem statement should be rotated after this fix
+- **DATABASE_URL is required**: The scripts will not run without a properly set DATABASE_URL environment variable
+- Always use environment variables for credentials - never hardcode them
+- Use strong passwords and rotate them regularly
 - SSL mode is set to `require` for secure connections
+- The migration calculates a proper checksum for Prisma's migration tracking
