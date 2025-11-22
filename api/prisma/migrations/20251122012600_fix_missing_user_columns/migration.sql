@@ -9,9 +9,11 @@ BEGIN
     WHERE table_name = 'users' AND column_name = 'onboardingComplete'
   ) THEN
     ALTER TABLE users ADD COLUMN "onboardingComplete" BOOLEAN NOT NULL DEFAULT false;
-    CREATE INDEX users_onboardingComplete_idx ON users("onboardingComplete");
   END IF;
 END $$;
+
+-- Create index for onboardingComplete (if not exists)
+CREATE INDEX IF NOT EXISTS users_onboardingComplete_idx ON users("onboardingComplete");
 
 -- Add status column
 DO $$ 
@@ -21,9 +23,11 @@ BEGIN
     WHERE table_name = 'users' AND column_name = 'status'
   ) THEN
     ALTER TABLE users ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'active';
-    CREATE INDEX users_status_idx ON users(status);
   END IF;
 END $$;
+
+-- Create index for status (if not exists)
+CREATE INDEX IF NOT EXISTS users_status_idx ON users(status);
 
 -- Add theme column
 DO $$ 
