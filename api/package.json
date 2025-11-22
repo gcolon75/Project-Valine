@@ -10,7 +10,8 @@
     "migrate:social-links:dry-run": "node scripts/migrate-social-links.js --dry-run"
   },
   "dependencies": {
-    "@prisma/client": "6.19.0"
+    "@prisma/client": "6.19.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "prisma": "6.19.0"
