@@ -17,6 +17,9 @@ model User {
   avatar          String?
   name            String?
   role            String   @default("artist") // 'artist' | 'observer'
+  status          String   @default("active") // 'pending' | 'active' | 'suspended'
+  theme           String?  @default("light") // 'light' | 'dark' - theme preference
+  onboardingComplete Boolean @default(false) // Onboarding completion status
   emailVerified   Boolean  @default(false)
   emailVerifiedAt DateTime?
   twoFactorEnabled Boolean @default(false)
