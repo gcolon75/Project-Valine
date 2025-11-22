@@ -123,7 +123,8 @@ npx prisma migrate resolve --rolled-back 20251121235650_add_missing_user_fields
 
 - Prisma CLI: ^6.19.0
 - @prisma/client: ^6.19.0
-- PostgreSQL: 14.x or higher
+- PostgreSQL: 9.1 or higher (tested with 14.x)
+  - Note: `ALTER TABLE ... IF NOT EXISTS` and `CREATE INDEX IF NOT EXISTS` require PostgreSQL 9.1+
 
 ## Notes
 
