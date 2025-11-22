@@ -90,8 +90,15 @@ function parseArgs() {
     if (args[i].startsWith('--')) {
       const key = args[i].slice(2);
       const value = args[i + 1];
+      
+      // Validate that we have a value and it's not another flag
+      if (!value || value.startsWith('--')) {
+        error(`Missing value for argument: ${args[i]}`);
+        process.exit(1);
+      }
+      
       parsed[key] = value;
-      i++;
+      i++; // Skip the value in the next iteration
     }
   }
   
@@ -114,6 +121,9 @@ async function checkDatabaseConnection() {
   
   info('Testing connection to PostgreSQL...');
   
+  // Note: In non-production environments, we use rejectUnauthorized: false for SSL
+  // to allow connections to development databases with self-signed certificates.
+  // This is a development convenience and should not be used in production.
   const client = new pg.Client({
     connectionString: DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : { rejectUnauthorized: false }
@@ -174,7 +184,16 @@ async function checkAndAddColumns() {
       
       info('\nAdding missing columns...');
       
+      // Validate column names against allowed list to prevent SQL injection
+      const allowedColumns = ['onboardingComplete', 'status', 'theme'];
+      
       for (const columnName of missing) {
+        // Security check: Only allow predefined column names
+        if (!allowedColumns.includes(columnName)) {
+          error(`Invalid column name: ${columnName}`);
+          process.exit(1);
+        }
+        
         const config = REQUIRED_COLUMNS[columnName];
         const nullable = config.nullable ? '' : 'NOT NULL';
         const defaultValue = config.default ? `DEFAULT ${config.default}` : '';
