@@ -15,7 +15,8 @@ export function getCorsHeaders(origin) {
     if (allowed === '*') {
       return true;
     }
-    return origin === allowed || origin?.startsWith(allowed);
+    // Use exact match only for security - no prefix matching
+    return origin === allowed;
   });
   
   return {

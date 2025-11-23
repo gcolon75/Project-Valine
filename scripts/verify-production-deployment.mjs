@@ -9,9 +9,26 @@ import https from 'https';
 import { URL } from 'url';
 
 const CHECKS = {
-  apiHealth: process.env.VITE_API_BASE || 'https://YOUR_API_URL',
-  frontendUrl: process.env.FRONTEND_URL || 'https://YOUR_DOMAIN'
+  apiHealth: process.env.VITE_API_BASE,
+  frontendUrl: process.env.FRONTEND_URL
 };
+
+// Validate required environment variables
+if (!CHECKS.apiHealth || !CHECKS.frontendUrl) {
+  console.error('\n❌ ERROR: Missing required environment variables\n');
+  console.error('Please set the following environment variables:');
+  if (!CHECKS.apiHealth) {
+    console.error('  - VITE_API_BASE (e.g., https://your-api-gateway-url.execute-api.us-west-2.amazonaws.com)');
+  }
+  if (!CHECKS.frontendUrl) {
+    console.error('  - FRONTEND_URL (e.g., https://your-cloudfront-domain.cloudfront.net)');
+  }
+  console.error('\nExample usage:');
+  console.error('  export VITE_API_BASE="https://api.example.com"');
+  console.error('  export FRONTEND_URL="https://example.com"');
+  console.error('  node scripts/verify-production-deployment.mjs\n');
+  process.exit(1);
+}
 
 async function checkApiHealth() {
   console.log('\n🔍 Checking API Health...');
