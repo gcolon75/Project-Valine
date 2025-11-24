@@ -87,9 +87,25 @@ Keep `src/components/ui/Card.jsx` as it follows the ui component pattern.
 
 ```bash
 # Update imports from Card to ui/Card
-find src -name "*.jsx" -exec sed -i "s|from '\.\./Card'|from '../ui/Card'|g" {} \;
-find src -name "*.jsx" -exec sed -i "s|from '\./Card'|from './ui/Card'|g" {} \;
+# ⚠️ CAUTION: Run these commands with care and verify results
+# Recommended approach: Use IDE refactoring tools instead (VS Code: F2 rename symbol)
+
+# Option 1: Preview changes first (recommended)
+find src -name "*.jsx" -exec grep -l "from '\.\./Card'" {} \;
+find src -name "*.jsx" -exec grep -l "from '\./Card'" {} \;
+
+# Option 2: Manual sed (backup first!)
+# find src -name "*.jsx" -exec sed -i "s|from '\.\./Card'|from '../ui/Card'|g" {} \;
+# find src -name "*.jsx" -exec sed -i "s|from '\./Card'|from './ui/Card'|g" {} \;
+
+# Option 3: Use jscodeshift (safest for complex migrations)
+# npx jscodeshift -t path/to/transform.js src/
 ```
+
+**⚠️ Important:** After any import changes:
+1. Run `npm run build` to verify no broken imports
+2. Test affected pages manually
+3. Commit changes in small batches for easy rollback
 
 ## Phase 3: Organize Directory Structure (Low Risk)
 

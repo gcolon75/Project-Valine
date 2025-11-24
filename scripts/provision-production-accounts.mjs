@@ -275,9 +275,18 @@ async function provisionAccount(config) {
   } catch (error) {
     console.error('❌ Error provisioning account:', error.message);
     if (error.code === 'P2002') {
-      console.error('[HINT] Unique constraint violation - username or email may already exist');
+      const field = error.meta?.target?.includes('email') ? 'email' : 
+                    error.meta?.target?.includes('username') ? 'username' : 'field';
+      console.error(`[HINT] Unique constraint violation on ${field} - this value already exists in database`);
+      console.error('[TIP] If updating an existing user, use scripts/admin-set-password.mjs instead');
     } else if (error.code === 'P1001') {
-      console.error('[HINT] Cannot reach database. Check DATABASE_URL and network connectivity');
+      console.error('[HINT] Cannot reach database server');
+      console.error('[TROUBLESHOOTING]');
+      console.error('  1. Verify DATABASE_URL is correct');
+      console.error('  2. Check if database server is running');
+      console.error('  3. For RDS: Ensure security group allows your IP');
+      console.error('  4. For VPN users: Verify VPN connection is active');
+      console.error('  5. Test connection: psql "$DATABASE_URL" -c "SELECT 1"');
     }
     throw error;
   } finally {

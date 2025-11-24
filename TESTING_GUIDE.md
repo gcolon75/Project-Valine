@@ -11,7 +11,8 @@ This guide covers testing procedures for Project Valine, including account creat
 
 ### Create Owner Account
 ```bash
-export DATABASE_URL="postgresql://USER:PASS@HOST:5432/DATABASE?sslmode=require"
+# Replace YOUR_USER, YOUR_PASS, YOUR_HOST, YOUR_DATABASE with real values
+export DATABASE_URL="postgresql://YOUR_USER:YOUR_PASS@YOUR_HOST:5432/YOUR_DATABASE?sslmode=require"
 
 node scripts/provision-production-accounts.mjs \
   --email=ghawk075@gmail.com \

@@ -138,9 +138,11 @@ echo "   Invalidation ID: $INVALIDATION_ID"
 
 # Wait for invalidation to complete (optional, can be skipped)
 echo "   Waiting for invalidation to complete..."
-aws cloudfront wait invalidation-completed \
+if ! aws cloudfront wait invalidation-completed \
   --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-  --id $INVALIDATION_ID 2>/dev/null || warn "Invalidation still in progress"
+  --id $INVALIDATION_ID; then
+  warn "Invalidation still in progress or timed out (this is normal, CDN will update within ~15 minutes)"
+fi
 
 success "Cache invalidation complete"
 
