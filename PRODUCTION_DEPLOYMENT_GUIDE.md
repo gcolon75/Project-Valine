@@ -4,6 +4,11 @@
 
 This is the **definitive deployment guide** based on actual scripts, workflows, and patterns found in the repository.
 
+> **Note:** This guide uses placeholder values for sensitive information. For actual production values:
+> - Database credentials: See your AWS RDS console or contact repository owner
+> - Email addresses: See `.env.example` or repository owner for allowlist
+> - API endpoints: See existing documentation or GitHub Actions workflow outputs
+
 ---
 
 ## Table of Contents
@@ -30,7 +35,7 @@ Set these environment variables before deployment:
 
 ```bash
 # Database Connection (REQUIRED)
-export DATABASE_URL="postgresql://ValineColon_75:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 
 # JWT Secret (REQUIRED - Generate new for production!)
 export JWT_SECRET="$(openssl rand -base64 32)"
@@ -40,7 +45,7 @@ export AWS_REGION="us-west-2"
 export STAGE="prod"
 
 # Allowlist Configuration
-export ALLOWED_USER_EMAILS="ghawk075@gmail.com,valinejustin@gmail.com"
+export ALLOWED_USER_EMAILS="admin@example.com,user@example.com"
 export ENABLE_REGISTRATION="false"
 
 # Frontend Configuration
@@ -629,13 +634,13 @@ This script checks database, adds missing columns, and creates user account:
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://ValineColon_75:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 
 # Run script
 node fix-user-schema-complete.mjs \
-  --email "ghawk075@gmail.com" \
+  --email "admin@example.com" \
   --password "YourProductionPassword123!" \
-  --display-name "Gabriel Colon"
+  --display-name "Admin User"
 ```
 
 **Expected output:**
@@ -660,13 +665,13 @@ Step 3: Regenerating Prisma Clients...
 Step 4: Creating User Account...
 ✅ User account created successfully!
    User ID: abc-123-def-456
-   Username: ghawk075
-   Email: ghawk075@gmail.com
+   Username: admin
+   Email: admin@example.com
 
 Step 5: Creating User Profile...
 ✅ Profile created successfully!
    Profile ID: xyz-789-uvw-012
-   Vanity URL: ghawk075
+   Vanity URL: admin
 
 ✅ Setup complete! You can now log in with your credentials.
 ```
@@ -682,7 +687,7 @@ cd /home/runner/work/Project-Valine/Project-Valine
 export DATABASE_URL="postgresql://..."
 
 # Run script
-node scripts/admin-set-password.mjs "ghawk075@gmail.com" "NewPassword123!"
+node scripts/admin-set-password.mjs "admin@example.com" "NewPassword123!"
 ```
 
 ### Method C: Using Admin Upsert User
@@ -697,9 +702,9 @@ export DATABASE_URL="postgresql://..."
 
 # Run script
 node scripts/admin-upsert-user.mjs \
-  --email "ghawk075@gmail.com" \
+  --email "admin@example.com" \
   --password "Password123!" \
-  --display-name "Gabriel Colon"
+  --display-name "Admin User"
 ```
 
 ### Verify User Creation
@@ -709,7 +714,7 @@ node scripts/admin-upsert-user.mjs \
 curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "ghawk075@gmail.com",
+    "email": "admin@example.com",
     "password": "YourProductionPassword123!"
   }'
 
@@ -785,10 +790,10 @@ Expected:
 curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "ghawk075@gmail.com",
-    "username": "gcolon",
+    "email": "admin@example.com",
+    "username": "admin",
     "password": "TestPassword123!",
-    "displayName": "Gabriel Colon"
+    "displayName": "Admin User"
   }'
 ```
 
@@ -820,7 +825,7 @@ Expected: HTTP 403 Forbidden
 curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "ghawk075@gmail.com",
+    "email": "admin@example.com",
     "password": "YourProductionPassword123!"
   }'
 ```
@@ -975,9 +980,9 @@ Error: Unknown argument `status` provided to User.create()
 ```bash
 # Run complete schema fix script
 node fix-user-schema-complete.mjs \
-  --email "ghawk075@gmail.com" \
+  --email "admin@example.com" \
   --password "Password123!" \
-  --display-name "Gabriel Colon"
+  --display-name "Admin User"
 ```
 
 ### Issue 6: JWT Secret Invalid in Production
@@ -1184,7 +1189,7 @@ gh run watch RUN_ID
 # Complete production deployment script
 
 # Step 0: Set environment variables
-export DATABASE_URL="postgresql://ValineColon_75:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 export JWT_SECRET="$(openssl rand -base64 32)"
 export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 export S3_BUCKET="your-s3-bucket"
@@ -1215,9 +1220,9 @@ aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_I
 
 # Step 5: Create User Account
 node fix-user-schema-complete.mjs \
-  --email "ghawk075@gmail.com" \
+  --email "admin@example.com" \
   --password "YourProductionPassword123!" \
-  --display-name "Gabriel Colon"
+  --display-name "Admin User"
 
 # Step 6: Verify Deployment
 export FRONTEND_URL="https://dkmxy676d3vgc.cloudfront.net"
