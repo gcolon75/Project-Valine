@@ -1,0 +1,153 @@
+name: Security Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for dev bypass in production config
+        run: |
+          echo "Checking for dev bypass in production config files..."
+          
+          # Check .env.production
+          if [ -f ".env.production" ]; then
+            if grep -E "VITE_DEV_BYPASS_AUTH\s*=\s*['\"]?true" .env.production 2>/dev/null; then
+              echo "❌ VITE_DEV_BYPASS_AUTH=true found in .env.production"
+              exit 1
+            fi
+            if grep -E "VITE_ENABLE_DEV_BYPASS\s*=\s*['\"]?true" .env.production 2>/dev/null; then
+              echo "❌ VITE_ENABLE_DEV_BYPASS=true found in .env.production"
+              exit 1
+            fi
+          fi
+          
+          # Check for any committed .env files (except examples)
+          if find . -name ".env" -not -path "./node_modules/*" -not -path "./.git/*" | grep -v ".example" | head -1 | grep -q .; then
+            echo "⚠️ Warning: .env file found that may contain secrets"
+            echo "Ensure .env files are in .gitignore"
+          fi
+          
+          echo "✅ No dev bypass in production config"
+      
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Checking for hardcoded secrets..."
+          
+          # Check for common secret patterns (excluding examples, tests, docs)
+          # These patterns intentionally require specific formats to reduce false positives
+          PATTERNS=(
+            # Match: jwt_secret = "actualvalue" but not documentation examples
+            "jwt_secret\s*=\s*['\"][a-zA-Z0-9+/=]{20,}['\"]"
+            # Match: real PostgreSQL URLs (not placeholders like USER:PASS)
+            "database_url\s*=\s*['\"]postgresql://[a-z0-9]+:[^@]+@[^'\"]+['\"]"
+            # Match: api_key with actual-looking values
+            "api_key\s*=\s*['\"][a-zA-Z0-9]{20,}['\"]"
+          )
+          
+          # Files and directories to exclude
+          EXCLUDE_PATTERNS="--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=coverage --exclude-dir=.copilot"
+          EXCLUDE_FILES="--exclude=*.example --exclude=*.md --exclude=*.test.* --exclude=*.spec.* --exclude=DEPLOYMENT* --exclude=*GUIDE* --exclude=*CHECKLIST*"
+          
+          FOUND_ISSUES=false
+          
+          for pattern in "${PATTERNS[@]}"; do
+            # Use more specific grep to reduce false positives
+            MATCHES=$(grep -riE "$pattern" . \
+              $EXCLUDE_PATTERNS \
+              $EXCLUDE_FILES \
+              2>/dev/null | grep -v "placeholder\|example\|YOUR_\|CHANGE_THIS" | head -5)
+            
+            if [ -n "$MATCHES" ]; then
+              echo "⚠️ Potential hardcoded secret pattern found:"
+              echo "$MATCHES"
+              FOUND_ISSUES=true
+            fi
+          done
+          
+          if [ "$FOUND_ISSUES" = true ]; then
+            echo ""
+            echo "⚠️ Please review the above warnings for potential security issues"
+            echo "Note: Some patterns may be false positives (e.g., in documentation)"
+          else
+            echo "✅ No obvious hardcoded secrets found"
+          fi
+      
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files that shouldn't be committed..."
+          
+          SENSITIVE_FILES=(
+            ".env"
+            ".env.local"
+            ".env.prod"
+            "*.pem"
+            "*.key"
+            "credentials.json"
+            "secrets.json"
+          )
+          
+          FOUND_SENSITIVE=false
+          
+          for pattern in "${SENSITIVE_FILES[@]}"; do
+            if find . -name "$pattern" -not -path "./node_modules/*" -not -path "./.git/*" | grep -q .; then
+              # Allow .env.example files
+              FILES=$(find . -name "$pattern" -not -path "./node_modules/*" -not -path "./.git/*" | grep -v ".example")
+              if [ -n "$FILES" ]; then
+                echo "⚠️ Sensitive file found: $pattern"
+                echo "$FILES"
+                FOUND_SENSITIVE=true
+              fi
+            fi
+          done
+          
+          # Special check for rds-ca-cert.pem (may be needed for SSL)
+          if [ -f "rds-ca-cert.pem" ]; then
+            echo "ℹ️ rds-ca-cert.pem found - this may be intentional for RDS SSL"
+          fi
+          
+          if [ "$FOUND_SENSITIVE" = true ]; then
+            echo ""
+            echo "⚠️ Review sensitive files above"
+            echo "Ensure these are intentional and don't contain secrets"
+          else
+            echo "✅ No unexpected sensitive files found"
+          fi
+      
+      - name: Validate .gitignore
+        run: |
+          echo "Validating .gitignore contains required entries..."
+          
+          REQUIRED_IGNORES=(
+            "node_modules"
+            ".env"
+            ".env.local"
+            ".env.*.local"
+            "dist"
+            ".serverless"
+          )
+          
+          MISSING=()
+          
+          for entry in "${REQUIRED_IGNORES[@]}"; do
+            if ! grep -qF "$entry" .gitignore 2>/dev/null; then
+              MISSING+=("$entry")
+            fi
+          done
+          
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "⚠️ Missing .gitignore entries:"
+            for entry in "${MISSING[@]}"; do
+              echo "  - $entry"
+            done
+          else
+            echo "✅ .gitignore contains required entries"
+          fi
