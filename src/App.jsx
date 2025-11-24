@@ -14,6 +14,7 @@ import Bookmarks from './pages/Bookmarks.jsx';
 import Notifications from './pages/Notifications.jsx';
 import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
+import ProfileEdit from './pages/ProfileEdit.jsx';
 import ScriptsIndex from './pages/Scripts/Index.jsx';
 import ScriptsNew from './pages/Scripts/New.jsx';
 import ScriptsShow from './pages/Scripts/Show.jsx';
@@ -50,12 +51,15 @@ function App() {
       {/* Authenticated pages under AppLayout */}
       <Route element={<AppLayout />}>
         <Route path="/feed" element={<Feed />} />
+        <Route path="/dashboard" element={<Feed />} />
         <Route path="/search" element={<Search />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/bookmarks" element={<Bookmarks />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:id" element={<Profile />} />
+        <Route path="/profile-edit" element={<ProfileEdit />} />
         {/* Scripts */}
         <Route path="/scripts" element={<ScriptsIndex />} />
         <Route path="/scripts/new" element={<ScriptsNew />} />

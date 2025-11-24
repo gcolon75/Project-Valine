@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import * as api from '../services/api';
+import { updateMyProfile } from '../services/profileService';
 
 export default function ProfileSetup() {
   const { user, updateUser } = useAuth();
@@ -34,9 +34,15 @@ export default function ProfileSetup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const updates = { ...form, name: form.displayName, profileComplete: true };
-    updateUser(updates);
-    try { await api.updateUser(user.id, updates); } catch {}
+    const updates = { ...form, name: form.displayName, profileComplete: true, onboardingComplete: true };
+    try {
+      await updateMyProfile(updates);
+      updateUser(updates);
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+      // Still update locally for offline-first UX
+      updateUser(updates);
+    }
     navigate('/dashboard');
   };
 

@@ -1,8 +1,9 @@
 // src/pages/Profile.jsx
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
-import { useApiFallback } from '../hooks/useApiFallback';
+import { getMyProfile } from '../services/profileService';
+import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import { Button, Card } from '../components/ui';
@@ -20,27 +21,21 @@ const isValidUrl = (url) => {
   }
 };
 
-// Mock/fallback profile data
-const FALLBACK_PROFILE = {
-  displayName: 'Your Name',
-  username: 'username',
-  headline: 'Voice Actor • Writer • Producer',
-  bio: 'I write character-driven sci-fi and act in indie drama. Looking for collaborators on a short pilot.',
+// Default empty profile for showing stats as 0
+const EMPTY_PROFILE = {
+  displayName: '',
+  username: '',
+  headline: '',
+  bio: '',
   avatar: null,
-  role: 'Writer • Actor • Producer',
-  postsCount: 12,
-  followersCount: 342,
-  followingCount: 156,
-  reelsCount: 5,
-  scriptsCount: 3,
+  role: '',
+  postsCount: 0,
+  followersCount: 0,
+  followingCount: 0,
+  reelsCount: 0,
+  scriptsCount: 0,
   posts: [],
-  externalLinks: {
-    website: 'https://example.com',
-    imdb: '',
-    showreel: 'https://example.com/reel',
-    instagram: '',
-    linkedin: ''
-  }
+  externalLinks: {}
 };
 
 const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
@@ -64,21 +59,82 @@ const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
 
 export default function Profile() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('posts');
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch profile from API with fallback
-  const { data: profile, loading, error, usingFallback } = useApiFallback(
-    () => id ? getUserProfile(id) : Promise.resolve(FALLBACK_PROFILE),
-    FALLBACK_PROFILE,
-    { 
-      diagnosticContext: 'Profile.getUserProfile',
-      immediate: true
-    }
-  );
+  // Determine if viewing own profile
+  const isOwnProfile = useMemo(() => {
+    if (!id) return true; // No ID means viewing own profile
+    if (!user) return false;
+    return id === user.id || id === user.username;
+  }, [id, user]);
+
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        let profileData;
+        
+        if (isOwnProfile && user) {
+          // Fetch own profile from /me/profile or use auth context data
+          try {
+            profileData = await getMyProfile();
+          } catch (apiError) {
+            console.warn('Failed to fetch profile from API, using auth context:', apiError);
+            // Fall back to auth context user data
+            profileData = {
+              ...EMPTY_PROFILE,
+              displayName: user.displayName || user.name || '',
+              username: user.username || '',
+              headline: user.headline || '',
+              bio: user.bio || '',
+              avatar: user.avatar || null,
+              role: user.role || '',
+              externalLinks: user.externalLinks || {}
+            };
+          }
+        } else if (id) {
+          // Fetch other user's profile
+          profileData = await getUserProfile(id);
+        } else {
+          // No ID and no user - show empty state
+          profileData = EMPTY_PROFILE;
+        }
+        
+        setProfile(profileData);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+        setError(err);
+        // Use empty profile on error to show 0 stats
+        if (isOwnProfile && user) {
+          setProfile({
+            ...EMPTY_PROFILE,
+            displayName: user.displayName || user.name || '',
+            username: user.username || '',
+            headline: user.headline || '',
+            bio: user.bio || '',
+            avatar: user.avatar || null,
+            role: user.role || '',
+            externalLinks: user.externalLinks || {}
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [id, user, isOwnProfile]);
 
   if (loading) return <SkeletonProfile />;
   
-  if (error && !usingFallback) {
+  if (error && !profile) {
     return (
       <div className="text-center py-8 text-neutral-400">
         Profile not found

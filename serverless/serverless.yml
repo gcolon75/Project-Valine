@@ -383,6 +383,12 @@ functions:
       - httpApi:
           path: /me/profile
           method: patch
+  getMyProfile:
+    handler: src/handlers/profiles.getMyProfile
+    events:
+      - httpApi:
+          path: /me/profile
+          method: get
   deleteProfile:
     handler: src/handlers/profiles.deleteProfile
     events:

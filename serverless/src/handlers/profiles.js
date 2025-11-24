@@ -873,29 +873,42 @@ export const updateMyProfile = async (event) => {
       
       const shouldMarkOnboardingComplete = hasBasicInfo && hasProfileInfo;
       
-      // Update onboardingComplete if needed
+      // Update onboardingComplete if needed (with graceful fallback if field doesn't exist)
       if (shouldMarkOnboardingComplete && !updatedUser.onboardingComplete) {
         console.log('[updateMyProfile] Marking onboarding as complete');
-        updatedUser = await prisma.user.update({
-          where: { id: userId },
-          data: { onboardingComplete: true },
-        });
+        try {
+          updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { onboardingComplete: true },
+          });
+        } catch (updateErr) {
+          // Handle schema-related errors gracefully when onboardingComplete field doesn't exist
+          // P2009: Unknown field in Prisma query
+          // Re-throw connection or other critical errors
+          if (updateErr.code === 'P2009' || 
+              (updateErr.message && updateErr.message.includes('Unknown field'))) {
+            console.warn('[updateMyProfile] Could not update onboardingComplete (field may not exist):', updateErr.message);
+          } else {
+            throw updateErr;
+          }
+        }
       }
 
       // Return combined profile data
       const response = {
         id: profile.id,
         userId: updatedUser.id,
-        username: updatedUser.username,
-        displayName: updatedUser.displayName,
-        avatar: updatedUser.avatar,
+        username: updatedUser.username || null,
+        displayName: updatedUser.displayName || updatedUser.name || null,
+        avatar: updatedUser.avatar || null,
         vanityUrl: profile.vanityUrl,
-        headline: profile.headline,
-        bio: profile.bio,
-        roles: profile.roles,
-        tags: profile.tags,
-        links: profile.links,
-        onboardingComplete: updatedUser.onboardingComplete,
+        headline: profile.headline || updatedUser.headline || null,
+        bio: profile.bio || updatedUser.bio || null,
+        roles: profile.roles || updatedUser.roles || [],
+        tags: profile.tags || updatedUser.tags || [],
+        links: profile.links || [],
+        onboardingComplete: updatedUser.onboardingComplete || false,
+        profileComplete: updatedUser.profileComplete || false,
       };
 
       console.log('[updateMyProfile] Update successful');
@@ -915,6 +928,114 @@ export const updateMyProfile = async (event) => {
 
   } catch (e) {
     console.error('[updateMyProfile] Error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /api/me/profile - Get current user's profile
+ * 
+ * This endpoint returns the authenticated user's profile data, combining
+ * user and profile information with graceful fallbacks for missing fields.
+ * 
+ * Returns:
+ * - id: Profile ID
+ * - userId: User ID
+ * - email: User email
+ * - username: User username
+ * - displayName: User display name
+ * - avatar: User avatar URL
+ * - headline: Profile headline
+ * - bio: Profile bio
+ * - roles: Profile roles array
+ * - tags: Profile tags array
+ * - links: Profile links array
+ * - onboardingComplete: Whether user has completed onboarding
+ * - profileComplete: Whether user's profile is complete
+ * - createdAt: User creation timestamp
+ */
+export const getMyProfile = async (event) => {
+  try {
+    // Get authenticated user ID
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    console.log('[getMyProfile] User ID:', userId);
+
+    const prisma = getPrisma();
+
+    // Fetch user data
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.log('[getMyProfile] User not found:', userId);
+      return error(404, 'User not found');
+    }
+
+    // Fetch profile data (may not exist yet)
+    let profile = null;
+    try {
+      profile = await prisma.profile.findUnique({
+        where: { userId },
+        include: {
+          links: {
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              label: true,
+              url: true,
+              type: true,
+              position: true,
+            },
+          },
+        },
+      });
+    } catch (profileErr) {
+      // Handle schema-related errors gracefully when Profile model may not exist
+      // P2021: Table does not exist in the database
+      // P2025: Record not found (profile doesn't exist for this user)
+      // Re-throw connection or other critical errors
+      if (profileErr.code === 'P2021' || profileErr.code === 'P2025' ||
+          (profileErr.message && (profileErr.message.includes('does not exist') || 
+           profileErr.message.includes('Unknown model')))) {
+        console.warn('[getMyProfile] Could not fetch profile (model may not exist or profile not created):', profileErr.message);
+        // Continue without profile data - profile will be null
+      } else {
+        throw profileErr;
+      }
+    }
+
+    // Construct response with graceful fallbacks
+    const response = {
+      // Profile ID (null if no profile yet)
+      id: profile?.id || null,
+      userId: user.id,
+      email: user.email,
+      username: user.username || null,
+      displayName: user.displayName || user.name || null,
+      avatar: user.avatar || null,
+      // Profile-specific fields
+      vanityUrl: profile?.vanityUrl || null,
+      headline: profile?.headline || user.headline || null,
+      bio: profile?.bio || user.bio || null,
+      roles: profile?.roles || user.roles || [],
+      tags: profile?.tags || user.tags || [],
+      links: profile?.links || [],
+      // Status fields
+      onboardingComplete: user.onboardingComplete || false,
+      profileComplete: user.profileComplete || false,
+      createdAt: user.createdAt,
+    };
+
+    console.log('[getMyProfile] Returning profile for user:', userId);
+    return json(response);
+
+  } catch (e) {
+    console.error('[getMyProfile] Error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

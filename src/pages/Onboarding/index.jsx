@@ -8,7 +8,7 @@ import ProfileBasics from './steps/ProfileBasics';
 import LinksSetup from './steps/LinksSetup';
 import PreferencesSetup from './steps/PreferencesSetup';
 import toast from 'react-hot-toast';
-import * as api from '../../services/api';
+import { updateMyProfile } from '../../services/profileService';
 
 const ONBOARDING_STORAGE_KEY = 'valine-onboarding-progress';
 const TOTAL_STEPS = 4;
@@ -122,18 +122,16 @@ export default function Onboarding() {
         onboardingComplete: true,
       };
 
-      // Optimistically update local state
-      updateUser(updates);
-
-      // Attempt to save to backend
+      // Attempt to save to backend first
       try {
-        if (user?.id) {
-          await api.updateUser(user.id, updates);
-        }
+        await updateMyProfile(updates);
       } catch (apiError) {
         console.warn('Failed to save to backend, using local state:', apiError);
         // Continue anyway - data is saved locally
       }
+
+      // Update local state after successful backend save (or on fallback)
+      updateUser(updates);
 
       // Clear saved onboarding progress
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);

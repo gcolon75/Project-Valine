@@ -415,6 +415,15 @@ async function me(event) {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username || null,
+        displayName: user.displayName || user.name || null,
+        avatar: user.avatar || null,
+        headline: user.headline || null,
+        bio: user.bio || null,
+        roles: user.roles || [],
+        tags: user.tags || [],
+        onboardingComplete: user.onboardingComplete || false,
+        profileComplete: user.profileComplete || false,
         createdAt: user.createdAt,
         twoFactorEnabled: user.twoFactorEnabled || false
       }

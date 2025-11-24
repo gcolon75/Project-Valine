@@ -12,19 +12,19 @@ const MarketingFooter = () => {
           {/* Product Column */}
           <nav aria-labelledby="footer-product">
             <h3 id="footer-product" className="font-semibold text-neutral-900 mb-4">Product</h3>
-            <ul className="space-y-3 text-sm text-neutral-700">
+            <ul className="space-y-3 text-sm">
               <li>
-                <a href="#features" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
+                <a href="#features" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Features
                 </a>
               </li>
               <li>
-                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
+                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
                   Changelog
                 </span>
               </li>
               <li>
-                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
+                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
                   Roadmap
                 </span>
               </li>
@@ -34,19 +34,19 @@ const MarketingFooter = () => {
           {/* Resources Column */}
           <nav aria-labelledby="footer-resources">
             <h3 id="footer-resources" className="font-semibold text-neutral-900 mb-4">Resources</h3>
-            <ul className="space-y-3 text-sm text-neutral-700">
+            <ul className="space-y-3 text-sm">
               <li>
-                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
+                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
                   Documentation
                 </span>
               </li>
               <li>
-                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
+                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
                   Support
                 </span>
               </li>
               <li>
-                <a href="#faq" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
+                <a href="#faq" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   FAQ
                 </a>
               </li>
@@ -56,14 +56,14 @@ const MarketingFooter = () => {
           {/* Company Column */}
           <nav aria-labelledby="footer-company">
             <h3 id="footer-company" className="font-semibold text-neutral-900 mb-4">Company</h3>
-            <ul className="space-y-3 text-sm text-neutral-700">
+            <ul className="space-y-3 text-sm">
               <li>
-                <a href="#about" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
+                <a href="#about" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   About
                 </a>
               </li>
               <li>
-                <span className="text-neutral-500 cursor-not-allowed" aria-disabled="true">
+                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
                   Contact
                 </span>
               </li>
@@ -73,14 +73,14 @@ const MarketingFooter = () => {
           {/* Legal Column */}
           <nav aria-labelledby="footer-legal">
             <h3 id="footer-legal" className="font-semibold text-neutral-900 mb-4">Legal</h3>
-            <ul className="space-y-3 text-sm text-neutral-700">
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/legal/privacy" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
+                <Link to="/legal/privacy" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/legal/terms" className="hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
+                <Link to="/legal/terms" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Terms of Service
                 </Link>
               </li>
@@ -104,7 +104,7 @@ const MarketingFooter = () => {
             </div>
 
             {/* Copyright */}
-            <div className="text-sm text-neutral-700">
+            <div className="text-sm text-neutral-600">
               &copy; {currentYear} Joint. All rights reserved.
             </div>
 

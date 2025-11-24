@@ -2,6 +2,26 @@
 import apiClient from './api';
 
 /**
+ * Get the current user's profile
+ * @returns {Promise<Object>} Current user's profile data
+ */
+export const getMyProfile = async () => {
+  const { data } = await apiClient.get('/me/profile');
+  return data;
+};
+
+/**
+ * Update the current user's profile
+ * @param {Object} updates - Profile updates including displayName, headline, bio, avatar, etc.
+ * @param {boolean} [updates.onboardingComplete] - Set to true to mark onboarding as complete
+ * @returns {Promise<Object>} Updated profile
+ */
+export const updateMyProfile = async (updates) => {
+  const { data } = await apiClient.patch('/me/profile', updates);
+  return data;
+};
+
+/**
  * Get user profile with links
  * @param {string} userId - User ID
  * @returns {Promise<Object>} Profile data with links array
