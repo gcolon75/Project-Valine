@@ -35,9 +35,13 @@ Set these environment variables before deployment:
 
 ```bash
 # Database Connection (REQUIRED)
+# ⚠️ SECURITY: Use a strong, unique password for production
+# ⚠️ Rotate default database credentials before deployment
 export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 
 # JWT Secret (REQUIRED - Generate new for production!)
+# ⚠️ SECURITY: Store this securely and NEVER commit to version control
+# ⚠️ Save this value - you'll need it for all Lambda functions
 export JWT_SECRET="$(openssl rand -base64 32)"
 
 # AWS Configuration
@@ -101,11 +105,15 @@ export AWS_PROFILE="project-valine"
 ### Security Checklist
 
 - [ ] Generate NEW JWT_SECRET for production (never use dev secret!)
-- [ ] Rotate database password if using default
+- [ ] Use strong, unique database password (min 16 characters, mixed case, numbers, symbols)
+- [ ] Rotate database password if using default credentials
+- [ ] Store JWT_SECRET securely (password manager, AWS Secrets Manager, or GitHub Secrets)
+- [ ] NEVER commit JWT_SECRET to version control (.env files are gitignored)
 - [ ] Update `ALLOWED_USER_EMAILS` with production email addresses
 - [ ] Ensure `ENABLE_REGISTRATION="false"` for allowlist mode
 - [ ] Verify database has SSL enabled (`sslmode=require` in DATABASE_URL)
 - [ ] Database backup completed before migration
+- [ ] Test database connection with production credentials before deployment
 
 ### Pre-Flight Verification
 
