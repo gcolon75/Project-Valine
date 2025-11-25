@@ -144,41 +144,7 @@ export default function PreferencesSetup({ userData, onUpdate }) {
                 Public Profile
               </h4>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Your profile is visible to everyone. Recommended for finding opportunities.
-              </p>
-            </div>
-          </label>
-
-          <label
-            className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-              preferences.profileVisibility === 'connections'
-                ? 'border-[#0CCE6B] bg-[#0CCE6B]/5'
-                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
-            }`}
-          >
-            <input
-              type="radio"
-              name="visibility"
-              value="connections"
-              checked={preferences.profileVisibility === 'connections'}
-              onChange={() => handleVisibilityChange('connections')}
-              className="sr-only"
-            />
-            <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-              preferences.profileVisibility === 'connections'
-                ? 'border-[#0CCE6B] bg-[#0CCE6B]'
-                : 'border-neutral-400 dark:border-neutral-600'
-            }`}>
-              {preferences.profileVisibility === 'connections' && (
-                <Check className="w-3 h-3 text-white" />
-              )}
-            </div>
-            <div className="flex-1">
-              <h4 className="text-sm font-semibold text-neutral-900 dark:text-white mb-1">
-                Connections Only
-              </h4>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Only your connections can view your full profile.
+                Anyone can see your profile and follow you without approval. Recommended for finding opportunities.
               </p>
             </div>
           </label>
@@ -212,7 +178,7 @@ export default function PreferencesSetup({ userData, onUpdate }) {
                 Private Profile
               </h4>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Your profile is hidden from search and only visible when you share your link.
+                Your profile is hidden from search. Only people you share your profile link with can find and follow you.
               </p>
             </div>
           </label>

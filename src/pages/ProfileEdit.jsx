@@ -316,7 +316,7 @@ export default function ProfileEdit() {
         
         // Navigate back to profile after brief delay
         setTimeout(() => {
-          navigate(`/profile/${user.username}`);
+          navigate('/profile');
         }, 300);
       } catch (error) {
         // Rollback optimistic update on error
