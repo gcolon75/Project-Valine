@@ -6,7 +6,10 @@ import apiClient from './api';
  */
 
 /**
- * Get pending follow requests for the current user
+ * Get pending follow requests for the current user.
+ * Returns requests where other users want to follow the authenticated user.
+ * Authentication is handled via the auth token, so no userId parameter is needed.
+ * @returns {Promise<Object>} Object containing requests array
  */
 export const getConnectionRequests = async () => {
   const { data } = await apiClient.get('/connections/requests');

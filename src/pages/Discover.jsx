@@ -27,8 +27,9 @@ export default function Discover() {
     
     setSearchLoading(true);
     try {
-      // Simulated user search - replace with actual API call
-      // In production: const response = await searchService.searchUsers(query);
+      // TODO: Replace with actual API call when user search endpoint is available
+      // In production: const response = await api.get('/users/search', { params: { q: query } });
+      // For now, using mock data to demonstrate the UI functionality
       const mockUsers = [
         {
           id: 'user-1',

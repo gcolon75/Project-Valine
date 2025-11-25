@@ -23,11 +23,12 @@ export default function Requests() {
   const loadRequests = async () => {
     try {
       const data = await getConnectionRequests();
-      setRequests(data.requests || data || []);
+      // API returns { requests: [...] } or array directly depending on implementation
+      const requestsArray = Array.isArray(data) ? data : (data?.requests || []);
+      setRequests(requestsArray);
     } catch (err) {
       console.error('Failed to load requests:', err);
-      setError(err.message);
-      // Use mock data for demo purposes
+      setError(err.message || 'Failed to load requests');
       setRequests([]);
     } finally {
       setLoading(false);

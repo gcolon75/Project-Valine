@@ -97,7 +97,8 @@ export default function Profile() {
         setConnectionStatus(status);
       } catch (err) {
         console.warn('Failed to fetch connection status:', err);
-        // Use default status on error
+        // Use default status on error - buttons will show "Follow" as default
+        // This is intentional as it allows users to still attempt to follow
       }
     };
 
