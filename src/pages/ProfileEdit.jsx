@@ -467,7 +467,7 @@ export default function ProfileEdit() {
               {/* Basic Information */}
               <FormSection title="Basic Information" icon={User}>
                 <div className="space-y-4">
-                  <FormField label="Display Name" required>
+                  <FormField label="Name" required>
                     <input
                       type="text"
                       value={formData.displayName}
@@ -490,6 +490,9 @@ export default function ProfileEdit() {
                         placeholder="username"
                       />
                     </div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
+                      Used for tagging and your profile URL
+                    </p>
                   </FormField>
 
                   <FormField label="Professional Title">

@@ -1,11 +1,12 @@
 // src/pages/Profile.jsx
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
+import PasswordConfirmModal from '../components/PasswordConfirmModal';
 import { Button, Card } from '../components/ui';
 import { Share2, FileText, Video, User, ExternalLink, Globe, Film } from 'lucide-react';
 
@@ -60,10 +61,12 @@ const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
 export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('posts');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Determine if viewing own profile
   const isOwnProfile = useMemo(() => {
@@ -173,7 +176,7 @@ export default function Profile() {
             {/* Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
               <Button 
-                onClick={() => window.location.href = '/profile-edit'}
+                onClick={() => setShowPasswordModal(true)}
                 variant="primary"
                 size="md"
               >
@@ -356,6 +359,18 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Password Confirmation Modal for Edit Profile */}
+      <PasswordConfirmModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        onSuccess={() => {
+          setShowPasswordModal(false);
+          navigate('/profile-edit');
+        }}
+        title="Confirm Your Identity"
+        message="Please enter your password to access the profile editor."
+      />
     </div>
   );
 }

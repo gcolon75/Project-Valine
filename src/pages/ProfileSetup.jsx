@@ -153,7 +153,7 @@ export default function ProfileSetup() {
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium mb-1">Display Name *</label>
+            <label htmlFor="displayName" className="block text-sm font-medium mb-1">Name *</label>
             <input
               type="text"
               name="displayName"
@@ -161,6 +161,7 @@ export default function ProfileSetup() {
               required
               value={form.displayName}
               onChange={handleChange}
+              placeholder="Your full name"
               className="w-full rounded-md bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 p-2 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-600"
             />
           </div>
