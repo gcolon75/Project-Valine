@@ -282,7 +282,7 @@ export default function Settings() {
           )}
           
           <SettingItem label="Username" value={`@${user?.username || 'username'}`} />
-          <SettingItem label="Display Name" value={user?.displayName || 'User Name'} />
+          <SettingItem label="Name" value={user?.displayName || 'User Name'} />
           <SettingItem label="Member Since" value="January 2024" />
         </SettingsSection>
 
