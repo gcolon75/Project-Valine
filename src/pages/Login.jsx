@@ -55,13 +55,8 @@ const Login = () => {
         return;
       }
       
-      // Navigate based on profile completion
-      if (user.onboardingComplete || user.profileComplete) {
-        navigate('/dashboard');
-      } else {
-        // Redirect new users to onboarding
-        navigate('/onboarding');
-      }
+      // Always go directly to dashboard after sign in - no onboarding redirect
+      navigate('/dashboard');
     } catch (err) {
       // Handle specific error types
       const errorMessage = err.message || 'An error occurred';

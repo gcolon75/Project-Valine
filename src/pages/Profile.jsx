@@ -3,12 +3,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
+import { followUser, sendConnectionRequest, unfollowUser, getConnectionStatus } from '../services/connectionService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PasswordConfirmModal from '../components/PasswordConfirmModal';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // URL validation helper to prevent XSS attacks
 const isValidUrl = (url) => {
@@ -36,7 +38,8 @@ const EMPTY_PROFILE = {
   reelsCount: 0,
   scriptsCount: 0,
   posts: [],
-  externalLinks: {}
+  externalLinks: {},
+  profileVisibility: 'public'
 };
 
 const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
@@ -67,6 +70,15 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  
+  // Connection/Follow states
+  const [connectionStatus, setConnectionStatus] = useState({
+    isFollowing: false,
+    isFollowedBy: false,
+    requestPending: false,
+    requestSent: false
+  });
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Determine if viewing own profile
   const isOwnProfile = useMemo(() => {
@@ -74,6 +86,65 @@ export default function Profile() {
     if (!user) return false;
     return id === user.id || id === user.username;
   }, [id, user]);
+
+  // Fetch connection status for other users' profiles
+  useEffect(() => {
+    const fetchConnectionStatus = async () => {
+      if (isOwnProfile || !profile?.id || !user) return;
+      
+      try {
+        const status = await getConnectionStatus(profile.id);
+        setConnectionStatus(status);
+      } catch (err) {
+        console.warn('Failed to fetch connection status:', err);
+        // Use default status on error
+      }
+    };
+
+    fetchConnectionStatus();
+  }, [isOwnProfile, profile?.id, user]);
+
+  // Handle follow action
+  const handleFollow = async () => {
+    if (!profile?.id) return;
+    
+    setFollowLoading(true);
+    try {
+      // For public profiles, follow directly
+      // For private profiles, send a request
+      if (profile.profileVisibility === 'private') {
+        await sendConnectionRequest(profile.id);
+        setConnectionStatus(prev => ({ ...prev, requestSent: true }));
+        toast.success('Follow request sent!');
+      } else {
+        await followUser(profile.id);
+        setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
+        toast.success(`Now following ${profile.displayName || profile.username}!`);
+      }
+    } catch (err) {
+      console.error('Failed to follow:', err);
+      toast.error('Failed to follow. Please try again.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // Handle unfollow action
+  const handleUnfollow = async () => {
+    if (!profile?.id) return;
+    
+    setFollowLoading(true);
+    try {
+      await unfollowUser(profile.id);
+      setConnectionStatus(prev => ({ ...prev, isFollowing: false }));
+      toast.success('Unfollowed successfully');
+    } catch (err) {
+      console.error('Failed to unfollow:', err);
+      toast.error('Failed to unfollow. Please try again.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   // Fetch profile data
   useEffect(() => {
@@ -175,21 +246,79 @@ export default function Profile() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
-              <Button 
-                onClick={() => setShowPasswordModal(true)}
-                variant="primary"
-                size="md"
-              >
-                Edit Profile
-              </Button>
-              <Button 
-                variant="secondary"
-                size="md"
-                aria-label="Share profile"
-                className="!p-2 !min-h-[44px] !min-w-[44px]"
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
+              {isOwnProfile ? (
+                <>
+                  <Button 
+                    onClick={() => setShowPasswordModal(true)}
+                    variant="primary"
+                    size="md"
+                  >
+                    Edit Profile
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    size="md"
+                    aria-label="Share profile"
+                    className="!p-2 !min-h-[44px] !min-w-[44px]"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Follow/Unfollow Button for other users */}
+                  {connectionStatus.isFollowing ? (
+                    <Button 
+                      onClick={handleUnfollow}
+                      variant="secondary"
+                      size="md"
+                      disabled={followLoading}
+                    >
+                      {followLoading ? (
+                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Following
+                        </>
+                      )}
+                    </Button>
+                  ) : connectionStatus.requestSent ? (
+                    <Button 
+                      variant="secondary"
+                      size="md"
+                      disabled
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Requested
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleFollow}
+                      variant="primary"
+                      size="md"
+                      disabled={followLoading}
+                    >
+                      {followLoading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          {displayData.profileVisibility === 'private' ? 'Request to Follow' : 'Follow'}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button 
+                    variant="secondary"
+                    size="md"
+                    aria-label="Share profile"
+                    className="!p-2 !min-h-[44px] !min-w-[44px]"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
