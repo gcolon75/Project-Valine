@@ -127,14 +127,14 @@ const Join = () => {
                 <input
                   type="text"
                   required
-                  placeholder="@yourusername"
+                  placeholder="yourusername"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                 />
               </div>
               <p className="text-xs text-neutral-500 mt-1">
-                Used for tagging (@username) and your profile URL
+                Used for mentions and your profile URL
               </p>
             </div>
 

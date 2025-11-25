@@ -28,7 +28,10 @@ export default function PasswordConfirmModal({
     setIsLoading(true);
 
     try {
-      // Verify password by attempting login with current user's email
+      // Verify password by attempting login with current user's email.
+      // Note: This refreshes the existing session (HTTP-only cookies) rather than
+      // creating a new one. A dedicated password verification endpoint would be
+      // preferable for this use case in a production environment.
       await authService.login(user.email, password);
       
       // Password verified successfully
