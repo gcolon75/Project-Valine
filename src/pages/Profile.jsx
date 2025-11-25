@@ -312,7 +312,7 @@ export default function Profile() {
                   )}
                   {/* Message Button */}
                   <Button 
-                    onClick={() => navigate(`/inbox?new=${displayData.id}`)}
+                    onClick={() => navigate('/inbox')}
                     variant="secondary"
                     size="md"
                   >

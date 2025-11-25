@@ -54,7 +54,9 @@ export default function Conversation() {
     setSending(true);
     try {
       const result = await sendMessage(conversationId, newMessage.trim());
-      setMessages(prev => [...prev, result.message]);
+      if (result?.message) {
+        setMessages(prev => [...prev, result.message]);
+      }
       setNewMessage('');
     } catch (err) {
       console.error('Failed to send message:', err);
