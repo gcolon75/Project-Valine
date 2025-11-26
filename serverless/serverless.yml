@@ -351,6 +351,18 @@ functions:
       - httpApi:
           path: /connections/requests/{id}/reject
           method: post
+  followUser:
+    handler: src/handlers/connections.followUser
+    events:
+      - httpApi:
+          path: /connections/follow
+          method: post
+  getConnectionStatus:
+    handler: src/handlers/connections.getConnectionStatus
+    events:
+      - httpApi:
+          path: /connections/status/{userId}
+          method: get
 
   # ========== PROFILES ==========
   getProfileByVanity:
@@ -479,6 +491,18 @@ functions:
       - httpApi:
           path: /account
           method: delete
+  getPreferences:
+    handler: src/handlers/settings.getPreferences
+    events:
+      - httpApi:
+          path: /me/preferences
+          method: get
+  updatePreferences:
+    handler: src/handlers/settings.updatePreferences
+    events:
+      - httpApi:
+          path: /me/preferences
+          method: put
 
   # ========== REEL REQUESTS ==========
   createReelRequest:

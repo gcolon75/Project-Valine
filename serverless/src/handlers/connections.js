@@ -1,14 +1,13 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
-
-const headers = { 'Access-Control-Allow-Origin': '*' };
+import { getUserFromEvent } from './auth.js';
 
 export const sendRequest = async (event) => {
   try {
     const { senderId, receiverId, message } = JSON.parse(event.body || '{}');
     
     if (!senderId || !receiverId) {
-      return error('senderId and receiverId are required', 400);
+      return error(400, 'senderId and receiverId are required');
     }
 
     const prisma = getPrisma();
@@ -20,7 +19,7 @@ export const sendRequest = async (event) => {
     return json(request, 201);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -29,7 +28,7 @@ export const listRequests = async (event) => {
     const { userId } = event.queryStringParameters || {};
     
     if (!userId) {
-      return error('userId is required', 400);
+      return error(400, 'userId is required');
     }
 
     const prisma = getPrisma();
@@ -42,7 +41,7 @@ export const listRequests = async (event) => {
     return json(requests);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -51,7 +50,7 @@ export const approveRequest = async (event) => {
     const id = event.pathParameters?.id;
     
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const prisma = getPrisma();
@@ -63,7 +62,7 @@ export const approveRequest = async (event) => {
     return json(request);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -72,7 +71,7 @@ export const rejectRequest = async (event) => {
     const id = event.pathParameters?.id;
     
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const prisma = getPrisma();
@@ -84,6 +83,113 @@ export const rejectRequest = async (event) => {
     return json(request);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /connections/follow
+ * Follow or unfollow a user (toggle)
+ * Body: { targetUserId: string }
+ */
+export const followUser = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const { targetUserId } = JSON.parse(event.body || '{}');
+    
+    if (!targetUserId) {
+      return error(400, 'targetUserId is required');
+    }
+
+    if (userId === targetUserId) {
+      return error(400, 'Cannot follow yourself');
+    }
+
+    const prisma = getPrisma();
+
+    // Check if there's an existing connection request (follow)
+    const existingRequest = await prisma.connectionRequest.findUnique({
+      where: {
+        senderId_receiverId: {
+          senderId: userId,
+          receiverId: targetUserId,
+        },
+      },
+    });
+
+    if (existingRequest) {
+      // Unfollow - delete the connection request
+      await prisma.connectionRequest.delete({
+        where: { id: existingRequest.id },
+      });
+      return json({ isFollowing: false, message: 'Unfollowed successfully' });
+    } else {
+      // Follow - create a new connection request with accepted status
+      await prisma.connectionRequest.create({
+        data: {
+          senderId: userId,
+          receiverId: targetUserId,
+          status: 'accepted', // Auto-accept for follow functionality
+        },
+      });
+      return json({ isFollowing: true, message: 'Followed successfully' }, 201);
+    }
+  } catch (e) {
+    console.error('Follow user error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /connections/status/{userId}
+ * Get connection status with a user
+ * Returns: { isFollowing: boolean, isFollower: boolean }
+ */
+export const getConnectionStatus = async (event) => {
+  try {
+    const currentUserId = getUserFromEvent(event);
+    if (!currentUserId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const targetUserId = event.pathParameters?.userId;
+    
+    if (!targetUserId) {
+      return error(400, 'userId is required');
+    }
+
+    const prisma = getPrisma();
+
+    // Check if current user follows target user
+    const followingRequest = await prisma.connectionRequest.findUnique({
+      where: {
+        senderId_receiverId: {
+          senderId: currentUserId,
+          receiverId: targetUserId,
+        },
+      },
+    });
+
+    // Check if target user follows current user
+    const followerRequest = await prisma.connectionRequest.findUnique({
+      where: {
+        senderId_receiverId: {
+          senderId: targetUserId,
+          receiverId: currentUserId,
+        },
+      },
+    });
+
+    return json({
+      isFollowing: !!followingRequest && followingRequest.status === 'accepted',
+      isFollower: !!followerRequest && followerRequest.status === 'accepted',
+    });
+  } catch (e) {
+    console.error('Get connection status error:', e);
+    return error(500, 'Server error: ' + e.message);
   }
 };

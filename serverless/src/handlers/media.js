@@ -24,12 +24,12 @@ export const getUploadUrl = async (event) => {
 
     const { id: profileId } = event.pathParameters || {};
     if (!profileId) {
-      return error('profileId is required', 400);
+      return error(400, 'profileId is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     // Require email verification for media uploads
@@ -42,7 +42,7 @@ export const getUploadUrl = async (event) => {
     const { type, title, description, privacy } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
-      return error('Valid type is required (image, video, or pdf)', 400);
+      return error(400, 'Valid type is required (image, video, or pdf)');
     }
 
     const prisma = getPrisma();
@@ -53,11 +53,11 @@ export const getUploadUrl = async (event) => {
     });
 
     if (!profile) {
-      return error('Profile not found', 404);
+      return error(404, 'Profile not found');
     }
 
     if (profile.userId !== userId) {
-      return error('Forbidden - not profile owner', 403);
+      return error(403, 'Forbidden - not profile owner');
     }
 
     // Generate unique S3 key
@@ -95,7 +95,7 @@ export const getUploadUrl = async (event) => {
     }, 201);
   } catch (e) {
     console.error('Get upload URL error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -113,12 +113,12 @@ export const completeUpload = async (event) => {
 
     const { id: profileId } = event.pathParameters || {};
     if (!profileId) {
-      return error('profileId is required', 400);
+      return error(400, 'profileId is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     // Require email verification for media uploads
@@ -131,7 +131,7 @@ export const completeUpload = async (event) => {
     const { mediaId, width, height, fileSize } = body;
 
     if (!mediaId) {
-      return error('mediaId is required', 400);
+      return error(400, 'mediaId is required');
     }
 
     const prisma = getPrisma();
@@ -142,11 +142,11 @@ export const completeUpload = async (event) => {
     });
 
     if (!profile) {
-      return error('Profile not found', 404);
+      return error(404, 'Profile not found');
     }
 
     if (profile.userId !== userId) {
-      return error('Forbidden - not profile owner', 403);
+      return error(403, 'Forbidden - not profile owner');
     }
 
     // Update media record
@@ -170,7 +170,7 @@ export const completeUpload = async (event) => {
     });
   } catch (e) {
     console.error('Complete upload error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -182,12 +182,12 @@ export const updateMedia = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -204,16 +204,16 @@ export const updateMedia = async (event) => {
     });
 
     if (!media) {
-      return error('Media not found', 404);
+      return error(404, 'Media not found');
     }
 
     if (media.profile.userId !== userId) {
-      return error('Forbidden - not media owner', 403);
+      return error(403, 'Forbidden - not media owner');
     }
 
     // Validate privacy value
     if (privacy && !['public', 'on-request', 'private'].includes(privacy)) {
-      return error('Invalid privacy value', 400);
+      return error(400, 'Invalid privacy value');
     }
 
     // Update media
@@ -230,7 +230,7 @@ export const updateMedia = async (event) => {
     return json(updatedMedia);
   } catch (e) {
     console.error('Update media error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -242,12 +242,12 @@ export const deleteMedia = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -261,11 +261,11 @@ export const deleteMedia = async (event) => {
     });
 
     if (!media) {
-      return error('Media not found', 404);
+      return error(404, 'Media not found');
     }
 
     if (media.profile.userId !== userId) {
-      return error('Forbidden - not media owner', 403);
+      return error(403, 'Forbidden - not media owner');
     }
 
     // TODO: Delete from S3
@@ -277,7 +277,7 @@ export const deleteMedia = async (event) => {
     return json({ message: 'Media deleted successfully' });
   } catch (e) {
     console.error('Delete media error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -289,7 +289,7 @@ export const getAccessUrl = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const viewerId = getUserFromEvent(event);
@@ -304,20 +304,20 @@ export const getAccessUrl = async (event) => {
     });
 
     if (!media) {
-      return error('Media not found', 404);
+      return error(404, 'Media not found');
     }
 
     const isOwner = viewerId === media.profile.userId;
 
     // Check privacy access
     if (media.privacy === 'private' && !isOwner) {
-      return error('This media is private', 403);
+      return error(403, 'This media is private');
     }
 
     if (media.privacy === 'on-request' && !isOwner) {
       // Check if viewer has an approved request
       if (!viewerId) {
-        return error('Authentication required to request access', 401);
+        return error(401, 'Authentication required to request access');
       }
 
       const request = await prisma.reelRequest.findUnique({
@@ -330,7 +330,7 @@ export const getAccessUrl = async (event) => {
       });
 
       if (!request || request.status !== 'approved') {
-        return error('Access request required or pending', 403);
+        return error(403, 'Access request required or pending');
       }
     }
 
@@ -359,6 +359,6 @@ export const getAccessUrl = async (event) => {
     });
   } catch (e) {
     console.error('Get access URL error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };

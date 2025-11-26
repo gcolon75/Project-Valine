@@ -6,7 +6,7 @@ export const listConversations = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const { limit = '20', cursor } = event.queryStringParameters || {};
@@ -70,7 +70,7 @@ export const listConversations = async (event) => {
     });
   } catch (e) {
     console.error('List conversations error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -78,12 +78,12 @@ export const getMessages = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const conversationId = event.pathParameters?.id;
     if (!conversationId) {
-      return error('Conversation ID is required', 400);
+      return error(400, 'Conversation ID is required');
     }
 
     const { limit = '50', cursor } = event.queryStringParameters || {};
@@ -101,7 +101,7 @@ export const getMessages = async (event) => {
     });
 
     if (!participant) {
-      return error('Not authorized to view this conversation', 403);
+      return error(403, 'Not authorized to view this conversation');
     }
 
     // Get messages
@@ -133,7 +133,7 @@ export const getMessages = async (event) => {
     });
   } catch (e) {
     console.error('Get messages error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -141,17 +141,17 @@ export const sendMessage = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const conversationId = event.pathParameters?.id;
     if (!conversationId) {
-      return error('Conversation ID is required', 400);
+      return error(400, 'Conversation ID is required');
     }
 
     const { text } = JSON.parse(event.body || '{}');
     if (!text || text.trim().length === 0) {
-      return error('Message text is required', 400);
+      return error(400, 'Message text is required');
     }
 
     const prisma = getPrisma();
@@ -167,7 +167,7 @@ export const sendMessage = async (event) => {
     });
 
     if (!participant) {
-      return error('Not authorized to send messages in this conversation', 403);
+      return error(403, 'Not authorized to send messages in this conversation');
     }
 
     // Create message and update conversation
@@ -203,7 +203,7 @@ export const sendMessage = async (event) => {
     }, 201);
   } catch (e) {
     console.error('Send message error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -211,13 +211,13 @@ export const createConversation = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const { participantIds, title } = JSON.parse(event.body || '{}');
     
     if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
-      return error('participantIds array is required', 400);
+      return error(400, 'participantIds array is required');
     }
 
     const prisma = getPrisma();
@@ -259,6 +259,6 @@ export const createConversation = async (event) => {
     }, 201);
   } catch (e) {
     console.error('Create conversation error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
