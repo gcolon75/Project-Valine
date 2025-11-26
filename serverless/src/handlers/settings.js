@@ -12,7 +12,7 @@ export const getSettings = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -50,7 +50,7 @@ export const getSettings = async (event) => {
     return json(settings);
   } catch (e) {
     console.error('Get settings error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -68,7 +68,7 @@ export const updateSettings = async (event) => {
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     // Require email verification for updating settings
@@ -114,7 +114,7 @@ export const updateSettings = async (event) => {
     return json(settings);
   } catch (e) {
     console.error('Update settings error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -126,7 +126,7 @@ export const exportAccountData = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -166,7 +166,7 @@ export const exportAccountData = async (event) => {
     });
 
     if (!user) {
-      return error('User not found', 404);
+      return error(404, 'User not found');
     }
 
     // Remove sensitive fields
@@ -212,7 +212,7 @@ export const exportAccountData = async (event) => {
     return json(exportData);
   } catch (e) {
     console.error('Export account data error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -224,14 +224,14 @@ export const deleteAccount = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
     const { confirmPassword } = body;
 
     if (!confirmPassword) {
-      return error('Password confirmation is required', 400);
+      return error(400, 'Password confirmation is required');
     }
 
     const prisma = getPrisma();
@@ -243,7 +243,7 @@ export const deleteAccount = async (event) => {
     });
 
     if (!user) {
-      return error('User not found', 404);
+      return error(404, 'User not found');
     }
 
     // Verify password using bcrypt
@@ -251,7 +251,7 @@ export const deleteAccount = async (event) => {
     const passwordMatch = await bcrypt.compare(confirmPassword, user.password);
     
     if (!passwordMatch) {
-      return error('Invalid password', 401);
+      return error(401, 'Invalid password');
     }
 
     // In production, you might want to:
@@ -270,6 +270,127 @@ export const deleteAccount = async (event) => {
     });
   } catch (e) {
     console.error('Delete account error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /me/preferences
+ * Get user preferences (theme, etc.)
+ */
+export const getPreferences = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const prisma = getPrisma();
+
+    // Get user and settings
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        theme: true,
+        onboardingComplete: true,
+      },
+    });
+
+    if (!user) {
+      return error(404, 'User not found');
+    }
+
+    // Get user settings if they exist
+    const settings = await prisma.userSettings.findUnique({
+      where: { userId },
+    });
+
+    return json({
+      theme: user.theme || 'light',
+      onboardingComplete: user.onboardingComplete || false,
+      notifications: settings?.notifications || {},
+      privacy: settings?.privacy || {},
+    });
+  } catch (e) {
+    console.error('Get preferences error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * PUT /me/preferences
+ * Update user preferences (theme, etc.)
+ */
+export const updatePreferences = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const { theme, onboardingComplete, notifications, privacy } = body;
+
+    const prisma = getPrisma();
+
+    // Update user theme if provided
+    const userUpdateData = {};
+    if (theme !== undefined) {
+      if (!['light', 'dark'].includes(theme)) {
+        return error(400, 'Invalid theme value. Must be "light" or "dark"');
+      }
+      userUpdateData.theme = theme;
+    }
+    if (onboardingComplete !== undefined) {
+      userUpdateData.onboardingComplete = Boolean(onboardingComplete);
+    }
+
+    // Update user if we have user-level changes
+    if (Object.keys(userUpdateData).length > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: userUpdateData,
+      });
+    }
+
+    // Update or create settings if we have settings-level changes
+    if (notifications !== undefined || privacy !== undefined) {
+      const settingsUpdateData = {};
+      if (notifications !== undefined) settingsUpdateData.notifications = notifications;
+      if (privacy !== undefined) settingsUpdateData.privacy = privacy;
+
+      await prisma.userSettings.upsert({
+        where: { userId },
+        update: settingsUpdateData,
+        create: {
+          userId,
+          ...settingsUpdateData,
+        },
+      });
+    }
+
+    // Return updated preferences
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        theme: true,
+        onboardingComplete: true,
+      },
+    });
+
+    const updatedSettings = await prisma.userSettings.findUnique({
+      where: { userId },
+    });
+
+    return json({
+      theme: updatedUser?.theme || 'light',
+      onboardingComplete: updatedUser?.onboardingComplete || false,
+      notifications: updatedSettings?.notifications || {},
+      privacy: updatedSettings?.privacy || {},
+    });
+  } catch (e) {
+    console.error('Update preferences error:', e);
+    return error(500, 'Server error: ' + e.message);
   }
 };
