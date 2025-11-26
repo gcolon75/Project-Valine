@@ -19,6 +19,7 @@ describe('Auth Handler Exports', () => {
     'enable2FA',
     'verify2FA',
     'disable2FA',
+    'seedRestricted',
     'getUserFromEvent' // Helper function for compatibility
   ];
 
@@ -74,7 +75,8 @@ describe('Auth Handler Serverless.yml Compatibility', () => {
     'src/handlers/auth.setup2FA': 'setup2FA',
     'src/handlers/auth.enable2FA': 'enable2FA',
     'src/handlers/auth.verify2FA': 'verify2FA',
-    'src/handlers/auth.disable2FA': 'disable2FA'
+    'src/handlers/auth.disable2FA': 'disable2FA',
+    'src/handlers/auth.seedRestricted': 'seedRestricted'
   };
 
   Object.entries(serverlessYmlHandlers).forEach(([fullPath, handlerName]) => {
