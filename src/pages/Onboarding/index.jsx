@@ -114,14 +114,21 @@ export default function Onboarding() {
     setIsSaving(true);
     
     try {
+      // Defensive check - onboardingData should always be initialized but check anyway
+      if (!onboardingData) {
+        console.error('[Onboarding] onboardingData is null/undefined');
+        toast.error('Something went wrong. Please refresh and try again.');
+        return;
+      }
+
       // Update user profile with onboarding data
       const updates = {
-        displayName: onboardingData.displayName,
-        headline: onboardingData.headline,
+        displayName: onboardingData.displayName || '',
+        headline: onboardingData.headline || '',
         bio: onboardingData.bio || '',
         roles: onboardingData.roles || [],
         tags: onboardingData.tags || [],
-        avatarUrl: onboardingData.avatar,
+        avatarUrl: onboardingData.avatar || null,
         profileComplete: true,
         onboardingComplete: true,
       };
@@ -140,6 +147,7 @@ export default function Onboarding() {
       }
 
       // Update local state after successful backend save (or on fallback)
+      // Include both displayName and name for backward compatibility with different app components
       updateUser({
         ...updates,
         name: updates.displayName,

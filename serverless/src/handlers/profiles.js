@@ -867,16 +867,22 @@ export const updateMyProfile = async (event) => {
       }
 
       // Check if onboarding should be marked complete
-      // Priority: 1) Explicit request flag, 2) Auto-detect based on profile data
+      // Priority: 1) Explicit request flag (if boolean), 2) Auto-detect based on profile data
       const hasBasicInfo = updatedUser.displayName && updatedUser.username;
       const hasProfileInfo = profile.headline || profile.bio || 
                             (profile.roles && profile.roles.length > 0) || 
                             (profile.tags && profile.tags.length > 0);
       
-      // Respect explicit onboardingComplete/profileComplete flags from request
-      // OR auto-detect based on profile completeness
-      const shouldMarkOnboardingComplete = onboardingComplete === true || (hasBasicInfo && hasProfileInfo);
-      const shouldMarkProfileComplete = profileComplete === true || (hasBasicInfo && hasProfileInfo);
+      // Determine final flag values:
+      // - If explicitly set to true in request, use true
+      // - If explicitly set to false in request, skip auto-detection
+      // - If undefined in request, auto-detect based on profile completeness
+      const shouldMarkOnboardingComplete = 
+        onboardingComplete === true || 
+        (onboardingComplete !== false && hasBasicInfo && hasProfileInfo);
+      const shouldMarkProfileComplete = 
+        profileComplete === true || 
+        (profileComplete !== false && hasBasicInfo && hasProfileInfo);
       
       // Update onboardingComplete and profileComplete if needed
       const statusUpdateData = {};
