@@ -40,7 +40,7 @@ provider:
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
-    ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "false"}
+    ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "true"}
     ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, "ghawk075@gmail.com,valinejustin@gmail.com"}
     PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
     PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
