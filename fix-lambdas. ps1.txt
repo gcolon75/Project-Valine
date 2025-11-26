@@ -1,0 +1,24 @@
+# Correct DATABASE_URL with NO SPACES
+$dbUrl = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres? sslmode=require"
+$jwtSecret = "oHnvIQ0wx5P1fxADM4UKXkv7k+VP05clPNTD9RDfROo="
+$allowedEmails = "ghawk075@gmail.com,valinejustin@gmail.com"
+
+$envVars = "Variables={DATABASE_URL=$dbUrl,JWT_SECRET=$jwtSecret,ALLOWED_USER_EMAILS=$allowedEmails,ENABLE_REGISTRATION=false,STRICT_ALLOWLIST=false}"
+
+$functions = @(
+    "pv-api-prod-login",
+    "pv-api-prod-me",
+    "pv-api-prod-register",
+    "pv-api-prod-getMyProfile",
+    "pv-api-prod-updateMyProfile",
+    "pv-api-prod-refresh",
+    "pv-api-prod-logout"
+)
+
+foreach ($fn in $functions) {
+    Write-Host "Updating $fn..." -ForegroundColor Yellow
+    aws lambda update-function-configuration --function-name $fn --region us-west-2 --environment $envVars | Out-Null
+    Write-Host "Done: $fn" -ForegroundColor Green
+}
+
+Write-Host "`nAll functions updated!" -ForegroundColor Cyan
