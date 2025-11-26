@@ -78,6 +78,7 @@ provider:
     ANALYTICS_SAMPLING_RATE: ${env:ANALYTICS_SAMPLING_RATE, "1.0"}
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
     STRICT_ALLOWLIST: ${env:STRICT_ALLOWLIST, "0"}
+    ADMIN_SEED_TOKEN: ${env:ADMIN_SEED_TOKEN, ""}
 
 custom:
   esbuild:
@@ -192,6 +193,12 @@ functions:
     events:
       - httpApi:
           path: /auth/2fa/disable
+          method: post
+  seedRestricted:
+    handler: src/handlers/auth.seedRestricted
+    events:
+      - httpApi:
+          path: /auth/seed-restricted
           method: post
 
   # ========== USERS ==========

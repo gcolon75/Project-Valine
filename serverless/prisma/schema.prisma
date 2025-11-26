@@ -20,6 +20,7 @@ model User {
   status          String   @default("active") // 'pending' | 'active' | 'suspended'
   theme           String?  @default("light") // 'light' | 'dark' - theme preference
   onboardingComplete Boolean @default(false) // Onboarding completion status
+  profileComplete Boolean @default(false)  // Profile completion status
   emailVerified   Boolean  @default(false)
   emailVerifiedAt DateTime?
   twoFactorEnabled Boolean @default(false)

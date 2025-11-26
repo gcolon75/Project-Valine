@@ -261,6 +261,10 @@ async function login(event) {
         user: {
           id: user.id,
           email: user.email,
+          username: user.username || null,
+          displayName: user.displayName || user.name || null,
+          onboardingComplete: user.onboardingComplete || false,
+          profileComplete: user.profileComplete || false,
           createdAt: user.createdAt,
           twoFactorEnabled: user.twoFactorEnabled || false
         },
@@ -284,20 +288,33 @@ async function register(event) {
   
   try {
     const rawBody = event?.body || '';
-    console.log(`[REGISTER] Raw body length: ${rawBody.length}`);
+    logStructured(correlationId, 'register_attempt', {
+      bodyLength: rawBody.length
+    }, 'info');
+    
     let data = {};
     if (rawBody) {
       try {
         data = JSON.parse(rawBody);
       } catch (e) {
-        console.error('[REGISTER] JSON parse error:', e);
-        return error(400, 'Invalid JSON body');
+        logStructured(correlationId, 'register_json_parse_error', {
+          error: e.message
+        }, 'error');
+        return error(400, 'Invalid JSON body', { correlationId });
       }
     }
     const { email, password, username, displayName } = data;
     if (!email || !password) {
-      return error(400, 'email and password are required');
+      logStructured(correlationId, 'register_missing_credentials', {
+        hasEmail: !!email,
+        hasPassword: !!password
+      }, 'warn');
+      return error(400, 'email and password are required', { correlationId });
     }
+
+    logStructured(correlationId, 'register_credentials_received', {
+      email: redactEmail(email)
+    }, 'info');
 
     // Generate username from email if not provided
     const finalUsername = username || email.split('@')[0];
@@ -321,8 +338,8 @@ async function register(event) {
     if (!enableRegistration) {
       // Registration closed to public — require email in allowlist
       if (allowlist.length === 0) {
-        console.warn('[REGISTER] Registration closed and no allowlist configured');
-        return error(403, 'Registration not permitted');
+        logStructured(correlationId, 'register_closed_no_allowlist', {}, 'warn');
+        return error(403, 'Registration not permitted', { correlationId });
       }
       if (!allowlist.includes(email.toLowerCase())) {
         logStructured(correlationId, 'registration_denied', {
@@ -334,12 +351,19 @@ async function register(event) {
       }
     }
 
+    logStructured(correlationId, 'register_allowlist_passed', {
+      email: redactEmail(email)
+    }, 'info');
+
     const prisma = getPrisma();
     const existing = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
     });
     if (existing) {
-      return error(409, 'Email already registered');
+      logStructured(correlationId, 'register_email_exists', {
+        email: redactEmail(email)
+      }, 'warn');
+      return error(409, 'Email already registered', { correlationId });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -352,7 +376,11 @@ async function register(event) {
       }
     });
 
-    console.log(`[REGISTER] Created userId=${user.id}`);
+    logStructured(correlationId, 'register_success', {
+      userId: user.id,
+      email: redactEmail(user.email)
+    }, 'info');
+    
     return response(201, {
       user: {
         id: user.id,
@@ -361,8 +389,11 @@ async function register(event) {
       }
     });
   } catch (e) {
-    console.error('[REGISTER] Unhandled error:', e);
-    return error(500, 'Server error');
+    logStructured(correlationId, 'register_unhandled_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    return error(500, 'Server error', { correlationId });
   }
 }
 
@@ -670,6 +701,180 @@ function getUserFromEvent(event) {
   }
 }
 
+/* ---------------------- SEED RESTRICTED ---------------------- */
+
+/**
+ * POST /auth/seed-restricted
+ * Seeds initial allowlisted user accounts.
+ * 
+ * This endpoint is guarded by the ADMIN_SEED_TOKEN environment variable.
+ * It creates users from the ALLOWED_USER_EMAILS environment variable if they
+ * don't exist, sets them with onboardingComplete=true, profileComplete=true,
+ * emailVerified=true, and generates temporary random passwords.
+ * 
+ * Security:
+ * - Requires ADMIN_SEED_TOKEN in Authorization header (Bearer token)
+ * - Token must be at least 32 characters long
+ * - Uses constant-time comparison to prevent timing attacks
+ * - Returns 403 if token is missing or invalid
+ * - Returns 503 if token is configured but too short
+ * - All operations are logged for audit trail (info, warn, error levels)
+ * 
+ * Password Delivery:
+ * - Temporary passwords are returned in the response for admin to retrieve
+ * - This is intentional for initial setup - endpoint is one-time use
+ * - Passwords are NOT logged; only the creation event is logged
+ * - Admins should immediately change these passwords after first login
+ */
+async function seedRestricted(event) {
+  const correlationId = generateCorrelationId();
+  const start = nowSeconds();
+  
+  try {
+    logStructured(correlationId, 'seed_restricted_attempt', {}, 'info');
+    
+    // Check for admin seed token
+    const adminToken = process.env.ADMIN_SEED_TOKEN;
+    if (!adminToken || adminToken.trim() === '') {
+      logStructured(correlationId, 'seed_restricted_no_token_configured', {}, 'warn');
+      return error(403, 'Seed endpoint not configured', { correlationId });
+    }
+    
+    // Validate token meets minimum security requirements (at least 32 chars)
+    const MIN_TOKEN_LENGTH = 32;
+    if (adminToken.length < MIN_TOKEN_LENGTH) {
+      logStructured(correlationId, 'seed_restricted_token_too_short', {
+        minLength: MIN_TOKEN_LENGTH,
+        actualLength: adminToken.length
+      }, 'error');
+      return error(503, 'Seed endpoint misconfigured', { correlationId });
+    }
+    
+    // Extract Authorization header
+    const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+    const providedToken = authHeader.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : authHeader;
+    
+    // Use constant-time comparison to prevent timing attacks
+    const tokensMatch = providedToken && 
+      providedToken.length === adminToken.length &&
+      crypto.timingSafeEqual(Buffer.from(providedToken), Buffer.from(adminToken));
+    
+    if (!tokensMatch) {
+      logStructured(correlationId, 'seed_restricted_invalid_token', {
+        hasToken: !!providedToken,
+        tokenLength: providedToken?.length || 0
+      }, 'warn');
+      return error(403, 'Invalid or missing admin token', { correlationId });
+    }
+    
+    logStructured(correlationId, 'seed_restricted_token_valid', {}, 'info');
+    
+    // Get allowlisted emails from environment
+    const allowlist = getActiveAllowlist();
+    if (allowlist.length === 0) {
+      logStructured(correlationId, 'seed_restricted_empty_allowlist', {}, 'warn');
+      return error(400, 'No allowlisted emails configured', { correlationId });
+    }
+    
+    const prisma = getPrisma();
+    const results = [];
+    
+    for (const email of allowlist) {
+      try {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() }
+        });
+        
+        if (existingUser) {
+          logStructured(correlationId, 'seed_restricted_user_exists', {
+            email: redactEmail(email),
+            userId: existingUser.id
+          }, 'info');
+          
+          results.push({
+            email: redactEmail(email),
+            status: 'alreadyExists',
+            userId: existingUser.id
+          });
+          continue;
+        }
+        
+        // Generate temporary random password (32 hex chars = 16 bytes = 128 bits of entropy)
+        // This is intentionally returned in the response for one-time admin setup
+        const tempPassword = crypto.randomBytes(16).toString('hex');
+        const passwordHash = await bcrypt.hash(tempPassword, 12);
+        
+        // Generate username from email
+        const username = email.split('@')[0];
+        const displayName = username;
+        
+        // Create user with all flags set
+        const user = await prisma.user.create({
+          data: {
+            email: email.toLowerCase(),
+            username: username,
+            passwordHash: passwordHash,
+            displayName: displayName,
+            onboardingComplete: true,
+            profileComplete: true,
+            emailVerified: true,
+            emailVerifiedAt: new Date()
+          }
+        });
+        
+        // Note: Password is intentionally included in response for admin to retrieve
+        // during initial setup. This endpoint is protected by ADMIN_SEED_TOKEN and
+        // should only be called once during deployment. Do not log the password.
+        logStructured(correlationId, 'seed_restricted_user_created', {
+          email: redactEmail(email),
+          userId: user.id
+        }, 'info');
+        
+        results.push({
+          email: redactEmail(email),
+          status: 'created',
+          userId: user.id,
+          tempPassword: tempPassword // Intentional: admin needs this for initial setup
+        });
+        
+      } catch (userError) {
+        logStructured(correlationId, 'seed_restricted_user_error', {
+          email: redactEmail(email),
+          error: userError.message
+        }, 'error');
+        
+        results.push({
+          email: redactEmail(email),
+          status: 'error',
+          error: userError.message
+        });
+      }
+    }
+    
+    logStructured(correlationId, 'seed_restricted_complete', {
+      totalUsers: allowlist.length,
+      results: results.map(r => ({ email: r.email, status: r.status })),
+      latencySeconds: nowSeconds() - start
+    }, 'info');
+    
+    return response(200, {
+      success: true,
+      message: 'Seed operation completed',
+      users: results
+    });
+    
+  } catch (e) {
+    logStructured(correlationId, 'seed_restricted_unhandled_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    return error(500, 'Server error', { correlationId });
+  }
+}
+
 /* ---------------------- EXPORT ALL ---------------------- */
 
 export {
@@ -684,5 +889,6 @@ export {
   enable2FA,
   verify2FA,
   disable2FA,
+  seedRestricted,
   getUserFromEvent
 };
