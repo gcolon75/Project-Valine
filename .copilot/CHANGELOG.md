@@ -1,5 +1,43 @@
 # Project Valine Change Log
 
+## PR #272 - 2025-11-25 - Social Features: Posts, Interactions, Messaging & Feed System
+- **Agent:** GitHub Copilot Coding Agent
+- **Objective:** Implement core social features for user interaction
+- **Files Added:**
+  - `src/components/NotificationBell.jsx` - Header notification dropdown
+  - `src/data/demoPosts.js` - Demo posts for feed population
+  - `src/pages/Conversation.jsx` - Message thread view
+- **Files Modified:**
+  - `src/services/postService.js` - Added like, comment, bookmark API methods
+  - `src/pages/Inbox.jsx` - Full conversation list with search
+  - `src/pages/Profile.jsx` - Added Message button for other users
+  - `src/layouts/AppLayout.jsx` - Added notification bell to header
+  - `src/routes/App.jsx` - Added conversation route
+- **Features Implemented:**
+  - Notification bell with unread count in header
+  - Enhanced messaging inbox with conversation list
+  - Individual message thread view
+  - Message button on user profiles
+  - Demo posts for feed population
+  - Post like/comment/bookmark API integration
+- **Status:** ✅ Complete
+- **Key Decisions:**
+  - Demo data provides fallback when API unavailable
+  - Optimistic UI updates for likes and saves
+  - Existing Discover page demo profiles preserved
+
+## PR #271 - 2025-11-25 - Profile System & Follow System
+- **Objective:** Implement user profile and follow/unfollow functionality
+- **Status:** ✅ Merged
+
+## PR #270 - 2025-11-25 - Login Loop Fix & Field Naming
+- **Objective:** Fix authentication loop and field naming issues
+- **Status:** ✅ Merged
+
+## PR #269 - 2025-11-25 - User Flow Fixes
+- **Objective:** Fix user flow issues in authentication
+- **Status:** ✅ Merged
+
 ## PR #268 - 2025-11-24 - Repository Organization & Deployment Streamlining
 - **Agent:** Repository Organization Agent
 - **Objective:** Transform Project-Valine into production-ready repository

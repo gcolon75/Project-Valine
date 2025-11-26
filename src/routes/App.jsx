@@ -32,6 +32,7 @@ const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const DiscoverPage = lazy(() => import("../pages/Discover"));
 const PostPage = lazy(() => import("../pages/Post"));
 const InboxPage = lazy(() => import("../pages/Inbox"));
+const ConversationPage = lazy(() => import("../pages/Conversation"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
 const ProfileEditPage = lazy(() => import("../pages/ProfileEdit"));
 const BookmarksPage = lazy(() => import("../pages/Bookmarks"));
@@ -167,6 +168,14 @@ export default function App() {
             element={
               <Protected>
                 <InboxPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="inbox/:id"
+            element={
+              <Protected>
+                <ConversationPage />
               </Protected>
             }
           />

@@ -9,7 +9,7 @@ import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PasswordConfirmModal from '../components/PasswordConfirmModal';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // URL validation helper to prevent XSS attacks
@@ -310,6 +310,15 @@ export default function Profile() {
                       )}
                     </Button>
                   )}
+                  {/* Message Button */}
+                  <Button 
+                    onClick={() => navigate('/inbox')}
+                    variant="secondary"
+                    size="md"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
                   <Button 
                     variant="secondary"
                     size="md"

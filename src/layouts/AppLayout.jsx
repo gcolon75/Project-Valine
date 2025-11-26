@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Home, Search, PlusCircle, Bell, User, Video, Settings, LogOut, AlertTriangle } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
+import NotificationBell from "../components/NotificationBell";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ export default function AppLayout() {
 
             {/* Right Actions - Desktop */}
             <div className="flex items-center space-x-3">
+              <NotificationBell />
               <NavLink
                 to="/settings"
                 className="flex items-center space-x-2 text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-2"
