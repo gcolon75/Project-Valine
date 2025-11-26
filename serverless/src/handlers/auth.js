@@ -714,8 +714,17 @@ function getUserFromEvent(event) {
  * 
  * Security:
  * - Requires ADMIN_SEED_TOKEN in Authorization header (Bearer token)
+ * - Token must be at least 32 characters long
+ * - Uses constant-time comparison to prevent timing attacks
  * - Returns 403 if token is missing or invalid
+ * - Returns 503 if token is configured but too short
  * - All operations are logged for audit trail (info, warn, error levels)
+ * 
+ * Password Delivery:
+ * - Temporary passwords are returned in the response for admin to retrieve
+ * - This is intentional for initial setup - endpoint is one-time use
+ * - Passwords are NOT logged; only the creation event is logged
+ * - Admins should immediately change these passwords after first login
  */
 async function seedRestricted(event) {
   const correlationId = generateCorrelationId();
@@ -731,13 +740,28 @@ async function seedRestricted(event) {
       return error(403, 'Seed endpoint not configured', { correlationId });
     }
     
+    // Validate token meets minimum security requirements (at least 32 chars)
+    const MIN_TOKEN_LENGTH = 32;
+    if (adminToken.length < MIN_TOKEN_LENGTH) {
+      logStructured(correlationId, 'seed_restricted_token_too_short', {
+        minLength: MIN_TOKEN_LENGTH,
+        actualLength: adminToken.length
+      }, 'error');
+      return error(503, 'Seed endpoint misconfigured', { correlationId });
+    }
+    
     // Extract Authorization header
     const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
     const providedToken = authHeader.startsWith('Bearer ') 
       ? authHeader.slice(7) 
       : authHeader;
     
-    if (!providedToken || providedToken !== adminToken) {
+    // Use constant-time comparison to prevent timing attacks
+    const tokensMatch = providedToken && 
+      providedToken.length === adminToken.length &&
+      crypto.timingSafeEqual(Buffer.from(providedToken), Buffer.from(adminToken));
+    
+    if (!tokensMatch) {
       logStructured(correlationId, 'seed_restricted_invalid_token', {
         hasToken: !!providedToken,
         tokenLength: providedToken?.length || 0
