@@ -1,4 +1,4 @@
-DATABASE_URL=postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds. amazonaws.com:5432/postgres?sslmode=require
+DATABASE_URL=postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2. rds. amazonaws.com:5432/postgres?sslmode=require
 JWT_SECRET=oHnvIQ0wx5P1fxADM4UKXkv7k+VP05clPNTD9RDfROo=
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ENABLE_REGISTRATION=false
