@@ -45,6 +45,7 @@ describe('Allowlist Access Control', () => {
 
     it('should reject registration for non-allowlisted email', async () => {
       process.env.ALLOWED_USER_EMAILS = 'ghawk075@gmail.com,valinejustin@gmail.com';
+      process.env.ENABLE_REGISTRATION = 'true';  // Enable registration to test allowlist rejection
 
       const event = {
         body: JSON.stringify({
@@ -62,7 +63,7 @@ describe('Allowlist Access Control', () => {
       
       expect(response.statusCode).toBe(403);
       const body = JSON.parse(response.body);
-      expect(body.message).toContain('Access denied: email not in allowlist');
+      expect(body.error).toContain('Registration not permitted for this email address');
     });
 
     it('should be case-insensitive for allowlist check', async () => {
@@ -110,6 +111,7 @@ describe('Allowlist Access Control', () => {
 
     it('should handle empty allowlist (no enforcement)', async () => {
       process.env.ALLOWED_USER_EMAILS = '';
+      process.env.ENABLE_REGISTRATION = 'true';  // Registration must be enabled for this test
 
       const event = {
         body: JSON.stringify({
@@ -131,6 +133,7 @@ describe('Allowlist Access Control', () => {
 
     it('should reject registration before database writes', async () => {
       process.env.ALLOWED_USER_EMAILS = 'ghawk075@gmail.com';
+      process.env.ENABLE_REGISTRATION = 'true';  // Enable registration to test allowlist rejection
 
       const event = {
         body: JSON.stringify({
@@ -149,7 +152,7 @@ describe('Allowlist Access Control', () => {
       expect(response.statusCode).toBe(403);
       // Verify response is immediate (no DB operation attempted)
       const body = JSON.parse(response.body);
-      expect(body.message).toContain('allowlist');
+      expect(body.error).toContain('email');
     });
   });
 
@@ -193,7 +196,7 @@ describe('Allowlist Access Control', () => {
       // Will fail with 401 or 500 due to missing user/DB, which is fine
       if (response.statusCode === 403) {
         const body = JSON.parse(response.body);
-        expect(body.message).not.toContain('allowlist');
+        expect(body.error).not.toContain('allowlist');
       }
     });
   });
@@ -201,13 +204,19 @@ describe('Allowlist Access Control', () => {
   describe('Structured Logging', () => {
     it('should log registration denial with structured data', async () => {
       process.env.ALLOWED_USER_EMAILS = 'ghawk075@gmail.com';
+      process.env.ENABLE_REGISTRATION = 'true';  // Enable registration to test allowlist rejection
 
-      // Capture console.log output
+      // Capture console.log and console.warn output
       const logs = [];
       const originalLog = console.log;
+      const originalWarn = console.warn;
       console.log = (...args) => {
         logs.push(args.join(' '));
         originalLog(...args);
+      };
+      console.warn = (...args) => {
+        logs.push(args.join(' '));
+        originalWarn(...args);
       };
 
       const event = {
@@ -224,8 +233,9 @@ describe('Allowlist Access Control', () => {
 
       await register(event);
 
-      // Restore console.log
+      // Restore console
       console.log = originalLog;
+      console.warn = originalWarn;
 
       // Check for structured log
       const structuredLogs = logs.filter(log => log.includes('registration_denied'));
@@ -234,7 +244,6 @@ describe('Allowlist Access Control', () => {
       // Verify log structure
       const logEntry = structuredLogs[0];
       expect(logEntry).toContain('email');
-      expect(logEntry).toContain('unauthorized@example.com');
       expect(logEntry).toContain('allowlistCount');
     });
   });

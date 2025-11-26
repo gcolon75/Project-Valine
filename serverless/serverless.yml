@@ -200,6 +200,12 @@ functions:
       - httpApi:
           path: /auth/seed-restricted
           method: post
+  authStatus:
+    handler: src/handlers/auth.authStatus
+    events:
+      - httpApi:
+          path: /auth/status
+          method: get
 
   # ========== USERS ==========
   createUser:

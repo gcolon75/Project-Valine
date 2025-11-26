@@ -137,10 +137,11 @@ describe('Registration Disabled Tests', () => {
 
   test('should have CORS headers even when registration is disabled', async () => {
     process.env.ENABLE_REGISTRATION = 'false';
+    process.env.ALLOWED_USER_EMAILS = 'owner@example.com';
 
     const event = {
       body: JSON.stringify({
-        email: 'test@example.com',
+        email: 'nonallowed@example.com',
         password: 'password123',
         username: 'testuser',
         displayName: 'Test User'

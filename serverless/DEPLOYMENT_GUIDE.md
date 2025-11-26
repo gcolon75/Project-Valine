@@ -333,6 +333,59 @@ npx serverless deploy --stage prod --region us-west-2
 
 Or update the Lambda environment variable directly in AWS Console.
 
+## Updating Environment Variables Only
+
+When changing only environment variables without code changes, Serverless Framework may skip deployment because it doesn't detect any changes.
+
+### Force Deployment
+
+To ensure environment variable changes are deployed:
+
+```bash
+npx serverless deploy --stage prod --region us-west-2 --force
+```
+
+The `--force` flag forces a CloudFormation update even when no code changes are detected.
+
+### Alternative: Update Directly in AWS Lambda Console
+
+If you need to change environment variables without redeploying:
+
+1. Navigate to AWS Lambda Console
+2. Select the Lambda function (e.g., `pv-api-prod-register`)
+3. Go to **Configuration** → **Environment variables**
+4. Click **Edit** and update the values
+5. Click **Save** (Lambda will restart automatically)
+
+⚠️ **Warning:** Console changes are not version-controlled. Prefer `--force` deploy for consistency.
+
+### Verify Environment Variables
+
+After deployment, verify that environment variables propagated correctly:
+
+```bash
+# Check via AWS CLI
+aws lambda get-function-configuration \
+  --function-name pv-api-prod-register \
+  --region us-west-2 \
+  --query 'Environment.Variables.{ENABLE_REGISTRATION:ENABLE_REGISTRATION,ALLOWED_USER_EMAILS:ALLOWED_USER_EMAILS}'
+
+# Or use the auth status endpoint
+curl https://YOUR_API_URL/auth/status
+```
+
+The `/auth/status` endpoint returns the current registration configuration:
+
+```json
+{
+  "registrationEnabled": true,
+  "allowlistActive": true,
+  "allowlistCount": 2,
+  "twoFactorEnabled": false,
+  "emailVerificationRequired": false
+}
+```
+
 ## Monitoring
 
 ### CloudWatch Logs

@@ -36,6 +36,15 @@ import { generateCorrelationId, logStructured } from '../utils/correlationId.js'
 let cachedAllowlist = null;
 
 function getActiveAllowlist() {
+  // Disable cache in test environment to allow env var changes between tests
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+    const allowListRaw = process.env.ALLOWED_USER_EMAILS || '';
+    return allowListRaw
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean);
+  }
+  
   if (cachedAllowlist !== null) {
     return cachedAllowlist;
   }
@@ -45,6 +54,13 @@ function getActiveAllowlist() {
     .map(e => e.trim().toLowerCase())
     .filter(Boolean);
   return cachedAllowlist;
+}
+
+/**
+ * Clear the allowlist cache (primarily for testing)
+ */
+function clearAllowlistCache() {
+  cachedAllowlist = null;
 }
 
 /* ---------------------- Helpers ---------------------- */
@@ -335,19 +351,32 @@ async function register(event) {
       return error(503, 'Service temporarily unavailable: configuration error', { correlationId });
     }
 
+    // Check allowlist enforcement based on registration mode
     if (!enableRegistration) {
       // Registration closed to public — require email in allowlist
       if (allowlist.length === 0) {
-        logStructured(correlationId, 'register_closed_no_allowlist', {}, 'warn');
-        return error(403, 'Registration not permitted', { correlationId });
+        logStructured(correlationId, 'register_closed_no_allowlist', {
+          email: redactEmail(email)
+        }, 'warn');
+        return error(403, 'Registration is currently disabled', { correlationId });
       }
       if (!allowlist.includes(email.toLowerCase())) {
+        logStructured(correlationId, 'registration_denied', {
+          email: redactEmail(email),
+          reason: 'registration_disabled_not_in_allowlist',
+          allowlistCount: allowlist.length
+        }, 'warn');
+        return error(403, 'Registration is currently disabled', { correlationId });
+      }
+    } else {
+      // Registration is enabled, but check allowlist if configured
+      if (allowlist.length > 0 && !allowlist.includes(email.toLowerCase())) {
         logStructured(correlationId, 'registration_denied', {
           email: redactEmail(email),
           reason: 'email_not_in_allowlist',
           allowlistCount: allowlist.length
         }, 'warn');
-        return error(403, 'Access denied: email not in allowlist', { correlationId });
+        return error(403, 'Registration not permitted for this email address', { correlationId });
       }
     }
 
@@ -356,9 +385,21 @@ async function register(event) {
     }, 'info');
 
     const prisma = getPrisma();
-    const existing = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    
+    // Check for existing user - wrapped in try-catch to handle DB errors
+    let existing;
+    try {
+      existing = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+    } catch (dbError) {
+      logStructured(correlationId, 'register_db_lookup_error', {
+        email: redactEmail(email),
+        error: dbError.message
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
+    }
+    
     if (existing) {
       logStructured(correlationId, 'register_email_exists', {
         email: redactEmail(email)
@@ -366,15 +407,34 @@ async function register(event) {
       return error(409, 'Email already registered', { correlationId });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        username: finalUsername,
-        passwordHash: passwordHash,
-        displayName: finalDisplayName,
+    // Create user - wrapped in try-catch to handle unique constraint violations
+    let user;
+    try {
+      const passwordHash = await bcrypt.hash(password, 12);
+      user = await prisma.user.create({
+        data: {
+          email: email.toLowerCase(),
+          username: finalUsername,
+          passwordHash: passwordHash,
+          displayName: finalDisplayName,
+        }
+      });
+    } catch (createError) {
+      // Check for Prisma unique constraint violation (P2002)
+      if (createError.code === 'P2002') {
+        logStructured(correlationId, 'register_duplicate_constraint', {
+          email: redactEmail(email),
+          target: createError.meta?.target
+        }, 'warn');
+        return error(409, 'Email or username already registered', { correlationId });
       }
-    });
+      logStructured(correlationId, 'register_db_create_error', {
+        email: redactEmail(email),
+        error: createError.message,
+        code: createError.code
+      }, 'error');
+      return error(500, 'Server error', { correlationId });
+    }
 
     logStructured(correlationId, 'register_success', {
       userId: user.id,
@@ -875,6 +935,45 @@ async function seedRestricted(event) {
   }
 }
 
+/* ---------------------- AUTH STATUS ---------------------- */
+
+/**
+ * GET /auth/status
+ * Returns the current auth configuration for ops visibility.
+ * This is a public endpoint that helps operators verify that
+ * environment variables are correctly propagated to Lambda.
+ */
+async function authStatus(_event) {
+  const correlationId = generateCorrelationId();
+  
+  try {
+    logStructured(correlationId, 'auth_status_request', {}, 'info');
+    
+    const allowlist = getActiveAllowlist();
+    const enableRegistration = (process.env.ENABLE_REGISTRATION || 'false') === 'true';
+    const twoFactorEnabled = (process.env.TWO_FACTOR_ENABLED || 'false') === 'true';
+    const emailVerificationRequired = (process.env.EMAIL_VERIFICATION_REQUIRED || 'false') === 'true';
+    
+    const statusResponse = {
+      registrationEnabled: enableRegistration,
+      allowlistActive: allowlist.length > 0,
+      allowlistCount: allowlist.length,
+      twoFactorEnabled: twoFactorEnabled,
+      emailVerificationRequired: emailVerificationRequired
+    };
+    
+    logStructured(correlationId, 'auth_status_response', statusResponse, 'info');
+    
+    return response(200, statusResponse);
+  } catch (e) {
+    logStructured(correlationId, 'auth_status_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    return error(500, 'Server error', { correlationId });
+  }
+}
+
 /* ---------------------- EXPORT ALL ---------------------- */
 
 export {
@@ -890,5 +989,7 @@ export {
   verify2FA,
   disable2FA,
   seedRestricted,
-  getUserFromEvent
+  authStatus,
+  getUserFromEvent,
+  clearAllowlistCache
 };
