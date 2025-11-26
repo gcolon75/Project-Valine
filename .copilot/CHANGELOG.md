@@ -1,5 +1,48 @@
 # Project Valine Change Log
 
+## Quick Reference (Recent PRs)
+
+### PR #274 (2025-11-26) - Fix CORS errors and 500 errors
+Fixed missing routes (follow, connection status, preferences) and corrected error function signature across handlers.
+
+### PR #273 (2025-11-26) - Fix Login 500 Error
+Removed extra space in DATABASE_URL that was breaking Prisma connection string parsing.
+
+### PR #272 (2025-11-25) - Implement Social Features
+Added notification bell, messaging inbox, conversation threads, and demo content for presentations.
+
+### PR #271 (2025-11-25) - Fix Profile System and Enable Follow System
+Fixed `/profile/undefined` errors, removed forced onboarding redirect, implemented Instagram-style follow system.
+
+### PR #270 (2025-11-25) - Fix Login Loop and Field Naming
+Added password confirmation modal for edit profile, standardized field labels (Display Name → Name).
+
+### PR #269 (2025-11-24) - Fix User Flow Issues
+Fixed onboarding persistence, edit profile flow, and profile data fetching; standardized footer link colors.
+
+---
+
+## Project Status (as of 2025-11-26)
+
+**Working:**
+- ✅ Login/logout with ghawk075@gmail.com and valinejustin@gmail.com
+- ✅ Follow/unfollow users
+- ✅ Messaging inbox
+- ✅ Notifications
+- ✅ Profile viewing
+
+**In Progress:**
+- ⚠️ Onboarding persistence (Issue #275 - this PR)
+- ⚠️ Profile data saving to database
+
+**Known Issues:**
+- 🐛 Users forced through onboarding on every login
+- 🐛 Profile changes don't persist
+
+---
+
+## Detailed Change History
+
 ## PR #272 - 2025-11-25 - Social Features: Posts, Interactions, Messaging & Feed System
 - **Agent:** GitHub Copilot Coding Agent
 - **Objective:** Implement core social features for user interaction

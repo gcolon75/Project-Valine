@@ -707,7 +707,9 @@ export const updateMyProfile = async (event) => {
       roles, 
       tags, 
       avatarUrl, 
-      bannerUrl 
+      bannerUrl,
+      onboardingComplete,
+      profileComplete
     } = body;
 
     console.log('[updateMyProfile] Update fields:', Object.keys(body));
@@ -865,29 +867,40 @@ export const updateMyProfile = async (event) => {
       }
 
       // Check if onboarding should be marked complete
-      // Criteria: has displayName, username, and at least one of headline/bio/roles/tags
+      // Priority: 1) Explicit request flag, 2) Auto-detect based on profile data
       const hasBasicInfo = updatedUser.displayName && updatedUser.username;
       const hasProfileInfo = profile.headline || profile.bio || 
                             (profile.roles && profile.roles.length > 0) || 
                             (profile.tags && profile.tags.length > 0);
       
-      const shouldMarkOnboardingComplete = hasBasicInfo && hasProfileInfo;
+      // Respect explicit onboardingComplete/profileComplete flags from request
+      // OR auto-detect based on profile completeness
+      const shouldMarkOnboardingComplete = onboardingComplete === true || (hasBasicInfo && hasProfileInfo);
+      const shouldMarkProfileComplete = profileComplete === true || (hasBasicInfo && hasProfileInfo);
       
-      // Update onboardingComplete if needed (with graceful fallback if field doesn't exist)
+      // Update onboardingComplete and profileComplete if needed
+      const statusUpdateData = {};
       if (shouldMarkOnboardingComplete && !updatedUser.onboardingComplete) {
-        console.log('[updateMyProfile] Marking onboarding as complete');
+        statusUpdateData.onboardingComplete = true;
+      }
+      if (shouldMarkProfileComplete && !updatedUser.profileComplete) {
+        statusUpdateData.profileComplete = true;
+      }
+      
+      if (Object.keys(statusUpdateData).length > 0) {
+        console.log('[updateMyProfile] Updating status flags:', Object.keys(statusUpdateData));
         try {
           updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: { onboardingComplete: true },
+            data: statusUpdateData,
           });
         } catch (updateErr) {
-          // Handle schema-related errors gracefully when onboardingComplete field doesn't exist
+          // Handle schema-related errors gracefully when fields don't exist
           // P2009: Unknown field in Prisma query
           // Re-throw connection or other critical errors
           if (updateErr.code === 'P2009' || 
               (updateErr.message && updateErr.message.includes('Unknown field'))) {
-            console.warn('[updateMyProfile] Could not update onboardingComplete (field may not exist):', updateErr.message);
+            console.warn('[updateMyProfile] Could not update status flags (fields may not exist):', updateErr.message);
           } else {
             throw updateErr;
           }

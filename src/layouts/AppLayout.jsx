@@ -65,6 +65,7 @@ export default function AppLayout() {
               <NotificationBell />
               <NavLink
                 to="/settings"
+                title="Settings"
                 className="flex items-center space-x-2 text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-2"
                 aria-label="Settings"
               >
@@ -72,6 +73,7 @@ export default function AppLayout() {
               </NavLink>
               <button
                 onClick={handleLogout}
+                title="Log out"
                 className="flex items-center space-x-2 text-neutral-600 dark:text-neutral-400 hover:text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg p-2"
                 aria-label="Log out"
               >

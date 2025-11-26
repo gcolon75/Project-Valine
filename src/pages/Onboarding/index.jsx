@@ -116,28 +116,44 @@ export default function Onboarding() {
     try {
       // Update user profile with onboarding data
       const updates = {
-        ...onboardingData,
-        name: onboardingData.displayName,
+        displayName: onboardingData.displayName,
+        headline: onboardingData.headline,
+        bio: onboardingData.bio || '',
+        roles: onboardingData.roles || [],
+        tags: onboardingData.tags || [],
+        avatarUrl: onboardingData.avatar,
         profileComplete: true,
         onboardingComplete: true,
       };
 
+      console.log('[Onboarding] Saving profile updates:', Object.keys(updates));
+
       // Attempt to save to backend first
+      let backendSuccess = false;
       try {
-        await updateMyProfile(updates);
+        const response = await updateMyProfile(updates);
+        console.log('[Onboarding] Backend save successful:', response);
+        backendSuccess = true;
       } catch (apiError) {
-        console.warn('Failed to save to backend, using local state:', apiError);
-        // Continue anyway - data is saved locally
+        console.error('[Onboarding] Failed to save to backend:', apiError);
+        // Continue anyway - data is saved locally as fallback
       }
 
       // Update local state after successful backend save (or on fallback)
-      updateUser(updates);
+      updateUser({
+        ...updates,
+        name: updates.displayName,
+      });
 
       // Clear saved onboarding progress
       localStorage.removeItem(ONBOARDING_STORAGE_KEY);
 
       // Show success message
-      toast.success('Profile completed! Welcome to Joint 🎉');
+      if (backendSuccess) {
+        toast.success('Profile completed! Welcome to Joint 🎉');
+      } else {
+        toast.success('Profile saved locally. Welcome to Joint 🎉');
+      }
 
       // Navigate to dashboard
       setTimeout(() => {
