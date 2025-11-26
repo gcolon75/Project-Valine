@@ -24,6 +24,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
+        title={unreadCounts.notifications > 0 ? `Notifications (${unreadCounts.notifications} unread)` : 'Notifications'}
         className="relative p-2 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={`Notifications${unreadCounts.notifications > 0 ? `, ${unreadCounts.notifications} unread` : ''}`}
       >
