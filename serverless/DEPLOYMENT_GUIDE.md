@@ -115,7 +115,12 @@ This installs:
 The Prisma layer contains the database client and Lambda-compatible binary:
 
 ```bash
-./build-prisma-layer.sh
+npm run build:layer
+```
+
+Or directly:
+```bash
+./scripts/build-prisma-layer.sh
 ```
 
 **Expected output:**
@@ -129,6 +134,45 @@ Layer size: 93M
 - First time setup
 - Prisma schema changes
 - Upgrading Prisma version
+
+### Manual steps (if script fails)
+
+1. **Generate Prisma client:**
+   ```bash
+   npx prisma generate
+   ```
+
+2. **Create layer structure:**
+   ```bash
+   mkdir -p layers/nodejs/node_modules
+   cp -r node_modules/.prisma layers/nodejs/node_modules/
+   cp -r node_modules/@prisma layers/nodejs/node_modules/
+   ```
+
+3. **Create layer zip:**
+   ```bash
+   cd layers && zip -r prisma-layer.zip nodejs/
+   ```
+
+4. **Deploy:**
+   ```bash
+   npx serverless deploy --force
+   ```
+
+### Verify layer
+
+After deployment, check Lambda layer ARN:
+```bash
+aws lambda list-layers --region us-west-2 | grep prisma
+```
+
+Check function configuration:
+```bash
+aws lambda get-function-configuration \
+  --function-name pv-api-prod-authStatus \
+  --region us-west-2 \
+  --query 'Layers[*].Arn'
+```
 
 ## Configuration
 

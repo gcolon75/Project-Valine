@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy": "serverless deploy",
+    "build:layer": "bash scripts/build-prisma-layer.sh",
+    "deploy": "npm run build:layer && serverless deploy",
+    "deploy:force": "npm run build:layer && serverless deploy --force",
     "remove": "serverless remove",
     "test": "vitest run",
     "test:watch": "vitest",
