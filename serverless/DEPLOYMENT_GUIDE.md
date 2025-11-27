@@ -45,8 +45,40 @@ You need a PostgreSQL database accessible from AWS Lambda. Options:
 
 Get the connection string in this format:
 ```
-postgresql://username:password@hostname:5432/database_name
+postgresql://username:password@hostname:5432/database_name?sslmode=require
 ```
+
+#### Database Connection String Format
+
+The `DATABASE_URL` must be a valid PostgreSQL connection string **without spaces or unescaped special characters**.
+
+**Common Issues:**
+
+1. **Spaces in hostname**: ❌ `rds. amazonaws.com` → ✅ `rds.amazonaws.com`
+2. **Special characters in password** must be URL-encoded:
+   - `@` → `%40`
+   - `#` → `%23`
+   - `$` → `%24`
+   - `&` → `%26`
+   - `%` → `%25`
+   - ` ` (space) → `%20`
+
+**Example with special characters:**
+```bash
+# Password is "P@ss#word!"
+# URL-encoded: P%40ss%23word%21
+DATABASE_URL="postgresql://user:P%40ss%23word%21@host:5432/db?sslmode=require"
+```
+
+**Validation:**
+
+Test your connection string locally before deploying:
+```bash
+export DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
+npx prisma db execute --stdin <<< "SELECT 1;"
+```
+
+If this fails with "invalid domain character" or similar, check for spaces or unencoded special characters.
 
 ### 3. JWT Secret
 
@@ -423,6 +455,47 @@ PrismaClientInitializationError: ...
 ```
 
 ## Troubleshooting
+
+### Issue: "invalid domain character" or "Database configuration error"
+
+**Cause:** The `DATABASE_URL` contains spaces or unencoded special characters that Prisma cannot parse.
+
+**Symptoms:**
+- CloudWatch logs show: `Error parsing connection string: invalid domain character in database URL`
+- Registration returns 503 with `Database configuration error`
+
+**Fix:**
+1. Check for spaces in the hostname (common copy-paste issue):
+   ```
+   ❌ rds. amazonaws.com  (space after rds.)
+   ✅ rds.amazonaws.com   (no space)
+   ```
+
+2. URL-encode special characters in the password:
+   ```bash
+   # If password contains @, #, $, &, %, or spaces, encode them
+   # Example: P@ss#word! becomes P%40ss%23word%21
+   ```
+
+3. Verify the DATABASE_URL in Lambda:
+   ```bash
+   aws lambda get-function-configuration \
+     --function-name pv-api-prod-register \
+     --region us-west-2 \
+     --query 'Environment.Variables.DATABASE_URL'
+   ```
+
+4. Test the connection string locally:
+   ```bash
+   export DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
+   npx prisma db execute --stdin <<< "SELECT 1;"
+   ```
+
+5. Update and redeploy with corrected URL:
+   ```bash
+   export DATABASE_URL="postgresql://user:pass@host.rds.amazonaws.com:5432/db?sslmode=require"
+   npx serverless deploy --stage prod --region us-west-2 --force
+   ```
 
 ### Issue: "Registration not permitted" for Allowed Email
 
