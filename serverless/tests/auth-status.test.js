@@ -97,4 +97,30 @@ describe('Auth Status Endpoint', () => {
     expect(body.allowlistActive).toBe(true);
     expect(body.allowlistCount).toBe(3);
   });
+
+  it('should not include empty cookies property in response', async () => {
+    process.env.ENABLE_REGISTRATION = 'true';
+    process.env.ALLOWED_USER_EMAILS = '';
+
+    const response = await authStatus({});
+
+    expect(response.statusCode).toBe(200);
+    // Response should not have cookies property when no cookies are set
+    expect(response.cookies).toBeUndefined();
+  });
+
+  it('should handle case-insensitive boolean env var values', async () => {
+    process.env.ENABLE_REGISTRATION = 'TRUE';
+    process.env.TWO_FACTOR_ENABLED = 'True';
+    process.env.EMAIL_VERIFICATION_REQUIRED = 'TrUe';
+    process.env.ALLOWED_USER_EMAILS = '';
+
+    const response = await authStatus({});
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.registrationEnabled).toBe(true);
+    expect(body.twoFactorEnabled).toBe(true);
+    expect(body.emailVerificationRequired).toBe(true);
+  });
 });

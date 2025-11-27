@@ -87,12 +87,18 @@ function redactEmail(e) {
  * Unified JSON response with optional cookies array (HTTP API v2).
  */
 function response(statusCode, bodyObj, cookieHeaders = []) {
-  return {
+  const result = {
     statusCode,
     headers: buildHeaders({ 'Content-Type': 'application/json' }),
-    cookies: cookieHeaders,
     body: JSON.stringify(bodyObj)
   };
+  
+  // Only add cookies if they exist and array is not empty
+  if (Array.isArray(cookieHeaders) && cookieHeaders.length > 0) {
+    result.cookies = cookieHeaders;
+  }
+  
+  return result;
 }
 
 /* ---------------------- LOGIN ---------------------- */
@@ -977,10 +983,21 @@ async function authStatus(_event) {
   try {
     logStructured(correlationId, 'auth_status_request', {}, 'info');
     
-    const allowlist = getActiveAllowlist();
-    const enableRegistration = (process.env.ENABLE_REGISTRATION || 'false') === 'true';
-    const twoFactorEnabled = (process.env.TWO_FACTOR_ENABLED || 'false') === 'true';
-    const emailVerificationRequired = (process.env.EMAIL_VERIFICATION_REQUIRED || 'false') === 'true';
+    // Defensive: wrap allowlist retrieval in try-catch
+    let allowlist = [];
+    try {
+      allowlist = getActiveAllowlist() || [];
+    } catch (allowlistError) {
+      logStructured(correlationId, 'auth_status_allowlist_error', {
+        error: allowlistError.message
+      }, 'error');
+      // Continue with empty allowlist rather than failing
+    }
+    
+    // Defensive: safely parse boolean env vars with explicit fallbacks
+    const enableRegistration = String(process.env.ENABLE_REGISTRATION || 'false').toLowerCase() === 'true';
+    const twoFactorEnabled = String(process.env.TWO_FACTOR_ENABLED || 'false').toLowerCase() === 'true';
+    const emailVerificationRequired = String(process.env.EMAIL_VERIFICATION_REQUIRED || 'false').toLowerCase() === 'true';
     
     const statusResponse = {
       registrationEnabled: enableRegistration,
@@ -996,9 +1013,20 @@ async function authStatus(_event) {
   } catch (e) {
     logStructured(correlationId, 'auth_status_error', {
       error: e.message,
-      stack: e.stack
+      stack: e.stack,
+      name: e.name
     }, 'error');
-    return error(500, 'Server error', { correlationId });
+    
+    // Return a minimal fallback response instead of generic 500
+    return {
+      statusCode: 500,
+      headers: buildHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        error: 'AUTH_STATUS_ERROR',
+        message: 'Failed to retrieve auth status',
+        correlationId: correlationId
+      })
+    };
   }
 }
 
