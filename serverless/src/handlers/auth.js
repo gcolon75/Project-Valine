@@ -1017,16 +1017,12 @@ async function authStatus(_event) {
       name: e.name
     }, 'error');
     
-    // Return a minimal fallback response instead of generic 500
-    return {
-      statusCode: 500,
-      headers: buildHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({
-        error: 'AUTH_STATUS_ERROR',
-        message: 'Failed to retrieve auth status',
-        correlationId: correlationId
-      })
-    };
+    // Return a structured error response using the response helper for consistency
+    return response(500, {
+      error: 'AUTH_STATUS_ERROR',
+      message: 'Failed to retrieve auth status',
+      correlationId: correlationId
+    });
   }
 }
 
