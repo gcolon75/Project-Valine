@@ -24,7 +24,9 @@ export function validateDatabaseUrl(url) {
   }
 
   // Validate basic PostgreSQL connection string structure
-  const urlPattern = /^postgresql:\/\/[^:]+:[^@]+@[^:]+:\d+\/[^?]+(\?.*)?$/;
+  // Note: [^:@]+ for username allows any chars except : and @
+  // [^@]+ for password allows any chars except @
+  const urlPattern = /^postgresql:\/\/[^:@]+:[^@]+@[^:]+:\d+\/[^?]+(\?.*)?$/;
   if (!urlPattern.test(url)) {
     const sanitized = url.replace(/:([^@]+)@/, ':***@');
     return { 

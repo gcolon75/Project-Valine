@@ -134,14 +134,14 @@ describe('DATABASE_URL Validation', () => {
 
   describe('Real-World Error Cases', () => {
     it('should catch the exact error from the issue (space in rds.amazonaws.com)', () => {
-      // This is the exact issue from CloudWatch logs
+      // This simulates the issue from CloudWatch logs - space in hostname
       const result = validateDatabaseUrl(
-        'postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds. amazonaws.com:5432/postgres?sslmode=require'
+        'postgresql://testuser:testpass123@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds. amazonaws.com:5432/postgres?sslmode=require'
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('contains spaces');
       // Verify password is masked
-      expect(result.sanitizedUrl).not.toContain('Crypt0J01nt75');
+      expect(result.sanitizedUrl).not.toContain('testpass123');
       expect(result.sanitizedUrl).toContain(':***@');
     });
   });
