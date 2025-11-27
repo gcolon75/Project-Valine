@@ -866,35 +866,57 @@ export const updateMyProfile = async (event) => {
         });
       }
 
-      // Check if onboarding should be marked complete
-      // Priority: 1) Explicit request flag (if boolean), 2) Auto-detect based on profile data
-      const hasBasicInfo = updatedUser.displayName && updatedUser.username;
-      const hasProfileInfo = profile.headline || profile.bio || 
-                            (profile.roles && profile.roles.length > 0) || 
-                            (profile.tags && profile.tags.length > 0);
+      // Handle onboardingComplete and profileComplete flags
+      // Key principle: Explicit values from request take priority, undefined means keep current DB value
+      // This prevents profile edits from accidentally resetting onboarding status
       
-      // Determine final flag values:
-      // - If explicitly set to true in request, use true
-      // - If explicitly set to false in request, skip auto-detection
-      // - If undefined in request, auto-detect based on profile completeness
-      const shouldMarkOnboardingComplete = 
-        onboardingComplete === true || 
-        (onboardingComplete !== false && hasBasicInfo && hasProfileInfo);
-      const shouldMarkProfileComplete = 
-        profileComplete === true || 
-        (profileComplete !== false && hasBasicInfo && hasProfileInfo);
+      console.log('[updateMyProfile] Flags from request:', {
+        onboardingComplete: onboardingComplete,
+        profileComplete: profileComplete,
+      });
       
-      // Update onboardingComplete and profileComplete if needed
+      console.log('[updateMyProfile] Current DB flags:', {
+        onboardingComplete: updatedUser.onboardingComplete,
+        profileComplete: updatedUser.profileComplete,
+      });
+      
+      // Determine final flag values based on explicit request or keep existing
+      let finalOnboardingComplete = updatedUser.onboardingComplete; // Current DB value
+      let finalProfileComplete = updatedUser.profileComplete; // Current DB value
+      
+      // Explicit values from request take absolute priority
+      if (onboardingComplete === true) {
+        finalOnboardingComplete = true;
+      } else if (onboardingComplete === false) {
+        finalOnboardingComplete = false;
+      }
+      // If undefined, keep current value (don't auto-detect for onboarding)
+      
+      if (profileComplete === true) {
+        finalProfileComplete = true;
+      } else if (profileComplete === false) {
+        finalProfileComplete = false;
+      }
+      // If undefined, keep current value (don't auto-detect for profile)
+      
+      // Prepare status update data if values have changed
       const statusUpdateData = {};
-      if (shouldMarkOnboardingComplete && !updatedUser.onboardingComplete) {
-        statusUpdateData.onboardingComplete = true;
+      if (finalOnboardingComplete !== updatedUser.onboardingComplete) {
+        statusUpdateData.onboardingComplete = finalOnboardingComplete;
       }
-      if (shouldMarkProfileComplete && !updatedUser.profileComplete) {
-        statusUpdateData.profileComplete = true;
+      if (finalProfileComplete !== updatedUser.profileComplete) {
+        statusUpdateData.profileComplete = finalProfileComplete;
       }
       
+      console.log('[updateMyProfile] Final flags to save:', {
+        onboardingComplete: finalOnboardingComplete,
+        profileComplete: finalProfileComplete,
+        willUpdate: Object.keys(statusUpdateData).length > 0,
+      });
+      
+      // Update status flags if needed
       if (Object.keys(statusUpdateData).length > 0) {
-        console.log('[updateMyProfile] Updating status flags:', Object.keys(statusUpdateData));
+        console.log('[updateMyProfile] Updating status flags:', statusUpdateData);
         try {
           updatedUser = await prisma.user.update({
             where: { id: userId },
