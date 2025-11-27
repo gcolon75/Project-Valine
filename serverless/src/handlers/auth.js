@@ -7,7 +7,7 @@
  *  - With serverless-esbuild bundling, only external deps (e.g. @prisma/client) remain in node_modules.
  */
 
-import { getPrisma } from '../db/client.js';
+import { getPrisma, validateDatabaseUrl } from '../db/client.js';
 import { json, error, getCorsHeaders } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -385,6 +385,34 @@ async function register(event) {
     }, 'info');
 
     const prisma = getPrisma();
+    
+    // Test database connection before proceeding
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logStructured(correlationId, 'register_db_connection_ok', {}, 'info');
+    } catch (dbTestError) {
+      logStructured(correlationId, 'register_db_connection_failed', {
+        error: dbTestError.message,
+        code: dbTestError.code
+      }, 'error');
+      
+      // Check if it's a connection string parsing error
+      if (dbTestError.message.includes('invalid domain character') || 
+          dbTestError.message.includes('connection string') ||
+          dbTestError.message.includes('database string is invalid')) {
+        // Validate and log sanitized URL for debugging
+        const validation = validateDatabaseUrl(process.env.DATABASE_URL);
+        if (!validation.valid) {
+          logStructured(correlationId, 'register_db_config_error', {
+            validationError: validation.error,
+            sanitizedUrl: validation.sanitizedUrl
+          }, 'error');
+        }
+        return error(503, 'Database configuration error', { correlationId });
+      }
+      
+      return error(503, 'Database temporarily unavailable', { correlationId });
+    }
     
     // Check for existing user - wrapped in try-catch to handle DB errors
     let existing;
