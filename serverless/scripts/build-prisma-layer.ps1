@@ -172,11 +172,17 @@ try {
     Write-Host "Layer structure (sample):" -ForegroundColor Cyan
     try {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
-        $zip = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
-        $zip.Entries | Where-Object { $_.FullName -match "(prisma|\.node)" } | Select-Object -First 10 | ForEach-Object {
-            Write-Host "  $($_.FullName)" -ForegroundColor Gray
+        $zip = $null
+        try {
+            $zip = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+            $zip.Entries | Where-Object { $_.FullName -match "(prisma|\.node)" } | Select-Object -First 10 | ForEach-Object {
+                Write-Host "  $($_.FullName)" -ForegroundColor Gray
+            }
+        } finally {
+            if ($null -ne $zip) {
+                $zip.Dispose()
+            }
         }
-        $zip.Dispose()
     } catch {
         Write-Host "  (Could not read zip contents)" -ForegroundColor Yellow
     }
