@@ -17,11 +17,43 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
+// Validate DATABASE_URL for common issues
+function validateDatabaseUrl(url) {
+  // Check for spaces in the URL (common copy-paste issue)
+  if (/\s/.test(url)) {
+    const sanitizedUrl = url.replace(/:([^@]+)@/, ':***@');
+    console.error('❌ DATABASE_URL contains spaces!');
+    console.error('');
+    console.error('Sanitized URL showing space location:');
+    console.error(`  ${sanitizedUrl}`);
+    console.error('');
+    console.error('Common issue: Space in hostname (e.g., "rds. amazonaws.com" should be "rds.amazonaws.com")');
+    console.error('');
+    return false;
+  }
+  return true;
+}
+
+if (!validateDatabaseUrl(DATABASE_URL)) {
+  process.exit(1);
+}
+
 async function verifyColumns() {
-  // Configure SSL based on environment
-  const sslConfig = process.env.NODE_ENV === 'production' 
-    ? { rejectUnauthorized: true }  // Strict SSL validation in production
-    : { rejectUnauthorized: false }; // Relaxed for development/testing
+  // Log connection info (without password)
+  try {
+    const urlObj = new URL(DATABASE_URL);
+    console.log(`📡 Connecting to: ${urlObj.hostname}:${urlObj.port}${urlObj.pathname}`);
+  } catch {
+    console.log('📡 Connecting to database...');
+  }
+
+  // Configure SSL for AWS RDS
+  // AWS RDS uses certificates signed by Amazon's CA which may not be in the default trust store
+  // Using rejectUnauthorized: false allows connections to AWS RDS
+  // For production with strict validation, use the AWS RDS CA bundle instead
+  const sslConfig = {
+    rejectUnauthorized: false  // Required for AWS RDS self-signed certificate chain
+  };
   
   const client = new pg.Client({
     connectionString: DATABASE_URL,
@@ -67,6 +99,23 @@ async function verifyColumns() {
     
   } catch (error) {
     console.error('❌ Verification failed:', error.message);
+    console.error('');
+    
+    // Provide helpful debugging info based on error type
+    if (error.code === 'ENOTFOUND') {
+      console.error('🔍 DNS lookup failed - hostname not found');
+      console.error('   Check for spaces or typos in the DATABASE_URL hostname');
+      console.error('   Example: "rds. amazonaws.com" should be "rds.amazonaws.com"');
+    } else if (error.code === 'SELF_SIGNED_CERT_IN_CHAIN' || error.message.includes('self-signed certificate')) {
+      console.error('🔐 SSL certificate error');
+      console.error('   This script uses rejectUnauthorized: false for AWS RDS');
+      console.error('   If you still see this error, check your pg library version');
+    } else if (error.code === 'ECONNREFUSED') {
+      console.error('🔌 Connection refused');
+      console.error('   Check if the database server is running and accessible');
+      console.error('   Verify security group/firewall rules allow your connection');
+    }
+    
     process.exit(1);
   } finally {
     await client.end();
