@@ -19,6 +19,8 @@ import {
 import { json, error, getCorsHeaders } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import fs from 'fs/promises';
+import path from 'path';
 import { authenticator } from 'otplib';
 import {
   generateCsrfToken,
@@ -200,6 +202,15 @@ async function login(event) {
         logStructured(correlationId, 'login_degraded_user_not_found', {
           email: redactEmail(email)
         }, 'warn');
+        
+        // Double-check: verify email is in allowlist before creating user
+        // (This should already be verified above, but defense-in-depth)
+        if (allowlist.length > 0 && !allowlist.includes(email.toLowerCase())) {
+          logStructured(correlationId, 'login_degraded_blocked_not_allowlisted', {
+            email: redactEmail(email)
+          }, 'error');
+          return error(403, 'Access denied: email not in allowlist', { correlationId });
+        }
         
         // Create degraded mode user for allowlisted email on first login attempt
         // Note: This means first login will "register" the user in degraded store
@@ -1131,9 +1142,6 @@ async function authDiag(_event) {
     let layerPresent = false;
     let engineFilesFound = [];
     try {
-      const fs = await import('fs');
-      const path = await import('path');
-      
       // Check common Lambda layer paths
       const layerPaths = [
         '/opt/nodejs/node_modules/.prisma',
@@ -1143,16 +1151,18 @@ async function authDiag(_event) {
       
       for (const layerPath of layerPaths) {
         try {
-          const stats = fs.statSync(layerPath);
+          const stats = await fs.stat(layerPath);
           if (stats.isDirectory()) {
             layerPresent = true;
             // List engine files (don't expose full paths for security)
             const clientPath = path.join(layerPath, 'client');
-            if (fs.existsSync(clientPath)) {
-              const files = fs.readdirSync(clientPath);
+            try {
+              const files = await fs.readdir(clientPath);
               engineFilesFound = files.filter(f => 
                 f.includes('query_engine') || f.includes('libquery_engine')
               ).map(f => f.replace(/^.*\//, '')); // Strip path
+            } catch {
+              // Client dir not accessible
             }
             break;
           }

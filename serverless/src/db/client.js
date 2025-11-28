@@ -1,40 +1,57 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
-let PrismaClient;
-let prisma;
+let PrismaClient = null;
+let prisma = null;
 
 // Degraded mode state
 let prismaDegraded = false;
 let prismaInitError = null;
+let prismaInitAttempted = false;
 
 // In-memory user store for degraded mode (allowlisted emails only)
 // Map<email, { id, email, passwordHash, createdAt }>
 const degradedUserStore = new Map();
 
+// Try to load PrismaClient at module load time
+// This uses dynamic import which returns a promise
+let prismaClientPromise = null;
+
 /**
- * Safely attempt to import PrismaClient
- * Returns null if import fails (e.g., missing .prisma/client)
+ * Lazily load PrismaClient on first access
+ * @returns {Promise<typeof PrismaClient|null>}
  */
-async function importPrismaClient() {
-  try {
-    const module = await import('@prisma/client');
-    return module.PrismaClient;
-  } catch (err) {
-    const errorLog = {
-      timestamp: new Date().toISOString(),
-      correlationId: crypto.randomUUID(),
-      event: 'prisma_import_failed',
-      level: 'error',
-      details: {
-        error: err.message,
-        code: err.code,
-        name: err.name
-      }
-    };
-    console.error(JSON.stringify(errorLog));
-    return null;
+async function getPrismaClientClass() {
+  if (PrismaClient !== null) {
+    return PrismaClient;
   }
+  
+  if (prismaClientPromise === null) {
+    prismaClientPromise = import('@prisma/client')
+      .then(module => {
+        PrismaClient = module.PrismaClient;
+        return PrismaClient;
+      })
+      .catch(err => {
+        const errorLog = {
+          timestamp: new Date().toISOString(),
+          correlationId: crypto.randomUUID(),
+          event: 'prisma_import_failed',
+          level: 'error',
+          details: {
+            error: err.message,
+            code: err.code,
+            name: err.name
+          }
+        };
+        console.error(JSON.stringify(errorLog));
+        prismaDegraded = true;
+        prismaInitError = err.message;
+        return null;
+      });
+  }
+  
+  return prismaClientPromise;
 }
 
 /**
@@ -54,17 +71,15 @@ async function initializePrisma() {
     return null;
   }
 
-  if (!PrismaClient) {
-    PrismaClient = await importPrismaClient();
-    if (!PrismaClient) {
-      prismaDegraded = true;
-      prismaInitError = 'Failed to import @prisma/client - .prisma/client may be missing';
-      return null;
-    }
+  const ClientClass = await getPrismaClientClass();
+  if (!ClientClass) {
+    prismaDegraded = true;
+    prismaInitError = 'Failed to import @prisma/client - .prisma/client may be missing';
+    return null;
   }
 
   try {
-    const client = new PrismaClient();
+    const client = new ClientClass();
     // Test the connection with a simple query
     await client.$queryRaw`SELECT 1`;
     
@@ -165,6 +180,10 @@ export function setDegradedMode(degraded, error = null) {
  * Returns a singleton PrismaClient instance.
  * Validates DATABASE_URL on first initialization and logs any issues.
  * May return null if in degraded mode.
+ * 
+ * Note: This is a synchronous function for backward compatibility.
+ * It uses the already-loaded PrismaClient class if available.
+ * For async initialization with connection testing, use initPrismaAsync().
  */
 export function getPrisma() {
   if (prismaDegraded) {
@@ -179,26 +198,50 @@ export function getPrisma() {
       if (validation.sanitizedUrl) {
         console.error('[Sanitized URL]', validation.sanitizedUrl);
       }
-      // Still create the client - Prisma will provide detailed error
-      // This validation is for better error messages in CloudWatch
+      // Still try to create the client - Prisma will provide detailed error
     }
     
-    try {
-      // Synchronous fallback - try to create client directly
-      // Note: Full async initialization happens via initPrismaAsync
-      const { PrismaClient: SyncPrismaClient } = require('@prisma/client');
-      prisma = new SyncPrismaClient();
-    } catch (err) {
-      prismaDegraded = true;
-      prismaInitError = err.message;
-      console.error(JSON.stringify({
+    // Check if PrismaClient class is already loaded
+    if (PrismaClient) {
+      try {
+        prisma = new PrismaClient();
+      } catch (err) {
+        prismaDegraded = true;
+        prismaInitError = err.message;
+        console.error(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: 'prisma_sync_init_failed',
+          level: 'error',
+          error: err.message
+        }));
+        return null;
+      }
+    } else {
+      // PrismaClient not loaded yet - enter degraded mode
+      // The async loader should have set this up by now if available
+      console.warn(JSON.stringify({
         timestamp: new Date().toISOString(),
-        event: 'prisma_sync_init_failed',
-        level: 'error',
-        error: err.message
+        event: 'prisma_class_not_loaded',
+        level: 'warn',
+        message: 'PrismaClient class not available - use initPrismaAsync() first'
       }));
+      
+      // Don't set degraded mode here - it might just need async initialization
+      // Return null to signal caller should retry or use degraded flow
       return null;
     }
+  }
+  return prisma;
+}
+
+/**
+ * Sync version of getPrisma for backwards compatibility
+ * May return null if Prisma hasn't been initialized yet
+ * @returns {PrismaClient|null}
+ */
+export function getPrismaSync() {
+  if (prismaDegraded) {
+    return null;
   }
   return prisma;
 }
