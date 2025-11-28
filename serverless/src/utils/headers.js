@@ -3,6 +3,8 @@
  * Includes CORS, security headers, and content-type helpers
  */
 
+import { isPrismaDegraded } from '../db/client.js';
+
 // Service version - re-evaluated each time to allow tests to change it
 const getServiceVersion = () => process.env.SERVICE_VERSION || '0.0.1';
 
@@ -98,6 +100,11 @@ export function json(data, statusCode = 200, extra = {}) {
   // Add correlation ID header if provided
   if (correlationId) {
     headers['x-correlation-id'] = correlationId;
+  }
+  
+  // Add prisma degraded header if in degraded mode
+  if (isPrismaDegraded()) {
+    headers['x-prisma-degraded'] = 'true';
   }
   
   return {

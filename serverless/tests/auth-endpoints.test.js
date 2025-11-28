@@ -11,7 +11,7 @@ import { generateAccessToken, generateRefreshToken, generateAccessTokenCookie, g
 const mockUsers = new Map();
 let mockUserId = 'test-user-123';
 
-// Mock Prisma
+// Mock Prisma with all required exports
 vi.mock('../src/db/client.js', () => ({
   getPrisma: () => ({
     user: {
@@ -28,7 +28,13 @@ vi.mock('../src/db/client.js', () => ({
         return null;
       }
     }
-  })
+  }),
+  validateDatabaseUrl: () => ({ valid: true }),
+  isPrismaDegraded: () => false,
+  getDegradedUser: () => null,
+  createDegradedUser: async () => null,
+  verifyDegradedUserPassword: async () => false,
+  getDegradedUserCount: () => 0
 }));
 
 describe('Auth Endpoints - Login with Cookies', () => {
