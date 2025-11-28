@@ -607,6 +607,7 @@ async function me(event) {
     
     const prisma = getPrisma();
     let user;
+    let profile = null;
     try {
       user = await prisma.user.findUnique({ where: { id: userId } });
     } catch (dbError) {
@@ -623,10 +624,22 @@ async function me(event) {
       }, 'warn');
       return error(404, 'User not found', { correlationId });
     }
+
+    // Fetch profile data if available
+    try {
+      profile = await prisma.profile.findUnique({ where: { userId } });
+    } catch (profileError) {
+      // Profile may not exist - continue with null profile
+      logStructured(correlationId, 'me_profile_fetch_warning', {
+        userId,
+        error: profileError.message
+      }, 'warn');
+    }
     
     logStructured(correlationId, 'me_success', {
       userId: user.id,
-      email: redactEmail(user.email)
+      email: redactEmail(user.email),
+      hasProfile: !!profile
     }, 'info');
     
     return response(200, {
@@ -636,10 +649,11 @@ async function me(event) {
         username: user.username || null,
         displayName: user.displayName || user.name || null,
         avatar: user.avatar || null,
-        headline: user.headline || null,
-        bio: user.bio || null,
-        roles: user.roles || [],
-        tags: user.tags || [],
+        headline: profile?.headline || null,
+        // bio exists on both User and Profile tables; Profile takes precedence
+        bio: profile?.bio || user.bio || null,
+        roles: profile?.roles || [],
+        tags: profile?.tags || [],
         onboardingComplete: user.onboardingComplete || false,
         profileComplete: user.profileComplete || false,
         createdAt: user.createdAt,
