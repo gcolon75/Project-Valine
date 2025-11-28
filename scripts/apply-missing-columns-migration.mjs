@@ -67,7 +67,9 @@ async function applyMigration() {
   // Configure SSL for AWS RDS
   // AWS RDS uses certificates signed by Amazon's CA which may not be in the default trust store
   // Using rejectUnauthorized: false allows connections to AWS RDS
-  // For production with strict validation, use the AWS RDS CA bundle instead
+  // For production with strict validation, download the AWS RDS CA bundle from:
+  // https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+  // Then use: ssl: { rejectUnauthorized: true, ca: fs.readFileSync('rds-ca-cert.pem') }
   const sslConfig = {
     rejectUnauthorized: false  // Required for AWS RDS self-signed certificate chain
   };
