@@ -16,7 +16,7 @@ import {
   verifyDegradedUserPassword,
   getDegradedUserCount
 } from '../db/client.js';
-import { json, error, getCorsHeaders } from '../utils/headers.js';
+import { error, getCorsHeaders } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import fs from 'fs/promises';

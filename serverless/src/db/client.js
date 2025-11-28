@@ -7,7 +7,6 @@ let prisma = null;
 // Degraded mode state
 let prismaDegraded = false;
 let prismaInitError = null;
-let prismaInitAttempted = false;
 
 // In-memory user store for degraded mode (allowlisted emails only)
 // Map<email, { id, email, passwordHash, createdAt }>
@@ -266,7 +265,9 @@ export async function initPrismaAsync() {
  * @returns {object|null} User object or null
  */
 export function getDegradedUser(email) {
-  if (!email) return null;
+  if (!email) {
+    return null;
+  }
   return degradedUserStore.get(email.toLowerCase()) || null;
 }
 
@@ -312,7 +313,9 @@ export async function createDegradedUser(email, password) {
  */
 export async function verifyDegradedUserPassword(email, password) {
   const user = getDegradedUser(email);
-  if (!user) return false;
+  if (!user) {
+    return false;
+  }
   return bcrypt.compare(password, user.passwordHash);
 }
 
