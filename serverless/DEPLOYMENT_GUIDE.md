@@ -112,37 +112,78 @@ This installs:
 
 ### 2. Build Prisma Layer
 
-The Prisma layer contains the database client and Lambda-compatible binary:
+The Prisma layer contains the database client and Lambda-compatible binary.
+
+### Automatic (Cross-platform)
 
 ```bash
 npm run build:layer
 ```
 
-Or directly:
-```bash
-./scripts/build-prisma-layer.sh
+This automatically detects your platform and runs the appropriate script.
+
+### Manual - Windows (PowerShell)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1
 ```
 
-**Expected output:**
+Or using the npm script:
+
+```powershell
+npm run build:layer:powershell
 ```
+
+### Manual - Linux/Mac (Bash)
+
+```bash
+bash scripts/build-prisma-layer.sh
+```
+
+Or using the npm script:
+
+```bash
+npm run build:layer:bash
+```
+
+### Verify the build
+
+```powershell
+# Windows
+Get-Item layers/prisma-layer.zip | Select-Object Length, LastWriteTime
+
+# Linux/Mac
+ls -lh layers/prisma-layer.zip
+```
+
+Expected: 8-15 MB zip file created within the last few minutes.
+
+**Expected output:**
+
+```text
 ✓ Prisma layer built successfully!
-Layer location: /home/runner/work/Project-Valine/Project-Valine/serverless/layers/prisma-layer.zip
-Layer size: 93M
+Layer location: .../serverless/layers/prisma-layer.zip
+Layer size: ~10 MB
 ```
 
 **Note:** This only needs to be run when:
+
 - First time setup
 - Prisma schema changes
 - Upgrading Prisma version
 
 ### Manual steps (if script fails)
 
+#### Linux/Mac
+
 1. **Generate Prisma client:**
+
    ```bash
    npx prisma generate
    ```
 
 2. **Create layer structure:**
+
    ```bash
    mkdir -p layers/nodejs/node_modules
    cp -r node_modules/.prisma layers/nodejs/node_modules/
@@ -150,12 +191,42 @@ Layer size: 93M
    ```
 
 3. **Create layer zip:**
+
    ```bash
    cd layers && zip -r prisma-layer.zip nodejs/
    ```
 
 4. **Deploy:**
+
    ```bash
+   npx serverless deploy --force
+   ```
+
+#### Windows
+
+1. **Generate Prisma client:**
+
+   ```powershell
+   npx prisma generate
+   ```
+
+2. **Create layer structure:**
+
+   ```powershell
+   New-Item -ItemType Directory -Force -Path "layers/nodejs/node_modules"
+   Copy-Item -Recurse -Force "node_modules/.prisma" "layers/nodejs/node_modules/"
+   Copy-Item -Recurse -Force "node_modules/@prisma" "layers/nodejs/node_modules/"
+   ```
+
+3. **Create layer zip:**
+
+   ```powershell
+   Compress-Archive -Path "layers/nodejs" -DestinationPath "layers/prisma-layer.zip" -Force
+   ```
+
+4. **Deploy:**
+
+   ```powershell
    npx serverless deploy --force
    ```
 
