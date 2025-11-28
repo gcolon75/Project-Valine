@@ -650,6 +650,7 @@ async function me(event) {
         displayName: user.displayName || user.name || null,
         avatar: user.avatar || null,
         headline: profile?.headline || null,
+        // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,
         roles: profile?.roles || [],
         tags: profile?.tags || [],
