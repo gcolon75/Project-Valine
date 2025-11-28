@@ -20,7 +20,10 @@ describe('Auth Handler Exports', () => {
     'verify2FA',
     'disable2FA',
     'seedRestricted',
-    'getUserFromEvent' // Helper function for compatibility
+    'authStatus',
+    'authDiag',
+    'getUserFromEvent', // Helper function for compatibility
+    'clearAllowlistCache' // Helper for testing
   ];
 
   it('should export all required handlers', () => {
@@ -60,6 +63,11 @@ describe('Auth Handler Exports', () => {
     expect(authModule.verifyEmail).toBeDefined();
     expect(authModule.resendVerification).toBeDefined();
   });
+  
+  it('should have diagnostic handlers', () => {
+    expect(authModule.authStatus).toBeDefined();
+    expect(authModule.authDiag).toBeDefined();
+  });
 });
 
 describe('Auth Handler Serverless.yml Compatibility', () => {
@@ -76,7 +84,9 @@ describe('Auth Handler Serverless.yml Compatibility', () => {
     'src/handlers/auth.enable2FA': 'enable2FA',
     'src/handlers/auth.verify2FA': 'verify2FA',
     'src/handlers/auth.disable2FA': 'disable2FA',
-    'src/handlers/auth.seedRestricted': 'seedRestricted'
+    'src/handlers/auth.seedRestricted': 'seedRestricted',
+    'src/handlers/auth.authStatus': 'authStatus',
+    'src/handlers/auth.authDiag': 'authDiag'
   };
 
   Object.entries(serverlessYmlHandlers).forEach(([fullPath, handlerName]) => {

@@ -770,3 +770,75 @@ npx serverless deploy --stage prod --region us-west-2
 # Via AWS Console
 # Lambda → pv-api-prod-register → Configuration → Environment variables
 ```
+
+## Degraded Mode (Emergency Operation)
+
+When Prisma layer fails to initialize (e.g., missing `.prisma/client`, wrong binary architecture), the API enters **degraded mode** to maintain basic functionality for allowlisted users.
+
+### What Happens in Degraded Mode
+
+1. **Login**: Allowlisted users can still log in using an in-memory user store
+   - First login creates user in memory with bcrypt-hashed password
+   - Subsequent logins verify against the stored hash
+   - No 2FA support in degraded mode
+   - Response includes `_degradedMode: true` flag
+
+2. **Registration**: Not available in degraded mode (returns 503)
+
+3. **Health Check**: Returns `prismaDegraded: true` and adds `PRISMA_DEGRADED` warning
+
+4. **Diagnostics**: `/auth/diag` endpoint provides detailed system state
+
+### Detecting Degraded Mode
+
+```bash
+# Check health endpoint
+curl $API_URL/health | jq '.prismaDegraded'
+
+# Check diagnostics endpoint
+curl $API_URL/auth/diag | jq '.'
+
+# Response headers include x-prisma-degraded: true when degraded
+```
+
+### Disabling Degraded Mode
+
+To force a hard failure instead of degraded mode (useful for controlled rollback):
+
+```bash
+export DISABLE_DEGRADED_LOGIN=true
+npx serverless deploy --stage prod --region us-west-2 --force
+```
+
+### Recovery from Degraded Mode
+
+1. Rebuild Prisma layer in Linux environment:
+   ```bash
+   # Use WSL or Docker on Windows
+   bash scripts/build-prisma-layer.sh
+   ```
+
+2. Verify layer contains only rhel-openssl binary:
+   ```bash
+   unzip -l layers/prisma-layer.zip | grep query_engine
+   # Should only show: libquery_engine-rhel-openssl-3.0.x.so.node
+   ```
+
+3. Deploy with force flag:
+   ```bash
+   npx serverless deploy --stage prod --region us-west-2 --force
+   ```
+
+4. Verify recovery:
+   ```bash
+   curl $API_URL/health | jq '.prismaDegraded'
+   # Should return: false
+   ```
+
+### Security Considerations
+
+- Degraded mode only allows login for **allowlisted emails**
+- Passwords are still bcrypt-hashed (12 rounds)
+- In-memory store expires when Lambda container recycles
+- No user data persists beyond Lambda lifetime
+- Structured logs include `login_degraded_mode` events for audit

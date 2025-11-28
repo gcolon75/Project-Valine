@@ -1,5 +1,6 @@
 import { json } from '../utils/headers.js';
 import { validateSecret, isInsecureDefault } from '../utils/redaction.js';
+import { isPrismaDegraded } from '../db/client.js';
 
 /* ---------------------- Allowlist Helper ---------------------- */
 
@@ -75,11 +76,15 @@ export const handler = async () => {
   const allowlistInfo = getAllowlistInfo();
   const secretsStatus = getSecretsStatus();
   
+  // Check Prisma degraded status
+  const prismaDegraded = isPrismaDegraded();
+  
   const response = {
     status: 'ok',
     timestamp: Date.now(),
     service: 'Project Valine API',
     version: '1.0.0',
+    prismaDegraded,
     ...allowlistInfo,
     secretsStatus
   };
@@ -94,6 +99,9 @@ export const handler = async () => {
   }
   if (!secretsStatus.jwtSecretValid) {
     warnings.push('JWT_SECRET_INVALID');
+  }
+  if (prismaDegraded) {
+    warnings.push('PRISMA_DEGRADED');
   }
   
   if (warnings.length > 0) {

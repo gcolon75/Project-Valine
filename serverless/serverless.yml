@@ -209,6 +209,12 @@ functions:
       - httpApi:
           path: /auth/status
           method: get
+  authDiag:
+    handler: src/handlers/auth.authDiag
+    events:
+      - httpApi:
+          path: /auth/diag
+          method: get
 
   # ========== USERS ==========
   createUser:

@@ -7,7 +7,15 @@
  *  - With serverless-esbuild bundling, only external deps (e.g. @prisma/client) remain in node_modules.
  */
 
-import { getPrisma, validateDatabaseUrl } from '../db/client.js';
+import { 
+  getPrisma, 
+  validateDatabaseUrl,
+  isPrismaDegraded,
+  getDegradedUser,
+  createDegradedUser,
+  verifyDegradedUserPassword,
+  getDegradedUserCount
+} from '../db/client.js';
 import { json, error, getCorsHeaders } from '../utils/headers.js';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -120,7 +128,8 @@ async function login(event) {
 
     const rawBody = event?.body || '';
     logStructured(correlationId, 'login_attempt', {
-      bodyLength: rawBody.length
+      bodyLength: rawBody.length,
+      prismaDegraded: isPrismaDegraded()
     }, 'info');
 
     let creds = {};
@@ -163,81 +172,152 @@ async function login(event) {
       email: redactEmail(email)
     }, 'info');
 
-    const prisma = getPrisma();
-    let user;
-    try {
-      user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() }
-      });
-    } catch (dbError) {
-      logStructured(correlationId, 'login_db_error', {
-        email: redactEmail(email),
-        error: dbError.message
+    // Check if Prisma is in degraded mode
+    const degradedMode = isPrismaDegraded();
+    
+    // If degraded mode is disabled via env var, return 503
+    if (degradedMode && process.env.DISABLE_DEGRADED_LOGIN === 'true') {
+      logStructured(correlationId, 'login_degraded_disabled', {
+        email: redactEmail(email)
       }, 'error');
-      return error(500, 'Server error', { correlationId });
+      return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
     }
 
-    if (!user) {
-      logStructured(correlationId, 'login_user_not_found', {
+    let user;
+    
+    if (degradedMode) {
+      // Degraded mode: use in-memory user store
+      logStructured(correlationId, 'login_degraded_mode', {
         email: redactEmail(email)
       }, 'warn');
-      return error(401, 'Invalid credentials', { correlationId });
-    }
-    
-    logStructured(correlationId, 'login_user_found', {
-      userId: user.id,
-      email: redactEmail(user.email),
-      hasPasswordHash: !!user.passwordHash,
-      hasLegacyPassword: !!user.password
-    }, 'info');
-    
-    /**
-     * Transitional legacy password support:
-     * Handles users created before passwordHash column was standardized.
-     * TODO: Remove after patch-legacy-passwords.mjs migration is executed.
-     */
-    if (!user.passwordHash && user.password) {
-      logStructured(correlationId, 'login_using_legacy_password', {
-        userId: user.id,
-        email: redactEmail(user.email)
-      }, 'warn');
-      user.passwordHash = user.password; // assume bcrypt hash
-    }
-    
-    if (!user.passwordHash) {
-      logStructured(correlationId, 'login_no_password_hash', {
-        userId: user.id,
-        email: redactEmail(user.email)
-      }, 'error');
-      return error(500, 'Server error', { correlationId });
-    }
+      
+      user = getDegradedUser(email);
+      
+      if (!user) {
+        // In degraded mode, we cannot verify if user exists in DB
+        // For security, only allow login for users we've already created in degraded mode
+        // or create new user if this is the first login attempt
+        logStructured(correlationId, 'login_degraded_user_not_found', {
+          email: redactEmail(email)
+        }, 'warn');
+        
+        // Create degraded mode user for allowlisted email on first login attempt
+        // Note: This means first login will "register" the user in degraded store
+        // Password will be hashed and stored in memory
+        user = await createDegradedUser(email, password);
+        
+        logStructured(correlationId, 'login_degraded_user_created', {
+          email: redactEmail(email),
+          userId: user.id
+        }, 'warn');
+      } else {
+        // Verify password for existing degraded mode user
+        const valid = await verifyDegradedUserPassword(email, password);
+        if (!valid) {
+          logStructured(correlationId, 'login_degraded_invalid_password', {
+            email: redactEmail(email)
+          }, 'warn');
+          return error(401, 'Invalid credentials', { correlationId });
+        }
+      }
+    } else {
+      // Normal mode: use Prisma
+      const prisma = getPrisma();
+      
+      if (!prisma) {
+        // Prisma returned null unexpectedly
+        logStructured(correlationId, 'login_prisma_null', {
+          email: redactEmail(email)
+        }, 'error');
+        return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
+      }
+      
+      try {
+        user = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() }
+        });
+      } catch (dbError) {
+        logStructured(correlationId, 'login_db_error', {
+          email: redactEmail(email),
+          error: dbError.message,
+          code: dbError.code
+        }, 'error');
+        
+        // Check if this is a Prisma initialization or connection error
+        if (dbError.name === 'PrismaClientInitializationError' ||
+            dbError.code === 'P1001' || // Can't reach database
+            dbError.code === 'P1002' || // Database timed out
+            dbError.code === 'P1003') { // Database not found
+          return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
+        }
+        
+        return error(500, 'Server error', { correlationId });
+      }
 
-    let valid;
-    try {
-      valid = await bcrypt.compare(password, user.passwordHash);
-    } catch (bcryptError) {
-      logStructured(correlationId, 'login_bcrypt_error', {
+      if (!user) {
+        logStructured(correlationId, 'login_user_not_found', {
+          email: redactEmail(email)
+        }, 'warn');
+        return error(401, 'Invalid credentials', { correlationId });
+      }
+      
+      logStructured(correlationId, 'login_user_found', {
         userId: user.id,
         email: redactEmail(user.email),
-        error: bcryptError.message
-      }, 'error');
-      return error(500, 'Server error', { correlationId });
-    }
-    
-    if (!valid) {
-      logStructured(correlationId, 'login_invalid_password', {
-        userId: user.id,
-        email: redactEmail(user.email)
-      }, 'warn');
-      return error(401, 'Invalid credentials', { correlationId });
+        hasPasswordHash: !!user.passwordHash,
+        hasLegacyPassword: !!user.password
+      }, 'info');
+      
+      /**
+       * Transitional legacy password support:
+       * Handles users created before passwordHash column was standardized.
+       * TODO: Remove after patch-legacy-passwords.mjs migration is executed.
+       */
+      if (!user.passwordHash && user.password) {
+        logStructured(correlationId, 'login_using_legacy_password', {
+          userId: user.id,
+          email: redactEmail(user.email)
+        }, 'warn');
+        user.passwordHash = user.password; // assume bcrypt hash
+      }
+      
+      if (!user.passwordHash) {
+        logStructured(correlationId, 'login_no_password_hash', {
+          userId: user.id,
+          email: redactEmail(user.email)
+        }, 'error');
+        return error(500, 'Server error', { correlationId });
+      }
+
+      let valid;
+      try {
+        valid = await bcrypt.compare(password, user.passwordHash);
+      } catch (bcryptError) {
+        logStructured(correlationId, 'login_bcrypt_error', {
+          userId: user.id,
+          email: redactEmail(user.email),
+          error: bcryptError.message
+        }, 'error');
+        return error(500, 'Server error', { correlationId });
+      }
+      
+      if (!valid) {
+        logStructured(correlationId, 'login_invalid_password', {
+          userId: user.id,
+          email: redactEmail(user.email)
+        }, 'warn');
+        return error(401, 'Invalid credentials', { correlationId });
+      }
     }
 
     logStructured(correlationId, 'login_password_verified', {
       userId: user.id,
-      email: redactEmail(user.email)
+      email: redactEmail(user.email),
+      degradedMode
     }, 'info');
 
-    if (user.twoFactorEnabled) {
+    // 2FA only applies in normal mode (degraded mode users don't have 2FA)
+    if (!degradedMode && user.twoFactorEnabled) {
       if (!twoFactorCode) {
         logStructured(correlationId, '2fa_code_missing', {
           userId: user.id,
@@ -274,7 +354,8 @@ async function login(event) {
     logStructured(correlationId, 'login_success', {
       userId: user.id,
       email: redactEmail(user.email),
-      latencySeconds: nowSeconds() - start
+      latencySeconds: nowSeconds() - start,
+      degradedMode
     }, 'info');
 
     return response(
@@ -290,7 +371,8 @@ async function login(event) {
           createdAt: user.createdAt,
           twoFactorEnabled: user.twoFactorEnabled || false
         },
-        csrfToken
+        csrfToken,
+        ...(degradedMode ? { _degradedMode: true } : {})
       },
       cookies
     );
@@ -1026,6 +1108,107 @@ async function authStatus(_event) {
   }
 }
 
+/* ---------------------- AUTH DIAG ---------------------- */
+
+/**
+ * GET /auth/diag
+ * Returns diagnostic information for ops debugging.
+ * Public endpoint (no auth required) for quickly diagnosing production issues.
+ * 
+ * WARNING: This endpoint exposes system state for debugging.
+ * Consider restricting access in production via WAF or removing after outage.
+ */
+async function authDiag(_event) {
+  const correlationId = generateCorrelationId();
+  
+  try {
+    logStructured(correlationId, 'auth_diag_request', {}, 'info');
+    
+    // Check Prisma degraded status
+    const prismaDegradedStatus = isPrismaDegraded();
+    
+    // Check for .prisma directory presence
+    let layerPresent = false;
+    let engineFilesFound = [];
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Check common Lambda layer paths
+      const layerPaths = [
+        '/opt/nodejs/node_modules/.prisma',
+        '/var/task/node_modules/.prisma',
+        './node_modules/.prisma'
+      ];
+      
+      for (const layerPath of layerPaths) {
+        try {
+          const stats = fs.statSync(layerPath);
+          if (stats.isDirectory()) {
+            layerPresent = true;
+            // List engine files (don't expose full paths for security)
+            const clientPath = path.join(layerPath, 'client');
+            if (fs.existsSync(clientPath)) {
+              const files = fs.readdirSync(clientPath);
+              engineFilesFound = files.filter(f => 
+                f.includes('query_engine') || f.includes('libquery_engine')
+              ).map(f => f.replace(/^.*\//, '')); // Strip path
+            }
+            break;
+          }
+        } catch {
+          // Path doesn't exist, continue
+        }
+      }
+    } catch (fsError) {
+      // fs not available or error - ignore
+      logStructured(correlationId, 'auth_diag_fs_error', {
+        error: fsError.message
+      }, 'warn');
+    }
+    
+    // Get allowlist info
+    let allowlist = [];
+    try {
+      allowlist = getActiveAllowlist() || [];
+    } catch {
+      // Ignore errors
+    }
+    
+    // Get degraded user count
+    const degradedUserCount = getDegradedUserCount();
+    
+    const diagResponse = {
+      prismaDegraded: prismaDegradedStatus,
+      layerPresent,
+      allowlistCount: allowlist.length,
+      registrationEnabled: String(process.env.ENABLE_REGISTRATION || 'false').toLowerCase() === 'true',
+      degradedLoginDisabled: process.env.DISABLE_DEGRADED_LOGIN === 'true',
+      degradedUserCount,
+      engineFilesFound: engineFilesFound.length > 0 ? engineFilesFound : undefined,
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      timestamp: Date.now()
+    };
+    
+    logStructured(correlationId, 'auth_diag_response', diagResponse, 'info');
+    
+    return response(200, diagResponse);
+  } catch (e) {
+    logStructured(correlationId, 'auth_diag_error', {
+      error: e.message,
+      stack: e.stack
+    }, 'error');
+    
+    return response(500, {
+      error: 'AUTH_DIAG_ERROR',
+      message: 'Failed to retrieve diagnostic info',
+      correlationId
+    });
+  }
+}
+
 /* ---------------------- EXPORT ALL ---------------------- */
 
 export {
@@ -1042,6 +1225,7 @@ export {
   disable2FA,
   seedRestricted,
   authStatus,
+  authDiag,
   getUserFromEvent,
   clearAllowlistCache
 };
