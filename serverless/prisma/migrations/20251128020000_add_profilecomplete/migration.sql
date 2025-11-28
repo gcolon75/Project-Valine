@@ -1,5 +1,5 @@
 -- Add profileComplete column if it doesn't exist
-DO $ 
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
@@ -10,10 +10,10 @@ BEGIN
     ALTER TABLE users ADD COLUMN "profileComplete" BOOLEAN NOT NULL DEFAULT false;
     CREATE INDEX users_profileComplete_idx ON users("profileComplete");
   END IF;
-END $;
+END $$;
 
 -- Verification
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
@@ -25,4 +25,4 @@ BEGIN
   END IF;
   
   RAISE NOTICE 'Migration successful: profileComplete column exists';
-END $;
+END $$;

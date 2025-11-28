@@ -29,6 +29,7 @@ Should no longer see "profileComplete does not exist" errors.
 ```sql
 ALTER TABLE users DROP COLUMN IF EXISTS "profileComplete";
 DROP INDEX IF EXISTS users_profileComplete_idx;
+DELETE FROM "_prisma_migrations" WHERE migration_name = '20251128020000_add_profilecomplete';
 ```
 
 ## Technical Details
