@@ -836,7 +836,7 @@ export const updateMyProfile = async (event) => {
         profile = await prisma.profile.create({
           data: {
             userId,
-            vanityUrl: updatedUser.username,
+            vanityUrl: updatedUser.username || userId,
             headline: headline || '',
             bio: bio || '',
             roles: roles || [],

@@ -137,6 +137,28 @@ describe('Profile Onboarding Persistence', () => {
       expect(createdProfile.headline).toBe('Voice Actor');
     });
 
+    it('should use userId as vanityUrl fallback when username is null', async () => {
+      // Set username to null to test fallback
+      mockUsers.get(mockUserId).username = null;
+
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          headline: 'Test Headline',
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      // Check that profile was created with userId as vanityUrl
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.vanityUrl).toBe(mockUserId);
+    });
+
     it('should set onboardingComplete and profileComplete flags on User table', async () => {
       const event = {
         headers: { authorization: 'Bearer test-token' },
