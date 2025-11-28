@@ -825,13 +825,9 @@ export const updateMyProfile = async (event) => {
       // For now, we'll skip it or store in metadata
 
       // Get or create profile
+      // Note: Profile model does not have a links relation in the current schema
       let profile = await prisma.profile.findUnique({
         where: { userId },
-        include: {
-          links: {
-            orderBy: { position: 'asc' },
-          },
-        },
       });
 
       if (!profile) {
@@ -846,11 +842,6 @@ export const updateMyProfile = async (event) => {
             roles: roles || [],
             tags: tags || [],
           },
-          include: {
-            links: {
-              orderBy: { position: 'asc' },
-            },
-          },
         });
       } else if (Object.keys(profileUpdateData).length > 0) {
         // Update profile
@@ -858,11 +849,6 @@ export const updateMyProfile = async (event) => {
         profile = await prisma.profile.update({
           where: { userId },
           data: profileUpdateData,
-          include: {
-            links: {
-              orderBy: { position: 'asc' },
-            },
-          },
         });
       }
 
@@ -936,6 +922,7 @@ export const updateMyProfile = async (event) => {
       }
 
       // Return combined profile data
+      // Note: profile.links is not available in current schema, so we return empty array
       const response = {
         id: profile.id,
         userId: updatedUser.id,
@@ -943,11 +930,11 @@ export const updateMyProfile = async (event) => {
         displayName: updatedUser.displayName || updatedUser.name || null,
         avatar: updatedUser.avatar || null,
         vanityUrl: profile.vanityUrl,
-        headline: profile.headline || updatedUser.headline || null,
-        bio: profile.bio || updatedUser.bio || null,
-        roles: profile.roles || updatedUser.roles || [],
-        tags: profile.tags || updatedUser.tags || [],
-        links: profile.links || [],
+        headline: profile.headline || null,
+        bio: profile.bio || null,
+        roles: profile.roles || [],
+        tags: profile.tags || [],
+        links: [],
         onboardingComplete: updatedUser.onboardingComplete || false,
         profileComplete: updatedUser.profileComplete || false,
       };
@@ -1018,22 +1005,11 @@ export const getMyProfile = async (event) => {
     }
 
     // Fetch profile data (may not exist yet)
+    // Note: Profile model does not have a links relation in the current schema
     let profile = null;
     try {
       profile = await prisma.profile.findUnique({
         where: { userId },
-        include: {
-          links: {
-            orderBy: { position: 'asc' },
-            select: {
-              id: true,
-              label: true,
-              url: true,
-              type: true,
-              position: true,
-            },
-          },
-        },
       });
     } catch (profileErr) {
       // Handle schema-related errors gracefully when Profile model may not exist
@@ -1051,6 +1027,7 @@ export const getMyProfile = async (event) => {
     }
 
     // Construct response with graceful fallbacks
+    // Note: profile.links is not available in current schema, so we return empty array
     const response = {
       // Profile ID (null if no profile yet)
       id: profile?.id || null,
@@ -1061,11 +1038,11 @@ export const getMyProfile = async (event) => {
       avatar: user.avatar || null,
       // Profile-specific fields
       vanityUrl: profile?.vanityUrl || null,
-      headline: profile?.headline || user.headline || null,
-      bio: profile?.bio || user.bio || null,
-      roles: profile?.roles || user.roles || [],
-      tags: profile?.tags || user.tags || [],
-      links: profile?.links || [],
+      headline: profile?.headline || null,
+      bio: profile?.bio || null,
+      roles: profile?.roles || [],
+      tags: profile?.tags || [],
+      links: [],
       // Status fields
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,
