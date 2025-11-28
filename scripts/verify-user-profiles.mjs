@@ -82,10 +82,10 @@ async function verifyProfiles() {
       console.log(`\n👤 Checking: ${email}`);
       console.log('-'.repeat(40));
       
-      // Get user data
+      // Get user data (only columns that exist in users table)
       const userResult = await client.query(`
         SELECT id, email, username, "displayName", "onboardingComplete", "profileComplete",
-               headline, bio, roles, tags, avatar, "createdAt"
+               bio, avatar, "createdAt"
         FROM users
         WHERE email = $1;
       `, [email]);
@@ -102,14 +102,11 @@ async function verifyProfiles() {
       console.log(`  Display Name: ${user.displayName || '(not set)'}`);
       console.log(`  Onboarding Complete: ${user.onboardingComplete ? '✅ Yes' : '❌ No'}`);
       console.log(`  Profile Complete: ${user.profileComplete ? '✅ Yes' : '⚠️ No'}`);
-      console.log(`  Headline: ${user.headline || '(not set)'}`);
-      console.log(`  Bio: ${user.bio ? user.bio.substring(0, 50) + '...' : '(not set)'}`);
-      console.log(`  Roles: ${user.roles && user.roles.length > 0 ? user.roles.join(', ') : '(none)'}`);
-      console.log(`  Tags: ${user.tags && user.tags.length > 0 ? user.tags.join(', ') : '(none)'}`);
+      console.log(`  Bio (User): ${user.bio ? user.bio.substring(0, 50) + '...' : '(not set)'}`);
       console.log(`  Avatar: ${user.avatar ? '✅ Set' : '⚠️ Not set'}`);
       console.log(`  Created: ${user.createdAt}`);
       
-      // Check for associated profile record
+      // Check for associated profile record (headline, roles, tags are stored in Profile table)
       const profileResult = await client.query(`
         SELECT id, "userId", "vanityUrl", headline, bio, roles, tags, "createdAt"
         FROM profiles
@@ -117,16 +114,26 @@ async function verifyProfiles() {
       `, [user.id]);
       
       if (profileResult.rows.length === 0) {
-        console.log('\n  ⚠️ No Profile record found (may be stored on User)');
+        console.log('\n  ⚠️ No Profile record found - onboarding data NOT persisted!');
+        allPassed = false;
       } else {
         const profile = profileResult.rows[0];
-        console.log('\n  📄 Profile Record:');
+        console.log('\n  📄 Profile Record (stores onboarding data):');
         console.log(`    Profile ID: ${profile.id}`);
         console.log(`    Vanity URL: ${profile.vanityUrl || '(not set)'}`);
         console.log(`    Headline: ${profile.headline || '(not set)'}`);
         console.log(`    Bio: ${profile.bio ? profile.bio.substring(0, 50) + '...' : '(not set)'}`);
         console.log(`    Roles: ${profile.roles && profile.roles.length > 0 ? profile.roles.join(', ') : '(none)'}`);
         console.log(`    Tags: ${profile.tags && profile.tags.length > 0 ? profile.tags.join(', ') : '(none)'}`);
+        
+        // Check if profile data has meaningful content
+        const hasProfileData = profile.headline || profile.bio || 
+          (profile.roles && profile.roles.length > 0) || 
+          (profile.tags && profile.tags.length > 0);
+        
+        if (!hasProfileData) {
+          console.log('\n  ⚠️ Profile record exists but has no data (headline, bio, roles, tags are all empty)');
+        }
       }
       
       // Check if onboarding is complete
