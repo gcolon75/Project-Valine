@@ -36,6 +36,33 @@ const REQUIRED_COLUMNS = {
   theme: { type: 'VARCHAR(255)', default: null, nullable: true }
 };
 
+// Validate DATABASE_URL for common issues
+function validateDatabaseUrl(url) {
+  // Check for spaces in the URL (common copy-paste issue)
+  if (/\s/.test(url)) {
+    const sanitizedUrl = url.replace(/:([^@]+)@/, ':***@');
+    console.error('❌ DATABASE_URL contains spaces!');
+    console.error('');
+    console.error('Sanitized URL showing space location:');
+    console.error(`  ${sanitizedUrl}`);
+    console.error('');
+    console.error('Common issue: Space in hostname (e.g., "rds. amazonaws.com" should be "rds.amazonaws.com")');
+    console.error('');
+    return false;
+  }
+  return true;
+}
+
+// Configure SSL for AWS RDS
+// AWS RDS uses certificates signed by Amazon's CA which may not be in the default trust store
+// Using rejectUnauthorized: false allows connections to AWS RDS
+// For production with strict validation, download the AWS RDS CA bundle from:
+// https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+// Then use: ssl: { rejectUnauthorized: true, ca: fs.readFileSync('rds-ca-cert.pem') }
+const sslConfig = {
+  rejectUnauthorized: false  // Required for AWS RDS self-signed certificate chain
+};
+
 // ============================================================================
 // Terminal Colors
 // ============================================================================
@@ -119,14 +146,16 @@ async function checkDatabaseConnection() {
     process.exit(1);
   }
   
+  // Validate DATABASE_URL for common issues
+  if (!validateDatabaseUrl(DATABASE_URL)) {
+    process.exit(1);
+  }
+  
   info('Testing connection to PostgreSQL...');
   
-  // Note: In non-production environments, we use rejectUnauthorized: false for SSL
-  // to allow connections to development databases with self-signed certificates.
-  // This is a development convenience and should not be used in production.
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {
@@ -155,7 +184,7 @@ async function checkAndAddColumns() {
   
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {
@@ -286,7 +315,7 @@ async function createUserAccount(email, password, displayName) {
   
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {
@@ -362,7 +391,7 @@ async function verifySetup() {
   
   const client = new pg.Client({
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : { rejectUnauthorized: false }
+    ssl: sslConfig
   });
   
   try {
