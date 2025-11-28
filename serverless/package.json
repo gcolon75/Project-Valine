@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:layer": "bash scripts/build-prisma-layer.sh",
+    "build:layer": "node scripts/build-layer-selector.js",
+    "build:layer:bash": "bash scripts/build-prisma-layer.sh",
+    "build:layer:powershell": "powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1",
     "deploy": "npm run build:layer && serverless deploy",
     "deploy:force": "npm run build:layer && serverless deploy --force",
     "remove": "serverless remove",
