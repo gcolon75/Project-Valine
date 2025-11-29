@@ -74,17 +74,21 @@ describe('Auth Endpoints - Login with Cookies', () => {
     const accessCookie = response.cookies.find(c => c.includes('access_token='));
     expect(accessCookie).toBeDefined();
     expect(accessCookie).toContain('HttpOnly');
-    expect(accessCookie).toContain('SameSite=Strict'); // Production mode
+    expect(accessCookie).toContain('SameSite=None'); // Cross-origin (CloudFront → API Gateway)
+    expect(accessCookie).toContain('Secure'); // Required for SameSite=None
     
     // Check refresh token cookie
     const refreshCookie = response.cookies.find(c => c.includes('refresh_token='));
     expect(refreshCookie).toBeDefined();
     expect(refreshCookie).toContain('HttpOnly');
-    expect(refreshCookie).toContain('SameSite=Strict'); // Production mode
+    expect(refreshCookie).toContain('SameSite=None'); // Cross-origin (CloudFront → API Gateway)
+    expect(refreshCookie).toContain('Secure'); // Required for SameSite=None
     
     // Check CSRF token cookie
-    const csrfCookie = response.cookies.find(c => c.includes('csrf_token='));
+    const csrfCookie = response.cookies.find(c => c.includes('XSRF-TOKEN='));
     expect(csrfCookie).toBeDefined();
+    expect(csrfCookie).toContain('SameSite=None'); // Cross-origin (CloudFront → API Gateway)
+    expect(csrfCookie).toContain('Secure'); // Required for SameSite=None
     
     // Verify response body doesn't contain token
     const body = JSON.parse(response.body);

@@ -67,7 +67,7 @@ export const getCorsHeaders = (event) => {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-CSRF-Token',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-CSRF-Token,X-Requested-With,Cookie',
     'Access-Control-Max-Age': '86400', // 24 hours
   };
 };
