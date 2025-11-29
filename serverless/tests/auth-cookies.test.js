@@ -39,7 +39,11 @@ describe('Token Manager - Cookie Generation', () => {
     expect(decoded.jti).toBeTruthy();
   });
 
-  it('should generate access token cookie with HttpOnly flag', () => {
+  it('should generate access token cookie with correct attributes in development mode', () => {
+    // Run in development mode to test the Lax case
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    
     const token = generateAccessToken(testUserId);
     const cookie = generateAccessTokenCookie(token);
     
@@ -48,9 +52,15 @@ describe('Token Manager - Cookie Generation', () => {
     expect(cookie).toContain('SameSite=Lax');
     expect(cookie).toContain('Path=/');
     expect(cookie).toContain('Max-Age=1800'); // 30 minutes
+    
+    process.env.NODE_ENV = originalEnv;
   });
 
-  it('should generate refresh token cookie with HttpOnly flag', () => {
+  it('should generate refresh token cookie with correct attributes in development mode', () => {
+    // Run in development mode to test the Lax case
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    
     const token = generateRefreshToken(testUserId);
     const cookie = generateRefreshTokenCookie(token);
     
@@ -59,6 +69,21 @@ describe('Token Manager - Cookie Generation', () => {
     expect(cookie).toContain('SameSite=Lax');
     expect(cookie).toContain('Path=/');
     expect(cookie).toContain('Max-Age=604800'); // 7 days
+    
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('should use SameSite=None in production for cross-site support', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    
+    const token = generateAccessToken(testUserId);
+    const cookie = generateAccessTokenCookie(token);
+    
+    expect(cookie).toContain('SameSite=None');
+    expect(cookie).toContain('Secure');
+    
+    process.env.NODE_ENV = originalEnv;
   });
 
   it('should include Secure flag in production', () => {

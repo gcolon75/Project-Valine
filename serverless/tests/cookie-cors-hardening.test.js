@@ -24,14 +24,14 @@ describe('Cookie Hardening Tests', () => {
   });
 
   describe('SameSite Cookie Attribute', () => {
-    test('should use SameSite=Strict in production', () => {
+    test('should use SameSite=None in production for cross-site requests', () => {
       process.env.NODE_ENV = 'production';
       delete process.env.COOKIE_DOMAIN;
 
       const token = 'fake-jwt-token';
       const cookie = generateAccessTokenCookie(token);
 
-      expect(cookie).toContain('SameSite=Strict');
+      expect(cookie).toContain('SameSite=None');
       expect(cookie).toContain('Secure');
       expect(cookie).toContain('HttpOnly');
     });
@@ -48,14 +48,14 @@ describe('Cookie Hardening Tests', () => {
       expect(cookie).toContain('HttpOnly');
     });
 
-    test('refresh token should use SameSite=Strict in production', () => {
+    test('refresh token should use SameSite=None in production for cross-site requests', () => {
       process.env.NODE_ENV = 'production';
       delete process.env.COOKIE_DOMAIN;
 
       const token = 'fake-refresh-token';
       const cookie = generateRefreshTokenCookie(token);
 
-      expect(cookie).toContain('SameSite=Strict');
+      expect(cookie).toContain('SameSite=None');
       expect(cookie).toContain('Secure');
       expect(cookie).toContain('HttpOnly');
     });
@@ -92,13 +92,15 @@ describe('Cookie Hardening Tests', () => {
   });
 
   describe('Cookie Domain', () => {
-    test('should include Domain attribute when COOKIE_DOMAIN is set', () => {
+    test('should NOT include Domain attribute even when COOKIE_DOMAIN is set (for cross-site cookies)', () => {
       process.env.NODE_ENV = 'production';
       process.env.COOKIE_DOMAIN = '.example.com';
 
       const cookie = generateAccessTokenCookie('token');
 
-      expect(cookie).toContain('Domain=.example.com');
+      // Domain attribute is intentionally not set for cross-site cookies
+      // Let browser set it to the API domain
+      expect(cookie).not.toContain('Domain=');
     });
 
     test('should NOT include Domain attribute when COOKIE_DOMAIN is empty', () => {
@@ -267,8 +269,9 @@ describe('CORS Hardening Tests', () => {
  * 1. Set NODE_ENV=production
  * 2. Login via /auth/login
  * 3. Check response Set-Cookie headers:
- *    - access_token cookie should have: HttpOnly; Secure; SameSite=Strict
- *    - refresh_token cookie should have: HttpOnly; Secure; SameSite=Strict
+ *    - access_token cookie should have: HttpOnly; Secure; SameSite=None
+ *    - refresh_token cookie should have: HttpOnly; Secure; SameSite=None
+ *    - Neither cookie should have a Domain attribute (for cross-site cookie support)
  * 
  * 4. Set NODE_ENV=development
  * 5. Login via /auth/login
@@ -286,4 +289,10 @@ describe('CORS Hardening Tests', () => {
  *    - Should get Access-Control-Allow-Origin: https://example.com (default, not evil)
  * 
  * 4. Verify wildcard (*) is never used in production
+ * 
+ * Cross-site cookie flow:
+ * 1. Frontend on CloudFront (dkmxy676d3vgc.cloudfront.net)
+ * 2. API on API Gateway (i72dxlcfcc.execute-api.us-west-2.amazonaws.com)
+ * 3. Login sets cookies on API domain
+ * 4. Subsequent requests from CloudFront include cookies with credentials
  */

@@ -161,20 +161,18 @@ const parseCookies = (cookieHeader) => {
 export const generateAccessTokenCookie = (token) => {
   const maxAge = 30 * 60; // 30 minutes in seconds
   
-  // Use SameSite=Strict in production for maximum CSRF protection
-  // Use SameSite=Lax in development for easier testing
-  const sameSite = isProduction() ? 'Strict' : 'Lax';
+  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  // SameSite=None requires Secure flag
+  const sameSite = isProduction() ? 'None' : 'Lax';
   
   let cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
+  // Secure flag is required for SameSite=None, always include in production
   if (isProduction()) {
     cookie += '; Secure';
   }
   
-  const cookieDomain = getCookieDomain();
-  if (cookieDomain) {
-    cookie += `; Domain=${cookieDomain}`;
-  }
+  // Don't set Domain - let browser set it to the API domain for cross-site cookies
   
   return cookie;
 };
@@ -187,20 +185,18 @@ export const generateAccessTokenCookie = (token) => {
 export const generateRefreshTokenCookie = (token) => {
   const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
   
-  // Use SameSite=Strict in production for maximum CSRF protection
-  // Use SameSite=Lax in development for easier testing
-  const sameSite = isProduction() ? 'Strict' : 'Lax';
+  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  // SameSite=None requires Secure flag
+  const sameSite = isProduction() ? 'None' : 'Lax';
   
   let cookie = `refresh_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
+  // Secure flag is required for SameSite=None, always include in production
   if (isProduction()) {
     cookie += '; Secure';
   }
   
-  const cookieDomain = getCookieDomain();
-  if (cookieDomain) {
-    cookie += `; Domain=${cookieDomain}`;
-  }
+  // Don't set Domain - let browser set it to the API domain for cross-site cookies
   
   return cookie;
 };
@@ -210,14 +206,16 @@ export const generateRefreshTokenCookie = (token) => {
  * @returns {string[]} Array of Set-Cookie headers to clear cookies
  */
 export const generateClearCookieHeaders = () => {
-  const baseCookie = 'Path=/; SameSite=Lax; Max-Age=0';
+  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  const sameSite = isProduction() ? 'None' : 'Lax';
+  const baseCookie = `Path=/; SameSite=${sameSite}; Max-Age=0`;
+  // Secure flag is required for SameSite=None, always include in production
   const secureSuffix = isProduction() ? '; Secure' : '';
-  const cookieDomain = getCookieDomain();
-  const domainSuffix = cookieDomain ? `; Domain=${cookieDomain}` : '';
+  // Don't set Domain - let browser set it to the API domain for cross-site cookies
   
   return [
-    `access_token=; ${baseCookie}${secureSuffix}${domainSuffix}`,
-    `refresh_token=; ${baseCookie}${secureSuffix}${domainSuffix}`
+    `access_token=; ${baseCookie}${secureSuffix}`,
+    `refresh_token=; ${baseCookie}${secureSuffix}`
   ];
 };
 
