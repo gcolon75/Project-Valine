@@ -675,6 +675,7 @@ const MAX_TAGS = 5;
  * - displayName (User): string, required
  * - username (User): 3-30 chars, alphanumeric + underscore/hyphen, unique
  * - headline (Profile): max 100 chars
+ * - title (Profile): string, professional title (e.g., "Senior Voice Actor")
  * - bio (Profile): max 500 chars
  * - roles (Profile): array, must be in ALLOWED_ROLES
  * - tags (Profile): array, max 5, validated against ALLOWED_TAGS
@@ -703,6 +704,7 @@ export const updateMyProfile = async (event) => {
       displayName, 
       username, 
       headline, 
+      title,
       bio, 
       roles, 
       tags, 
@@ -818,6 +820,7 @@ export const updateMyProfile = async (event) => {
       // Prepare profile update data
       const profileUpdateData = {};
       if (headline !== undefined) profileUpdateData.headline = headline;
+      if (title !== undefined) profileUpdateData.title = title;
       if (bio !== undefined) profileUpdateData.bio = bio;
       if (roles !== undefined) profileUpdateData.roles = roles;
       if (tags !== undefined) profileUpdateData.tags = tags;
@@ -931,6 +934,7 @@ export const updateMyProfile = async (event) => {
         avatar: updatedUser.avatar || null,
         vanityUrl: profile.vanityUrl,
         headline: profile.headline || null,
+        title: profile.title || null,
         bio: profile.bio || null,
         roles: profile.roles || [],
         tags: profile.tags || [],
@@ -1039,6 +1043,7 @@ export const getMyProfile = async (event) => {
       // Profile-specific fields
       vanityUrl: profile?.vanityUrl || null,
       headline: profile?.headline || null,
+      title: profile?.title || null,
       bio: profile?.bio || null,
       roles: profile?.roles || [],
       tags: profile?.tags || [],

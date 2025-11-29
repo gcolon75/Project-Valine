@@ -273,6 +273,7 @@ model Profile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vanityUrl   String   @unique
   headline    String? // Short professional headline
+  title       String?  // Professional title (e.g., "Senior Voice Actor")
   bio         String?  @db.Text
   roles       String[] // PR #262: ["Voice Actor", "Director", "Writer"] - from curated list
   tags        String[] // PR #262: Curated tags (max 5 from 30-tag taxonomy)
