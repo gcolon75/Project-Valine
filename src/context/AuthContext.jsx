@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as authService from "../services/authService";
+import { getMyProfile } from "../services/profileService";
 import { trackLogin, trackSignup, trackLogout } from "../analytics/client";
 import { isEmailAllowed, isAllowlistActive } from "../utils/allowlistConfig";
 
@@ -158,6 +159,25 @@ export function AuthProvider({ children }) {
     setUser((prev) => ({ ...prev, ...updates }));
   };
 
+  /**
+   * Refresh user data from the backend
+   * Fetches /me/profile and updates the user state
+   * @returns {Promise<Object|null>} Updated user data or null on error
+   */
+  const refreshUser = async () => {
+    try {
+      const profileData = await getMyProfile();
+      if (profileData) {
+        setUser(profileData);
+        return profileData;
+      }
+      return null;
+    } catch (error) {
+      console.error('[AuthContext.refreshUser] Failed to refresh user data:', error);
+      return null;
+    }
+  };
+
   // Dev Bypass function - localhost only, explicit flag required
   const devBypass = () => {
     // Triple-gate security check
@@ -234,6 +254,7 @@ export function AuthProvider({ children }) {
       register,
       logout, 
       updateUser,
+      refreshUser,
       devLogin: (IS_DEV && !AUTH_ENABLED) ? devLogin : undefined,
       devBypass: (DEV_BYPASS_ENABLED && typeof window !== 'undefined' && window.location?.hostname === 'localhost') ? devBypass : undefined,
       isAuthenticated: !!user,
