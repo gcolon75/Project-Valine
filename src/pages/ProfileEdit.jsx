@@ -11,14 +11,14 @@ import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { getProfile, updateProfile, batchUpdateProfileLinks } from '../services/profileService';
+import { getProfile, updateMyProfile, batchUpdateProfileLinks } from '../services/profileService';
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, refreshUser } = useAuth();
   
   // Feature flag for backend integration
   const BACKEND_LINKS_ENABLED = import.meta.env.VITE_ENABLE_PROFILE_LINKS_API === 'true';
@@ -285,16 +285,27 @@ export default function ProfileEdit() {
       updateUser(sanitizedData);
       
       try {
-        // Backend API integration
-        if (BACKEND_LINKS_ENABLED && user?.id) {
-          // Update profile with title, headline, and links (all sanitized)
+        // Backend API integration - call updateMyProfile when user is authenticated
+        if (user?.id) {
+          // Build profile update with all editable fields
           const profileUpdate = {
-            title: sanitizedData.title,
+            displayName: sanitizedData.displayName,
+            username: sanitizedData.username,
             headline: sanitizedData.headline,
+            title: sanitizedData.title,
+            bio: sanitizedData.bio,
+            location: sanitizedData.location,
+            pronouns: sanitizedData.pronouns,
+            primaryRoles: sanitizedData.primaryRoles,
+            skills: sanitizedData.skills,
+            avatarUrl: sanitizedData.avatar,
             links: sanitizedData.profileLinks
           };
           
-          await updateProfile(user.id, profileUpdate);
+          await updateMyProfile(profileUpdate);
+          
+          // Refresh user data from backend to ensure consistency
+          await refreshUser();
         } else {
           // Fallback: simulate API delay for realistic UX
           await new Promise(resolve => setTimeout(resolve, 500));
