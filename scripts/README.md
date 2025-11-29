@@ -395,9 +395,14 @@ node scripts/wire-original-router.mjs
 
 **Purpose**: Reset or set a user's password directly in the database.
 
+**Parameters**:
+- `<email>` - User's email address (required, first positional argument)
+- `<password>` - New password to set (required, second positional argument)
+
 **Quick Start**:
 ```bash
 # Set password for a specific user
+# Usage: admin-set-password.mjs <email> <password>
 DATABASE_URL="postgresql://..." node scripts/admin-set-password.mjs user@example.com newpassword123
 ```
 
@@ -448,14 +453,14 @@ DATABASE_URL="postgresql://..." node scripts/provision-production-accounts.mjs
 
 ### prisma-optimize.mjs
 
-**Purpose**: Optimize Prisma binaries for deployment (remove unused platform binaries).
+**Purpose**: Optimize Prisma binaries for deployment by removing unused platform-specific query engine binaries. Prisma generates binaries for multiple platforms (Windows, macOS, Linux) but Lambda only needs Linux. This reduces deployment package size significantly.
 
 **Quick Start**:
 ```bash
-# For production (Linux only)
+# For production (Linux only - removes Windows/macOS binaries, reduces package size)
 node scripts/prisma-optimize.mjs --prod
 
-# For development (keep all platforms)
+# For development (keep all platforms for cross-platform compatibility)
 node scripts/prisma-optimize.mjs --dev
 ```
 

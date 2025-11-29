@@ -132,7 +132,7 @@
 - Database migrations
 - Seed scripts
 
-> **⚠️ Important:** The Express server in `/server` is **legacy development stubs only** and should NOT be deployed to production.
+> **⚠️ Important:** If a `/server` directory exists, it contains **legacy development stubs only** and should NOT be deployed to production. The serverless backend is the canonical API.
 
 ---
 
@@ -329,7 +329,7 @@ npm run verify:sri                     # Verify SRI integrity
 - `serverless/src/db/client.js` - Fixed synchronous initialization
 - `serverless/tests/degraded-mode.test.js` - Added tests
 
-**Problem Solved:** Login attempts were failing with 503 errors due to Prisma Client not being initialized properly at Lambda cold start.
+**Problem:** Login attempts were failing with 503 errors due to Prisma Client not being initialized properly at Lambda cold start.
 
 **Solution:** 
 - Added synchronous loading of PrismaClient at module load time using `createRequire`
