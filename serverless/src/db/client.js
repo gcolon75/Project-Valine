@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { createRequire } from 'module';
 
 let PrismaClient = null;
 let prisma = null;
@@ -12,7 +13,19 @@ let prismaInitError = null;
 // Map<email, { id, email, passwordHash, createdAt }>
 const degradedUserStore = new Map();
 
-// Try to load PrismaClient at module load time
+// Try to load PrismaClient synchronously at module load time
+// This ensures getPrisma() can work without requiring async initialization
+try {
+  const require = createRequire(import.meta.url);
+  const prismaModule = require('@prisma/client');
+  PrismaClient = prismaModule.PrismaClient;
+  console.log('[Prisma] PrismaClient loaded synchronously at module load');
+} catch (e) {
+  console.warn('[Prisma] Failed to load PrismaClient synchronously:', e.message);
+  // Will fall back to async loading if synchronous load fails
+}
+
+// Fallback: Try to load PrismaClient asynchronously
 // This uses dynamic import which returns a promise
 let prismaClientPromise = null;
 
