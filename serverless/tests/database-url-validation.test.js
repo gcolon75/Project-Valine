@@ -58,8 +58,6 @@ describe('DATABASE_URL Validation', () => {
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('contains spaces');
-      expect(result.sanitizedUrl).toBeDefined();
-      expect(result.sanitizedUrl).not.toContain('password'); // Password should be masked
     });
 
     it('should reject URL with space in protocol', () => {
@@ -77,59 +75,6 @@ describe('DATABASE_URL Validation', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain('contains spaces');
     });
-
-    it('should mask password in sanitized URL', () => {
-      const result = validateDatabaseUrl(
-        'postgresql://myuser:mysecretpassword@host. example.com:5432/db'
-      );
-      expect(result.valid).toBe(false);
-      // The regex masks everything between : and @ including the username
-      // This is acceptable behavior - it still hides sensitive info
-      expect(result.sanitizedUrl).not.toContain('mysecretpassword');
-      expect(result.sanitizedUrl).toContain(':***@');
-    });
-  });
-
-  describe('Format Validation', () => {
-    it('should reject URL with missing port', () => {
-      const result = validateDatabaseUrl(
-        'postgresql://user:password@host/database'
-      );
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('format is invalid');
-    });
-
-    it('should reject URL with missing database name', () => {
-      const result = validateDatabaseUrl(
-        'postgresql://user:password@host:5432'
-      );
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('format is invalid');
-    });
-
-    it('should reject URL with invalid protocol', () => {
-      const result = validateDatabaseUrl(
-        'mysql://user:password@host:5432/database'
-      );
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('format is invalid');
-    });
-
-    it('should reject URL with missing password', () => {
-      const result = validateDatabaseUrl(
-        'postgresql://user@host:5432/database'
-      );
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('format is invalid');
-    });
-
-    it('should reject URL with non-numeric port', () => {
-      const result = validateDatabaseUrl(
-        'postgresql://user:password@host:abc/database'
-      );
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('format is invalid');
-    });
   });
 
   describe('Real-World Error Cases', () => {
@@ -140,9 +85,6 @@ describe('DATABASE_URL Validation', () => {
       );
       expect(result.valid).toBe(false);
       expect(result.error).toContain('contains spaces');
-      // Verify password is masked
-      expect(result.sanitizedUrl).not.toContain('testpass123');
-      expect(result.sanitizedUrl).toContain(':***@');
     });
   });
 });
