@@ -1,0 +1,11 @@
+﻿const { Client } = require('pg');
+const c = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+(async () => {
+  await c. connect();
+  await c.query('UPDATE users SET "profileComplete" = true WHERE email IN (\, \)', ['ghawk075@gmail.com', 'valinejustin@gmail.com']);
+  console. log('Done - profileComplete set to true');
+  await c. end();
+})();
