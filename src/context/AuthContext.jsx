@@ -171,6 +171,7 @@ export function AuthProvider({ children }) {
         setUser(profileData);
         return profileData;
       }
+      console.warn('[AuthContext.refreshUser] getMyProfile returned no data');
       return null;
     } catch (error) {
       console.error('[AuthContext.refreshUser] Failed to refresh user data:', error);

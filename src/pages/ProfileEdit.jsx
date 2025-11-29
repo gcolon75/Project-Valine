@@ -285,7 +285,7 @@ export default function ProfileEdit() {
       updateUser(sanitizedData);
       
       try {
-        // Backend API integration - always call updateMyProfile when user is authenticated
+        // Backend API integration - call updateMyProfile when user is authenticated
         if (user?.id) {
           // Build profile update with all editable fields
           const profileUpdate = {
