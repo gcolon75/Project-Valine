@@ -45,7 +45,11 @@ export const generateCsrfCookie = (token) => {
     cookie += '; Secure';
   }
   
-  // Don't set Domain - let browser set it to the API domain for cross-site cookies
+  // Don't set Domain attribute for cross-origin cookies.
+  // When Domain is omitted, the cookie is scoped to the exact API domain
+  // (e.g., i72dxlcfcc.execute-api.us-west-2.amazonaws.com), allowing it to
+  // be set by the API and sent back on subsequent cross-origin requests.
+  // Setting Domain would restrict to that specific domain suffix only.
   
   return cookie;
 };
@@ -182,7 +186,10 @@ export const clearCsrfCookie = () => {
     cookie += '; Secure';
   }
   
-  // Don't set Domain - let browser set it to the API domain for cross-site cookies
+  // Don't set Domain attribute for cross-origin cookies.
+  // When Domain is omitted, the cookie is scoped to the exact API domain
+  // (e.g., i72dxlcfcc.execute-api.us-west-2.amazonaws.com), allowing it to
+  // be cleared correctly on subsequent cross-origin requests.
   
   return cookie;
 };
