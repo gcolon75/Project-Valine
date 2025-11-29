@@ -2,7 +2,9 @@
 
 **Welcome to the Project Valine documentation hub!** This index provides quick access to all documentation organized by category.
 
-📍 **New here?** Start with the [Project Status](../PROJECT_STATUS.md) for an executive overview.
+📍 **New here?** Start with:
+- **[COMPREHENSIVE_SUMMARY.md](../COMPREHENSIVE_SUMMARY.md)** - Complete project overview for agents & new chat sessions
+- **[Project Status](../PROJECT_STATUS.md)** - Executive overview of readiness, security, and QA
 
 ---
 
@@ -30,6 +32,7 @@
 Essential guides to get Project Valine up and running.
 
 ### Core Setup
+- **[COMPREHENSIVE_SUMMARY](../COMPREHENSIVE_SUMMARY.md)** - Complete project overview for agents & new sessions
 - **[Project Status](../PROJECT_STATUS.md)** - Current state, readiness, and next steps
 - **[README](../README.md)** - Project overview and high-level features
 - **[CONTRIBUTING](../CONTRIBUTING.md)** - Contribution guidelines
@@ -377,10 +380,10 @@ See `diagnostics/` folder for phase-specific validation and closeout reports.
 
 - 🐛 **Found a bug?** Open an issue: [GitHub Issues](https://github.com/gcolon75/Project-Valine/issues)
 - 💬 **Questions?** Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-- 📖 **Confused?** Start with [Project Status](../PROJECT_STATUS.md)
+- 📖 **Confused?** Start with [COMPREHENSIVE_SUMMARY.md](../COMPREHENSIVE_SUMMARY.md) or [Project Status](../PROJECT_STATUS.md)
 - 🤝 **Want to contribute?** See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
-**Last Updated:** 2025-11-06  
-**Documentation Version:** 1.0 (Post PRs 155-187 reorganization)
+**Last Updated:** 2025-11-29  
+**Documentation Version:** 1.1 (Added COMPREHENSIVE_SUMMARY.md reference)

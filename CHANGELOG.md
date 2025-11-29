@@ -239,13 +239,18 @@ The Discord bot Lambda function was experiencing critical deployment failures:
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- `COMPREHENSIVE_SUMMARY.md` - New comprehensive project summary for agents and new chat sessions
 
 ### Changed
-- Nothing yet
+- README.md updated with Recent Changes section and reference to COMPREHENSIVE_SUMMARY.md
 
 ### Fixed
-- Nothing yet
+- **Prisma Client Synchronous Initialization** - Fixed 503 errors on login due to Prisma Client not being initialized at Lambda cold start
+  - Added synchronous loading of PrismaClient at module load time using `createRequire`
+  - Falls back to async loading if synchronous load fails  
+  - `getPrisma()` now works synchronously when PrismaClient is pre-loaded
+  - Added comprehensive degraded mode with in-memory user store for database outages
+  - Files: `serverless/src/db/client.js`, `serverless/tests/degraded-mode.test.js`
 
 ---
 

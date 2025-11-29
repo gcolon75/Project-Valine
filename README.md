@@ -11,18 +11,20 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 
 ## 📊 **[→ Project Status (Current Readiness, Security, QA)](PROJECT_STATUS.md)** ←
 
-**Latest Update:** PRs 155-187 merged | **Status:** Production-Ready (83% Complete)  
+**Latest Update:** PRs 155-287 merged | **Status:** Production-Ready (83% Complete)  
 **Security:** 2FA, CSRF, Rate Limits, CSP (Report-Only) | **Tests:** 107 (45% coverage)
 
 ---
 
 > 📖 **New to Joint?** Start with:
+> - **[COMPREHENSIVE_SUMMARY.md](COMPREHENSIVE_SUMMARY.md)** - **START HERE** - Complete project overview for agents & new sessions
 > - **[WORKING_STATE_SUMMARY.md](WORKING_STATE_SUMMARY.md)** - Current working state (frontend, auth, health)
 > - **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Readiness, security posture, QA coverage
 > - **[docs/](docs/README.md)** - Complete documentation index
 
 ## Table of Contents
 
+- [Recent Changes](#recent-changes)
 - [Overview](#overview)
 - [Current Status](#current-status)
 - [Key Features](#key-features)
@@ -38,6 +40,33 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 - [Contributing](#contributing)
 - [Development](#development)
 - [Technology Stack](#technology-stack)
+
+## Recent Changes
+
+### 🔧 Current PR: Prisma Client Synchronous Initialization Fix
+
+**Problem:** Login attempts were failing with 503 errors due to Prisma Client not being initialized properly at Lambda cold start.
+
+**Solution:**
+- Added synchronous loading of PrismaClient at module load time using `createRequire`
+- Falls back to async loading if synchronous load fails
+- `getPrisma()` now works synchronously when PrismaClient is pre-loaded
+- Added comprehensive degraded mode with in-memory user store for database outages
+
+**Files Changed:**
+- `serverless/src/db/client.js` - Fixed synchronous initialization
+- `serverless/tests/degraded-mode.test.js` - Added tests for degraded mode
+
+### Recent PRs (Nov 2025)
+
+| PR | Category | Summary |
+|----|----------|---------|
+| #287 | Backend | Profile record creation fix |
+| #181-185 | Security | Rate limiting, CSRF protection, 2FA support, audit logging |
+| #186-187 | QA | Post-merge verification infrastructure, regression test suite |
+| #173-182 | Onboarding | 6-step profile builder, profile links API, theme preferences |
+
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Overview
 
