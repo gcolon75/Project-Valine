@@ -294,6 +294,7 @@ export const getPreferences = async (event) => {
         id: true,
         theme: true,
         onboardingComplete: true,
+        profileComplete: true,
       },
     });
 
@@ -309,6 +310,7 @@ export const getPreferences = async (event) => {
     return json({
       theme: user.theme || 'light',
       onboardingComplete: user.onboardingComplete || false,
+      profileComplete: user.profileComplete || false,
       notifications: settings?.notifications || {},
       privacy: settings?.privacy || {},
     });
@@ -330,7 +332,7 @@ export const updatePreferences = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { theme, onboardingComplete, notifications, privacy } = body;
+    const { theme, onboardingComplete, profileComplete, notifications, privacy } = body;
 
     const prisma = getPrisma();
 
@@ -344,6 +346,9 @@ export const updatePreferences = async (event) => {
     }
     if (onboardingComplete !== undefined) {
       userUpdateData.onboardingComplete = Boolean(onboardingComplete);
+    }
+    if (profileComplete !== undefined) {
+      userUpdateData.profileComplete = Boolean(profileComplete);
     }
 
     // Update user if we have user-level changes
@@ -376,6 +381,7 @@ export const updatePreferences = async (event) => {
       select: {
         theme: true,
         onboardingComplete: true,
+        profileComplete: true,
       },
     });
 
@@ -386,6 +392,7 @@ export const updatePreferences = async (event) => {
     return json({
       theme: updatedUser?.theme || 'light',
       onboardingComplete: updatedUser?.onboardingComplete || false,
+      profileComplete: updatedUser?.profileComplete || false,
       notifications: updatedSettings?.notifications || {},
       privacy: updatedSettings?.privacy || {},
     });
