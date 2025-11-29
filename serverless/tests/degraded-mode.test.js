@@ -73,6 +73,14 @@ describe('Simplified Prisma Client', () => {
       expect(result.error).toContain('spaces');
     });
 
+    it('should sanitize password in error messages when spaces detected', () => {
+      const result = validateDatabaseUrl('postgresql://user:secretpass@host. example.com:5432/db');
+      expect(result.valid).toBe(false);
+      expect(result.sanitizedUrl).toBeDefined();
+      expect(result.sanitizedUrl).not.toContain('secretpass');
+      expect(result.sanitizedUrl).toContain(':***@');
+    });
+
     it('should return invalid for missing URL', () => {
       const result = validateDatabaseUrl(undefined);
       expect(result.valid).toBe(false);

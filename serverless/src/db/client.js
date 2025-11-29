@@ -24,14 +24,16 @@ export function isPrismaDegraded() {
 /**
  * Validate DATABASE_URL format
  * @param {string} url
- * @returns {{ valid: boolean, error?: string }}
+ * @returns {{ valid: boolean, error?: string, sanitizedUrl?: string }}
  */
 export function validateDatabaseUrl(url) {
   if (!url) {
     return { valid: false, error: 'DATABASE_URL is not set' };
   }
   if (url.includes(' ')) {
-    return { valid: false, error: 'DATABASE_URL contains spaces' };
+    // Create sanitized version for logging (hide password)
+    const sanitized = url.replace(/:([^@]+)@/, ':***@');
+    return { valid: false, error: 'DATABASE_URL contains spaces', sanitizedUrl: sanitized };
   }
   return { valid: true };
 }
