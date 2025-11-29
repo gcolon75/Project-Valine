@@ -38,11 +38,11 @@ export function validateDatabaseUrl(url) {
 
 // Stub functions for backward compatibility with existing code
 export function getDegradedUser() { return null; }
-export function createDegradedUser() { return null; }
-export function verifyDegradedUserPassword() { return false; }
+export async function createDegradedUser() { return null; }
+export async function verifyDegradedUserPassword() { return false; }
 export function getDegradedUserCount() { return 0; }
 export function initPrismaAsync() { return Promise.resolve(getPrisma()); }
 export function setDegradedMode() {}
 export function getPrismaInitError() { return null; }
 export function clearDegradedUserStore() {}
-export function getPrismaSync() { return prisma; }
+export function getPrismaSync() { return getPrisma(); }

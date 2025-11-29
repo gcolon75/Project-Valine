@@ -36,12 +36,12 @@ describe('Simplified Prisma Client', () => {
       expect(getDegradedUser('any@example.com')).toBeNull();
     });
 
-    it('createDegradedUser should return null', () => {
-      expect(createDegradedUser('test@example.com', 'password')).toBeNull();
+    it('createDegradedUser should return null (async for backward compatibility)', async () => {
+      expect(await createDegradedUser('test@example.com', 'password')).toBeNull();
     });
 
-    it('verifyDegradedUserPassword should return false', () => {
-      expect(verifyDegradedUserPassword('test@example.com', 'password')).toBe(false);
+    it('verifyDegradedUserPassword should return false (async for backward compatibility)', async () => {
+      expect(await verifyDegradedUserPassword('test@example.com', 'password')).toBe(false);
     });
 
     it('getDegradedUserCount should return 0', () => {
