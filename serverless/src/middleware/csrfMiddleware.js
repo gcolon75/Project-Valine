@@ -32,18 +32,24 @@ const hashCsrfToken = (token) => {
 export const generateCsrfCookie = (token) => {
   const NODE_ENV = process.env.NODE_ENV || 'development';
   const IS_PRODUCTION = NODE_ENV === 'production';
-  const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
+  
+  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  // SameSite=None requires Secure flag
+  const sameSite = IS_PRODUCTION ? 'None' : 'Lax';
   
   // Non-HttpOnly cookie so frontend can read it
-  let cookie = `XSRF-TOKEN=${token}; Path=/; SameSite=Lax; Max-Age=${15 * 60}`; // 15 minutes
+  let cookie = `XSRF-TOKEN=${token}; Path=/; SameSite=${sameSite}; Max-Age=${15 * 60}`; // 15 minutes
   
+  // Secure flag is required for SameSite=None, always include in production
   if (IS_PRODUCTION) {
     cookie += '; Secure';
   }
   
-  if (COOKIE_DOMAIN) {
-    cookie += `; Domain=${COOKIE_DOMAIN}`;
-  }
+  // Don't set Domain attribute for cross-origin cookies.
+  // When Domain is omitted, the cookie is scoped to the exact API domain
+  // (e.g., i72dxlcfcc.execute-api.us-west-2.amazonaws.com), allowing it to
+  // be set by the API and sent back on subsequent cross-origin requests.
+  // Setting Domain would restrict to that specific domain suffix only.
   
   return cookie;
 };
@@ -168,17 +174,22 @@ export const withCsrfProtection = (handler) => {
 export const clearCsrfCookie = () => {
   const NODE_ENV = process.env.NODE_ENV || 'development';
   const IS_PRODUCTION = NODE_ENV === 'production';
-  const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
   
-  let cookie = 'XSRF-TOKEN=; Path=/; SameSite=Lax; Max-Age=0';
+  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  // SameSite=None requires Secure flag
+  const sameSite = IS_PRODUCTION ? 'None' : 'Lax';
   
+  let cookie = `XSRF-TOKEN=; Path=/; SameSite=${sameSite}; Max-Age=0`;
+  
+  // Secure flag is required for SameSite=None, always include in production
   if (IS_PRODUCTION) {
     cookie += '; Secure';
   }
   
-  if (COOKIE_DOMAIN) {
-    cookie += `; Domain=${COOKIE_DOMAIN}`;
-  }
+  // Don't set Domain attribute for cross-origin cookies.
+  // When Domain is omitted, the cookie is scoped to the exact API domain
+  // (e.g., i72dxlcfcc.execute-api.us-west-2.amazonaws.com), allowing it to
+  // be cleared correctly on subsequent cross-origin requests.
   
   return cookie;
 };

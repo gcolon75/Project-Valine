@@ -75,9 +75,9 @@ function clearAllowlistCache() {
 
 /* ---------------------- Helpers ---------------------- */
 
-function buildHeaders(extra = {}) {
+function buildHeaders(event = null, extra = {}) {
   return {
-    ...getCorsHeaders(),
+    ...getCorsHeaders(event),
     ...extra
   };
 }
@@ -95,11 +95,15 @@ function redactEmail(e) {
 
 /**
  * Unified JSON response with optional cookies array (HTTP API v2).
+ * @param {number} statusCode - HTTP status code
+ * @param {object} bodyObj - Response body object
+ * @param {string[]} cookieHeaders - Array of Set-Cookie header values
+ * @param {object} event - Lambda event object for CORS origin detection
  */
-function response(statusCode, bodyObj, cookieHeaders = []) {
+function response(statusCode, bodyObj, cookieHeaders = [], event = null) {
   const result = {
     statusCode,
-    headers: buildHeaders({ 'Content-Type': 'application/json' }),
+    headers: buildHeaders(event, { 'Content-Type': 'application/json' }),
     body: JSON.stringify(bodyObj)
   };
   
@@ -385,7 +389,8 @@ async function login(event) {
         csrfToken,
         ...(degradedMode ? { _degradedMode: true } : {})
       },
-      cookies
+      cookies,
+      event
     );
   } catch (e) {
     logStructured(correlationId, 'login_unhandled_error', {
@@ -574,7 +579,7 @@ async function register(event) {
         email: user.email,
         createdAt: user.createdAt
       }
-    });
+    }, [], event);
   } catch (e) {
     logStructured(correlationId, 'register_unhandled_error', {
       error: e.message,
@@ -659,7 +664,7 @@ async function me(event) {
         createdAt: user.createdAt,
         twoFactorEnabled: user.twoFactorEnabled || false
       }
-    });
+    }, [], event);
   } catch (e) {
     logStructured(correlationId, 'me_unhandled_error', {
       error: e.message,
@@ -691,7 +696,7 @@ async function refresh(event) {
     const newAccess = generateAccessToken(user.id);
     const accessCookie = generateAccessTokenCookie(newAccess);
 
-    return response(200, { ok: true }, [accessCookie]);
+    return response(200, { ok: true }, [accessCookie], event);
   } catch (e) {
     console.error('[REFRESH] Unhandled error:', e);
     return error(500, 'Server error');
@@ -700,13 +705,13 @@ async function refresh(event) {
 
 /* ---------------------- LOGOUT ---------------------- */
 
-async function logout(_event) {
+async function logout(event) {
   try {
     const cookies = [
       ...generateClearCookieHeaders(),
       clearCsrfCookie()
     ];
-    return response(200, { ok: true }, cookies);
+    return response(200, { ok: true }, cookies, event);
   } catch (e) {
     console.error('[LOGOUT] Unhandled error:', e);
     return error(500, 'Server error');
@@ -730,7 +735,7 @@ async function verifyEmail(event) {
     if (!token) return error(400, 'token is required');
 
     console.log('[VERIFY_EMAIL] Not yet implemented');
-    return response(200, { verified: true });
+    return response(200, { verified: true }, [], event);
   } catch (e) {
     console.error('[VERIFY_EMAIL] Unhandled error:', e);
     return error(500, 'Server error');
@@ -752,7 +757,7 @@ async function resendVerification(event) {
     if (!email) return error(400, 'email is required');
 
     console.log('[RESEND_VERIFICATION] Not yet implemented');
-    return response(200, { sent: true });
+    return response(200, { sent: true }, [], event);
   } catch (e) {
     console.error('[RESEND_VERIFICATION] Unhandled error:', e);
     return error(500, 'Server error');
@@ -781,7 +786,7 @@ async function setup2FA(event) {
     });
 
     const otpauth = authenticator.keyuri(user.email, 'ProjectValine', secret);
-    return response(200, { secret, otpauth });
+    return response(200, { secret, otpauth }, [], event);
   } catch (e) {
     console.error('[SETUP2FA] Unhandled error:', e);
     return error(500, 'Server error');
@@ -822,7 +827,7 @@ async function enable2FA(event) {
       data: { twoFactorEnabled: true }
     });
 
-    return response(200, { twoFactorEnabled: true });
+    return response(200, { twoFactorEnabled: true }, [], event);
   } catch (e) {
     console.error('[ENABLE2FA] Unhandled error:', e);
     return error(500, 'Server error');
@@ -858,7 +863,7 @@ async function verify2FA(event) {
     });
     if (!ok) return error(401, 'Invalid code');
 
-    return response(200, { verified: true });
+    return response(200, { verified: true }, [], event);
   } catch (e) {
     console.error('[VERIFY2FA] Unhandled error:', e);
     return error(500, 'Server error');
@@ -886,7 +891,7 @@ async function disable2FA(event) {
       }
     });
 
-    return response(200, { twoFactorEnabled: false });
+    return response(200, { twoFactorEnabled: false }, [], event);
   } catch (e) {
     console.error('[DISABLE2FA] Unhandled error:', e);
     return error(500, 'Server error');
@@ -1065,7 +1070,7 @@ async function seedRestricted(event) {
       success: true,
       message: 'Seed operation completed',
       users: results
-    });
+    }, [], event);
     
   } catch (e) {
     logStructured(correlationId, 'seed_restricted_unhandled_error', {
@@ -1084,7 +1089,7 @@ async function seedRestricted(event) {
  * This is a public endpoint that helps operators verify that
  * environment variables are correctly propagated to Lambda.
  */
-async function authStatus(_event) {
+async function authStatus(event) {
   const correlationId = generateCorrelationId();
   
   try {
@@ -1116,7 +1121,7 @@ async function authStatus(_event) {
     
     logStructured(correlationId, 'auth_status_response', statusResponse, 'info');
     
-    return response(200, statusResponse);
+    return response(200, statusResponse, [], event);
   } catch (e) {
     logStructured(correlationId, 'auth_status_error', {
       error: e.message,
@@ -1129,7 +1134,7 @@ async function authStatus(_event) {
       error: 'AUTH_STATUS_ERROR',
       message: 'Failed to retrieve auth status',
       correlationId: correlationId
-    });
+    }, [], event);
   }
 }
 
@@ -1143,7 +1148,7 @@ async function authStatus(_event) {
  * WARNING: This endpoint exposes system state for debugging.
  * Consider restricting access in production via WAF or removing after outage.
  */
-async function authDiag(_event) {
+async function authDiag(event) {
   const correlationId = generateCorrelationId();
   
   try {
@@ -1218,7 +1223,7 @@ async function authDiag(_event) {
     
     logStructured(correlationId, 'auth_diag_response', diagResponse, 'info');
     
-    return response(200, diagResponse);
+    return response(200, diagResponse, [], event);
   } catch (e) {
     logStructured(correlationId, 'auth_diag_error', {
       error: e.message,
@@ -1229,7 +1234,7 @@ async function authDiag(_event) {
       error: 'AUTH_DIAG_ERROR',
       message: 'Failed to retrieve diagnostic info',
       correlationId
-    });
+    }, [], event);
   }
 }
 

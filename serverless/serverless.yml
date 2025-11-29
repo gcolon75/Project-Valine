@@ -23,6 +23,7 @@ provider:
         - Authorization
         - X-CSRF-Token
         - X-Requested-With
+        - Cookie
       allowedMethods:
         - GET
         - POST

@@ -67,7 +67,7 @@ export const getCorsHeaders = (event) => {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-CSRF-Token',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-CSRF-Token,X-Requested-With,Cookie',
     'Access-Control-Max-Age': '86400', // 24 hours
   };
 };
@@ -115,5 +115,7 @@ export function json(data, statusCode = 200, extra = {}) {
 }
 
 export function error(statusCode = 400, message = 'Bad Request', extra = {}) {
+  // Extract event from extra if provided for proper CORS origin detection
+  const event = extra.event;
   return json({ error: message }, statusCode, extra);
 }
