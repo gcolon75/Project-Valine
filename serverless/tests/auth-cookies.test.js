@@ -39,7 +39,7 @@ describe('Token Manager - Cookie Generation', () => {
     expect(decoded.jti).toBeTruthy();
   });
 
-  it('should generate access token cookie with HttpOnly flag', () => {
+  it('should generate access token cookie with correct attributes in development mode', () => {
     // Run in development mode to test the Lax case
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';
@@ -56,7 +56,7 @@ describe('Token Manager - Cookie Generation', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  it('should generate refresh token cookie with HttpOnly flag', () => {
+  it('should generate refresh token cookie with correct attributes in development mode', () => {
     // Run in development mode to test the Lax case
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';

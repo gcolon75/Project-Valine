@@ -1,8 +1,7 @@
 /**
- * Tests for cookie domain normalization
+ * Tests for cookie generation with Domain attribute behavior
  * Note: Domain attribute is intentionally not set for cross-site cookies
  * to support CloudFront frontend + API Gateway backend architecture.
- * The normalizeCookieDomain utility is still tested for edge cases.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
