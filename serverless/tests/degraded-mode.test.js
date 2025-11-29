@@ -12,7 +12,8 @@ import {
   verifyDegradedUserPassword,
   getDegradedUserCount,
   clearDegradedUserStore,
-  validateDatabaseUrl
+  validateDatabaseUrl,
+  getPrisma
 } from '../src/db/client.js';
 
 describe('Degraded Mode - Database Client', () => {
@@ -177,5 +178,43 @@ describe('Degraded Mode - Auth Integration', () => {
     expect(user).toBeDefined();
     
     // Non-allowlisted email would be blocked by login handler (not tested here)
+  });
+});
+
+describe('Synchronous PrismaClient Loading', () => {
+  beforeEach(() => {
+    // Reset degraded mode state before each test
+    setDegradedMode(false, null);
+  });
+
+  afterEach(() => {
+    setDegradedMode(false, null);
+  });
+
+  it('should load PrismaClient synchronously and getPrisma should return non-null when not in degraded mode', () => {
+    // This tests that PrismaClient was loaded synchronously at module load time
+    // and getPrisma() returns a client instance without needing async initialization
+    
+    // Ensure we're not in degraded mode
+    expect(isPrismaDegraded()).toBe(false);
+    
+    // getPrisma() should return a PrismaClient instance synchronously
+    // (not null) because PrismaClient was loaded at module load time
+    const prisma = getPrisma();
+    expect(prisma).not.toBeNull();
+    expect(prisma).toBeDefined();
+    
+    // Verify it's a valid PrismaClient instance by checking for expected methods
+    expect(typeof prisma.user).toBe('object');
+    expect(typeof prisma.$connect).toBe('function');
+    expect(typeof prisma.$disconnect).toBe('function');
+  });
+
+  it('should return null when in degraded mode', () => {
+    setDegradedMode(true, 'Prisma init failed');
+    
+    // getPrisma should return null in degraded mode
+    const prisma = getPrisma();
+    expect(prisma).toBeNull();
   });
 });

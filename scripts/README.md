@@ -389,6 +389,320 @@ node scripts/wire-original-router.mjs
 .\scripts\start-dev.ps1
 ```
 
+## Admin & User Management Scripts
+
+### admin-set-password.mjs
+
+**Purpose**: Reset or set a user's password directly in the database.
+
+**Parameters**:
+- `<email>` - User's email address (required, first positional argument)
+- `<password>` - New password to set (required, second positional argument)
+
+**Quick Start**:
+```bash
+# Set password for a specific user
+# Usage: admin-set-password.mjs <email> <password>
+DATABASE_URL="postgresql://..." node scripts/admin-set-password.mjs user@example.com newpassword123
+```
+
+### admin-upsert-user.mjs
+
+**Purpose**: Create or update a user account with full control over all fields.
+
+**Quick Start**:
+```bash
+# Create or update user
+DATABASE_URL="postgresql://..." node scripts/admin-upsert-user.mjs \
+  --email user@example.com \
+  --password SecurePassword123! \
+  --display-name "John Doe"
+
+# Dry run (test mode, no database changes)
+DATABASE_URL="postgresql://..." node scripts/admin-upsert-user.mjs \
+  --email user@example.com \
+  --password SecurePassword123! \
+  --dry-run
+
+# Skip if user already exists
+DATABASE_URL="postgresql://..." node scripts/admin-upsert-user.mjs \
+  --email user@example.com \
+  --password SecurePassword123! \
+  --skip-if-exists
+```
+
+### setup-test-users.mjs
+
+**Purpose**: Create test user accounts for development and QA testing.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/setup-test-users.mjs
+```
+
+### provision-production-accounts.mjs
+
+**Purpose**: Provision initial production accounts with proper configuration.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/provision-production-accounts.mjs
+```
+
+## Database & Migration Scripts
+
+### prisma-optimize.mjs
+
+**Purpose**: Optimize Prisma binaries for deployment by removing unused platform-specific query engine binaries. Prisma generates binaries for multiple platforms (Windows, macOS, Linux) but Lambda only needs Linux. This reduces deployment package size significantly.
+
+**Quick Start**:
+```bash
+# For production (Linux only - removes Windows/macOS binaries, reduces package size)
+node scripts/prisma-optimize.mjs --prod
+
+# For development (keep all platforms for cross-platform compatibility)
+node scripts/prisma-optimize.mjs --dev
+```
+
+### add-profilecomplete-column.mjs
+
+**Purpose**: Add the profileComplete column to the User table.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/add-profilecomplete-column.mjs
+```
+
+### apply-missing-columns-migration.mjs
+
+**Purpose**: Apply migrations for any missing database columns.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/apply-missing-columns-migration.mjs
+```
+
+### verify-user-columns.mjs
+
+**Purpose**: Verify that required user columns exist in the database.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/verify-user-columns.mjs
+```
+
+## Security & Audit Scripts
+
+### secret-audit.mjs
+
+**Purpose**: Scan for accidentally committed secrets in the codebase.
+
+**Quick Start**:
+```bash
+node scripts/secret-audit.mjs
+```
+
+### post-merge-security-audit.js
+
+**Purpose**: Run comprehensive security audit after merging changes.
+
+**Quick Start**:
+```bash
+node scripts/post-merge-security-audit.js
+```
+
+### validate-allowlist.js
+
+**Purpose**: Validate the email allowlist configuration.
+
+**Quick Start**:
+```bash
+node scripts/validate-allowlist.js
+```
+
+## Build & SRI Scripts
+
+### prebuild.js
+
+**Purpose**: Pre-build validation (runs before `npm run build`).
+
+**Quick Start**:
+```bash
+node scripts/prebuild.js
+# Automatically runs via: npm run build
+```
+
+### postbuild-validate.js
+
+**Purpose**: Post-build validation to ensure build output is correct.
+
+**Quick Start**:
+```bash
+node scripts/postbuild-validate.js
+```
+
+### generate-sri.js
+
+**Purpose**: Generate Subresource Integrity (SRI) hashes for production bundles.
+
+**Quick Start**:
+```bash
+# Generate SRI hashes after build
+node scripts/generate-sri.js
+
+# Or use the combined command
+npm run build:sri
+```
+
+### verify-sri.js
+
+**Purpose**: Verify that SRI hashes in index.html match the actual bundle files.
+
+**Quick Start**:
+```bash
+node scripts/verify-sri.js
+# Or: npm run verify:sri
+```
+
+## Verification & Diagnostics
+
+### post-merge-comprehensive-verification.js
+
+**Purpose**: Run comprehensive verification after merging PRs.
+
+**Quick Start**:
+```bash
+node scripts/post-merge-comprehensive-verification.js
+# Or: npm run verify:post-merge
+```
+
+### verify-predeploy.mjs
+
+**Purpose**: Pre-deployment validation checks.
+
+**Quick Start**:
+```bash
+node scripts/verify-predeploy.mjs
+```
+
+### verify-env-contract.mjs
+
+**Purpose**: Validate environment variable configuration against requirements.
+
+**Quick Start**:
+```bash
+node scripts/verify-env-contract.mjs
+```
+
+### verify-production-deployment.mjs
+
+**Purpose**: Verify that production deployment is healthy.
+
+**Quick Start**:
+```bash
+node scripts/verify-production-deployment.mjs --api-base https://your-api.execute-api.us-west-2.amazonaws.com
+```
+
+### verify-user-profiles.mjs
+
+**Purpose**: Verify user profile data integrity.
+
+**Quick Start**:
+```bash
+DATABASE_URL="postgresql://..." node scripts/verify-user-profiles.mjs
+```
+
+### verify-white-screen-fix.js
+
+**Purpose**: Verify that white screen fixes are working correctly.
+
+**Quick Start**:
+```bash
+node scripts/verify-white-screen-fix.js --domain your-domain.cloudfront.net
+```
+
+## CloudFront & Frontend Scripts
+
+### diagnose-white-screen.js
+
+**Purpose**: Diagnose white screen issues with detailed analysis.
+
+**Quick Start**:
+```bash
+node scripts/diagnose-white-screen.js --domain your-domain.cloudfront.net
+```
+
+### check-cloudfront.js
+
+**Purpose**: Check CloudFront distribution status and configuration.
+
+**Quick Start**:
+```bash
+node scripts/check-cloudfront.js --distribution E123456789
+```
+
+### deploy-frontend.js
+
+**Purpose**: Deploy frontend to S3 with CloudFront invalidation.
+
+**Quick Start**:
+```bash
+node scripts/deploy-frontend.js --bucket valine-frontend-prod --distribution E123456789
+```
+
+## UX Audit Scripts
+
+### ux-audit-agent.mjs
+
+**Purpose**: Automated UX audit agent that analyzes pages for usability issues.
+
+**Quick Start**:
+```bash
+node scripts/ux-audit-agent.mjs --url https://your-site.com
+```
+
+### ux-audit-to-issues.mjs
+
+**Purpose**: Convert UX audit findings to GitHub issues.
+
+**Quick Start**:
+```bash
+node scripts/ux-audit-to-issues.mjs --input ux-audit-results.json
+```
+
+## Test Analysis Scripts
+
+### analyze-test-failures.mjs
+
+**Purpose**: Analyze test failures and categorize them by type.
+
+**Quick Start**:
+```bash
+# Run tests with JSON output, then analyze
+npm test -- --reporter=json > test-results.json
+node scripts/analyze-test-failures.mjs test-results.json
+```
+
+### generate-regression-report.mjs
+
+**Purpose**: Generate regression test report from Playwright results.
+
+**Quick Start**:
+```bash
+node scripts/generate-regression-report.mjs
+```
+
+## Image & Asset Optimization
+
+### optimize-images.mjs
+
+**Purpose**: Optimize images in the public directory.
+
+**Quick Start**:
+```bash
+node scripts/optimize-images.mjs
+```
+
 ## Configuration Files
 
 ### ssm-params.example.json
