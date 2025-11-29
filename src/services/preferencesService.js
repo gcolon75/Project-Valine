@@ -7,7 +7,7 @@ import apiClient from './api';
  * @returns {string|null} preferences.theme - Theme preference ('light', 'dark', or null for system)
  */
 export const getPreferences = async () => {
-  const { data } = await apiClient.get('/api/me/preferences');
+  const { data } = await apiClient.get('/me/preferences');
   return data;
 };
 
@@ -17,7 +17,7 @@ export const getPreferences = async () => {
  * @returns {Promise<Object>} Updated preferences
  */
 export const updateThemePreference = async (theme) => {
-  const { data } = await apiClient.patch('/api/me/preferences', { theme });
+  const { data } = await apiClient.put('/me/preferences', { theme });
   return data;
 };
 

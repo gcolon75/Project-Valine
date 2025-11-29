@@ -7,7 +7,7 @@ import apiClient from '../api';
 vi.mock('../api', () => ({
   default: {
     get: vi.fn(),
-    patch: vi.fn()
+    put: vi.fn()
   }
 }));
 
@@ -46,7 +46,7 @@ describe('Preferences Service', () => {
 
       const result = await preferencesService.getPreferences();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/me/preferences');
+      expect(apiClient.get).toHaveBeenCalledWith('/me/preferences');
       expect(result).toEqual(mockPreferences);
     });
 
@@ -69,11 +69,11 @@ describe('Preferences Service', () => {
         theme: 'light'
       };
 
-      apiClient.patch.mockResolvedValue({ data: mockResponse });
+      apiClient.put.mockResolvedValue({ data: mockResponse });
 
       const result = await preferencesService.updateThemePreference('light');
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/me/preferences', { theme: 'light' });
+      expect(apiClient.put).toHaveBeenCalledWith('/me/preferences', { theme: 'light' });
       expect(result).toEqual(mockResponse);
     });
 
@@ -82,11 +82,11 @@ describe('Preferences Service', () => {
         theme: 'dark'
       };
 
-      apiClient.patch.mockResolvedValue({ data: mockResponse });
+      apiClient.put.mockResolvedValue({ data: mockResponse });
 
       const result = await preferencesService.updateThemePreference('dark');
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/me/preferences', { theme: 'dark' });
+      expect(apiClient.put).toHaveBeenCalledWith('/me/preferences', { theme: 'dark' });
       expect(result).toEqual(mockResponse);
     });
 
@@ -95,11 +95,11 @@ describe('Preferences Service', () => {
         theme: null
       };
 
-      apiClient.patch.mockResolvedValue({ data: mockResponse });
+      apiClient.put.mockResolvedValue({ data: mockResponse });
 
       const result = await preferencesService.updateThemePreference(null);
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/me/preferences', { theme: null });
+      expect(apiClient.put).toHaveBeenCalledWith('/me/preferences', { theme: null });
       expect(result.theme).toBeNull();
     });
   });
@@ -112,11 +112,11 @@ describe('Preferences Service', () => {
         theme: 'dark'
       };
 
-      apiClient.patch.mockResolvedValue({ data: mockResponse });
+      apiClient.put.mockResolvedValue({ data: mockResponse });
 
       const result = await preferencesService.syncThemeToBackend();
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/api/me/preferences', { theme: 'dark' });
+      expect(apiClient.put).toHaveBeenCalledWith('/me/preferences', { theme: 'dark' });
       expect(result).toEqual(mockResponse);
       // Should clear localStorage after sync
       expect(localStorageMock.getItem('theme')).toBeNull();
@@ -125,7 +125,7 @@ describe('Preferences Service', () => {
     it('should return null if no localStorage theme', async () => {
       const result = await preferencesService.syncThemeToBackend();
 
-      expect(apiClient.patch).not.toHaveBeenCalled();
+      expect(apiClient.put).not.toHaveBeenCalled();
       expect(result).toBeNull();
     });
 
@@ -134,14 +134,14 @@ describe('Preferences Service', () => {
 
       const result = await preferencesService.syncThemeToBackend();
 
-      expect(apiClient.patch).not.toHaveBeenCalled();
+      expect(apiClient.put).not.toHaveBeenCalled();
       expect(result).toBeNull();
     });
 
     it('should not clear localStorage on sync failure', async () => {
       localStorageMock.setItem('theme', 'light');
       
-      apiClient.patch.mockRejectedValue(new Error('Network error'));
+      apiClient.put.mockRejectedValue(new Error('Network error'));
 
       const result = await preferencesService.syncThemeToBackend();
 
@@ -161,7 +161,7 @@ describe('Preferences Service', () => {
 
       const result = await preferencesService.loadThemePreference();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/me/preferences');
+      expect(apiClient.get).toHaveBeenCalledWith('/me/preferences');
       expect(result).toBe('dark');
     });
 

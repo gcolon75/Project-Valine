@@ -525,6 +525,12 @@ functions:
       - httpApi:
           path: /me/preferences
           method: put
+  patchPreferences:
+    handler: src/handlers/settings.updatePreferences
+    events:
+      - httpApi:
+          path: /me/preferences
+          method: patch
 
   # ========== REEL REQUESTS ==========
   createReelRequest:
