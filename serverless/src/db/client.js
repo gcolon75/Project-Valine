@@ -16,8 +16,8 @@ const degradedUserStore = new Map();
 // Try to load PrismaClient synchronously at module load time
 // This ensures getPrisma() can work without requiring async initialization
 try {
-  const require = createRequire(import.meta.url);
-  const prismaModule = require('@prisma/client');
+  const dynamicRequire = createRequire(import.meta.url);
+  const prismaModule = dynamicRequire('@prisma/client');
   PrismaClient = prismaModule.PrismaClient;
   console.log('[Prisma] PrismaClient loaded synchronously at module load');
 } catch (e) {
