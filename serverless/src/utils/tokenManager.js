@@ -121,9 +121,11 @@ export const extractToken = (event, tokenType = 'access') => {
   // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
   // Format: ["access_token=abc123", "refresh_token=xyz789"]
   if (Array.isArray(event.cookies) && event.cookies.length > 0) {
+    const prefix = `${cookieName}=`;
     for (const cookie of event.cookies) {
-      if (cookie.startsWith(`${cookieName}=`)) {
-        return cookie.substring(cookieName.length + 1);
+      if (cookie.startsWith(prefix)) {
+        // Handle cookie values that may contain '=' (e.g., base64 tokens)
+        return cookie.substring(prefix.length);
       }
     }
   }

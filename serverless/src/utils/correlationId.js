@@ -50,3 +50,23 @@ export function logStructured(correlationId, event, metadata = {}, level = 'info
       console.log(JSON.stringify(log));
   }
 }
+
+/**
+ * Log diagnostic info about auth headers/cookies (redacted)
+ * Used by protected handlers to diagnose authentication issues
+ * @param {string} handler - Handler name for log prefix
+ * @param {object} event - Lambda event object
+ */
+export function logAuthDiagnostics(handler, event) {
+  const hasCookiesArray = Array.isArray(event.cookies) && event.cookies.length > 0;
+  const hasHeaderCookie = !!(event.headers?.cookie || event.headers?.Cookie);
+  const hasAuthHeader = !!(event.headers?.authorization || event.headers?.Authorization);
+  
+  console.log(`[${handler}] [AUTH_DIAG]`, {
+    hasCookiesArray,
+    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0,
+    hasHeaderCookie,
+    hasAuthHeader,
+    timestamp: new Date().toISOString(),
+  });
+}

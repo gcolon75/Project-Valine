@@ -3,6 +3,7 @@ import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
+import { logAuthDiagnostics } from '../utils/correlationId.js';
 import {
   isModerationEnabled,
   scanProfilePayload,
@@ -18,25 +19,6 @@ const headers = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Credentials': 'true',
 };
-
-/**
- * Log diagnostic info about auth headers/cookies (redacted)
- * @param {string} handler - Handler name for log prefix
- * @param {object} event - Lambda event
- */
-function logAuthDiagnostics(handler, event) {
-  const hasCookiesArray = Array.isArray(event.cookies) && event.cookies.length > 0;
-  const hasHeaderCookie = !!(event.headers?.cookie || event.headers?.Cookie);
-  const hasAuthHeader = !!(event.headers?.authorization || event.headers?.Authorization);
-  
-  console.log(`[${handler}] [AUTH_DIAG]`, {
-    hasCookiesArray,
-    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0,
-    hasHeaderCookie,
-    hasAuthHeader,
-    timestamp: new Date().toISOString(),
-  });
-}
 
 // Validation constants
 const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other'];
