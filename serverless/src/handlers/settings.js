@@ -3,6 +3,7 @@ import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
+import { logAuthDiagnostics } from '../utils/correlationId.js';
 
 /**
  * GET /api/settings
@@ -280,8 +281,12 @@ export const deleteAccount = async (event) => {
  */
 export const getPreferences = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('getPreferences', event);
+    
     const userId = getUserFromEvent(event);
     if (!userId) {
+      console.log('[getPreferences] UNAUTHORIZED - No user ID from token');
       return error(401, 'Unauthorized');
     }
 

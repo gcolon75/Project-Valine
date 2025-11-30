@@ -13,7 +13,7 @@ import { sendNewReportAlert } from '../utils/discord.js';
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': true,
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 /**

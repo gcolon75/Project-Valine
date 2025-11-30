@@ -3,6 +3,7 @@ import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
+import { logAuthDiagnostics } from '../utils/correlationId.js';
 import {
   isModerationEnabled,
   scanProfilePayload,
@@ -16,7 +17,7 @@ import {
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': true,
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 // Validation constants
@@ -684,6 +685,9 @@ const MAX_TAGS = 5;
  */
 export const updateMyProfile = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('updateMyProfile', event);
+    
     // Get authenticated user ID
     const userId = getUserFromEvent(event);
     if (!userId) {
@@ -1015,9 +1019,13 @@ export const updateMyProfile = async (event) => {
  */
 export const getMyProfile = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('getMyProfile', event);
+    
     // Get authenticated user ID
     const userId = getUserFromEvent(event);
     if (!userId) {
+      console.log('[getMyProfile] UNAUTHORIZED - No user ID from token');
       return error(401, 'Unauthorized');
     }
 

@@ -110,13 +110,27 @@ export const verifyToken = (token) => {
 
 /**
  * Extract token from cookies or Authorization header
+ * Supports both HTTP API v2 (event.cookies array) and traditional (event.headers.cookie) formats
  * @param {object} event - Lambda event object
  * @param {string} tokenType - 'access' or 'refresh'
  * @returns {string|null} Token string or null
  */
 export const extractToken = (event, tokenType = 'access') => {
-  // Try cookies first (preferred method)
   const cookieName = tokenType === 'access' ? 'access_token' : 'refresh_token';
+  
+  // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
+  // Format: ["access_token=abc123", "refresh_token=xyz789"]
+  if (Array.isArray(event.cookies) && event.cookies.length > 0) {
+    const prefix = `${cookieName}=`;
+    for (const cookie of event.cookies) {
+      if (cookie.startsWith(prefix)) {
+        // Handle cookie values that may contain '=' (e.g., base64 tokens)
+        return cookie.substring(prefix.length);
+      }
+    }
+  }
+  
+  // Traditional format: Parse from headers.cookie string
   const cookies = parseCookies(event.headers?.cookie || event.headers?.Cookie || '');
   
   if (cookies[cookieName]) {
