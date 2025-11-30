@@ -1,0 +1,309 @@
+# Project Valine Deployment Runbook
+
+This document provides unified deployment procedures for Project Valine's backend and frontend.
+
+---
+
+## Infrastructure IDs
+
+| Resource | Value |
+|----------|-------|
+| S3 Bucket | s3://valine-frontend-prod |
+| CloudFront Distribution | E16LPJDBIL5DEE |
+| API Base URL | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
+| Database URL | postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require |
+| Prisma Layer ARN | arn:aws:lambda:us-west-2:579939802800:layer:prisma:12 |
+| AWS Region | us-west-2 |
+
+---
+
+## Prerequisites
+
+- AWS CLI configured with appropriate credentials
+- Node.js 18+ and npm installed
+- Git access to the repository
+- PowerShell (Windows) or Bash (Linux/macOS)
+
+---
+
+## Backend Deployment
+
+### Step 1: Pull Latest Code
+
+```powershell
+cd <path-to-Project-Valine>
+git checkout main
+git pull origin main
+```
+
+### Step 2: Install Dependencies
+
+```powershell
+cd serverless
+npm ci
+```
+
+### Step 3: Deploy to Production
+
+```powershell
+npx serverless deploy --stage prod --region us-west-2
+```
+
+### Step 4: Verify Prisma Layer
+
+After deployment, verify the correct Prisma layer is attached:
+
+```powershell
+aws lambda get-function-configuration `
+    --function-name pv-api-prod-updateMyProfile `
+    --region us-west-2 `
+    --query "Layers[].Arn"
+```
+
+Expected output:
+```json
+["arn:aws:lambda:us-west-2:579939802800:layer:prisma:12"]
+```
+
+---
+
+## Prisma Layer Rebuild
+
+When the Prisma schema changes, rebuild the layer before deploying:
+
+### Windows (PowerShell)
+
+```powershell
+cd <path-to-Project-Valine>\serverless
+.\scripts\build-prisma-layer.ps1
+npx serverless deploy --stage prod --region us-west-2
+```
+
+### Linux/macOS (Bash)
+
+```bash
+cd serverless
+./scripts/build-prisma-layer.sh
+npx serverless deploy --stage prod --region us-west-2
+```
+
+### When to Rebuild
+
+- After adding/removing fields in `schema.prisma`
+- After adding new models
+- After upgrading Prisma version
+- After running `npm ci` or dependency updates
+
+---
+
+## Frontend Deployment
+
+### Step 1: Install Dependencies
+
+```powershell
+cd <path-to-Project-Valine>
+npm ci
+```
+
+### Step 2: Build Production Bundle
+
+```powershell
+npm run build
+```
+
+### Step 3: Sync to S3
+
+```powershell
+aws s3 sync dist/ s3://valine-frontend-prod --delete
+```
+
+### Step 4: Invalidate CloudFront Cache
+
+```powershell
+aws cloudfront create-invalidation `
+    --distribution-id E16LPJDBIL5DEE `
+    --paths "/*"
+```
+
+### Full Frontend Deploy (One-liner)
+
+```powershell
+npm ci; npm run build; aws s3 sync dist/ s3://valine-frontend-prod --delete; aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
+```
+
+---
+
+## Environment Configuration
+
+### Backend Environment Variables
+
+Set in Lambda via Serverless Framework or AWS Console:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Secret for JWT signing |
+| `ALLOWED_USER_EMAILS` | Comma-separated allowlist |
+| `ENABLE_REGISTRATION` | `true` or `false` |
+
+### Frontend Environment Variables
+
+Set in `.env.production` before build:
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_BASE` | API base URL |
+| `VITE_ALLOWED_USER_EMAILS` | Frontend allowlist |
+| `VITE_ENABLE_REGISTRATION` | `true` or `false` |
+
+---
+
+## Troubleshooting
+
+### Issue: "PrismaClientValidationError: Unknown arg"
+
+**Cause:** Prisma layer is out-of-date after schema changes.
+
+**Solution:**
+```powershell
+cd serverless
+.\scripts\build-prisma-layer.ps1
+npx serverless deploy --stage prod --region us-west-2
+```
+
+### Issue: "403 Forbidden" on API Requests
+
+**Cause:** Missing CSRF token or not in allowlist.
+
+**Solution:**
+1. Verify `x-csrf-token` header is included in requests
+2. Check `ALLOWED_USER_EMAILS` includes the user's email
+3. Ensure cookies are being sent with requests
+
+### Issue: "Layer artifact not found"
+
+**Cause:** `prisma-layer.zip` was not built.
+
+**Solution:**
+```powershell
+cd serverless
+.\scripts\build-prisma-layer.ps1
+```
+
+### Issue: "500 Internal Server Error" on Login
+
+**Cause:** Database connection issue or missing environment variable.
+
+**Solution:**
+1. Verify `DATABASE_URL` is set correctly
+2. Check RDS security group allows Lambda access
+3. Tail logs for specific error:
+   ```powershell
+   aws logs tail /aws/lambda/pv-api-prod-login --region us-west-2 --follow
+   ```
+
+### Issue: Frontend Shows Old Content After Deploy
+
+**Cause:** CloudFront cache not invalidated.
+
+**Solution:**
+```powershell
+aws cloudfront create-invalidation `
+    --distribution-id E16LPJDBIL5DEE `
+    --paths "/*"
+```
+
+### Issue: "Email not in allowlist"
+
+**Cause:** User email not in `ALLOWED_USER_EMAILS`.
+
+**Solution:**
+1. Update Lambda environment variable
+2. Redeploy backend
+3. See [ALLOWED_USERS.md](./ALLOWED_USERS.md) for detailed instructions
+
+---
+
+## Log Tailing
+
+### Backend Logs
+
+```powershell
+# Login function
+aws logs tail /aws/lambda/pv-api-prod-login --region us-west-2 --follow
+
+# Profile update function
+aws logs tail /aws/lambda/pv-api-prod-updateMyProfile --region us-west-2 --follow
+
+# All API logs
+aws logs tail /aws/lambda/pv-api-prod --region us-west-2 --follow
+```
+
+### CloudFront Logs
+
+CloudFront logs are stored in S3. Check the distribution settings for the log bucket.
+
+---
+
+## Rollback Procedures
+
+### Backend Rollback
+
+```powershell
+# Revert to previous commit
+git checkout main
+git revert HEAD
+git push origin main
+
+# Redeploy
+cd serverless
+npx serverless deploy --stage prod --region us-west-2
+```
+
+### Frontend Rollback
+
+```powershell
+# Revert to previous commit
+git checkout main
+git revert HEAD
+git push origin main
+
+# Rebuild and deploy
+npm ci
+npm run build
+aws s3 sync dist/ s3://valine-frontend-prod --delete
+aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
+```
+
+---
+
+## Health Checks
+
+### API Health
+
+```powershell
+Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method GET
+```
+
+### Frontend Health
+
+```powershell
+Invoke-WebRequest -Uri "https://dkmxy676d3vgc.cloudfront.net" -Method GET
+```
+
+### Database Connection
+
+```powershell
+# From a Lambda function or local environment with DB access
+npx prisma db pull
+```
+
+---
+
+## Related Documentation
+
+- [ALLOWED_USERS.md](./ALLOWED_USERS.md) – User allowlist management
+- [docs/allowlist.md](./docs/allowlist.md) – Allowlist configuration details
+- [serverless/layers/README.md](./serverless/layers/README.md) – Prisma layer build instructions
+- [docs/postmortem-2025-11-30.md](./docs/postmortem-2025-11-30.md) – Recent incident postmortem
+- [PRODUCTION_DEPLOYMENT_GUIDE.md](./PRODUCTION_DEPLOYMENT_GUIDE.md) – Detailed deployment guide

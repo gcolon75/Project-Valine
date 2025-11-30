@@ -47,8 +47,14 @@ const NotFoundPage = lazy(() => import("../pages/NotFound"));
 const SkeletonTestPage = lazy(() => import("../pages/SkeletonTest"));
 
 function Protected({ children }) {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const location = useLocation();
+
+  // Wait for auth state to be initialized before making redirect decisions
+  if (!isInitialized) {
+    return null;
+  }
+
   if (!user) return <Navigate to="/login" replace />;
   if (!user.profileComplete && location.pathname !== "/setup") {
     return <Navigate to="/setup" replace />;
