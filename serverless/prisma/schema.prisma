@@ -1,298 +1,313 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x", "windows", "darwin", "darwin-arm64"]
   output        = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "windows", "darwin", "darwin-arm64"]
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
-  email           String   @unique
-  normalizedEmail String?  @unique // Lowercase normalized email for case-insensitive lookups
-  passwordHash    String   // hashed password
-  displayName     String
-  bio             String?
-  avatar          String?
-  name            String?
-  role            String   @default("artist") // 'artist' | 'observer'
-  status          String   @default("active") // 'pending' | 'active' | 'suspended'
-  theme           String?  @default("light") // 'light' | 'dark' - theme preference
-  onboardingComplete Boolean @default(false) // Onboarding completion status
-  profileComplete Boolean @default(false)  // Profile completion status
-  emailVerified   Boolean  @default(false)
-  emailVerifiedAt DateTime?
-  twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String?  // Encrypted or hashed TOTP secret
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                        String                      @id @default(uuid())
+  username                  String                      @unique
+  email                     String                      @unique
+  normalizedEmail           String                      @unique
+  emailVerified             Boolean                     @default(false)
+  emailVerifiedAt           DateTime?
+  passwordHash              String
+  displayName               String?
+  bio                       String?
+  avatar                    String?
+  name                      String?
+  role                      String                      @default("artist")
+  status                    String                      @default("active")
+  theme                     String?                     @default("light")
+  onboardingComplete        Boolean                     @default(false)
+  twoFactorEnabled          Boolean                     @default(false)
+  twoFactorSecret           String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  profileComplete           Boolean                     @default(false)
+  audit_logs                audit_logs[]
+  auditions                 auditions[]
+  bookmarks                 Bookmark[]
+  comments                  Comment[]
+  receivedRequests          ConnectionRequest[]         @relation("receiver")
+  sentRequests              ConnectionRequest[]         @relation("sender")
+  conversations             ConversationParticipant[]
+  verificationTokens        EmailVerificationToken[]
+  likes                     Like[]
+  sentMessages              Message[]                   @relation("sender")
+  notifications             Notification[]              @relation("recipient")
+  triggeredNotifs           Notification[]              @relation("triggerer")
+  password_reset_tokens     password_reset_tokens[]
+  posts                     Post[]
+  profile_links             profile_links[]
+  profile                   Profile?
+  receivedReelRequests      ReelRequest[]               @relation("owner")
+  sentReelRequests          ReelRequest[]               @relation("requester")
+  reels                     Reel[]
+  refreshTokens             RefreshToken[]
+  scripts                   scripts[]
+  sessions                  sessions[]
+  two_factor_recovery_codes two_factor_recovery_codes[]
+  settings                  UserSettings?
 
-  scripts            Script[]
-  auditions          Audition[]
-  posts              Post[]
-  reels              Reel[]
-  comments           Comment[]
-  likes              Like[]
-  bookmarks          Bookmark[]
-  sentRequests       ConnectionRequest[] @relation("sender")
-  receivedRequests   ConnectionRequest[] @relation("receiver")
-  sentMessages       Message[]           @relation("sender")
-  conversations      ConversationParticipant[]
-  notifications      Notification[]      @relation("recipient")
-  triggeredNotifs    Notification[]      @relation("triggerer")
-  profile            Profile?
-  settings           UserSettings?
-  sentReelRequests   ReelRequest[]       @relation("requester")
-  receivedReelRequests ReelRequest[]     @relation("owner")
-  verificationTokens EmailVerificationToken[]
-  refreshTokens      RefreshToken[]
-
+  @@index([createdAt])
+  @@index([email])
+  @@index([normalizedEmail])
+  @@index([onboardingComplete], map: "users_onboardingcomplete_idx")
+  @@index([profileComplete], map: "users_profilecomplete_idx")
+  @@index([status])
+  @@index([username])
   @@map("users")
-}
-model Script {
-  id        String   @id @default(cuid())
-  title     String
-  summary   String
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-}
-model Audition {
-  id        String   @id @default(cuid())
-  title     String
-  summary   String
-  hostId    String
-  host      User     @relation(fields: [hostId], references: [id])
-  createdAt DateTime @default(now())
 }
 
 model Post {
   id        String   @id @default(uuid())
-  content   String   @db.Text
+  content   String
   media     String[]
+  tags      String[]
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  @@map("posts")
   @@index([authorId])
+  @@index([createdAt])
+  @@index([tags])
+  @@map("posts")
 }
 
 model Reel {
-  id          String   @id @default(uuid())
-  videoUrl    String
-  thumbnail   String?
-  caption     String?  @db.Text
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  
-  comments    Comment[]
-  likes       Like[]
-  bookmarks   Bookmark[]
+  id        String     @id @default(uuid())
+  videoUrl  String
+  thumbnail String?
+  caption   String?
+  tags      String[]
+  authorId  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  bookmarks Bookmark[]
+  comments  Comment[]
+  likes     Like[]
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  @@map("reels")
   @@index([authorId])
   @@index([createdAt])
+  @@index([tags])
+  @@map("reels")
 }
 
 model Comment {
   id        String   @id @default(uuid())
-  text      String   @db.Text
+  text      String
   reelId    String
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  updatedAt DateTime
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
-  @@map("comments")
   @@index([reelId])
   @@index([authorId])
+  @@index([createdAt])
+  @@map("comments")
 }
 
 model Like {
   id        String   @id @default(uuid())
   reelId    String
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("likes")
   @@unique([reelId, userId])
   @@index([reelId])
   @@index([userId])
+  @@map("likes")
 }
 
 model Bookmark {
   id        String   @id @default(uuid())
   reelId    String
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("bookmarks")
   @@unique([reelId, userId])
   @@index([reelId])
   @@index([userId])
+  @@map("bookmarks")
 }
 
 model Conversation {
-  id           String   @id @default(uuid())
-  title        String?
-  lastMessage  String?  @db.Text
+  id            String                    @id @default(uuid())
+  title         String?
+  lastMessage   String?
   lastMessageAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  participants  ConversationParticipant[]
+  messages      Message[]
 
-  participants ConversationParticipant[]
-  messages     Message[]
-
+  @@index([lastMessageAt])
   @@map("conversations")
 }
 
 model ConversationParticipant {
   id             String       @id @default(uuid())
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt       DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("conversation_participants")
   @@unique([conversationId, userId])
   @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
 }
 
 model Message {
   id             String       @id @default(uuid())
-  text           String       @db.Text
+  text           String
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
-  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@map("messages")
   @@index([conversationId])
   @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
 }
 
 model Notification {
   id          String   @id @default(uuid())
-  type        String   // 'like', 'comment', 'follow', 'message'
-  message     String   @db.Text
+  type        String
+  message     String
   recipientId String
-  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
   triggererId String?
-  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id], onDelete: SetNull)
   isRead      Boolean  @default(false)
-  metadata    Json?    // Additional data like reelId, commentId, etc.
+  metadata    Json?
   createdAt   DateTime @default(now())
+  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])
 
-  @@map("notifications")
   @@index([recipientId, isRead])
   @@index([createdAt])
+  @@index([type])
+  @@map("notifications")
 }
 
 model ConnectionRequest {
   id         String   @id @default(uuid())
   senderId   String
-  sender     User     @relation("sender", fields: [senderId], references: [id])
   receiverId String
-  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
   status     String   @default("pending")
   message    String?
   createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@map("connection_requests")
   @@unique([senderId, receiverId])
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([status])
+  @@map("connection_requests")
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vanityUrl   String   @unique
-  headline    String?
-  title       String?  // Professional title (e.g., "Senior Voice Actor")
-  bio         String?  @db.Text
-  roles       String[] // ["Actor", "Director", "Writer"]
-  location    Json?    // { city: "Los Angeles", state: "CA", country: "USA" }
-  privacy     Json     @default("{}") // { visibility: "public|network|private", showEmail: false, showPhone: false }
-  tags        String[] // searchable tags
-  socialLinks Json?    // { website: "", instagram: "", imdb: "" }
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  vanityUrl     String          @unique
+  headline      String?
+  bio           String?
+  roles         String[]
+  tags          String[]
+  location      Json?
+  privacy       Json            @default("{}")
+  socialLinks   Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  title         String?
+  credits       Credit[]
+  media         Media[]
+  profile_links profile_links[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  media       Media[]
-  credits     Credit[]
-
-  @@map("profiles")
   @@index([vanityUrl])
   @@index([roles])
+  @@index([tags])
+  @@index([userId])
+  @@map("profiles")
 }
 
 model Media {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   profileId       String
-  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  type            String   // "image" | "video" | "pdf"
-  s3Key           String   // S3 object key
-  posterS3Key     String?  // For videos - thumbnail/poster frame
+  type            String
+  s3Key           String
+  posterS3Key     String?
   title           String?
-  description     String?  @db.Text
-  duration        Int?     // For videos in seconds
+  description     String?
+  duration        Int?
   width           Int?
   height          Int?
-  fileSize        Int?     // In bytes
-  privacy         String   @default("public") // "public" | "on-request" | "private"
-  processedStatus String   @default("pending") // "pending" | "processing" | "complete" | "failed"
-  metadata        Json?    // Additional metadata like tags, derivatives, etc.
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
+  fileSize        Int?
+  privacy         String        @default("public")
+  processedStatus String        @default("pending")
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
   reelRequests    ReelRequest[]
 
-  @@map("media")
   @@index([profileId])
   @@index([type])
   @@index([privacy])
   @@index([processedStatus])
+  @@index([createdAt])
+  @@map("media")
 }
 
 model Credit {
   id          String   @id @default(uuid())
   profileId   String
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  title       String   // Project/show title
-  role        String   // Character or position
-  company     String?  // Production company
+  title       String
+  role        String
+  company     String?
   year        Int?
-  description String?  @db.Text
-  orderIndex  Int      @default(0) // For custom ordering
-  metadata    Json?    // Additional fields like genre, awards, etc.
+  description String?
+  orderIndex  Int      @default(0)
+  metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@map("credits")
   @@index([profileId])
   @@index([year])
+  @@index([profileId, orderIndex])
+  @@map("credits")
 }
 
 model UserSettings {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notifications     Json     @default("{}") // { email: true, push: true, reelRequests: true, messages: true }
-  accountSecurity   Json     @default("{}") // { twoFactorEnabled: false, loginNotifications: true }
-  privacy           Json     @default("{}") // { showActivity: true, allowMessagesFrom: "everyone" }
-  billing           Json?    // Reference to billing info (not stored directly for PCI compliance)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  notifications   Json     @default("{}")
+  accountSecurity Json     @default("{}")
+  privacy         Json     @default("{}")
+  billing         Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
@@ -300,132 +315,239 @@ model UserSettings {
 model ReelRequest {
   id          String   @id @default(uuid())
   mediaId     String
-  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   requesterId String
-  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
   ownerId     String
-  owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  status      String   @default("pending") // "pending" | "approved" | "denied"
-  message     String?  @db.Text
-  response    String?  @db.Text
+  status      String   @default("pending")
+  message     String?
+  response    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
 
-  @@map("reel_requests")
   @@unique([mediaId, requesterId])
   @@index([mediaId])
   @@index([requesterId])
   @@index([ownerId, status])
+  @@map("reel_requests")
 }
 
 model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("email_verification_tokens")
   @@index([userId])
   @@index([token])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 model RefreshToken {
   id            String    @id @default(uuid())
   userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jti           String    @unique // JWT ID for tracking
+  jti           String    @unique
   expiresAt     DateTime
-  invalidatedAt DateTime? // When token was invalidated (logout)
+  invalidatedAt DateTime?
   createdAt     DateTime  @default(now())
   lastUsedAt    DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("refresh_tokens")
   @@index([userId])
   @@index([jti])
   @@index([userId, invalidatedAt])
+  @@map("refresh_tokens")
 }
 
 model PRIntelligence {
-  id                   String   @id @default(uuid())
-  prNumber             Int
-  changedFilesCount    Int
-  sensitivePathsCount  Int
-  riskScore            Float
-  metadata             Json?    // Additional PR metadata
-  createdAt            DateTime @default(now())
+  id                  String   @id @default(uuid())
+  prNumber            Int
+  changedFilesCount   Int
+  sensitivePathsCount Int
+  riskScore           Float
+  metadata            Json?
+  createdAt           DateTime @default(now())
 
-  @@map("pr_intelligence")
   @@index([prNumber])
   @@index([riskScore])
+  @@map("pr_intelligence")
 }
 
 model TestRun {
   id         String   @id @default(uuid())
   suite      String
   testName   String
-  status     String   // "passed" | "failed" | "skipped"
+  status     String
   durationMs Int
   runAt      DateTime @default(now())
-  metadata   Json?    // Additional test metadata
+  metadata   Json?
 
-  @@map("test_runs")
   @@index([suite, testName])
   @@index([runAt])
   @@index([status])
+  @@map("test_runs")
 }
 
 model ModerationReport {
-  id           String   @id @default(cuid())
+  id           String             @id @default(cuid())
   reporterId   String
-  targetType   String   // "user" | "profile" | "post" | "comment" | "link"
+  targetType   String
   targetId     String
-  category     String   // from REPORT_CATEGORY_ALLOWLIST
-  description  String?  @db.Text
-  evidenceUrls String[] @default([])
-  status       String   @default("open") // "open" | "reviewed" | "actioned" | "dismissed"
-  severity     Int      @default(0) // 0=info,1=low,2=med,3=high
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  category     String
+  description  String?
+  evidenceUrls String[]           @default([])
+  status       String             @default("open")
+  severity     Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
   actions      ModerationAction[]
 
-  @@map("moderation_reports")
   @@index([reporterId])
   @@index([targetType, targetId])
   @@index([status])
   @@index([category])
   @@index([severity])
   @@index([createdAt])
+  @@map("moderation_reports")
 }
 
 model ModerationAction {
-  id          String   @id @default(cuid())
-  reportId    String
-  action      String   // "allow" | "remove" | "ban" | "warn"
-  reason      String?  @db.Text
-  actorId     String   // admin userId
-  createdAt   DateTime @default(now())
+  id        String           @id @default(cuid())
+  reportId  String
+  action    String
+  reason    String?
+  actorId   String
+  createdAt DateTime         @default(now())
+  report    ModerationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-  report      ModerationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-
-  @@map("moderation_actions")
   @@index([reportId])
   @@index([actorId])
   @@index([createdAt])
+  @@map("moderation_actions")
 }
 
 model AnalyticsEvent {
   id         String   @id @default(cuid())
   event      String
-  anonId     String?      // random UUID per browser (cookie); no userId unless strictly needed
-  userId     String?      // optional: only if user is logged in AND consented (flag controlled)
-  sessionId  String?      // generated client-side ephemeral (no personal data)
+  anonId     String?
+  userId     String?
+  sessionId  String?
   properties Json?
   createdAt  DateTime @default(now())
 
-  @@map("analytics_events")
   @@index([event])
   @@index([createdAt])
+  @@map("analytics_events")
+}
+
+model audit_logs {
+  id         String   @id
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  users      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource])
+  @@index([userId, createdAt])
+  @@index([userId])
+}
+
+model auditions {
+  id        String   @id
+  title     String
+  summary   String
+  hostId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  users     User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([hostId])
+}
+
+model password_reset_tokens {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([token])
+  @@index([userId])
+}
+
+model profile_links {
+  id        String   @id
+  userId    String
+  profileId String
+  label     String
+  url       String
+  type      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  profiles  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([userId, position])
+}
+
+model scripts {
+  id        String   @id
+  title     String
+  summary   String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  users     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model sessions {
+  id           String   @id
+  userId       String
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  users        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([token])
+  @@index([userId, expiresAt])
+  @@index([userId])
+}
+
+model two_factor_recovery_codes {
+  id        String    @id
+  userId    String
+  code      String
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  users     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, used])
 }
