@@ -5,6 +5,25 @@ import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
 
 /**
+ * Log diagnostic info about auth headers/cookies (redacted)
+ * @param {string} handler - Handler name for log prefix
+ * @param {object} event - Lambda event
+ */
+function logAuthDiagnostics(handler, event) {
+  const hasCookiesArray = Array.isArray(event.cookies) && event.cookies.length > 0;
+  const hasHeaderCookie = !!(event.headers?.cookie || event.headers?.Cookie);
+  const hasAuthHeader = !!(event.headers?.authorization || event.headers?.Authorization);
+  
+  console.log(`[${handler}] [AUTH_DIAG]`, {
+    hasCookiesArray,
+    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0,
+    hasHeaderCookie,
+    hasAuthHeader,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
  * GET /api/settings
  * Get user settings (authenticated)
  */
@@ -280,8 +299,12 @@ export const deleteAccount = async (event) => {
  */
 export const getPreferences = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('getPreferences', event);
+    
     const userId = getUserFromEvent(event);
     if (!userId) {
+      console.log('[getPreferences] UNAUTHORIZED - No user ID from token');
       return error(401, 'Unauthorized');
     }
 

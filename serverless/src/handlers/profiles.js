@@ -16,8 +16,27 @@ import {
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': true,
+  'Access-Control-Allow-Credentials': 'true',
 };
+
+/**
+ * Log diagnostic info about auth headers/cookies (redacted)
+ * @param {string} handler - Handler name for log prefix
+ * @param {object} event - Lambda event
+ */
+function logAuthDiagnostics(handler, event) {
+  const hasCookiesArray = Array.isArray(event.cookies) && event.cookies.length > 0;
+  const hasHeaderCookie = !!(event.headers?.cookie || event.headers?.Cookie);
+  const hasAuthHeader = !!(event.headers?.authorization || event.headers?.Authorization);
+  
+  console.log(`[${handler}] [AUTH_DIAG]`, {
+    hasCookiesArray,
+    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0,
+    hasHeaderCookie,
+    hasAuthHeader,
+    timestamp: new Date().toISOString(),
+  });
+}
 
 // Validation constants
 const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other'];
@@ -684,6 +703,9 @@ const MAX_TAGS = 5;
  */
 export const updateMyProfile = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('updateMyProfile', event);
+    
     // Get authenticated user ID
     const userId = getUserFromEvent(event);
     if (!userId) {
@@ -1015,9 +1037,13 @@ export const updateMyProfile = async (event) => {
  */
 export const getMyProfile = async (event) => {
   try {
+    // Log auth diagnostics for debugging
+    logAuthDiagnostics('getMyProfile', event);
+    
     // Get authenticated user ID
     const userId = getUserFromEvent(event);
     if (!userId) {
+      console.log('[getMyProfile] UNAUTHORIZED - No user ID from token');
       return error(401, 'Unauthorized');
     }
 
