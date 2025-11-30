@@ -1,4 +1,6 @@
 -- Add title column to profiles table if it doesn't exist
+-- Note: title is nullable (TEXT without NOT NULL) to match the schema definition (String?)
+-- and to maintain backwards compatibility with existing profiles
 DO $$
 BEGIN
   IF NOT EXISTS (
