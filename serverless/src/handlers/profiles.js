@@ -712,13 +712,21 @@ export const updateMyProfile = async (event) => {
       headline, 
       title,
       bio, 
-      roles, 
-      tags, 
+      roles: rolesFromBody, 
+      tags: tagsFromBody,
+      // Frontend field mappings (primaryRoles → roles, skills → tags)
+      primaryRoles,
+      skills,
+      links,
       avatarUrl, 
       bannerUrl,
       onboardingComplete,
       profileComplete
     } = body;
+
+    // Map frontend fields to backend fields with explicit backend names taking precedence
+    const roles = rolesFromBody !== undefined ? rolesFromBody : primaryRoles;
+    const tags = tagsFromBody !== undefined ? tagsFromBody : skills;
 
     console.log('[updateMyProfile] Request body:', {
       bodyFields: Object.keys(body),
@@ -727,6 +735,16 @@ export const updateMyProfile = async (event) => {
       bio: bio ? bio.substring(0, 50) + '...' : null,
       hasDisplayName: !!displayName,
       hasUsername: !!username
+    });
+
+    // Diagnostic log: field mappings for debugging
+    console.log('[updateMyProfile] Field mappings:', {
+      rolesSource: rolesFromBody !== undefined ? 'roles' : (primaryRoles !== undefined ? 'primaryRoles' : 'none'),
+      tagsSource: tagsFromBody !== undefined ? 'tags' : (skills !== undefined ? 'skills' : 'none'),
+      mappedRoles: roles,
+      mappedTags: tags,
+      hasLinks: links !== undefined,
+      hasTitle: title !== undefined,
     });
 
     // Validation
@@ -837,11 +855,13 @@ export const updateMyProfile = async (event) => {
       if (bio !== undefined) profileUpdateData.bio = bio;
       if (roles !== undefined) profileUpdateData.roles = roles;
       if (tags !== undefined) profileUpdateData.tags = tags;
+      // Map frontend 'links' to backend 'socialLinks' (JSON field in serverless schema)
+      if (links !== undefined) profileUpdateData.socialLinks = links;
       // Note: bannerUrl would need a field in the Profile schema
       // For now, we'll skip it or store in metadata
 
       // Get or create profile
-      // Note: Profile model does not have a links relation in the current schema
+      // Note: Profile model uses socialLinks (Json) field in serverless schema
       let profile = await prisma.profile.findUnique({
         where: { userId },
       });
@@ -858,6 +878,7 @@ export const updateMyProfile = async (event) => {
             bio: bio || '',
             roles: roles || [],
             tags: tags || [],
+            socialLinks: links || null,
           },
         });
         console.log('[updateMyProfile] PROFILE CREATED', {
@@ -951,7 +972,7 @@ export const updateMyProfile = async (event) => {
       }
 
       // Return combined profile data
-      // Note: profile.links is not available in current schema, so we return empty array
+      // Use socialLinks from profile for links (maps frontend 'links' field)
       const response = {
         id: profile.id,
         userId: updatedUser.id,
@@ -964,7 +985,7 @@ export const updateMyProfile = async (event) => {
         bio: profile.bio || null,
         roles: profile.roles || [],
         tags: profile.tags || [],
-        links: [],
+        links: profile.socialLinks || [],
         onboardingComplete: updatedUser.onboardingComplete || false,
         profileComplete: updatedUser.profileComplete || false,
       };
@@ -1066,7 +1087,7 @@ export const getMyProfile = async (event) => {
     }
 
     // Construct response with graceful fallbacks
-    // Note: profile.links is not available in current schema, so we return empty array
+    // Use socialLinks from profile for links (maps frontend 'links' field)
     const response = {
       // Profile ID (null if no profile yet)
       id: profile?.id || null,
@@ -1082,7 +1103,7 @@ export const getMyProfile = async (event) => {
       bio: profile?.bio || null,
       roles: profile?.roles || [],
       tags: profile?.tags || [],
-      links: [],
+      links: profile?.socialLinks || [],
       // Status fields
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,
