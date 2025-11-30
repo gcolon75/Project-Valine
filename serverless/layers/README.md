@@ -8,13 +8,21 @@ The `prisma-layer.zip` file is **not** committed to git (it's ~93MB) and must be
 
 ### Build Command
 
-From the `serverless/` directory:
+**Windows (PowerShell) – Recommended:**
 
-```bash
-./build-prisma-layer.sh
+```powershell
+cd serverless
+.\scripts\build-prisma-layer.ps1
 ```
 
-This script:
+**Linux/macOS (Bash):**
+
+```bash
+cd serverless
+./scripts/build-prisma-layer.sh
+```
+
+These scripts:
 1. Generates the Prisma client in `api/` with Lambda binaries
 2. Copies the necessary files to a temporary build directory
 3. Excludes unnecessary WASM and edge deployment files
@@ -58,20 +66,48 @@ layers:
       artifact: layers/prisma-layer.zip
 ```
 
-No manual layer deployment needed - just run:
-```bash
+**Important:** Do NOT use `aws lambda publish-layer-version` manually. The Serverless Framework handles layer deployment automatically.
+
+Deploy using:
+```powershell
 npx serverless deploy --stage prod --region us-west-2
+```
+
+### Verification
+
+After deployment, verify the correct layer version is attached to Lambda functions:
+
+```powershell
+aws lambda get-function-configuration `
+    --function-name pv-api-prod-updateMyProfile `
+    --region us-west-2 `
+    --query "Layers[].Arn"
+```
+
+Expected output (version may vary):
+```json
+["arn:aws:lambda:us-west-2:579939802800:layer:prisma:12"]
 ```
 
 ### Troubleshooting
 
 **Error: "Layer artifact not found"**
-- Run `./build-prisma-layer.sh` to create the layer
+- Run the build script:
+  - Windows: `.\scripts\build-prisma-layer.ps1`
+  - Linux/macOS: `./scripts/build-prisma-layer.sh`
 
 **Error: "PrismaClientInitializationError: Query engine library not found"**
 - Verify the layer was deployed
 - Check the layer contains `libquery_engine-rhel-openssl-3.0.x.so.node`
-- Rebuild the layer: `./build-prisma-layer.sh`
+- Rebuild the layer using the appropriate script above
+
+**Error: "PrismaClientValidationError: Unknown arg"**
+- Schema was changed but layer was not rebuilt
+- Rebuild and redeploy:
+  ```powershell
+  .\scripts\build-prisma-layer.ps1
+  npx serverless deploy --stage prod --region us-west-2
+  ```
 
 **Error: "Package too large"**
 - This is normal - the layer is ~93MB

@@ -94,3 +94,13 @@ describe('API Client Environment Configuration', () => {
     expect(typeof apiClient.defaults.withCredentials).toBe('boolean');
   });
 });
+
+describe('API Client XSRF Configuration', () => {
+  it('should have xsrfCookieName configured as XSRF-TOKEN', () => {
+    expect(apiClient.defaults.xsrfCookieName).toBe('XSRF-TOKEN');
+  });
+
+  it('should have xsrfHeaderName configured as X-XSRF-TOKEN', () => {
+    expect(apiClient.defaults.xsrfHeaderName).toBe('X-XSRF-TOKEN');
+  });
+});
