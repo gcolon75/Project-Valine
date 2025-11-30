@@ -687,16 +687,18 @@ export const updateMyProfile = async (event) => {
     // Get authenticated user ID
     const userId = getUserFromEvent(event);
     if (!userId) {
+      console.log('[updateMyProfile] UNAUTHORIZED - No user ID from token');
       return error(401, 'Unauthorized');
     }
 
-    console.log('[updateMyProfile] User ID:', userId);
+    console.log('[updateMyProfile] START', { userId });
 
     // Parse request body
     let body;
     try {
       body = JSON.parse(event.body || '{}');
     } catch (err) {
+      console.log('[updateMyProfile] Invalid JSON body');
       return error(400, 'Invalid JSON');
     }
 
@@ -714,7 +716,14 @@ export const updateMyProfile = async (event) => {
       profileComplete
     } = body;
 
-    console.log('[updateMyProfile] Update fields:', Object.keys(body));
+    console.log('[updateMyProfile] Request body:', {
+      bodyFields: Object.keys(body),
+      headline: headline,
+      title: title,
+      bio: bio ? bio.substring(0, 50) + '...' : null,
+      hasDisplayName: !!displayName,
+      hasUsername: !!username
+    });
 
     // Validation
     const errors = [];
@@ -841,10 +850,16 @@ export const updateMyProfile = async (event) => {
             userId,
             vanityUrl: updatedUser.username || userId,
             headline: headline || '',
+            title: title || '',
             bio: bio || '',
             roles: roles || [],
             tags: tags || [],
           },
+        });
+        console.log('[updateMyProfile] PROFILE CREATED', {
+          profileId: profile.id,
+          title: profile.title,
+          headline: profile.headline
         });
       } else if (Object.keys(profileUpdateData).length > 0) {
         // Update profile
@@ -853,6 +868,13 @@ export const updateMyProfile = async (event) => {
           where: { userId },
           data: profileUpdateData,
         });
+        console.log('[updateMyProfile] PROFILE UPDATED', {
+          profileId: profile.id,
+          title: profile.title,
+          headline: profile.headline
+        });
+      } else {
+        console.log('[updateMyProfile] Profile exists, no profile fields to update (user fields may have been updated)');
       }
 
       // Handle onboardingComplete and profileComplete flags
@@ -943,7 +965,12 @@ export const updateMyProfile = async (event) => {
         profileComplete: updatedUser.profileComplete || false,
       };
 
-      console.log('[updateMyProfile] Update successful');
+      console.log('[updateMyProfile] RESPONSE', {
+        profileId: response.id,
+        title: response.title,
+        headline: response.headline,
+        onboardingComplete: response.onboardingComplete
+      });
       return json(response);
 
     } catch (dbError) {
@@ -1054,7 +1081,12 @@ export const getMyProfile = async (event) => {
       createdAt: user.createdAt,
     };
 
-    console.log('[getMyProfile] Returning profile for user:', userId);
+    console.log('[getMyProfile] RESPONSE', {
+      profileId: response.id,
+      title: response.title,
+      headline: response.headline,
+      hasProfile: !!profile
+    });
     return json(response);
 
   } catch (e) {

@@ -218,6 +218,7 @@ model Profile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vanityUrl   String   @unique
   headline    String?
+  title       String?  // Professional title (e.g., "Senior Voice Actor")
   bio         String?  @db.Text
   roles       String[] // ["Actor", "Director", "Writer"]
   location    Json?    // { city: "Los Angeles", state: "CA", country: "USA" }
