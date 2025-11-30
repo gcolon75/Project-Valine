@@ -874,7 +874,7 @@ export const updateMyProfile = async (event) => {
           headline: profile.headline
         });
       } else {
-        console.log('[updateMyProfile] No profile fields to update');
+        console.log('[updateMyProfile] Profile exists, no profile fields to update (user fields may have been updated)');
       }
 
       // Handle onboardingComplete and profileComplete flags
