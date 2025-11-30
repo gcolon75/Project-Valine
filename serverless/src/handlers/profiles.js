@@ -741,8 +741,8 @@ export const updateMyProfile = async (event) => {
     console.log('[updateMyProfile] Field mappings:', {
       rolesSource: rolesFromBody !== undefined ? 'roles' : (primaryRoles !== undefined ? 'primaryRoles' : 'none'),
       tagsSource: tagsFromBody !== undefined ? 'tags' : (skills !== undefined ? 'skills' : 'none'),
-      mappedRoles: roles,
-      mappedTags: tags,
+      rolesCount: Array.isArray(roles) ? roles.length : 0,
+      tagsCount: Array.isArray(tags) ? tags.length : 0,
       hasLinks: links !== undefined,
       hasTitle: title !== undefined,
     });
