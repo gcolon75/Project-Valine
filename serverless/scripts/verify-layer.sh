@@ -41,5 +41,27 @@ echo ""
 echo "Layer contents:"
 unzip -l "${LAYER_DIR}/prisma-layer.zip" | grep -E "(prisma|\.node)" | head -20
 
+# Verify .prisma/client/default presence (required by newer Prisma versions)
+echo ""
+echo "Checking for .prisma/client/default..."
+if unzip -l "${LAYER_DIR}/prisma-layer.zip" | grep -q "\.prisma/client/default/"; then
+  echo "✓ .prisma/client/default/ directory found"
+else
+  echo "❌ MISSING: .prisma/client/default/ directory not found in layer"
+  echo "This is required by newer Prisma versions. Rebuild the layer:"
+  echo "  powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1"
+  exit 1
+fi
+
+# Verify Lambda query engine binary
+echo ""
+echo "Checking for Lambda query engine..."
+if unzip -l "${LAYER_DIR}/prisma-layer.zip" | grep -q "libquery_engine-rhel-openssl-3.0.x.so.node"; then
+  echo "✓ libquery_engine-rhel-openssl-3.0.x.so.node found"
+else
+  echo "❌ MISSING: libquery_engine-rhel-openssl-3.0.x.so.node not found"
+  exit 1
+fi
+
 echo ""
 echo "✓ Verification complete"

@@ -171,6 +171,44 @@ cd serverless
 npx serverless deploy --stage prod --region us-west-2
 ```
 
+### Issue: "Cannot find module '.prisma/client/default'"
+
+**Cause:** The Prisma Lambda Layer is missing the newer "default" bundle required by recent Prisma versions. This occurs when the layer was built with selective file copying instead of full directory copying.
+
+**Symptoms:**
+- `Runtime.ImportModuleError: Cannot find module '.prisma/client/default'`
+- Login and profile endpoints return 500 errors
+- CloudWatch logs show require stack including `/opt/nodejs/node_modules/@prisma/client/default.js`
+
+**Solution:**
+```powershell
+# Full layer rebuild and deploy
+cd C:\Users\ghawk\Documents\GitHub\Project-Valine\serverless
+npm ci
+npx prisma generate --schema=prisma\schema.prisma
+powershell -ExecutionPolicy Bypass -File .\scripts\build-prisma-layer.ps1
+
+# Validate layer before deploy (optional but recommended)
+bash scripts/validate-layer.sh
+
+# Deploy
+npx serverless deploy --stage prod --region us-west-2
+```
+
+**Verification:**
+```powershell
+# Check layer is attached
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-login `
+  --region us-west-2 `
+  --query "Layers[].Arn"
+
+# Test login endpoint
+$api = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$body = @{ email = "ghawk075@gmail.com"; password = "Test123!" } | ConvertTo-Json
+Invoke-WebRequest -Uri "$api/auth/login" -Method POST -Body $body -ContentType "application/json"
+```
+
 ### Issue: "403 Forbidden" on API Requests
 
 **Cause:** Missing CSRF token or not in allowlist.
@@ -202,6 +240,18 @@ cd serverless
    aws logs tail /aws/lambda/pv-api-prod-login --region us-west-2 --follow
    ```
 
+### Issue: "500 Internal Server Error" on Profile Endpoints
+
+**Cause:** Missing profile record for user, or null handling issues with new fields (bannerUrl, budgetMin, budgetMax).
+
+**Solution:**
+1. Profile endpoints now auto-create profiles for authenticated users
+2. Check logs for specific Prisma errors:
+   ```powershell
+   aws logs tail /aws/lambda/pv-api-prod-getMyProfile --region us-west-2 --follow
+   ```
+3. If schema mismatch, rebuild and redeploy layer (see "Cannot find module '.prisma/client/default'" above)
+
 ### Issue: Frontend Shows Old Content After Deploy
 
 **Cause:** CloudFront cache not invalidated.
@@ -221,6 +271,38 @@ aws cloudfront create-invalidation `
 1. Update Lambda environment variable
 2. Redeploy backend
 3. See [ALLOWED_USERS.md](./ALLOWED_USERS.md) for detailed instructions
+
+---
+
+## Safe Backend Redeploy (PowerShell)
+
+When deploying backend changes, especially after Prisma schema updates:
+
+```powershell
+# 1. Navigate to serverless directory
+cd C:\Users\ghawk\Documents\GitHub\Project-Valine\serverless
+
+# 2. Clean install dependencies
+npm ci
+
+# 3. Generate Prisma client (important after schema changes)
+npx prisma generate --schema=prisma\schema.prisma
+
+# 4. Rebuild layer (includes .prisma/client/default bundle)
+powershell -ExecutionPolicy Bypass -File .\scripts\build-prisma-layer.ps1
+
+# 5. Validate layer contents (optional but recommended)
+bash scripts/validate-layer.sh
+
+# 6. Deploy to production
+npx serverless deploy --stage prod --region us-west-2
+
+# 7. Verify layer is attached correctly
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-login `
+  --region us-west-2 `
+  --query "Layers[].Arn"
+```
 
 ---
 

@@ -1033,10 +1033,22 @@ export const updateMyProfile = async (event) => {
     } catch (dbError) {
       console.error('[updateMyProfile] Database error:', dbError);
       
-      // Handle specific Prisma errors
+      // Handle specific Prisma errors with appropriate status codes
       if (dbError.code === 'P2002') {
         // Unique constraint violation
         return error(409, 'Username or vanity URL already taken');
+      }
+      
+      if (dbError.code === 'P2009' || dbError.code === 'P2011' || dbError.code === 'P2012') {
+        // P2009: Unknown field in query
+        // P2011: Null constraint violation
+        // P2012: Missing required value
+        return error(400, 'Validation error: ' + dbError.message);
+      }
+      
+      if (dbError.code === 'P2025') {
+        // Record not found (profile doesn't exist)
+        return error(404, 'Profile not found');
       }
       
       throw dbError;
@@ -1096,7 +1108,7 @@ export const getMyProfile = async (event) => {
       return error(404, 'User not found');
     }
 
-    // Fetch profile data with education and gallery media (may not exist yet)
+    // Fetch profile data with education and gallery media
     // Note: Profile model does not have a links relation in the current schema
     let profile = null;
     let education = [];
@@ -1119,10 +1131,25 @@ export const getMyProfile = async (event) => {
           },
         },
       });
-      if (profile) {
-        education = profile.education || [];
-        gallery = profile.media || [];
+      
+      // Auto-create profile if it doesn't exist (harden owner routes)
+      if (!profile) {
+        console.log('[getMyProfile] Auto-creating profile for user:', userId);
+        profile = await prisma.profile.create({
+          data: {
+            userId,
+            vanityUrl: user.username || userId,
+            headline: '',
+            bio: '',
+            roles: [],
+            tags: [],
+          },
+        });
+        console.log('[getMyProfile] Profile auto-created:', profile.id);
       }
+      
+      education = profile.education || [];
+      gallery = profile.media || [];
     } catch (profileErr) {
       // Handle schema-related errors gracefully when Profile model may not exist
       // P2021: Table does not exist in the database
@@ -1131,7 +1158,7 @@ export const getMyProfile = async (event) => {
       if (profileErr.code === 'P2021' || profileErr.code === 'P2025' ||
           (profileErr.message && (profileErr.message.includes('does not exist') || 
            profileErr.message.includes('Unknown model')))) {
-        console.warn('[getMyProfile] Could not fetch profile (model may not exist or profile not created):', profileErr.message);
+        console.warn('[getMyProfile] Could not fetch/create profile (model may not exist):', profileErr.message);
         // Continue without profile data - profile will be null
       } else {
         throw profileErr;
