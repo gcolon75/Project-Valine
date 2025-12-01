@@ -1,8 +1,6 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 
-const headers = { 'Access-Control-Allow-Origin': '*' };
-
 export const createPost = async (event) => {
   try {
     const { content, media, authorId, mediaId } = JSON.parse(event.body || '{}');
@@ -33,7 +31,7 @@ export const createPost = async (event) => {
       }
       
       // Store the media record (without profile) for the response
-      const { profile, ...mediaWithoutProfile } = mediaRecord;
+      const { profile: _profile, ...mediaWithoutProfile } = mediaRecord;
       mediaAttachment = mediaWithoutProfile;
     }
 

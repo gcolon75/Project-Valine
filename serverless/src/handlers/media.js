@@ -279,9 +279,9 @@ export const updateMedia = async (event) => {
 
     // Update media
     const updateData = {};
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (privacy !== undefined) updateData.privacy = privacy;
+    if (title !== undefined) {updateData.title = title;}
+    if (description !== undefined) {updateData.description = description;}
+    if (privacy !== undefined) {updateData.privacy = privacy;}
 
     const updatedMedia = await prisma.media.update({
       where: { id },

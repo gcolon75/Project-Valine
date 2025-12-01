@@ -538,17 +538,17 @@ export const updateProfile = async (event) => {
     const profile = await prisma.$transaction(async (tx) => {
       // Update profile fields
       const updateData = {};
-      if (vanityUrl !== undefined) updateData.vanityUrl = vanityUrl;
-      if (headline !== undefined) updateData.headline = headline;
-      if (title !== undefined) updateData.title = title;
-      if (bio !== undefined) updateData.bio = bio;
-      if (roles !== undefined) updateData.roles = roles;
-      if (location !== undefined) updateData.location = location;
-      if (tags !== undefined) updateData.tags = tags;
-      if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
-      if (privacy !== undefined) updateData.privacy = privacy;
+      if (vanityUrl !== undefined) {updateData.vanityUrl = vanityUrl;}
+      if (headline !== undefined) {updateData.headline = headline;}
+      if (title !== undefined) {updateData.title = title;}
+      if (bio !== undefined) {updateData.bio = bio;}
+      if (roles !== undefined) {updateData.roles = roles;}
+      if (location !== undefined) {updateData.location = location;}
+      if (tags !== undefined) {updateData.tags = tags;}
+      if (socialLinks !== undefined) {updateData.socialLinks = socialLinks;}
+      if (privacy !== undefined) {updateData.privacy = privacy;}
 
-      const updatedProfile = await tx.profile.update({
+      const _updatedProfile = await tx.profile.update({
         where: { id },
         data: updateData,
       });
@@ -856,9 +856,9 @@ export const updateMyProfile = async (event) => {
     try {
       // Prepare user update data
       const userUpdateData = {};
-      if (username !== undefined) userUpdateData.username = username;
-      if (displayName !== undefined) userUpdateData.displayName = displayName;
-      if (avatarUrl !== undefined) userUpdateData.avatar = avatarUrl;
+      if (username !== undefined) {userUpdateData.username = username;}
+      if (displayName !== undefined) {userUpdateData.displayName = displayName;}
+      if (avatarUrl !== undefined) {userUpdateData.avatar = avatarUrl;}
 
       // Update user if there are changes
       let updatedUser;
@@ -874,17 +874,17 @@ export const updateMyProfile = async (event) => {
 
       // Prepare profile update data
       const profileUpdateData = {};
-      if (headline !== undefined) profileUpdateData.headline = headline;
-      if (title !== undefined) profileUpdateData.title = title;
-      if (bio !== undefined) profileUpdateData.bio = bio;
-      if (roles !== undefined) profileUpdateData.roles = roles;
-      if (tags !== undefined) profileUpdateData.tags = tags;
+      if (headline !== undefined) {profileUpdateData.headline = headline;}
+      if (title !== undefined) {profileUpdateData.title = title;}
+      if (bio !== undefined) {profileUpdateData.bio = bio;}
+      if (roles !== undefined) {profileUpdateData.roles = roles;}
+      if (tags !== undefined) {profileUpdateData.tags = tags;}
       // Map frontend 'links' to backend 'socialLinks' (JSON field in serverless schema)
-      if (links !== undefined) profileUpdateData.socialLinks = links;
+      if (links !== undefined) {profileUpdateData.socialLinks = links;}
       // bannerUrl, budgetMin, budgetMax fields
-      if (bannerUrl !== undefined) profileUpdateData.bannerUrl = bannerUrl;
-      if (budgetMin !== undefined) profileUpdateData.budgetMin = budgetMin;
-      if (budgetMax !== undefined) profileUpdateData.budgetMax = budgetMax;
+      if (bannerUrl !== undefined) {profileUpdateData.bannerUrl = bannerUrl;}
+      if (budgetMin !== undefined) {profileUpdateData.budgetMin = budgetMin;}
+      if (budgetMax !== undefined) {profileUpdateData.budgetMax = budgetMax;}
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema

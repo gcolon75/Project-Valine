@@ -174,11 +174,21 @@ export const updateEducation = async (event) => {
 
     // Update education
     const updateData = {};
-    if (institution !== undefined) updateData.institution = institution;
-    if (program !== undefined) updateData.program = program;
-    if (startYear !== undefined) updateData.startYear = startYear;
-    if (endYear !== undefined) updateData.endYear = endYear;
-    if (achievements !== undefined) updateData.achievements = achievements;
+    if (institution !== undefined) {
+      updateData.institution = institution;
+    }
+    if (program !== undefined) {
+      updateData.program = program;
+    }
+    if (startYear !== undefined) {
+      updateData.startYear = startYear;
+    }
+    if (endYear !== undefined) {
+      updateData.endYear = endYear;
+    }
+    if (achievements !== undefined) {
+      updateData.achievements = achievements;
+    }
 
     const updatedEducation = await prisma.education.update({
       where: { id },
