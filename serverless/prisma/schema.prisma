@@ -71,6 +71,7 @@ model Post {
   media     String[]
   tags      String[]
   authorId  String
+  mediaId   String?
   createdAt DateTime @default(now())
   updatedAt DateTime
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -238,7 +239,11 @@ model Profile {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   title         String?
+  bannerUrl     String?
+  budgetMin     Int?
+  budgetMax     Int?
   credits       Credit[]
+  education     Education[]
   media         Media[]
   profile_links profile_links[]
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -248,6 +253,22 @@ model Profile {
   @@index([tags])
   @@index([userId])
   @@map("profiles")
+}
+
+model Education {
+  id           String   @id @default(uuid())
+  profileId    String
+  institution  String
+  program      String
+  startYear    Int?
+  endYear      Int?
+  achievements String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("education")
 }
 
 model Media {
@@ -265,6 +286,7 @@ model Media {
   privacy         String        @default("public")
   processedStatus String        @default("pending")
   metadata        Json?
+  mediaType       String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)

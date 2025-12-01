@@ -489,6 +489,32 @@ functions:
           path: /credits/{id}
           method: delete
 
+  # ========== EDUCATION ==========
+  listEducation:
+    handler: src/handlers/education.listEducation
+    events:
+      - httpApi:
+          path: /me/profile/education
+          method: get
+  createEducation:
+    handler: src/handlers/education.createEducation
+    events:
+      - httpApi:
+          path: /me/profile/education
+          method: post
+  updateEducation:
+    handler: src/handlers/education.updateEducation
+    events:
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: put
+  deleteEducation:
+    handler: src/handlers/education.deleteEducation
+    events:
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: delete
+
   # ========== SETTINGS ==========
   getSettings:
     handler: src/handlers/settings.getSettings

@@ -720,6 +720,8 @@ export const updateMyProfile = async (event) => {
       links,
       avatarUrl, 
       bannerUrl,
+      budgetMin,
+      budgetMax,
       onboardingComplete,
       profileComplete
     } = body;
@@ -745,6 +747,9 @@ export const updateMyProfile = async (event) => {
       tagsCount: Array.isArray(tags) ? tags.length : 0,
       hasLinks: links !== undefined,
       hasTitle: title !== undefined,
+      hasBannerUrl: bannerUrl !== undefined,
+      hasBudgetMin: budgetMin !== undefined,
+      hasBudgetMax: budgetMax !== undefined,
     });
 
     // Validation
@@ -808,6 +813,25 @@ export const updateMyProfile = async (event) => {
       }
     }
 
+    // Budget validation
+    if (budgetMin !== undefined && budgetMin !== null) {
+      if (!Number.isInteger(budgetMin) || budgetMin < 0) {
+        errors.push('budgetMin must be a non-negative integer');
+      }
+    }
+
+    if (budgetMax !== undefined && budgetMax !== null) {
+      if (!Number.isInteger(budgetMax) || budgetMax < 0) {
+        errors.push('budgetMax must be a non-negative integer');
+      }
+    }
+
+    if (budgetMin !== undefined && budgetMax !== undefined && 
+        budgetMin !== null && budgetMax !== null && 
+        budgetMin > budgetMax) {
+      errors.push('budgetMin cannot be greater than budgetMax');
+    }
+
     if (errors.length > 0) {
       console.log('[updateMyProfile] Validation errors:', errors);
       return error(400, 'Validation failed', { errors });
@@ -857,8 +881,10 @@ export const updateMyProfile = async (event) => {
       if (tags !== undefined) profileUpdateData.tags = tags;
       // Map frontend 'links' to backend 'socialLinks' (JSON field in serverless schema)
       if (links !== undefined) profileUpdateData.socialLinks = links;
-      // Note: bannerUrl would need a field in the Profile schema
-      // For now, we'll skip it or store in metadata
+      // bannerUrl, budgetMin, budgetMax fields
+      if (bannerUrl !== undefined) profileUpdateData.bannerUrl = bannerUrl;
+      if (budgetMin !== undefined) profileUpdateData.budgetMin = budgetMin;
+      if (budgetMax !== undefined) profileUpdateData.budgetMax = budgetMax;
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema
@@ -879,6 +905,9 @@ export const updateMyProfile = async (event) => {
             roles: roles || [],
             tags: tags || [],
             socialLinks: links || null,
+            bannerUrl: bannerUrl || null,
+            budgetMin: budgetMin || null,
+            budgetMax: budgetMax || null,
           },
         });
         console.log('[updateMyProfile] PROFILE CREATED', {
@@ -986,6 +1015,9 @@ export const updateMyProfile = async (event) => {
         roles: profile.roles || [],
         tags: profile.tags || [],
         links: profile.socialLinks || [],
+        bannerUrl: profile.bannerUrl || null,
+        budgetMin: profile.budgetMin || null,
+        budgetMax: profile.budgetMax || null,
         onboardingComplete: updatedUser.onboardingComplete || false,
         profileComplete: updatedUser.profileComplete || false,
       };
@@ -1064,13 +1096,33 @@ export const getMyProfile = async (event) => {
       return error(404, 'User not found');
     }
 
-    // Fetch profile data (may not exist yet)
+    // Fetch profile data with education and gallery media (may not exist yet)
     // Note: Profile model does not have a links relation in the current schema
     let profile = null;
+    let education = [];
+    let gallery = [];
     try {
       profile = await prisma.profile.findUnique({
         where: { userId },
+        include: {
+          education: {
+            orderBy: [
+              { endYear: 'desc' },
+              { startYear: 'desc' },
+            ],
+          },
+          media: {
+            where: {
+              mediaType: 'GALLERY',
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       });
+      if (profile) {
+        education = profile.education || [];
+        gallery = profile.media || [];
+      }
     } catch (profileErr) {
       // Handle schema-related errors gracefully when Profile model may not exist
       // P2021: Table does not exist in the database
@@ -1104,6 +1156,11 @@ export const getMyProfile = async (event) => {
       roles: profile?.roles || [],
       tags: profile?.tags || [],
       links: profile?.socialLinks || [],
+      bannerUrl: profile?.bannerUrl || null,
+      budgetMin: profile?.budgetMin || null,
+      budgetMax: profile?.budgetMax || null,
+      education: education,
+      gallery: gallery,
       // Status fields
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,
@@ -1114,7 +1171,9 @@ export const getMyProfile = async (event) => {
       profileId: response.id,
       title: response.title,
       headline: response.headline,
-      hasProfile: !!profile
+      hasProfile: !!profile,
+      educationCount: education.length,
+      galleryCount: gallery.length
     });
     return json(response);
 

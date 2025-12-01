@@ -55,10 +55,17 @@ function Protected({ children }) {
     return null;
   }
 
-  if (!user) return <Navigate to="/login" replace />;
-  if (!user.profileComplete && location.pathname !== "/setup") {
-    return <Navigate to="/setup" replace />;
+  // Not logged in - redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
+
+  // User hasn't completed onboarding - redirect to onboarding (except if already there)
+  if (user.onboardingComplete === false && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // User is authenticated and has completed onboarding (or is in onboarding flow)
   return children;
 }
 
@@ -100,6 +107,8 @@ export default function App() {
           <Route path="signup-page" element={<SignupPage />} />
           <Route path="login-page" element={<LoginPageSkeleton />} />
           <Route path="skeleton-test" element={<SkeletonTestPage />} />
+          {/* Legacy /setup redirects to /onboarding */}
+          <Route path="setup" element={<Navigate to="/onboarding" replace />} />
           {/* Legal pages */}
           <Route path="legal/privacy" element={<PrivacyPolicyPage />} />
           <Route path="legal/terms" element={<TermsOfServicePage />} />
@@ -114,7 +123,6 @@ export default function App() {
 
         {/* Authenticated app shell */}
         <Route element={<AppLayout />}>
-          <Route path="setup" element={<ProfileSetupPage />} />
 
           {/* Dashboard */}
           <Route

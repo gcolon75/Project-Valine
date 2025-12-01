@@ -10,6 +10,9 @@ import crypto from 'crypto';
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 
+// Valid media types
+const VALID_MEDIA_TYPES = ['AVATAR', 'BANNER', 'GALLERY', 'POST'];
+
 /**
  * POST /api/profiles/:id/media/upload-url
  * Generate signed S3 upload URL and create placeholder media record
@@ -23,10 +26,7 @@ export const getUploadUrl = async (event) => {
     }
 
     const { id: profileId } = event.pathParameters || {};
-    if (!profileId) {
-      return error(400, 'profileId is required');
-    }
-
+    
     const userId = getUserFromEvent(event);
     if (!userId) {
       return error(401, 'Unauthorized');
@@ -39,42 +39,72 @@ export const getUploadUrl = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { type, title, description, privacy } = body;
+    const { type, title, description, privacy, mediaType } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
       return error(400, 'Valid type is required (image, video, or pdf)');
     }
 
-    const prisma = getPrisma();
-
-    // Verify profile ownership
-    const profile = await prisma.profile.findUnique({
-      where: { id: profileId },
-    });
-
-    if (!profile) {
-      return error(404, 'Profile not found');
+    // Validate mediaType if provided
+    if (mediaType && !VALID_MEDIA_TYPES.includes(mediaType)) {
+      return error(400, `Invalid mediaType. Must be one of: ${VALID_MEDIA_TYPES.join(', ')}`);
     }
 
-    if (profile.userId !== userId) {
-      return error(403, 'Forbidden - not profile owner');
+    const prisma = getPrisma();
+
+    // Ensure profile exists for the user - auto-create if not
+    let profile;
+    if (profileId) {
+      // If profileId is provided, verify ownership
+      profile = await prisma.profile.findUnique({
+        where: { id: profileId },
+      });
+
+      if (!profile) {
+        return error(404, 'Profile not found');
+      }
+
+      if (profile.userId !== userId) {
+        return error(403, 'Forbidden - not profile owner');
+      }
+    } else {
+      // If no profileId, find or create profile for the user
+      profile = await prisma.profile.findUnique({
+        where: { userId },
+      });
+
+      if (!profile) {
+        // Auto-create a stub profile
+        profile = await prisma.profile.create({
+          data: {
+            userId,
+            vanityUrl: userId, // Use userId as fallback vanityUrl
+            headline: '',
+            bio: '',
+            roles: [],
+            tags: [],
+          },
+        });
+        console.log('[getUploadUrl] Auto-created profile for user:', userId);
+      }
     }
 
     // Generate unique S3 key
     const mediaId = crypto.randomUUID();
     const timestamp = Date.now();
-    const s3Key = `profiles/${profileId}/media/${timestamp}-${mediaId}`;
+    const s3Key = `profiles/${profile.id}/media/${timestamp}-${mediaId}`;
 
-    // Create placeholder media record
+    // Create placeholder media record with mediaType
     const media = await prisma.media.create({
       data: {
-        profileId,
+        profileId: profile.id,
         type,
         s3Key,
         title: title || null,
         description: description || null,
         privacy: privacy || 'public',
         processedStatus: 'pending',
+        mediaType: mediaType || null,
       },
     });
 
@@ -91,6 +121,7 @@ export const getUploadUrl = async (event) => {
       mediaId: media.id,
       uploadUrl,
       s3Key,
+      profileId: profile.id,
       message: 'Upload your file to the provided URL, then call /complete endpoint',
     }, 201);
   } catch (e) {
@@ -149,6 +180,15 @@ export const completeUpload = async (event) => {
       return error(403, 'Forbidden - not profile owner');
     }
 
+    // Get the media record to check mediaType
+    const existingMedia = await prisma.media.findUnique({
+      where: { id: mediaId },
+    });
+
+    if (!existingMedia) {
+      return error(404, 'Media not found');
+    }
+
     // Update media record
     const media = await prisma.media.update({
       where: { id: mediaId },
@@ -160,12 +200,33 @@ export const completeUpload = async (event) => {
       },
     });
 
+    // Generate the S3 URL for the uploaded file
+    const s3Url = `https://${MEDIA_BUCKET}.s3.${process.env.AWS_REGION || 'us-west-2'}.amazonaws.com/${media.s3Key}`;
+
+    // Handle special mediaTypes - update user avatar or profile banner
+    if (existingMedia.mediaType === 'AVATAR') {
+      // Update user.avatar with the S3 URL
+      await prisma.user.update({
+        where: { id: userId },
+        data: { avatar: s3Url },
+      });
+      console.log('[completeUpload] Updated user avatar:', userId);
+    } else if (existingMedia.mediaType === 'BANNER') {
+      // Update profile.bannerUrl with the S3 URL
+      await prisma.profile.update({
+        where: { id: profileId },
+        data: { bannerUrl: s3Url },
+      });
+      console.log('[completeUpload] Updated profile banner:', profileId);
+    }
+
     // TODO: Trigger background processing (Lambda, SQS, etc.)
     // For now, we'll mark it as complete immediately
     // In production, this would queue a job for transcoding/thumbnail generation
 
     return json({
       media,
+      s3Url,
       message: 'Upload marked as complete, processing started',
     });
   } catch (e) {

@@ -224,3 +224,43 @@ export const uploadAvatarToS3 = async (uploadUrl, file, fileType) => {
     throw new Error(`Upload failed: ${response.statusText}`);
   }
 };
+
+/**
+ * List education entries for the current user
+ * @returns {Promise<Array>} Array of education entries
+ */
+export const listEducation = async () => {
+  const { data } = await apiClient.get('/me/profile/education');
+  return data;
+};
+
+/**
+ * Create a new education entry
+ * @param {Object} education - Education data
+ * @returns {Promise<Object>} Created education entry
+ */
+export const createEducation = async (education) => {
+  const { data } = await apiClient.post('/me/profile/education', education);
+  return data;
+};
+
+/**
+ * Update an education entry
+ * @param {string} id - Education entry ID
+ * @param {Object} updates - Education updates
+ * @returns {Promise<Object>} Updated education entry
+ */
+export const updateEducation = async (id, updates) => {
+  const { data } = await apiClient.put(`/me/profile/education/${id}`, updates);
+  return data;
+};
+
+/**
+ * Delete an education entry
+ * @param {string} id - Education entry ID
+ * @returns {Promise<Object>} Success response
+ */
+export const deleteEducation = async (id) => {
+  const { data } = await apiClient.delete(`/me/profile/education/${id}`);
+  return data;
+};
