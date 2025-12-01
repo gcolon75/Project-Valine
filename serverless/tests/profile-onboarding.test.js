@@ -372,8 +372,8 @@ describe('Profile Onboarding Persistence', () => {
       expect(body.profileComplete).toBe(true);
     });
 
-    it('should handle missing profile gracefully', async () => {
-      // No profile set for user
+    it('should auto-create profile when missing', async () => {
+      // No profile set for user - should auto-create
       const event = {
         headers: { authorization: 'Bearer test-token' }
       };
@@ -382,7 +382,9 @@ describe('Profile Onboarding Persistence', () => {
       expect(response.statusCode).toBe(200);
 
       const body = JSON.parse(response.body);
-      expect(body.id).toBeNull(); // No profile ID
+      // Profile is now auto-created, so we should have an ID
+      expect(body.id).not.toBeNull();
+      // Auto-created profile normalizes empty strings to null in response
       expect(body.headline).toBeNull();
       expect(body.roles).toEqual([]);
       expect(body.tags).toEqual([]);

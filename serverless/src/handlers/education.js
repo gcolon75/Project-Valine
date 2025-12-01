@@ -16,12 +16,14 @@ export const listEducation = async (event) => {
     const prisma = getPrisma();
 
     // Get user's profile
-    const profile = await prisma.profile.findUnique({
+    let profile = await prisma.profile.findUnique({
       where: { userId },
     });
 
     if (!profile) {
-      // Return empty array if no profile exists yet
+      // No profile exists yet - return empty education array
+      // Profile will be created when user accesses /me/profile or updates profile
+      console.log('[listEducation] No profile exists for user, returning empty array:', userId);
       return json([]);
     }
 
@@ -33,9 +35,14 @@ export const listEducation = async (event) => {
       ],
     });
 
-    return json(education);
+    return json(education || []);
   } catch (e) {
     console.error('List education error:', e);
+    // Return empty array instead of 500 for recoverable errors
+    if (e.code === 'P2021' || e.code === 'P2025') {
+      console.warn('[listEducation] Prisma error (table/record issue), returning empty array:', e.message);
+      return json([]);
+    }
     return error(500, 'Server error: ' + e.message);
   }
 };

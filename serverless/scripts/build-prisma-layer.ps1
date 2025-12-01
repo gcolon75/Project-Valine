@@ -16,17 +16,16 @@ $BuildDir       = Join-Path $ServerlessDir ".layer-build"
 $NodejsDir      = Join-Path $BuildDir "nodejs"
 $NodeModulesDir = Join-Path $NodejsDir "node_modules"
 
-$SrcPrismaClientDir   = Join-Path $ServerlessDir "node_modules\.prisma\client"
-$SrcAtPrismaClientDir = Join-Path $ServerlessDir "node_modules\@prisma\client"
+$SrcPrismaDir         = Join-Path $ServerlessDir "node_modules\.prisma"
+$SrcAtPrismaDir       = Join-Path $ServerlessDir "node_modules\@prisma"
 
-$DstPrismaClientDir   = Join-Path $NodeModulesDir ".prisma\client"
-$DstAtPrismaClientDir = Join-Path $NodeModulesDir "@prisma\client"
+$DstPrismaDir         = Join-Path $NodeModulesDir ".prisma"
+$DstAtPrismaDir       = Join-Path $NodeModulesDir "@prisma"
 
 # Clean previous artifacts
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
 if (Test-Path (Join-Path $LayerDir "prisma-layer.zip")) { Remove-Item -Force (Join-Path $LayerDir "prisma-layer.zip") }
-New-Item -ItemType Directory -Force -Path $DstPrismaClientDir | Out-Null
-New-Item -ItemType Directory -Force -Path $DstAtPrismaClientDir | Out-Null
+New-Item -ItemType Directory -Force -Path $NodeModulesDir | Out-Null
 
 # Ensure deps and generate Prisma client (serverless/prisma/schema.prisma)
 Push-Location $ServerlessDir
@@ -42,24 +41,30 @@ try {
 }
 
 # Verify Lambda binary exists
-$LambdaBinary = Join-Path $SrcPrismaClientDir "libquery_engine-rhel-openssl-3.0.x.so.node"
+$LambdaBinary = Join-Path $SrcPrismaDir "client\libquery_engine-rhel-openssl-3.0.x.so.node"
 if (-not (Test-Path $LambdaBinary)) { throw "Lambda binary not found: $LambdaBinary" }
 
-# Copy generated client (minimal files)
-Copy-Item -Path (Join-Path $SrcPrismaClientDir "index.js")      -Destination $DstPrismaClientDir -Force
-Copy-Item -Path (Join-Path $SrcPrismaClientDir "index.d.ts")    -Destination $DstPrismaClientDir -Force -ErrorAction SilentlyContinue
-Copy-Item -Path (Join-Path $SrcPrismaClientDir "package.json")  -Destination $DstPrismaClientDir -Force -ErrorAction SilentlyContinue
-Copy-Item -Path (Join-Path $SrcPrismaClientDir "schema.prisma") -Destination $DstPrismaClientDir -Force -ErrorAction SilentlyContinue
-Copy-Item -Path $LambdaBinary                                   -Destination $DstPrismaClientDir -Force
+# Verify .prisma/client/default bundle exists (required by newer Prisma versions)
+$DefaultBundle = Join-Path $SrcPrismaDir "client\default\index.js"
+if (-not (Test-Path $DefaultBundle)) { 
+  throw "Prisma client 'default' bundle not found: $DefaultBundle. Ensure Prisma is up-to-date and 'npx prisma generate' was run." 
+}
+Write-Host "Verified: .prisma/client/default/index.js exists"
 
-# Copy @prisma/client runtime (JS only)
-Copy-Item -Path (Join-Path $SrcAtPrismaClientDir "package.json") -Destination $DstAtPrismaClientDir -Force
-Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.js" -File | ForEach-Object {
-  Copy-Item -Path $_.FullName -Destination $DstAtPrismaClientDir -Force
+# Copy entire .prisma directory (includes client and default bundle)
+Write-Host "Copying .prisma directory (full)..."
+Copy-Item -Recurse -Path $SrcPrismaDir -Destination $DstPrismaDir -Force
+
+# Copy entire @prisma directory (includes client runtime)
+Write-Host "Copying @prisma directory (full)..."
+Copy-Item -Recurse -Path $SrcAtPrismaDir -Destination $DstAtPrismaDir -Force
+
+# Verify default bundle copied successfully
+$DstDefaultBundle = Join-Path $DstPrismaDir "client\default\index.js"
+if (-not (Test-Path $DstDefaultBundle)) {
+  throw "Failed to copy .prisma/client/default/index.js to build directory"
 }
-if (Test-Path (Join-Path $SrcAtPrismaClientDir "runtime")) {
-  Copy-Item -Recurse -Path (Join-Path $SrcAtPrismaClientDir "runtime") -Destination (Join-Path $DstAtPrismaClientDir "runtime") -Force
-}
+Write-Host "Verified: .prisma/client/default/index.js copied to build folder"
 
 # Create layer zip
 New-Item -ItemType Directory -Force -Path $LayerDir | Out-Null
@@ -69,4 +74,8 @@ Compress-Archive -Path $NodejsDir -DestinationPath $ZipPath -Force
 # Report and clean
 $zipSizeMB = [math]::Round((Get-Item $ZipPath).Length / 1MB, 2)
 Write-Host "Layer created: $ZipPath ($zipSizeMB MB)"
+Write-Host "Contents include:"
+Write-Host "  - .prisma/client/default/* (required for newer Prisma)"
+Write-Host "  - .prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"
+Write-Host "  - @prisma/client/* runtime"
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
