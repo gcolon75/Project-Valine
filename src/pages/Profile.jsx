@@ -442,11 +442,78 @@ export default function Profile() {
         
         {activeTab === 'about' && (
           <div className="space-y-6">
-            <Card title="About" padding="default">
+            {/* Overview */}
+            <Card title="Overview" padding="default">
+              {displayData.headline && (
+                <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-2">
+                  {displayData.headline}
+                </p>
+              )}
               <p className="text-neutral-700 dark:text-neutral-300">
                 {displayData.bio || 'No bio available'}
               </p>
             </Card>
+
+            {/* Roles & Skills */}
+            {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0 || displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+              <Card title="Roles & Skills" padding="default">
+                {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0) && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">Roles</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {(displayData.roles || displayData.primaryRoles || []).map(role => (
+                        <span key={role} className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {(displayData.tags || displayData.skills || []).map(tag => (
+                        <span key={tag} className="px-3 py-1 bg-[#0CCE6B]/10 text-[#0CCE6B] rounded-full text-sm">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Education */}
+            {displayData.education?.length > 0 && (
+              <Card title="Education" padding="default">
+                <div className="space-y-4">
+                  {displayData.education.map(edu => (
+                    <div key={edu.id} className="border-l-2 border-[#0CCE6B] pl-4">
+                      <h4 className="font-medium text-neutral-900 dark:text-white">{edu.institution}</h4>
+                      <p className="text-neutral-600 dark:text-neutral-400">{edu.program}</p>
+                      {(edu.startYear || edu.endYear) && (
+                        <p className="text-sm text-neutral-500">
+                          {edu.startYear || '?'} - {edu.endYear || 'Present'}
+                        </p>
+                      )}
+                      {edu.achievements && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{edu.achievements}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Budget Range */}
+            {(displayData.budgetMin || displayData.budgetMax) && (
+              <Card title="Budget Range" padding="default">
+                <p className="text-neutral-700 dark:text-neutral-300">
+                  ${displayData.budgetMin || 0} - ${displayData.budgetMax || '∞'}
+                </p>
+              </Card>
+            )}
 
             {/* Links Section */}
             {displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link) && (

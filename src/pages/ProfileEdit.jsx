@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, MapPin, Briefcase, GraduationCap, Award, 
-  Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft
+  Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
 import ImageCropper from '../components/ImageCropper';
 import MediaUploader from '../components/MediaUploader';
@@ -11,7 +11,7 @@ import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { getProfile, updateMyProfile, batchUpdateProfileLinks } from '../services/profileService';
+import { getProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, createEducation, updateEducation, deleteEducation } from '../services/profileService';
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
@@ -112,6 +112,30 @@ export default function ProfileEdit() {
     loadProfile();
   }, [BACKEND_LINKS_ENABLED, user?.id]);
 
+  // Education state
+  const [educationList, setEducationList] = useState([]);
+  const [isLoadingEducation, setIsLoadingEducation] = useState(false);
+  const [editingEducation, setEditingEducation] = useState(null);
+  const [showEducationForm, setShowEducationForm] = useState(false);
+
+  // Load education on mount
+  useEffect(() => {
+    const loadEducation = async () => {
+      if (user?.id) {
+        setIsLoadingEducation(true);
+        try {
+          const data = await listEducation();
+          setEducationList(data.education || []);
+        } catch (error) {
+          console.error('Failed to load education:', error);
+        } finally {
+          setIsLoadingEducation(false);
+        }
+      }
+    };
+    loadEducation();
+  }, [user?.id]);
+
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [cropperType, setCropperType] = useState(null); // 'avatar' or 'banner'
   const [activeSection, setActiveSection] = useState('basic');
@@ -155,6 +179,39 @@ export default function ProfileEdit() {
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
+  };
+
+  // Education CRUD handlers
+  const handleAddEducation = async (educationData) => {
+    try {
+      const result = await createEducation(educationData);
+      setEducationList(prev => [...prev, result.education]);
+      setShowEducationForm(false);
+      toast.success('Education added!');
+    } catch (error) {
+      toast.error('Failed to add education');
+    }
+  };
+
+  const handleUpdateEducation = async (id, updates) => {
+    try {
+      const result = await updateEducation(id, updates);
+      setEducationList(prev => prev.map(e => e.id === id ? result.education : e));
+      setEditingEducation(null);
+      toast.success('Education updated!');
+    } catch (error) {
+      toast.error('Failed to update education');
+    }
+  };
+
+  const handleDeleteEducation = async (id) => {
+    try {
+      await deleteEducation(id);
+      setEducationList(prev => prev.filter(e => e.id !== id));
+      toast.success('Education removed!');
+    } catch (error) {
+      toast.error('Failed to remove education');
+    }
   };
 
   const handleAvatarUpload = (imageUrl) => {
@@ -719,13 +776,82 @@ export default function ProfileEdit() {
           {activeSection === 'education' && (
             <FormSection title="Education & Training" icon={GraduationCap}>
               <div className="space-y-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Add your education, training programs, and certifications
-                </p>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors">
-                  <Plus className="w-5 h-5" />
-                  <span>Add Education</span>
-                </button>
+                {isLoadingEducation ? (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading education...</p>
+                ) : (
+                  <>
+                    {/* Existing Education Entries */}
+                    {educationList.length > 0 && (
+                      <div className="space-y-4">
+                        {educationList.map((edu) => (
+                          <div 
+                            key={edu.id} 
+                            className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                          >
+                            {editingEducation === edu.id ? (
+                              // Edit Mode
+                              <EducationForm
+                                initialData={edu}
+                                onSave={(data) => handleUpdateEducation(edu.id, data)}
+                                onCancel={() => setEditingEducation(null)}
+                              />
+                            ) : (
+                              // View Mode
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-medium text-neutral-900 dark:text-white">{edu.institution}</h4>
+                                  <p className="text-neutral-600 dark:text-neutral-400">{edu.program}</p>
+                                  {(edu.startYear || edu.endYear) && (
+                                    <p className="text-sm text-neutral-500">
+                                      {edu.startYear || '?'} - {edu.endYear || 'Present'}
+                                    </p>
+                                  )}
+                                  {edu.achievements && (
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{edu.achievements}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => setEditingEducation(edu.id)}
+                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                                    aria-label="Edit education"
+                                  >
+                                    <Edit2 className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEducation(edu.id)}
+                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    aria-label="Delete education"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Education Form */}
+                    {showEducationForm ? (
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <EducationForm
+                          onSave={handleAddEducation}
+                          onCancel={() => setShowEducationForm(false)}
+                        />
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => setShowEducationForm(true)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
+                      >
+                        <Plus className="w-5 h-5" />
+                        <span>Add Education</span>
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </FormSection>
           )}
@@ -770,5 +896,117 @@ function FormField({ label, required, children }) {
       </label>
       {children}
     </div>
+  );
+}
+
+function EducationForm({ initialData = {}, onSave, onCancel }) {
+  const [formData, setFormData] = useState({
+    institution: initialData.institution || '',
+    program: initialData.program || '',
+    startYear: initialData.startYear || '',
+    endYear: initialData.endYear || '',
+    achievements: initialData.achievements || ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.institution.trim() || !formData.program.trim()) {
+      return;
+    }
+    onSave({
+      institution: formData.institution.trim(),
+      program: formData.program.trim(),
+      startYear: formData.startYear ? parseInt(formData.startYear, 10) : null,
+      endYear: formData.endYear ? parseInt(formData.endYear, 10) : null,
+      achievements: formData.achievements.trim() || null
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Institution <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.institution}
+          onChange={(e) => setFormData(prev => ({ ...prev, institution: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., Juilliard School"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Program / Degree <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.program}
+          onChange={(e) => setFormData(prev => ({ ...prev, program: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., BFA in Drama"
+          required
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            Start Year
+          </label>
+          <input
+            type="number"
+            value={formData.startYear}
+            onChange={(e) => setFormData(prev => ({ ...prev, startYear: e.target.value }))}
+            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="2018"
+            min="1900"
+            max="2099"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            End Year
+          </label>
+          <input
+            type="number"
+            value={formData.endYear}
+            onChange={(e) => setFormData(prev => ({ ...prev, endYear: e.target.value }))}
+            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="2022 (or leave blank for present)"
+            min="1900"
+            max="2099"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Achievements / Notes
+        </label>
+        <textarea
+          value={formData.achievements}
+          onChange={(e) => setFormData(prev => ({ ...prev, achievements: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          rows={2}
+          placeholder="e.g., Dean's List, Lead in senior production"
+        />
+      </div>
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-medium transition-all"
+        >
+          {initialData.id ? 'Update' : 'Add'} Education
+        </button>
+      </div>
+    </form>
   );
 }
