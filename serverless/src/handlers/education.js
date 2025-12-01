@@ -15,14 +15,14 @@ export const listEducation = async (event) => {
 
     const prisma = getPrisma();
 
-    // Get user's profile (auto-create if needed for owner routes)
+    // Get user's profile
     let profile = await prisma.profile.findUnique({
       where: { userId },
     });
 
     if (!profile) {
-      // Auto-create profile for owner route - return empty education array
-      // Profile will be created on first actual profile update
+      // No profile exists yet - return empty education array
+      // Profile will be created when user accesses /me/profile or updates profile
       console.log('[listEducation] No profile exists for user, returning empty array:', userId);
       return json([]);
     }

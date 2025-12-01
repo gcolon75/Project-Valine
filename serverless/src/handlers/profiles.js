@@ -1138,9 +1138,10 @@ export const getMyProfile = async (event) => {
         profile = await prisma.profile.create({
           data: {
             userId,
-            vanityUrl: user.username || userId,
-            headline: '',
-            bio: '',
+            // Use nullish coalescing to preserve empty strings if explicitly set
+            vanityUrl: user.username ?? userId,
+            headline: null,
+            bio: null,
             roles: [],
             tags: [],
           },
