@@ -5,6 +5,7 @@ import { useFeed } from "../context/FeedContext";
 import PostCard from "../components/PostCard";
 import { Search, TrendingUp, User, UserPlus, Loader2 } from "lucide-react";
 import { followUser, sendConnectionRequest } from "../services/connectionService";
+import { searchUsers as searchUsersApi } from "../services/search";
 import toast from "react-hot-toast";
 
 export default function Discover() {
@@ -18,7 +19,7 @@ export default function Discover() {
   
   const postResults = useMemo(() => search(q), [q, search]);
 
-  // Mock user search - in production this would call an API
+  // Search users via API with fallback to mock data
   const searchUsers = async (query) => {
     if (!query || query.length < 2) {
       setUserResults([]);
@@ -27,9 +28,28 @@ export default function Discover() {
     
     setSearchLoading(true);
     try {
-      // TODO: Replace with actual API call when user search endpoint is available
-      // In production: const response = await api.get('/users/search', { params: { q: query } });
-      // For now, using mock data to demonstrate the UI functionality
+      // Try API call first
+      const response = await searchUsersApi({ query, limit: 20 });
+      if (response?.items && response.items.length > 0) {
+        // Map API response to expected format
+        const mappedUsers = response.items.map(user => ({
+          id: user.id,
+          displayName: user.displayName || user.username,
+          username: user.username,
+          avatar: user.avatar,
+          headline: user.bio || user.role || '',
+          profileVisibility: 'public',
+        }));
+        setUserResults(mappedUsers);
+        setSearchLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.warn('API search failed, falling back to mock data:', error);
+    }
+
+    // Fallback to mock data for demo purposes
+    try {
       const mockUsers = [
         {
           id: 'user-1',

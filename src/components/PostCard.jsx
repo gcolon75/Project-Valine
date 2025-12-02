@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, FileText, Video, Image } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
@@ -20,14 +20,6 @@ export default function PostCard({ post }) {
   
   // Image fallback: use post image if available, otherwise use placeholder
   const imageUrl = post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
-
-  // Get content type icon
-  const getContentTypeIcon = () => {
-    const type = post.contentType || post.mediaType;
-    if (type === "pdf" || type === "script") return FileText;
-    if (type === "video" || type === "reel" || type === "audition") return Video;
-    return Image;
-  };
 
   // Handle request access
   const handleRequestAccess = async () => {
@@ -76,8 +68,6 @@ export default function PostCard({ post }) {
       setDownloading(false);
     }
   };
-
-  const ContentIcon = getContentTypeIcon();
 
   return (
     <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
