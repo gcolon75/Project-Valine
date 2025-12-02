@@ -13,6 +13,20 @@ vi.mock('../../context/FeedContext', () => ({
   }),
 }));
 
+// Mock AuthContext
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user-123', name: 'Test User' },
+    isAuthenticated: true,
+  }),
+  AuthProvider: ({ children }) => children,
+}));
+
+// Mock mediaService
+vi.mock('../../services/mediaService', () => ({
+  uploadMedia: vi.fn().mockResolvedValue({ id: 'media-123' }),
+}));
+
 // Mock toast
 vi.mock('react-hot-toast', () => ({
   default: {
@@ -132,6 +146,8 @@ describe('PostComposer', () => {
         title: 'Test Post',
         body: 'Post content',
         tags: ['#demo'],
+        mediaId: null,
+        visibility: 'public',
       });
       expect(toast.default.success).toHaveBeenCalledWith('Post created successfully!');
     });
@@ -175,8 +191,26 @@ describe('PostComposer', () => {
         title: 'Test Post',
         body: 'Content',
         tags: [],
+        mediaId: null,
+        visibility: 'public',
       });
     });
+  });
+
+  it('should render file upload section', () => {
+    renderWithProviders(<PostComposer />);
+    
+    expect(screen.getByText('Attach File')).toBeInTheDocument();
+    expect(screen.getByText('Click to upload image, video, or PDF')).toBeInTheDocument();
+  });
+
+  it('should render visibility selector', () => {
+    renderWithProviders(<PostComposer />);
+    
+    expect(screen.getByText('Visibility')).toBeInTheDocument();
+    expect(screen.getByText('Public')).toBeInTheDocument();
+    expect(screen.getByText('On Request')).toBeInTheDocument();
+    expect(screen.getByText('Private')).toBeInTheDocument();
   });
 
   it('should handle post creation error', async () => {

@@ -299,3 +299,72 @@ const getImageDimensions = (file) => {
     img.src = objectUrl;
   });
 };
+
+/**
+ * Get presigned download URL for media
+ * @param {string} mediaId - Media ID
+ * @param {string} requesterId - User requesting access (optional)
+ * @returns {Promise<Object>} Download URL data with downloadUrl, expiresAt, filename
+ */
+export const getMediaAccessUrl = async (mediaId, requesterId) => {
+  if (!mediaId) {
+    throw new Error('Media ID is required');
+  }
+
+  try {
+    const params = requesterId ? { requesterId } : {};
+    const { data } = await apiClient.get(`/media/${mediaId}/access-url`, { params });
+    return data;
+  } catch (error) {
+    console.error('Failed to get media access URL:', error);
+    
+    if (error.response?.status === 403) {
+      throw new Error('You do not have permission to access this media');
+    } else if (error.response?.status === 404) {
+      throw new Error('Media not found');
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    
+    throw new Error('Failed to get download URL. Please try again.');
+  }
+};
+
+/**
+ * Request access to gated media
+ * @param {string} mediaId - Media ID
+ * @param {string} requesterId - User requesting access
+ * @param {string} reason - Optional reason for request
+ * @returns {Promise<Object>} Request status
+ */
+export const requestMediaAccess = async (mediaId, requesterId, reason = '') => {
+  if (!mediaId) {
+    throw new Error('Media ID is required');
+  }
+
+  if (!requesterId) {
+    throw new Error('Requester ID is required');
+  }
+
+  try {
+    const { data } = await apiClient.post(`/media/${mediaId}/request-access`, {
+      requesterId,
+      reason
+    });
+    return data;
+  } catch (error) {
+    console.error('Failed to request media access:', error);
+    
+    if (error.response?.status === 403) {
+      throw new Error('You cannot request access to this media');
+    } else if (error.response?.status === 404) {
+      throw new Error('Media not found');
+    } else if (error.response?.status === 409) {
+      throw new Error('Access request already pending');
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    
+    throw new Error('Failed to request access. Please try again.');
+  }
+};

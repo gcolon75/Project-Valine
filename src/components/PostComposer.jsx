@@ -1,15 +1,24 @@
 // src/components/PostComposer.jsx
-import { useState } from "react";
-import { Send, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { Send, X, Upload, FileText, Video, Image, File } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
+import { useAuth } from "../context/AuthContext";
+import { uploadMedia } from "../services/mediaService";
 
 export default function PostComposer() {
   const { createPost } = useFeed();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [visibility, setVisibility] = useState("public");
+  const fileInputRef = useRef(null);
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -21,20 +30,115 @@ export default function PostComposer() {
 
   const removeTag = (t) => setTags(tags.filter((x) => x !== t));
 
-  const submit = (e) => {
+  // Determine media type from file
+  const getMediaType = (file) => {
+    if (file.type.startsWith("image/")) return "image";
+    if (file.type.startsWith("video/")) return "video";
+    if (file.type === "application/pdf") return "pdf";
+    return "document";
+  };
+
+  // Get file type icon
+  const getFileIcon = (file) => {
+    if (!file) return File;
+    if (file.type.startsWith("image/")) return Image;
+    if (file.type.startsWith("video/")) return Video;
+    if (file.type === "application/pdf") return FileText;
+    return File;
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (500MB for video, 10MB for images/docs)
+    const maxSize = file.type.startsWith("video/") ? 500 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const maxSizeMB = file.type.startsWith("video/") ? 500 : 10;
+      toast.error(`File size must be less than ${maxSizeMB}MB`);
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setFilePreview(e.target?.result);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  // Remove selected file
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       toast.error("Please add a title to your post");
       return;
     }
+
     try {
-      createPost({ title: title.trim(), body: body.trim(), tags });
+      let mediaId = null;
+
+      // Upload file if selected
+      if (selectedFile && user?.id) {
+        setUploading(true);
+        setUploadProgress(0);
+        
+        try {
+          const mediaResult = await uploadMedia(
+            user.id,
+            selectedFile,
+            getMediaType(selectedFile),
+            {
+              title: title.trim(),
+              privacy: visibility,
+              onProgress: setUploadProgress
+            }
+          );
+          mediaId = mediaResult?.id;
+        } catch (uploadError) {
+          console.error("Upload failed:", uploadError);
+          toast.error(uploadError.message || "Failed to upload file. Please try again.");
+          setUploading(false);
+          return;
+        }
+      }
+
+      createPost({ 
+        title: title.trim(), 
+        body: body.trim(), 
+        tags,
+        mediaId,
+        visibility
+      });
       toast.success("Post created successfully!");
-      setTitle(""); setBody(""); setTags([]); setTagInput("");
+      setTitle(""); 
+      setBody(""); 
+      setTags([]); 
+      setTagInput("");
+      removeFile();
+      setVisibility("public");
     } catch (error) {
       toast.error("Failed to create post. Please try again.");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
+
+  const FileIcon = getFileIcon(selectedFile);
 
   return (
     <form
@@ -54,6 +158,8 @@ export default function PostComposer() {
         className="mt-2 w-full bg-transparent text-sm text-neutral-700 dark:text-neutral-300 outline-none placeholder:text-neutral-500"
         placeholder="Add a short description (optional)"
       />
+      
+      {/* Tags section */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {tags.map((t) => (
           <button
@@ -81,15 +187,112 @@ export default function PostComposer() {
         >
           Add tag
         </button>
-        <div className="ml-auto">
-          <button
-            type="submit"
-            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover transition-colors flex items-center gap-1.5"
-          >
-            <Send className="w-4 h-4" />
-            <span>Post</span>
-          </button>
+      </div>
+
+      {/* File upload section */}
+      <div className="mt-4 space-y-2">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          Attach File
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,application/pdf,.doc,.docx"
+          onChange={handleFileSelect}
+          className="hidden"
+          id="post-file-upload"
+        />
+        <label
+          htmlFor="post-file-upload"
+          className="flex items-center gap-2 cursor-pointer rounded-lg border border-dashed border-neutral-300 dark:border-white/20 bg-neutral-100 dark:bg-white/5 px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
+        >
+          <Upload className="w-5 h-5" />
+          <span>Click to upload image, video, or PDF</span>
+        </label>
+        
+        {/* File preview */}
+        {selectedFile && (
+          <div className="flex items-center gap-3 p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+            {filePreview ? (
+              <img src={filePreview} alt="Preview" className="w-12 h-12 rounded object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                <FileIcon className="w-6 h-6 text-neutral-500" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                {selectedFile.name}
+              </p>
+              <p className="text-xs text-neutral-500">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={removeFile}
+              className="p-1 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              aria-label="Remove file"
+            >
+              <X className="w-4 h-4 text-neutral-500" />
+            </button>
+          </div>
+        )}
+
+        {/* Upload progress */}
+        {uploading && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-neutral-500">
+              <span>Uploading...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-1.5">
+              <div 
+                className="bg-brand h-1.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Visibility selector */}
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+          Visibility
+        </label>
+        <div className="flex gap-2">
+          {[
+            { value: "public", label: "Public" },
+            { value: "on-request", label: "On Request" },
+            { value: "private", label: "Private" }
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setVisibility(option.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                visibility === option.value
+                  ? "bg-brand text-white"
+                  : "bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-white/10 hover:bg-neutral-200 dark:hover:bg-white/10"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* Submit button */}
+      <div className="mt-4 flex justify-end">
+        <button
+          type="submit"
+          disabled={uploading}
+          className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Send className="w-4 h-4" />
+          <span>{uploading ? "Uploading..." : "Post"}</span>
+        </button>
       </div>
     </form>
   );

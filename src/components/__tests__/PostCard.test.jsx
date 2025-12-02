@@ -13,6 +13,21 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
+// Mock AuthContext
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user-123', name: 'Test User' },
+    isAuthenticated: true,
+  }),
+  AuthProvider: ({ children }) => children,
+}));
+
+// Mock mediaService
+vi.mock('../../services/mediaService', () => ({
+  getMediaAccessUrl: vi.fn().mockResolvedValue({ downloadUrl: 'http://test.com/download', filename: 'test.pdf' }),
+  requestMediaAccess: vi.fn().mockResolvedValue({ status: 'pending' }),
+}));
+
 describe('PostCard', () => {
   const renderPostCard = (post = createMockPost()) => {
     return render(
@@ -146,24 +161,40 @@ describe('PostCard', () => {
     expect(screen.getByText('Save')).toBeInTheDocument();
   });
 
-  it('should render request button', () => {
-    renderPostCard();
+  it('should render request access button for gated posts', () => {
+    const post = createMockPost({ visibility: 'on-request' });
+    renderPostCard(post);
 
-    expect(screen.getByText('Request')).toBeInTheDocument();
+    expect(screen.getByText('Request Access')).toBeInTheDocument();
   });
 
-  it('should handle request button click', async () => {
+  it('should handle request access button click', async () => {
     const user = userEvent.setup();
-    const post = createMockPost({ id: 'post-789' });
+    const post = createMockPost({ id: 'post-789', visibility: 'on-request' });
 
     renderPostCard(post);
 
-    const requestButton = screen.getByText('Request').closest('button');
+    const requestButton = screen.getByText('Request Access').closest('button');
     await user.click(requestButton);
 
     // Should show toast notification (note: toast library mocked in test setup)
     // Test passes if button click doesn't throw error
     expect(requestButton).toBeInTheDocument();
+  });
+
+  it('should render download button for public posts with media', () => {
+    const post = createMockPost({ visibility: 'public', mediaId: 'media-123' });
+    renderPostCard(post);
+
+    expect(screen.getByText('Download')).toBeInTheDocument();
+  });
+
+  it('should show blurred preview for gated content', () => {
+    const post = createMockPost({ visibility: 'on-request' });
+    renderPostCard(post);
+
+    // Should show access required text
+    expect(screen.getByText('Access Required')).toBeInTheDocument();
   });
 
   it('should apply correct styling for saved posts', () => {

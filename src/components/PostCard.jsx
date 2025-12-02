@@ -1,16 +1,83 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, FileText, Video, Image } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
+import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
+import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService";
 
 export default function PostCard({ post }) {
   const { likePost, toggleSave } = useFeed();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const [accessRequested, setAccessRequested] = useState(false);
+  const [hasAccess, setHasAccess] = useState(post.visibility === "public" || post.hasAccess);
+  const [downloading, setDownloading] = useState(false);
+  
+  // Check if content is gated
+  const isGated = post.visibility === "on-request" || post.visibility === "private";
   
   // Image fallback: use post image if available, otherwise use placeholder
   const imageUrl = post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
+
+  // Get content type icon
+  const getContentTypeIcon = () => {
+    const type = post.contentType || post.mediaType;
+    if (type === "pdf" || type === "script") return FileText;
+    if (type === "video" || type === "reel" || type === "audition") return Video;
+    return Image;
+  };
+
+  // Handle request access
+  const handleRequestAccess = async () => {
+    if (!user?.id) {
+      toast.error("Please log in to request access");
+      return;
+    }
+
+    try {
+      if (post.mediaId) {
+        await requestMediaAccess(post.mediaId, user.id);
+      }
+      setAccessRequested(true);
+      toast.success("Access request sent! You'll be notified when approved.");
+    } catch (error) {
+      console.error("Request access failed:", error);
+      toast.error("Failed to send request. Please try again.");
+    }
+  };
+
+  // Handle download
+  const handleDownload = async () => {
+    if (!post.mediaId) {
+      toast.error("No media available for download");
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      const { downloadUrl, filename } = await getMediaAccessUrl(post.mediaId, user?.id);
+      
+      // Create download link
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename || `${post.title || "download"}`;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Download started!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error(error.message || "Failed to download. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const ContentIcon = getContentTypeIcon();
 
   return (
     <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
@@ -21,23 +88,54 @@ export default function PostCard({ post }) {
           <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
           <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>
         </div>
-        <div className="ml-auto text-xs text-neutral-600 dark:text-neutral-400">
-          {timeAgo(post.createdAt)}
+        <div className="ml-auto flex items-center gap-2">
+          {/* Visibility indicator */}
+          {isGated && (
+            <span className="flex items-center gap-1 text-xs text-neutral-500">
+              <Lock className="w-3 h-3" />
+              {post.visibility === "private" ? "Private" : "On Request"}
+            </span>
+          )}
+          <span className="text-xs text-neutral-600 dark:text-neutral-400">
+            {timeAgo(post.createdAt)}
+          </span>
         </div>
       </div>
 
       {/* Media */}
       <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden">
-        {imageUrl && (
-          <img 
-            src={imageUrl} 
-            alt={post.title || "Post image"}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // If image fails to load, hide it and show gradient background
-              e.target.style.display = 'none';
-            }}
-          />
+        {isGated && !hasAccess ? (
+          // Gated content - show blurred preview
+          <div className="relative w-full h-full">
+            {imageUrl && (
+              <img 
+                src={imageUrl} 
+                alt={post.title || "Post preview"}
+                className="w-full h-full object-cover blur-lg opacity-50"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/40">
+              <Lock className="w-8 h-8 text-white mb-2" />
+              <span className="text-white text-sm font-medium">
+                {post.visibility === "private" ? "Private Content" : "Access Required"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          // Full content
+          imageUrl && (
+            <img 
+              src={imageUrl} 
+              alt={post.title || "Post image"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          )
         )}
       </div>
 
@@ -57,7 +155,7 @@ export default function PostCard({ post }) {
         </div>
 
         {/* Actions */}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
           <button
             onClick={() => likePost(post.id)}
             className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
@@ -87,16 +185,46 @@ export default function PostCard({ post }) {
             <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.saved ? "Saved" : "Save"}</span>
           </button>
-          <button
-            onClick={() => {
-              toast.success('Access request sent!');
-              // TODO: API call to request access
-            }}
-            className="ml-auto rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors"
-            aria-label="Request access to this post"
-          >
-            Request
-          </button>
+          
+          {/* Request/Download button */}
+          <div className="ml-auto">
+            {isGated && !hasAccess ? (
+              // Request access button
+              <button
+                onClick={handleRequestAccess}
+                disabled={accessRequested}
+                className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+                  accessRequested
+                    ? "border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    : "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30"
+                }`}
+                aria-label={accessRequested ? "Access requested" : "Request access to this post"}
+              >
+                {accessRequested ? (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    <span>Requested</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Request Access</span>
+                  </>
+                )}
+              </button>
+            ) : post.mediaId || post.mediaUrl ? (
+              // Download button for accessible content with media
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="rounded-full border border-emerald-500 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-600/20 px-3 py-1.5 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Download content"
+              >
+                <Download className="w-4 h-4" />
+                <span>{downloading ? "Downloading..." : "Download"}</span>
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
