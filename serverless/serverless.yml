@@ -295,6 +295,54 @@ functions:
           path: /posts/{id}
           method: get
 
+  # ========== SCRIPTS ==========
+  listScripts:
+    handler: src/handlers/scripts.listScripts
+    events:
+      - httpApi:
+          path: /scripts
+          method: get
+  createScript:
+    handler: src/handlers/scripts.createScript
+    events:
+      - httpApi:
+          path: /scripts
+          method: post
+  getScript:
+    handler: src/handlers/scripts.getScript
+    events:
+      - httpApi:
+          path: /scripts/{id}
+          method: get
+
+  # ========== AUDITIONS ==========
+  listAuditions:
+    handler: src/handlers/auditions.listAuditions
+    events:
+      - httpApi:
+          path: /auditions
+          method: get
+  createAudition:
+    handler: src/handlers/auditions.createAudition
+    events:
+      - httpApi:
+          path: /auditions
+          method: post
+  getAudition:
+    handler: src/handlers/auditions.getAudition
+    events:
+      - httpApi:
+          path: /auditions/{id}
+          method: get
+
+  # ========== FEED ==========
+  getFeed:
+    handler: src/handlers/feed.getFeed
+    events:
+      - httpApi:
+          path: /feed
+          method: get
+
   # ========== CONVERSATIONS ==========
   listConversations:
     handler: src/handlers/conversations.listConversations

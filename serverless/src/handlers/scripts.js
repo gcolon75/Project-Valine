@@ -1,49 +1,106 @@
 import { getPrisma } from '../db/client.js';
-import { verifyIdToken } from '../utils/verifyCognito.js';
 import { json, error } from '../utils/headers.js';
+import { getUserFromEvent } from './auth.js';
+import crypto from 'crypto';
 
-const region = process.env.COGNITO_REGION;
-const userPoolId = process.env.COGNITO_POOL_ID;
-const audience = process.env.COGNITO_CLIENT_ID;
-
-export const handler = async (event) => {
+/**
+ * GET /scripts
+ * List all scripts with pagination
+ */
+export const listScripts = async (event) => {
   try {
-    const method = event.requestContext?.http?.method;
-    const authHeader = event.headers?.authorization || event.headers?.Authorization;
-    if (!authHeader?.startsWith('Bearer ')) return error('Missing token', 401);
-    const token = authHeader.slice(7);
-    const user = await verifyIdToken(token, { region, userPoolId, audience });
+    const { limit = '50', cursor } = event.queryStringParameters || {};
+    const prisma = getPrisma();
+    
+    const scripts = await prisma.scripts.findMany({
+      take: parseInt(limit, 10),
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        users: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        }
+      }
+    });
+    
+    return json(scripts);
+  } catch (e) {
+    console.error('listScripts error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+/**
+ * POST /scripts
+ * Create a new script
+ */
+export const createScript = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error('Unauthorized', 401);
+    }
+
+    const { title, summary = '' } = JSON.parse(event.body || '{}');
+    
+    if (!title) {
+      return error('title is required', 400);
+    }
 
     const prisma = getPrisma();
-
-    if (method === 'GET') {
-      const scripts = await prisma.script.findMany({ take: 50, orderBy: { createdAt: 'desc' } });
-      return json(scripts);
-    }
-
-    if (method === 'POST') {
-      const { title, summary = '', isDraft = true } = JSON.parse(event.body || '{}');
-      if (!title) return error('title is required', 422);
-
-      const created = await prisma.script.create({
-        data: {
-          title,
-          summary,
-          isDraft,
-          author: {
-            connectOrCreate: {
-              where: { id: user.sub },
-              create: { id: user.sub, email: user.email ?? `${user.sub}@unknown`, role: 'artist' },
-            },
-          },
-        },
-      });
-      return json(created, 201);
-    }
-
-    return error('Method Not Allowed', 405);
+    
+    const script = await prisma.scripts.create({
+      data: {
+        id: crypto.randomUUID(),
+        title,
+        summary,
+        authorId: userId,
+        updatedAt: new Date()
+      },
+      include: {
+        users: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        }
+      }
+    });
+    
+    return json(script, 201);
   } catch (e) {
-    console.error(e);
-    return error('Server error', 500);
+    console.error('createScript error:', e);
+    return error('Server error: ' + e.message, 500);
+  }
+};
+
+/**
+ * GET /scripts/{id}
+ * Get a single script by ID
+ */
+export const getScript = async (event) => {
+  try {
+    const id = event.pathParameters?.id;
+    
+    if (!id) {
+      return error('id is required', 400);
+    }
+
+    const prisma = getPrisma();
+    
+    const script = await prisma.scripts.findUnique({
+      where: { id },
+      include: {
+        users: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        }
+      }
+    });
+    
+    if (!script) {
+      return error('Script not found', 404);
+    }
+    
+    return json(script);
+  } catch (e) {
+    console.error('getScript error:', e);
+    return error('Server error: ' + e.message, 500);
   }
 };
