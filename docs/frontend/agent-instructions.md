@@ -656,3 +656,374 @@ export default UserProfileCard;
 - Follow the patterns in this document
 - Ask clarifying questions before starting
 - Test in both light and dark mode before completing
+
+## PRODUCTION URLS
+
+- **Frontend:** https://dkmxy676d3vgc.cloudfront.net
+- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+
+## CURRENT API ENDPOINTS AND HOW TO CALL THEM
+
+The API base URL is set via `VITE_API_BASE` environment variable. Key endpoints include:
+
+### Auth Endpoints
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+- `GET /auth/me` - Get current user
+- `POST /auth/logout` - Logout user
+- `POST /auth/refresh` - Refresh access token
+
+### Profile Endpoints
+- `GET /me/profile` - Get current user's profile
+- `PATCH /me/profile` - Update current user's profile
+- `GET /profiles/{vanityUrl}` - Get profile by vanity URL
+
+### Connections Endpoints
+- `POST /connections/request` - Send connection request
+- `GET /connections/requests` - Get pending connection requests
+- `POST /connections/requests/{id}/approve` - Approve connection request
+
+### Posts Endpoints
+- `GET /posts` - List posts (paginated)
+- `POST /posts` - Create new post
+- `GET /posts/{id}` - Get single post
+
+### Feed Endpoint
+- `GET /feed` - Get personalized feed
+
+### Notifications Endpoints
+- `GET /notifications` - Get user notifications
+- `PATCH /notifications/{id}/read` - Mark notification as read
+
+### Example API Call
+```javascript
+import apiClient from './services/api';
+
+// GET request
+const posts = await apiClient.get('/posts');
+
+// POST request
+const newPost = await apiClient.post('/posts', { content: 'Hello world!' });
+
+// PATCH request
+await apiClient.patch('/me/profile', { bio: 'Updated bio' });
+```
+
+## ERROR HANDLING PATTERNS FOR API FAILURES
+
+Use try/catch with axios and handle different status codes:
+
+```jsx
+import { useState } from 'react';
+import apiClient from '../services/api';
+
+const MyComponent = () => {
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data } = await apiClient.get('/endpoint');
+      return data;
+    } catch (err) {
+      // Handle different error types
+      if (err.response) {
+        // Server responded with error status
+        switch (err.response.status) {
+          case 400:
+            setError('Invalid request. Please check your input.');
+            break;
+          case 401:
+            setError('Session expired. Please log in again.');
+            // Redirect to login
+            break;
+          case 403:
+            setError('You do not have permission to perform this action.');
+            break;
+          case 404:
+            setError('Resource not found.');
+            break;
+          case 500:
+            setError('Server error. Please try again later.');
+            break;
+          default:
+            setError(err.response.data?.message || 'An error occurred.');
+        }
+      } else if (err.request) {
+        // Request made but no response received
+        setError('Network error. Please check your connection.');
+      } else {
+        // Something else went wrong
+        setError('An unexpected error occurred.');
+      }
+      console.error('API Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {loading && <div className="animate-pulse">Loading...</div>}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## TOAST NOTIFICATION PATTERNS USING EXISTING TOASTCONTEXT
+
+The ToastContext is at `src/context/ToastContext.jsx`. Use the `useToast()` hook with the `push(msg)` method:
+
+```jsx
+import { useToast } from '../context/ToastContext';
+
+const MyComponent = () => {
+  const { push } = useToast();
+
+  const handleSuccess = () => {
+    push('Profile updated successfully!');
+  };
+
+  const handleError = (errorMessage) => {
+    push(`Error: ${errorMessage}`);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      await apiClient.patch('/me/profile', { bio: 'New bio' });
+      push('Profile saved!');
+    } catch (err) {
+      push('Failed to save profile. Please try again.');
+    }
+  };
+
+  return (
+    <button 
+      onClick={handleSubmit}
+      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+    >
+      Save Profile
+    </button>
+  );
+};
+```
+
+### Toast Best Practices
+- Keep messages short and actionable
+- Use for confirmations: "Saved!", "Deleted!", "Sent!"
+- Use for errors: "Failed to save. Please try again."
+- Toast auto-dismisses after 2.5 seconds
+
+## FORM VALIDATION PATTERNS
+
+Common validation patterns for forms:
+
+```jsx
+import { useState } from 'react';
+
+const useFormValidation = () => {
+  const [errors, setErrors] = useState({});
+
+  // Email validation
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return 'Email is required';
+    if (!emailRegex.test(email)) return 'Please enter a valid email';
+    return null;
+  };
+
+  // Password strength validation
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required';
+    if (password.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(password)) return 'Password must contain an uppercase letter';
+    if (!/[a-z]/.test(password)) return 'Password must contain a lowercase letter';
+    if (!/[0-9]/.test(password)) return 'Password must contain a number';
+    return null;
+  };
+
+  // Required field validation
+  const validateRequired = (value, fieldName) => {
+    if (!value || value.trim() === '') return `${fieldName} is required`;
+    return null;
+  };
+
+  // Username validation
+  const validateUsername = (username) => {
+    if (!username) return 'Username is required';
+    if (username.length < 3) return 'Username must be at least 3 characters';
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores';
+    return null;
+  };
+
+  return { errors, setErrors, validateEmail, validatePassword, validateRequired, validateUsername };
+};
+
+// Usage in a form component
+const SignupForm = () => {
+  const [formData, setFormData] = useState({ email: '', password: '', username: '' });
+  const { errors, setErrors, validateEmail, validatePassword, validateUsername } = useFormValidation();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+    
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+    
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
+    
+    const usernameError = validateUsername(formData.username);
+    if (usernameError) newErrors.username = usernameError;
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      // Form is valid, proceed with submission
+      console.log('Form submitted:', formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <input
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-neutral-900 
+            text-neutral-900 dark:text-white 
+            ${errors.email ? 'border-red-500' : 'border-neutral-200 dark:border-neutral-700'}`}
+          placeholder="Email"
+        />
+        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+      </div>
+      {/* Similar pattern for other fields */}
+    </form>
+  );
+};
+```
+
+## AUTHENTICATION FLOW
+
+Authentication is managed by AuthContext at `src/context/AuthContext.jsx`.
+
+### Login Flow
+```jsx
+import { useAuth } from '../context/AuthContext';
+
+const LoginPage = () => {
+  const { login, loading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(null);
+    
+    try {
+      await login(email, password);
+      // User is now logged in, redirect handled by context
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <input 
+        type="email" 
+        value={email} 
+        onChange={(e) => setEmail(e.target.value)} 
+        placeholder="Email"
+      />
+      <input 
+        type="password" 
+        value={password} 
+        onChange={(e) => setPassword(e.target.value)} 
+        placeholder="Password"
+      />
+      {error && <p className="text-red-500">{error}</p>}
+      <button type="submit" disabled={loading}>
+        {loading ? 'Logging in...' : 'Login'}
+      </button>
+    </form>
+  );
+};
+```
+
+### Logout Flow
+```jsx
+import { useAuth } from '../context/AuthContext';
+
+const LogoutButton = () => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    // User is logged out, redirect to login page
+  };
+
+  return (
+    <button onClick={handleLogout}>
+      Logout
+    </button>
+  );
+};
+```
+
+### Checking Auth State
+```jsx
+import { useAuth } from '../context/AuthContext';
+
+const ProtectedComponent = () => {
+  const { user, isAuthenticated, isInitialized } = useAuth();
+
+  // Wait for auth to initialize
+  if (!isInitialized) {
+    return <div>Loading...</div>;
+  }
+
+  // Check if user is logged in
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return (
+    <div>
+      <p>Welcome, {user.displayName || user.email}!</p>
+    </div>
+  );
+};
+```
+
+### Token Management
+- **Access tokens** are stored via HTTP-only cookies (secure, not accessible via JavaScript)
+- **Token refresh** is handled automatically by axios interceptors in `src/services/api.js`
+- When access token expires, the interceptor calls `/auth/refresh` to get a new token
+- If refresh fails, user is redirected to login
+
+### AuthContext API
+```jsx
+const {
+  user,           // Current user object or null
+  loading,        // Boolean - true during auth operations
+  isInitialized,  // Boolean - true after initial auth check
+  isAuthenticated,// Boolean - true if user is logged in
+  login,          // Function(email, password) - login user
+  register,       // Function(userData) - register new user
+  logout,         // Function() - logout user
+  updateUser,     // Function(updates) - update user state locally
+  refreshUser,    // Function() - fetch fresh user data from API
+} = useAuth();
+```
