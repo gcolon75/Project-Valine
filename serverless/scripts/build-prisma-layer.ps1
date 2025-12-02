@@ -100,8 +100,10 @@ $AtRuntimeDir = Join-Path $SrcAtPrismaClientDir "runtime"
 if (Test-Path $AtRuntimeDir) { 
   $DstAtRuntimeDir = Join-Path $DstAtPrismaClientDir "runtime"
   New-Item -ItemType Directory -Force -Path $DstAtRuntimeDir | Out-Null
-  Get-ChildItem -Path $AtRuntimeDir -Recurse -File | Where-Object { $_.Name -notlike "*wasm*" } | ForEach-Object {
-    $RelPath = $_.FullName.Substring($AtRuntimeDir.Length + 1)
+  # Use -inotlike for case-insensitive WASM exclusion
+  Get-ChildItem -Path $AtRuntimeDir -Recurse -File | Where-Object { $_.Name -inotlike "*wasm*" } | ForEach-Object {
+    # Use Resolve-Path and relative path calculation for proper cross-platform handling
+    $RelPath = $_.FullName.Replace($AtRuntimeDir, "").TrimStart("\", "/")
     $DestPath = Join-Path $DstAtRuntimeDir $RelPath
     $DestDir = Split-Path $DestPath -Parent
     if (-not (Test-Path $DestDir)) { New-Item -ItemType Directory -Force -Path $DestDir | Out-Null }
