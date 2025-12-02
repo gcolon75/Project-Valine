@@ -10,10 +10,11 @@ import crypto from 'crypto';
 export const listAuditions = async (event) => {
   try {
     const { limit = '50', cursor } = event.queryStringParameters || {};
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
     const prisma = getPrisma();
     
     const auditions = await prisma.auditions.findMany({
-      take: parseInt(limit, 10),
+      take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: 'desc' },
       include: {

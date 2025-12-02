@@ -14,6 +14,7 @@ export const getFeed = async (event) => {
     }
 
     const { limit = '20', cursor } = event.queryStringParameters || {};
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
     const prisma = getPrisma();
     
     // Get all users that the current user follows (accepted connection requests where current user is sender)
@@ -35,7 +36,7 @@ export const getFeed = async (event) => {
       where: {
         authorId: { in: authorIds }
       },
-      take: parseInt(limit, 10),
+      take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: 'desc' },
       include: {
