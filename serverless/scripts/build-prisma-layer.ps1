@@ -44,27 +44,77 @@ try {
 $LambdaBinary = Join-Path $SrcPrismaDir "client\libquery_engine-rhel-openssl-3.0.x.so.node"
 if (-not (Test-Path $LambdaBinary)) { throw "Lambda binary not found: $LambdaBinary" }
 
-# Verify .prisma/client/default bundle exists (required by newer Prisma versions)
-$DefaultBundle = Join-Path $SrcPrismaDir "client\default\index.js"
-if (-not (Test-Path $DefaultBundle)) { 
-  throw "Prisma client 'default' bundle not found: $DefaultBundle. Ensure Prisma is up-to-date and 'npx prisma generate' was run." 
+# Verify default.js exists (Prisma 6.x uses default.js file, not default/index.js folder)
+$DefaultJs = Join-Path $SrcPrismaDir "client\default.js"
+if (-not (Test-Path $DefaultJs)) { 
+  throw "Prisma client 'default.js' not found: $DefaultJs. Ensure Prisma 6.x is installed and 'npx prisma generate' was run." 
 }
-Write-Host "Verified: .prisma/client/default/index.js exists"
+Write-Host "Verified: .prisma/client/default.js exists (Prisma 6.x structure)"
 
-# Copy entire .prisma directory (includes client and default bundle)
-Write-Host "Copying .prisma directory (full)..."
-Copy-Item -Recurse -Path $SrcPrismaDir -Destination $DstPrismaDir -Force
+# Create destination directories
+$DstPrismaClientDir = Join-Path $DstPrismaDir "client"
+$DstAtPrismaClientDir = Join-Path $DstAtPrismaDir "client"
+New-Item -ItemType Directory -Force -Path $DstPrismaClientDir | Out-Null
+New-Item -ItemType Directory -Force -Path $DstAtPrismaClientDir | Out-Null
 
-# Copy entire @prisma directory (includes client runtime)
-Write-Host "Copying @prisma directory (full)..."
-Copy-Item -Recurse -Path $SrcAtPrismaDir -Destination $DstAtPrismaDir -Force
+# Copy .prisma/client files (Prisma 6.x structure)
+Write-Host "Copying .prisma/client files (Prisma 6.x)..."
+$SrcPrismaClientDir = Join-Path $SrcPrismaDir "client"
 
-# Verify default bundle copied successfully
-$DstDefaultBundle = Join-Path $DstPrismaDir "client\default\index.js"
-if (-not (Test-Path $DstDefaultBundle)) {
-  throw "Failed to copy .prisma/client/default/index.js to build directory"
+# Copy JS files
+Get-ChildItem -Path $SrcPrismaClientDir -Filter "*.js" -File | ForEach-Object { Copy-Item $_.FullName -Destination $DstPrismaClientDir }
+# Copy TypeScript declaration files
+Get-ChildItem -Path $SrcPrismaClientDir -Filter "*.d.ts" -File | ForEach-Object { Copy-Item $_.FullName -Destination $DstPrismaClientDir }
+# Copy package.json if exists
+$PkgJson = Join-Path $SrcPrismaClientDir "package.json"
+if (Test-Path $PkgJson) { Copy-Item $PkgJson -Destination $DstPrismaClientDir }
+# Copy schema.prisma if exists
+$SchemaPrisma = Join-Path $SrcPrismaClientDir "schema.prisma"
+if (Test-Path $SchemaPrisma) { Copy-Item $SchemaPrisma -Destination $DstPrismaClientDir }
+# Copy Lambda binary
+Copy-Item $LambdaBinary -Destination $DstPrismaClientDir
+# Copy runtime directory if exists
+$RuntimeDir = Join-Path $SrcPrismaClientDir "runtime"
+if (Test-Path $RuntimeDir) { 
+  Copy-Item -Recurse -Path $RuntimeDir -Destination $DstPrismaClientDir -Force 
 }
-Write-Host "Verified: .prisma/client/default/index.js copied to build folder"
+
+# Copy @prisma/client files
+Write-Host "Copying @prisma/client files..."
+$SrcAtPrismaClientDir = Join-Path $SrcAtPrismaDir "client"
+# Copy JS files
+Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.js" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName -Destination $DstAtPrismaClientDir }
+# Copy TypeScript declaration files
+Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.d.ts" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName -Destination $DstAtPrismaClientDir }
+# Copy package.json
+$AtPkgJson = Join-Path $SrcAtPrismaClientDir "package.json"
+if (Test-Path $AtPkgJson) { Copy-Item $AtPkgJson -Destination $DstAtPrismaClientDir }
+# Copy LICENSE if exists
+$License = Join-Path $SrcAtPrismaClientDir "LICENSE"
+if (Test-Path $License) { Copy-Item $License -Destination $DstAtPrismaClientDir }
+# Copy README.md if exists
+$Readme = Join-Path $SrcAtPrismaClientDir "README.md"
+if (Test-Path $Readme) { Copy-Item $Readme -Destination $DstAtPrismaClientDir }
+# Copy runtime directory (exclude WASM files)
+$AtRuntimeDir = Join-Path $SrcAtPrismaClientDir "runtime"
+if (Test-Path $AtRuntimeDir) { 
+  $DstAtRuntimeDir = Join-Path $DstAtPrismaClientDir "runtime"
+  New-Item -ItemType Directory -Force -Path $DstAtRuntimeDir | Out-Null
+  Get-ChildItem -Path $AtRuntimeDir -Recurse -File | Where-Object { $_.Name -notlike "*wasm*" } | ForEach-Object {
+    $RelPath = $_.FullName.Substring($AtRuntimeDir.Length + 1)
+    $DestPath = Join-Path $DstAtRuntimeDir $RelPath
+    $DestDir = Split-Path $DestPath -Parent
+    if (-not (Test-Path $DestDir)) { New-Item -ItemType Directory -Force -Path $DestDir | Out-Null }
+    Copy-Item $_.FullName -Destination $DestPath
+  }
+}
+
+# Verify default.js copied successfully
+$DstDefaultJs = Join-Path $DstPrismaClientDir "default.js"
+if (-not (Test-Path $DstDefaultJs)) {
+  throw "Failed to copy .prisma/client/default.js to build directory"
+}
+Write-Host "Verified: .prisma/client/default.js copied to build folder"
 
 # Create layer zip
 New-Item -ItemType Directory -Force -Path $LayerDir | Out-Null
@@ -75,7 +125,7 @@ Compress-Archive -Path $NodejsDir -DestinationPath $ZipPath -Force
 $zipSizeMB = [math]::Round((Get-Item $ZipPath).Length / 1MB, 2)
 Write-Host "Layer created: $ZipPath ($zipSizeMB MB)"
 Write-Host "Contents include:"
-Write-Host "  - .prisma/client/default/* (required for newer Prisma)"
+Write-Host "  - .prisma/client/*.js (including default.js for Prisma 6.x)"
 Write-Host "  - .prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"
 Write-Host "  - @prisma/client/* runtime"
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }

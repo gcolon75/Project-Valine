@@ -647,76 +647,6 @@ functions:
           path: /search/users
           method: get
 
-  # ========== INTERNAL/ADMIN ==========
-  ingestPRIntel:
-    handler: src/handlers/prIntel.ingestPRIntel
-    events:
-      - httpApi:
-          path: /internal/pr-intel/ingest
-          method: post
-  getPRIntel:
-    handler: src/handlers/prIntel.getPRIntel
-    events:
-      - httpApi:
-          path: /internal/pr-intel/{prNumber}
-          method: get
-  ingestTestRuns:
-    handler: src/handlers/testIntel.ingestTestRuns
-    events:
-      - httpApi:
-          path: /internal/tests/ingest
-          method: post
-  getFlakyCandidates:
-    handler: src/handlers/testIntel.getFlakyCandidates
-    events:
-      - httpApi:
-          path: /internal/tests/flaky-candidates
-          method: get
-  analyzeSchemaDiff:
-    handler: src/handlers/schemaDiff.analyzeSchemaDiff
-    events:
-      - httpApi:
-          path: /internal/schema/diff
-          method: post
-  runSyntheticJourney:
-    handler: src/handlers/syntheticJourney.runSyntheticJourney
-    events:
-      - httpApi:
-          path: /internal/journey/run
-          method: post
-
-  # ========== OBSERVABILITY ==========
-  ingestMetrics:
-    handler: src/handlers/observability.ingestMetrics
-    events:
-      - httpApi:
-          path: /internal/observability/metrics
-          method: post
-  getMetrics:
-    handler: src/handlers/observability.getMetrics
-    events:
-      - httpApi:
-          path: /internal/observability/metrics
-          method: get
-  observabilityHealth:
-    handler: src/handlers/observability.healthCheck
-    events:
-      - httpApi:
-          path: /internal/observability/health
-          method: get
-  getStats:
-    handler: src/handlers/observability.getStats
-    events:
-      - httpApi:
-          path: /internal/observability/stats
-          method: get
-  logEvent:
-    handler: src/handlers/observability.logEvent
-    events:
-      - httpApi:
-          path: /internal/observability/log
-          method: post
-
   # ========== REPORTS & MODERATION ==========
   createReport:
     handler: src/handlers/reports.createReport
@@ -762,9 +692,3 @@ functions:
       - httpApi:
           path: /analytics/config
           method: get
-  analyticsCleanup:
-    handler: src/handlers/analytics.cleanupOldEvents
-    events:
-      - httpApi:
-          path: /analytics/events/cleanup
-          method: delete
