@@ -101,3 +101,20 @@ When working on this repository:
 **Create user account:**
 1. Set `DATABASE_URL`
 2. Run `node scripts/provision-production-accounts.mjs --email=EMAIL --password=PASS --name=NAME`
+
+## Agent Instructions
+
+Comprehensive documentation for each agent team member:
+
+- **Frontend Agent:** [docs/frontend/agent-instructions.md](../docs/frontend/agent-instructions.md)
+  - React + Tailwind CSS patterns, dark mode, API integration, auth flow
+- **Backend Agent:** [docs/backend/agent-instructions.md](../docs/backend/agent-instructions.md)
+  - AWS Lambda handlers, Prisma ORM, JWT auth, media uploads
+- **DevOps Agent:** [docs/devops/agent-instructions.md](../docs/devops/agent-instructions.md)
+  - AWS deployment, infrastructure overview, common issues
+- **Database Agent:** [docs/database/agent-instructions.md](../docs/database/agent-instructions.md)
+  - PostgreSQL operations, Prisma migrations, schema reference
+- **Testing Agent:** [docs/testing/agent-instructions.md](../docs/testing/agent-instructions.md)
+  - API testing patterns, E2E testing with Playwright
+- **Deployment Runbook:** [docs/ops/DEPLOYMENT_RUNBOOK.md](../docs/ops/DEPLOYMENT_RUNBOOK.md)
+  - Step-by-step deployment guide, troubleshooting, rollback procedures

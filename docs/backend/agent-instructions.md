@@ -394,3 +394,194 @@ When requirements are unclear, ask:
 - "What should happen if the resource doesn't exist?"
 - "Are there authorization requirements?"
 - "Should this send notifications?"
+
+## DATABASE_URL PATTERN
+
+The DATABASE_URL environment variable format for connecting to AWS RDS PostgreSQL:
+
+```
+postgresql://USER:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+```
+
+**IMPORTANT**: Never include actual credentials in code or docs. Use environment variables.
+
+### Setting DATABASE_URL
+```powershell
+# PowerShell
+$env:DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+
+# Bash
+export DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+```
+**Note:** Replace `<USERNAME>` and `<PASSWORD>` with your actual database credentials.
+
+## PRISMA LAYER BUILD PROCESS FOR PRISMA 6.X
+
+Reference the `serverless/scripts/build-prisma-layer.ps1` script for building the Prisma Lambda layer.
+
+### Key Points for Prisma 6.x
+- Prisma 6.x uses `default.js` file structure (not `default/index.js`)
+- Required binary: `libquery_engine-rhel-openssl-3.0.x.so.node`
+- **ALWAYS** run `npx prisma generate` before building the layer
+
+### Build Steps
+```powershell
+cd serverless
+
+# 1. Generate Prisma client
+npx prisma generate
+
+# 2. Build the layer
+.\scripts\build-prisma-layer.ps1
+```
+
+### Verify Layer Contents
+The layer should contain:
+- `nodejs/node_modules/.prisma/client/`
+  - `default.js` (Prisma 6.x format)
+  - `libquery_engine-rhel-openssl-3.0.x.so.node` (Linux binary for Lambda)
+- `nodejs/node_modules/@prisma/client/`
+
+## CLOUDFORMATION RESOURCE LIMIT
+
+**Current count: ~451/500 resources**
+
+CloudFormation has a 500 resource limit per stack. If adding new Lambda functions, be aware of this constraint.
+
+### Solutions When Approaching Limit
+1. **Remove unused internal endpoints** - Audit serverless.yml for endpoints no longer needed
+2. **Split into multiple CloudFormation stacks** - Create separate stacks for different domains
+3. **Use nested stacks** - Reference child stacks from parent stack
+
+### Checking Resource Count
+```bash
+aws cloudformation describe-stack-resources --stack-name project-valine-prod | jq '.StackResources | length'
+```
+
+## JWT AUTHENTICATION PATTERN
+
+Reference existing `serverless/src/utils/tokenManager.js` for JWT handling.
+
+### Extract User ID from Event
+```javascript
+import { getUserIdFromEvent } from '../utils/tokenManager.js';
+
+export const handler = async (event) => {
+  const userId = getUserIdFromEvent(event);
+  
+  if (!userId) {
+    return {
+      statusCode: 401,
+      headers,
+      body: JSON.stringify({ error: 'Unauthorized' }),
+    };
+  }
+  
+  // User is authenticated, proceed with request
+  // userId contains the authenticated user's ID
+};
+```
+
+### Token Flow
+1. **Access Token** - Short-lived (30 minutes), set as HTTP-only cookie
+2. **Refresh Token** - Long-lived (7 days), set as HTTP-only cookie
+3. Tokens are automatically extracted from cookies or Authorization header
+4. When access token expires, client calls `/auth/refresh` to get new tokens
+
+### Token Manager Functions
+```javascript
+import {
+  generateAccessToken,    // Create access JWT
+  generateRefreshToken,   // Create refresh JWT
+  verifyToken,            // Verify and decode JWT
+  extractToken,           // Get token from cookies/header
+  getUserIdFromEvent,     // Get user ID from Lambda event
+  generateAccessTokenCookie,  // Create Set-Cookie header for access token
+  generateRefreshTokenCookie, // Create Set-Cookie header for refresh token
+  generateClearCookieHeaders, // Create headers to clear auth cookies
+} from '../utils/tokenManager.js';
+```
+
+## MEDIA UPLOAD FLOW (S3 PRESIGNED URLS)
+
+Reference `serverless/src/handlers/media.js` for media upload handling.
+
+### Upload Flow
+1. **Client requests upload URL:**
+   ```javascript
+   POST /profiles/{profileId}/media/upload-url
+   Body: { type: "image"|"video"|"pdf", title?: string, mediaType?: "AVATAR"|"BANNER"|"GALLERY"|"POST" }
+   ```
+
+2. **Server returns presigned URL and media record ID:**
+   ```javascript
+   Response: {
+     mediaId: "uuid",
+     uploadUrl: "https://s3.amazonaws.com/...",
+     s3Key: "profiles/{profileId}/media/...",
+     profileId: "uuid"
+   }
+   ```
+
+3. **Client uploads file directly to S3:**
+   ```javascript
+   await fetch(uploadUrl, {
+     method: 'PUT',
+     body: file,
+     headers: { 'Content-Type': file.type }
+   });
+   ```
+
+4. **Client marks upload as complete:**
+   ```javascript
+   POST /profiles/{profileId}/media/complete
+   Body: { mediaId: "uuid", width?: number, height?: number, fileSize?: number }
+   ```
+
+### Special Media Types
+- `AVATAR` - Automatically updates `user.avatar` on complete
+- `BANNER` - Automatically updates `profile.bannerUrl` on complete
+- `GALLERY` - General profile media
+- `POST` - Media attached to posts
+
+## DEPLOYMENT CHECKLIST
+
+Before deploying to production:
+
+- [ ] On `main` branch with all changes committed
+- [ ] Run `npm ci` in serverless directory
+- [ ] Run `npx prisma generate`
+- [ ] Build Prisma layer: `.\scripts\build-prisma-layer.ps1`
+- [ ] Set environment variables: DATABASE_URL, JWT_SECRET
+- [ ] Deploy: `npx serverless deploy --stage prod --region us-west-2`
+- [ ] Verify: Check /health endpoint
+
+### Deploy Commands
+```powershell
+cd serverless
+npm ci
+npx prisma generate
+.\scripts\build-prisma-layer.ps1
+
+# Set environment variables
+$env:DATABASE_URL="postgresql://..."
+$env:JWT_SECRET="your-secret"
+
+# Deploy
+npx serverless deploy --stage prod --region us-west-2
+
+# Verify
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
+```
+
+### Post-Deployment Verification
+1. Check `/health` endpoint returns 200
+2. Test `/auth/login` with test credentials
+3. Verify database connection via API response
+4. Check CloudWatch logs for errors
+
+## PRODUCTION URLS
+
+- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **Frontend:** https://dkmxy676d3vgc.cloudfront.net
+- **Database:** project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com
