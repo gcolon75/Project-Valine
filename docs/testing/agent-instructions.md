@@ -13,7 +13,8 @@ $api = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 
 # Login
 $body = @{ email = "test@example.com"; password = "Test123!" } | ConvertTo-Json
-$response = Invoke-RestMethod -Uri "$api/auth/login" -Method POST -Body $body -ContentType "application/json" -SessionVariable session
+$response = Invoke-RestMethod -Uri "$api/auth/login" -Method POST -Body $body -ContentType "application/json"
+# Note: Token is set via HTTP-only cookie; for testing purposes, you may need to extract from response
 $token = $response.token
 
 # Authenticated request

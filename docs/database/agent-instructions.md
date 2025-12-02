@@ -34,7 +34,7 @@ import pg from 'pg';
 const { Client } = pg;
 const c = new Client({
   connectionString: 'postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres',
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: true }
 });
 c.connect()
   .then(() => c.query('YOUR SQL HERE'))
@@ -43,7 +43,7 @@ c.connect()
 "@ | Out-File -Encoding utf8 query.js
 node query.js
 ```
-**Note:** Replace `<USERNAME>` and `<PASSWORD>` with your actual database credentials.
+**Note:** Replace `<USERNAME>` and `<PASSWORD>` with your actual database credentials. The `ssl: { rejectUnauthorized: true }` setting validates SSL certificates (recommended for production). Use `rejectUnauthorized: false` only for local testing with self-signed certificates.
 
 ### Add Column to Existing Table
 ```sql

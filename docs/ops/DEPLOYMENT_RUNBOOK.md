@@ -1,11 +1,18 @@
 # Project Valine - Deployment Runbook
 
 ## Quick Reference
-| Resource | URL |
-|----------|-----|
+| Resource | Value |
+|----------|-------|
 | Frontend | https://dkmxy676d3vgc.cloudfront.net |
 | API | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
 | DB Host | project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com |
+| S3 Bucket | project-valine-frontend-prod |
+| AWS Region | us-west-2 |
+
+**Note:** To find your CloudFront Distribution ID, run:
+```powershell
+aws cloudfront list-distributions --query "DistributionList.Items[?contains(DomainName, 'cloudfront.net')].{Id:Id,DomainName:DomainName}" --output table
+```
 
 ## Pre-Deployment Checklist
 - [ ] On `main` branch
