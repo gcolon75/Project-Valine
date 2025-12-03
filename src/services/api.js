@@ -95,6 +95,7 @@ const getCsrfToken = () => {
 /**
  * Get access token from cookie or localStorage
  * Reads access_token cookie first, falls back to localStorage auth_token
+ * Note: This function is intentionally duplicated in authService.js for export
  * @returns {string|null}
  */
 const getAccessToken = () => {

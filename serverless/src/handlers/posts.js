@@ -2,16 +2,25 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 /**
  * Structured log helper for observability
+ * Limits data size in production to prevent excessive logging
  * @param {string} event - Event name
  * @param {object} data - Log data
  */
 const log = (event, data) => {
+  // In production, sanitize sensitive data and limit stack trace exposure
+  const sanitizedData = { ...data };
+  if (isProduction && sanitizedData.stack) {
+    // Only include first line of stack in production
+    sanitizedData.stack = sanitizedData.stack.split('\n')[0];
+  }
   console.log(JSON.stringify({
     timestamp: new Date().toISOString(),
     event,
-    ...data
+    ...sanitizedData
   }));
 };
 
