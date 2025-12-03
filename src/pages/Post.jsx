@@ -228,10 +228,10 @@ export default function Post() {
       const postPayload = {
         content: formData.description || formData.title,
         authorId: user.id,
-        tags: formData.tags,
+        tags: Array.isArray(formData.tags) ? formData.tags : [],
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
-        visibility: formData.visibility, // Post visibility: PUBLIC or FOLLOWERS
+        visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS
       };
       
       // Call API to create post
@@ -241,8 +241,25 @@ export default function Post() {
       navigate('/dashboard');
     } catch (error) {
       console.error('Create post error:', error);
-      setErrors({ submit: error.message || 'Failed to create post' });
-      toast.error(error.message || 'Failed to create post');
+      
+      // Handle specific HTTP error codes with helpful messages
+      const status = error?.response?.status;
+      let errorMessage = 'Failed to create post';
+      
+      if (status === 401) {
+        errorMessage = 'Please log in to create a post';
+      } else if (status === 400) {
+        errorMessage = error?.response?.data?.message || 'Invalid post data. Please check your inputs.';
+      } else if (status === 403) {
+        errorMessage = 'You do not have permission to create this post';
+      } else if (status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

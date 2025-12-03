@@ -1,26 +1,72 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
+import { getUserIdFromEvent } from '../utils/tokenManager.js';
+
+/**
+ * Structured log helper for observability
+ * @param {string} event - Event name
+ * @param {object} data - Log data
+ */
+const log = (event, data) => {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    event,
+    ...data
+  }));
+};
 
 export const createPost = async (event) => {
+  const route = 'POST /posts';
+  
   try {
+    // Check authentication first
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      log('auth_failure', { route, reason: 'missing_or_invalid_token' });
+      return error('Unauthorized - valid access token required', 401);
+    }
+    
     let body;
     try {
       body = JSON.parse(event.body || '{}');
     } catch (parseError) {
+      log('parse_error', { route, userId: authUserId, error: parseError.message });
       return error('Invalid JSON in request body', 400);
     }
+    
     const { content, media, authorId, mediaId, tags, visibility } = body;
     
+    // Log incoming request (payload size for observability)
+    log('create_post_request', { 
+      route, 
+      userId: authUserId,
+      payloadSize: event.body?.length || 0,
+      hasMediaId: !!mediaId,
+      tagCount: Array.isArray(tags) ? tags.length : 0,
+      visibility: visibility || 'PUBLIC'
+    });
+    
     if (!content || !authorId) {
+      log('validation_error', { route, userId: authUserId, reason: 'missing_required_fields' });
       return error('content and authorId are required', 400);
+    }
+    
+    // Verify the authenticated user matches the authorId
+    if (authUserId !== authorId) {
+      log('auth_mismatch', { route, userId: authUserId, authorId });
+      return error('Forbidden - you can only create posts for yourself', 403);
     }
 
     // Validate visibility if provided
     const validVisibilities = ['PUBLIC', 'FOLLOWERS'];
     const postVisibility = visibility || 'PUBLIC';
     if (!validVisibilities.includes(postVisibility)) {
+      log('validation_error', { route, userId: authUserId, reason: 'invalid_visibility', value: visibility });
       return error('visibility must be either PUBLIC or FOLLOWERS', 400);
     }
+    
+    // Validate tags is an array if provided
+    const safeTags = Array.isArray(tags) ? tags : [];
 
     const prisma = getPrisma();
 
@@ -35,11 +81,13 @@ export const createPost = async (event) => {
       });
 
       if (!mediaRecord) {
+        log('media_not_found', { route, userId: authUserId, mediaId });
         return error('Media not found', 404);
       }
 
       // Verify media belongs to the author (via profile ownership)
       if (mediaRecord.profile.userId !== authorId) {
+        log('media_ownership_error', { route, userId: authUserId, mediaId });
         return error('Forbidden - media does not belong to user', 403);
       }
       
@@ -52,7 +100,7 @@ export const createPost = async (event) => {
       data: { 
         content, 
         media: media || [], 
-        tags: tags || [],
+        tags: safeTags,
         authorId,
         mediaId: mediaId || null,
         visibility: postVisibility,
@@ -67,8 +115,10 @@ export const createPost = async (event) => {
     // Include media attachment in response if present
     const responsePost = mediaAttachment ? { ...post, mediaAttachment } : post;
     
+    log('create_post_success', { route, userId: authUserId, postId: post.id });
     return json(responsePost, 201);
   } catch (e) {
+    log('create_post_error', { route, error: e.message, stack: e.stack });
     console.error(e);
     return error('Server error: ' + e.message, 500);
   }

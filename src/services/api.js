@@ -83,7 +83,7 @@ export const apiClient = axios.create({
  */
 const getCsrfToken = () => {
   const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
+  for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
     if (name === 'XSRF-TOKEN') {
       return decodeURIComponent(value);
@@ -92,16 +92,33 @@ const getCsrfToken = () => {
   return null;
 };
 
+/**
+ * Get access token from cookie or localStorage
+ * Reads access_token cookie first, falls back to localStorage auth_token
+ * @returns {string|null}
+ */
+const getAccessToken = () => {
+  // First, try to read from access_token cookie (non-HttpOnly)
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'access_token' && value) {
+      return decodeURIComponent(value);
+    }
+  }
+  // Fall back to localStorage
+  return localStorage.getItem('auth_token');
+};
+
 // Request interceptor - add auth token, CSRF protection, and path normalization
 apiClient.interceptors.request.use((config) => {
-  // Add Authorization header for backward compatibility (when not using cookies)
-  const enableAuth = import.meta.env.VITE_ENABLE_AUTH === 'true';
   const csrfEnabled = import.meta.env.VITE_CSRF_ENABLED === 'true';
   const stripLegacyPrefix = import.meta.env.VITE_API_STRIP_LEGACY_API_PREFIX === 'true';
   
-  if (!enableAuth) {
-    const token = localStorage.getItem('auth_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Always attach Authorization header from access_token cookie or localStorage
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   
   // Strip legacy /api prefix if enabled
@@ -115,11 +132,9 @@ apiClient.interceptors.request.use((config) => {
   // Add CSRF protection for state-changing requests
   if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
     // Read XSRF-TOKEN cookie and send as X-CSRF-Token header
-    if (csrfEnabled || enableAuth) {
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        config.headers['X-CSRF-Token'] = csrfToken;
-      }
+    const csrfToken = getCsrfToken();
+    if (csrfToken && csrfEnabled) {
+      config.headers['X-CSRF-Token'] = csrfToken;
     }
     
     // Also add X-Requested-With for additional protection
