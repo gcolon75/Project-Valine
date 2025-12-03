@@ -162,7 +162,7 @@ describe('PostCard', () => {
   });
 
   it('should render request access button for gated posts', () => {
-    const post = createMockPost({ visibility: 'on-request' });
+    const post = createMockPost({ visibility: 'on-request', mediaId: 'media-123' });
     renderPostCard(post);
 
     expect(screen.getByText('Request Access')).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe('PostCard', () => {
 
   it('should handle request access button click', async () => {
     const user = userEvent.setup();
-    const post = createMockPost({ id: 'post-789', visibility: 'on-request' });
+    const post = createMockPost({ id: 'post-789', visibility: 'on-request', mediaId: 'media-123' });
 
     renderPostCard(post);
 
@@ -190,7 +190,7 @@ describe('PostCard', () => {
   });
 
   it('should show blurred preview for gated content', () => {
-    const post = createMockPost({ visibility: 'on-request' });
+    const post = createMockPost({ visibility: 'on-request', mediaId: 'media-123' });
     renderPostCard(post);
 
     // Should show access required text

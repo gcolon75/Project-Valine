@@ -99,19 +99,21 @@ model Audition {
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
-  media     String[]
-  tags      String[]
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  mediaId   String?  // NEW: links to Media.id when a post attaches uploaded media
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  content       String   @db.Text
+  media         String[]
+  tags          String[]
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mediaId       String?  // Links to Media.id when a post attaches uploaded media
+  mediaAttached Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
+  @@index([mediaId])
   @@map("posts")
 }
 
@@ -334,6 +336,7 @@ model Media {
   updatedAt       DateTime @updatedAt
 
   reelRequests ReelRequest[]
+  posts        Post[]
 
   @@index([profileId])
   @@index([type])

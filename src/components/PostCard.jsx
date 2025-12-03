@@ -11,15 +11,19 @@ export default function PostCard({ post }) {
   const { likePost, toggleSave } = useFeed();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [accessRequested, setAccessRequested] = useState(false);
-  const [hasAccess, setHasAccess] = useState(post.visibility === "public" || post.hasAccess);
+  const [accessRequested, setAccessRequested] = useState(post.accessRequestStatus === 'pending');
+  const [hasAccess, setHasAccess] = useState(
+    post.visibility === "public" || 
+    post.hasAccess || 
+    post.accessRequestStatus === 'approved'
+  );
   const [downloading, setDownloading] = useState(false);
   
-  // Check if content is gated
-  const isGated = post.visibility === "on-request" || post.visibility === "private";
+  // Check if content is gated (has a mediaId and is not public)
+  const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
   
-  // Image fallback: use post image if available, otherwise use placeholder
-  const imageUrl = post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
+  // Image fallback: use mediaAttachment url, post image, or placeholder
+  const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
 
   // Handle request access
   const handleRequestAccess = async () => {
@@ -49,12 +53,18 @@ export default function PostCard({ post }) {
 
     setDownloading(true);
     try {
-      const { downloadUrl, filename } = await getMediaAccessUrl(post.mediaId, user?.id);
+      const response = await getMediaAccessUrl(post.mediaId, user?.id);
+      // Backend returns viewUrl, posterUrl. Use viewUrl for download.
+      const downloadUrl = response.viewUrl || response.downloadUrl;
+      
+      if (!downloadUrl) {
+        throw new Error('No download URL available');
+      }
       
       // Create download link
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = filename || `${post.title || "download"}`;
+      link.download = post.title || "download";
       link.target = "_blank";
       document.body.appendChild(link);
       link.click();
