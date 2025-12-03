@@ -101,10 +101,11 @@ model Audition {
 model Post {
   id        String   @id @default(uuid())
   content   String   @db.Text
-  media     String[] // Array of S3 keys or URLs
-  tags      String[] // PR #262: Curated tags (max 5)
+  media     String[]
+  tags      String[]
   authorId  String
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mediaId   String?  // NEW: links to Media.id when a post attaches uploaded media
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
