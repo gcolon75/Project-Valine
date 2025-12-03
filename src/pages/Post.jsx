@@ -17,9 +17,8 @@ const CONTENT_TYPES = [
 ];
 
 const VISIBILITY_OPTIONS = [
-  { value: 'public', label: 'Public', description: 'Anyone can view' },
-  { value: 'on-request', label: 'On Request', description: 'Visible after requesting access' },
-  { value: 'private', label: 'Private', description: 'Only you can view' },
+  { value: 'PUBLIC', label: 'Public', description: 'Anyone can view' },
+  { value: 'FOLLOWERS', label: 'Followers Only', description: 'Only your followers can view' },
 ];
 
 // Accepted file types per content type
@@ -55,7 +54,7 @@ export default function Post() {
     title: '',
     description: '',
     tags: [],
-    visibility: 'public',
+    visibility: 'PUBLIC',
   });
   
   const [errors, setErrors] = useState({});
@@ -232,6 +231,7 @@ export default function Post() {
         tags: formData.tags,
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
+        visibility: formData.visibility, // Post visibility: PUBLIC or FOLLOWERS
       };
       
       // Call API to create post
