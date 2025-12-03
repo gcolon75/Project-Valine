@@ -113,6 +113,25 @@ export const getAuthToken = () => {
 };
 
 /**
+ * Get access token from cookie or localStorage
+ * Reads access_token cookie first, falls back to localStorage auth_token
+ * Note: This function is intentionally duplicated in api.js to avoid circular imports
+ * @returns {string|null}
+ */
+export const getAccessToken = () => {
+  // First, try to read from access_token cookie (non-HttpOnly)
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'access_token' && value) {
+      return decodeURIComponent(value);
+    }
+  }
+  // Fall back to localStorage
+  return localStorage.getItem('auth_token');
+};
+
+/**
  * Verify email with token
  * @param {string} token - Email verification token from URL
  * @returns {Promise<{user}>} User data with verified email
