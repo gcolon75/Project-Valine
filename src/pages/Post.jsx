@@ -1,8 +1,13 @@
 // src/pages/Post.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import TagSelector from '../components/forms/TagSelector';
 import { validateTags } from '../constants/tags';
+import { useAuth } from '../context/AuthContext';
+import { createPost } from '../services/postService';
+import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
 
 const CONTENT_TYPES = [
   { value: 'script', label: 'Script', icon: '📝' },
@@ -13,13 +18,37 @@ const CONTENT_TYPES = [
 
 const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'Public', description: 'Anyone can view' },
-  { value: 'on-request', label: 'On Request', description: 'Visible with link' },
+  { value: 'on-request', label: 'On Request', description: 'Access must be requested' },
   { value: 'private', label: 'Private', description: 'Only you can view' },
 ];
 
+// Accepted file types per content type
+const ACCEPTED_TYPES = {
+  script: '.pdf,.doc,.docx',
+  audition: '.mp4,.mov,.webm,.mp3,.wav',
+  reading: '.mp3,.wav,.m4a,.mp4',
+  reel: '.mp4,.mov,.webm',
+};
+
+// Max file sizes in MB
+const MAX_FILE_SIZES = {
+  script: 10,
+  audition: 500,
+  reading: 100,
+  reel: 500,
+};
+
 export default function Post() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Upload state
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedMediaId, setUploadedMediaId] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
   
   const [formData, setFormData] = useState({
     contentType: '',
@@ -37,6 +66,108 @@ export default function Post() {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+    // Reset file when content type changes
+    if (field === 'contentType') {
+      setSelectedFile(null);
+      setUploadedMediaId(null);
+      setUploadProgress(0);
+      setUploadError(null);
+    }
+  };
+
+  // Get media type for the API
+  const getMediaType = (contentType, file) => {
+    if (!file) return 'image';
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    // PDFs and documents
+    if (['pdf', 'doc', 'docx'].includes(extension)) return 'pdf';
+    // Video files
+    if (['mp4', 'mov', 'webm'].includes(extension)) return 'video';
+    // Audio files
+    if (['mp3', 'wav', 'm4a'].includes(extension)) return 'audio';
+    // Images
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image';
+    
+    return 'pdf'; // Default fallback
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = MAX_FILE_SIZES[formData.contentType] || 100;
+    
+    // Validate file size
+    if (file.size > maxSize * 1024 * 1024) {
+      setUploadError(`File size must be less than ${maxSize}MB`);
+      return;
+    }
+
+    setSelectedFile(file);
+    setUploadError(null);
+    setUploadedMediaId(null);
+  };
+
+  // Upload file to S3
+  const handleFileUpload = async () => {
+    if (!selectedFile || !user?.profileId) {
+      // If user doesn't have profileId, try using user id
+      const profileId = user?.profileId || user?.id;
+      if (!profileId) {
+        setUploadError('Profile not found. Please complete your profile first.');
+        return;
+      }
+    }
+
+    const profileId = user?.profileId || user?.id;
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    try {
+      const mediaType = getMediaType(formData.contentType, selectedFile);
+      
+      // Step 1: Get presigned upload URL
+      setUploadProgress(5);
+      const { mediaId, uploadUrl } = await getUploadUrl(
+        profileId,
+        mediaType,
+        formData.title || selectedFile.name,
+        formData.description,
+        formData.visibility
+      );
+
+      // Step 2: Upload to S3
+      await uploadToS3(uploadUrl, selectedFile, mediaType, (progress) => {
+        setUploadProgress(5 + Math.floor(progress * 0.85)); // 5-90%
+      });
+
+      // Step 3: Complete upload
+      setUploadProgress(95);
+      await completeUpload(profileId, mediaId, {
+        fileSize: selectedFile.size,
+      });
+
+      setUploadProgress(100);
+      setUploadedMediaId(mediaId);
+      toast.success('File uploaded successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError(error.message || 'Upload failed. Please try again.');
+      toast.error('Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Remove selected file
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setUploadedMediaId(null);
+    setUploadProgress(0);
+    setUploadError(null);
   };
   
   const validateForm = () => {
@@ -82,16 +213,34 @@ export default function Post() {
       return;
     }
     
+    // Check if user is authenticated
+    if (!user?.id) {
+      setErrors({ submit: 'Please log in to create a post' });
+      toast.error('Please log in to create a post');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // TODO: Replace with actual API call
-      console.log('Submitting post:', formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare post data
+      const postPayload = {
+        content: formData.description || formData.title,
+        authorId: user.id,
+        tags: formData.tags,
+        media: [], // Legacy field - array of media URLs
+        mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
+      };
+      
+      // Call API to create post
+      await createPost(postPayload);
+      
+      toast.success('Post created successfully!');
       navigate('/dashboard');
     } catch (error) {
+      console.error('Create post error:', error);
       setErrors({ submit: error.message || 'Failed to create post' });
+      toast.error(error.message || 'Failed to create post');
     } finally {
       setIsSubmitting(false);
     }
@@ -187,6 +336,133 @@ export default function Post() {
             </span>
           </div>
         </div>
+
+        {/* File Upload - Only show when content type is selected */}
+        {formData.contentType && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              Attach File
+            </label>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">
+              Upload your {formData.contentType} file (max {MAX_FILE_SIZES[formData.contentType]}MB)
+            </p>
+
+            {/* File not selected yet */}
+            {!selectedFile && !uploadedMediaId && (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors bg-neutral-50 dark:bg-neutral-800/50">
+                <div className="flex flex-col items-center justify-center py-4">
+                  <Upload className="w-8 h-8 text-neutral-400 mb-2" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Accepted: {ACCEPTED_TYPES[formData.contentType]}
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept={ACCEPTED_TYPES[formData.contentType]}
+                  onChange={handleFileSelect}
+                />
+              </label>
+            )}
+
+            {/* File selected but not uploaded */}
+            {selectedFile && !uploadedMediaId && !isUploading && (
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {selectedFile.type.startsWith('video/') ? (
+                      <Film className="w-8 h-8 text-emerald-500" />
+                    ) : selectedFile.type.startsWith('audio/') ? (
+                      <FileText className="w-8 h-8 text-emerald-500" />
+                    ) : selectedFile.type === 'application/pdf' ? (
+                      <FileText className="w-8 h-8 text-emerald-500" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-emerald-500" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate max-w-xs">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleFileUpload}
+                      className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition"
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveFile}
+                      className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition"
+                      aria-label="Remove file"
+                    >
+                      <X className="w-5 h-5 text-neutral-500" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Uploading progress */}
+            {isUploading && (
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">Uploading...</span>
+                  <span className="text-sm font-medium text-emerald-600">{uploadProgress}%</span>
+                </div>
+                <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Upload complete */}
+            {uploadedMediaId && (
+              <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-500" />
+                    <div>
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        File uploaded successfully
+                      </p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {selectedFile?.name}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-lg transition"
+                    aria-label="Remove file"
+                  >
+                    <X className="w-5 h-5 text-emerald-600" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload error */}
+            {uploadError && (
+              <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{uploadError}</p>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Tags */}
         <div>
