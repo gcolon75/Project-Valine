@@ -409,7 +409,11 @@ export default function Profile() {
                 {displayData.posts.map(post => (
                   <div key={post.id} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 p-4">
                     <div className="flex items-start gap-3 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10 flex-shrink-0" />
+                      <div 
+                        className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10 flex-shrink-0" 
+                        aria-label="Author avatar" 
+                        role="img"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
                           {displayData.displayName || displayData.username}

@@ -3,7 +3,13 @@ import { json, error } from '../utils/headers.js';
 
 export const createPost = async (event) => {
   try {
-    const { content, media, authorId, mediaId, tags, visibility } = JSON.parse(event.body || '{}');
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      return error('Invalid JSON in request body', 400);
+    }
+    const { content, media, authorId, mediaId, tags, visibility } = body;
     
     if (!content || !authorId) {
       return error('content and authorId are required', 400);
