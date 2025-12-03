@@ -1,7 +1,7 @@
 // src/pages/Post.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TagSelector from '../components/forms/TagSelector';
 import { validateTags } from '../constants/tags';
@@ -18,7 +18,7 @@ const CONTENT_TYPES = [
 
 const VISIBILITY_OPTIONS = [
   { value: 'public', label: 'Public', description: 'Anyone can view' },
-  { value: 'on-request', label: 'On Request', description: 'Access must be requested' },
+  { value: 'on-request', label: 'On Request', description: 'Visible after requesting access' },
   { value: 'private', label: 'Private', description: 'Only you can view' },
 ];
 
@@ -112,16 +112,18 @@ export default function Post() {
 
   // Upload file to S3
   const handleFileUpload = async () => {
-    if (!selectedFile || !user?.profileId) {
-      // If user doesn't have profileId, try using user id
-      const profileId = user?.profileId || user?.id;
-      if (!profileId) {
-        setUploadError('Profile not found. Please complete your profile first.');
-        return;
-      }
+    if (!selectedFile) {
+      setUploadError('Please select a file first.');
+      return;
+    }
+    
+    // Get profileId, fallback to user id
+    const profileId = user?.profileId || user?.id;
+    if (!profileId) {
+      setUploadError('Profile not found. Please complete your profile first.');
+      return;
     }
 
-    const profileId = user?.profileId || user?.id;
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
@@ -376,7 +378,7 @@ export default function Post() {
                     {selectedFile.type.startsWith('video/') ? (
                       <Film className="w-8 h-8 text-emerald-500" />
                     ) : selectedFile.type.startsWith('audio/') ? (
-                      <FileText className="w-8 h-8 text-emerald-500" />
+                      <Mic className="w-8 h-8 text-emerald-500" />
                     ) : selectedFile.type === 'application/pdf' ? (
                       <FileText className="w-8 h-8 text-emerald-500" />
                     ) : (
