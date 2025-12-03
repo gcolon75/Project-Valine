@@ -107,6 +107,7 @@ model Post {
   author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   mediaId       String?  // Links to Media.id when a post attaches uploaded media
   mediaAttached Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  visibility    String   @default("PUBLIC") // PUBLIC or FOLLOWERS
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -286,9 +287,10 @@ model Profile {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  media   Media[]
-  credits Credit[]
-  links   ProfileLink[]
+  media     Media[]
+  credits   Credit[]
+  links     ProfileLink[]
+  education Education[]
 
   @@index([vanityUrl])
   @@index([userId])
@@ -314,6 +316,22 @@ model ProfileLink {
   @@index([profileId])
   @@index([userId, position])
   @@map("profile_links")
+}
+
+model Education {
+  id           String   @id @default(uuid())
+  profileId    String
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  institution  String
+  program      String
+  startYear    Int?
+  endYear      Int?
+  achievements String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([profileId])
+  @@map("education")
 }
 
 model Media {

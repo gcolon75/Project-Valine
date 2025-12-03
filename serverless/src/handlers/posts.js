@@ -3,10 +3,17 @@ import { json, error } from '../utils/headers.js';
 
 export const createPost = async (event) => {
   try {
-    const { content, media, authorId, mediaId } = JSON.parse(event.body || '{}');
+    const { content, media, authorId, mediaId, tags, visibility } = JSON.parse(event.body || '{}');
     
     if (!content || !authorId) {
       return error('content and authorId are required', 400);
+    }
+
+    // Validate visibility if provided
+    const validVisibilities = ['PUBLIC', 'FOLLOWERS'];
+    const postVisibility = visibility || 'PUBLIC';
+    if (!validVisibilities.includes(postVisibility)) {
+      return error('visibility must be either PUBLIC or FOLLOWERS', 400);
     }
 
     const prisma = getPrisma();
@@ -39,8 +46,10 @@ export const createPost = async (event) => {
       data: { 
         content, 
         media: media || [], 
+        tags: tags || [],
         authorId,
         mediaId: mediaId || null,
+        visibility: postVisibility,
       },
       include: { 
         author: { 

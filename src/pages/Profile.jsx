@@ -7,7 +7,7 @@ import { followUser, sendConnectionRequest, unfollowUser, getConnectionStatus } 
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
-import PasswordConfirmModal from '../components/PasswordConfirmModal';
+import PostCard from '../components/PostCard';
 import { Button, Card } from '../components/ui';
 import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -69,7 +69,6 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   
   // Connection/Follow states
   const [connectionStatus, setConnectionStatus] = useState({
@@ -250,7 +249,7 @@ export default function Profile() {
               {isOwnProfile ? (
                 <>
                   <Button 
-                    onClick={() => setShowPasswordModal(true)}
+                    onClick={() => navigate('/profile-edit')}
                     variant="primary"
                     size="md"
                   >
@@ -353,15 +352,15 @@ export default function Profile() {
           {/* Stats */}
           <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.postsCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.posts || displayData.postsCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Posts</span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.followersCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.followers || displayData.followersCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Followers</span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData.followingCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.following || displayData.followingCount || 0}</span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Following</span>
             </div>
           </div>
@@ -376,7 +375,7 @@ export default function Profile() {
             onClick={() => setActiveTab('posts')}
             icon={FileText}
             label="Posts"
-            count={displayData.postsCount}
+            count={displayData._count?.posts || displayData.postsCount}
           />
           <ProfileTab
             active={activeTab === 'reels'}
@@ -405,19 +404,41 @@ export default function Profile() {
       <div className="space-y-6">
         {activeTab === 'posts' && (
           <Card title="Posts" padding="default">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {displayData.posts && displayData.posts.length > 0 ? (
-                displayData.posts.slice(0, 6).map(post => (
-                  <div key={post.id} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 p-3">
+            {displayData.posts && displayData.posts.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                {displayData.posts.map(post => (
+                  <div key={post.id} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 p-4">
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                          {displayData.displayName || displayData.username}
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
                     <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{post.content}</p>
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {post.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className="px-2 py-0.5 bg-[#0CCE6B]/10 text-[#0CCE6B] rounded-full text-xs">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))
-              ) : (
-                [1,2,3,4,5,6].map(i => (
-                  <div key={i} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 aspect-video" aria-hidden="true" />
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={FileText}
+                title="No posts yet"
+                description="Posts shared by this user will appear here"
+              />
+            )}
           </Card>
         )}
         
@@ -449,9 +470,15 @@ export default function Profile() {
                   {displayData.headline}
                 </p>
               )}
-              <p className="text-neutral-700 dark:text-neutral-300">
-                {displayData.bio || 'No bio available'}
-              </p>
+              {displayData.bio ? (
+                <p className="text-neutral-700 dark:text-neutral-300">
+                  {displayData.bio}
+                </p>
+              ) : !displayData.headline ? (
+                <p className="text-neutral-500 dark:text-neutral-400 italic">
+                  No bio available
+                </p>
+              ) : null}
             </Card>
 
             {/* Roles & Skills */}
@@ -565,18 +592,6 @@ export default function Profile() {
           </div>
         )}
       </div>
-
-      {/* Password Confirmation Modal for Edit Profile */}
-      <PasswordConfirmModal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        onSuccess={() => {
-          setShowPasswordModal(false);
-          navigate('/profile-edit');
-        }}
-        title="Confirm Your Identity"
-        message="Please enter your password to access the profile editor."
-      />
     </div>
   );
 }
