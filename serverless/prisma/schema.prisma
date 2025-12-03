@@ -73,7 +73,7 @@ model Post {
   authorId  String
   mediaId   String?
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
@@ -90,7 +90,7 @@ model Reel {
   tags      String[]
   authorId  String
   createdAt DateTime   @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   bookmarks Bookmark[]
   comments  Comment[]
   likes     Like[]
@@ -108,7 +108,7 @@ model Comment {
   reelId    String
   authorId  String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
@@ -214,7 +214,7 @@ model ConnectionRequest {
   status     String   @default("pending")
   message    String?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
   receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
@@ -492,7 +492,7 @@ model auditions {
   summary   String
   hostId    String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   users     User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
@@ -522,7 +522,7 @@ model profile_links {
   type      String
   position  Int      @default(0)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   profiles  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -537,7 +537,7 @@ model scripts {
   summary   String
   authorId  String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   users     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
