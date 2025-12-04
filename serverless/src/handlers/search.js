@@ -143,6 +143,7 @@ export const searchUsers = async (event) => {
         role: true,
         createdAt: true,
       },
+      distinct: ['id'],
       orderBy: { createdAt: 'desc' },
     });
 
