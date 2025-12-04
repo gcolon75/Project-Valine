@@ -14,7 +14,7 @@ import React from 'react';
  */
 const Footer = () => (
   <footer className="py-8 text-center text-sm text-neutral-700 dark:text-neutral-300">
-    &copy; {new Date().getFullYear()} Joint. All rights reserved.
+    &copy; {new Date().getFullYear()} Project Valine. All rights reserved. Created by Gabriel Colon &amp; Justin Valine.
   </footer>
 );
 

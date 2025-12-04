@@ -434,6 +434,12 @@ functions:
       - httpApi:
           path: /connections/status/{userId}
           method: get
+  unfollowUser:
+    handler: src/handlers/connections.unfollowUser
+    events:
+      - httpApi:
+          path: /connections/unfollow
+          method: post
 
   # ========== PROFILES ==========
   getProfileByVanity:

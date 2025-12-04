@@ -193,3 +193,50 @@ export const getConnectionStatus = async (event) => {
     return error(500, 'Server error: ' + e.message);
   }
 };
+
+/**
+ * POST /connections/unfollow
+ * Unfollow a user
+ * Body: { targetUserId: string }
+ */
+export const unfollowUser = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      return error(400, 'Invalid JSON in request body');
+    }
+
+    const { targetUserId } = body;
+    
+    if (!targetUserId) {
+      return error(400, 'targetUserId is required');
+    }
+
+    const prisma = getPrisma();
+
+    // Delete the connection request where current user is following target
+    const result = await prisma.connectionRequest.deleteMany({
+      where: {
+        senderId: userId,
+        receiverId: targetUserId,
+        status: 'accepted'
+      }
+    });
+
+    if (result.count === 0) {
+      return json({ success: false, message: 'No connection found to unfollow' });
+    }
+
+    return json({ success: true, message: 'Unfollowed successfully' });
+  } catch (e) {
+    console.error('Unfollow user error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
