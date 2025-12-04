@@ -143,7 +143,7 @@ export const searchUsers = async (event) => {
         role: true,
         createdAt: true,
       },
-      distinct: ['username'],  // Changed from ['id'] to ['username'] for proper deduplication
+      distinct: ['id'],  // Dedupe by id (username is already unique per DB constraint)
       orderBy: { createdAt: 'desc' },
     });
 

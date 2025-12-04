@@ -8,13 +8,37 @@ import EmptyState from "../components/EmptyState";
 import { Card, Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
 import { getFeedPosts } from "../services/postService";
+import { getMyProfile } from "../services/profileService";
+import { useAuth } from "../context/AuthContext";
 import { ALLOWED_TAGS } from "../constants/tags";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { posts } = useFeed();
   const [apiPosts, setApiPosts] = useState([]);
   const [loadingApi, setLoadingApi] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await getMyProfile();
+        setProfileData(data);
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    if (user) {
+      fetchProfile();
+    } else {
+      setLoadingProfile(false);
+    }
+  }, [user]);
 
   // Try to fetch posts from API, fallback to context posts
   useEffect(() => {
@@ -73,23 +97,32 @@ export default function Dashboard() {
           <aside className="hidden lg:block space-y-4">
             <Card padding="default">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-white/10" aria-hidden="true" />
+                {profileData?.avatar ? (
+                  <img 
+                    src={profileData.avatar} 
+                    alt={profileData.displayName || 'Profile'} 
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-white/10" aria-hidden="true" />
+                )}
                 <div>
-                  <div className="font-semibold text-neutral-900 dark:text-white">Your Name</div>
+                  <div className="font-semibold text-neutral-900 dark:text-white">
+                    {profileData?.displayName || user?.displayName || 'Your Name'}
+                  </div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                    Writer • Actor • Producer
+                    @{profileData?.username || user?.username || 'username'}
                   </div>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-3 text-center text-sm text-neutral-700 dark:text-neutral-300">
+              <div className="mt-4 grid grid-cols-2 text-center text-sm text-neutral-700 dark:text-neutral-300">
                 <div>
-                  12 <span className="block text-xs text-neutral-500">Posts</span>
+                  {profileData?.stats?.followers ?? 0}
+                  <span className="block text-xs text-neutral-500">Followers</span>
                 </div>
                 <div>
-                  48 <span className="block text-xs text-neutral-500">Saves</span>
-                </div>
-                <div>
-                  3.2k <span className="block text-xs text-neutral-500">Views</span>
+                  {profileData?.stats?.following ?? 0}
+                  <span className="block text-xs text-neutral-500">Following</span>
                 </div>
               </div>
             </Card>

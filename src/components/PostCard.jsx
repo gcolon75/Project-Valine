@@ -96,6 +96,19 @@ export default function PostCard({ post }) {
               {post.visibility === "private" ? "Private" : "On Request"}
             </span>
           )}
+          {/* Price badge */}
+          {post.price !== undefined && post.price !== null && (() => {
+            const priceValue = parseFloat(post.price);
+            return (
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                priceValue > 0 
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                  : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+              }`}>
+                {priceValue > 0 ? `$${priceValue.toFixed(2)}` : 'Free'}
+              </span>
+            );
+          })()}
           <span className="text-xs text-neutral-600 dark:text-neutral-400">
             {timeAgo(post.createdAt)}
           </span>
