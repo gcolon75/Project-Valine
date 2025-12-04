@@ -206,7 +206,14 @@ export const unfollowUser = async (event) => {
       return error(401, 'Unauthorized');
     }
 
-    const { targetUserId } = JSON.parse(event.body || '{}');
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      return error(400, 'Invalid JSON in request body');
+    }
+
+    const { targetUserId } = body;
     
     if (!targetUserId) {
       return error(400, 'targetUserId is required');
@@ -215,13 +222,17 @@ export const unfollowUser = async (event) => {
     const prisma = getPrisma();
 
     // Delete the connection request where current user is following target
-    await prisma.connectionRequest.deleteMany({
+    const result = await prisma.connectionRequest.deleteMany({
       where: {
         senderId: userId,
         receiverId: targetUserId,
         status: 'accepted'
       }
     });
+
+    if (result.count === 0) {
+      return json({ success: false, message: 'No connection found to unfollow' });
+    }
 
     return json({ success: true, message: 'Unfollowed successfully' });
   } catch (e) {
