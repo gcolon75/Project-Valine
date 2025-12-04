@@ -294,6 +294,18 @@ functions:
       - httpApi:
           path: /posts/{id}
           method: get
+  getAudioUploadUrl:
+    handler: src/handlers/posts.getAudioUploadUrl
+    events:
+      - httpApi:
+          path: /posts/audio-upload-url
+          method: post
+  requestPostAccess:
+    handler: src/handlers/posts.requestPostAccess
+    events:
+      - httpApi:
+          path: /posts/{id}/request
+          method: post
 
   # ========== SCRIPTS ==========
   listScripts:

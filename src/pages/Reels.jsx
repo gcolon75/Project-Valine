@@ -1,6 +1,6 @@
 // src/pages/Reels.jsx
 import { useState, useRef, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX, MoreVertical } from 'lucide-react';
+import { ChevronUp, ChevronDown, Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX, MoreVertical, X, Film } from 'lucide-react';
 import ReelsCommentModal from '../components/ReelsCommentModal';
 import { useApiFallback } from '../hooks/useApiFallback';
 import { getReels, toggleReelLike, toggleReelBookmark } from '../services/reelsService';
@@ -55,9 +55,82 @@ const FALLBACK_REELS = [
   },
 ];
 
+// Coming Soon Overlay Component
+function ComingSoonOverlay({ onClose }) {
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="coming-soon-title"
+    >
+      <div className="relative max-w-md mx-4 p-8 bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl border border-neutral-700 shadow-2xl text-center">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-colors"
+          aria-label="Close coming soon overlay"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        
+        {/* Icon */}
+        <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-gradient-to-br from-[#0CCE6B] to-emerald-600 flex items-center justify-center">
+          <Film className="w-10 h-10 text-white" />
+        </div>
+        
+        {/* Title */}
+        <h2 id="coming-soon-title" className="text-2xl font-bold text-white mb-3">
+          Coming Soon
+        </h2>
+        
+        {/* Subtitle */}
+        <p className="text-lg text-emerald-400 font-medium mb-4">
+          Video Reels
+        </p>
+        
+        {/* Description */}
+        <p className="text-neutral-400 mb-6">
+          Short-form video reels are coming to Valine! Share your voice acting demos, 
+          behind-the-scenes moments, and creative content in a whole new way.
+        </p>
+        
+        {/* Features Preview */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="p-3 bg-neutral-800/50 rounded-lg">
+            <span className="text-2xl mb-1 block">🎬</span>
+            <span className="text-sm text-neutral-300">Demo Reels</span>
+          </div>
+          <div className="p-3 bg-neutral-800/50 rounded-lg">
+            <span className="text-2xl mb-1 block">🎤</span>
+            <span className="text-sm text-neutral-300">Voice Clips</span>
+          </div>
+          <div className="p-3 bg-neutral-800/50 rounded-lg">
+            <span className="text-2xl mb-1 block">🎭</span>
+            <span className="text-sm text-neutral-300">Acting Shorts</span>
+          </div>
+          <div className="p-3 bg-neutral-800/50 rounded-lg">
+            <span className="text-2xl mb-1 block">✨</span>
+            <span className="text-sm text-neutral-300">BTS Content</span>
+          </div>
+        </div>
+        
+        {/* CTA Button */}
+        <button
+          onClick={onClose}
+          className="w-full py-3 bg-gradient-to-r from-[#0CCE6B] to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all"
+        >
+          Got it!
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Reels() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [showComingSoon, setShowComingSoon] = useState(true);
   const containerRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -186,6 +259,9 @@ export default function Reels() {
 
   return (
     <div className="fixed inset-0 bg-black">
+      {/* Coming Soon Overlay */}
+      {showComingSoon && <ComingSoonOverlay onClose={() => setShowComingSoon(false)} />}
+      
       {/* Reels Container */}
       <div
         ref={containerRef}

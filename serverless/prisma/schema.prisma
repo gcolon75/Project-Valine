@@ -66,19 +66,23 @@ model User {
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  content   String
-  media     String[]
-  tags      String[]
-  authorId  String
-  mediaId   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  content    String
+  media      String[]
+  tags       String[]
+  authorId   String
+  mediaId    String?
+  visibility String   @default("PUBLIC")
+  audioUrl   String?
+  price      Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
+  @@index([visibility])
   @@map("posts")
 }
 

@@ -1,12 +1,12 @@
 // src/pages/Post.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic } from 'lucide-react';
+import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TagSelector from '../components/forms/TagSelector';
 import { validateTags } from '../constants/tags';
 import { useAuth } from '../context/AuthContext';
-import { createPost } from '../services/postService';
+import { createPost, getAudioUploadUrl, uploadAudioToS3 } from '../services/postService';
 import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
 
 const CONTENT_TYPES = [
@@ -14,6 +14,7 @@ const CONTENT_TYPES = [
   { value: 'audition', label: 'Audition', icon: '🎭' },
   { value: 'reading', label: 'Reading', icon: '📖' },
   { value: 'reel', label: 'Reel', icon: '🎬' },
+  { value: 'audio', label: 'Audio', icon: '🎤' },
 ];
 
 const VISIBILITY_OPTIONS = [
@@ -27,6 +28,7 @@ const ACCEPTED_TYPES = {
   audition: '.mp4,.mov,.webm,.mp3,.wav',
   reading: '.mp3,.wav,.m4a,.mp4',
   reel: '.mp4,.mov,.webm',
+  audio: '.mp3,.wav,.m4a',
 };
 
 // Max file sizes in MB
@@ -35,6 +37,7 @@ const MAX_FILE_SIZES = {
   audition: 500,
   reading: 100,
   reel: 500,
+  audio: 100,
 };
 
 export default function Post() {
@@ -47,6 +50,7 @@ export default function Post() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedMediaId, setUploadedMediaId] = useState(null);
+  const [uploadedAudioUrl, setUploadedAudioUrl] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   
   const [formData, setFormData] = useState({
@@ -55,6 +59,8 @@ export default function Post() {
     description: '',
     tags: [],
     visibility: 'PUBLIC',
+    price: '',
+    isFree: true,
   });
   
   const [errors, setErrors] = useState({});
@@ -69,8 +75,14 @@ export default function Post() {
     if (field === 'contentType') {
       setSelectedFile(null);
       setUploadedMediaId(null);
+      setUploadedAudioUrl(null);
       setUploadProgress(0);
       setUploadError(null);
+    }
+    // Handle "Make Free" checkbox
+    if (field === 'isFree' && value === true) {
+      setFormData(prev => ({ ...prev, [field]: value, price: '' }));
+      return;
     }
   };
 
@@ -107,6 +119,7 @@ export default function Post() {
     setSelectedFile(file);
     setUploadError(null);
     setUploadedMediaId(null);
+    setUploadedAudioUrl(null);
   };
 
   // Upload file to S3
@@ -128,32 +141,52 @@ export default function Post() {
     setUploadError(null);
 
     try {
-      const mediaType = getMediaType(formData.contentType, selectedFile);
-      
-      // Step 1: Get presigned upload URL
-      setUploadProgress(5);
-      const { mediaId, uploadUrl } = await getUploadUrl(
-        profileId,
-        mediaType,
-        formData.title || selectedFile.name,
-        formData.description,
-        formData.visibility
-      );
+      // Check if this is an audio-only post type
+      if (formData.contentType === 'audio') {
+        // Use audio-specific upload flow
+        setUploadProgress(5);
+        const { uploadUrl, audioUrl } = await getAudioUploadUrl(
+          selectedFile.name,
+          selectedFile.type || 'audio/mpeg'
+        );
 
-      // Step 2: Upload to S3
-      await uploadToS3(uploadUrl, selectedFile, mediaType, (progress) => {
-        setUploadProgress(5 + Math.floor(progress * 0.85)); // 5-90%
-      });
+        // Upload to S3
+        await uploadAudioToS3(uploadUrl, selectedFile, (progress) => {
+          setUploadProgress(5 + Math.floor(progress * 0.9)); // 5-95%
+        });
 
-      // Step 3: Complete upload
-      setUploadProgress(95);
-      await completeUpload(profileId, mediaId, {
-        fileSize: selectedFile.size,
-      });
+        setUploadProgress(100);
+        setUploadedAudioUrl(audioUrl);
+        toast.success('Audio uploaded successfully!');
+      } else {
+        // Standard media upload flow
+        const mediaType = getMediaType(formData.contentType, selectedFile);
+        
+        // Step 1: Get presigned upload URL
+        setUploadProgress(5);
+        const { mediaId, uploadUrl } = await getUploadUrl(
+          profileId,
+          mediaType,
+          formData.title || selectedFile.name,
+          formData.description,
+          formData.visibility
+        );
 
-      setUploadProgress(100);
-      setUploadedMediaId(mediaId);
-      toast.success('File uploaded successfully!');
+        // Step 2: Upload to S3
+        await uploadToS3(uploadUrl, selectedFile, mediaType, (progress) => {
+          setUploadProgress(5 + Math.floor(progress * 0.85)); // 5-90%
+        });
+
+        // Step 3: Complete upload
+        setUploadProgress(95);
+        await completeUpload(profileId, mediaId, {
+          fileSize: selectedFile.size,
+        });
+
+        setUploadProgress(100);
+        setUploadedMediaId(mediaId);
+        toast.success('File uploaded successfully!');
+      }
     } catch (error) {
       console.error('Upload error:', error);
       setUploadError(error.message || 'Upload failed. Please try again.');
@@ -167,6 +200,7 @@ export default function Post() {
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setUploadedMediaId(null);
+    setUploadedAudioUrl(null);
     setUploadProgress(0);
     setUploadError(null);
   };
@@ -182,6 +216,14 @@ export default function Post() {
       newErrors.title = 'Title is required';
     } else if (formData.title.length > 100) {
       newErrors.title = 'Title must be 100 characters or less';
+    }
+    
+    // Validate price if not free
+    if (!formData.isFree && formData.price) {
+      const priceValue = parseFloat(formData.price);
+      if (isNaN(priceValue) || priceValue < 0) {
+        newErrors.price = 'Price must be a valid positive number';
+      }
     }
     
     if (formData.description.length > 1000) {
@@ -224,6 +266,9 @@ export default function Post() {
     setIsSubmitting(true);
     
     try {
+      // Calculate price value
+      const priceValue = formData.isFree ? 0 : (parseFloat(formData.price) || 0);
+      
       // Prepare post data
       const postPayload = {
         content: formData.description || formData.title,
@@ -232,6 +277,8 @@ export default function Post() {
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
         visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS
+        audioUrl: uploadedAudioUrl || null, // Audio file URL for audio posts
+        price: priceValue, // Post price (0 for free)
       };
       
       // Call API to create post
@@ -447,7 +494,7 @@ export default function Post() {
               </div>
             )}
 
-            {/* Upload complete */}
+            {/* Upload complete - Media */}
             {uploadedMediaId && (
               <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4">
                 <div className="flex items-center justify-between">
@@ -470,6 +517,40 @@ export default function Post() {
                   >
                     <X className="w-5 h-5 text-emerald-600" />
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload complete - Audio */}
+            {uploadedAudioUrl && (
+              <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-emerald-500" />
+                    <div>
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                        Audio uploaded successfully
+                      </p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {selectedFile?.name}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveFile}
+                    className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded-lg transition"
+                    aria-label="Remove file"
+                  >
+                    <X className="w-5 h-5 text-emerald-600" />
+                  </button>
+                </div>
+                {/* Audio Preview */}
+                <div className="mt-3">
+                  <audio controls className="w-full">
+                    <source src={uploadedAudioUrl} type={selectedFile?.type || 'audio/mpeg'} />
+                    Your browser does not support the audio element.
+                  </audio>
                 </div>
               </div>
             )}
@@ -526,6 +607,57 @@ export default function Post() {
                 </div>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Pricing
+          </label>
+          <div className="space-y-4">
+            {/* Make Free Checkbox */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isFree}
+                onChange={(e) => handleChange('isFree', e.target.checked)}
+                className="w-5 h-5 rounded border-neutral-300 dark:border-neutral-700 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-neutral-900 dark:text-neutral-100 font-medium">Make this post free</span>
+            </label>
+            
+            {/* Price Input */}
+            {!formData.isFree && (
+              <div>
+                <label htmlFor="price" className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                  Set a price for this post
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-neutral-400" />
+                  </div>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    min="0"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => handleChange('price', e.target.value)}
+                    placeholder="0.00"
+                    className="block w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    aria-invalid={!!errors.price}
+                  />
+                </div>
+                {errors.price && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">{errors.price}</p>
+                )}
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  Users will need to request access to view paid posts
+                </p>
+              </div>
+            )}
           </div>
         </div>
         
