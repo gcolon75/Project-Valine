@@ -106,10 +106,18 @@ export const createPost = async (event) => {
     }
 
     // Parse and validate price
-    const postPrice = parseFloat(price) || 0;
-    if (postPrice < 0) {
-      log('validation_error', { route, userId: authUserId, reason: 'invalid_price', value: price });
-      return error('Price cannot be negative', 400);
+    let postPrice = 0;
+    if (price !== undefined && price !== null && price !== '') {
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice)) {
+        log('validation_error', { route, userId: authUserId, reason: 'invalid_price', value: price });
+        return error('Price must be a valid number', 400);
+      }
+      if (parsedPrice < 0) {
+        log('validation_error', { route, userId: authUserId, reason: 'negative_price', value: price });
+        return error('Price cannot be negative', 400);
+      }
+      postPrice = parsedPrice;
     }
 
     const post = await prisma.post.create({

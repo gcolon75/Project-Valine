@@ -2,10 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Bookmark, Share2, Clock, DollarSign, Loader2 } from 'lucide-react';
-import { getPost } from '../services/postService';
+import { getPost, requestPostAccess } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { apiClient } from '../services/api';
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -43,7 +42,7 @@ export default function PostDetail() {
 
     try {
       setRequestingAccess(true);
-      await apiClient.post(`/posts/${id}/request`);
+      await requestPostAccess(id);
       toast.success('Access request sent to post owner');
     } catch (err) {
       console.error('Error requesting access:', err);
