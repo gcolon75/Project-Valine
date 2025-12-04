@@ -266,7 +266,15 @@ apiClient.interceptors.response.use(
 
 // Legacy fetch-based request function for backward compatibility
 async function req(p, o = {}) {
-  const res = await fetch(base + p, { headers: { 'Content-Type': 'application/json' }, ...o });
+  const headers = { 'Content-Type': 'application/json', ...o.headers };
+  
+  // Always attach Authorization header if token is available
+  const token = getAccessToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const res = await fetch(base + p, { ...o, headers });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

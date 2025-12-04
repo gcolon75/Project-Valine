@@ -1,8 +1,8 @@
 // src/services/__tests__/api.test.js
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../mocks/server';
-import apiClient from '../api';
+import apiClient, { feed } from '../api';
 
 describe('API Client', () => {
   beforeEach(() => {
@@ -32,6 +32,37 @@ describe('API Client', () => {
     it('should work without auth token', async () => {
       const response = await apiClient.get('http://localhost:3001/health');
       expect(response.data).toEqual({ ok: true, status: 'healthy' });
+    });
+  });
+
+  describe('Legacy fetch-based req function', () => {
+    it('should include auth token in request headers when available', async () => {
+      // Mock localStorage properly
+      const mockGetItem = (key) => key === 'auth_token' ? 'legacy-test-token-456' : null;
+      global.localStorage.getItem.mockImplementation(mockGetItem);
+      
+      let capturedAuthHeader = null;
+      server.use(
+        http.get('http://localhost:4000/feed', ({ request }) => {
+          capturedAuthHeader = request.headers.get('authorization');
+          return HttpResponse.json({ posts: [] });
+        })
+      );
+
+      await feed(0);
+
+      expect(capturedAuthHeader).toBe('Bearer legacy-test-token-456');
+    });
+
+    it('should work without auth token', async () => {
+      server.use(
+        http.get('http://localhost:4000/feed', () => {
+          return HttpResponse.json({ posts: [] });
+        })
+      );
+
+      const result = await feed(0);
+      expect(result).toEqual({ posts: [] });
     });
   });
 
