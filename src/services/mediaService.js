@@ -1,5 +1,5 @@
 // Media service - API client for media uploads and management
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get MIME type for a file based on its type

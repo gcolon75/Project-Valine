@@ -1,5 +1,5 @@
 // src/services/settingsService.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get user settings

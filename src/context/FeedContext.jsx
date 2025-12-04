@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { rankForUser, searchPosts } from "../services/search";
 import { optimisticUpdate } from "../hooks/useOptimisticUpdate";
-import apiClient from "../services/api";
+import { apiClient } from "../services/api.js";
 
 // ---- Demo seed data ----
 const NOW = Date.now();

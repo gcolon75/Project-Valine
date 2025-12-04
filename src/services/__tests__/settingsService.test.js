@@ -1,10 +1,10 @@
 // src/services/__tests__/settingsService.test.js
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getSettings, updateSettings, exportAccountData, deleteAccount } from '../settingsService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock the API client
-vi.mock('../api');
+vi.mock('../api.js');
 
 // Mock DOM methods for file download
 const mockCreateElement = vi.fn();

@@ -1,5 +1,5 @@
 // src/services/messagesService.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get user's conversations/chats

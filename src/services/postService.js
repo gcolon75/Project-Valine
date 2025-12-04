@@ -1,4 +1,4 @@
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 export const getFeedPosts = async (limit = 20, cursor = null) => {
   const { data } = await apiClient.get('/posts', { params: { limit, cursor } });

@@ -1,10 +1,10 @@
 // src/services/__tests__/search.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { searchProfiles, searchUsers, searchPosts, rankForUser } from '../search';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock the API client
-vi.mock('../api');
+vi.mock('../api.js');
 
 describe('search service', () => {
   beforeEach(() => {

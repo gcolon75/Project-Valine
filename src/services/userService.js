@@ -1,4 +1,4 @@
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 export const getUserProfile = async (username) => {
   const { data } = await apiClient.get(`/users/${username}`);

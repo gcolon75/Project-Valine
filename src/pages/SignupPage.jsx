@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../services/api';
+import { apiClient } from '../services/api.js';
 import { isValidEmail, validatePassword, passwordsMatch } from '../utils/validation';
 
 /**

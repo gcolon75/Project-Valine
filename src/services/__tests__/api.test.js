@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../mocks/server';
-import apiClient, { feed } from '../api';
+import { apiClient, feed } from '../api.js';
 
 describe('API Client', () => {
   beforeEach(() => {

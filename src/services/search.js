@@ -1,5 +1,5 @@
 // src/services/search.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 // Normalize text
 const norm = (s) =>
