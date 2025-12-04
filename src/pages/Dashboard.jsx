@@ -240,25 +240,6 @@ export default function Dashboard() {
               </div>
             </Card>
 
-            <Card title="Trending tags" padding="default">
-              <div className="flex flex-wrap gap-2">
-                {["#Monologue", "#SciFi", "#ShortFilm", "#Casting", "#Reading", "#Drama"].map(
-                  (t) => (
-                    <button
-                      key={t}
-                      onClick={() => setActiveTag(t)}
-                      className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all"
-                      aria-label={`Filter by ${t}`}
-                    >
-                      {t}
-                    </button>
-                  )
-                )}
-              </div>
-              <p className="mt-2 text-[11px] text-neutral-600 dark:text-neutral-400">
-                Fresh this week. Tap a tag to filter the feed.
-              </p>
-            </Card>
           </aside>
         </div>
       </div>
