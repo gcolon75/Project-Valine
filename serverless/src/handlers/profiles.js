@@ -274,7 +274,26 @@ export const getProfileById = async (event) => {
       return error('Forbidden - not profile owner', 403);
     }
 
-    return json(profile);
+    // Get follower/following counts
+    const [followersCount, followingCount] = await Promise.all([
+      prisma.connectionRequest.count({
+        where: { receiverId: profile.userId, status: 'accepted' }
+      }),
+      prisma.connectionRequest.count({
+        where: { senderId: profile.userId, status: 'accepted' }
+      })
+    ]);
+
+    // Add stats to response
+    const responseProfile = {
+      ...profile,
+      stats: {
+        followers: followersCount,
+        following: followingCount
+      }
+    };
+
+    return json(responseProfile);
   } catch (e) {
     console.error('Get profile by ID error:', e);
     return error('Server error: ' + e.message, 500);
@@ -1166,6 +1185,16 @@ export const getMyProfile = async (event) => {
       }
     }
 
+    // Get follower/following counts
+    const [followersCount, followingCount] = await Promise.all([
+      prisma.connectionRequest.count({
+        where: { receiverId: userId, status: 'accepted' }
+      }),
+      prisma.connectionRequest.count({
+        where: { senderId: userId, status: 'accepted' }
+      })
+    ]);
+
     // Construct response with graceful fallbacks
     // Use socialLinks from profile for links (maps frontend 'links' field)
     const response = {
@@ -1189,6 +1218,11 @@ export const getMyProfile = async (event) => {
       budgetMax: profile?.budgetMax || null,
       education: education,
       gallery: gallery,
+      // Stats
+      stats: {
+        followers: followersCount,
+        following: followingCount,
+      },
       // Status fields
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,

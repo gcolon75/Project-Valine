@@ -34,7 +34,8 @@ export const getFeed = async (event) => {
     // Fetch posts from followed users and self
     const posts = await prisma.post.findMany({
       where: {
-        authorId: { in: authorIds }
+        authorId: { in: authorIds },
+        visibility: 'PUBLIC'  // Only show public posts in feed
       },
       take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),

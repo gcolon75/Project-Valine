@@ -143,7 +143,7 @@ export const searchUsers = async (event) => {
         role: true,
         createdAt: true,
       },
-      distinct: ['id'],
+      distinct: ['username'],  // Changed from ['id'] to ['username'] for proper deduplication
       orderBy: { createdAt: 'desc' },
     });
 
@@ -151,8 +151,18 @@ export const searchUsers = async (event) => {
     const itemsToReturn = hasMore ? users.slice(0, -1) : users;
     const nextCursor = hasMore ? itemsToReturn[itemsToReturn.length - 1].id : null;
 
+    // Sort to prioritize exact username matches
+    const queryLower = query.toLowerCase();
+    const sortedUsers = itemsToReturn.sort((a, b) => {
+      const aExact = a.username?.toLowerCase() === queryLower;
+      const bExact = b.username?.toLowerCase() === queryLower;
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      return 0;
+    });
+
     return json({
-      items: itemsToReturn,
+      items: sortedUsers,
       nextCursor,
       hasMore,
     });
