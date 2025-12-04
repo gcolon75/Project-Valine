@@ -1,10 +1,10 @@
 // src/services/__tests__/reelsService.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as reelsService from '../reelsService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock the API client
-vi.mock('../api');
+vi.mock('../api.js');
 
 describe('reelsService', () => {
   beforeEach(() => {

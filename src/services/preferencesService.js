@@ -1,5 +1,5 @@
 // Preferences service - API client for user preferences (theme, etc.)
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get user preferences (theme, etc.)

@@ -1,5 +1,5 @@
 // src/services/twoFactorService.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Check if 2FA feature is enabled

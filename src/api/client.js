@@ -2,11 +2,11 @@
 // API client wrapper - exports the main apiClient from services/api.js
 // This file exists to match the Phase 02 specification structure
 
-import apiClient from '../services/api';
+import { apiClient } from '../services/api.js';
 
 // Re-export the main API client
 export default apiClient;
-export { apiClient } from '../services/api';
+export { apiClient } from '../services/api.js';
 
 /**
  * API Client Configuration:

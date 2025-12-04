@@ -1,5 +1,5 @@
 // src/services/sessionsService.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get all active sessions for the current user

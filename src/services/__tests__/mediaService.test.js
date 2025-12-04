@@ -8,11 +8,11 @@ import {
   uploadMedia,
   getContentType
 } from '../mediaService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock the API client
-vi.mock('../api', () => ({
-  default: {
+vi.mock('../api.js', () => ({
+  apiClient: {
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),

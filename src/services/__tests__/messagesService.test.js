@@ -1,9 +1,9 @@
 // src/services/__tests__/messagesService.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as messagesService from '../messagesService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
-vi.mock('../api');
+vi.mock('../api.js');
 
 describe('messagesService', () => {
   beforeEach(() => {

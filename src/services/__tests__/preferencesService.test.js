@@ -1,11 +1,11 @@
 // src/services/__tests__/preferencesService.test.js
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as preferencesService from '../preferencesService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock apiClient
-vi.mock('../api', () => ({
-  default: {
+vi.mock('../api.js', () => ({
+  apiClient: {
     get: vi.fn(),
     put: vi.fn()
   }

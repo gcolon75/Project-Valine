@@ -1,5 +1,5 @@
 // src/services/reelsService.js
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get reels feed

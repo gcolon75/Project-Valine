@@ -1,13 +1,14 @@
 // src/services/__tests__/profileService.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as profileService from '../profileService';
-import apiClient from '../api';
+import { apiClient } from '../api.js';
 
 // Mock apiClient
-vi.mock('../api', () => ({
-  default: {
+vi.mock('../api.js', () => ({
+  apiClient: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn()
   }
