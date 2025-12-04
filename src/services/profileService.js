@@ -1,5 +1,5 @@
 // Profile service - API client for profile links and profile data
-import apiClient from './api';
+import { apiClient } from './api.js';
 
 /**
  * Get the current user's profile
