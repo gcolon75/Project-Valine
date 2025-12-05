@@ -115,6 +115,12 @@ export const getProfileByVanity = async (event) => {
     const viewerId = getUserFromEvent(event); // May be null for unauthenticated
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[getProfileByVanity] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     const profile = await prisma.profile.findUnique({
       where: { vanityUrl },
       include: {
@@ -227,6 +233,12 @@ export const getProfileById = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[getProfileById] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     const profile = await prisma.profile.findUnique({
       where: { id },
       include: {
@@ -336,6 +348,12 @@ export const createProfile = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[createProfile] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Check if user already has a profile
     const existingProfile = await prisma.profile.findUnique({
@@ -485,6 +503,12 @@ export const updateProfile = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[updateProfile] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Check profile exists and user owns it
     const existingProfile = await prisma.profile.findUnique({
@@ -668,7 +692,6 @@ const ALLOWED_TAGS = [
   'Podcast',
   'VoiceOver',
   // Content Types
-  'Reading',
   'Reel',
   'ShortFilm',
   'Feature',
@@ -771,6 +794,13 @@ export const updateMyProfile = async (event) => {
       hasBudgetMax: budgetMax !== undefined,
     });
 
+    // Early Prisma availability check (before any DB operations)
+    const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[updateMyProfile] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     // Validation
     const errors = [];
 
@@ -781,7 +811,6 @@ export const updateMyProfile = async (event) => {
         errors.push('Username must be 3-30 characters (alphanumeric, underscore, hyphen)');
       } else {
         // Check uniqueness
-        const prisma = getPrisma();
         const existing = await prisma.user.findFirst({
           where: { 
             username, 
@@ -859,7 +888,6 @@ export const updateMyProfile = async (event) => {
     // Check allowlist (owner-only mode)
     const strictAllowlist = process.env.STRICT_ALLOWLIST === '1';
     if (strictAllowlist) {
-      const prisma = getPrisma();
       const allowedEmails = (process.env.ALLOWED_USER_EMAILS || '').split(',').map(e => e.trim());
       const user = await prisma.user.findUnique({ where: { id: userId } });
       
@@ -870,8 +898,6 @@ export const updateMyProfile = async (event) => {
     }
 
     // Update user and profile
-    const prisma = getPrisma();
-    
     try {
       // Prepare user update data
       const userUpdateData = {};
@@ -1117,6 +1143,12 @@ export const getMyProfile = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[getMyProfile] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     // Fetch user data
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -1262,6 +1294,12 @@ export const deleteProfile = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[deleteProfile] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Check profile exists and user owns it
     const existingProfile = await prisma.profile.findUnique({

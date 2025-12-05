@@ -79,6 +79,12 @@ export const createPost = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
+
     // If mediaId is provided, validate it exists and belongs to the user
     let mediaAttachment = null;
     if (mediaId) {
@@ -161,6 +167,13 @@ export const listPosts = async (event) => {
     const { limit = '20', cursor } = event.queryStringParameters || {};
     
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.warn('[listPosts] Prisma unavailable (degraded mode), returning empty array');
+      return json([]);
+    }
+
     const posts = await prisma.post.findMany({
       take: parseInt(limit),
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
@@ -213,6 +226,13 @@ export const getPost = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[getPost] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     const post = await prisma.post.findUnique({
       where: { id },
       include: { 

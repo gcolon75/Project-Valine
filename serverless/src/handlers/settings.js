@@ -292,6 +292,12 @@ export const getPreferences = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[getPreferences] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     // Get user and settings
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -340,6 +346,12 @@ export const updatePreferences = async (event) => {
     const { theme, onboardingComplete, profileComplete, notifications, privacy } = body;
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[updatePreferences] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Update user theme if provided
     const userUpdateData = {};

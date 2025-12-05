@@ -407,6 +407,96 @@ The same fix was applied to other auth handlers that had the same vulnerability:
 
 ---
 
+## Remaining 500 Fixes - Profile, Education, Preferences, Posts (Dec 2024)
+
+### Summary
+Multiple handlers were still returning 500 errors because they called `getPrisma()` but did not check if the result was `null` (indicating degraded mode / database unavailable).
+
+### Affected Handlers
+
+#### Profile Handlers (`src/handlers/profiles.js`)
+- `getProfileByVanity` - GET /profiles/{vanityUrl}
+- `getProfileById` - GET /profiles/id/{id}
+- `createProfile` - POST /profiles
+- `updateProfile` - PUT /profiles/id/{id}
+- `updateMyProfile` - PATCH /me/profile
+- `getMyProfile` - GET /me/profile
+- `deleteProfile` - DELETE /profiles/id/{id}
+
+#### Education Handlers (`src/handlers/education.js`)
+- `listEducation` - GET /me/profile/education
+- `createEducation` - POST /me/profile/education
+- `updateEducation` - PUT /me/profile/education/{id}
+- `deleteEducation` - DELETE /me/profile/education/{id}
+
+#### Settings Handlers (`src/handlers/settings.js`)
+- `getPreferences` - GET /me/preferences
+- `updatePreferences` - PUT/PATCH /me/preferences
+
+#### Posts Handlers (`src/handlers/posts.js`)
+- `createPost` - POST /posts
+- `listPosts` - GET /posts
+- `getPost` - GET /posts/{id}
+
+### Fix Applied
+Added null check for `getPrisma()` in each handler:
+
+```javascript
+const prisma = getPrisma();
+
+// Handle degraded mode (database unavailable)
+if (!prisma) {
+  console.error('[handlerName] Prisma unavailable (degraded mode)');
+  return error(503, 'Database unavailable');
+}
+```
+
+For list endpoints (`listPosts`, `listEducation`), return empty arrays instead of 503:
+
+```javascript
+if (!prisma) {
+  console.warn('[listPosts] Prisma unavailable (degraded mode), returning empty array');
+  return json([]);
+}
+```
+
+### Onboarding Flow Stabilization
+
+The onboarding loop was caused by:
+1. Backend handlers returning 500s, preventing `onboardingComplete` flag from being saved
+2. Frontend reading `user.onboardingComplete === false` from failed /auth/me or /me/profile calls
+
+**Solution:**
+1. Fixed all handler 500s so profile updates succeed
+2. The `updateMyProfile` handler properly saves `onboardingComplete: true` when explicitly passed
+3. The `getMyProfile` handler returns `onboardingComplete` from the user record
+4. Frontend `Protected` component correctly routes based on `user.onboardingComplete`
+
+### "Reading" Option Removal
+
+Per user request, the "Reading" content type was removed from:
+1. `src/pages/Post.jsx` - CONTENT_TYPES, ACCEPTED_TYPES, MAX_FILE_SIZES
+2. `src/constants/tags.js` - ALLOWED_TAGS, TAG_CATEGORIES
+3. `serverless/src/handlers/profiles.js` - ALLOWED_TAGS
+
+Legacy posts with "Reading" tags will still display; they are not blocked.
+
+### Performance/Deploy Time Observations
+
+Deployment takes ~1200-1300 seconds due to:
+1. Large Lambda bundle size (~95MB) with ~465 CloudFormation resources
+2. Many individual Lambda functions (individually packaged)
+3. Prisma client and native binaries included in each package
+
+Optimizations applied:
+- Prisma client reuse via singleton pattern in `getPrisma()`
+- `versionFunctions: false` to reduce CloudFormation resource count
+- `excludeDevDependencies: true` in package config
+
+Further optimization would require architectural changes (consolidating functions, using layers, etc.) which is out of scope for this fix.
+
+---
+
 ## Related Files
 
 - `serverless.yml` - esbuild and package configuration
@@ -416,6 +506,7 @@ The same fix was applied to other auth handlers that had the same vulnerability:
 - `src/handlers/education.js` - Education CRUD handlers
 - `src/handlers/notifications.js` - Notification handlers
 - `src/handlers/posts.js` - Post creation handlers
+- `src/handlers/settings.js` - Settings and preferences handlers
 - `src/utils/tokenManager.js` - JWT generation and cookie formatting
 - `src/middleware/csrfMiddleware.js` - CSRF token handling
 - `prisma/schema.prisma` - Database schema and binary targets
