@@ -24,7 +24,8 @@ describe('Token Manager - Cookie Generation', () => {
     
     const decoded = verifyToken(token);
     expect(decoded).toBeTruthy();
-    expect(decoded.userId).toBe(testUserId);
+    // Uses standard JWT 'sub' claim for user ID (changed from legacy 'userId')
+    expect(decoded.sub).toBe(testUserId);
     expect(decoded.type).toBe('access');
   });
 
@@ -34,7 +35,8 @@ describe('Token Manager - Cookie Generation', () => {
     
     const decoded = verifyToken(token);
     expect(decoded).toBeTruthy();
-    expect(decoded.userId).toBe(testUserId);
+    // Uses standard JWT 'sub' claim for user ID (changed from legacy 'userId')
+    expect(decoded.sub).toBe(testUserId);
     expect(decoded.type).toBe('refresh');
     expect(decoded.jti).toBeTruthy();
   });
@@ -163,7 +165,8 @@ describe('Token Manager - Token Extraction', () => {
     expect(extractedToken).toBe(cookieToken);
     
     const decoded = verifyToken(extractedToken);
-    expect(decoded.userId).toBe('user-from-cookie');
+    // Uses standard JWT 'sub' claim for user ID (changed from legacy 'userId')
+    expect(decoded.sub).toBe('user-from-cookie');
   });
 
   it('should return null when no token is present', () => {
@@ -216,7 +219,8 @@ describe('Token Manager - Token Verification', () => {
     const decoded = verifyToken(token);
     
     expect(decoded).toBeTruthy();
-    expect(decoded.userId).toBe(testUserId);
+    // Uses standard JWT 'sub' claim for user ID (changed from legacy 'userId')
+    expect(decoded.sub).toBe(testUserId);
   });
 
   it('should return null for invalid token', () => {

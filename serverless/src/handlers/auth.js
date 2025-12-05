@@ -682,9 +682,14 @@ async function refresh(event) {
     if (!refreshTok) {
       return error(401, 'Missing refresh token');
     }
-    const payload = verifyToken(refreshTok, 'refresh');
+    const payload = verifyToken(refreshTok);
     if (!payload) {
       return error(401, 'Invalid refresh token');
+    }
+    
+    // Ensure this is actually a refresh token, not an access token
+    if (payload.type !== 'refresh') {
+      return error(401, 'Invalid token type - expected refresh token');
     }
 
     const prisma = getPrisma();
