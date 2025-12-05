@@ -90,22 +90,28 @@ export function getPrismaInitError() {
 
 /**
  * Validate DATABASE_URL format
+ * Validates in order: existence → spaces → protocol prefix
  * @param {string} url
  * @returns {{ valid: boolean, error?: string, sanitizedUrl?: string }}
  */
 export function validateDatabaseUrl(url) {
+  // Check 1: URL must be set
   if (!url) {
     return { valid: false, error: 'DATABASE_URL is not set' };
   }
+  
+  // Check 2: No spaces allowed (common copy-paste error)
   if (url.includes(' ')) {
     // Create sanitized version for logging (hide password)
     const sanitized = url.replace(/:([^@]+)@/, ':***@');
     return { valid: false, error: 'DATABASE_URL contains spaces', sanitizedUrl: sanitized };
   }
-  // Basic format check
+  
+  // Check 3: Must have PostgreSQL protocol prefix
   if (!url.startsWith('postgresql://') && !url.startsWith('postgres://')) {
     return { valid: false, error: 'DATABASE_URL must start with postgresql:// or postgres://' };
   }
+  
   return { valid: true };
 }
 

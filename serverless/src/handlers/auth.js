@@ -688,7 +688,8 @@ async function refresh(event) {
     }
     
     // Ensure this is actually a refresh token, not an access token
-    if (payload.type !== 'refresh') {
+    // Check for payload.type existence to handle tokens without type field
+    if (!payload.type || payload.type !== 'refresh') {
       return error(401, 'Invalid token type - expected refresh token');
     }
 
