@@ -331,21 +331,23 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Name, Title and Bio */}
+          {/* Name, Username, Bio, and Title */}
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
             {displayData.displayName}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mb-2">
             @{displayData.username}
           </p>
-          {displayData.headline && (
-            <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-4">
-              {displayData.headline}
+          {/* Bio appears directly under @username per UX requirements */}
+          {displayData.bio && (
+            <p className="text-neutral-700 dark:text-neutral-300 mb-3">
+              {displayData.bio}
             </p>
           )}
-          {displayData.bio && (
-            <p className="text-neutral-700 dark:text-neutral-300 mb-4">
-              {displayData.bio}
+          {/* Professional title/headline shown last in header */}
+          {(displayData.title || displayData.headline) && (
+            <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-4">
+              {displayData.title || displayData.headline}
             </p>
           )}
 

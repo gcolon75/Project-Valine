@@ -497,6 +497,70 @@ Further optimization would require architectural changes (consolidating function
 
 ---
 
+## Degraded Mode Always Active - Prisma Initialization Fix (Dec 2024)
+
+### Summary
+`getPrisma()` was returning `null` for all requests in production Lambda, causing widespread 503 "Database unavailable" errors on `/me/profile`, `/posts`, `/me/preferences`, `/me/profile/education`, and other DB-backed endpoints. Health and meta endpoints (which don't use Prisma) worked correctly.
+
+### Symptoms
+- CloudWatch logs consistently showed: `[getMyProfile] Prisma unavailable (degraded mode)`
+- All DB-dependent handlers returned 503 "Database unavailable"
+- `/auth/diag` showed `prismaDegraded: true`
+- Deploy times increased significantly (~1200-1300 seconds)
+- `DATABASE_URL` was correctly set in Lambda environment
+
+### Root Cause
+The `db/client.js` was too aggressive in enabling `degradedMode`:
+
+1. **Automatic degraded mode on any initialization failure:** Once `degradedMode` was set to `true` (either from URL validation failure or catch block), it never recovered
+2. **Overly strict URL validation:** Valid URLs could be rejected by transient validation issues
+3. **Permanent error caching:** `prismaInitError` prevented any retry attempts even if the underlying issue was fixed
+
+The combination meant that a single transient failure during Lambda cold start would permanently lock the function into degraded mode until the next deployment.
+
+### Fix Applied
+1. **Removed automatic `degradedMode = true` from initialization failures:**
+   - `validateDatabaseUrl` failures now log error but don't set `degradedMode`
+   - Catch block in `getPrisma()` now stores error but doesn't set `degradedMode`
+   - `initPrismaAsync()` connection test no longer sets `degradedMode` on failure
+
+2. **Added `resetPrismaState()` helper:**
+   - Allows clearing cached client and error state for reconnection attempts
+
+3. **`degradedMode` is now ONLY activated by explicit `setDegradedMode(true)` call:**
+   - Used for intentional failover scenarios (testing, manual override)
+   - Not triggered automatically by transient errors
+
+4. **Fixed esbuild external pattern for Prisma:**
+   - Changed `.prisma` to `.prisma/*` and `.prisma/client/*` for proper glob matching
+
+5. **Simplified deploy script:**
+   - Removed build:layer dependency, runs `prisma generate` directly before deploy
+   - Deploy command: `npm run prisma:generate && serverless deploy`
+
+### Key Principle
+> Transient initialization failures should NOT permanently lock Lambda functions into degraded mode. Handlers should return appropriate error codes (503) per-request, allowing retries when the underlying issue (network, DB availability) resolves.
+
+### Verification Steps
+After deployment:
+1. `GET /auth/diag` → `prismaDegraded: false`
+2. `GET /me/profile` → 200 with user profile data
+3. `GET /posts?limit=20` → 200 with posts array
+4. `PATCH /me/profile` → 200 on profile update
+5. `GET /me/preferences` → 200 with user preferences
+
+### PowerShell Validation Commands
+```powershell
+cd C:\Users\ghawk\Documents\GitHub\Project-Valine
+git checkout main
+git pull origin main
+cd .\serverless
+npm ci
+npx serverless deploy --stage prod --region us-west-2
+```
+
+---
+
 ## Related Files
 
 - `serverless.yml` - esbuild and package configuration

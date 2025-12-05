@@ -96,7 +96,8 @@ custom:
       - aws-sdk
       # Prisma must be external for Lambda - esbuild cannot bundle native binaries
       - '@prisma/client'
-      - .prisma
+      - '.prisma/*'
+      - '.prisma/client/*'
     keepOutputDirectory: true
     # Prisma client generation handled externally before deploy
     packagerOptions:

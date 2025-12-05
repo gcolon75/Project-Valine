@@ -134,7 +134,7 @@ export default function Onboarding() {
 
       console.log('[Onboarding] Saving profile updates:', Object.keys(updates));
 
-      // Attempt to save to backend first
+      // Attempt to save to backend
       let backendSuccess = false;
       try {
         const response = await updateMyProfile(updates);
@@ -142,30 +142,47 @@ export default function Onboarding() {
         backendSuccess = true;
       } catch (apiError) {
         console.error('[Onboarding] Failed to save to backend:', apiError);
-        // Continue anyway - data is saved locally as fallback
+        // Show error but don't prevent navigation - user can try again later
       }
 
-      // Update local state after successful backend save (or on fallback)
-      // Include both displayName and name for backward compatibility with different app components
-      updateUser({
-        ...updates,
-        name: updates.displayName,
-      });
-
-      // Clear saved onboarding progress
-      localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-
-      // Show success message
       if (backendSuccess) {
-        toast.success('Profile completed! Welcome to Joint 🎉');
-      } else {
-        toast.success('Profile saved locally. Welcome to Joint 🎉');
-      }
+        // Update local state after successful backend save
+        // Include both displayName and name for backward compatibility
+        updateUser({
+          ...updates,
+          name: updates.displayName,
+        });
 
-      // Navigate to dashboard
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+        // Clear saved onboarding progress
+        localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+
+        // Show success message
+        toast.success('Profile completed! Welcome to Joint 🎉');
+
+        // Navigate to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      } else {
+        // Backend save failed - show warning but still update local state
+        // so user can proceed, but they may need to complete onboarding again
+        updateUser({
+          ...updates,
+          name: updates.displayName,
+          // Note: onboardingComplete may not persist if backend failed
+        });
+
+        // INTENTIONALLY preserve localStorage data on backend failure
+        // This allows users to resume onboarding without re-entering data
+        // if they need to complete onboarding again on their next login
+
+        toast.error('Could not save profile to server. Your changes are saved locally, but you may need to complete onboarding again on your next login.');
+
+        // Navigate anyway after a longer delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2500);
+      }
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       toast.error('Failed to save profile. Please try again.');
