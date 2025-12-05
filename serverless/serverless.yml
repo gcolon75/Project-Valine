@@ -1,4 +1,4 @@
-service: pv-api
+﻿service: pv-api
 frameworkVersion: "3"
 
 plugins:
@@ -113,9 +113,20 @@ package:
     - '!**/*.md'
     - '!**/.git/**'
     - '!**/.vscode/**'
-    # Include Prisma client and generated files for Lambda
-    - 'node_modules/.prisma/**'
+
+    # Include only Prisma client + generated client directory
     - 'node_modules/@prisma/client/**'
+    - 'node_modules/.prisma/client/**'
+
+    # Exclude unused Prisma engines to keep Lambda size < 250MB
+    - '!node_modules/.prisma/client/query_engine-windows-*'
+    - '!node_modules/.prisma/client/query_engine-darwin-*'
+    - '!node_modules/.prisma/client/libquery_engine-rhel-*'
+    - '!node_modules/.prisma/client/libquery_engine-darwin-*'
+    - '!node_modules/.prisma/client/libquery_engine-debian-*'
+    - '!node_modules/.prisma/client/libquery_engine-linux-*musl*'
+    - '!node_modules/.prisma/client/*.exe'
+    - '!node_modules/.cache/**'
 
 functions:
   health:
