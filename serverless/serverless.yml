@@ -1,4 +1,4 @@
-﻿service: pv-api
+service: pv-api
 frameworkVersion: "3"
 
 plugins:
@@ -89,6 +89,8 @@ custom:
     sourcemap: false
     platform: node
     target: node20
+    # Output CommonJS format for Lambda handler resolution
+    format: cjs
     concurrency: 1
     external:
       - aws-sdk
@@ -96,7 +98,7 @@ custom:
       - '@prisma/client'
       - .prisma
     keepOutputDirectory: true
-    # Include Prisma native binaries in the bundle
+    # Prisma client generation handled externally before deploy
     packagerOptions:
       scripts: []
 
