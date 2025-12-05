@@ -611,6 +611,16 @@ async function me(event) {
     }, 'info');
     
     const prisma = getPrisma();
+    
+    // Handle Prisma in degraded mode (null client)
+    if (!prisma) {
+      logStructured(correlationId, 'me_prisma_unavailable', {
+        userId,
+        prismaDegraded: isPrismaDegraded()
+      }, 'error');
+      return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
+    }
+    
     let user;
     let profile = null;
     try {
@@ -694,6 +704,11 @@ async function refresh(event) {
     }
 
     const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[REFRESH] Database unavailable');
+      return error(503, 'DATABASE_UNAVAILABLE');
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) {
       return error(401, 'Invalid user');
@@ -778,6 +793,11 @@ async function setup2FA(event) {
     if (!userId) return error(401, 'Unauthorized');
 
     const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[SETUP2FA] Database unavailable');
+      return error(503, 'DATABASE_UNAVAILABLE');
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return error(404, 'Not found');
 
@@ -817,6 +837,11 @@ async function enable2FA(event) {
     if (!code) return error(400, 'code is required');
 
     const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[ENABLE2FA] Database unavailable');
+      return error(503, 'DATABASE_UNAVAILABLE');
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.twoFactorSecret) {
       return error(400, '2FA not initialized');
@@ -858,6 +883,11 @@ async function verify2FA(event) {
     if (!code) return error(400, 'code is required');
 
     const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[VERIFY2FA] Database unavailable');
+      return error(503, 'DATABASE_UNAVAILABLE');
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.twoFactorSecret) {
       return error(400, '2FA not initialized');
@@ -882,6 +912,11 @@ async function disable2FA(event) {
     if (!userId) return error(401, 'Unauthorized');
 
     const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[DISABLE2FA] Database unavailable');
+      return error(503, 'DATABASE_UNAVAILABLE');
+    }
+    
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return error(404, 'Not found');
 
@@ -991,6 +1026,13 @@ async function seedRestricted(event) {
     }
     
     const prisma = getPrisma();
+    if (!prisma) {
+      logStructured(correlationId, 'seed_restricted_prisma_unavailable', {
+        prismaDegraded: isPrismaDegraded()
+      }, 'error');
+      return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
+    }
+    
     const results = [];
     
     for (const email of allowlist) {
