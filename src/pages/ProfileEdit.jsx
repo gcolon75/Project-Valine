@@ -48,7 +48,7 @@ export default function ProfileEdit() {
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     username: user?.username || '',
-    headline: user?.headline || '',
+    customRole: user?.customRole || '',
     title: user?.title || '',
     pronouns: user?.pronouns || '',
     location: user?.location || '',
@@ -96,7 +96,6 @@ export default function ProfileEdit() {
             setFormData(prev => ({
               ...prev,
               title: profile.title || prev.title,
-              headline: profile.headline || prev.headline,
               profileLinks: profile.links || prev.profileLinks
             }));
           }
@@ -153,7 +152,7 @@ export default function ProfileEdit() {
 
   const roleOptions = [
     'Actor', 'Voice Actor', 'Playwright', 'Director', 
-    'Producer', 'Composer', 'Designer', 'Technician'
+    'Producer', 'Composer', 'Designer', 'Technician', 'Other'
   ];
 
   const handleChange = (field, value) => {
@@ -297,19 +296,12 @@ export default function ProfileEdit() {
       const sanitizedData = {
         ...formData,
         displayName: sanitizeText(formData.displayName),
-        headline: sanitizeText(formData.headline),
         title: sanitizeText(formData.title),
         bio: sanitizeText(formData.bio),
         location: sanitizeText(formData.location),
         pronouns: sanitizeText(formData.pronouns),
       };
       
-      // Validate headline length
-      if (sanitizedData.headline && sanitizedData.headline.length > 100) {
-        toast.error('Headline must be 100 characters or less');
-        return;
-      }
-
       // Validate title length
       if (sanitizedData.title && sanitizedData.title.length > 100) {
         toast.error('Title must be 100 characters or less');
@@ -348,7 +340,6 @@ export default function ProfileEdit() {
           const profileUpdate = {
             displayName: sanitizedData.displayName,
             username: sanitizedData.username,
-            headline: sanitizedData.headline,
             title: sanitizedData.title,
             bio: sanitizedData.bio,
             location: sanitizedData.location,
@@ -577,20 +568,6 @@ export default function ProfileEdit() {
                     </p>
                   </FormField>
 
-                  <FormField label="Headline" required>
-                    <input
-                      type="text"
-                      value={formData.headline}
-                      onChange={(e) => handleChange('headline', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Voice & stage actor — classical & contemporary"
-                      maxLength={100}
-                    />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
-                      {formData.headline.length}/100 characters
-                    </p>
-                  </FormField>
-
                   <FormField label="Pronouns">
                     <input
                       type="text"
@@ -625,23 +602,58 @@ export default function ProfileEdit() {
 
                   <FormField label="Primary Roles">
                     <div className="space-y-2">
-                      {roleOptions.map(role => (
-                        <label key={role} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.primaryRoles.includes(role)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                handleChange('primaryRoles', [...formData.primaryRoles, role]);
-                              } else {
-                                handleChange('primaryRoles', formData.primaryRoles.filter(r => r !== role));
-                              }
-                            }}
-                            className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700"
-                          />
-                          <span className="text-neutral-900 dark:text-white">{role}</span>
-                        </label>
-                      ))}
+                      {(() => {
+                        const hasOtherRole = formData.primaryRoles.some(r => r.startsWith('Other:')) || formData.customRole;
+                        return (
+                          <>
+                            {roleOptions.map(role => (
+                              <label key={role} className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={role === 'Other' ? hasOtherRole : formData.primaryRoles.includes(role)}
+                                  onChange={(e) => {
+                                    if (role === 'Other') {
+                                      if (!e.target.checked) {
+                                        // Clearing Other - remove custom role
+                                        handleChange('customRole', '');
+                                        handleChange('primaryRoles', formData.primaryRoles.filter(r => !r.startsWith('Other:')));
+                                      }
+                                    } else if (e.target.checked) {
+                                      handleChange('primaryRoles', [...formData.primaryRoles, role]);
+                                    } else {
+                                      handleChange('primaryRoles', formData.primaryRoles.filter(r => r !== role));
+                                    }
+                                  }}
+                                  className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700"
+                                />
+                                <span className="text-neutral-900 dark:text-white">{role}</span>
+                              </label>
+                            ))}
+                            {/* Custom role text input when Other is checked */}
+                            {hasOtherRole && (
+                              <div className="ml-6 mt-2">
+                                <input
+                                  type="text"
+                                  value={formData.customRole || ''}
+                                  onChange={(e) => {
+                                    const customValue = e.target.value;
+                                    handleChange('customRole', customValue);
+                                    // Update primaryRoles to include custom role
+                                    const otherRoles = formData.primaryRoles.filter(r => !r.startsWith('Other:'));
+                                    if (customValue.trim()) {
+                                      handleChange('primaryRoles', [...otherRoles, `Other: ${customValue.trim()}`]);
+                                    } else {
+                                      handleChange('primaryRoles', otherRoles);
+                                    }
+                                  }}
+                                  placeholder="Specify your role..."
+                                  className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </FormField>
 

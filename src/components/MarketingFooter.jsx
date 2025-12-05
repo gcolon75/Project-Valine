@@ -105,7 +105,7 @@ const MarketingFooter = () => {
 
             {/* Copyright */}
             <div className="text-sm text-neutral-600">
-              &copy; {currentYear} Joint. All rights reserved.
+              &copy; {currentYear} Project Valine. All rights reserved. Created by Gabriel Colon &amp; Justin Valine.
             </div>
 
             {/* Social Links */}
