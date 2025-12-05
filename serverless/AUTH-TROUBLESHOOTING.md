@@ -351,6 +351,62 @@ function Protected({ children }) {
 
 ---
 
+## `/auth/me` Handler Null-Dereference Fix (Dec 2024)
+
+### Summary
+The `/auth/me` endpoint was returning 500 errors with the message `Cannot read properties of null (reading 'user')` when the Prisma client was unavailable (degraded mode).
+
+### Symptoms
+- `GET /auth/me` returned 500 Internal Server Error
+- CloudWatch logs showed:
+  ```json
+  {"event":"me_request_received"}
+  {"event":"me_token_decoded","userId":"..."}
+  {"event":"me_db_error","error":"Cannot read properties of null (reading 'user')"}
+  ```
+- JWT was successfully decoded (userId present), but database access failed
+
+### Root Cause
+The `me()` handler in `src/handlers/auth.js` called `getPrisma()` and immediately accessed `prisma.user.findUnique()` without checking if `getPrisma()` returned `null`. When Prisma is in degraded mode (database unavailable), `getPrisma()` returns `null`, causing a `TypeError` when trying to access `.user` on null.
+
+**Broken pattern:**
+```javascript
+const prisma = getPrisma();
+// prisma could be null here!
+const user = await prisma.user.findUnique({ where: { id: userId } });
+```
+
+### Fix
+Added null check for `getPrisma()` result and return 503 "DATABASE_UNAVAILABLE" instead of crashing:
+
+```javascript
+const prisma = getPrisma();
+if (!prisma) {
+  logStructured(correlationId, 'me_prisma_unavailable', {
+    userId,
+    prismaDegraded: isPrismaDegraded()
+  }, 'error');
+  return error(503, 'DATABASE_UNAVAILABLE', { correlationId });
+}
+```
+
+### Additional Hardening
+The same fix was applied to other auth handlers that had the same vulnerability:
+- `refresh` - token refresh endpoint
+- `setup2FA` - 2FA setup
+- `enable2FA` - 2FA enable
+- `verify2FA` - 2FA verification
+- `disable2FA` - 2FA disable
+- `seedRestricted` - admin seed endpoint
+
+### Debugging Tips
+1. Check CloudWatch logs for `me_prisma_unavailable` or `me_db_error` events
+2. Verify database connectivity via `/auth/diag` endpoint (`prismaDegraded` field)
+3. Confirm `DATABASE_URL` environment variable is correctly set in Lambda
+4. Check for Prisma client initialization errors in Lambda cold start logs
+
+---
+
 ## Related Files
 
 - `serverless.yml` - esbuild and package configuration
