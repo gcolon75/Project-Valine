@@ -172,8 +172,9 @@ export default function Onboarding() {
           // Note: onboardingComplete may not persist if backend failed
         });
 
-        // Keep localStorage so they can resume if they come back
-        // Don't clear: localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+        // INTENTIONALLY preserve localStorage data on backend failure
+        // This allows users to resume onboarding without re-entering data
+        // if they need to complete onboarding again on their next login
 
         toast.error('Could not save profile to server. Your changes are saved locally, but you may need to complete onboarding again on your next login.');
 
