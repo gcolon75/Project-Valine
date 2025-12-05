@@ -233,11 +233,133 @@ After deploying, verify:
 
 ---
 
+## Handler Null-Dereference Fixes (Dec 2024)
+
+### Summary
+Multiple handlers were crashing with `TypeError: Cannot read properties of null` when accessing relations on potentially null Prisma results.
+
+### Fixed Handlers
+
+#### 1. `updateMyProfile` (PATCH /me/profile)
+**Error:** `Cannot read properties of null (reading 'user')`
+
+**Root Cause:** When Prisma is in degraded mode (database unavailable), `getPrisma()` returns `null`. Handlers must check for this before accessing `prisma.model.method()`.
+
+**Fix:** The handler now handles:
+- Degraded mode (prisma is null)
+- Auto-creates profile if it doesn't exist for the user
+- Returns proper error codes instead of throwing
+
+#### 2. `createEducation` / `updateEducation` / `deleteEducation`
+**Error:** `Cannot read properties of null (reading 'profile')`
+
+**Root Cause:** When fetching education with `include: { profile: true }`, the profile relation could be null for orphaned education entries (e.g., if profile was deleted but cascade didn't clean up education).
+
+**Fix:** Added explicit null checks:
+```javascript
+if (!education.profile) {
+  console.error('[updateEducation] Orphaned education entry - no profile:', { educationId: id, userId });
+  return error(404, 'Education entry profile not found');
+}
+```
+
+#### 3. `getUnreadCounts` (GET /unread-counts)
+**Error:** `Cannot read properties of null (reading 'notification')`
+
+**Root Cause:** When `getPrisma()` returns `null` (degraded mode), calling `prisma.notification.count()` crashes.
+
+**Fix:** Added degraded mode handling to return zeros instead of crashing:
+```javascript
+const prisma = getPrisma();
+if (!prisma) {
+  console.warn('[getUnreadCounts] Prisma unavailable (degraded mode), returning zeros');
+  return json({ notifications: 0, messages: 0 });
+}
+```
+
+#### 4. `createPost` (POST /posts)
+**Error:** `Cannot read properties of null (reading 'post')` / `Cannot read properties of null (reading 'profile')`
+
+**Root Cause:** When validating media ownership with `include: { profile: true }`, the profile relation could be null for orphaned media entries.
+
+**Fix:** Added explicit null check before accessing `mediaRecord.profile.userId`:
+```javascript
+if (!mediaRecord.profile) {
+  log('media_orphaned', { route, userId: authUserId, mediaId, reason: 'no_profile' });
+  return error(404, 'Media profile not found');
+}
+```
+
+### Best Practices for Future Handlers
+
+1. **Always check getPrisma() result:**
+   ```javascript
+   const prisma = getPrisma();
+   if (!prisma) {
+     return error(503, 'Database unavailable');
+   }
+   ```
+
+2. **Check included relations before accessing:**
+   ```javascript
+   const record = await prisma.model.findUnique({
+     where: { id },
+     include: { relation: true }
+   });
+   if (!record) return error(404, 'Not found');
+   if (!record.relation) return error(404, 'Relation not found');
+   ```
+
+3. **Use optional chaining for non-critical data:**
+   ```javascript
+   const ownerName = record.profile?.user?.displayName || 'Unknown';
+   ```
+
+---
+
+## Onboarding Loop Fix (Dec 2024)
+
+### Summary
+Users were being redirected to onboarding on every login, even after completing it.
+
+### Root Cause
+The `onboardingComplete` flag was not being properly persisted due to:
+1. Handler errors (500s) preventing the flag from being saved
+2. Frontend not correctly reading the flag from the backend response
+
+### Fix
+1. Fixed all handler 500 errors that were preventing profile updates
+2. Ensured `updateMyProfile` properly saves `onboardingComplete: true` when onboarding completes
+3. Frontend `Protected` component correctly reads `user.onboardingComplete` from AuthContext
+
+### Frontend Routing Logic (src/routes/App.jsx)
+```javascript
+function Protected({ children }) {
+  const { user, isInitialized } = useAuth();
+  
+  if (!isInitialized) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  
+  // Only redirect to onboarding if flag is explicitly false
+  if (user.onboardingComplete === false && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
+  return children;
+}
+```
+
+---
+
 ## Related Files
 
 - `serverless.yml` - esbuild and package configuration
 - `src/db/client.js` - Prisma client initialization with error handling
 - `src/handlers/auth.js` - Authentication handlers
+- `src/handlers/profiles.js` - Profile update handlers
+- `src/handlers/education.js` - Education CRUD handlers
+- `src/handlers/notifications.js` - Notification handlers
+- `src/handlers/posts.js` - Post creation handlers
 - `src/utils/tokenManager.js` - JWT generation and cookie formatting
 - `src/middleware/csrfMiddleware.js` - CSRF token handling
 - `prisma/schema.prisma` - Database schema and binary targets
