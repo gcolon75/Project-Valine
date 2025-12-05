@@ -74,12 +74,12 @@ export const markAsRead = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const notificationId = event.pathParameters?.id;
     if (!notificationId) {
-      return error('Notification ID is required', 400);
+      return error(400, 'Notification ID is required');
     }
 
     const prisma = getPrisma();
@@ -90,11 +90,11 @@ export const markAsRead = async (event) => {
     });
 
     if (!notification) {
-      return error('Notification not found', 404);
+      return error(404, 'Notification not found');
     }
 
     if (notification.recipientId !== userId) {
-      return error('Not authorized to mark this notification as read', 403);
+      return error(403, 'Not authorized to mark this notification as read');
     }
 
     // Mark as read
@@ -119,7 +119,7 @@ export const markAsRead = async (event) => {
     });
   } catch (e) {
     console.error('Mark as read error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -127,7 +127,7 @@ export const markAllAsRead = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -149,7 +149,7 @@ export const markAllAsRead = async (event) => {
     });
   } catch (e) {
     console.error('Mark all as read error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
