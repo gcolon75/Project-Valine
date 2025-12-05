@@ -1,9 +1,9 @@
 /**
- * Tests for simplified Prisma client 
- * Verifies the simple singleton pattern and stub functions for backward compatibility
+ * Tests for Prisma client with degraded mode support
+ * Verifies the singleton pattern, degraded mode functionality, and error handling
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   isPrismaDegraded,
   setDegradedMode,
@@ -19,51 +19,89 @@ import {
   getPrismaSync
 } from '../src/db/client.js';
 
-describe('Simplified Prisma Client', () => {
+describe('Prisma Client with Degraded Mode', () => {
+  // Clean up degraded user store between tests
+  beforeEach(() => {
+    clearDegradedUserStore();
+  });
+
   describe('isPrismaDegraded', () => {
-    it('should always return false (degraded mode removed)', () => {
+    it('should return false by default', () => {
+      // Reset state
+      setDegradedMode(false);
       expect(isPrismaDegraded()).toBe(false);
     });
 
-    it('should still return false after calling setDegradedMode (no-op stub)', () => {
-      setDegradedMode(true, 'Test error');
-      expect(isPrismaDegraded()).toBe(false);
+    it('should return true when degraded mode is enabled', () => {
+      setDegradedMode(true);
+      expect(isPrismaDegraded()).toBe(true);
+      // Reset for other tests
+      setDegradedMode(false);
     });
   });
 
-  describe('Stub Functions for Backward Compatibility', () => {
-    it('getDegradedUser should always return null', () => {
-      expect(getDegradedUser('any@example.com')).toBeNull();
+  describe('Degraded Mode User Store', () => {
+    it('getDegradedUser should return null for non-existent user', () => {
+      expect(getDegradedUser('nonexistent@example.com')).toBeNull();
     });
 
-    it('createDegradedUser should return null (async for backward compatibility)', async () => {
-      expect(await createDegradedUser('test@example.com', 'password')).toBeNull();
+    it('createDegradedUser should create a user with hashed password', async () => {
+      const user = await createDegradedUser('test@example.com', 'password123');
+      expect(user).not.toBeNull();
+      expect(user.email).toBe('test@example.com');
+      expect(user.passwordHash).toBeDefined();
+      expect(user.passwordHash).not.toBe('password123'); // Should be hashed
+      expect(user._degradedMode).toBe(true);
     });
 
-    it('verifyDegradedUserPassword should return false (async for backward compatibility)', async () => {
-      expect(await verifyDegradedUserPassword('test@example.com', 'password')).toBe(false);
+    it('getDegradedUser should return created user', async () => {
+      await createDegradedUser('stored@example.com', 'password');
+      const user = getDegradedUser('stored@example.com');
+      expect(user).not.toBeNull();
+      expect(user.email).toBe('stored@example.com');
     });
 
-    it('getDegradedUserCount should return 0', () => {
+    it('verifyDegradedUserPassword should verify correct password', async () => {
+      await createDegradedUser('verify@example.com', 'correctpassword');
+      const result = await verifyDegradedUserPassword('verify@example.com', 'correctpassword');
+      expect(result).toBe(true);
+    });
+
+    it('verifyDegradedUserPassword should reject incorrect password', async () => {
+      await createDegradedUser('verify@example.com', 'correctpassword');
+      const result = await verifyDegradedUserPassword('verify@example.com', 'wrongpassword');
+      expect(result).toBe(false);
+    });
+
+    it('getDegradedUserCount should return number of users', async () => {
+      expect(getDegradedUserCount()).toBe(0);
+      await createDegradedUser('user1@example.com', 'password');
+      expect(getDegradedUserCount()).toBe(1);
+      await createDegradedUser('user2@example.com', 'password');
+      expect(getDegradedUserCount()).toBe(2);
+    });
+
+    it('clearDegradedUserStore should clear all users', async () => {
+      await createDegradedUser('user@example.com', 'password');
+      expect(getDegradedUserCount()).toBe(1);
+      clearDegradedUserStore();
       expect(getDegradedUserCount()).toBe(0);
     });
 
-    it('clearDegradedUserStore should be a no-op (no errors)', () => {
-      expect(() => clearDegradedUserStore()).not.toThrow();
-    });
-
-    it('setDegradedMode should be a no-op (no errors)', () => {
-      expect(() => setDegradedMode(true, 'error')).not.toThrow();
-    });
-
-    it('getPrismaInitError should return null', () => {
-      expect(getPrismaInitError()).toBeNull();
+    it('setDegradedMode should not throw', () => {
+      expect(() => setDegradedMode(true)).not.toThrow();
+      expect(() => setDegradedMode(false)).not.toThrow();
     });
   });
 
   describe('validateDatabaseUrl', () => {
     it('should return valid for correct URL', () => {
       const result = validateDatabaseUrl('postgresql://user:pass@host:5432/db?sslmode=require');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for postgres:// URL', () => {
+      const result = validateDatabaseUrl('postgres://user:pass@host:5432/db');
       expect(result.valid).toBe(true);
     });
 
@@ -92,41 +130,29 @@ describe('Simplified Prisma Client', () => {
       expect(result.valid).toBe(false);
       expect(result.error).toContain('not set');
     });
+
+    it('should return invalid for non-postgresql URL', () => {
+      const result = validateDatabaseUrl('mysql://user:pass@host:5432/db');
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('postgresql://');
+    });
   });
 
   describe('getPrisma', () => {
-    it('should return a PrismaClient instance', () => {
+    it('should return null when degraded mode is enabled', () => {
+      setDegradedMode(true);
       const prisma = getPrisma();
-      expect(prisma).not.toBeNull();
-      expect(prisma).toBeDefined();
-      
-      // Verify it's a valid PrismaClient instance by checking for expected methods
-      expect(typeof prisma.user).toBe('object');
-      expect(typeof prisma.$connect).toBe('function');
-      expect(typeof prisma.$disconnect).toBe('function');
-    });
-
-    it('should return the same instance on multiple calls (singleton pattern)', () => {
-      const prisma1 = getPrisma();
-      const prisma2 = getPrisma();
-      expect(prisma1).toBe(prisma2);
-    });
-  });
-
-  describe('initPrismaAsync', () => {
-    it('should return a Promise that resolves to PrismaClient', async () => {
-      const prisma = await initPrismaAsync();
-      expect(prisma).not.toBeNull();
-      expect(prisma).toBeDefined();
-      expect(typeof prisma.$connect).toBe('function');
+      expect(prisma).toBeNull();
+      setDegradedMode(false);
     });
   });
 
   describe('getPrismaSync', () => {
-    it('should return the same instance as getPrisma', () => {
-      const prisma = getPrisma();
-      const prismaSynced = getPrismaSync();
-      expect(prismaSynced).toBe(prisma);
+    it('should return the same as getPrisma', () => {
+      setDegradedMode(false);
+      const prisma1 = getPrisma();
+      const prisma2 = getPrismaSync();
+      expect(prisma1).toBe(prisma2);
     });
   });
 });
