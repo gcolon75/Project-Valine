@@ -92,7 +92,14 @@ custom:
     concurrency: 1
     external:
       - aws-sdk
+      # Prisma must be external for Lambda - esbuild cannot bundle native binaries
+      - '@prisma/client'
+      - .prisma
     keepOutputDirectory: true
+    # Include Prisma native binaries in the bundle
+    packagerOptions:
+      scripts:
+        - npx prisma generate
 
 package:
   individually: true
@@ -104,6 +111,9 @@ package:
     - '!**/*.md'
     - '!**/.git/**'
     - '!**/.vscode/**'
+    # Include Prisma client and generated files for Lambda
+    - 'node_modules/.prisma/**'
+    - 'node_modules/@prisma/client/**'
 
 functions:
   health:
