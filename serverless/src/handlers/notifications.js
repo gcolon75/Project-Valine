@@ -6,12 +6,23 @@ export const listNotifications = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const { limit = '50', cursor, unreadOnly } = event.queryStringParameters || {};
 
     const prisma = getPrisma();
+    
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.warn('[listNotifications] Prisma unavailable (degraded mode), returning empty');
+      return json({
+        notifications: [],
+        nextCursor: null,
+        hasMore: false,
+        unreadCount: 0
+      });
+    }
 
     const whereClause = {
       recipientId: userId,
@@ -37,7 +48,7 @@ export const listNotifications = async (event) => {
 
     const hasMore = notifications.length > parseInt(limit);
     const itemsToReturn = hasMore ? notifications.slice(0, -1) : notifications;
-    const nextCursor = hasMore ? itemsToReturn[itemsToReturn.length - 1].id : null;
+    const nextCursor = hasMore && itemsToReturn.length > 0 ? itemsToReturn[itemsToReturn.length - 1].id : null;
 
     // Get unread count
     const unreadCount = await prisma.notification.count({
@@ -55,7 +66,7 @@ export const listNotifications = async (event) => {
     });
   } catch (e) {
     console.error('List notifications error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -156,6 +167,15 @@ export const getUnreadCounts = async (event) => {
     }
 
     const prisma = getPrisma();
+    
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.warn('[getUnreadCounts] Prisma unavailable (degraded mode), returning zeros');
+      return json({
+        notifications: 0,
+        messages: 0
+      });
+    }
 
     // Get unread notifications count
     const notificationsCount = await prisma.notification.count({
@@ -187,7 +207,11 @@ export const getUnreadCounts = async (event) => {
     });
   } catch (e) {
     console.error('[getUnreadCounts] Error:', e);
-    return error('Server error: ' + e.message, 500);
+    // Return zeros instead of 500 for better UX (non-critical endpoint)
+    return json({
+      notifications: 0,
+      messages: 0
+    });
   }
 };
 

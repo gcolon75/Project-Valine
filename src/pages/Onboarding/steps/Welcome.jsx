@@ -99,7 +99,7 @@ export default function Welcome({ userData, onUpdate }) {
         </div>
         <div className="text-center p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
           <div className="text-2xl font-bold text-[#0CCE6B]">Free</div>
-          <div className="text-xs text-neutral-500">forever</div>
+          <div className="text-xs text-neutral-500">to join</div>
         </div>
       </div>
     </div>

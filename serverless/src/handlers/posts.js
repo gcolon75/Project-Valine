@@ -94,6 +94,12 @@ export const createPost = async (event) => {
         return error(404, 'Media not found');
       }
 
+      // Guard against orphaned media entries (profile may have been deleted)
+      if (!mediaRecord.profile) {
+        log('media_orphaned', { route, userId: authUserId, mediaId, reason: 'no_profile' });
+        return error(404, 'Media profile not found');
+      }
+
       // Verify media belongs to the author (via profile ownership)
       if (mediaRecord.profile.userId !== authorId) {
         log('media_ownership_error', { route, userId: authUserId, mediaId });

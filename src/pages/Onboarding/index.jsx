@@ -43,7 +43,6 @@ export default function Onboarding() {
     
     return {
       displayName: user?.displayName || user?.name || '',
-      headline: user?.headline || '',
       title: user?.title || '',
       location: user?.location || '',
       avatar: user?.avatar || null,
@@ -124,7 +123,7 @@ export default function Onboarding() {
       // Update user profile with onboarding data
       const updates = {
         displayName: onboardingData.displayName || '',
-        headline: onboardingData.headline || '',
+        title: onboardingData.title || '',
         bio: onboardingData.bio || '',
         roles: onboardingData.roles || [],
         tags: onboardingData.tags || [],

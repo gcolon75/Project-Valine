@@ -175,6 +175,12 @@ export const updateEducation = async (event) => {
       return error(404, 'Education entry not found');
     }
 
+    // Guard against orphaned education entries (profile may have been deleted)
+    if (!education.profile) {
+      console.error('[updateEducation] Orphaned education entry - no profile:', { educationId: id, userId });
+      return error(404, 'Education entry profile not found');
+    }
+
     if (education.profile.userId !== userId) {
       return error(403, 'Forbidden - not education owner');
     }
@@ -237,6 +243,12 @@ export const deleteEducation = async (event) => {
 
     if (!education) {
       return error(404, 'Education entry not found');
+    }
+
+    // Guard against orphaned education entries (profile may have been deleted)
+    if (!education.profile) {
+      console.error('[deleteEducation] Orphaned education entry - no profile:', { educationId: id, userId });
+      return error(404, 'Education entry profile not found');
     }
 
     if (education.profile.userId !== userId) {

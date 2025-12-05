@@ -6,7 +6,8 @@ import Button from '../../../components/ui/Button';
 
 /**
  * ProfileBasics Step - Core profile information
- * Includes: display name, headline, title, location, avatar upload
+ * Includes: display name, title (professional title), location, avatar upload
+ * Note: Headline field removed per product decision - only Professional Title is used
  */
 export default function ProfileBasics({ userData, onUpdate }) {
   const [showCropper, setShowCropper] = useState(false);
@@ -14,7 +15,6 @@ export default function ProfileBasics({ userData, onUpdate }) {
 
   const [formData, setFormData] = useState({
     displayName: userData?.displayName || '',
-    headline: userData?.headline || '',
     title: userData?.title || '',
     location: userData?.location || '',
     avatar: userData?.avatar || null,
@@ -28,10 +28,6 @@ export default function ProfileBasics({ userData, onUpdate }) {
       newErrors.displayName = 'Display name is required';
     } else if (formData.displayName.length > 100) {
       newErrors.displayName = 'Display name must be 100 characters or less';
-    }
-
-    if (formData.headline.length > 100) {
-      newErrors.headline = 'Headline must be 100 characters or less';
     }
 
     if (formData.title.length > 100) {
@@ -123,30 +119,6 @@ export default function ProfileBasics({ userData, onUpdate }) {
             {formData.displayName.length}/100 characters
           </p>
         )}
-      </div>
-
-      {/* Headline */}
-      <div>
-        <label
-          htmlFor="headline"
-          className="block text-sm font-medium text-neutral-900 dark:text-white mb-2"
-        >
-          Professional Headline
-        </label>
-        <input
-          type="text"
-          id="headline"
-          name="headline"
-          value={formData.headline}
-          onChange={handleChange}
-          maxLength={100}
-          className="w-full px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
-          placeholder="e.g., Award-winning voice actor specializing in character work"
-          aria-describedby="headline-hint"
-        />
-        <p id="headline-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-          {formData.headline.length}/100 characters • A brief tagline that appears on your profile
-        </p>
       </div>
 
       {/* Professional Title */}
