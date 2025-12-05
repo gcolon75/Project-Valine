@@ -32,7 +32,7 @@ export const createPost = async (event) => {
     const authUserId = getUserIdFromEvent(event);
     if (!authUserId) {
       log('auth_failure', { route, reason: 'missing_or_invalid_token' });
-      return error('Unauthorized - valid access token required', 401);
+      return error(401, 'Unauthorized - valid access token required');
     }
     
     let body;
@@ -40,7 +40,7 @@ export const createPost = async (event) => {
       body = JSON.parse(event.body || '{}');
     } catch (parseError) {
       log('parse_error', { route, userId: authUserId, error: parseError.message });
-      return error('Invalid JSON in request body', 400);
+      return error(400, 'Invalid JSON in request body');
     }
     
     const { content, media, authorId, mediaId, tags, visibility, audioUrl, price } = body;
@@ -57,13 +57,13 @@ export const createPost = async (event) => {
     
     if (!content || !authorId) {
       log('validation_error', { route, userId: authUserId, reason: 'missing_required_fields' });
-      return error('content and authorId are required', 400);
+      return error(400, 'content and authorId are required');
     }
     
     // Verify the authenticated user matches the authorId
     if (authUserId !== authorId) {
       log('auth_mismatch', { route, userId: authUserId, authorId });
-      return error('Forbidden - you can only create posts for yourself', 403);
+      return error(403, 'Forbidden - you can only create posts for yourself');
     }
 
     // Validate visibility if provided
@@ -71,7 +71,7 @@ export const createPost = async (event) => {
     const postVisibility = visibility || 'PUBLIC';
     if (!validVisibilities.includes(postVisibility)) {
       log('validation_error', { route, userId: authUserId, reason: 'invalid_visibility', value: visibility });
-      return error('visibility must be either PUBLIC or FOLLOWERS', 400);
+      return error(400, 'visibility must be either PUBLIC or FOLLOWERS');
     }
     
     // Validate tags is an array if provided
@@ -91,13 +91,13 @@ export const createPost = async (event) => {
 
       if (!mediaRecord) {
         log('media_not_found', { route, userId: authUserId, mediaId });
-        return error('Media not found', 404);
+        return error(404, 'Media not found');
       }
 
       // Verify media belongs to the author (via profile ownership)
       if (mediaRecord.profile.userId !== authorId) {
         log('media_ownership_error', { route, userId: authUserId, mediaId });
-        return error('Forbidden - media does not belong to user', 403);
+        return error(403, 'Forbidden - media does not belong to user');
       }
       
       // Store the media record (without profile) for the response
@@ -111,11 +111,11 @@ export const createPost = async (event) => {
       const parsedPrice = parseFloat(price);
       if (isNaN(parsedPrice)) {
         log('validation_error', { route, userId: authUserId, reason: 'invalid_price', value: price });
-        return error('Price must be a valid number', 400);
+        return error(400, 'Price must be a valid number');
       }
       if (parsedPrice < 0) {
         log('validation_error', { route, userId: authUserId, reason: 'negative_price', value: price });
-        return error('Price cannot be negative', 400);
+        return error(400, 'Price cannot be negative');
       }
       postPrice = parsedPrice;
     }
@@ -146,7 +146,7 @@ export const createPost = async (event) => {
   } catch (e) {
     log('create_post_error', { route, error: e.message, stack: e.stack });
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -194,7 +194,7 @@ export const listPosts = async (event) => {
     return json(postsWithMedia);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -203,7 +203,7 @@ export const getPost = async (event) => {
     const id = event.pathParameters?.id;
     
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const prisma = getPrisma();
@@ -217,7 +217,7 @@ export const getPost = async (event) => {
     });
     
     if (!post) {
-      return error('Post not found', 404);
+      return error(404, 'Post not found');
     }
     
     // Fetch media attachment if present
@@ -234,7 +234,7 @@ export const getPost = async (event) => {
     return json(responsePost);
   } catch (e) {
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -249,7 +249,7 @@ export const getAudioUploadUrl = async (event) => {
     const authUserId = getUserIdFromEvent(event);
     if (!authUserId) {
       log('auth_failure', { route, reason: 'missing_or_invalid_token' });
-      return error('Unauthorized - valid access token required', 401);
+      return error(401, 'Unauthorized - valid access token required');
     }
     
     let body;
@@ -257,13 +257,13 @@ export const getAudioUploadUrl = async (event) => {
       body = JSON.parse(event.body || '{}');
     } catch (parseError) {
       log('parse_error', { route, userId: authUserId, error: parseError.message });
-      return error('Invalid JSON in request body', 400);
+      return error(400, 'Invalid JSON in request body');
     }
     
     const { filename, contentType } = body;
     
     if (!filename) {
-      return error('filename is required', 400);
+      return error(400, 'filename is required');
     }
     
     // Validate content type
@@ -279,7 +279,7 @@ export const getAudioUploadUrl = async (event) => {
     
     if (!bucket) {
       log('config_error', { route, reason: 'missing_s3_bucket' });
-      return error('Server configuration error', 500);
+      return error(500, 'Server configuration error');
     }
     
     // Generate unique S3 key for audio file
@@ -304,7 +304,7 @@ export const getAudioUploadUrl = async (event) => {
   } catch (e) {
     log('audio_upload_url_error', { route, error: e.message, stack: e.stack });
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -319,12 +319,12 @@ export const requestPostAccess = async (event) => {
     const authUserId = getUserIdFromEvent(event);
     if (!authUserId) {
       log('auth_failure', { route, reason: 'missing_or_invalid_token' });
-      return error('Unauthorized - valid access token required', 401);
+      return error(401, 'Unauthorized - valid access token required');
     }
     
     const postId = event.pathParameters?.id;
     if (!postId) {
-      return error('Post ID is required', 400);
+      return error(400, 'Post ID is required');
     }
     
     const prisma = getPrisma();
@@ -336,12 +336,12 @@ export const requestPostAccess = async (event) => {
     });
     
     if (!post) {
-      return error('Post not found', 404);
+      return error(404, 'Post not found');
     }
     
     // Can't request access to your own post
     if (post.authorId === authUserId) {
-      return error('You cannot request access to your own post', 400);
+      return error(400, 'You cannot request access to your own post');
     }
     
     // For now, just log the request and return success
@@ -363,6 +363,6 @@ export const requestPostAccess = async (event) => {
   } catch (e) {
     log('post_access_request_error', { route, error: e.message, stack: e.stack });
     console.error(e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };

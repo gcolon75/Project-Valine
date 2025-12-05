@@ -10,8 +10,6 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   versionFunctions: false
-  layers:
-    - { Ref: PrismaLambdaLayer }
   httpApi:
     cors:
       allowedOrigins:
@@ -94,17 +92,7 @@ custom:
     concurrency: 1
     external:
       - aws-sdk
-      - '@prisma/client'
-      - '.prisma/client'
-    exclude:
-      - '@prisma/client'
-      - '.prisma/client'
     keepOutputDirectory: true
-
-layers:
-  prisma:
-    package:
-      artifact: layers/prisma-layer.zip
 
 package:
   individually: true
