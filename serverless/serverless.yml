@@ -99,7 +99,7 @@ custom:
     # Include Prisma native binaries in the bundle
     packagerOptions:
       scripts:
-        - npx prisma generate
+        - pwsh -NoLogo -NoProfile -Command "Set-Location 'C:\Users\ghawk\Documents\GitHub\Project-Valine'; npx prisma generate --schema serverless/prisma/schema.prisma"
 
 package:
   individually: true
