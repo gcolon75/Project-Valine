@@ -76,6 +76,8 @@ export function FeedProvider({ children }) {
     });
   };
 
+  // NOTE: addComment is a local-first UI function for immediate feedback.
+  // Actual comment persistence is handled by API calls in the CommentList component.
   const addComment = (postId, text) => {
     const c = {
       id: "c" + Math.random().toString(36).slice(2),
@@ -94,6 +96,9 @@ export function FeedProvider({ children }) {
     if (post) bumpPrefs(post.tags, 1.5);
   };
 
+  // NOTE: createPost is a local-first UI function for immediate feedback.
+  // Actual post creation via API is handled in the Post page component (Post.jsx).
+  // This function is kept for local state management and preference tracking.
   const createPost = ({ title, body, tags }) => {
     const post = {
       id: "p" + Math.random().toString(36).slice(2),
