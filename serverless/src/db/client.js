@@ -194,7 +194,9 @@ export async function createDegradedUser(email, password) {
  */
 export async function verifyDegradedUserPassword(email, password) {
   const user = getDegradedUser(email);
-  if (!user || !user.passwordHash) return false;
+  if (!user || !user.passwordHash) {
+    return false;
+  }
   
   const bcrypt = await import('bcryptjs');
   return bcrypt.default.compare(password, user.passwordHash);
@@ -226,7 +228,9 @@ export function clearDegradedUserStore() {
  */
 export async function initPrismaAsync() {
   const client = getPrisma();
-  if (!client) return null;
+  if (!client) {
+    return null;
+  }
   
   try {
     // Test the connection
