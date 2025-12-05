@@ -4,46 +4,8 @@ import { rankForUser, searchPosts } from "../services/search";
 import { optimisticUpdate } from "../hooks/useOptimisticUpdate";
 import { apiClient } from "../services/api.js";
 
-// ---- Demo seed data ----
-const NOW = Date.now();
-const demoPosts = [
-  {
-    id: "p1",
-    author: { name: "Avery Quinn", role: "Writer • Sci-Fi", avatar: "" },
-    title: "Six-page pilot cold open",
-    body: "Looking for feedback on pacing and hook. Short cold open for a space-noir pilot.",
-    tags: ["#Script", "#SciFi", "#NeedEdits"],
-    createdAt: NOW - 2 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 42,
-    saved: false,
-    comments: 8,
-  },
-  {
-    id: "p2",
-    author: { name: "Milo Reyes", role: "Actor • Drama", avatar: "" },
-    title: "Audition tape (teaser)",
-    body: "Monologue snippet; full tape gated — hit Discover to request access.",
-    tags: ["#Audition", "#Drama"],
-    createdAt: NOW - 5 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 31,
-    saved: false,
-    comments: 12,
-  },
-  {
-    id: "p3",
-    author: { name: "Noa Kim", role: "Director • Indie", avatar: "" },
-    title: "ShortFilm board roughs",
-    body: "Looking for a writer to punch up a key scene. Mood board and beat sheet attached.",
-    tags: ["#ShortFilm", "#Indie", "#Collab"],
-    createdAt: NOW - 24 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 18,
-    saved: false,
-    comments: 4,
-  },
-];
+// No more demo seed data - API-first approach
+// Posts are loaded from the backend API only
 
 const FeedContext = createContext(null);
 export const useFeed = () => useContext(FeedContext);
@@ -51,9 +13,10 @@ export const useFeed = () => useContext(FeedContext);
 const LS_KEY = "valine.feed.v1";
 
 export function FeedProvider({ children }) {
+  // Initialize with empty array - posts come from API only
   const [posts, setPosts] = useState(() => {
     const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved).posts : demoPosts;
+    return saved ? JSON.parse(saved).posts : [];
   });
 
   const [comments, setComments] = useState(() => {
@@ -113,6 +76,8 @@ export function FeedProvider({ children }) {
     });
   };
 
+  // NOTE: addComment is a local-first UI function for immediate feedback.
+  // Actual comment persistence is handled by API calls in the CommentList component.
   const addComment = (postId, text) => {
     const c = {
       id: "c" + Math.random().toString(36).slice(2),
@@ -131,6 +96,9 @@ export function FeedProvider({ children }) {
     if (post) bumpPrefs(post.tags, 1.5);
   };
 
+  // NOTE: createPost is a local-first UI function for immediate feedback.
+  // Actual post creation via API is handled in the Post page component (Post.jsx).
+  // This function is kept for local state management and preference tracking.
   const createPost = ({ title, body, tags }) => {
     const post = {
       id: "p" + Math.random().toString(36).slice(2),

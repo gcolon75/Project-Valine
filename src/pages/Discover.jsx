@@ -19,7 +19,7 @@ export default function Discover() {
   
   const postResults = useMemo(() => search(q), [q, search]);
 
-  // Search users via API with fallback to mock data
+  // Search users via API (real users only)
   const searchUsers = async (query) => {
     if (!query || query.length < 2) {
       setUserResults([]);
@@ -28,7 +28,6 @@ export default function Discover() {
     
     setSearchLoading(true);
     try {
-      // Try API call first
       const response = await searchUsersApi({ query, limit: 20 });
       if (response?.items && response.items.length > 0) {
         // Map API response to expected format
@@ -41,66 +40,9 @@ export default function Discover() {
           profileVisibility: 'public',
         }));
         setUserResults(mappedUsers);
-        setSearchLoading(false);
-        return;
+      } else {
+        setUserResults([]);
       }
-    } catch (error) {
-      console.warn('API search failed, falling back to mock data:', error);
-    }
-
-    // Fallback to mock data for demo purposes
-    try {
-      const mockUsers = [
-        {
-          id: 'user-1',
-          displayName: 'Justin Valine',
-          username: 'valinejustin',
-          avatar: 'https://i.pravatar.cc/150?img=11',
-          headline: 'Voice Actor & Theater Artist',
-          profileVisibility: 'public',
-        },
-        {
-          id: 'user-2',
-          displayName: 'Sarah Johnson',
-          username: 'voiceactor_sarah',
-          avatar: 'https://i.pravatar.cc/150?img=1',
-          headline: 'Professional Voice Actor',
-          profileVisibility: 'public',
-        },
-        {
-          id: 'user-3',
-          displayName: 'Michael Chen',
-          username: 'audio_engineer_mike',
-          avatar: 'https://i.pravatar.cc/150?img=12',
-          headline: 'Audio Engineer & Producer',
-          profileVisibility: 'private',
-        },
-        {
-          id: 'user-4',
-          displayName: 'Emily Rodriguez',
-          username: 'writer_emily',
-          avatar: 'https://i.pravatar.cc/150?img=5',
-          headline: 'Script Writer & Playwright',
-          profileVisibility: 'public',
-        },
-        {
-          id: 'user-5',
-          displayName: 'Gabriel Colon',
-          username: 'ghawk75',
-          avatar: 'https://i.pravatar.cc/150?img=68',
-          headline: 'Voice & Stage Actor',
-          profileVisibility: 'public',
-        },
-      ];
-      
-      // Filter by query
-      const filtered = mockUsers.filter(user => 
-        user.displayName.toLowerCase().includes(query.toLowerCase()) ||
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.headline?.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      setUserResults(filtered);
     } catch (error) {
       console.error('Search failed:', error);
       setUserResults([]);
@@ -139,35 +81,8 @@ export default function Discover() {
     }
   };
 
-  // Featured artists (shown when no search)
-  const featuredUsers = [
-    {
-      id: 'user-1',
-      displayName: 'Justin Valine',
-      username: 'valinejustin',
-      avatar: 'https://i.pravatar.cc/150?img=11',
-      headline: 'Voice Actor & Theater Artist',
-      profileVisibility: 'public',
-    },
-    {
-      id: 'user-5',
-      displayName: 'Gabriel Colon',
-      username: 'ghawk75',
-      avatar: 'https://i.pravatar.cc/150?img=68',
-      headline: 'Voice & Stage Actor',
-      profileVisibility: 'public',
-    },
-    {
-      id: 'user-2',
-      displayName: 'Sarah Johnson',
-      username: 'voiceactor_sarah',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      headline: 'Professional Voice Actor',
-      profileVisibility: 'public',
-    },
-  ];
-
-  const displayUsers = q.length >= 2 ? userResults : featuredUsers;
+  // Only show search results (no featured/fake users when no search)
+  const displayUsers = q.length >= 2 ? userResults : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-fade-in">
@@ -218,10 +133,14 @@ export default function Discover() {
       {(searchType === 'all' || searchType === 'users') && (
         <div>
           <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
-            {q.length >= 2 ? 'People' : 'Featured Artists'}
+            {q.length >= 2 ? 'People' : 'Search for people'}
           </h3>
           
-          {displayUsers.length === 0 && q.length >= 2 ? (
+          {q.length < 2 ? (
+            <div className="text-center py-8 text-neutral-500">
+              Enter at least 2 characters to search for people
+            </div>
+          ) : displayUsers.length === 0 ? (
             <div className="text-center py-8 text-neutral-500">
               No users found for "{q}"
             </div>

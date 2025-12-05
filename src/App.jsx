@@ -7,7 +7,7 @@ import Join from './pages/Join.jsx';
 import Login from './pages/Login.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import Feed from './pages/Feed.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import Search from './services/Search.jsx/index.js';
 import Messages from './pages/Messages.jsx';
 import Bookmarks from './pages/Bookmarks.jsx';
@@ -51,8 +51,8 @@ function App() {
       <Route path="/onboarding" element={<Onboarding />} />
       {/* Authenticated pages under AppLayout */}
       <Route element={<AppLayout />}>
-        <Route path="/feed" element={<Feed />} />
-        <Route path="/dashboard" element={<Feed />} />
+        <Route path="/feed" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/search" element={<Search />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/bookmarks" element={<Bookmarks />} />
