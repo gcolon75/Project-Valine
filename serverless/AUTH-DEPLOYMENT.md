@@ -45,11 +45,14 @@ npx prisma generate --schema serverless/prisma/schema.prisma
 Ensure AWS credentials are configured and the following environment variables are set:
 
 ```powershell
-$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
-$env:JWT_SECRET = "your-jwt-secret"
+# Database connection string (no spaces, special chars URL-encoded)
+$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+$env:JWT_SECRET = "your-jwt-secret-at-least-32-chars"
 $env:AWS_REGION = "us-west-2"
 $env:STAGE = "prod"
 ```
+
+See `.env.example` for the full list of environment variables.
 
 ### Deploy Backend
 
@@ -79,9 +82,11 @@ npm run build
 # Sync to S3 (requires AWS CLI)
 aws s3 sync dist/ s3://valine-frontend-prod --delete
 
-# Invalidate CloudFront cache
-aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --paths "/*"
+# Invalidate CloudFront cache (get distribution ID from AWS Console or use aws cloudfront list-distributions)
+aws cloudfront create-invalidation --distribution-id EXXXXXXXXXX --paths "/*"
 ```
+
+> **Note**: Find your CloudFront distribution ID in the AWS Console under CloudFront > Distributions, or run `aws cloudfront list-distributions --query "DistributionList.Items[*].{Id:Id,Origin:Origins.Items[0].DomainName}"` to list all distributions.
 
 ## Troubleshooting
 
