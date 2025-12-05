@@ -5,12 +5,15 @@ import { getUserFromEvent } from './auth.js';
 /**
  * GET /feed
  * Get aggregated posts from followed users for the authenticated user's feed
+ * Returns:
+ * - PUBLIC posts from followed users
+ * - All posts from self (PUBLIC and FOLLOWERS)
  */
 export const getFeed = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const { limit = '20', cursor } = event.queryStringParameters || {};
@@ -28,14 +31,20 @@ export const getFeed = async (event) => {
     
     const followedUserIds = following.map(f => f.receiverId);
     
-    // Include the user's own posts in their feed
-    const authorIds = [userId, ...followedUserIds];
-    
-    // Fetch posts from followed users and self
+    // Fetch posts with visibility rules:
+    // - Self's posts: any visibility (PUBLIC or FOLLOWERS)
+    // - Followed users' posts: only PUBLIC
     const posts = await prisma.post.findMany({
       where: {
-        authorId: { in: authorIds },
-        visibility: 'PUBLIC'  // Only show public posts in feed
+        OR: [
+          // Self's posts with any visibility
+          { authorId: userId },
+          // Followed users' public posts
+          {
+            authorId: { in: followedUserIds },
+            visibility: 'PUBLIC'
+          }
+        ]
       },
       take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
@@ -79,6 +88,6 @@ export const getFeed = async (event) => {
     });
   } catch (e) {
     console.error('getFeed error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
