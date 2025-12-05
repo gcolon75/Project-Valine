@@ -251,25 +251,17 @@ export default function Dashboard() {
           {/* RIGHT COLUMN */}
           <aside className="hidden lg:block space-y-4">
             <Card title="Discover creators" padding="default">
-              <div className="grid gap-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" aria-hidden="true" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm truncate text-neutral-900 dark:text-white">Creator {i}</div>
-                      <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">
-                        Actor • Drama
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => navigate(`/profile/creator-${i}`)}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      View
-                    </Button>
-                  </div>
-                ))}
+              <div className="text-center py-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                  Find and connect with artists in the community
+                </p>
+                <Button
+                  onClick={() => navigate('/discover')}
+                  variant="primary"
+                  size="sm"
+                >
+                  Explore Discover
+                </Button>
               </div>
             </Card>
 

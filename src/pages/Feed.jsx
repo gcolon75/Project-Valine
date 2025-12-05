@@ -1,4 +1,8 @@
-// src/context/FeedContext.jsx
+// src/pages/Feed.jsx - DEPRECATED, use FeedContext.jsx instead
+// This file is kept for backward compatibility but should be removed
+// All functionality has been moved to src/context/FeedContext.jsx
+// Posts are now loaded from the API only - no mock/demo data
+
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { rankForUser, searchPosts } from "../services/search";
 
@@ -10,56 +14,16 @@ import { rankForUser, searchPosts } from "../services/search";
 const FeedContext = createContext(null);
 export const useFeed = () => useContext(FeedContext);
 
-// Demo starter posts
-const NOW = Date.now();
-const demoPosts = [
-  {
-    id: "p1",
-    author: { name: "Avery Quinn", role: "Writer • Sci-Fi", avatar: "" },
-    title: "Six-page pilot cold open",
-    body:
-      "Looking for feedback on pacing and hook. Short cold open for a space-noir pilot.",
-    tags: ["#Script", "#SciFi", "#NeedEdits"],
-    createdAt: NOW - 2 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 42,
-    saved: false,
-    comments: 8,
-  },
-  {
-    id: "p2",
-    author: { name: "Milo Reyes", role: "Actor • Drama", avatar: "" },
-    title: "Audition tape (teaser)",
-    body:
-      "Monologue snippet; full tape gated — hit Discover to request access.",
-    tags: ["#Audition", "#Drama"],
-    createdAt: NOW - 5 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 31,
-    saved: false,
-    comments: 12,
-  },
-  {
-    id: "p3",
-    author: { name: "Noa Kim", role: "Director • Indie", avatar: "" },
-    title: "ShortFilm board roughs",
-    body:
-      "Looking for a writer to punch up a key scene. Mood board and beat sheet attached.",
-    tags: ["#ShortFilm", "#Indie", "#Collab"],
-    createdAt: NOW - 24 * 60 * 60 * 1000,
-    mediaUrl: "",
-    likes: 18,
-    saved: false,
-    comments: 4,
-  },
-];
+// No demo posts - API-first approach
+// Posts are loaded from the backend API only
 
 const LS_KEY = "valine.feed.v1";
 
 export function FeedProvider({ children }) {
+  // Initialize with empty array - posts come from API only
   const [posts, setPosts] = useState(() => {
     const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved).posts : demoPosts;
+    return saved ? JSON.parse(saved).posts : [];
   });
 
   const [comments, setComments] = useState(() => {
