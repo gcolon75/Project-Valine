@@ -1,9 +1,19 @@
 // src/mocks/handlers.js
+// 
+// MSW (Mock Service Worker) handlers for TESTING ONLY
+// These mock handlers are used in automated tests to simulate API responses
+// without requiring a real backend server.
+//
+// WARNING: These handlers should NOT be used in production.
+// The browser.js file conditionally enables these mocks only when:
+// - Running in development mode with VITE_ENABLE_MOCKS=true
+// - Running automated tests
+//
 import { http, HttpResponse } from 'msw';
 
 const API_BASE = 'http://localhost:3001';
 
-// Mock data
+// Mock data for testing purposes only
 const mockUser = {
   id: 'user-1',
   username: 'testuser',
