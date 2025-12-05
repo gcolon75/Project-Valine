@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 
 let prisma = null;
 let prismaInitError = null;
+// degradedMode is ONLY set when explicitly requested via setDegradedMode(true)
+// It is NOT automatically set on initialization failures
 let degradedMode = false;
 
 // In-memory user store for degraded mode (when database is unavailable)
@@ -16,16 +18,17 @@ const degradedUserStore = new Map();
  * - node_modules/.prisma/** must be included in the package
  * - The rhel-openssl-3.0.x binary target is required for Amazon Linux 2023
  * 
- * @returns {PrismaClient|null} Returns null if initialization failed
+ * DEGRADED MODE BEHAVIOR:
+ * - degradedMode is ONLY activated by explicit call to setDegradedMode(true)
+ * - Initialization failures are logged but do NOT trigger degraded mode automatically
+ * - This ensures transient issues don't permanently lock out database access
+ * 
+ * @returns {PrismaClient|null} Returns null if in degraded mode or initialization failed
  */
 export function getPrisma() {
+  // Only return null for explicit degraded mode override
   if (degradedMode) {
-    return null;
-  }
-  
-  if (prismaInitError) {
-    // Don't retry if we already failed - prevents repeated cold start delays
-    console.error('[DB] Prisma previously failed to initialize:', prismaInitError.message);
+    console.warn('[DB] Running in degraded mode (explicitly set)');
     return null;
   }
   
@@ -42,8 +45,9 @@ export function getPrisma() {
         if (validation.sanitizedUrl) {
           console.error('[DB] Sanitized URL:', validation.sanitizedUrl);
         }
+        // Store the error but DON'T enable degraded mode automatically
+        // This allows retries on subsequent calls if the env var is fixed
         prismaInitError = new Error(`DATABASE_URL validation failed: ${validation.error}`);
-        degradedMode = true;
         return null;
       }
       
@@ -54,6 +58,8 @@ export function getPrisma() {
           : ['error']
       });
       
+      // Clear any previous error on successful initialization
+      prismaInitError = null;
       console.log('[DB] Prisma client initialized successfully');
     } catch (error) {
       // Capture initialization errors - common in Lambda when binaries are missing
@@ -64,8 +70,9 @@ export function getPrisma() {
         ...(process.env.NODE_ENV !== 'production' && { stack: error.stack })
       });
       
+      // Store error but DON'T enable degraded mode automatically
+      // This allows retries if the underlying issue is fixed
       prismaInitError = error;
-      degradedMode = true;
       return null;
     }
   }
@@ -123,7 +130,19 @@ export function setDegradedMode(enabled) {
   degradedMode = enabled;
   if (enabled) {
     console.warn('[DB] Degraded mode enabled - database operations will use in-memory store');
+  } else {
+    console.log('[DB] Degraded mode disabled - will attempt normal database operations');
   }
+}
+
+/**
+ * Reset Prisma client state (for testing or reconnection)
+ * This clears the cached client and error state to allow fresh initialization
+ */
+export function resetPrismaState() {
+  prisma = null;
+  prismaInitError = null;
+  console.log('[DB] Prisma state reset - next getPrisma() call will reinitialize');
 }
 
 // ============= Degraded Mode User Store =============
@@ -199,6 +218,10 @@ export function clearDegradedUserStore() {
 /**
  * Initialize Prisma asynchronously with connection test
  * Useful for Lambda cold start optimization
+ * 
+ * NOTE: This does NOT automatically enable degraded mode on connection failure.
+ * Use setDegradedMode(true) explicitly if you want to enter degraded mode.
+ * 
  * @returns {Promise<PrismaClient|null>}
  */
 export async function initPrismaAsync() {
@@ -212,7 +235,8 @@ export async function initPrismaAsync() {
     return client;
   } catch (error) {
     console.error('[DB] Database connection test failed:', error.message);
-    degradedMode = true;
+    // Log the error but DON'T automatically enable degraded mode
+    // The caller can decide whether to enable it based on their use case
     return null;
   }
 }
