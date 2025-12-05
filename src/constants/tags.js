@@ -30,7 +30,6 @@ export const ALLOWED_TAGS = [
   'VoiceOver',
   
   // Content Types
-  'Reading',
   'Reel',
   'ShortFilm',
   'Feature',
@@ -52,7 +51,7 @@ export const TAG_CATEGORIES = {
   performance: ['Monologue', 'Drama', 'Comedy', 'Improv', 'Character', 'Stage'],
   genre: ['SciFi', 'Fantasy', 'Horror', 'Romance', 'Thriller', 'Action'],
   format: ['Narration', 'Animation', 'Commercial', 'Audiobook', 'Podcast', 'VoiceOver'],
-  content: ['Reading', 'Reel', 'ShortFilm', 'Feature', 'Pilot', 'ColdRead'],
+  content: ['Reel', 'ShortFilm', 'Feature', 'Pilot', 'ColdRead'],
   skill: ['Dialect', 'Playwriting', 'Directing', 'Producing', 'Editing', 'Casting'],
 };
 

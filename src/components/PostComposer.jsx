@@ -149,7 +149,7 @@ export default function PostComposer() {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="w-full bg-transparent text-base md:text-lg font-semibold text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500"
-        placeholder="Share a script, audition, reading, or reel..."
+        placeholder="Share a script, audition, or reel..."
       />
       <textarea
         value={body}

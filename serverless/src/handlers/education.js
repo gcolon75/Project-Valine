@@ -15,6 +15,12 @@ export const listEducation = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.warn('[listEducation] Prisma unavailable (degraded mode), returning empty array');
+      return json([]);
+    }
+
     // Get user's profile
     let profile = await prisma.profile.findUnique({
       where: { userId },
@@ -85,6 +91,12 @@ export const createEducation = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[createEducation] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Get user's profile (or create one if it doesn't exist)
     let profile = await prisma.profile.findUnique({
@@ -163,6 +175,12 @@ export const updateEducation = async (event) => {
 
     const prisma = getPrisma();
 
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[updateEducation] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
+
     // Get education and verify ownership through profile
     const education = await prisma.education.findUnique({
       where: { id },
@@ -232,6 +250,12 @@ export const deleteEducation = async (event) => {
     }
 
     const prisma = getPrisma();
+
+    // Handle degraded mode (database unavailable)
+    if (!prisma) {
+      console.error('[deleteEducation] Prisma unavailable (degraded mode)');
+      return error(503, 'Database unavailable');
+    }
 
     // Get education and verify ownership
     const education = await prisma.education.findUnique({
