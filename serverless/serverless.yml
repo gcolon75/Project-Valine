@@ -10,6 +10,9 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   versionFunctions: false
+  # Attach Prisma layer to all functions (provides @prisma/client and .prisma/client)
+  layers:
+    - { Ref: PrismaLambdaLayer }
   httpApi:
     cors:
       allowedOrigins:
@@ -113,20 +116,38 @@ package:
     - '!**/*.md'
     - '!**/.git/**'
     - '!**/.vscode/**'
-
-    # Include only Prisma client + generated client directory
-    - 'node_modules/@prisma/client/**'
-    - 'node_modules/.prisma/client/**'
-
-    # Exclude unused Prisma engines to keep Lambda size < 250MB
-    - '!node_modules/.prisma/client/query_engine-windows-*'
-    - '!node_modules/.prisma/client/query_engine-darwin-*'
-    - '!node_modules/.prisma/client/libquery_engine-rhel-*'
-    - '!node_modules/.prisma/client/libquery_engine-darwin-*'
-    - '!node_modules/.prisma/client/libquery_engine-debian-*'
-    - '!node_modules/.prisma/client/libquery_engine-linux-*musl*'
-    - '!node_modules/.prisma/client/*.exe'
     - '!node_modules/.cache/**'
+    # IMPORTANT: Prisma is provided via the PrismaLambdaLayer, NOT bundled per-function.
+    # Exclude all Prisma files from function packages to keep them small.
+    - '!node_modules/@prisma/**'
+    - '!node_modules/.prisma/**'
+
+# =========================================================================
+# Prisma Lambda Layer
+# =========================================================================
+# The Prisma client and native binaries are large (~93MB compressed).
+# Including them in each function zip would exceed Lambda's 250MB limit.
+# Instead, we use a Lambda Layer that is built separately and attached
+# to all functions via provider.layers above.
+#
+# To build the layer before deployment:
+#   Windows:   .\scripts\build-prisma-layer.ps1
+#   Linux/Mac: ./scripts/build-prisma-layer.sh
+#
+# The layer contains:
+#   - nodejs/node_modules/@prisma/client (Prisma client runtime)
+#   - nodejs/node_modules/.prisma/client (generated client + native binary)
+#
+# See layers/README.md for more details.
+# =========================================================================
+layers:
+  prisma:
+    name: ${self:service}-${self:provider.stage}-prisma
+    description: Prisma client and native binaries for Lambda (Node.js 20.x)
+    compatibleRuntimes:
+      - nodejs20.x
+    package:
+      artifact: layers/prisma-layer.zip
 
 functions:
   health:

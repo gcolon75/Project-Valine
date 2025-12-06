@@ -1,6 +1,8 @@
 # Auth Handler Deployment Guide
 
-This document provides deployment instructions for the authentication endpoints in Project Valine.
+This document provides authentication-specific deployment details for Project Valine.
+
+> **📚 For the complete backend deployment guide, see [docs/BACKEND-DEPLOYMENT.md](../docs/BACKEND-DEPLOYMENT.md)**
 
 ## Auth Endpoint to Handler Mapping
 
@@ -40,13 +42,15 @@ npx prisma generate --schema serverless/prisma/schema.prisma
 
 ## Deployment Commands (PowerShell)
 
+> **⚠️ Important:** The backend now uses a **Prisma Lambda Layer** to keep function sizes small. You must build the layer before deploying. See [docs/BACKEND-DEPLOYMENT.md](../docs/BACKEND-DEPLOYMENT.md) for the full deployment process.
+
 ### Prerequisites
 
 Ensure AWS credentials are configured and the following environment variables are set:
 
 ```powershell
 # Database connection string (no spaces, special chars URL-encoded)
-$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 $env:JWT_SECRET = "your-jwt-secret-at-least-32-chars"
 $env:AWS_REGION = "us-west-2"
 $env:STAGE = "prod"
@@ -54,7 +58,7 @@ $env:STAGE = "prod"
 
 See `.env.example` for the full list of environment variables.
 
-### Deploy Backend
+### Deploy Backend (Full Process)
 
 ```powershell
 # Navigate to serverless directory
@@ -64,10 +68,13 @@ cd serverless
 npm ci
 
 # Generate Prisma client
-npx prisma generate --schema prisma/schema.prisma
+npx prisma generate --schema=prisma\schema.prisma
+
+# Build Prisma Lambda Layer (REQUIRED)
+.\scripts\build-prisma-layer.ps1
 
 # Deploy to AWS
-npx serverless deploy --stage prod
+npx serverless deploy --stage prod --region us-west-2 --verbose
 ```
 
 ### Deploy Frontend
