@@ -23,7 +23,7 @@ cd serverless
 ```
 
 These scripts:
-1. Generates the Prisma client in `api/` with Lambda binaries
+1. Generates the Prisma client in `serverless/node_modules` with Lambda binaries
 2. Copies the necessary files to a temporary build directory
 3. Excludes unnecessary WASM and edge deployment files
 4. Creates `prisma-layer.zip` with only the Lambda runtime binary

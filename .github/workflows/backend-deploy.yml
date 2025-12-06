@@ -25,7 +25,24 @@ jobs:
         working-directory: serverless
         run: |
           npm ci
-          npx prisma generate
+          npx prisma generate --schema=prisma/schema.prisma
+      - name: Build Prisma Lambda Layer
+        working-directory: serverless
+        run: |
+          chmod +x ./scripts/build-prisma-layer.sh
+          ./scripts/build-prisma-layer.sh
+      - name: Verify layer artifact
+        working-directory: serverless
+        run: |
+          ls -la layers/
+          if [ ! -f layers/prisma-layer.zip ]; then
+            echo "ERROR: layers/prisma-layer.zip not found!"
+            exit 1
+          fi
+          echo "Layer artifact size: $(du -h layers/prisma-layer.zip | cut -f1)"
       - name: Deploy
         working-directory: serverless
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: serverless deploy --stage prod --region us-west-2 --verbose

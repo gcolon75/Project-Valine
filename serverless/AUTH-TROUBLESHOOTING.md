@@ -2,6 +2,8 @@
 
 This document describes common authentication issues in Project Valine's serverless backend and how to resolve them.
 
+> **📚 For the complete backend deployment guide, see [docs/BACKEND-DEPLOYMENT.md](../docs/BACKEND-DEPLOYMENT.md)**
+
 ## Table of Contents
 - [Root Cause: HTTP 500 on Auth Endpoints (Dec 2024)](#root-cause-http-500-on-auth-endpoints-dec-2024)
 - [Cookie Configuration for HTTP API v2](#cookie-configuration-for-http-api-v2)
@@ -25,23 +27,34 @@ The production auth endpoints (`/auth/login`, `/auth/me`, `/auth/logout`) were r
 ### Why Diagnostic Endpoints Worked
 The `/auth/status` and `/auth/diag` endpoints don't instantiate `PrismaClient` - they only check configuration and call `isPrismaDegraded()`, which doesn't require the native binaries.
 
-### The Fix
-1. Mark `@prisma/client` and `.prisma` as external in the esbuild config
-2. Include `node_modules/.prisma/**` and `node_modules/@prisma/client/**` in the package patterns
+### The Fix (Current Architecture - Prisma Lambda Layer)
+
+**As of December 2024**, Prisma is deployed via a **Lambda Layer** rather than bundled per-function. This approach:
+- Keeps individual function zips small (< 10 MB each)
+- Avoids the 250 MB Lambda unzipped limit
+- Makes deployments fast (~1 minute vs 15-17 minutes)
 
 ```yaml
 # serverless.yml
-custom:
-  esbuild:
-    external:
-      - aws-sdk
-      - '@prisma/client'  # CRITICAL: Must be external for Lambda
-      - .prisma
+provider:
+  layers:
+    - { Ref: PrismaLambdaLayer }  # Attach to all functions
 
 package:
   patterns:
-    - 'node_modules/.prisma/**'        # Include generated client
-    - 'node_modules/@prisma/client/**' # Include Prisma package
+    # Exclude Prisma from function bundles (provided by layer)
+    - '!node_modules/@prisma/**'
+    - '!node_modules/.prisma/**'
+
+layers:
+  prisma:
+    package:
+      artifact: layers/prisma-layer.zip
+```
+
+To build the layer before deployment:
+```powershell
+.\scripts\build-prisma-layer.ps1
 ```
 
 ---
@@ -108,6 +121,8 @@ const cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=None; Secure; 
 
 ## Prisma Client Bundling for Lambda
 
+> **Note:** As of December 2024, Prisma is deployed via a **Lambda Layer** rather than bundled in each function. See [docs/BACKEND-DEPLOYMENT.md](../docs/BACKEND-DEPLOYMENT.md) for the full details.
+
 ### Binary Targets
 The Prisma schema must include the correct binary target for Amazon Linux 2023 (Lambda runtime):
 
@@ -131,17 +146,19 @@ custom:
     external:
       - aws-sdk
       - '@prisma/client'
-      - .prisma
+      - '.prisma/*'
+      - '.prisma/client/*'
 ```
 
-### Package Patterns
-Include the Prisma files in the Lambda deployment:
+### Package Patterns (Lambda Layer Approach)
+Prisma files are **excluded** from function bundles (provided by layer instead):
 
 ```yaml
 package:
   patterns:
-    - 'node_modules/.prisma/**'
-    - 'node_modules/@prisma/client/**'
+    # Exclude Prisma - provided via Lambda Layer
+    - '!node_modules/@prisma/**'
+    - '!node_modules/.prisma/**'
 ```
 
 ### DATABASE_URL Format
