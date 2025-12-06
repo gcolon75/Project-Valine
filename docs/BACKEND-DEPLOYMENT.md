@@ -172,7 +172,10 @@ npx serverless package --stage prod --region us-west-2 --verbose
 Get-ChildItem .serverless\*.zip | Select-Object Name, @{N='SizeMB';E={[math]::Round($_.Length/1MB, 2)}}
 ```
 
-**Expected Result:** Each function zip should be **< 10 MB** (handler code only, no Prisma).
+**Expected Result:** Each function zip should be **< 1 MB** (handler code only, no Prisma). Typical sizes:
+- Simple handlers: 2-3 KB
+- Auth handlers: ~88 KB  
+- Media handlers (with AWS SDK): ~260 KB
 
 ### Check Layer Attachment
 
@@ -229,8 +232,10 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
 **Solution:**
 1. Ensure `serverless.yml` has `layers` section defined
 2. Ensure `provider.layers` references `{ Ref: PrismaLambdaLayer }`
-3. Ensure `package.patterns` excludes `!node_modules/@prisma/**` and `!node_modules/.prisma/**`
-4. Rebuild the layer: `.\scripts\build-prisma-layer.ps1`
+3. Ensure `custom.esbuild.exclude` contains `@prisma/client`, `.prisma/*`, `.prisma/client/*`, and `prisma`
+   - **Important:** The `exclude` option tells serverless-esbuild to skip packing these modules. Without it, `external` modules are still npm-packed into each function bundle.
+4. Ensure `package.patterns` excludes `!node_modules/@prisma/**`, `!node_modules/.prisma/**`, and `!node_modules/prisma/**`
+5. Rebuild the layer: `.\scripts\build-prisma-layer.ps1`
 
 ### 2. Prisma Not Generated
 

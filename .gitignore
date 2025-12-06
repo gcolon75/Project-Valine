@@ -23,6 +23,7 @@ serverless/.layer-build/
 
 # Prisma Lambda layer (can be regenerated with build-prisma-layer.sh)
 serverless/layers/prisma-layer.zip
+serverless/prisma-layer.zip
 
 # Orchestrator secrets and build artifacts
 orchestrator/samconfig.toml

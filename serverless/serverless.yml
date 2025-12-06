@@ -101,6 +101,14 @@ custom:
       - '@prisma/client'
       - '.prisma/*'
       - '.prisma/client/*'
+    # CRITICAL: 'exclude' prevents serverless-esbuild from packing these modules.
+    # Without this, external modules are still npm-packed into each function bundle.
+    # Prisma is provided via the Lambda Layer, so we exclude it from function bundles entirely.
+    exclude:
+      - '@prisma/client'
+      - '.prisma/*'
+      - '.prisma/client/*'
+      - 'prisma'
     keepOutputDirectory: true
     # Prisma client generation handled externally before deploy
     packagerOptions:
@@ -121,6 +129,7 @@ package:
     # Exclude all Prisma files from function packages to keep them small.
     - '!node_modules/@prisma/**'
     - '!node_modules/.prisma/**'
+    - '!node_modules/prisma/**'
 
 # =========================================================================
 # Prisma Lambda Layer
