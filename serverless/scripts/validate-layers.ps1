@@ -26,7 +26,15 @@ if (-not (Test-Path $CfTemplatePath)) {
 
 # Load CloudFormation template
 Write-Host "Loading CloudFormation template..."
-$cf = Get-Content $CfTemplatePath -Raw | ConvertFrom-Json
+try {
+    $cf = Get-Content $CfTemplatePath -Raw | ConvertFrom-Json
+} catch {
+    Write-Host "ERROR: Failed to parse CloudFormation template:"
+    Write-Host "  $($_.Exception.Message)"
+    Write-Host ""
+    Write-Host "The template may be malformed. Try running 'serverless package' again."
+    exit 1
+}
 
 # Functions to check (including previously failing ones)
 $functionsToCheck = @(
@@ -84,7 +92,9 @@ if (Test-Path $LayerZipPath) {
     $layerSizeMB = [math]::Round((Get-Item $LayerZipPath).Length / 1MB, 2)
     Write-Host "  Prisma Layer (compressed):   $layerSizeMB MB"
     
-    # Estimate uncompressed size (typically ~2-3x for Prisma layer)
+    # Estimate uncompressed size
+    # Prisma layers typically have a 2-3x compression ratio (mostly JS and one native binary)
+    # Using 2.5x as a conservative estimate for validation
     $estimatedUncompressedMB = [math]::Round($layerSizeMB * 2.5, 2)
     Write-Host "  Estimated uncompressed:      ~$estimatedUncompressedMB MB"
     

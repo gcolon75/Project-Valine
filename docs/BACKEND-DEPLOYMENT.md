@@ -277,11 +277,22 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
 8. Verify layer size is < 150MB uncompressed (script will validate this)
 9. **Validate layer attachments** to ensure no duplicate layers:
    ```powershell
+   # Package the application (PowerShell)
+   npx serverless package --stage prod --region us-west-2 --verbose
+   
+   # Run validation script (PowerShell)
+   .\scripts\validate-layers.ps1
+   ```
+   
+   **Bash equivalent:**
+   ```bash
    # Package the application
    npx serverless package --stage prod --region us-west-2 --verbose
    
-   # Run validation script
-   .\scripts\validate-layers.ps1
+   # Manual layer validation (Bash)
+   # Check CloudFormation template for specific function layer counts
+   jq '.Resources.UpdateEducationLambdaFunction.Properties.Layers' \
+       .serverless/cloudformation-template-update-stack.json
    ```
    
    The validation script checks:
