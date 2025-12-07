@@ -160,12 +160,14 @@ layers:
 functions:
   health:
     handler: src/handlers/health.handler
+    layers: []     # explicitly none - no DB access
     events:
       - httpApi:
           path: /health
           method: get
   meta:
     handler: src/handlers/meta.handler
+    layers: []     # explicitly none - no DB access
     events:
       - httpApi:
           path: /meta
@@ -277,12 +279,12 @@ functions:
           path: /auth/status
           method: get
   authDiag:
-  handler: src/handlers/auth.authDiag
-  layers: []     # explicitly none if no DB access
-  events:
-    - httpApi:
-        path: /auth/diag
-        method: get
+    handler: src/handlers/auth.authDiag
+    layers: []     # explicitly none - diagnostics only, uses isPrismaDegraded() not getPrisma()
+    events:
+      - httpApi:
+          path: /auth/diag
+          method: get
 
   # ========== USERS ==========
   createUser:
@@ -727,38 +729,38 @@ functions:
           method: delete
 
   # ========== EDUCATION ==========
-# Education handlers with NO layer (explicitly clear layers)
-listEducation:
-  handler: src/handlers/education.listEducation
-  layers: []     # explicitly none
-  events:
-    - httpApi:
-        path: /me/profile/education
-        method: get
-
-createEducation:
-  handler: src/handlers/education.createEducation
-  layers: []     # explicitly none
-  events:
-    - httpApi:
-        path: /me/profile/education
-        method: post
-
-updateEducation:
-  handler: src/handlers/education.updateEducation
-  layers: []     # explicitly none
-  events:
-    - httpApi:
-        path: /me/profile/education/{id}
-        method: put
-
-deleteEducation:
-  handler: src/handlers/education.deleteEducation
-  layers: []     # explicitly none
-  events:
-    - httpApi:
-        path: /me/profile/education/{id}
-        method: delete
+  listEducation:
+    handler: src/handlers/education.listEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/education
+          method: get
+  createEducation:
+    handler: src/handlers/education.createEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/education
+          method: post
+  updateEducation:
+    handler: src/handlers/education.updateEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: put
+  deleteEducation:
+    handler: src/handlers/education.deleteEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: delete
 
   # ========== SETTINGS ==========
   getSettings:
