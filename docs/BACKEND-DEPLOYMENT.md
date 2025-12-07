@@ -168,7 +168,7 @@ Verify the layer was created:
 Get-ChildItem .\layers\prisma-layer.zip
 ```
 
-Expected output: `~15-25 MB` file (minimal layer after PR #XXX optimization)
+Expected output: `~15-25 MB` file (minimal layer after optimization)
 
 ### Step 5: Deploy to AWS
 
