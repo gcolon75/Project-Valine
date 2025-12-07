@@ -57,58 +57,92 @@ $DstAtPrismaClientDir = Join-Path $DstAtPrismaDir "client"
 New-Item -ItemType Directory -Force -Path $DstPrismaClientDir | Out-Null
 New-Item -ItemType Directory -Force -Path $DstAtPrismaClientDir | Out-Null
 
-# Copy .prisma/client files (Prisma 6.x structure)
-Write-Host "Copying .prisma/client files (Prisma 6.x)..."
+# Copy .prisma/client files (Prisma 6.x structure) - MINIMAL CONTENTS ONLY
+Write-Host "Copying .prisma/client files (Prisma 6.x - minimal)..."
 $SrcPrismaClientDir = Join-Path $SrcPrismaDir "client"
 
-# Copy JS files
-Get-ChildItem -Path $SrcPrismaClientDir -Filter "*.js" -File | ForEach-Object { Copy-Item $_.FullName -Destination $DstPrismaClientDir }
-# Copy TypeScript declaration files
+# Copy ONLY essential JS files (exclude .map files)
+Get-ChildItem -Path $SrcPrismaClientDir -Filter "*.js" -File | 
+  Where-Object { $_.Name -notlike "*.map" } | 
+  ForEach-Object { Copy-Item $_.FullName -Destination $DstPrismaClientDir }
+
+# Copy TypeScript declaration files (needed for type resolution)
 Get-ChildItem -Path $SrcPrismaClientDir -Filter "*.d.ts" -File | ForEach-Object { Copy-Item $_.FullName -Destination $DstPrismaClientDir }
-# Copy package.json if exists
+
+# Copy package.json only (skip README, LICENSE)
 $PkgJson = Join-Path $SrcPrismaClientDir "package.json"
 if (Test-Path $PkgJson) { Copy-Item $PkgJson -Destination $DstPrismaClientDir }
+
 # Copy schema.prisma if exists
 $SchemaPrisma = Join-Path $SrcPrismaClientDir "schema.prisma"
 if (Test-Path $SchemaPrisma) { Copy-Item $SchemaPrisma -Destination $DstPrismaClientDir }
-# Copy Lambda binary
+
+# Copy ONLY the Linux x64 OpenSSL 3 engine (Lambda runtime)
 Copy-Item $LambdaBinary -Destination $DstPrismaClientDir
-# Copy runtime directory if exists
+
+# Copy runtime directory but exclude tests, docs, and non-essential files
 $RuntimeDir = Join-Path $SrcPrismaClientDir "runtime"
 if (Test-Path $RuntimeDir) { 
-  Copy-Item -Recurse -Path $RuntimeDir -Destination $DstPrismaClientDir -Force 
+  $DstRuntimeDir = Join-Path $DstPrismaClientDir "runtime"
+  New-Item -ItemType Directory -Force -Path $DstRuntimeDir | Out-Null
+  Get-ChildItem -Path $RuntimeDir -Recurse -File | 
+    Where-Object { 
+      $_.Name -notlike "*.map" -and 
+      $_.Name -notlike "README*" -and 
+      $_.Name -notlike "LICENSE*" -and
+      $_.FullName -notlike "*\tests\*" -and
+      $_.FullName -notlike "*\test\*" -and
+      $_.FullName -notlike "*\docs\*" -and
+      $_.FullName -notlike "*\.cache\*"
+    } | 
+    ForEach-Object {
+      $RelPath = $_.FullName.Replace($RuntimeDir, "").TrimStart("\", "/")
+      $DestPath = Join-Path $DstRuntimeDir $RelPath
+      $DestDir = Split-Path $DestPath -Parent
+      if (-not (Test-Path $DestDir)) { New-Item -ItemType Directory -Force -Path $DestDir | Out-Null }
+      Copy-Item $_.FullName -Destination $DestPath
+    }
 }
 
-# Copy @prisma/client files
-Write-Host "Copying @prisma/client files..."
+# Copy @prisma/client files - MINIMAL CONTENTS ONLY
+Write-Host "Copying @prisma/client files (minimal)..."
 $SrcAtPrismaClientDir = Join-Path $SrcAtPrismaDir "client"
-# Copy JS files
-Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.js" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName -Destination $DstAtPrismaClientDir }
+
+# Copy ONLY essential JS files (exclude .map files)
+Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.js" -File -ErrorAction SilentlyContinue | 
+  Where-Object { $_.Name -notlike "*.map" } |
+  ForEach-Object { Copy-Item $_.FullName -Destination $DstAtPrismaClientDir }
+
 # Copy TypeScript declaration files
 Get-ChildItem -Path $SrcAtPrismaClientDir -Filter "*.d.ts" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName -Destination $DstAtPrismaClientDir }
-# Copy package.json
+
+# Copy package.json ONLY (skip README, LICENSE)
 $AtPkgJson = Join-Path $SrcAtPrismaClientDir "package.json"
 if (Test-Path $AtPkgJson) { Copy-Item $AtPkgJson -Destination $DstAtPrismaClientDir }
-# Copy LICENSE if exists
-$License = Join-Path $SrcAtPrismaClientDir "LICENSE"
-if (Test-Path $License) { Copy-Item $License -Destination $DstAtPrismaClientDir }
-# Copy README.md if exists
-$Readme = Join-Path $SrcAtPrismaClientDir "README.md"
-if (Test-Path $Readme) { Copy-Item $Readme -Destination $DstAtPrismaClientDir }
-# Copy runtime directory (exclude WASM files)
+
+# Copy runtime directory (exclude WASM, tests, docs, maps, README, LICENSE)
 $AtRuntimeDir = Join-Path $SrcAtPrismaClientDir "runtime"
 if (Test-Path $AtRuntimeDir) { 
   $DstAtRuntimeDir = Join-Path $DstAtPrismaClientDir "runtime"
   New-Item -ItemType Directory -Force -Path $DstAtRuntimeDir | Out-Null
-  # Use -inotlike for case-insensitive WASM exclusion
-  Get-ChildItem -Path $AtRuntimeDir -Recurse -File | Where-Object { $_.Name -inotlike "*wasm*" } | ForEach-Object {
-    # Use Resolve-Path and relative path calculation for proper cross-platform handling
-    $RelPath = $_.FullName.Replace($AtRuntimeDir, "").TrimStart("\", "/")
-    $DestPath = Join-Path $DstAtRuntimeDir $RelPath
-    $DestDir = Split-Path $DestPath -Parent
-    if (-not (Test-Path $DestDir)) { New-Item -ItemType Directory -Force -Path $DestDir | Out-Null }
-    Copy-Item $_.FullName -Destination $DestPath
-  }
+  Get-ChildItem -Path $AtRuntimeDir -Recurse -File | 
+    Where-Object { 
+      $_.Name -inotlike "*wasm*" -and 
+      $_.Name -notlike "*.map" -and 
+      $_.Name -notlike "README*" -and 
+      $_.Name -notlike "LICENSE*" -and
+      $_.FullName -notlike "*\tests\*" -and
+      $_.FullName -notlike "*\test\*" -and
+      $_.FullName -notlike "*\docs\*" -and
+      $_.FullName -notlike "*\.cache\*"
+    } | 
+    ForEach-Object {
+      $RelPath = $_.FullName.Replace($AtRuntimeDir, "").TrimStart("\", "/")
+      $DestPath = Join-Path $DstAtRuntimeDir $RelPath
+      $DestDir = Split-Path $DestPath -Parent
+      if (-not (Test-Path $DestDir)) { New-Item -ItemType Directory -Force -Path $DestDir | Out-Null }
+      Copy-Item $_.FullName -Destination $DestPath
+    }
 }
 
 # Verify default.js copied successfully
@@ -118,6 +152,22 @@ if (-not (Test-Path $DstDefaultJs)) {
 }
 Write-Host "Verified: .prisma/client/default.js copied to build folder"
 
+# Calculate total uncompressed size and validate
+Write-Host ""
+Write-Host "========================================="
+Write-Host "Validating layer size..."
+Write-Host "========================================="
+$TotalBytes = (Get-ChildItem -Path $BuildDir -Recurse -File | Measure-Object -Property Length -Sum).Sum
+$TotalMB = [math]::Round($TotalBytes / 1MB, 2)
+$MaxAllowedMB = 150
+
+Write-Host "Total uncompressed layer size: $TotalMB MB"
+if ($TotalMB -gt $MaxAllowedMB) {
+  throw "Layer size ($TotalMB MB) exceeds maximum allowed ($MaxAllowedMB MB). Reduce layer contents."
+}
+Write-Host "Size validation passed (< $MaxAllowedMB MB)"
+Write-Host ""
+
 # Create layer zip
 New-Item -ItemType Directory -Force -Path $LayerDir | Out-Null
 $ZipPath = Join-Path $LayerDir "prisma-layer.zip"
@@ -125,9 +175,22 @@ Compress-Archive -Path $NodejsDir -DestinationPath $ZipPath -Force
 
 # Report and clean
 $zipSizeMB = [math]::Round((Get-Item $ZipPath).Length / 1MB, 2)
-Write-Host "Layer created: $ZipPath ($zipSizeMB MB)"
-Write-Host "Contents include:"
-Write-Host "  - .prisma/client/*.js (including default.js for Prisma 6.x)"
-Write-Host "  - .prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"
-Write-Host "  - @prisma/client/* runtime"
+Write-Host "========================================="
+Write-Host "Layer Build Complete"
+Write-Host "========================================="
+Write-Host "Layer created: $ZipPath"
+Write-Host "Compressed size: $zipSizeMB MB"
+Write-Host "Uncompressed size: $TotalMB MB (validated < $MaxAllowedMB MB)"
+Write-Host ""
+Write-Host "Minimal contents include:"
+Write-Host "  - .prisma/client/*.js (essential files only, no .map)"
+Write-Host "  - .prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node (Lambda binary)"
+Write-Host "  - @prisma/client/runtime/** (minimal, no WASM/tests/docs/README/LICENSE)"
+Write-Host ""
+Write-Host "Excluded from layer:"
+Write-Host "  - README.md, LICENSE files"
+Write-Host "  - Source maps (*.map)"
+Write-Host "  - Tests, docs, cache directories"
+Write-Host "  - Non-Lambda platform binaries"
+Write-Host "========================================="
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }

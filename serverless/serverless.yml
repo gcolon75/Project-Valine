@@ -10,9 +10,8 @@ provider:
   region: ${env:AWS_REGION, "us-west-2"}
   stage: ${env:STAGE, "prod"}
   versionFunctions: false
-  # Attach Prisma layer to all functions (provides @prisma/client and .prisma/client)
-  layers:
-    - { Ref: PrismaLambdaLayer }
+  # Prisma layer is attached per-function only to DB-using handlers (see individual functions)
+  # health and meta endpoints do NOT need Prisma layer
   httpApi:
     cors:
       allowedOrigins:
@@ -175,84 +174,112 @@ functions:
   # ========== AUTH ==========
   register:
     handler: src/handlers/auth.register
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/register
           method: post
   login:
     handler: src/handlers/auth.login
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/login
           method: post
   me:
     handler: src/handlers/auth.me
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/me
           method: get
   verifyEmail:
     handler: src/handlers/auth.verifyEmail
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/verify-email
           method: post
   resendVerification:
     handler: src/handlers/auth.resendVerification
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/resend-verification
           method: post
   refresh:
     handler: src/handlers/auth.refresh
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/refresh
           method: post
   logout:
     handler: src/handlers/auth.logout
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/logout
           method: post
   setup2FA:
     handler: src/handlers/auth.setup2FA
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/2fa/setup
           method: post
   enable2FA:
     handler: src/handlers/auth.enable2FA
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/2fa/enable
           method: post
   verify2FA:
     handler: src/handlers/auth.verify2FA
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/2fa/verify
           method: post
   disable2FA:
     handler: src/handlers/auth.disable2FA
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/2fa/disable
           method: post
   seedRestricted:
     handler: src/handlers/auth.seedRestricted
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/seed-restricted
           method: post
   authStatus:
     handler: src/handlers/auth.authStatus
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/status
           method: get
   authDiag:
     handler: src/handlers/auth.authDiag
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auth/diag
@@ -261,18 +288,24 @@ functions:
   # ========== USERS ==========
   createUser:
     handler: src/handlers/users.createUser
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /users
           method: post
   getUser:
     handler: src/handlers/users.getUser
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /users/{username}
           method: get
   updateUser:
     handler: src/handlers/users.updateUser
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /users/{id}
@@ -281,36 +314,48 @@ functions:
   # ========== REELS ==========
   listReels:
     handler: src/handlers/reels.listReels
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels
           method: get
   createReel:
     handler: src/handlers/reels.createReel
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels
           method: post
   toggleLike:
     handler: src/handlers/reels.toggleLike
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels/{id}/like
           method: post
   toggleBookmark:
     handler: src/handlers/reels.toggleBookmark
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels/{id}/bookmark
           method: post
   getReelComments:
     handler: src/handlers/reels.getComments
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels/{id}/comments
           method: get
   createReelComment:
     handler: src/handlers/reels.createComment
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels/{id}/comments
@@ -319,30 +364,40 @@ functions:
   # ========== POSTS ==========
   createPost:
     handler: src/handlers/posts.createPost
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /posts
           method: post
   listPosts:
     handler: src/handlers/posts.listPosts
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /posts
           method: get
   getPost:
     handler: src/handlers/posts.getPost
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /posts/{id}
           method: get
   getAudioUploadUrl:
     handler: src/handlers/posts.getAudioUploadUrl
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /posts/audio-upload-url
           method: post
   requestPostAccess:
     handler: src/handlers/posts.requestPostAccess
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /posts/{id}/request
@@ -351,18 +406,24 @@ functions:
   # ========== SCRIPTS ==========
   listScripts:
     handler: src/handlers/scripts.listScripts
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /scripts
           method: get
   createScript:
     handler: src/handlers/scripts.createScript
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /scripts
           method: post
   getScript:
     handler: src/handlers/scripts.getScript
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /scripts/{id}
@@ -371,18 +432,24 @@ functions:
   # ========== AUDITIONS ==========
   listAuditions:
     handler: src/handlers/auditions.listAuditions
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auditions
           method: get
   createAudition:
     handler: src/handlers/auditions.createAudition
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auditions
           method: post
   getAudition:
     handler: src/handlers/auditions.getAudition
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /auditions/{id}
@@ -391,6 +458,8 @@ functions:
   # ========== FEED ==========
   getFeed:
     handler: src/handlers/feed.getFeed
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /feed
@@ -399,24 +468,32 @@ functions:
   # ========== CONVERSATIONS ==========
   listConversations:
     handler: src/handlers/conversations.listConversations
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /conversations
           method: get
   createConversation:
     handler: src/handlers/conversations.createConversation
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /conversations
           method: post
   getMessages:
     handler: src/handlers/conversations.getMessages
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /conversations/{id}/messages
           method: get
   sendMessage:
     handler: src/handlers/conversations.sendMessage
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /conversations/{id}/messages
@@ -425,18 +502,24 @@ functions:
   # ========== NOTIFICATIONS ==========
   listNotifications:
     handler: src/handlers/notifications.listNotifications
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /notifications
           method: get
   markNotificationRead:
     handler: src/handlers/notifications.markAsRead
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /notifications/{id}/read
           method: patch
   markAllNotificationsRead:
     handler: src/handlers/notifications.markAllAsRead
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /notifications/mark-all
@@ -445,6 +528,8 @@ functions:
   # ========== NEW: UNREAD COUNTS ==========
   getUnreadCounts:
     handler: src/handlers/notifications.getUnreadCounts
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /unread-counts
@@ -453,42 +538,56 @@ functions:
   # ========== CONNECTIONS ==========
   sendConnectionRequest:
     handler: src/handlers/connections.sendRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/request
           method: post
   listConnectionRequests:
     handler: src/handlers/connections.listRequests
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/requests
           method: get
   approveConnectionRequest:
     handler: src/handlers/connections.approveRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/requests/{id}/approve
           method: post
   rejectConnectionRequest:
     handler: src/handlers/connections.rejectRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/requests/{id}/reject
           method: post
   followUser:
     handler: src/handlers/connections.followUser
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/follow
           method: post
   getConnectionStatus:
     handler: src/handlers/connections.getConnectionStatus
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/status/{userId}
           method: get
   unfollowUser:
     handler: src/handlers/connections.unfollowUser
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /connections/unfollow
@@ -497,42 +596,56 @@ functions:
   # ========== PROFILES ==========
   getProfileByVanity:
     handler: src/handlers/profiles.getProfileByVanity
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/{vanityUrl}
           method: get
   getProfileById:
     handler: src/handlers/profiles.getProfileById
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/id/{id}
           method: get
   createProfile:
     handler: src/handlers/profiles.createProfile
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles
           method: post
   updateProfile:
     handler: src/handlers/profiles.updateProfile
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/id/{id}
           method: put
   updateMyProfile:
     handler: src/handlers/profiles.updateMyProfile
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile
           method: patch
   getMyProfile:
     handler: src/handlers/profiles.getMyProfile
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile
           method: get
   deleteProfile:
     handler: src/handlers/profiles.deleteProfile
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/id/{id}
@@ -541,30 +654,40 @@ functions:
   # ========== MEDIA ==========
   getUploadUrl:
     handler: src/handlers/media.getUploadUrl
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/{id}/media/upload-url
           method: post
   completeUpload:
     handler: src/handlers/media.completeUpload
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/{id}/media/complete
           method: post
   updateMedia:
     handler: src/handlers/media.updateMedia
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /media/{id}
           method: put
   deleteMedia:
     handler: src/handlers/media.deleteMedia
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /media/{id}
           method: delete
   getAccessUrl:
     handler: src/handlers/media.getAccessUrl
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /media/{id}/access-url
@@ -573,24 +696,32 @@ functions:
   # ========== CREDITS ==========
   listCredits:
     handler: src/handlers/credits.listCredits
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/{id}/credits
           method: get
   createCredit:
     handler: src/handlers/credits.createCredit
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /profiles/{id}/credits
           method: post
   updateCredit:
     handler: src/handlers/credits.updateCredit
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /credits/{id}
           method: put
   deleteCredit:
     handler: src/handlers/credits.deleteCredit
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /credits/{id}
@@ -599,24 +730,32 @@ functions:
   # ========== EDUCATION ==========
   listEducation:
     handler: src/handlers/education.listEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile/education
           method: get
   createEducation:
     handler: src/handlers/education.createEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile/education
           method: post
   updateEducation:
     handler: src/handlers/education.updateEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile/education/{id}
           method: put
   deleteEducation:
     handler: src/handlers/education.deleteEducation
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/profile/education/{id}
@@ -625,42 +764,56 @@ functions:
   # ========== SETTINGS ==========
   getSettings:
     handler: src/handlers/settings.getSettings
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /settings
           method: get
   updateSettings:
     handler: src/handlers/settings.updateSettings
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /settings
           method: put
   exportAccountData:
     handler: src/handlers/settings.exportAccountData
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /account/export
           method: post
   deleteAccount:
     handler: src/handlers/settings.deleteAccount
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /account
           method: delete
   getPreferences:
     handler: src/handlers/settings.getPreferences
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/preferences
           method: get
   updatePreferences:
     handler: src/handlers/settings.updatePreferences
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/preferences
           method: put
   patchPreferences:
     handler: src/handlers/settings.updatePreferences
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /me/preferences
@@ -669,24 +822,32 @@ functions:
   # ========== REEL REQUESTS ==========
   createReelRequest:
     handler: src/handlers/reelRequests.createReelRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reels/{id}/request
           method: post
   listReelRequests:
     handler: src/handlers/reelRequests.listReelRequests
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reel-requests
           method: get
   approveReelRequest:
     handler: src/handlers/reelRequests.approveReelRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reel-requests/{id}/approve
           method: post
   denyReelRequest:
     handler: src/handlers/reelRequests.denyReelRequest
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reel-requests/{id}/deny
@@ -695,12 +856,16 @@ functions:
   # ========== SEARCH ==========
   searchProfiles:
     handler: src/handlers/search.searchProfiles
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /search
           method: get
   searchUsers:
     handler: src/handlers/search.searchUsers
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /search/users
@@ -709,30 +874,40 @@ functions:
   # ========== REPORTS & MODERATION ==========
   createReport:
     handler: src/handlers/reports.createReport
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reports
           method: post
   listReports:
     handler: src/handlers/reports.listReports
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reports
           method: get
   getReport:
     handler: src/handlers/reports.getReport
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /reports/{id}
           method: get
   makeDecision:
     handler: src/handlers/moderation.makeDecision
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /moderation/decision
           method: post
   moderationHealth:
     handler: src/handlers/moderation.getHealth
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /moderation/health
@@ -741,12 +916,16 @@ functions:
   # ========== ANALYTICS ==========
   analyticsIngest:
     handler: src/handlers/analytics.ingestEvents
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /analytics/ingest
           method: post
   analyticsConfig:
     handler: src/handlers/analytics.getConfig
+    layers:
+      - { Ref: PrismaLambdaLayer }
     events:
       - httpApi:
           path: /analytics/config
