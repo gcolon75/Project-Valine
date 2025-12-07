@@ -52,23 +52,57 @@ postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-wes
 
 ### Why Use a Layer?
 
-The Prisma client and native query engine binaries are ~93MB compressed. Including them in every Lambda function would:
-- Exceed AWS Lambda's 250MB unzipped limit
+The Prisma client and native query engine binaries are large (~20-30MB compressed after minimization). Including them in every Lambda function would:
+- Exceed AWS Lambda's 250MB unzipped limit when combined with function code
 - Make deployments slow (15-17 minutes vs ~1 minute)
 - Waste storage and bandwidth
 
-By using a Lambda Layer, the Prisma artifacts are deployed once and shared across all functions.
+By using a Lambda Layer, the Prisma artifacts are deployed once and shared across all database-accessing functions.
 
-### Layer Contents
+### Layer Attachment Strategy
 
-The layer (`layers/prisma-layer.zip`) contains:
+The Prisma layer is **selectively attached** only to functions that access the database. This minimizes the combined size for each function:
+
+**Functions WITH Prisma layer** (use database):
+- Auth functions (register, login, me, verify, 2FA, etc.)
+- Profile functions (CRUD operations)
+- Post, Reel, Script, Audition handlers
+- Conversations, Notifications, Connections
+- Media, Credits, Education handlers
+- Settings, Search, Reports, Moderation
+- Analytics handlers
+
+**Functions WITHOUT Prisma layer** (utility only):
+- `/health` - Health check endpoint
+- `/meta` - API metadata endpoint
+
+This ensures the combined size (function code + layer) stays well under the 250MB unzipped limit.
+
+### Layer Contents (Minimal)
+
+The layer (`layers/prisma-layer.zip`) contains ONLY essential files:
 ```
 nodejs/
   node_modules/
-    @prisma/client/        # Prisma client runtime
-    .prisma/client/        # Generated client + native binary
-      libquery_engine-rhel-openssl-3.0.x.so.node
+    @prisma/client/
+      runtime/**           # Runtime code (JS only, no WASM/tests/docs)
+      *.js, *.d.ts         # Entry points and types
+      package.json         # Package metadata
+    .prisma/client/
+      *.js, *.d.ts         # Generated client files
+      default.js           # Prisma 6.x main entry
+      schema.prisma        # Schema definition
+      libquery_engine-rhel-openssl-3.0.x.so.node  # Lambda binary ONLY
 ```
+
+**Explicitly EXCLUDED** to minimize size:
+- `README.md`, `LICENSE` files
+- Source maps (`*.map`)
+- Tests, docs, cache directories
+- WASM files (not needed on Lambda)
+- Non-Lambda platform binaries (Windows, macOS, ARM64, musl)
+
+The build script validates that the uncompressed layer size is < 150MB to maintain headroom.
 
 ### Building the Layer
 
@@ -134,7 +168,7 @@ Verify the layer was created:
 Get-ChildItem .\layers\prisma-layer.zip
 ```
 
-Expected output: `~90-100 MB` file
+Expected output: `~15-25 MB` file (minimal layer after PR #XXX optimization)
 
 ### Step 5: Deploy to AWS
 
@@ -172,10 +206,12 @@ npx serverless package --stage prod --region us-west-2 --verbose
 Get-ChildItem .serverless\*.zip | Select-Object Name, @{N='SizeMB';E={[math]::Round($_.Length/1MB, 2)}}
 ```
 
-**Expected Result:** Each function zip should be **< 1 MB** (handler code only, no Prisma). Typical sizes:
+**Expected Result:** Each function zip should be **< 1 MB** (handler code only, no Prisma). Layer zip should be **15-25 MB**. Typical function sizes:
 - Simple handlers: 2-3 KB
 - Auth handlers: ~88 KB  
 - Media handlers (with AWS SDK): ~260 KB
+
+The combined unzipped size (function + layer) for any function should be well under 200MB (AWS limit is 250MB).
 
 ### Check Layer Attachment
 
@@ -227,15 +263,18 @@ Go to **Actions → Backend Deploy → Run workflow** to trigger a manual deploy
 UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 262144000 bytes
 ```
 
-**Cause:** Prisma is being bundled per-function instead of via the layer.
+**Cause:** Prisma is being bundled per-function instead of via the layer, OR the layer is being attached to all functions (including non-DB functions), OR the layer contents are too large.
 
 **Solution:**
-1. Ensure `serverless.yml` has `layers` section defined
-2. Ensure `provider.layers` references `{ Ref: PrismaLambdaLayer }`
-3. Ensure `custom.esbuild.exclude` contains `@prisma/client`, `.prisma/*`, `.prisma/client/*`, and `prisma`
+1. Ensure `serverless.yml` has `layers` section defined at root level
+2. Ensure provider-level `layers` is REMOVED (layers should be per-function only)
+3. Ensure each DB-using function has `layers: [{ Ref: PrismaLambdaLayer }]` in its definition
+4. Ensure `health` and `meta` functions do NOT have the layer attached
+5. Ensure `custom.esbuild.exclude` contains `@prisma/client`, `.prisma/*`, `.prisma/client/*`, and `prisma`
    - **Important:** The `exclude` option tells serverless-esbuild to skip packing these modules. Without it, `external` modules are still npm-packed into each function bundle.
-4. Ensure `package.patterns` excludes `!node_modules/@prisma/**`, `!node_modules/.prisma/**`, and `!node_modules/prisma/**`
-5. Rebuild the layer: `.\scripts\build-prisma-layer.ps1`
+6. Ensure `package.patterns` excludes `!node_modules/@prisma/**`, `!node_modules/.prisma/**`, and `!node_modules/prisma/**`
+7. Rebuild the layer with minimized contents: `.\scripts\build-prisma-layer.ps1`
+8. Verify layer size is < 150MB uncompressed (script will validate this)
 
 ### 2. Prisma Not Generated
 
