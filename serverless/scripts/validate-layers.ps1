@@ -13,7 +13,7 @@ $ScriptDir      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ServerlessDir  = Split-Path -Parent $ScriptDir
 $ServerlessPath = Join-Path $ServerlessDir ".serverless"
 $CfTemplatePath = Join-Path $ServerlessPath "cloudformation-template-update-stack.json"
-$LayerZipPath   = Join-Path $ServerlessDir "layers\prisma-layer.zip"
+$LayerZipPath   = Join-Path $ServerlessDir "layers" | Join-Path -ChildPath "prisma-layer.zip"
 
 # Check if CloudFormation template exists (must run 'serverless package' first)
 if (-not (Test-Path $CfTemplatePath)) {
@@ -87,16 +87,19 @@ Write-Host "Layer Size Report:"
 Write-Host "=================="
 Write-Host ""
 
+# Compression ratio for Prisma layers
+# Prisma layers contain mostly JavaScript runtime code and one native binary
+# Typical compression ratio is 2-3x. We use 2.5x as a conservative estimate.
+$CompressionRatio = 2.5
+
 # Check Prisma layer size
 if (Test-Path $LayerZipPath) {
     $layerSizeMB = [math]::Round((Get-Item $LayerZipPath).Length / 1MB, 2)
     Write-Host "  Prisma Layer (compressed):   $layerSizeMB MB"
     
-    # Estimate uncompressed size
-    # Prisma layers typically have a 2-3x compression ratio (mostly JS and one native binary)
-    # Using 2.5x as a conservative estimate for validation
-    $estimatedUncompressedMB = [math]::Round($layerSizeMB * 2.5, 2)
-    Write-Host "  Estimated uncompressed:      ~$estimatedUncompressedMB MB"
+    # Estimate uncompressed size using the compression ratio
+    $estimatedUncompressedMB = [math]::Round($layerSizeMB * $CompressionRatio, 2)
+    Write-Host "  Estimated uncompressed:      ~$estimatedUncompressedMB MB (using ${CompressionRatio}x ratio)"
     
     if ($estimatedUncompressedMB -gt 150) {
         Write-Host "  WARNING: Layer may exceed 150MB uncompressed limit"

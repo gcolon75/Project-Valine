@@ -291,6 +291,11 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
    
    # Manual layer validation (Bash)
    # Check CloudFormation template for specific function layer counts
+   # Replace <FunctionName> with actual function (e.g., UpdateEducationLambdaFunction)
+   jq '.Resources.<FunctionName>LambdaFunction.Properties.Layers' \
+       .serverless/cloudformation-template-update-stack.json
+   
+   # Example: Check UpdateEducation function
    jq '.Resources.UpdateEducationLambdaFunction.Properties.Layers' \
        .serverless/cloudformation-template-update-stack.json
    ```
