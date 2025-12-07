@@ -13,7 +13,7 @@ $ScriptDir      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ServerlessDir  = Split-Path -Parent $ScriptDir
 $ServerlessPath = Join-Path $ServerlessDir ".serverless"
 $CfTemplatePath = Join-Path $ServerlessPath "cloudformation-template-update-stack.json"
-$LayerZipPath   = Join-Path $ServerlessDir "layers" | Join-Path -ChildPath "prisma-layer.zip"
+$LayerZipPath   = Join-Path (Join-Path $ServerlessDir "layers") "prisma-layer.zip"
 
 # Check if CloudFormation template exists (must run 'serverless package' first)
 if (-not (Test-Path $CfTemplatePath)) {
