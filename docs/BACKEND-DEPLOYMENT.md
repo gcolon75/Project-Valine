@@ -272,10 +272,12 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
 4. Ensure `health` and `meta` functions do NOT have the layer attached (use `layers: []`)
 5. Ensure `custom.esbuild.exclude` contains `@prisma/client`, `.prisma/*`, `.prisma/client/*`, and `prisma`
    - **Important:** The `exclude` option tells serverless-esbuild to skip packing these modules. Without it, `external` modules are still npm-packed into each function bundle.
-6. Ensure `package.patterns` uses aggressive exclusion `['!**']` to exclude ALL files from the project root, forcing serverless to rely solely on serverless-esbuild output
-7. Rebuild the layer with minimized contents: `.\scripts\build-prisma-layer.ps1`
-8. Verify layer size is < 150MB uncompressed (script will validate this)
-9. **Validate layer attachments** to ensure no duplicate layers:
+6. Ensure `custom.esbuild.packagerOptions.noDependencies: true` is set to prevent ALL devDependencies from being bundled
+   - **Critical:** This prevents @prisma/client (in devDependencies) from being npm-packed during esbuild's bundling phase
+7. Ensure `package.patterns` uses aggressive exclusion `['!**']` to exclude ALL files from the project root, forcing serverless to rely solely on serverless-esbuild output
+8. Rebuild the layer with minimized contents: `.\scripts\build-prisma-layer.ps1`
+9. Verify layer size is < 150MB uncompressed (script will validate this)
+10. **Validate layer attachments** to ensure no duplicate layers:
    ```powershell
    # Package the application (PowerShell)
    npx serverless package --stage prod --region us-west-2 --verbose
