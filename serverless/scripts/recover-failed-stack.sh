@@ -87,7 +87,15 @@ case $STACK_STATUS in
         echo "⏳ Waiting for stack deletion (this may take a few minutes)..."
         aws cloudformation wait stack-delete-complete \
           --stack-name "$STACK_NAME" \
-          --region "$REGION" 2>/dev/null || true
+          --region "$REGION" 2>/dev/null || {
+          echo ""
+          echo "⚠️  Stack deletion is taking longer than expected."
+          echo "Check the CloudFormation console for details:"
+          echo "https://$REGION.console.aws.amazon.com/cloudformation/home?region=$REGION#/stacks"
+          echo ""
+          echo "Note: The deletion may still be in progress."
+          echo "Retained resources must be cleaned up manually (see list above)."
+        }
         
         echo ""
         echo "✅ Stack deleted (with retained resources)"
