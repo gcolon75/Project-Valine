@@ -268,7 +268,7 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
 **Solution:**
 1. Ensure `serverless.yml` has `layers` section defined at root level
 2. Ensure provider-level `layers` is REMOVED (layers should be per-function only)
-3. Ensure each DB-using function has `layers: [{ Ref: PrismaLambdaLayer }]` in its definition
+3. Ensure each DB-using function has `layers: [{ Ref: PrismaV2LambdaLayer }]` in its definition
 4. Ensure `health` and `meta` functions do NOT have the layer attached (use `layers: []`)
 5. Ensure `custom.esbuild.exclude` contains `@prisma/client`, `.prisma/*`, `.prisma/client/*`, and `prisma`
    - **Important:** The `exclude` option tells serverless-esbuild to skip packing these modules. Without it, `external` modules are still npm-packed into each function bundle.
@@ -307,7 +307,7 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
    
    If validation fails with "ERROR (duplicate layers)", check `serverless.yml` for:
    - Education handlers must be properly indented under `functions:` (not at root level)
-   - All handlers that use Prisma must have `layers: [{ Ref: PrismaLambdaLayer }]`
+   - All handlers that use Prisma must have `layers: [{ Ref: PrismaV2LambdaLayer }]`
    - Handlers that do NOT use database (health, meta, authDiag) must have `layers: []`
 
 ### 2. Prisma Not Generated
