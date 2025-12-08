@@ -111,7 +111,14 @@ custom:
     keepOutputDirectory: false
     # Prisma client generation handled externally before deploy
     packagerOptions:
-      scripts: []
+  scripts: []
+  
+# CRITICAL: Tell esbuild/webpack to NOT include these node_modules
+bundleConfig:
+  nodeModules:
+    - '@prisma/client'
+    - '.prisma'
+    - 'prisma'
 
 package:
   individually: true
