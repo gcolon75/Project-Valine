@@ -6,6 +6,9 @@
 
 set -e
 
+# Configuration constants
+readonly MIN_LAYER_SIZE_KB=5120  # 5 MB minimum expected layer size
+
 echo "========================================="
 echo "Serverless Deployment Validation"
 echo "========================================="
@@ -228,10 +231,8 @@ if [ -f "layers/prisma-layer.zip" ]; then
         else
             # Convert to KB for better precision without external tools
             LAYER_SIZE_KB=$((LAYER_SIZE_BYTES / 1024))
-            # 5 MB = 5120 KB
-            MIN_SIZE_KB=5120
             
-            if [ $LAYER_SIZE_KB -lt $MIN_SIZE_KB ]; then
+            if [ $LAYER_SIZE_KB -lt $MIN_LAYER_SIZE_KB ]; then
                 # Display in MB for readability
                 LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
                 check_fail "Layer is suspiciously small (${LAYER_SIZE_MB} MB)"
