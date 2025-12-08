@@ -110,7 +110,10 @@ custom:
       - 'prisma'
     keepOutputDirectory: false
     # Prisma client generation handled externally before deploy
+    # noDependencies: true prevents ALL node_modules (especially devDependencies like @prisma/client)
+    # from being bundled into function packages. Prisma is provided via Lambda Layer instead.
     packagerOptions:
+      noDependencies: true
   scripts: []
   
 # CRITICAL: Tell esbuild/webpack to NOT include these node_modules
