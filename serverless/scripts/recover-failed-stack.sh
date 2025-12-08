@@ -132,6 +132,7 @@ case $STACK_STATUS in
     
   DELETE_COMPLETE)
     echo "✅ Stack is already deleted."
+    exit 0
     ;;
     
   CREATE_COMPLETE|UPDATE_COMPLETE)
