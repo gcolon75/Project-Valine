@@ -177,14 +177,47 @@ if [ -f "layers/prisma-layer.zip" ]; then
         check_pass "Lambda binary (rhel-openssl-3.0.x) present in layer"
     else
         check_fail "Lambda binary not found in layer"
-        echo "   Run: ./build-prisma-layer.sh"
+        echo "   Run: ./scripts/build-prisma-layer.sh"
+        VALIDATION_PASSED=false
+    fi
+    
+    # Check for Prisma client files (not just package.json)
+    if unzip -l layers/prisma-layer.zip | grep -q ".prisma/client/default.js"; then
+        check_pass "Prisma client default.js present in layer"
+    else
+        check_fail "Prisma client files missing from layer"
+        echo "   The layer only contains package.json but no actual Prisma client"
+        echo "   Run: ./scripts/build-prisma-layer.sh"
+        VALIDATION_PASSED=false
+    fi
+    
+    # Check for @prisma/client runtime
+    if unzip -l layers/prisma-layer.zip | grep -q "@prisma/client/runtime"; then
+        check_pass "@prisma/client runtime present in layer"
+    else
+        check_fail "@prisma/client runtime missing from layer"
+        echo "   Run: ./scripts/build-prisma-layer.sh"
         VALIDATION_PASSED=false
     fi
     
     # Check for unnecessary Debian binary (should not be in layer)
     if unzip -l layers/prisma-layer.zip | grep -q "libquery_engine-debian-openssl"; then
         check_warn "Layer contains Debian binary (not needed for Lambda)"
-        echo "   Rebuild layer: ./build-prisma-layer.sh"
+        echo "   Rebuild layer: ./scripts/build-prisma-layer.sh"
+    fi
+    
+    # Check layer is not suspiciously small (should be at least 5 MB)
+    LAYER_SIZE_BYTES=$(stat -f%z "layers/prisma-layer.zip" 2>/dev/null || stat -c%s "layers/prisma-layer.zip" 2>/dev/null)
+    LAYER_SIZE_MB=$((LAYER_SIZE_BYTES / 1024 / 1024))
+    
+    if [ $LAYER_SIZE_MB -lt 5 ]; then
+        check_fail "Layer is suspiciously small (${LAYER_SIZE_MB} MB)"
+        echo "   Expected size: 9-12 MB compressed"
+        echo "   This suggests the layer is incomplete (only package.json)"
+        echo "   Run: ./scripts/build-prisma-layer.sh"
+        VALIDATION_PASSED=false
+    else
+        check_pass "Layer size is reasonable (${LAYER_SIZE_MB} MB)"
     fi
 fi
 
