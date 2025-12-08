@@ -149,8 +149,8 @@ package:
 # See layers/README.md for more details.
 # =========================================================================
 layers:
-  prismaV2:                      # new logical ID
-    name: ${self:service}-${self:provider.stage}-prisma-v2  # new layer name
+  prismaV2:
+    name: ${self:service}-${self:provider.stage}-prisma-v2
     description: Prisma client and native binaries for Lambda (Node.js 20.x)
     compatibleRuntimes:
       - nodejs20.x
