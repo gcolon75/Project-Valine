@@ -4,7 +4,7 @@ This directory contains the Prisma Lambda layer for AWS Lambda deployment.
 
 ## Building the Layer
 
-The `prisma-layer.zip` file is **not** committed to git (it's ~93MB) and must be built before deployment.
+The `prisma-layer.zip` file is **not** committed to git (it's ~9-12MB compressed) and must be built before deployment.
 
 ### Build Command
 
@@ -37,11 +37,16 @@ The layer contains:
 
 ### Layer Size
 
-- Compressed (zip): ~93MB
-- Uncompressed: ~255MB
-- Lambda limit: 250MB (uncompressed), 50MB (compressed upload)
+- Compressed (zip): ~9-12 MB
+- Uncompressed: ~30-50 MB (optimized, minimal contents)
+- Lambda limit: 250MB (uncompressed), 50MB (compressed direct upload)
 
-**Note:** The layer is deployed as a Lambda Layer, so it doesn't count toward the function package size limit.
+**Note:** The layer is deployed as a Lambda Layer, so it doesn't count toward the individual function package size limit. The minimized layer size is achieved by excluding:
+- README.md, LICENSE files
+- Source maps (*.map)
+- Tests, docs, cache directories
+- WASM files
+- Non-Lambda platform binaries (only rhel-openssl-3.0.x is included)
 
 ### When to Rebuild
 

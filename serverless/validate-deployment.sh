@@ -207,7 +207,8 @@ if [ -f "layers/prisma-layer.zip" ]; then
     fi
     
     # Check layer is not suspiciously small (should be at least 5 MB)
-    LAYER_SIZE_BYTES=$(stat -f%z "layers/prisma-layer.zip" 2>/dev/null || stat -c%s "layers/prisma-layer.zip" 2>/dev/null)
+    # Use portable method to get file size
+    LAYER_SIZE_BYTES=$(wc -c < "layers/prisma-layer.zip" 2>/dev/null || echo "0")
     LAYER_SIZE_MB=$((LAYER_SIZE_BYTES / 1024 / 1024))
     
     if [ $LAYER_SIZE_MB -lt 5 ]; then
