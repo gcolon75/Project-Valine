@@ -95,6 +95,7 @@ case $STACK_STATUS in
           echo ""
           echo "Note: The deletion may still be in progress."
           echo "Retained resources must be cleaned up manually (see list above)."
+          exit 0
         }
         
         echo ""
