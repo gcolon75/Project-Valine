@@ -3,23 +3,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-  "build:layer": "node scripts/build-layer-selector.js",
-  "build:layer:bash": "bash scripts/build-prisma-layer.sh",
-  "build:layer:powershell": "powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1",
-  "deploy": "npm run prisma:generate && serverless deploy",
-  "deploy:force": "npm run prisma:generate && serverless deploy --force",
-  "remove": "serverless remove",
-  "test": "vitest run",
-  "test:watch": "vitest",
-  "lint:serverless": "eslint src --ext .js",
-  "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
-  "prisma:migrate": "prisma migrate dev --name init",
-  "prisma:deploy": "prisma migrate deploy"
-},
+    "build:layer": "node scripts/build-layer-selector.js",
+    "build:layer:bash": "bash scripts/build-prisma-layer.sh",
+    "build:layer:powershell": "powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1",
+    "deploy": "npm run prisma:generate && serverless deploy",
+    "deploy:force": "npm run prisma:generate && serverless deploy --force",
+    "remove": "serverless remove",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint:serverless": "eslint src --ext .js",
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:deploy": "prisma migrate deploy"
+  },
   "prisma": {
     "schema": "prisma/schema.prisma"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.0",
     "eslint": "^8.57.0",
     "prisma": "6.19.0",
     "serverless": "^3.40.0",
@@ -29,7 +30,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.637.0",
     "@aws-sdk/s3-request-presigner": "^3.637.0",
-    "@prisma/client": "6.19.0",
     "bcryptjs": "^3.0.3",
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
