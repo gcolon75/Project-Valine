@@ -352,6 +352,78 @@ Layer artifact not found at layers/prisma-layer.zip
 .\scripts\build-prisma-layer.ps1
 ```
 
+### 5. CloudFormation DELETE_FAILED State
+
+**Error:**
+```
+Stack is in DELETE_FAILED state and can not be updated
+```
+
+**Symptoms:**
+- Deployment fails with CloudFormation error
+- Stack shows DELETE_FAILED status in AWS Console
+- Cannot update or delete the stack through normal means
+- Layer version references may be broken (e.g., version 19 doesn't exist)
+
+**Common Causes:**
+- Prisma layer not built before deployment (missing `layers/prisma-layer.zip`)
+- Deployment attempted without running `build-prisma-layer.sh` first
+- Lambda functions referencing non-existent layer versions
+- Corrupted CloudFormation state from failed deployments
+
+**Quick Recovery:**
+
+1. **Automated Recovery (Recommended):**
+   ```bash
+   cd serverless
+   ./scripts/recover-failed-stack.sh pv-api-prod us-west-2
+   ```
+   This script will:
+   - Check the stack status
+   - Identify failed resources
+   - Guide you through recovery options
+   - Delete the stack (with optional resource retention)
+
+2. **Manual Recovery via AWS CLI:**
+   ```bash
+   # Force delete the failed stack
+   aws cloudformation delete-stack \
+     --stack-name pv-api-prod \
+     --region us-west-2
+   
+   # Wait for deletion
+   aws cloudformation wait stack-delete-complete \
+     --stack-name pv-api-prod \
+     --region us-west-2
+   ```
+
+3. **After Stack Deletion - Rebuild and Deploy:**
+   ```bash
+   # Build the Prisma layer (REQUIRED)
+   cd serverless
+   ./scripts/build-prisma-layer.sh
+   
+   # Verify layer exists
+   ls -lh layers/prisma-layer.zip
+   # Should show ~9-12 MB
+   
+   # Deploy fresh stack
+   ./deploy.sh
+   ```
+
+**Prevention:**
+- Always run `build-prisma-layer.sh` before deploying
+- Use the `deploy.sh` script which validates the layer exists
+- Prefer CI/CD (GitHub Actions) which builds the layer automatically
+- The updated `deploy.sh` now checks for the layer artifact before deploying
+
+**Detailed Recovery Guide:**  
+See [CloudFormation DELETE_FAILED Recovery Guide](troubleshooting/CLOUDFORMATION_DELETE_FAILED.md) for comprehensive troubleshooting steps, including:
+- Manual resource cleanup
+- AWS Console recovery steps
+- Understanding the 269 MB size discrepancy
+- Layer version troubleshooting
+
 ---
 
 ## Production Endpoints

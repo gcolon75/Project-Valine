@@ -19,7 +19,25 @@ bash validate-config.sh || {
 }
 
 echo ""
-echo "Step 2: Deploying to AWS..."
+echo "Step 2: Validating Prisma layer artifact..."
+LAYER_ZIP="layers/prisma-layer.zip"
+if [ ! -f "$LAYER_ZIP" ]; then
+  echo "❌ ERROR: Prisma layer not found at $LAYER_ZIP"
+  echo ""
+  echo "The Prisma layer must be built before deployment."
+  echo "Run one of the following commands first:"
+  echo ""
+  echo "  Linux/Mac:  ./scripts/build-prisma-layer.sh"
+  echo "  Windows:    powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1"
+  echo ""
+  exit 1
+fi
+
+LAYER_SIZE=$(du -h "$LAYER_ZIP" | cut -f1)
+echo "  ✅ Prisma layer found: $LAYER_ZIP ($LAYER_SIZE)"
+
+echo ""
+echo "Step 3: Deploying to AWS..."
 echo "  Region: us-west-2"
 echo "  Stage: prod"
 echo "  Stack: pv-api-prod"
