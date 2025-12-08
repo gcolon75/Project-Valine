@@ -53,20 +53,26 @@ Rebuild the layer when:
 
 ### Deployment
 
-The layer is automatically included in all Lambda functions via `serverless.yml`:
+The layer is attached to individual Lambda functions via `serverless.yml`:
 
 ```yaml
-provider:
-  layers:
-    - { Ref: PrismaLambdaLayer }
-
 layers:
-  prisma:
+  prismaV2:
+    name: ${self:service}-${self:provider.stage}-prisma-v2
     package:
       artifact: layers/prisma-layer.zip
+
+functions:
+  someFunction:
+    handler: src/handlers/some.handler
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
 ```
 
-**Important:** Do NOT use `aws lambda publish-layer-version` manually. The Serverless Framework handles layer deployment automatically.
+**Important:** 
+- Layers are attached per-function, not at the provider level
+- Functions that don't use Prisma (health, meta, authDiag) should have `layers: []`
+- Do NOT use `aws lambda publish-layer-version` manually. The Serverless Framework handles layer deployment automatically.
 
 Deploy using:
 ```powershell
