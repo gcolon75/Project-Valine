@@ -67,8 +67,8 @@ case $STACK_STATUS in
       
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Extracting resource IDs to retain..."
-        # Create an array of resource IDs
-        RETAIN_IDS_ARRAY=($(echo "$FAILED_RESOURCES" | awk '{print $1}'))
+        # Create an array of resource IDs safely (handles spaces)
+        mapfile -t RETAIN_IDS_ARRAY < <(echo "$FAILED_RESOURCES" | awk '{print $1}')
         
         if [ ${#RETAIN_IDS_ARRAY[@]} -eq 0 ]; then
           echo "No resources to retain. Attempting normal delete..."
