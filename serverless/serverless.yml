@@ -124,6 +124,13 @@ package:
     - '!**/.git/**'
     - '!**/.vscode/**'
     - '!node_modules/.cache/**'
+    # New exclusions to fix size issues
+    - '!.serverless/**'
+    - '!layers/**'
+    - '!node_modules/**'
+    - '!scripts/**'
+    - '!prisma/**'
+    - '!coverage/**'
     # IMPORTANT: Prisma is provided via the PrismaV2LambdaLayer, NOT bundled per-function.
     # Exclude all Prisma files from function packages to keep them small.
     - '!node_modules/@prisma/**'
