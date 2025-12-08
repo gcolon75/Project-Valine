@@ -67,13 +67,21 @@ case $STACK_STATUS in
       
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Extracting resource IDs to retain..."
-        RETAIN_IDS=$(echo "$FAILED_RESOURCES" | awk '{print $1}' | tr '\n' ' ')
+        # Create an array of resource IDs
+        RETAIN_IDS_ARRAY=($(echo "$FAILED_RESOURCES" | awk '{print $1}'))
         
-        echo "Deleting stack with retained resources: $RETAIN_IDS"
-        aws cloudformation delete-stack \
-          --stack-name "$STACK_NAME" \
-          --region "$REGION" \
-          --retain-resources $RETAIN_IDS
+        if [ ${#RETAIN_IDS_ARRAY[@]} -eq 0 ]; then
+          echo "No resources to retain. Attempting normal delete..."
+          aws cloudformation delete-stack \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION"
+        else
+          echo "Deleting stack with retained resources: ${RETAIN_IDS_ARRAY[*]}"
+          aws cloudformation delete-stack \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --retain-resources "${RETAIN_IDS_ARRAY[@]}"
+        fi
         
         echo ""
         echo "⏳ Waiting for stack deletion (this may take a few minutes)..."

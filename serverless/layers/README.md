@@ -121,6 +121,6 @@ Expected output (version may vary):
   ```
 
 **Error: "Package too large"**
-- This is normal - the layer is ~93MB
+- This is normal - the layer is ~9-12 MB compressed
 - Lambda supports up to 250MB uncompressed
 - The layer is deployed separately, not in the function package

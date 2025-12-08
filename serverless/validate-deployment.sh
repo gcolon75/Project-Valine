@@ -209,15 +209,22 @@ if [ -f "layers/prisma-layer.zip" ]; then
     # Check layer is not suspiciously small (should be at least 5 MB)
     # Use portable method to get file size
     LAYER_SIZE_BYTES=$(wc -c < "layers/prisma-layer.zip" 2>/dev/null || echo "0")
-    LAYER_SIZE_MB=$((LAYER_SIZE_BYTES / 1024 / 1024))
+    # Convert to KB for better precision without external tools
+    LAYER_SIZE_KB=$((LAYER_SIZE_BYTES / 1024))
+    # 5 MB = 5120 KB
+    MIN_SIZE_KB=5120
     
-    if [ $LAYER_SIZE_MB -lt 5 ]; then
+    if [ $LAYER_SIZE_KB -lt $MIN_SIZE_KB ]; then
+        # Display in MB for readability
+        LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
         check_fail "Layer is suspiciously small (${LAYER_SIZE_MB} MB)"
         echo "   Expected size: 9-12 MB compressed"
         echo "   This suggests the layer is incomplete (only package.json)"
         echo "   Run: ./scripts/build-prisma-layer.sh"
         VALIDATION_PASSED=false
     else
+        # Display in MB for readability
+        LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
         check_pass "Layer size is reasonable (${LAYER_SIZE_MB} MB)"
     fi
 fi
