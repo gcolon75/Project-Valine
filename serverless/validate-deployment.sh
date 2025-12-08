@@ -172,62 +172,78 @@ fi
 echo ""
 echo "6. Checking Prisma layer contents..."
 if [ -f "layers/prisma-layer.zip" ]; then
-    # Check for the Lambda binary
-    if unzip -l layers/prisma-layer.zip | grep -q "libquery_engine-rhel-openssl-3.0.x.so.node"; then
-        check_pass "Lambda binary (rhel-openssl-3.0.x) present in layer"
-    else
-        check_fail "Lambda binary not found in layer"
-        echo "   Run: ./scripts/build-prisma-layer.sh"
-        VALIDATION_PASSED=false
-    fi
+    # List layer contents once for efficiency
+    LAYER_CONTENTS=$(unzip -l layers/prisma-layer.zip 2>/dev/null)
     
-    # Check for Prisma client files (not just package.json)
-    if unzip -l layers/prisma-layer.zip | grep -q ".prisma/client/default.js"; then
-        check_pass "Prisma client default.js present in layer"
-    else
-        check_fail "Prisma client files missing from layer"
-        echo "   The layer only contains package.json but no actual Prisma client"
-        echo "   Run: ./scripts/build-prisma-layer.sh"
-        VALIDATION_PASSED=false
-    fi
-    
-    # Check for @prisma/client runtime
-    if unzip -l layers/prisma-layer.zip | grep -q "@prisma/client/runtime"; then
-        check_pass "@prisma/client runtime present in layer"
-    else
-        check_fail "@prisma/client runtime missing from layer"
-        echo "   Run: ./scripts/build-prisma-layer.sh"
-        VALIDATION_PASSED=false
-    fi
-    
-    # Check for unnecessary Debian binary (should not be in layer)
-    if unzip -l layers/prisma-layer.zip | grep -q "libquery_engine-debian-openssl"; then
-        check_warn "Layer contains Debian binary (not needed for Lambda)"
+    if [ -z "$LAYER_CONTENTS" ]; then
+        check_fail "Unable to read layer zip file (may be corrupted)"
         echo "   Rebuild layer: ./scripts/build-prisma-layer.sh"
+        VALIDATION_PASSED=false
+    else
+        # Check for the Lambda binary
+        if echo "$LAYER_CONTENTS" | grep -q "libquery_engine-rhel-openssl-3.0.x.so.node"; then
+            check_pass "Lambda binary (rhel-openssl-3.0.x) present in layer"
+        else
+            check_fail "Lambda binary not found in layer"
+            echo "   Run: ./scripts/build-prisma-layer.sh"
+            VALIDATION_PASSED=false
+        fi
+        
+        # Check for Prisma client files (not just package.json)
+        if echo "$LAYER_CONTENTS" | grep -q ".prisma/client/default.js"; then
+            check_pass "Prisma client default.js present in layer"
+        else
+            check_fail "Prisma client files missing from layer"
+            echo "   The layer only contains package.json but no actual Prisma client"
+            echo "   Run: ./scripts/build-prisma-layer.sh"
+            VALIDATION_PASSED=false
+        fi
+        
+        # Check for @prisma/client runtime
+        if echo "$LAYER_CONTENTS" | grep -q "@prisma/client/runtime"; then
+            check_pass "@prisma/client runtime present in layer"
+        else
+            check_fail "@prisma/client runtime missing from layer"
+            echo "   Run: ./scripts/build-prisma-layer.sh"
+            VALIDATION_PASSED=false
+        fi
+        
+        # Check for unnecessary Debian binary (should not be in layer)
+        if echo "$LAYER_CONTENTS" | grep -q "libquery_engine-debian-openssl"; then
+            check_warn "Layer contains Debian binary (not needed for Lambda)"
+            echo "   Rebuild layer: ./scripts/build-prisma-layer.sh"
+        fi
     fi
     
     # Check layer is not suspiciously small (should be at least 5 MB)
-    # Verify file exists and is readable before checking size
+    # Verify file is readable before checking size
     if [ -r "layers/prisma-layer.zip" ]; then
         # Use portable method to get file size
-        LAYER_SIZE_BYTES=$(wc -c < "layers/prisma-layer.zip" 2>/dev/null || echo "0")
-        # Convert to KB for better precision without external tools
-        LAYER_SIZE_KB=$((LAYER_SIZE_BYTES / 1024))
-        # 5 MB = 5120 KB
-        MIN_SIZE_KB=5120
+        LAYER_SIZE_BYTES=$(wc -c < "layers/prisma-layer.zip" 2>/dev/null)
         
-        if [ $LAYER_SIZE_KB -lt $MIN_SIZE_KB ]; then
-            # Display in MB for readability
-            LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
-            check_fail "Layer is suspiciously small (${LAYER_SIZE_MB} MB)"
-            echo "   Expected size: 9-12 MB compressed"
-            echo "   This suggests the layer is incomplete (only package.json)"
-            echo "   Run: ./scripts/build-prisma-layer.sh"
+        if [ -z "$LAYER_SIZE_BYTES" ] || [ "$LAYER_SIZE_BYTES" = "0" ]; then
+            check_fail "Unable to read layer file size (permission or access error)"
+            echo "   Check file permissions on layers/prisma-layer.zip"
             VALIDATION_PASSED=false
         else
-            # Display in MB for readability
-            LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
-            check_pass "Layer size is reasonable (${LAYER_SIZE_MB} MB)"
+            # Convert to KB for better precision without external tools
+            LAYER_SIZE_KB=$((LAYER_SIZE_BYTES / 1024))
+            # 5 MB = 5120 KB
+            MIN_SIZE_KB=5120
+            
+            if [ $LAYER_SIZE_KB -lt $MIN_SIZE_KB ]; then
+                # Display in MB for readability
+                LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
+                check_fail "Layer is suspiciously small (${LAYER_SIZE_MB} MB)"
+                echo "   Expected size: 9-12 MB compressed"
+                echo "   This suggests the layer is incomplete (only package.json)"
+                echo "   Run: ./scripts/build-prisma-layer.sh"
+                VALIDATION_PASSED=false
+            else
+                # Display in MB for readability
+                LAYER_SIZE_MB=$((LAYER_SIZE_KB / 1024))
+                check_pass "Layer size is reasonable (${LAYER_SIZE_MB} MB)"
+            fi
         fi
     else
         check_fail "Layer file is not readable"
