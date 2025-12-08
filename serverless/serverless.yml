@@ -113,15 +113,8 @@ custom:
     # noDependencies: true prevents ALL node_modules (especially devDependencies like @prisma/client)
     # from being bundled into function packages. Prisma is provided via Lambda Layer instead.
     packagerOptions:
+      scripts: []
       noDependencies: true
-  scripts: []
-  
-# CRITICAL: Tell esbuild/webpack to NOT include these node_modules
-bundleConfig:
-  nodeModules:
-    - '@prisma/client'
-    - '.prisma'
-    - 'prisma'
 
 package:
   individually: true
