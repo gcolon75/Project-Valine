@@ -108,7 +108,7 @@ custom:
       - '.prisma/*'
       - '.prisma/client/*'
       - 'prisma'
-    keepOutputDirectory: true
+    keepOutputDirectory: false
     # Prisma client generation handled externally before deploy
     packagerOptions:
       scripts: []
@@ -117,6 +117,10 @@ package:
   individually: true
   excludeDevDependencies: true
   patterns:
+    # BLOCK ALL ZIPs and build artifacts to prevent recursion
+    - '!**/*.zip'
+    - '!.esbuild/**'
+    - '!.serverless/**'
     - '!**/*.map'
     - '!**/tests/**'
     - '!**/__tests__/**'
@@ -125,7 +129,6 @@ package:
     - '!**/.vscode/**'
     - '!node_modules/.cache/**'
     # New exclusions to fix size issues
-    - '!.serverless/**'
     - '!layers/**'
     - '!node_modules/**'
     - '!scripts/**'
