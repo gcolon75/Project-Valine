@@ -96,11 +96,11 @@ export function FeedProvider({ children }) {
     if (post) bumpPrefs(post.tags, 1.5);
   };
 
-  // NOTE: createPost is a local-first UI function for immediate feedback.
-  // Actual post creation via API is handled in the Post page component (Post.jsx).
-  // This function is kept for local state management and preference tracking.
-  const createPost = ({ title, body, tags }) => {
-    const post = {
+  // NOTE: createPost now integrates with backend API
+  // Local state is updated optimistically for immediate UI feedback
+  const createPost = async ({ title, body, tags, mediaId, visibility }) => {
+    // Create optimistic local post for immediate feedback
+    const optimisticPost = {
       id: "p" + Math.random().toString(36).slice(2),
       author: { name: "You", role: "Creator", avatar: "" },
       title,
@@ -108,13 +108,51 @@ export function FeedProvider({ children }) {
       tags,
       createdAt: Date.now(),
       mediaUrl: "",
+      mediaId,
+      visibility: visibility || 'PUBLIC',
       likes: 0,
       saved: false,
       comments: 0,
     };
-    setPosts((prev) => [post, ...prev]);
+    
+    // Add to local state immediately
+    setPosts((prev) => [optimisticPost, ...prev]);
     bumpPrefs(tags, 1.0);
-    return post.id;
+    
+    // Call backend API
+    try {
+      const response = await apiClient.post('/posts', {
+        content: body || title,
+        tags: tags || [],
+        mediaId: mediaId || null,
+        visibility: visibility || 'PUBLIC'
+      });
+      
+      // Update with actual post data from backend
+      if (response?.data) {
+        const actualPost = {
+          id: response.data.id || optimisticPost.id,
+          author: response.data.author || optimisticPost.author,
+          title: title,
+          body: response.data.content || body,
+          tags: response.data.tags || tags,
+          createdAt: new Date(response.data.createdAt).getTime() || optimisticPost.createdAt,
+          mediaUrl: response.data.media?.[0] || "",
+          mediaId: response.data.mediaId || mediaId,
+          visibility: response.data.visibility || visibility,
+          likes: response.data._count?.likes || 0,
+          saved: false,
+          comments: response.data._count?.comments || 0,
+        };
+        
+        setPosts((prev) => prev.map(p => p.id === optimisticPost.id ? actualPost : p));
+      }
+    } catch (error) {
+      console.error('Failed to create post via API:', error);
+      // Keep optimistic post in place - user can try again or we handle elsewhere
+    }
+    
+    return optimisticPost.id;
   };
 
   const bumpPrefs = (tags, amount = 1) => {

@@ -90,23 +90,55 @@ export const createEducation = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const { institution, program, startYear, endYear, achievements } = body;
 
+    // Enhanced logging: incoming payload (sanitized for security)
+    console.log('[createEducation] Incoming payload:', {
+      userId: userId.substring(0, 8) + '...',
+      institution: institution ? institution.substring(0, 30) : null,
+      program: program ? program.substring(0, 30) : null,
+      startYear,
+      endYear,
+      hasAchievements: !!achievements
+    });
+
     if (!institution || !program) {
+      console.log('[createEducation] Validation failed: missing required fields');
       return error(400, 'institution and program are required');
     }
 
+    // Parse and validate startYear with detailed logging
     const normalizedStartYear = coerceYear(startYear, 'startYear');
     if (normalizedStartYear.error) {
+      console.log('[createEducation] startYear validation failed:', {
+        raw: startYear,
+        type: typeof startYear,
+        error: normalizedStartYear.error
+      });
       return error(400, normalizedStartYear.error);
     }
 
+    // Parse and validate endYear with detailed logging
     const normalizedEndYear = coerceYear(endYear, 'endYear');
     if (normalizedEndYear.error) {
+      console.log('[createEducation] endYear validation failed:', {
+        raw: endYear,
+        type: typeof endYear,
+        error: normalizedEndYear.error
+      });
       return error(400, normalizedEndYear.error);
     }
+
+    console.log('[createEducation] Year validation passed:', {
+      startYear: normalizedStartYear.value,
+      endYear: normalizedEndYear.value
+    });
 
     if (normalizedStartYear.value !== null &&
         normalizedEndYear.value !== null &&
         normalizedStartYear.value > normalizedEndYear.value) {
+      console.log('[createEducation] Year range validation failed:', {
+        startYear: normalizedStartYear.value,
+        endYear: normalizedEndYear.value
+      });
       return error(400, 'startYear cannot be after endYear');
     }
 
@@ -148,9 +180,24 @@ export const createEducation = async (event) => {
       },
     });
 
+    console.log('[createEducation] Education entry created successfully:', {
+      id: education.id,
+      profileId: profile.id
+    });
+
     return json(education, 201);
   } catch (e) {
-    console.error('Create education error:', e);
+    console.error('[createEducation] Error:', {
+      message: e.message,
+      code: e.code,
+      meta: e.meta
+    });
+    
+    // Handle specific Prisma errors with user-friendly messages
+    if (e.code === 'P2025') {
+      return error(404, 'Profile not found. Please ensure your profile exists before adding education.');
+    }
+    
     return error(500, 'Server error: ' + e.message);
   }
 };
@@ -174,19 +221,46 @@ export const updateEducation = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const { institution, program, startYear, endYear, achievements } = body;
 
+    // Enhanced logging: incoming payload (sanitized)
+    console.log('[updateEducation] Incoming payload:', {
+      educationId: id,
+      userId: userId.substring(0, 8) + '...',
+      institution: institution ? institution.substring(0, 30) : undefined,
+      program: program ? program.substring(0, 30) : undefined,
+      startYear,
+      endYear,
+      hasAchievements: achievements !== undefined
+    });
+
+    // Parse and validate startYear with detailed logging
     const normalizedStartYear = coerceYear(startYear, 'startYear');
     if (normalizedStartYear.error) {
+      console.log('[updateEducation] startYear validation failed:', {
+        raw: startYear,
+        type: typeof startYear,
+        error: normalizedStartYear.error
+      });
       return error(400, normalizedStartYear.error);
     }
 
+    // Parse and validate endYear with detailed logging
     const normalizedEndYear = coerceYear(endYear, 'endYear');
     if (normalizedEndYear.error) {
+      console.log('[updateEducation] endYear validation failed:', {
+        raw: endYear,
+        type: typeof endYear,
+        error: normalizedEndYear.error
+      });
       return error(400, normalizedEndYear.error);
     }
 
     if (normalizedStartYear.value !== null &&
         normalizedEndYear.value !== null &&
         normalizedStartYear.value > normalizedEndYear.value) {
+      console.log('[updateEducation] Year range validation failed:', {
+        startYear: normalizedStartYear.value,
+        endYear: normalizedEndYear.value
+      });
       return error(400, 'startYear cannot be after endYear');
     }
 
@@ -243,9 +317,24 @@ export const updateEducation = async (event) => {
       data: updateData,
     });
 
+    console.log('[updateEducation] Education entry updated successfully:', {
+      id: updatedEducation.id,
+      updated: Object.keys(updateData)
+    });
+
     return json(updatedEducation);
   } catch (e) {
-    console.error('Update education error:', e);
+    console.error('[updateEducation] Error:', {
+      message: e.message,
+      code: e.code,
+      meta: e.meta
+    });
+    
+    // Handle specific Prisma errors with user-friendly messages
+    if (e.code === 'P2025') {
+      return error(404, 'Education entry not found or has been deleted.');
+    }
+    
     return error(500, 'Server error: ' + e.message);
   }
 };

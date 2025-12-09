@@ -28,7 +28,7 @@ const isValidUrl = (url) => {
 const EMPTY_PROFILE = {
   displayName: '',
   username: '',
-  headline: '',
+  title: '',
   bio: '',
   avatar: null,
   role: '',
@@ -166,7 +166,7 @@ export default function Profile() {
               ...EMPTY_PROFILE,
               displayName: user.displayName || user.name || '',
               username: user.username || '',
-              headline: user.headline || '',
+              title: user.title || '',
               bio: user.bio || '',
               avatar: user.avatar || null,
               role: user.role || '',
@@ -191,7 +191,7 @@ export default function Profile() {
             ...EMPTY_PROFILE,
             displayName: user.displayName || user.name || '',
             username: user.username || '',
-            headline: user.headline || '',
+            title: user.title || '',
             bio: user.bio || '',
             avatar: user.avatar || null,
             role: user.role || '',
@@ -344,10 +344,10 @@ export default function Profile() {
               {displayData.bio}
             </p>
           )}
-          {/* Professional title/headline shown last in header */}
-          {(displayData.title || displayData.headline) && (
+          {/* Professional title shown last in header */}
+          {displayData.title && (
             <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-4">
-              {displayData.title || displayData.headline}
+              {displayData.title}
             </p>
           )}
 
@@ -471,16 +471,16 @@ export default function Profile() {
           <div className="space-y-6">
             {/* Overview */}
             <Card title="Overview" padding="default">
-              {displayData.headline && (
+              {displayData.title && (
                 <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-2">
-                  {displayData.headline}
+                  {displayData.title}
                 </p>
               )}
               {displayData.bio ? (
                 <p className="text-neutral-700 dark:text-neutral-300">
                   {displayData.bio}
                 </p>
-              ) : !displayData.headline ? (
+              ) : !displayData.title ? (
                 <p className="text-neutral-500 dark:text-neutral-400 italic">
                   No bio available
                 </p>

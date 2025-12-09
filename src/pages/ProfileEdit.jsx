@@ -58,6 +58,7 @@ export default function ProfileEdit() {
     languages: user?.languages || [],
     avatar: user?.avatar || null,
     banner: user?.banner || null,
+    bannerUrl: user?.bannerUrl || null,
     agency: user?.agency || { name: '', contact: '' },
     contactPreferences: user?.contactPreferences || {
       email: true,
@@ -98,13 +99,15 @@ export default function ProfileEdit() {
               displayName: profileData.displayName || prev.displayName,
               username: profileData.username || prev.username,
               title: profileData.title || prev.title,
-              headline: profileData.headline || prev.headline,
               bio: profileData.bio || prev.bio,
+              location: profileData.location || prev.location,
+              pronouns: profileData.pronouns || prev.pronouns,
               avatar: profileData.avatar || prev.avatar,
               banner: profileData.bannerUrl || prev.banner,
+              bannerUrl: profileData.bannerUrl || prev.bannerUrl,
               primaryRoles: profileData.roles || prev.primaryRoles,
               skills: profileData.tags || prev.skills,
-              profileLinks: profileData.links || prev.profileLinks,
+              profileLinks: profileData.socialLinks || profileData.links || prev.profileLinks,
               education: profileData.education || prev.education,
             }));
           }
@@ -353,7 +356,7 @@ export default function ProfileEdit() {
       try {
         // Backend API integration - call updateMyProfile when user is authenticated
         if (user?.id) {
-          // Build profile update with all editable fields
+          // Build profile update with all editable fields matching backend API
           const profileUpdate = {
             displayName: sanitizedData.displayName,
             username: sanitizedData.username,
@@ -361,10 +364,11 @@ export default function ProfileEdit() {
             bio: sanitizedData.bio,
             location: sanitizedData.location,
             pronouns: sanitizedData.pronouns,
-            primaryRoles: sanitizedData.primaryRoles,
-            skills: sanitizedData.skills,
-            avatarUrl: sanitizedData.avatar,
-            links: sanitizedData.profileLinks
+            roles: sanitizedData.primaryRoles,
+            tags: sanitizedData.skills,
+            avatar: sanitizedData.avatar,
+            bannerUrl: sanitizedData.banner || sanitizedData.bannerUrl,
+            socialLinks: sanitizedData.profileLinks
           };
           
           await updateMyProfile(profileUpdate);
@@ -939,14 +943,38 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate required fields
     if (!formData.institution.trim() || !formData.program.trim()) {
       return;
     }
+    
+    // Parse and validate years
+    const startYear = formData.startYear ? parseInt(formData.startYear, 10) : null;
+    const endYear = formData.endYear ? parseInt(formData.endYear, 10) : null;
+    
+    // Validate year range
+    if (startYear && (startYear < 1900 || startYear > 2035)) {
+      toast.error('Start year must be between 1900 and 2035');
+      return;
+    }
+    
+    if (endYear && (endYear < 1900 || endYear > 2035)) {
+      toast.error('End year must be between 1900 and 2035');
+      return;
+    }
+    
+    // Validate end year >= start year
+    if (startYear && endYear && endYear < startYear) {
+      toast.error('End year must be equal to or after start year');
+      return;
+    }
+    
     onSave({
       institution: formData.institution.trim(),
       program: formData.program.trim(),
-      startYear: formData.startYear ? parseInt(formData.startYear, 10) : null,
-      endYear: formData.endYear ? parseInt(formData.endYear, 10) : null,
+      startYear,
+      endYear,
       achievements: formData.achievements.trim() || null
     });
   };
@@ -968,7 +996,7 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
       </div>
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Program / Degree <span className="text-red-500">*</span>
+          Program <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -991,7 +1019,7 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
             className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="2018"
             min="1900"
-            max="2099"
+            max="2035"
           />
         </div>
         <div>
@@ -1005,7 +1033,7 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
             className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="2022 (or leave blank for present)"
             min="1900"
-            max="2099"
+            max="2035"
           />
         </div>
       </div>

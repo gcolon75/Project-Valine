@@ -162,6 +162,13 @@ export const rejectRequest = async (event) => {
 /**
  * POST /connections/follow
  * Follow or unfollow a user (toggle)
+ * 
+ * Follow semantics:
+ * - When user A follows user B: creates connection_request(senderId=A, receiverId=B, status='accepted')
+ * - User A is "following" user B (A.sentRequests includes this record)
+ * - User B has user A as a "follower" (B.receivedRequests includes this record)
+ * - User A will see user B's FOLLOWERS and PUBLIC posts in their feed
+ * 
  * Body: { targetUserId: string }
  */
 export const followUser = async (event) => {
@@ -219,6 +226,11 @@ export const followUser = async (event) => {
 /**
  * GET /connections/status/{userId}
  * Get connection status with a user
+ * 
+ * Connection semantics:
+ * - isFollowing: current user follows target user (current is sender, target is receiver, status='accepted')
+ * - isFollowedBy: target user follows current user (target is sender, current is receiver, status='accepted')
+ * 
  * Returns: { isFollowing: boolean, isFollowedBy: boolean }
  */
 export const getConnectionStatus = async (event) => {

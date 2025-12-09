@@ -5,8 +5,20 @@ import { getUserFromEvent } from './auth.js';
 /**
  * GET /feed
  * Get aggregated posts from followed users for the authenticated user's feed
+ * 
+ * Visibility semantics (Instagram + LinkedIn hybrid):
+ * - PUBLIC posts: visible to everyone (followers, non-followers, explore)
+ * - FOLLOWERS posts: visible only to followers + author's own profile
+ * 
+ * Feed composition for current user:
+ * - All posts from self (PUBLIC and FOLLOWERS visibility)
+ * - PUBLIC and FOLLOWERS posts from users that current user follows
+ * 
+ * Note: "following" means current user sent an accepted connection request (senderId = current user)
+ * 
  * Returns:
  * - PUBLIC posts from followed users
+ * - FOLLOWERS posts from followed users (current user is a follower)
  * - All posts from self (PUBLIC and FOLLOWERS)
  */
 export const getFeed = async (event) => {
