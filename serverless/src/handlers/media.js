@@ -10,8 +10,7 @@ import crypto from 'crypto';
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 
-// Valid media types
-const VALID_MEDIA_TYPES = ['AVATAR', 'BANNER', 'GALLERY', 'POST'];
+// Valid media types removed - mediaType column does not exist in database
 
 /**
  * POST /api/profiles/:id/media/upload-url
@@ -39,15 +38,10 @@ export const getUploadUrl = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { type, title, description, privacy, mediaType } = body;
+    const { type, title, description, privacy } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
       return error(400, 'Valid type is required (image, video, or pdf)');
-    }
-
-    // Validate mediaType if provided
-    if (mediaType && !VALID_MEDIA_TYPES.includes(mediaType)) {
-      return error(400, `Invalid mediaType. Must be one of: ${VALID_MEDIA_TYPES.join(', ')}`);
     }
 
     const prisma = getPrisma();
@@ -94,7 +88,7 @@ export const getUploadUrl = async (event) => {
     const timestamp = Date.now();
     const s3Key = `profiles/${profile.id}/media/${timestamp}-${mediaId}`;
 
-    // Create placeholder media record with mediaType
+    // Create placeholder media record
     const media = await prisma.media.create({
       data: {
         profileId: profile.id,
@@ -104,7 +98,6 @@ export const getUploadUrl = async (event) => {
         description: description || null,
         privacy: privacy || 'public',
         processedStatus: 'pending',
-        mediaType: mediaType || null,
       },
     });
 
@@ -180,7 +173,7 @@ export const completeUpload = async (event) => {
       return error(403, 'Forbidden - not profile owner');
     }
 
-    // Get the media record to check mediaType
+    // Get the media record
     const existingMedia = await prisma.media.findUnique({
       where: { id: mediaId },
     });
@@ -203,22 +196,8 @@ export const completeUpload = async (event) => {
     // Generate the S3 URL for the uploaded file
     const s3Url = `https://${MEDIA_BUCKET}.s3.${process.env.AWS_REGION || 'us-west-2'}.amazonaws.com/${media.s3Key}`;
 
-    // Handle special mediaTypes - update user avatar or profile banner
-    if (existingMedia.mediaType === 'AVATAR') {
-      // Update user.avatar with the S3 URL
-      await prisma.user.update({
-        where: { id: userId },
-        data: { avatar: s3Url },
-      });
-      console.log('[completeUpload] Updated user avatar:', userId);
-    } else if (existingMedia.mediaType === 'BANNER') {
-      // Update profile.bannerUrl with the S3 URL
-      await prisma.profile.update({
-        where: { id: profileId },
-        data: { bannerUrl: s3Url },
-      });
-      console.log('[completeUpload] Updated profile banner:', profileId);
-    }
+    // Note: Avatar and banner uploads are now handled separately through updateMyProfile endpoint
+    // This endpoint is for gallery media only
 
     // TODO: Trigger background processing (Lambda, SQS, etc.)
     // For now, we'll mark it as complete immediately

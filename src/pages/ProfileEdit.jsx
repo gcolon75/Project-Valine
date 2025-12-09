@@ -11,7 +11,7 @@ import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { getProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, createEducation, updateEducation, deleteEducation } from '../services/profileService';
+import { getMyProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, createEducation, updateEducation, deleteEducation } from '../services/profileService';
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
@@ -84,24 +84,33 @@ export default function ProfileEdit() {
     }
   }, []);
 
-  // Load profile from backend on mount if feature is enabled
+  // Load profile from backend on mount
   useEffect(() => {
     const loadProfile = async () => {
-      if (BACKEND_LINKS_ENABLED && user?.id) {
+      if (user?.id) {
         setIsLoadingProfile(true);
         try {
-          const profile = await getProfile(user.id);
-          // Update form data with backend profile
-          if (profile) {
+          const profileData = await getMyProfile();
+          // Update form data with backend profile data
+          if (profileData) {
             setFormData(prev => ({
               ...prev,
-              title: profile.title || prev.title,
-              profileLinks: profile.links || prev.profileLinks
+              displayName: profileData.displayName || prev.displayName,
+              username: profileData.username || prev.username,
+              title: profileData.title || prev.title,
+              headline: profileData.headline || prev.headline,
+              bio: profileData.bio || prev.bio,
+              avatar: profileData.avatar || prev.avatar,
+              banner: profileData.bannerUrl || prev.banner,
+              primaryRoles: profileData.roles || prev.primaryRoles,
+              skills: profileData.tags || prev.skills,
+              profileLinks: profileData.links || prev.profileLinks,
+              education: profileData.education || prev.education,
             }));
           }
         } catch (error) {
           console.error('Failed to load profile from backend:', error);
-          // Continue with existing data
+          // Continue with existing data from user context
         } finally {
           setIsLoadingProfile(false);
         }
@@ -109,7 +118,7 @@ export default function ProfileEdit() {
     };
 
     loadProfile();
-  }, [BACKEND_LINKS_ENABLED, user?.id]);
+  }, [user?.id]);
 
   // Education state
   const [educationList, setEducationList] = useState([]);
