@@ -1,0 +1,706 @@
+warning: in the working copy of 'api/prisma/schema.prisma', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/api/prisma/schema.prisma b/api/prisma/schema.prisma[m
+[1mindex 8880ba5..f2a54b2 100644[m
+[1m--- a/api/prisma/schema.prisma[m
+[1m+++ b/api/prisma/schema.prisma[m
+[36m@@ -8,76 +8,70 @@[m [mdatasource db {[m
+   url      = env("DATABASE_URL")[m
+ }[m
+ [m
+[31m-// ============================================[m
+[31m-// Core User & Authentication[m
+[31m-// ============================================[m
+[31m-[m
+ model User {[m
+[31m-  id                 String    @id @default(uuid())[m
+[31m-  username           String    @unique[m
+[31m-  email              String    @unique[m
+[31m-  normalizedEmail    String    @unique // lowercase, trimmed for deduplication[m
+[31m-  emailVerified      Boolean   @default(false) // Email verification status[m
+[31m-  emailVerifiedAt    DateTime? // When email was verified[m
+[31m-  passwordHash       String // bcrypt hashed password (NOT 'password')[m
+[31m-  displayName        String?[m
+[31m-  bio                String?[m
+[31m-  avatar             String?[m
+[31m-  name               String? // Full legal name (optional)[m
+[31m-  role               String    @default("artist") // 'artist' | 'observer'[m
+[31m-  status             String    @default("active") // 'pending' | 'active' | 'suspended'[m
+[31m-  theme              String?   @default("light") // 'light' | 'dark' - theme preference[m
+[31m-  onboardingComplete Boolean   @default(false) // Onboarding completion status (PR #262)[m
+[31m-  twoFactorEnabled   Boolean   @default(false) // 2FA enrollment status[m
+[31m-  twoFactorSecret    String? // TOTP secret (encrypted)[m
+[31m-  createdAt          DateTime  @default(now())[m
+[31m-  updatedAt          DateTime  @updatedAt[m
+[31m-[m
+[31m-  // Relations[m
+[31m-  scripts                 Script[][m
+[32m+[m[32m  id                      String                    @id @default(uuid())[m
+[32m+[m[32m  username                String                    @unique[m
+[32m+[m[32m  email                   String                    @unique[m
+[32m+[m[32m  normalizedEmail         String                    @unique[m
+[32m+[m[32m  emailVerified           Boolean                   @default(false)[m
+[32m+[m[32m  emailVerifiedAt         DateTime?[m
+[32m+[m[32m  passwordHash            String[m
+[32m+[m[32m  displayName             String?[m
+[32m+[m[32m  bio                     String?[m
+[32m+[m[32m  avatar                  String?[m
+[32m+[m[32m  name                    String?[m
+[32m+[m[32m  role                    String                    @default("artist")[m
+[32m+[m[32m  status                  String                    @default("active")[m
+[32m+[m[32m  theme                   String?                   @default("light")[m
+[32m+[m[32m  onboardingComplete      Boolean                   @default(false)[m
+[32m+[m[32m  twoFactorEnabled        Boolean                   @default(false)[m
+[32m+[m[32m  twoFactorSecret         String?[m
+[32m+[m[32m  createdAt               DateTime                  @default(now())[m
+[32m+[m[32m  updatedAt               DateTime                  @updatedAt[m
+[32m+[m[32m  profileComplete         Boolean                   @default(false)[m
+[32m+[m[32m  auditLogs               AuditLog[][m
+   auditions               Audition[][m
+[31m-  posts                   Post[][m
+[31m-  reels                   Reel[][m
+[31m-  comments                Comment[][m
+[31m-  likes                   Like[][m
+   bookmarks               Bookmark[][m
+[31m-  sentRequests            ConnectionRequest[]       @relation("sender")[m
+[32m+[m[32m  comments                Comment[][m
+   receivedRequests        ConnectionRequest[]       @relation("receiver")[m
+[31m-  sentMessages            Message[]                 @relation("sender")[m
+[32m+[m[32m  sentRequests            ConnectionRequest[]       @relation("sender")[m
+   conversations           ConversationParticipant[][m
+[32m+[m[32m  emailVerificationTokens EmailVerificationToken[][m
+[32m+[m[32m  likes                   Like[][m
+[32m+[m[32m  sentMessages            Message[]                 @relation("sender")[m
+   notifications           Notification[]            @relation("recipient")[m
+   triggeredNotifs         Notification[]            @relation("triggerer")[m
+[32m+[m[32m  passwordResetTokens     PasswordResetToken[][m
+[32m+[m[32m  posts                   Post[][m
+[32m+[m[32m  profileLinks            ProfileLink[][m
+   profile                 Profile?[m
+[31m-  settings                UserSettings?[m
+[31m-  sentReelRequests        ReelRequest[]             @relation("requester")[m
+   receivedReelRequests    ReelRequest[]             @relation("owner")[m
+[31m-  profileLinks            ProfileLink[][m
+[31m-  emailVerificationTokens EmailVerificationToken[][m
+[31m-  passwordResetTokens     PasswordResetToken[][m
+[31m-  twoFactorRecoveryCodes  TwoFactorRecoveryCode[][m
+[32m+[m[32m  sentReelRequests        ReelRequest[]             @relation("requester")[m
+[32m+[m[32m  reels                   Reel[][m
+[32m+[m[32m  refresh_tokens          refresh_tokens[][m
+[32m+[m[32m  scripts                 Script[][m
+   sessions                Session[][m
+[31m-  auditLogs               AuditLog[][m
+[32m+[m[32m  twoFactorRecoveryCodes  TwoFactorRecoveryCode[][m
+[32m+[m[32m  settings                UserSettings?[m
+ [m
+   @@index([email])[m
+   @@index([normalizedEmail])[m
+   @@index([username])[m
+   @@index([status])[m
+   @@index([createdAt])[m
+[32m+[m[32m  @@index([onboardingComplete], map: "users_onboardingcomplete_idx")[m
+[32m+[m[32m  @@index([profileComplete], map: "users_profilecomplete_idx")[m
+   @@map("users")[m
+ }[m
+ [m
+[31m-// ============================================[m
+[31m-// Content Models[m
+[31m-// ============================================[m
+[31m-[m
+ model Script {[m
+   id        String   @id @default(cuid())[m
+   title     String[m
+[31m-  summary   String   @db.Text[m
+[32m+[m[32m  summary   String[m
+   authorId  String[m
+[31m-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+   createdAt DateTime @default(now())[m
+   updatedAt DateTime @updatedAt[m
+[32m+[m[32m  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([authorId])[m
+   @@index([createdAt])[m
+[36m@@ -87,11 +81,11 @@[m [mmodel Script {[m
+ model Audition {[m
+   id        String   @id @default(cuid())[m
+   title     String[m
+[31m-  summary   String   @db.Text[m
+[32m+[m[32m  summary   String[m
+   hostId    String[m
+[31m-  host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)[m
+   createdAt DateTime @default(now())[m
+   updatedAt DateTime @updatedAt[m
+[32m+[m[32m  host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([hostId])[m
+   @@index([createdAt])[m
+[36m@@ -100,16 +94,16 @@[m [mmodel Audition {[m
+ [m
+ model Post {[m
+   id            String   @id @default(uuid())[m
+[31m-  content       String   @db.Text[m
+[32m+[m[32m  content       String[m
+   media         String[][m
+   tags          String[][m
+   authorId      String[m
+[31m-  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+[31m-  mediaId       String?  // Links to Media.id when a post attaches uploaded media[m
+[31m-  mediaAttached Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)[m
+[31m-  visibility    String   @default("PUBLIC") // PUBLIC or FOLLOWERS[m
+   createdAt     DateTime @default(now())[m
+   updatedAt     DateTime @updatedAt[m
+[32m+[m[32m  mediaId       String?[m
+[32m+[m[32m  visibility    String   @default("PUBLIC")[m
+[32m+[m[32m  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  mediaAttached Media?   @relation(fields: [mediaId], references: [id])[m
+ [m
+   @@index([authorId])[m
+   @@index([createdAt])[m
+[36m@@ -119,19 +113,18 @@[m [mmodel Post {[m
+ }[m
+ [m
+ model Reel {[m
+[31m-  id        String   @id @default(uuid())[m
+[32m+[m[32m  id        String     @id @default(uuid())[m
+   videoUrl  String[m
+   thumbnail String?[m
+[31m-  caption   String?  @db.Text[m
+[31m-  tags      String[] // PR #262: Curated tags (max 5)[m
+[32m+[m[32m  caption   String?[m
+[32m+[m[32m  tags      String[][m
+   authorId  String[m
+[31m-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+[31m-  createdAt DateTime @default(now())[m
+[31m-  updatedAt DateTime @updatedAt[m
+[31m-[m
+[32m+[m[32m  createdAt DateTime   @default(now())[m
+[32m+[m[32m  updatedAt DateTime   @updatedAt[m
+[32m+[m[32m  bookmarks Bookmark[][m
+   comments  Comment[][m
+   likes     Like[][m
+[31m-  bookmarks Bookmark[][m
+[32m+[m[32m  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([authorId])[m
+   @@index([createdAt])[m
+[36m@@ -141,13 +134,13 @@[m [mmodel Reel {[m
+ [m
+ model Comment {[m
+   id        String   @id @default(uuid())[m
+[31m-  text      String   @db.Text[m
+[32m+[m[32m  text      String[m
+   reelId    String[m
+[31m-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+   authorId  String[m
+[31m-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+   createdAt DateTime @default(now())[m
+   updatedAt DateTime @updatedAt[m
+[32m+[m[32m  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([reelId])[m
+   @@index([authorId])[m
+[36m@@ -158,10 +151,10 @@[m [mmodel Comment {[m
+ model Like {[m
+   id        String   @id @default(uuid())[m
+   reelId    String[m
+[31m-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+   userId    String[m
+[31m-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   createdAt DateTime @default(now())[m
+[32m+[m[32m  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@unique([reelId, userId])[m
+   @@index([reelId])[m
+[36m@@ -172,10 +165,10 @@[m [mmodel Like {[m
+ model Bookmark {[m
+   id        String   @id @default(uuid())[m
+   reelId    String[m
+[31m-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+   userId    String[m
+[31m-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   createdAt DateTime @default(now())[m
+[32m+[m[32m  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@unique([reelId, userId])[m
+   @@index([reelId])[m
+[36m@@ -183,20 +176,15 @@[m [mmodel Bookmark {[m
+   @@map("bookmarks")[m
+ }[m
+ [m
+[31m-// ============================================[m
+[31m-// Messaging & Notifications[m
+[31m-// ============================================[m
+[31m-[m
+ model Conversation {[m
+[31m-  id            String    @id @default(uuid())[m
+[32m+[m[32m  id            String                    @id @default(uuid())[m
+   title         String?[m
+[31m-  lastMessage   String?   @db.Text[m
+[32m+[m[32m  lastMessage   String?[m
+   lastMessageAt DateTime?[m
+[31m-  createdAt     DateTime  @default(now())[m
+[31m-  updatedAt     DateTime  @updatedAt[m
+[31m-[m
+[31m-  participants ConversationParticipant[][m
+[31m-  messages     Message[][m
+[32m+[m[32m  createdAt     DateTime                  @default(now())[m
+[32m+[m[32m  updatedAt     DateTime                  @updatedAt[m
+[32m+[m[32m  participants  ConversationParticipant[][m
+[32m+[m[32m  messages      Message[][m
+ [m
+   @@index([lastMessageAt])[m
+   @@map("conversations")[m
+[36m@@ -205,10 +193,10 @@[m [mmodel Conversation {[m
+ model ConversationParticipant {[m
+   id             String       @id @default(uuid())[m
+   conversationId String[m
+[31m-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)[m
+   userId         String[m
+[31m-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   joinedAt       DateTime     @default(now())[m
+[32m+[m[32m  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@unique([conversationId, userId])[m
+   @@index([userId])[m
+[36m@@ -218,12 +206,12 @@[m [mmodel ConversationParticipant {[m
+ [m
+ model Message {[m
+   id             String       @id @default(uuid())[m
+[31m-  text           String       @db.Text[m
+[32m+[m[32m  text           String[m
+   conversationId String[m
+[31m-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)[m
+   senderId       String[m
+[31m-  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)[m
+   createdAt      DateTime     @default(now())[m
+[32m+[m[32m  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([conversationId])[m
+   @@index([senderId])[m
+[36m@@ -233,15 +221,15 @@[m [mmodel Message {[m
+ [m
+ model Notification {[m
+   id          String   @id @default(uuid())[m
+[31m-  type        String // 'like' | 'comment' | 'follow' | 'message' | 'reel_request'[m
+[31m-  message     String   @db.Text[m
+[32m+[m[32m  type        String[m
+[32m+[m[32m  message     String[m
+   recipientId String[m
+[31m-  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)[m
+   triggererId String?[m
+[31m-  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id], onDelete: SetNull)[m
+   isRead      Boolean  @default(false)[m
+[31m-  metadata    Json? // Additional data like reelId, commentId, etc.[m
+[32m+[m[32m  metadata    Json?[m
+   createdAt   DateTime @default(now())[m
+[32m+[m[32m  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])[m
+ [m
+   @@index([recipientId, isRead])[m
+   @@index([createdAt])[m
+[36m@@ -252,13 +240,13 @@[m [mmodel Notification {[m
+ model ConnectionRequest {[m
+   id         String   @id @default(uuid())[m
+   senderId   String[m
+[31m-  sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)[m
+   receiverId String[m
+[31m-  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)[m
+[31m-  status     String   @default("pending") // 'pending' | 'accepted' | 'rejected'[m
+[31m-  message    String?  @db.Text[m
+[32m+[m[32m  status     String   @default("pending")[m
+[32m+[m[32m  message    String?[m
+   createdAt  DateTime @default(now())[m
+   updatedAt  DateTime @updatedAt[m
+[32m+[m[32m  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)[m
+ [m
+   @@unique([senderId, receiverId])[m
+   @@index([senderId])[m
+[36m@@ -267,30 +255,28 @@[m [mmodel ConnectionRequest {[m
+   @@map("connection_requests")[m
+ }[m
+ [m
+[31m-// ============================================[m
+[31m-// Profile & Portfolio[m
+[31m-// ============================================[m
+[31m-[m
+ model Profile {[m
+[31m-  id          String   @id @default(uuid())[m
+[31m-  userId      String   @unique[m
+[31m-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  vanityUrl   String   @unique[m
+[31m-  headline    String? // Short professional headline[m
+[31m-  title       String?  // Professional title (e.g., "Senior Voice Actor")[m
+[31m-  bio         String?  @db.Text[m
+[31m-  roles       String[] // PR #262: ["Voice Actor", "Director", "Writer"] - from curated list[m
+[31m-  tags        String[] // PR #262: Curated tags (max 5 from 30-tag taxonomy)[m
+[31m-  location    Json? // { city: "Los Angeles", state: "CA", country: "USA" }[m
+[31m-  privacy     Json     @default("{}") // { visibility: "public|network|private", showEmail: false, showPhone: false }[m
+[31m-  socialLinks Json? // { website: "", instagram: "", imdb: "", linkedin: "", showreel: "" }[m
+[31m-  createdAt   DateTime @default(now())[m
+[31m-  updatedAt   DateTime @updatedAt[m
+[31m-[m
+[31m-  media     Media[][m
+[31m-  credits   Credit[][m
+[31m-  links     ProfileLink[][m
+[31m-  education Education[][m
+[32m+[m[32m  id          String        @id @default(uuid())[m
+[32m+[m[32m  userId      String        @unique[m
+[32m+[m[32m  vanityUrl   String        @unique[m
+[32m+[m[32m  headline    String?[m
+[32m+[m[32m  bio         String?[m
+[32m+[m[32m  roles       String[][m
+[32m+[m[32m  tags        String[][m
+[32m+[m[32m  location    Json?[m
+[32m+[m[32m  privacy     Json          @default("{}")[m
+[32m+[m[32m  socialLinks Json?[m
+[32m+[m[32m  createdAt   DateTime      @default(now())[m
+[32m+[m[32m  updatedAt   DateTime      @updatedAt[m
+[32m+[m[32m  title       String?[m
+[32m+[m[32m  bannerUrl   String?[m
+[32m+[m[32m  budgetMin   Int?[m
+[32m+[m[32m  budgetMax   Int?[m
+[32m+[m[32m  credits     Credit[][m
+[32m+[m[32m  education   Education[][m
+[32m+[m[32m  media       Media[][m
+[32m+[m[32m  links       ProfileLink[][m
+[32m+[m[32m  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([vanityUrl])[m
+   @@index([userId])[m
+[36m@@ -302,15 +288,15 @@[m [mmodel Profile {[m
+ model ProfileLink {[m
+   id        String   @id @default(uuid())[m
+   userId    String[m
+[31m-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   profileId String[m
+[31m-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+[31m-  label     String // 1-40 characters[m
+[31m-  url       String   @db.Text[m
+[31m-  type      String // "website" | "imdb" | "showreel" | "other"[m
+[31m-  position  Int      @default(0) // Order/position for custom sorting[m
+[32m+[m[32m  label     String[m
+[32m+[m[32m  url       String[m
+[32m+[m[32m  type      String[m
+[32m+[m[32m  position  Int      @default(0)[m
+   createdAt DateTime @default(now())[m
+   updatedAt DateTime @updatedAt[m
+[32m+[m[32m  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([profileId])[m
+[36m@@ -321,40 +307,39 @@[m [mmodel ProfileLink {[m
+ model Education {[m
+   id           String   @id @default(uuid())[m
+   profileId    String[m
+[31m-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+   institution  String[m
+   program      String[m
+   startYear    Int?[m
+   endYear      Int?[m
+[31m-  achievements String?  @db.Text[m
+[32m+[m[32m  achievements String?[m
+   createdAt    DateTime @default(now())[m
+   updatedAt    DateTime @updatedAt[m
+[32m+[m[32m  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([profileId])[m
+   @@map("education")[m
+ }[m
+ [m
+ model Media {[m
+[31m-  id              String   @id @default(uuid())[m
+[32m+[m[32m  id              String        @id @default(uuid())[m
+   profileId       String[m
+[31m-  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+[31m-  type            String // "image" | "video" | "pdf" | "audio"[m
+[31m-  s3Key           String // S3 object key[m
+[31m-  posterS3Key     String? // For videos - thumbnail/poster frame[m
+[32m+[m[32m  type            String[m
+[32m+[m[32m  s3Key           String[m
+[32m+[m[32m  posterS3Key     String?[m
+   title           String?[m
+[31m-  description     String?  @db.Text[m
+[31m-  duration        Int? // For videos/audio in seconds[m
+[31m-  width           Int? // For images/videos[m
+[31m-  height          Int? // For images/videos[m
+[31m-  fileSize        Int? // In bytes[m
+[31m-  privacy         String   @default("public") // "public" | "on-request" | "private"[m
+[31m-  processedStatus String   @default("pending") // "pending" | "processing" | "complete" | "failed"[m
+[31m-  metadata        Json? // Additional metadata like tags, derivatives, codec info, etc.[m
+[31m-  createdAt       DateTime @default(now())[m
+[31m-  updatedAt       DateTime @updatedAt[m
+[31m-[m
+[31m-  reelRequests ReelRequest[][m
+[31m-  posts        Post[][m
+[32m+[m[32m  description     String?[m
+[32m+[m[32m  duration        Int?[m
+[32m+[m[32m  width           Int?[m
+[32m+[m[32m  height          Int?[m
+[32m+[m[32m  fileSize        Int?[m
+[32m+[m[32m  privacy         String        @default("public")[m
+[32m+[m[32m  processedStatus String        @default("pending")[m
+[32m+[m[32m  metadata        Json?[m
+[32m+[m[32m  createdAt       DateTime      @default(now())[m
+[32m+[m[32m  updatedAt       DateTime      @updatedAt[m
+[32m+[m[32m  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  posts           Post[][m
+[32m+[m[32m  reelRequests    ReelRequest[][m
+ [m
+   @@index([profileId])[m
+   @@index([type])[m
+[36m@@ -367,16 +352,16 @@[m [mmodel Media {[m
+ model Credit {[m
+   id          String   @id @default(uuid())[m
+   profileId   String[m
+[31m-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+[31m-  title       String // Project/show title[m
+[31m-  role        String // Character or position[m
+[31m-  company     String? // Production company[m
+[32m+[m[32m  title       String[m
+[32m+[m[32m  role        String[m
+[32m+[m[32m  company     String?[m
+   year        Int?[m
+[31m-  description String?  @db.Text[m
+[31m-  orderIndex  Int      @default(0) // For custom ordering[m
+[31m-  metadata    Json? // Additional fields like genre, awards, links, etc.[m
+[32m+[m[32m  description String?[m
+[32m+[m[32m  orderIndex  Int      @default(0)[m
+[32m+[m[32m  metadata    Json?[m
+   createdAt   DateTime @default(now())[m
+   updatedAt   DateTime @updatedAt[m
+[32m+[m[32m  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([profileId])[m
+   @@index([year])[m
+[36m@@ -387,13 +372,13 @@[m [mmodel Credit {[m
+ model UserSettings {[m
+   id              String   @id @default(uuid())[m
+   userId          String   @unique[m
+[31m-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  notifications   Json     @default("{}") // { email: true, push: true, reelRequests: true, messages: true }[m
+[31m-  accountSecurity Json     @default("{}") // { twoFactorEnabled: false, loginNotifications: true }[m
+[31m-  privacy         Json     @default("{}") // { showActivity: true, allowMessagesFrom: "everyone" }[m
+[31m-  billing         Json? // Reference to billing info (not stored directly for PCI compliance)[m
+[32m+[m[32m  notifications   Json     @default("{}")[m
+[32m+[m[32m  accountSecurity Json     @default("{}")[m
+[32m+[m[32m  privacy         Json     @default("{}")[m
+[32m+[m[32m  billing         Json?[m
+   createdAt       DateTime @default(now())[m
+   updatedAt       DateTime @updatedAt[m
+[32m+[m[32m  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@map("user_settings")[m
+ }[m
+[36m@@ -401,16 +386,16 @@[m [mmodel UserSettings {[m
+ model ReelRequest {[m
+   id          String   @id @default(uuid())[m
+   mediaId     String[m
+[31m-  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)[m
+   requesterId String[m
+[31m-  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)[m
+   ownerId     String[m
+[31m-  owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)[m
+[31m-  status      String   @default("pending") // "pending" | "approved" | "denied"[m
+[31m-  message     String?  @db.Text[m
+[31m-  response    String?  @db.Text[m
+[32m+[m[32m  status      String   @default("pending")[m
+[32m+[m[32m  message     String?[m
+[32m+[m[32m  response    String?[m
+   createdAt   DateTime @default(now())[m
+   updatedAt   DateTime @updatedAt[m
+[32m+[m[32m  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)[m
+ [m
+   @@unique([mediaId, requesterId])[m
+   @@index([mediaId])[m
+[36m@@ -419,17 +404,13 @@[m [mmodel ReelRequest {[m
+   @@map("reel_requests")[m
+ }[m
+ [m
+[31m-// ============================================[m
+[31m-// Security & Authentication Models[m
+[31m-// ============================================[m
+[31m-[m
+ model EmailVerificationToken {[m
+   id        String   @id @default(uuid())[m
+   userId    String[m
+[31m-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   token     String   @unique[m
+   expiresAt DateTime[m
+   createdAt DateTime @default(now())[m
+[32m+[m[32m  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([token])[m
+[36m@@ -440,11 +421,11 @@[m [mmodel EmailVerificationToken {[m
+ model PasswordResetToken {[m
+   id        String   @id @default(uuid())[m
+   userId    String[m
+[31m-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+   token     String   @unique[m
+   expiresAt DateTime[m
+   used      Boolean  @default(false)[m
+   createdAt DateTime @default(now())[m
+[32m+[m[32m  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([token])[m
+[36m@@ -455,11 +436,11 @@[m [mmodel PasswordResetToken {[m
+ model TwoFactorRecoveryCode {[m
+   id        String    @id @default(uuid())[m
+   userId    String[m
+[31m-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  code      String // bcrypt hashed recovery code (PR #255: Never store plaintext)[m
+[32m+[m[32m  code      String[m
+   used      Boolean   @default(false)[m
+   usedAt    DateTime?[m
+   createdAt DateTime  @default(now())[m
+[32m+[m[32m  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([userId, used])[m
+[36m@@ -469,13 +450,13 @@[m [mmodel TwoFactorRecoveryCode {[m
+ model Session {[m
+   id           String   @id @default(uuid())[m
+   userId       String[m
+[31m-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  token        String   @unique // Session token or JWT ID (jti claim)[m
+[32m+[m[32m  token        String   @unique[m
+   ipAddress    String?[m
+[31m-  userAgent    String?  @db.Text[m
+[32m+[m[32m  userAgent    String?[m
+   expiresAt    DateTime[m
+   lastActivity DateTime @default(now())[m
+   createdAt    DateTime @default(now())[m
+[32m+[m[32m  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([token])[m
+[36m@@ -487,15 +468,15 @@[m [mmodel Session {[m
+ model AuditLog {[m
+   id         String   @id @default(uuid())[m
+   userId     String[m
+[31m-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  action     String // "profile.update" | "email.change" | "password.change" | "2fa.enable" | etc.[m
+[31m-  resource   String // Resource type: "profile" | "user" | "settings" | "media"[m
+[31m-  resourceId String? // ID of the affected resource[m
+[31m-  changes    Json? // Before/after values (redacted per PR #255)[m
+[32m+[m[32m  action     String[m
+[32m+[m[32m  resource   String[m
+[32m+[m[32m  resourceId String?[m
+[32m+[m[32m  changes    Json?[m
+   ipAddress  String?[m
+[31m-  userAgent  String?  @db.Text[m
+[31m-  metadata   Json? // Additional context[m
+[32m+[m[32m  userAgent  String?[m
+[32m+[m[32m  metadata   Json?[m
+   createdAt  DateTime @default(now())[m
+[32m+[m[32m  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([userId])[m
+   @@index([action])[m
+[36m@@ -503,4 +484,95 @@[m [mmodel AuditLog {[m
+   @@index([createdAt])[m
+   @@index([userId, createdAt])[m
+   @@map("audit_logs")[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel analytics_events {[m
+[32m+[m[32m  id         String   @id[m
+[32m+[m[32m  event      String[m
+[32m+[m[32m  anonId     String?[m
+[32m+[m[32m  userId     String?[m
+[32m+[m[32m  sessionId  String?[m
+[32m+[m[32m  properties Json?[m
+[32m+[m[32m  createdAt  DateTime @default(now())[m
+[32m+[m
+[32m+[m[32m  @@index([createdAt])[m
+[32m+[m[32m  @@index([event])[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel moderation_actions {[m
+[32m+[m[32m  id                 String             @id[m
+[32m+[m[32m  reportId           String[m
+[32m+[m[32m  action             String[m
+[32m+[m[32m  reason             String?[m
+[32m+[m[32m  actorId            String[m
+[32m+[m[32m  createdAt          DateTime           @default(now())[m
+[32m+[m[32m  moderation_reports moderation_reports @relation(fields: [reportId], references: [id], onDelete: Cascade)[m
+[32m+[m
+[32m+[m[32m  @@index([actorId])[m
+[32m+[m[32m  @@index([createdAt])[m
+[32m+[m[32m  @@index([reportId])[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel moderation_reports {[m
+[32m+[m[32m  id                 String               @id[m
+[32m+[m[32m  reporterId         String[m
+[32m+[m[32m  targetType         String[m
+[32m+[m[32m  targetId           String[m
+[32m+[m[32m  category           String[m
+[32m+[m[32m  description        String?[m
+[32m+[m[32m  evidenceUrls       String[]             @default([])[m
+[32m+[m[32m  status             String               @default("open")[m
+[32m+[m[32m  severity           Int                  @default(0)[m
+[32m+[m[32m  createdAt          DateTime             @default(now())[m
+[32m+[m[32m  updatedAt          DateTime[m
+[32m+[m[32m  moderation_actions moderation_actions[][m
+[32m+[m
+[32m+[m[32m  @@index([category])[m
+[32m+[m[32m  @@index([createdAt])[m
+[32m+[m[32m  @@index([reporterId])[m
+[32m+[m[32m  @@index([severity])[m
+[32m+[m[32m  @@index([status])[m
+[32m+[m[32m  @@index([targetType, targetId])[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel pr_intelligence {[m
+[32m+[m[32m  id                  String   @id[m
+[32m+[m[32m  prNumber            Int[m
+[32m+[m[32m  changedFilesCount   Int[m
+[32m+[m[32m  sensitivePathsCount Int[m
+[32m+[m[32m  riskScore           Float[m
+[32m+[m[32m  metadata            Json?[m
+[32m+[m[32m  createdAt           DateTime @default(now())[m
+[32m+[m
+[32m+[m[32m  @@index([prNumber])[m
+[32m+[m[32m  @@index([riskScore])[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel refresh_tokens {[m
+[32m+[m[32m  id            String    @id[m
+[32m+[m[32m  userId        String[m
+[32m+[m[32m  jti           String    @unique[m
+[32m+[m[32m  expiresAt     DateTime[m
+[32m+[m[32m  invalidatedAt DateTime?[m
+[32m+[m[32m  createdAt     DateTime  @default(now())[m
+[32m+[m[32m  lastUsedAt    DateTime  @default(now())[m
+[32m+[m[32m  users         User      @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[32m+[m
+[32m+[m[32m  @@index([jti])[m
+[32m+[m[32m  @@index([userId])[m
+[32m+[m[32m  @@index([userId, invalidatedAt])[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmodel test_runs {[m
+[32m+[m[32m  id         String   @id[m
+[32m+[m[32m  suite      String[m
+[32m+[m[32m  testName   String[m
+[32m+[m[32m  status     String[m
+[32m+[m[32m  durationMs Int[m
+[32m+[m[32m  runAt      DateTime @default(now())[m
+[32m+[m[32m  metadata   Json?[m
+[32m+[m
+[32m+[m[32m  @@index([runAt])[m
+[32m+[m[32m  @@index([status])[m
+[32m+[m[32m  @@index([suite, testName])[m
+[32m+[m[32m}[m

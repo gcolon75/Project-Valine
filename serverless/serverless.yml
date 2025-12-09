@@ -150,7 +150,7 @@ layers:
       artifact: layers/prisma-layer.zip
 
 functions:
-   health:
+  health:
     handler: src/handlers/health.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
