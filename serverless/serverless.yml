@@ -37,7 +37,7 @@ provider:
     STAGE: ${env:STAGE, "prod"}
     # DATABASE_URL must be a valid PostgreSQL connection string with NO SPACES.
     # Format: postgresql://user:password@host:port/database?sslmode=require
-    # Special characters in password must be URL-encoded (e.g., @ → %40, # → %23)
+    # Special characters in password must be URL-encoded (e.g., @ ? %40, # ? %23)
     DATABASE_URL: ${env:DATABASE_URL}
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
     JWT_SECRET: ${env:JWT_SECRET}
