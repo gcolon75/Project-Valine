@@ -2,6 +2,29 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 
+const YEAR_MIN = 1900;
+// Allow future-dated education entries (planned programs) up to this many years ahead
+const YEAR_FUTURE_BUFFER = 10;
+const getYearMax = () => new Date().getFullYear() + YEAR_FUTURE_BUFFER;
+
+const coerceYear = (value, fieldName) => {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
+  }
+
+  const parsed = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isInteger(parsed)) {
+    return { error: `${fieldName} must be a valid year integer` };
+  }
+
+  const yearMax = getYearMax();
+  if (parsed < YEAR_MIN || parsed > yearMax) {
+    return { error: `${fieldName} must be a valid year between ${YEAR_MIN} and ${yearMax}` };
+  }
+
+  return { value: parsed };
+};
+
 /**
  * GET /me/profile/education
  * List education entries for authenticated user
@@ -71,22 +94,19 @@ export const createEducation = async (event) => {
       return error(400, 'institution and program are required');
     }
 
-    // Validate year fields if provided
-    if (startYear !== undefined && startYear !== null) {
-      if (!Number.isInteger(startYear) || startYear < 1900 || startYear > 2100) {
-        return error(400, 'startYear must be a valid year between 1900 and 2100');
-      }
+    const normalizedStartYear = coerceYear(startYear, 'startYear');
+    if (normalizedStartYear.error) {
+      return error(400, normalizedStartYear.error);
     }
 
-    if (endYear !== undefined && endYear !== null) {
-      if (!Number.isInteger(endYear) || endYear < 1900 || endYear > 2100) {
-        return error(400, 'endYear must be a valid year between 1900 and 2100');
-      }
+    const normalizedEndYear = coerceYear(endYear, 'endYear');
+    if (normalizedEndYear.error) {
+      return error(400, normalizedEndYear.error);
     }
 
-    if (startYear !== undefined && startYear !== null && 
-        endYear !== undefined && endYear !== null && 
-        startYear > endYear) {
+    if (normalizedStartYear.value !== null &&
+        normalizedEndYear.value !== null &&
+        normalizedStartYear.value > normalizedEndYear.value) {
       return error(400, 'startYear cannot be after endYear');
     }
 
@@ -122,8 +142,8 @@ export const createEducation = async (event) => {
         profileId: profile.id,
         institution,
         program,
-        startYear: startYear || null,
-        endYear: endYear || null,
+        startYear: normalizedStartYear.value,
+        endYear: normalizedEndYear.value,
         achievements: achievements || null,
       },
     });
@@ -154,22 +174,19 @@ export const updateEducation = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const { institution, program, startYear, endYear, achievements } = body;
 
-    // Validate year fields if provided
-    if (startYear !== undefined && startYear !== null) {
-      if (!Number.isInteger(startYear) || startYear < 1900 || startYear > 2100) {
-        return error(400, 'startYear must be a valid year between 1900 and 2100');
-      }
+    const normalizedStartYear = coerceYear(startYear, 'startYear');
+    if (normalizedStartYear.error) {
+      return error(400, normalizedStartYear.error);
     }
 
-    if (endYear !== undefined && endYear !== null) {
-      if (!Number.isInteger(endYear) || endYear < 1900 || endYear > 2100) {
-        return error(400, 'endYear must be a valid year between 1900 and 2100');
-      }
+    const normalizedEndYear = coerceYear(endYear, 'endYear');
+    if (normalizedEndYear.error) {
+      return error(400, normalizedEndYear.error);
     }
 
-    if (startYear !== undefined && startYear !== null && 
-        endYear !== undefined && endYear !== null && 
-        startYear > endYear) {
+    if (normalizedStartYear.value !== null &&
+        normalizedEndYear.value !== null &&
+        normalizedStartYear.value > normalizedEndYear.value) {
       return error(400, 'startYear cannot be after endYear');
     }
 
@@ -212,10 +229,10 @@ export const updateEducation = async (event) => {
       updateData.program = program;
     }
     if (startYear !== undefined) {
-      updateData.startYear = startYear;
+      updateData.startYear = normalizedStartYear.value;
     }
     if (endYear !== undefined) {
-      updateData.endYear = endYear;
+      updateData.endYear = normalizedEndYear.value;
     }
     if (achievements !== undefined) {
       updateData.achievements = achievements;

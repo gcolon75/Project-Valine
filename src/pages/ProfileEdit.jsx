@@ -133,7 +133,8 @@ export default function ProfileEdit() {
         setIsLoadingEducation(true);
         try {
           const data = await listEducation();
-          setEducationList(data.education || []);
+          const normalizedEducation = Array.isArray(data) ? data : (data?.education || []);
+          setEducationList(normalizedEducation);
         } catch (error) {
           console.error('Failed to load education:', error);
         } finally {
@@ -189,26 +190,33 @@ export default function ProfileEdit() {
     }));
   };
 
+  const educationErrorMessage = (error, fallback) =>
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
+
   // Education CRUD handlers
   const handleAddEducation = async (educationData) => {
     try {
       const result = await createEducation(educationData);
-      setEducationList(prev => [...prev, result.education]);
+      const created = result?.education || result;
+      setEducationList(prev => [...prev, created]);
       setShowEducationForm(false);
       toast.success('Education added!');
     } catch (error) {
-      toast.error('Failed to add education');
+      const message = educationErrorMessage(error, 'Failed to add education');
+      toast.error(message);
     }
   };
 
   const handleUpdateEducation = async (id, updates) => {
     try {
       const result = await updateEducation(id, updates);
-      setEducationList(prev => prev.map(e => e.id === id ? result.education : e));
+      const updated = result?.education || result;
+      setEducationList(prev => prev.map(e => e.id === id ? updated : e));
       setEditingEducation(null);
       toast.success('Education updated!');
     } catch (error) {
-      toast.error('Failed to update education');
+      const message = educationErrorMessage(error, 'Failed to update education');
+      toast.error(message);
     }
   };
 

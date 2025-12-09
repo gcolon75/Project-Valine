@@ -1,8 +1,8 @@
 import { apiClient } from './api.js';
 
 export const getFeedPosts = async (limit = 20, cursor = null) => {
-  const { data } = await apiClient.get('/posts', { params: { limit, cursor } });
-  return data;
+  const { data } = await apiClient.get('/feed', { params: { limit, cursor } });
+  return data?.posts ?? data;
 };
 
 export const createPost = async (postData) => {
@@ -101,4 +101,3 @@ export const requestPostAccess = async (postId) => {
   const { data } = await apiClient.post(`/posts/${postId}/request`);
   return data;
 };
-
