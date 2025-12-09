@@ -68,7 +68,12 @@ export const unfollowUser = async (targetUserId) => {
  */
 export const getConnectionStatus = async (targetUserId) => {
   const { data } = await apiClient.get(`/connections/status/${targetUserId}`);
-  return data;
+  return {
+    isFollowing: !!data?.isFollowing,
+    isFollowedBy: !!data?.isFollowedBy,
+    requestPending: data?.requestPending ?? false,
+    requestSent: data?.requestSent ?? false,
+  };
 };
 
 /**

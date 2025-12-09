@@ -4,15 +4,53 @@ import { getUserFromEvent } from './auth.js';
 
 export const sendRequest = async (event) => {
   try {
-    const { senderId, receiverId, message } = JSON.parse(event.body || '{}');
+    const senderId = getUserFromEvent(event);
+    if (!senderId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const { targetUserId, message } = JSON.parse(event.body || '{}');
+    const receiverId = targetUserId;
     
-    if (!senderId || !receiverId) {
-      return error(400, 'senderId and receiverId are required');
+    if (!receiverId) {
+      return error(400, 'targetUserId is required');
+    }
+
+    if (receiverId === senderId) {
+      return error(400, 'Cannot send connection request to yourself');
     }
 
     const prisma = getPrisma();
+    const existing = await prisma.connectionRequest.findUnique({
+      where: {
+        senderId_receiverId: {
+          senderId,
+          receiverId,
+        },
+      },
+    });
+    
+    if (existing) {
+      const hydrated = await prisma.connectionRequest.findUnique({
+        where: { id: existing.id },
+        include: { sender: true, receiver: true },
+      });
+
+      if (existing.status !== 'pending') {
+        return json(hydrated);
+      }
+
+      // Refresh updatedAt for pending requests to show latest activity
+      const refreshed = await prisma.connectionRequest.update({
+        where: { id: existing.id },
+        data: { updatedAt: new Date() },
+        include: { sender: true, receiver: true },
+      });
+      return json(refreshed);
+    }
+
     const request = await prisma.connectionRequest.create({
-      data: { senderId, receiverId, message },
+      data: { senderId, receiverId, message, status: 'pending' },
       include: { sender: true, receiver: true },
     });
     
@@ -25,10 +63,10 @@ export const sendRequest = async (event) => {
 
 export const listRequests = async (event) => {
   try {
-    const { userId } = event.queryStringParameters || {};
+    const userId = getUserFromEvent(event);
     
     if (!userId) {
-      return error(400, 'userId is required');
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -53,7 +91,24 @@ export const approveRequest = async (event) => {
       return error(400, 'id is required');
     }
 
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
     const prisma = getPrisma();
+    const existing = await prisma.connectionRequest.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return error(404, 'Request not found');
+    }
+
+    if (existing.receiverId !== userId) {
+      return error(403, 'Forbidden - not request recipient');
+    }
+
     const request = await prisma.connectionRequest.update({
       where: { id },
       data: { status: 'accepted' },
@@ -74,7 +129,24 @@ export const rejectRequest = async (event) => {
       return error(400, 'id is required');
     }
 
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
     const prisma = getPrisma();
+    const existing = await prisma.connectionRequest.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return error(404, 'Request not found');
+    }
+
+    if (existing.receiverId !== userId) {
+      return error(403, 'Forbidden - not request recipient');
+    }
+
     const request = await prisma.connectionRequest.update({
       where: { id },
       data: { status: 'rejected' },
@@ -147,7 +219,7 @@ export const followUser = async (event) => {
 /**
  * GET /connections/status/{userId}
  * Get connection status with a user
- * Returns: { isFollowing: boolean, isFollower: boolean }
+ * Returns: { isFollowing: boolean, isFollowedBy: boolean }
  */
 export const getConnectionStatus = async (event) => {
   try {
@@ -184,9 +256,12 @@ export const getConnectionStatus = async (event) => {
       },
     });
 
+    const isFollowing = !!followingRequest && followingRequest.status === 'accepted';
+    const isFollowedBy = !!followerRequest && followerRequest.status === 'accepted';
+
     return json({
-      isFollowing: !!followingRequest && followingRequest.status === 'accepted',
-      isFollower: !!followerRequest && followerRequest.status === 'accepted',
+      isFollowing,
+      isFollowedBy,
     });
   } catch (e) {
     console.error('Get connection status error:', e);

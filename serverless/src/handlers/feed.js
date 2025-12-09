@@ -33,7 +33,7 @@ export const getFeed = async (event) => {
     
     // Fetch posts with visibility rules:
     // - Self's posts: any visibility (PUBLIC or FOLLOWERS)
-    // - Followed users' posts: only PUBLIC
+    // - Followed users' posts: PUBLIC or FOLLOWERS
     const posts = await prisma.post.findMany({
       where: {
         OR: [
@@ -42,7 +42,7 @@ export const getFeed = async (event) => {
           // Followed users' public posts
           {
             authorId: { in: followedUserIds },
-            visibility: 'PUBLIC'
+            visibility: { in: ['PUBLIC', 'FOLLOWERS'] }
           }
         ]
       },
