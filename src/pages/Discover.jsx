@@ -36,7 +36,7 @@ export default function Discover() {
           displayName: user.displayName || user.username,
           username: user.username,
           avatar: user.avatar,
-          headline: user.bio || user.role || '',
+          title: user.title || user.bio || user.role || '',
           profileVisibility: 'public',
         }));
         setUserResults(mappedUsers);
@@ -177,7 +177,7 @@ export default function Discover() {
                     @{user.username}
                   </p>
                   <p className="text-sm text-center text-neutral-500 dark:text-neutral-500 mb-4 line-clamp-2">
-                    {user.headline}
+                    {user.title}
                   </p>
 
                   {/* Private profile indicator */}

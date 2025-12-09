@@ -175,9 +175,9 @@ export default function Requests() {
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       @{req.sender.username}
                     </p>
-                    {req.sender.headline && (
+                    {req.sender.title && (
                       <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-1 line-clamp-1">
-                        {req.sender.headline}
+                        {req.sender.title}
                       </p>
                     )}
                   </div>

@@ -714,11 +714,16 @@ const MAX_TAGS = 5;
  * This endpoint is designed for onboarding flow and profile updates.
  * It updates both User and Profile records for the authenticated user.
  * 
+ * CRITICAL FIELD MAPPINGS (to ensure consistency across frontend/backend):
+ * - User model: displayName, username, avatar (via avatarUrl param)
+ * - Profile model: title (professional title), headline, bio, bannerUrl, roles, tags, socialLinks (via links param)
+ * - Profile is resolved via userId (NOT profileId) to ensure consistency
+ * 
  * Supported fields:
  * - displayName (User): string, required
  * - username (User): 3-30 chars, alphanumeric + underscore/hyphen, unique
  * - headline (Profile): max 100 chars
- * - title (Profile): string, professional title (e.g., "Senior Voice Actor")
+ * - title (Profile): string, professional title (e.g., "Senior Voice Actor", "Producer")
  * - bio (Profile): max 500 chars
  * - roles (Profile): array, must be in ALLOWED_ROLES
  * - tags (Profile): array, max 5, validated against ALLOWED_TAGS
@@ -1111,6 +1116,9 @@ export const updateMyProfile = async (event) => {
  * This endpoint returns the authenticated user's profile data, combining
  * user and profile information with graceful fallbacks for missing fields.
  * 
+ * CRITICAL: Profile is resolved via userId (NOT profileId) to ensure consistency.
+ * Auto-creates profile if it doesn't exist to prevent "Profile not found" errors.
+ * 
  * Returns:
  * - id: Profile ID
  * - userId: User ID
@@ -1118,11 +1126,13 @@ export const updateMyProfile = async (event) => {
  * - username: User username
  * - displayName: User display name
  * - avatar: User avatar URL
+ * - title: Profile professional title (e.g., "Senior Voice Actor", "Producer")
  * - headline: Profile headline
  * - bio: Profile bio
  * - roles: Profile roles array
  * - tags: Profile tags array
- * - links: Profile links array
+ * - links: Profile links array (mapped from socialLinks JSON field)
+ * - bannerUrl: Profile banner URL
  * - onboardingComplete: Whether user has completed onboarding
  * - profileComplete: Whether user's profile is complete
  * - createdAt: User creation timestamp

@@ -17,7 +17,7 @@ export default function PostComposer() {
   const [filePreview, setFilePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [visibility, setVisibility] = useState("public");
+  const [visibility, setVisibility] = useState("PUBLIC");
   const fileInputRef = useRef(null);
 
   const addTag = () => {
@@ -129,7 +129,7 @@ export default function PostComposer() {
       setTags([]); 
       setTagInput("");
       removeFile();
-      setVisibility("public");
+      setVisibility("PUBLIC");
     } catch (error) {
       toast.error("Failed to create post. Please try again.");
     } finally {
@@ -263,9 +263,8 @@ export default function PostComposer() {
         </label>
         <div className="flex gap-2">
           {[
-            { value: "public", label: "Public" },
-            { value: "on-request", label: "On Request" },
-            { value: "private", label: "Private" }
+            { value: "PUBLIC", label: "Public", description: "Anyone can view" },
+            { value: "FOLLOWERS", label: "Followers Only", description: "Only your followers can view" }
           ].map((option) => (
             <button
               key={option.value}
@@ -276,6 +275,7 @@ export default function PostComposer() {
                   ? "bg-brand text-white"
                   : "bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-white/10 hover:bg-neutral-200 dark:hover:bg-white/10"
               }`}
+              title={option.description}
             >
               {option.label}
             </button>

@@ -24,6 +24,22 @@ const log = (event, data) => {
   }));
 };
 
+/**
+ * POST /posts
+ * Create a new post for the authenticated user
+ * 
+ * Visibility semantics (Instagram + LinkedIn hybrid):
+ * - PUBLIC: Post visible to everyone (appears in Explore, followers' feeds, author's profile)
+ * - FOLLOWERS: Post visible only to followers + on author's own profile (not in Explore)
+ * 
+ * Post distribution:
+ * - Author's profile posts tab: shows all posts (PUBLIC and FOLLOWERS)
+ * - Followers' dashboard feeds: shows posts based on visibility (PUBLIC and FOLLOWERS)
+ * - Explore feed: shows only PUBLIC posts
+ * 
+ * @param {Object} body - { content, authorId, visibility?, mediaId?, tags?, audioUrl?, price? }
+ * @returns {Object} Created post with author details
+ */
 export const createPost = async (event) => {
   const route = 'POST /posts';
   
