@@ -1175,9 +1175,6 @@ export const getMyProfile = async (event) => {
             ],
           },
           media: {
-            where: {
-              mediaType: 'GALLERY',
-            },
             orderBy: { createdAt: 'desc' },
           },
         },

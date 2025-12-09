@@ -247,6 +247,77 @@ aws lambda get-function-configuration \
 
 ## Configuration
 
+### Prisma Schema Synchronization
+
+**CRITICAL**: Before deploying, ensure your Prisma schema matches the production database.
+
+Schema mismatches cause runtime errors like:
+```
+PrismaClientKnownRequestError: The column `table.field` does not exist in the current database.
+```
+
+#### Pre-Deployment Schema Verification
+
+Run these checks before every deployment:
+
+```bash
+# 1. Navigate to API directory
+cd ../api
+
+# 2. Verify schema matches database
+npx prisma db pull --force
+
+# 3. Check for differences
+git diff prisma/schema.prisma
+
+# 4. If no changes, restore file
+git restore prisma/schema.prisma
+
+# 5. If changes exist, investigate and update
+# - If database has new columns: create migration
+# - If code references non-existent columns: remove references
+```
+
+#### When to Rebuild Prisma Layer
+
+Rebuild the Prisma layer whenever:
+- Schema changes (new/modified models or fields)
+- Prisma version upgrade
+- First deployment to new environment
+
+```bash
+# After schema changes, always regenerate and rebuild
+cd ../api
+npx prisma generate
+
+cd ../serverless
+npm run build:layer
+```
+
+#### Deployment with Database Changes
+
+When deploying code that requires schema changes:
+
+```bash
+# 1. Run migrations FIRST
+cd api
+npx prisma migrate deploy
+
+# 2. Regenerate Prisma Client
+npx prisma generate
+
+# 3. Rebuild Lambda layer
+cd ../serverless
+npm run build:layer
+
+# 4. Deploy functions
+npx serverless deploy --stage prod --region us-west-2
+```
+
+**Never deploy code changes before running migrations!**
+
+See [Schema Mismatch Resolution Guide](../docs/troubleshooting/schema-mismatch-resolution.md) for detailed troubleshooting.
+
 ### Environment Variables
 
 Set these before deploying:
