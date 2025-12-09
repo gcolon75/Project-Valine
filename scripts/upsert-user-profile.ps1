@@ -75,6 +75,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Default DATABASE_URL (no spaces as per requirement)
+# WARNING: This contains credentials for a development database.
+# In production, always use $env:DATABASE_URL instead of this default.
 $defaultDatabaseUrl = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 
 # Determine DATABASE_URL to use
@@ -199,54 +201,56 @@ try {
     $passwordHashEscaped = $passwordHash -replace "'", "''"
     
     # Build the SQL upsert statements
+    # Use a CTE to capture the user ID from the first upsert, then use it in the profile upsert
     $sql = @"
--- Upsert user
-INSERT INTO users (
-    id,
-    email,
-    "normalizedEmail",
-    username,
-    "displayName",
-    bio,
-    "passwordHash",
-    role,
-    status,
-    "emailVerified",
-    "emailVerifiedAt",
-    "onboardingComplete",
-    "profileComplete",
-    "createdAt",
-    "updatedAt"
+-- Upsert user and capture the ID
+WITH upserted_user AS (
+    INSERT INTO users (
+        id,
+        email,
+        "normalizedEmail",
+        username,
+        "displayName",
+        bio,
+        "passwordHash",
+        role,
+        status,
+        "emailVerified",
+        "emailVerifiedAt",
+        "onboardingComplete",
+        "profileComplete",
+        "createdAt",
+        "updatedAt"
+    )
+    VALUES (
+        '$userId',
+        '$emailEscaped',
+        '$emailEscaped',
+        '$usernameEscaped',
+        '$displayNameEscaped',
+        '$bioEscaped',
+        '$passwordHashEscaped',
+        'artist',
+        'active',
+        true,
+        '$now',
+        true,
+        true,
+        '$now',
+        '$now'
+    )
+    ON CONFLICT (email) DO UPDATE SET
+        "passwordHash" = EXCLUDED."passwordHash",
+        "displayName" = EXCLUDED."displayName",
+        bio = EXCLUDED.bio,
+        "emailVerified" = EXCLUDED."emailVerified",
+        "emailVerifiedAt" = EXCLUDED."emailVerifiedAt",
+        "onboardingComplete" = EXCLUDED."onboardingComplete",
+        "profileComplete" = EXCLUDED."profileComplete",
+        "updatedAt" = EXCLUDED."updatedAt"
+    RETURNING id
 )
-VALUES (
-    '$userId',
-    '$emailEscaped',
-    '$emailEscaped',
-    '$usernameEscaped',
-    '$displayNameEscaped',
-    '$bioEscaped',
-    '$passwordHashEscaped',
-    'artist',
-    'active',
-    true,
-    '$now',
-    true,
-    true,
-    '$now',
-    '$now'
-)
-ON CONFLICT (email) DO UPDATE SET
-    "passwordHash" = EXCLUDED."passwordHash",
-    "displayName" = EXCLUDED."displayName",
-    bio = EXCLUDED.bio,
-    "emailVerified" = EXCLUDED."emailVerified",
-    "emailVerifiedAt" = EXCLUDED."emailVerifiedAt",
-    "onboardingComplete" = EXCLUDED."onboardingComplete",
-    "profileComplete" = EXCLUDED."profileComplete",
-    "updatedAt" = EXCLUDED."updatedAt"
-RETURNING id;
-
--- Upsert profile
+-- Upsert profile using the user ID from above
 INSERT INTO profiles (
     id,
     "userId",
@@ -258,9 +262,9 @@ INSERT INTO profiles (
     "createdAt",
     "updatedAt"
 )
-VALUES (
+SELECT
     '$profileId',
-    (SELECT id FROM users WHERE email = '$emailEscaped'),
+    upserted_user.id,
     '$vanityUrlEscaped',
     '$headlineEscaped',
     '$bioEscaped',
@@ -268,7 +272,7 @@ VALUES (
     '{}',
     '$now',
     '$now'
-)
+FROM upserted_user
 ON CONFLICT ("userId") DO UPDATE SET
     "vanityUrl" = EXCLUDED."vanityUrl",
     headline = EXCLUDED.headline,

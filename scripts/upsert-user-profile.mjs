@@ -38,6 +38,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Default DATABASE_URL (no spaces)
+// WARNING: This contains credentials for a development database.
+// In production, always use $env:DATABASE_URL instead of this default.
 const DEFAULT_DATABASE_URL = 'postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require';
 
 // Dynamically import dependencies

@@ -104,6 +104,8 @@ Node.js:
 postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
 ```
 
+> **⚠️ Security Note**: The default DATABASE_URL contains credentials for a development database. In production environments, always override this by setting the `DATABASE_URL` environment variable instead of using the hardcoded default.
+
 **What it does**:
 1. Generates UUIDs for user and profile IDs using Node.js `crypto.randomUUID()`
 2. Hashes the password with bcrypt (12 rounds)
