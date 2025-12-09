@@ -4,11 +4,127 @@ This directory contains utility scripts for Project-Valine deployment, verificat
 
 ## Table of Contents
 
+- [User Management](#user-management)
 - [API Base Validation](#api-base-validation)
 - [Auth Backend Diagnostics](#auth-backend-diagnostics)
 - [Verification Scripts](#verification-scripts)
 - [Deployment Scripts](#deployment-scripts)
 - [Build & Test Scripts](#build--test-scripts)
+
+## User Management
+
+### upsert-user-profile.ps1 / upsert-user-profile.mjs
+
+**Purpose**: Create or update a user and their associated profile in the PostgreSQL database with all required fields.
+
+**Features**:
+- ✓ Generates UUIDs for both user and profile records
+- ✓ Hashes passwords with bcrypt (12 rounds)
+- ✓ Sets all required fields (createdAt, updatedAt, passwordHash, etc.)
+- ✓ Uses upsert semantics (INSERT ... ON CONFLICT UPDATE)
+- ✓ Automatically verifies the created/updated records
+- ✓ Supports both PowerShell and Node.js implementations
+
+**PowerShell Usage**:
+```powershell
+# Basic usage (uses default DATABASE_URL)
+.\scripts\upsert-user-profile.ps1 -Email "ghawk75@gmail.com" -Password "SecurePass123!"
+
+# Full usage with all parameters
+.\scripts\upsert-user-profile.ps1 `
+  -Email "ghawk75@gmail.com" `
+  -Username "ghawk75" `
+  -DisplayName "Gabriel Hawk" `
+  -VanityUrl "ghawk75" `
+  -Headline "Voice & Stage Actor" `
+  -Bio "Passionate about voice acting and theater" `
+  -Password "SecurePass123!"
+
+# With custom DATABASE_URL
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require"
+.\scripts\upsert-user-profile.ps1 -Email "ghawk75@gmail.com" -Password "Test123!"
+
+# Or pass DATABASE_URL as parameter
+.\scripts\upsert-user-profile.ps1 `
+  -Email "ghawk75@gmail.com" `
+  -Password "Test123!" `
+  -DatabaseUrl "postgresql://user:pass@host:5432/db?sslmode=require"
+```
+
+**Node.js Usage**:
+```bash
+# Basic usage (uses default DATABASE_URL)
+node scripts/upsert-user-profile.mjs \
+  --email "ghawk75@gmail.com" \
+  --password "SecurePass123!"
+
+# Full usage with all parameters
+node scripts/upsert-user-profile.mjs \
+  --email "ghawk75@gmail.com" \
+  --username "ghawk75" \
+  --display-name "Gabriel Hawk" \
+  --vanity-url "ghawk75" \
+  --headline "Voice & Stage Actor" \
+  --bio "Passionate about voice acting and theater" \
+  --password "SecurePass123!"
+
+# With custom DATABASE_URL
+export DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
+node scripts/upsert-user-profile.mjs \
+  --email "ghawk75@gmail.com" \
+  --password "Test123!"
+```
+
+**Parameters**:
+
+PowerShell:
+- `-Email` (required) - User email address
+- `-Password` (required) - Plain text password (will be hashed with bcrypt)
+- `-Username` (optional) - Username (defaults to email local part)
+- `-DisplayName` (optional) - Display name (defaults to username)
+- `-VanityUrl` (optional) - Profile vanity URL (defaults to username)
+- `-Headline` (optional) - Profile headline
+- `-Bio` (optional) - Profile bio
+- `-DatabaseUrl` (optional) - PostgreSQL connection string
+
+Node.js:
+- `--email` (required) - User email address
+- `--password` (required) - Plain text password (will be hashed with bcrypt)
+- `--username` (optional) - Username (defaults to email local part)
+- `--display-name` (optional) - Display name (defaults to username)
+- `--vanity-url` (optional) - Profile vanity URL (defaults to username)
+- `--headline` (optional) - Profile headline
+- `--bio` (optional) - Profile bio
+
+**Environment Variables**:
+- `DATABASE_URL` - PostgreSQL connection string (optional, uses default if not set)
+
+**Default DATABASE_URL**:
+```
+postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+```
+
+**What it does**:
+1. Generates UUIDs for user and profile IDs using Node.js `crypto.randomUUID()`
+2. Hashes the password with bcrypt (12 rounds)
+3. Creates or updates the user record with:
+   - All required fields (id, email, username, passwordHash, createdAt, updatedAt)
+   - Sets emailVerified = true, emailVerifiedAt = current timestamp
+   - Sets onboardingComplete = true, profileComplete = true
+   - Sets role = 'artist', status = 'active'
+4. Creates or updates the profile record with:
+   - All required fields (id, userId, vanityUrl, createdAt, updatedAt)
+   - Sets headline and bio
+   - Initializes empty roles and tags arrays
+5. Displays verification results showing both user and profile records
+
+**Requirements**:
+- PowerShell: Node.js installed, psql in PATH
+- Node.js: Dependencies installed in serverless directory (`cd serverless && npm install`)
+
+**Exit Codes**:
+- `0` - Success
+- `1` - Error occurred
 
 ## API Base Validation
 
