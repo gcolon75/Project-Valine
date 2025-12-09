@@ -34,6 +34,8 @@ Essential guides to get Project Valine up and running.
 ### Core Setup
 - **[COMPREHENSIVE_SUMMARY](../COMPREHENSIVE_SUMMARY.md)** - Complete project overview for agents & new sessions
 - **[Project Status](../PROJECT_STATUS.md)** - Current state, readiness, and next steps
+- **[System Handbook](PROJECT_VALINE_SYSTEM_HANDBOOK.md)** - ⭐ **NEW!** Complete system reference: architecture, database, API, workflows, troubleshooting
+- **[Environment Variables Checklist](ENV_CHECKLIST.md)** - ⭐ **NEW!** Complete env var reference for all environments
 - **[README](../README.md)** - Project overview and high-level features
 - **[CONTRIBUTING](../CONTRIBUTING.md)** - Contribution guidelines
 - **[CHANGELOG](../CHANGELOG.md)** - Release notes and changes
@@ -188,6 +190,9 @@ Backend implementation details, API documentation, and database migrations.
 - [Theme Preference API](backend/theme-preference-api.md) - Theme preference management
 - [Profile Links Implementation](backend/profile-links-implementation.md) - Implementation details
 - [Profile Links TODO](backend/profile-links-todo.md) - Remaining work
+
+### Troubleshooting & Operations
+- **[Troubleshooting Runbook](backend/troubleshooting-auth-profile-posts.md)** - ⭐ **NEW!** Practical commands for debugging auth, profiles, posts, feed, connections
 
 ### Database & Migrations
 - [Profile Links Migration](backend/migration-profile-links.md) - Migration guide and rollback
