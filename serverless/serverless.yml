@@ -150,9 +150,10 @@ layers:
       artifact: layers/prisma-layer.zip
 
 functions:
-  health:
+   health:
     handler: src/handlers/health.handler
-    layers: []     # explicitly none - no DB access
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
     events:
       - httpApi:
           path: /health
