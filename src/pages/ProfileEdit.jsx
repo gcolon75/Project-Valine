@@ -26,6 +26,9 @@ export default function ProfileEdit() {
   // Loading state
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
+  // Profile ID state (needed for media uploads)
+  const [profileId, setProfileId] = useState(null);
+  
   // Helper function to convert old externalLinks format to new normalized format
   const convertLegacyLinks = (externalLinks) => {
     if (!externalLinks || typeof externalLinks !== 'object') return [];
@@ -94,6 +97,9 @@ export default function ProfileEdit() {
           const profileData = await getMyProfile();
           // Update form data with backend profile data
           if (profileData) {
+            // Store profile ID for media uploads
+            setProfileId(profileData.id);
+            
             setFormData(prev => ({
               ...prev,
               displayName: profileData.displayName || prev.displayName,
@@ -312,7 +318,9 @@ export default function ProfileEdit() {
     const toastId = toast.loading('Uploading banner...');
 
     try {
-      const result = await uploadMedia(user?.id || 'me', file, 'image', {
+      // Use profile.id if available, otherwise let backend auto-create profile
+      const targetProfileId = profileId || user?.id || 'me';
+      const result = await uploadMedia(targetProfileId, file, 'image', {
         title: 'Profile Banner',
         description: 'Cover banner for profile',
         privacy: 'public',
@@ -359,7 +367,9 @@ export default function ProfileEdit() {
     const toastId = toast.loading('Uploading reel...');
 
     try {
-      const result = await uploadMedia(user?.id || 'me', file, 'video', {
+      // Use profile.id if available, otherwise let backend auto-create profile
+      const targetProfileId = profileId || user?.id || 'me';
+      const result = await uploadMedia(targetProfileId, file, 'video', {
         title: formData.reelPrivacy === 'public' ? 'Demo Reel' : 'Private Reel',
         description: 'Primary demo reel',
         privacy: formData.reelPrivacy,

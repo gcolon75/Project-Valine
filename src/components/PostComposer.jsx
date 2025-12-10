@@ -1,10 +1,11 @@
 // src/components/PostComposer.jsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Send, X, Upload, FileText, Video, Image, File } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadMedia } from "../services/mediaService";
+import { getMyProfile } from "../services/profileService";
 
 export default function PostComposer() {
   const { createPost } = useFeed();
@@ -18,7 +19,26 @@ export default function PostComposer() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [visibility, setVisibility] = useState("PUBLIC");
+  const [profileId, setProfileId] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Fetch profile ID for media uploads
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user?.id && !profileId) {
+        try {
+          const profile = await getMyProfile();
+          if (profile?.id) {
+            setProfileId(profile.id);
+          }
+        } catch (error) {
+          console.warn('Failed to fetch profile for media upload:', error);
+          // Will fall back to user.id if profile fetch fails
+        }
+      }
+    };
+    fetchProfile();
+  }, [user?.id, profileId]);
 
   const addTag = () => {
     const t = tagInput.trim();
@@ -97,8 +117,11 @@ export default function PostComposer() {
         setUploadProgress(0);
         
         try {
+          // Use profile.id if available, otherwise fall back to user.id
+          // Backend will auto-create profile if it doesn't exist
+          const targetProfileId = profileId || user.id;
           const mediaResult = await uploadMedia(
-            user.id,
+            targetProfileId,
             selectedFile,
             getMediaType(selectedFile),
             {
