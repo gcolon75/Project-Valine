@@ -128,7 +128,7 @@ function NavItem({ to, icon: Icon, label, badge }) {
             className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold"
             aria-label={`${badge} unread`}
           >
-            {badge > 9 ? '9+' : badge}
+            {badge > 99 ? '99+' : badge > 9 ? '9+' : badge}
           </span>
         )}
       </div>
@@ -160,7 +160,7 @@ function MobileNavItem({ to, icon: Icon, label, badge }) {
             className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold"
             aria-label={`${badge} unread`}
           >
-            {badge > 9 ? '9+' : badge}
+            {badge > 99 ? '99+' : badge > 9 ? '9+' : badge}
           </span>
         )}
       </div>
