@@ -460,9 +460,21 @@ export default function Profile() {
         {activeTab === 'posts' && (
           <Card title="Posts" padding="default">
             {loadingPosts ? (
-              <p className="text-neutral-600 dark:text-neutral-400">Loading posts...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Loading skeleton - 3 cards */}
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden animate-pulse">
+                    <div className="h-8 bg-neutral-200 dark:bg-neutral-800 m-4" />
+                    <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded" />
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : posts && posts.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {posts.map(post => {
                   // Transform post data to match PostCard expected format
                   const transformedPost = {
