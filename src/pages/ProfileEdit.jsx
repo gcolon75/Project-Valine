@@ -258,7 +258,7 @@ export default function ProfileEdit() {
     }
   };
 
-  const experienceErrorMessage = (error, fallback) =>
+  const extractErrorMessage = (error, fallback) =>
     error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
 
   // Experience CRUD handlers
@@ -270,7 +270,7 @@ export default function ProfileEdit() {
       setShowExperienceForm(false);
       toast.success('Experience added!');
     } catch (error) {
-      const message = experienceErrorMessage(error, 'Failed to add experience');
+      const message = extractErrorMessage(error, 'Failed to add experience');
       toast.error(message);
     }
   };
@@ -283,7 +283,7 @@ export default function ProfileEdit() {
       setEditingExperience(null);
       toast.success('Experience updated!');
     } catch (error) {
-      const message = experienceErrorMessage(error, 'Failed to update experience');
+      const message = extractErrorMessage(error, 'Failed to update experience');
       toast.error(message);
     }
   };
@@ -294,7 +294,7 @@ export default function ProfileEdit() {
       setExperienceList(prev => prev.filter(e => e.id !== id));
       toast.success('Experience removed!');
     } catch (error) {
-      const message = experienceErrorMessage(error, 'Failed to delete experience');
+      const message = extractErrorMessage(error, 'Failed to delete experience');
       toast.error(message);
     }
   };
