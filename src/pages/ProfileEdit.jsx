@@ -330,17 +330,6 @@ export default function ProfileEdit() {
       setUploadingReel(false);
     }
   };
-      trackMediaUpload('video', sizeBucket);
-
-      toast.success('Reel uploaded successfully!', { id: toastId });
-    } catch (error) {
-      console.error('Reel upload failed:', error);
-      toast.error(error.message || 'Failed to upload reel', { id: toastId });
-      throw error;
-    } finally {
-      setUploadingReel(false);
-    }
-  };
 
   const handleSave = async () => {
     try {

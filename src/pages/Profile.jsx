@@ -253,20 +253,20 @@ export default function Profile() {
       <Card padding="none" className="animate-slide-up">
         {/* Cover Image with Gradient or Banner */}
         <div className="h-32 sm:h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
-          {displayData.bannerUrl || displayData.banner ? (
-            <img 
-              src={displayData.bannerUrl || displayData.banner} 
-              alt="Profile banner" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback to gradient if image fails to load
-                e.target.style.display = 'none';
-              }}
-            />
+          {(displayData.bannerUrl || displayData.banner) ? (
+            <>
+              <img 
+                src={displayData.bannerUrl || displayData.banner} 
+                alt="Profile banner" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide image on error, let gradient background show through
+                  e.target.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/20" />
+            </>
           ) : (
-            <div className="absolute inset-0 bg-black/20" />
-          )}
-          {!displayData.bannerUrl && !displayData.banner && (
             <div className="absolute inset-0 bg-black/20" />
           )}
         </div>

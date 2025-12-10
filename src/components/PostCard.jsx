@@ -89,16 +89,12 @@ export default function PostCard({ post }) {
             alt={post.author.name}
             className="h-8 w-8 rounded-full object-cover"
             onError={(e) => {
-              // Fallback to placeholder on error
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'block';
+              e.target.src = ''; // Clear broken image
             }}
           />
-        ) : null}
-        <div 
-          className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" 
-          style={{ display: post.author.avatar ? 'none' : 'block' }}
-        />
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
+        )}
         <div className="min-w-0">
           <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
           <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>
