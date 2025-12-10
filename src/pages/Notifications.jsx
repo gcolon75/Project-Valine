@@ -134,7 +134,8 @@ export default function Notifications() {
       }
     };
     markAllRead();
-  }, []); // Run only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally run only on mount to mark all as read once
 
   // Handle marking all notifications as read
   const handleMarkAllRead = async () => {

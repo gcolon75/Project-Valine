@@ -427,8 +427,9 @@ export const sendMessage = async (event) => {
     }
 
     const { body: messageBody, forwardedPostId } = JSON.parse(event.body || '{}');
-    if (!messageBody || messageBody.trim().length === 0) {
-      return error(400, 'Message body is required');
+    // Body is optional when forwarding a post
+    if ((!messageBody || messageBody.trim().length === 0) && !forwardedPostId) {
+      return error(400, 'Message body or forwardedPostId is required');
     }
 
     const prisma = getPrisma();
@@ -477,7 +478,7 @@ export const sendMessage = async (event) => {
         data: {
           threadId,
           senderId: userId,
-          body: messageBody.trim(),
+          body: messageBody ? messageBody.trim() : '',
           forwardedPostId: forwardedPostId || null
         },
         include: {

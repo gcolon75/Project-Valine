@@ -232,7 +232,12 @@ export default function Conversation() {
                 handleSend(e);
               }
             }}
+            aria-label="Message input"
+            aria-describedby="message-help"
           />
+          <span id="message-help" className="sr-only">
+            Press Enter to send, Shift+Enter for new line
+          </span>
           <button
             type="submit"
             disabled={(!newMessage.trim() && !forwardedPost) || sending}
