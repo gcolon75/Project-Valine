@@ -415,3 +415,72 @@ export const requestPostAccess = async (event) => {
     return error(500, 'Server error: ' + e.message);
   }
 };
+
+/**
+ * DELETE /posts/{id}
+ * Delete a post (owner only)
+ * Also deletes any related access requests
+ * 
+ * @param {Object} event - Lambda event with pathParameters.id
+ * @returns {Object} Success response or error
+ */
+export const deletePost = async (event) => {
+  const route = 'DELETE /posts/{id}';
+  
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      log('auth_failure', { route, reason: 'missing_or_invalid_token' });
+      return error(401, 'Unauthorized - valid access token required');
+    }
+    
+    const postId = event.pathParameters?.id;
+    if (!postId) {
+      log('validation_error', { route, userId: authUserId, reason: 'missing_post_id' });
+      return error(400, 'Post ID is required');
+    }
+    
+    log('delete_post_request', { route, userId: authUserId, postId });
+    
+    const prisma = getPrisma();
+    
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
+    
+    // Find the post and verify ownership
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, authorId: true }
+    });
+    
+    if (!post) {
+      log('post_not_found', { route, userId: authUserId, postId });
+      return error(404, 'Post not found');
+    }
+    
+    // Verify the authenticated user is the post owner
+    if (post.authorId !== authUserId) {
+      log('auth_forbidden', { route, userId: authUserId, postId, ownerId: post.authorId });
+      return error(403, 'Forbidden - you can only delete your own posts');
+    }
+    
+    // Note: Since there's no PostAccessRequest model in the schema yet,
+    // we'll just delete the post. When PostAccessRequest is added later,
+    // we should add: await prisma.postAccessRequest.deleteMany({ where: { postId } });
+    
+    // Delete the post (cascade will handle related data)
+    await prisma.post.delete({
+      where: { id: postId }
+    });
+    
+    log('post_deleted', { route, userId: authUserId, postId });
+    
+    return json({ success: true, message: 'Post deleted successfully' }, 200);
+  } catch (e) {
+    log('delete_post_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};

@@ -380,6 +380,14 @@ functions:
       - httpApi:
           path: /posts/{id}
           method: get
+  deletePost:
+    handler: src/handlers/posts.deletePost
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /posts/{id}
+          method: delete
   getAudioUploadUrl:
     handler: src/handlers/posts.getAudioUploadUrl
     layers:

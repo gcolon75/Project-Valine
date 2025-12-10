@@ -75,6 +75,11 @@ export default function Profile() {
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   
+  // Handler to remove a post from local state after deletion
+  const handlePostDelete = (postId) => {
+    setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+  };
+  
   // Connection/Follow states
   const [connectionStatus, setConnectionStatus] = useState({
     isFollowing: false,
@@ -479,7 +484,9 @@ export default function Profile() {
                   // Transform post data to match PostCard expected format
                   const transformedPost = {
                     id: post.id,
+                    authorId: post.authorId,
                     author: {
+                      id: post.author?.id || post.authorId,
                       name: post.author?.displayName || displayData.displayName,
                       role: post.author?.username || displayData.username,
                       avatar: post.author?.avatar || displayData.avatar || ''
@@ -499,7 +506,7 @@ export default function Profile() {
                     comments: post.commentsCount || 0,
                     price: post.price
                   };
-                  return <PostCard key={post.id} post={transformedPost} />;
+                  return <PostCard key={post.id} post={transformedPost} onDelete={handlePostDelete} />;
                 })}
               </div>
             ) : (

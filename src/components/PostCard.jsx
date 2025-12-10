@@ -1,13 +1,15 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
+import ConfirmationModal from "./ConfirmationModal";
 import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService";
+import { deletePost } from "../services/postService";
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, onDelete }) {
   const { likePost, toggleSave } = useFeed();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -18,6 +20,12 @@ export default function PostCard({ post }) {
     post.accessRequestStatus === 'approved'
   );
   const [downloading, setDownloading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  
+  // Check if current user is the post author
+  const isAuthor = user && (user.id === post.author?.id || user.id === post.authorId);
   
   // Check if content is gated (has a mediaId and is not public)
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
@@ -79,52 +87,108 @@ export default function PostCard({ post }) {
     }
   };
 
+  // Handle delete post
+  const handleDeletePost = async () => {
+    setDeleting(true);
+    try {
+      await deletePost(post.id);
+      toast.success("Post deleted successfully");
+      setShowDeleteConfirm(false);
+      // Call parent callback if provided
+      if (onDelete) {
+        onDelete(post.id);
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast.error(error.response?.data?.message || "Failed to delete post. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        {post.author.avatar ? (
-          <img 
-            src={post.author.avatar} 
-            alt={post.author.name}
-            className="h-8 w-8 rounded-full object-cover"
-            onError={(e) => {
-              e.target.src = ''; // Clear broken image
-            }}
-          />
-        ) : (
-          <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
-        )}
-        <div className="min-w-0">
-          <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
-          <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {/* Visibility indicator */}
-          {isGated && (
-            <span className="flex items-center gap-1 text-xs text-neutral-500">
-              <Lock className="w-3 h-3" />
-              {post.visibility === "private" ? "Private" : "On Request"}
-            </span>
+    <>
+      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          {post.author.avatar ? (
+            <img 
+              src={post.author.avatar} 
+              alt={post.author.name}
+              className="h-8 w-8 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = ''; // Clear broken image
+              }}
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
           )}
-          {/* Price badge */}
-          {post.price !== undefined && post.price !== null && (() => {
-            const priceValue = parseFloat(post.price);
-            return (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                priceValue > 0 
-                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                  : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-              }`}>
-                {priceValue > 0 ? `$${priceValue.toFixed(2)}` : 'Free'}
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
+            <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {/* Visibility indicator */}
+            {isGated && (
+              <span className="flex items-center gap-1 text-xs text-neutral-500">
+                <Lock className="w-3 h-3" />
+                {post.visibility === "private" ? "Private" : "On Request"}
               </span>
-            );
-          })()}
-          <span className="text-xs text-neutral-600 dark:text-neutral-400">
-            {timeAgo(post.createdAt)}
-          </span>
+            )}
+            {/* Price badge */}
+            {post.price !== undefined && post.price !== null && (() => {
+              const priceValue = parseFloat(post.price);
+              return (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  priceValue > 0 
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                }`}>
+                  {priceValue > 0 ? `$${priceValue.toFixed(2)}` : 'Free'}
+                </span>
+              );
+            })()}
+            <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              {timeAgo(post.createdAt)}
+            </span>
+            
+            {/* 3-dot menu for author */}
+            {isAuthor && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                  aria-label="Post options"
+                >
+                  <MoreVertical className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+                </button>
+                
+                {showMenu && (
+                  <>
+                    {/* Backdrop to close menu */}
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowMenu(false)}
+                    />
+                    {/* Menu */}
+                    <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete post
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* Media */}
       <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden">
@@ -255,6 +319,19 @@ export default function PostCard({ post }) {
       {/* Comments */}
       {open && <CommentList postId={post.id} />}
     </article>
+
+    {/* Delete Confirmation Modal */}
+    <ConfirmationModal
+      isOpen={showDeleteConfirm}
+      onClose={() => setShowDeleteConfirm(false)}
+      onConfirm={handleDeletePost}
+      title="Delete Post"
+      message="Are you sure you want to delete this post? This will remove it from your profile and feed and revoke access for anyone who had access. This action cannot be undone."
+      confirmText={deleting ? "Deleting..." : "Delete"}
+      cancelText="Cancel"
+      destructive={true}
+    />
+  </>
   );
 }
 
