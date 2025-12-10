@@ -44,6 +44,9 @@ const mapProfileToForm = (profileData) => {
     pronouns: profileData.pronouns || '',
     location: profileData.location || '',
     availabilityStatus: profileData.availabilityStatus || 'available',
+    showPronouns: profileData.showPronouns !== undefined ? profileData.showPronouns : true,
+    showLocation: profileData.showLocation !== undefined ? profileData.showLocation : true,
+    showAvailability: profileData.showAvailability !== undefined ? profileData.showAvailability : true,
     primaryRoles: profileData.roles || [],
     bio: profileData.bio || '',
     languages: profileData.languages || [],
@@ -78,6 +81,10 @@ const mapFormToProfileUpdate = (formData) => {
     bio: formData.bio,
     location: formData.location,
     pronouns: formData.pronouns,
+    availabilityStatus: formData.availabilityStatus,
+    showPronouns: formData.showPronouns,
+    showLocation: formData.showLocation,
+    showAvailability: formData.showAvailability,
     roles: formData.primaryRoles,
     tags: formData.skills,
     avatar: formData.avatar,
@@ -111,6 +118,9 @@ export default function ProfileEdit() {
     pronouns: '',
     location: '',
     availabilityStatus: 'available',
+    showPronouns: true,
+    showLocation: true,
+    showAvailability: true,
     primaryRoles: [],
     bio: '',
     languages: [],
@@ -724,6 +734,15 @@ export default function ProfileEdit() {
                       className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="they/them"
                     />
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showPronouns}
+                        onChange={(e) => handleChange('showPronouns', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Location">
@@ -734,6 +753,15 @@ export default function ProfileEdit() {
                       className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Seattle, WA, USA"
                     />
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showLocation}
+                        onChange={(e) => handleChange('showLocation', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Availability Status">
@@ -746,6 +774,15 @@ export default function ProfileEdit() {
                       <option value="not-available">Not Available</option>
                       <option value="booking">Accepting Bookings</option>
                     </select>
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showAvailability}
+                        onChange={(e) => handleChange('showAvailability', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Primary Roles">
@@ -933,49 +970,74 @@ export default function ProfileEdit() {
                             key={exp.id} 
                             className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
                           >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium text-neutral-900 dark:text-white">{exp.title}</h4>
-                                <p className="text-neutral-600 dark:text-neutral-400">{exp.company}</p>
-                                {(exp.startDate || exp.endDate) && (
-                                  <p className="text-sm text-neutral-500">
-                                    {exp.startDate || '?'} - {exp.endDate || 'Present'}
-                                  </p>
-                                )}
-                                {exp.description && (
-                                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{exp.description}</p>
-                                )}
+                            {editingExperience === exp.id ? (
+                              // Edit Mode
+                              <ExperienceForm
+                                initialData={exp}
+                                onSave={(data) => handleUpdateExperience(exp.id, data)}
+                                onCancel={() => setEditingExperience(null)}
+                              />
+                            ) : (
+                              // View Mode
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-medium text-neutral-900 dark:text-white">{exp.title}</h4>
+                                  <p className="text-neutral-600 dark:text-neutral-400 text-sm">{exp.role}</p>
+                                  {exp.company && (
+                                    <p className="text-neutral-600 dark:text-neutral-400 text-sm">{exp.company}</p>
+                                  )}
+                                  {exp.year && (
+                                    <p className="text-sm text-neutral-500">{exp.year}</p>
+                                  )}
+                                  {exp.description && (
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">{exp.description}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => setEditingExperience(exp.id)}
+                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                                    aria-label="Edit experience"
+                                  >
+                                    <Edit2 className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExperience(exp.id)}
+                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    aria-label="Delete experience"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                  </button>
+                                </div>
                               </div>
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleDeleteExperience(exp.id)}
-                                  className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                  aria-label="Delete experience"
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                </button>
-                              </div>
-                            </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Add your professional experience, productions, and credits
-                    </p>
-                    
-                    {/* Note: Full experience form similar to EducationForm will be added in future update */}
-                    <button 
-                      onClick={() => {
-                        // Stub implementation - will call handleAddExperience when form is built
-                        toast.info('Experience form coming soon! Full CRUD handlers are ready.');
-                      }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
-                    >
-                      <Plus className="w-5 h-5" />
-                      <span>Add Experience</span>
-                    </button>
+                    {/* Add Experience Form */}
+                    {showExperienceForm ? (
+                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                        <ExperienceForm
+                          onSave={handleAddExperience}
+                          onCancel={() => setShowExperienceForm(false)}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Add your professional experience, productions, and film/theater credits
+                        </p>
+                        <button 
+                          onClick={() => setShowExperienceForm(true)}
+                          className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
+                        >
+                          <Plus className="w-5 h-5" />
+                          <span>Add Experience</span>
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -1106,6 +1168,128 @@ function FormField({ label, required, children }) {
       </label>
       {children}
     </div>
+  );
+}
+
+function ExperienceForm({ initialData = {}, onSave, onCancel }) {
+  const [formData, setFormData] = useState({
+    title: initialData.title || '',
+    role: initialData.role || '',
+    company: initialData.company || '',
+    year: initialData.year || '',
+    description: initialData.description || ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.title.trim() || !formData.role.trim()) {
+      toast.error('Title and Role are required');
+      return;
+    }
+    
+    // Parse and validate year
+    const year = formData.year ? parseInt(formData.year, 10) : null;
+    
+    // Validate year range
+    if (year && (year < 1900 || year > new Date().getFullYear() + 5)) {
+      toast.error(`Year must be between 1900 and ${new Date().getFullYear() + 5}`);
+      return;
+    }
+    
+    onSave({
+      title: formData.title.trim(),
+      role: formData.role.trim(),
+      company: formData.company.trim() || null,
+      year,
+      description: formData.description.trim() || null
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Production / Project Title <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., The Dark Knight, Hamilton"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Role <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.role}
+          onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., Lead Actor, Director, Cinematographer"
+          required
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            Company / Organization
+          </label>
+          <input
+            type="text"
+            value={formData.company}
+            onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., Warner Bros"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            Year
+          </label>
+          <input
+            type="number"
+            value={formData.year}
+            onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
+            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="2023"
+            min="1900"
+            max={new Date().getFullYear() + 5}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Description
+        </label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+          placeholder="Brief description of your role and contributions..."
+        />
+      </div>
+      <div className="flex justify-end space-x-3 pt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
+        >
+          Save Experience
+        </button>
+      </div>
+    </form>
   );
 }
 

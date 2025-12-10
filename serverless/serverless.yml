@@ -380,6 +380,14 @@ functions:
       - httpApi:
           path: /posts/{id}
           method: get
+  deletePost:
+    handler: src/handlers/posts.deletePost
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /posts/{id}
+          method: delete
   getAudioUploadUrl:
     handler: src/handlers/posts.getAudioUploadUrl
     layers:
@@ -753,6 +761,40 @@ functions:
     events:
       - httpApi:
           path: /me/profile/education/{id}
+          method: delete
+
+  # ========== EXPERIENCE (my profile convenience endpoints) ==========
+  listMyExperience:
+    handler: src/handlers/profiles.listMyExperience
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/experience
+          method: get
+  createMyExperience:
+    handler: src/handlers/profiles.createMyExperience
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/experience
+          method: post
+  updateMyExperience:
+    handler: src/handlers/profiles.updateMyExperience
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/experience/{id}
+          method: put
+  deleteMyExperience:
+    handler: src/handlers/profiles.deleteMyExperience
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/profile/experience/{id}
           method: delete
 
   # ========== SETTINGS ==========

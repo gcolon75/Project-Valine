@@ -10,7 +10,7 @@ import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // URL validation helper to prevent XSS attacks
@@ -74,6 +74,11 @@ export default function Profile() {
   // Posts state
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  
+  // Handler to remove a post from local state after deletion
+  const handlePostDelete = (postId) => {
+    setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+  };
   
   // Connection/Follow states
   const [connectionStatus, setConnectionStatus] = useState({
@@ -393,10 +398,39 @@ export default function Profile() {
           )}
           {/* Professional title shown last in header */}
           {displayData.title && (
-            <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-4">
+            <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-2">
               {displayData.title}
             </p>
           )}
+          
+          {/* Additional profile details with visibility toggles */}
+          <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            {displayData.pronouns && displayData.showPronouns !== false && (
+              <span className="flex items-center gap-1">
+                <User className="w-4 h-4" />
+                {displayData.pronouns}
+              </span>
+            )}
+            {displayData.location && displayData.showLocation !== false && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                {displayData.location}
+              </span>
+            )}
+            {displayData.availabilityStatus && displayData.showAvailability !== false && (
+              <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                displayData.availabilityStatus === 'available' 
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  : displayData.availabilityStatus === 'booking'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+              }`}>
+                <Briefcase className="w-3 h-3" />
+                {displayData.availabilityStatus === 'available' ? 'Available' : 
+                 displayData.availabilityStatus === 'booking' ? 'Accepting Bookings' : 'Not Available'}
+              </span>
+            )}
+          </div>
 
           {/* Stats */}
           <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
@@ -460,14 +494,28 @@ export default function Profile() {
         {activeTab === 'posts' && (
           <Card title="Posts" padding="default">
             {loadingPosts ? (
-              <p className="text-neutral-600 dark:text-neutral-400">Loading posts...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Loading skeleton - 3 cards */}
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden animate-pulse">
+                    <div className="h-8 bg-neutral-200 dark:bg-neutral-800 m-4" />
+                    <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded" />
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : posts && posts.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {posts.map(post => {
                   // Transform post data to match PostCard expected format
                   const transformedPost = {
                     id: post.id,
+                    authorId: post.authorId,
                     author: {
+                      id: post.author?.id || post.authorId,
                       name: post.author?.displayName || displayData.displayName,
                       role: post.author?.username || displayData.username,
                       avatar: post.author?.avatar || displayData.avatar || ''
@@ -487,7 +535,7 @@ export default function Profile() {
                     comments: post.commentsCount || 0,
                     price: post.price
                   };
-                  return <PostCard key={post.id} post={transformedPost} />;
+                  return <PostCard key={post.id} post={transformedPost} onDelete={handlePostDelete} />;
                 })}
               </div>
             ) : (
@@ -502,7 +550,7 @@ export default function Profile() {
         
         {activeTab === 'reels' && (
           <Card title="Reels" padding="default">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Reels thumbnails */}
               <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
               <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
@@ -521,69 +569,78 @@ export default function Profile() {
         
         {activeTab === 'about' && (
           <div className="space-y-6">
-            {/* Overview */}
+            {/* Overview Card */}
             <Card title="Overview" padding="default">
-              {displayData.title && (
-                <p className="text-neutral-700 dark:text-neutral-300 font-medium mb-2">
-                  {displayData.title}
-                </p>
-              )}
-              {displayData.bio ? (
-                <p className="text-neutral-700 dark:text-neutral-300">
-                  {displayData.bio}
-                </p>
-              ) : !displayData.title ? (
-                <p className="text-neutral-500 dark:text-neutral-400 italic">
-                  No bio available
-                </p>
-              ) : null}
+              <div className="space-y-3">
+                {displayData.title && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                      {displayData.title}
+                    </h3>
+                  </div>
+                )}
+                
+                {/* Professional details */}
+                <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                  {displayData.pronouns && displayData.showPronouns !== false && (
+                    <span>{displayData.pronouns}</span>
+                  )}
+                  {displayData.location && displayData.showLocation !== false && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {displayData.location}
+                    </span>
+                  )}
+                  {displayData.availabilityStatus && displayData.showAvailability !== false && (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      displayData.availabilityStatus === 'available' 
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                        : displayData.availabilityStatus === 'booking'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                    }`}>
+                      {displayData.availabilityStatus === 'available' ? 'Available' : 
+                       displayData.availabilityStatus === 'booking' ? 'Accepting Bookings' : 'Not Available'}
+                    </span>
+                  )}
+                </div>
+                
+                {displayData.bio && (
+                  <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                    {displayData.bio}
+                  </p>
+                )}
+                
+                {!displayData.title && !displayData.bio && (
+                  <p className="text-neutral-500 dark:text-neutral-400 italic">
+                    No overview information available
+                  </p>
+                )}
+              </div>
             </Card>
 
-            {/* Roles & Skills */}
-            {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0 || displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
-              <Card title="Roles & Skills" padding="default">
-                {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0) && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">Roles</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {(displayData.roles || displayData.primaryRoles || []).map(role => (
-                        <span key={role} className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm">
-                          {role}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {(displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
-                  <div>
-                    <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">Skills</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {(displayData.tags || displayData.skills || []).map(tag => (
-                        <span key={tag} className="px-3 py-1 bg-[#0CCE6B]/10 text-[#0CCE6B] rounded-full text-sm">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {/* Education */}
-            {displayData.education?.length > 0 && (
-              <Card title="Education" padding="default">
-                <div className="space-y-4">
-                  {displayData.education.map(edu => (
-                    <div key={edu.id} className="border-l-2 border-[#0CCE6B] pl-4">
-                      <h4 className="font-medium text-neutral-900 dark:text-white">{edu.institution}</h4>
-                      <p className="text-neutral-600 dark:text-neutral-400">{edu.program}</p>
-                      {(edu.startYear || edu.endYear) && (
-                        <p className="text-sm text-neutral-500">
-                          {edu.startYear || '?'} - {edu.endYear || 'Present'}
+            {/* Experience & Credits */}
+            {displayData.credits?.length > 0 && (
+              <Card title="Experience & Credits" padding="default">
+                <div className="space-y-6">
+                  {displayData.credits.map((credit, index) => (
+                    <div key={credit.id || index} className="relative pl-6 border-l-2 border-[#0CCE6B]">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#0CCE6B] border-2 border-white dark:border-neutral-900" />
+                      <h4 className="font-semibold text-neutral-900 dark:text-white text-base">
+                        {credit.title}
+                      </h4>
+                      <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
+                        {credit.role}{credit.company ? ` · ${credit.company}` : ''}
+                      </p>
+                      {credit.year && (
+                        <p className="text-neutral-500 dark:text-neutral-500 text-sm mt-1">
+                          {credit.year}
                         </p>
                       )}
-                      {edu.achievements && (
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{edu.achievements}</p>
+                      {credit.description && (
+                        <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-2">
+                          {credit.description}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -591,60 +648,151 @@ export default function Profile() {
               </Card>
             )}
 
-            {/* Budget Range */}
-            {(displayData.budgetMin || displayData.budgetMax) && (
-              <Card title="Budget Range" padding="default">
-                <p className="text-neutral-700 dark:text-neutral-300">
-                  ${displayData.budgetMin || 0} - ${displayData.budgetMax || '∞'}
-                </p>
+            {/* Education */}
+            {displayData.education?.length > 0 && (
+              <Card title="Education" padding="default">
+                <div className="space-y-4">
+                  {displayData.education.map((edu, index) => (
+                    <div key={edu.id || index} className="relative pl-6 border-l-2 border-[#0CCE6B]">
+                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#0CCE6B] border-2 border-white dark:border-neutral-900" />
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">
+                        {edu.institution}
+                      </h4>
+                      <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
+                        {edu.program}
+                      </p>
+                      {(edu.startYear || edu.endYear) && (
+                        <p className="text-neutral-500 dark:text-neutral-500 text-sm mt-1">
+                          {edu.startYear || '?'} - {edu.endYear || 'Present'}
+                        </p>
+                      )}
+                      {edu.achievements && (
+                        <p className="text-neutral-600 dark:text-neutral-400 text-sm mt-2">
+                          {edu.achievements}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </Card>
             )}
 
-            {/* Links Section */}
-            {displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link) && (
-              <Card padding="default">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                  <ExternalLink className="w-5 h-5" aria-hidden="true" />
-                  <span>Links</span>
-                </h3>
+            {/* Skills & Specializations */}
+            {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0 || displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+              <Card title="Skills & Specializations" padding="default">
+                <div className="space-y-4">
+                  {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0) && (
+                    <div>
+                      <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                        Primary Roles
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {(displayData.roles || displayData.primaryRoles || []).map((role, index) => (
+                          <span 
+                            key={`${role}-${index}`} 
+                            className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                          >
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+                    <div>
+                      <h4 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                        Skills & Genres
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {(displayData.tags || displayData.skills || []).map((tag, index) => (
+                          <span 
+                            key={`${tag}-${index}`} 
+                            className="px-3 py-1.5 bg-[#0CCE6B]/10 text-[#0CCE6B] rounded-full text-sm font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Contact & Links */}
+            {(displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link)) || 
+             (displayData.socialLinks && (Array.isArray(displayData.socialLinks) ? displayData.socialLinks.length > 0 : Object.values(displayData.socialLinks).some(link => link))) && (
+              <Card title="Contact & Links" padding="default">
                 <div className="space-y-3">
-                  {displayData.externalLinks.website && isValidUrl(displayData.externalLinks.website) && (
+                  {/* Legacy externalLinks format */}
+                  {displayData.externalLinks?.website && isValidUrl(displayData.externalLinks.website) && (
                     <a 
                       href={displayData.externalLinks.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       aria-label="Visit website"
                     >
                       <Globe className="w-5 h-5" aria-hidden="true" />
                       <span>Website</span>
                     </a>
                   )}
-                  {displayData.externalLinks.showreel && isValidUrl(displayData.externalLinks.showreel) && (
+                  {displayData.externalLinks?.showreel && isValidUrl(displayData.externalLinks.showreel) && (
                     <a 
                       href={displayData.externalLinks.showreel} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       aria-label="View showreel"
                     >
                       <Film className="w-5 h-5" aria-hidden="true" />
                       <span>Showreel</span>
                     </a>
                   )}
-                  {displayData.externalLinks.imdb && isValidUrl(displayData.externalLinks.imdb) && (
+                  {displayData.externalLinks?.imdb && isValidUrl(displayData.externalLinks.imdb) && (
                     <a 
                       href={displayData.externalLinks.imdb} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-1 -m-1"
+                      className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       aria-label="View IMDb profile"
                     >
                       <FileText className="w-5 h-5" aria-hidden="true" />
                       <span>IMDb</span>
                     </a>
                   )}
+                  
+                  {/* New socialLinks array format */}
+                  {Array.isArray(displayData.socialLinks) && displayData.socialLinks.map((link, index) => (
+                    link.url && isValidUrl(link.url) && (
+                      <a 
+                        key={`${link.url}-${index}`}
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        aria-label={`Visit ${link.label || 'link'}`}
+                      >
+                        <ExternalLink className="w-5 h-5" aria-hidden="true" />
+                        <span>{link.label || link.url}</span>
+                      </a>
+                    )
+                  ))}
                 </div>
+              </Card>
+            )}
+
+            {/* Empty state when no sections have data */}
+            {!displayData.title && !displayData.bio && 
+             !displayData.credits?.length && 
+             !displayData.education?.length && 
+             !displayData.roles?.length && !displayData.primaryRoles?.length && 
+             !displayData.tags?.length && !displayData.skills?.length && 
+             !displayData.externalLinks && (
+              <Card padding="default">
+                <p className="text-neutral-500 dark:text-neutral-400 text-center italic py-8">
+                  No profile information available yet
+                </p>
               </Card>
             )}
           </div>

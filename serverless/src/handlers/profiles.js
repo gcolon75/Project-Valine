@@ -770,7 +770,14 @@ export const updateMyProfile = async (event) => {
       budgetMin,
       budgetMax,
       onboardingComplete,
-      profileComplete
+      profileComplete,
+      // New profile fields
+      pronouns,
+      location,
+      availabilityStatus,
+      showPronouns,
+      showLocation,
+      showAvailability
     } = body;
 
     // Map frontend fields to backend fields with explicit backend names taking precedence
@@ -935,6 +942,13 @@ export const updateMyProfile = async (event) => {
       if (bannerUrl !== undefined) {profileUpdateData.bannerUrl = bannerUrl;}
       if (budgetMin !== undefined) {profileUpdateData.budgetMin = budgetMin;}
       if (budgetMax !== undefined) {profileUpdateData.budgetMax = budgetMax;}
+      // New profile fields
+      if (pronouns !== undefined) {profileUpdateData.pronouns = pronouns;}
+      if (location !== undefined) {profileUpdateData.location = location;}
+      if (availabilityStatus !== undefined) {profileUpdateData.availabilityStatus = availabilityStatus;}
+      if (showPronouns !== undefined) {profileUpdateData.showPronouns = showPronouns;}
+      if (showLocation !== undefined) {profileUpdateData.showLocation = showLocation;}
+      if (showAvailability !== undefined) {profileUpdateData.showAvailability = showAvailability;}
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema
@@ -958,6 +972,12 @@ export const updateMyProfile = async (event) => {
             bannerUrl: bannerUrl || null,
             budgetMin: budgetMin || null,
             budgetMax: budgetMax || null,
+            pronouns: pronouns || null,
+            location: location || null,
+            availabilityStatus: availabilityStatus || null,
+            showPronouns: showPronouns !== undefined ? showPronouns : true,
+            showLocation: showLocation !== undefined ? showLocation : true,
+            showAvailability: showAvailability !== undefined ? showAvailability : true,
           },
         });
         console.log('[updateMyProfile] PROFILE CREATED', {
@@ -1330,5 +1350,214 @@ export const deleteProfile = async (event) => {
   } catch (e) {
     console.error('Delete profile error:', e);
     return error('Server error: ' + e.message, 500);
+  }
+};
+
+
+/**
+ * GET /me/profile/experience
+ * List experience (credits) for the current user
+ */
+export const listMyExperience = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[listMyExperience] Prisma unavailable');
+      return error(503, 'Database unavailable');
+    }
+
+    // Get user's profile
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      return json([]);
+    }
+
+    // Get credits for this profile
+    const credits = await prisma.credit.findMany({
+      where: { profileId: profile.id },
+      orderBy: [
+        { year: 'desc' },
+        { orderIndex: 'asc' },
+      ],
+    });
+
+    return json(credits);
+  } catch (e) {
+    console.error('List my experience error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /me/profile/experience
+ * Create experience (credit) for the current user
+ */
+export const createMyExperience = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const { title, role, company, year, description, orderIndex, metadata } = body;
+
+    if (!title || !role) {
+      return error(400, 'title and role are required');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[createMyExperience] Prisma unavailable');
+      return error(503, 'Database unavailable');
+    }
+
+    // Get user's profile
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      return error(404, 'Profile not found');
+    }
+
+    // Create credit
+    const credit = await prisma.credit.create({
+      data: {
+        profileId: profile.id,
+        title,
+        role,
+        company: company || null,
+        year: year || null,
+        description: description || null,
+        orderIndex: orderIndex || 0,
+        metadata: metadata || {},
+      },
+    });
+
+    return json(credit, 201);
+  } catch (e) {
+    console.error('Create my experience error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * PUT /me/profile/experience/{id}
+ * Update experience (credit) for the current user
+ */
+export const updateMyExperience = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const { id } = event.pathParameters || {};
+    if (!id) {
+      return error(400, 'id is required');
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const { title, role, company, year, description, orderIndex, metadata } = body;
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[updateMyExperience] Prisma unavailable');
+      return error(503, 'Database unavailable');
+    }
+
+    // Get credit and verify ownership
+    const credit = await prisma.credit.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!credit) {
+      return error(404, 'Experience not found');
+    }
+
+    if (credit.profile.userId !== userId) {
+      return error(403, 'Forbidden - not experience owner');
+    }
+
+    // Update credit
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (role !== undefined) updateData.role = role;
+    if (company !== undefined) updateData.company = company;
+    if (year !== undefined) updateData.year = year;
+    if (description !== undefined) updateData.description = description;
+    if (orderIndex !== undefined) updateData.orderIndex = orderIndex;
+    if (metadata !== undefined) updateData.metadata = metadata;
+
+    const updatedCredit = await prisma.credit.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return json(updatedCredit);
+  } catch (e) {
+    console.error('Update my experience error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * DELETE /me/profile/experience/{id}
+ * Delete experience (credit) for the current user
+ */
+export const deleteMyExperience = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const { id } = event.pathParameters || {};
+    if (!id) {
+      return error(400, 'id is required');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      console.error('[deleteMyExperience] Prisma unavailable');
+      return error(503, 'Database unavailable');
+    }
+
+    // Get credit and verify ownership
+    const credit = await prisma.credit.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!credit) {
+      return error(404, 'Experience not found');
+    }
+
+    if (credit.profile.userId !== userId) {
+      return error(403, 'Forbidden - not experience owner');
+    }
+
+    await prisma.credit.delete({
+      where: { id },
+    });
+
+    return json({ message: 'Experience deleted successfully' });
+  } catch (e) {
+    console.error('Delete my experience error:', e);
+    return error(500, 'Server error: ' + e.message);
   }
 };

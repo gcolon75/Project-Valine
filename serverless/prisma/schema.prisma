@@ -230,27 +230,32 @@ model ConnectionRequest {
 }
 
 model Profile {
-  id            String          @id @default(uuid())
-  userId        String          @unique
-  vanityUrl     String          @unique
-  headline      String?
-  bio           String?
-  roles         String[]
-  tags          String[]
-  location      Json?
-  privacy       Json            @default("{}")
-  socialLinks   Json?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  title         String?
-  bannerUrl     String?
-  budgetMin     Int?
-  budgetMax     Int?
-  credits       Credit[]
-  education     Education[]
-  media         Media[]
-  profile_links profile_links[]
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String          @id @default(uuid())
+  userId              String          @unique
+  vanityUrl           String          @unique
+  headline            String?
+  bio                 String?
+  roles               String[]
+  tags                String[]
+  location            String?
+  privacy             Json            @default("{}")
+  socialLinks         Json?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  title               String?
+  bannerUrl           String?
+  budgetMin           Int?
+  budgetMax           Int?
+  pronouns            String?
+  availabilityStatus  String?
+  showPronouns        Boolean         @default(true)
+  showLocation        Boolean         @default(true)
+  showAvailability    Boolean         @default(true)
+  credits             Credit[]
+  education           Education[]
+  media               Media[]
+  profile_links       profile_links[]
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
   @@index([roles])

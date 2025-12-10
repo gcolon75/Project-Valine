@@ -32,6 +32,11 @@ export const getPost = async (id) => {
   return data;
 };
 
+export const deletePost = async (id) => {
+  const { data } = await apiClient.delete(`/posts/${id}`);
+  return data;
+};
+
 export const likePost = async (id) => {
   const { data } = await apiClient.post(`/posts/${id}/like`);
   return data;
