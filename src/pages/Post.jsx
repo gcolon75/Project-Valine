@@ -1,5 +1,5 @@
 // src/pages/Post.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import { validateTags } from '../constants/tags';
 import { useAuth } from '../context/AuthContext';
 import { createPost, getAudioUploadUrl, uploadAudioToS3 } from '../services/postService';
 import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
+import { getMyProfile } from '../services/profileService';
 
 const CONTENT_TYPES = [
   { value: 'script', label: 'Script', icon: '📝' },
@@ -41,6 +42,29 @@ export default function Post() {
   const navigate = useNavigate();
   const { user, isInitialized } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileId, setProfileId] = useState(null);
+  const [profileError, setProfileError] = useState(false);
+  
+  // Fetch profile ID for media uploads
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // Only fetch if we have a user, don't have a profile ID yet, and haven't errored
+      if (user?.id && !profileId && !profileError) {
+        try {
+          const profile = await getMyProfile();
+          if (profile?.id) {
+            setProfileId(profile.id);
+            setProfileError(false);
+          }
+        } catch (error) {
+          console.warn('Failed to fetch profile for media upload:', error);
+          setProfileError(true);
+          // Profile will be auto-created on first upload attempt by backend
+        }
+      }
+    };
+    fetchProfile();
+  }, [user?.id, profileId, profileError]);
   
   // Upload state
   const [selectedFile, setSelectedFile] = useState(null);
@@ -126,10 +150,11 @@ export default function Post() {
       return;
     }
     
-    // Get profileId, fallback to user id
-    const profileId = user?.profileId || user?.id;
-    if (!profileId) {
-      setUploadError('Profile not found. Please complete your profile first.');
+    // Use profile.id if available, otherwise fall back to user.id
+    // Backend will auto-create profile if it doesn't exist
+    const targetProfileId = profileId || user?.id;
+    if (!targetProfileId) {
+      setUploadError('Not logged in. Please log in to upload files.');
       return;
     }
 
@@ -162,7 +187,7 @@ export default function Post() {
         // Step 1: Get presigned upload URL
         setUploadProgress(5);
         const { mediaId, uploadUrl } = await getUploadUrl(
-          profileId,
+          targetProfileId,
           mediaType,
           formData.title || selectedFile.name,
           formData.description,
@@ -176,7 +201,7 @@ export default function Post() {
 
         // Step 3: Complete upload
         setUploadProgress(95);
-        await completeUpload(profileId, mediaId, {
+        await completeUpload(targetProfileId, mediaId, {
           fileSize: selectedFile.size,
         });
 

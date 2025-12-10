@@ -214,12 +214,16 @@ export default function Profile() {
   // Fetch posts for the profile
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!profile?.id) return;
+      // Use userId (user's ID) not profile.id (profile's DB ID) for posts filtering
+      // Posts are created with authorId = user.id, not profile.id
+      // Fallback to profile.id only for legacy profiles where userId might not be set
+      const authorId = profile?.userId || profile?.id;
+      if (!authorId) return;
       
       setLoadingPosts(true);
       try {
         const postsData = await listPosts({ 
-          authorId: profile.id, 
+          authorId, 
           limit: 20 
         });
         setPosts(Array.isArray(postsData) ? postsData : []);
@@ -232,7 +236,7 @@ export default function Profile() {
     };
 
     fetchPosts();
-  }, [profile?.id]);
+  }, [profile?.userId, profile?.id]);
 
   if (loading) return <SkeletonProfile />;
   

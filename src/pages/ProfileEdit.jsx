@@ -16,6 +16,76 @@ import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
 
+// Helper function to convert old externalLinks format to new normalized format
+const convertLegacyLinks = (externalLinks) => {
+  if (!externalLinks || typeof externalLinks !== 'object') return [];
+  
+  // If it's already an array, assume it's the new format
+  if (Array.isArray(externalLinks)) return externalLinks;
+  
+  // Convert old format to new
+  const links = [];
+  if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'website' });
+  if (externalLinks.imdb) links.push({ label: 'IMDb', url: externalLinks.imdb, type: 'imdb' });
+  if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'showreel' });
+  if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'other' });
+  if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'other' });
+  
+  return links;
+};
+
+// Helper function to map profile data to form data
+const mapProfileToForm = (profileData) => {
+  return {
+    displayName: profileData.displayName || '',
+    username: profileData.username || '',
+    customRole: profileData.customRole || '',
+    title: profileData.title || '',
+    pronouns: profileData.pronouns || '',
+    location: profileData.location || '',
+    availabilityStatus: profileData.availabilityStatus || 'available',
+    primaryRoles: profileData.roles || [],
+    bio: profileData.bio || '',
+    languages: profileData.languages || [],
+    avatar: profileData.avatar || null,
+    // Note: Both banner and bannerUrl are maintained for compatibility
+    // banner: Display URL used by UI components
+    // bannerUrl: API field name expected by backend
+    banner: profileData.bannerUrl || null,
+    bannerUrl: profileData.bannerUrl || null,
+    agency: profileData.agency || { name: '', contact: '' },
+    contactPreferences: profileData.contactPreferences || {
+      email: true,
+      phone: false,
+      platform: true
+    },
+    profileLinks: profileData.socialLinks || profileData.links || convertLegacyLinks(profileData.externalLinks) || [],
+    primaryReel: profileData.primaryReel || null,
+    reelPrivacy: profileData.reelPrivacy || 'public',
+    credits: profileData.credits || [],
+    experience: profileData.experience || [],
+    education: profileData.education || [],
+    skills: profileData.tags || []
+  };
+};
+
+// Helper function to map form data to profile update payload
+const mapFormToProfileUpdate = (formData) => {
+  return {
+    displayName: formData.displayName,
+    username: formData.username,
+    title: formData.title,
+    bio: formData.bio,
+    location: formData.location,
+    pronouns: formData.pronouns,
+    roles: formData.primaryRoles,
+    tags: formData.skills,
+    avatar: formData.avatar,
+    bannerUrl: formData.banner || formData.bannerUrl,
+    socialLinks: formData.profileLinks
+  };
+};
+
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const { user, updateUser, refreshUser } = useAuth();
@@ -26,94 +96,71 @@ export default function ProfileEdit() {
   // Loading state
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
-  // Helper function to convert old externalLinks format to new normalized format
-  const convertLegacyLinks = (externalLinks) => {
-    if (!externalLinks || typeof externalLinks !== 'object') return [];
-    
-    // If it's already an array, assume it's the new format
-    if (Array.isArray(externalLinks)) return externalLinks;
-    
-    // Convert old format to new
-    const links = [];
-    if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'website' });
-    if (externalLinks.imdb) links.push({ label: 'IMDb', url: externalLinks.imdb, type: 'imdb' });
-    if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'showreel' });
-    if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'other' });
-    if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'other' });
-    
-    return links;
-  };
+  // Profile state - stores the full profile object from backend
+  const [profile, setProfile] = useState(null);
   
-  // Form state
+  // Profile ID state (needed for media uploads)
+  const [profileId, setProfileId] = useState(null);
+  
+  // Form state - initialized from profile, not user context
   const [formData, setFormData] = useState({
-    displayName: user?.displayName || '',
-    username: user?.username || '',
-    customRole: user?.customRole || '',
-    title: user?.title || '',
-    pronouns: user?.pronouns || '',
-    location: user?.location || '',
-    availabilityStatus: user?.availabilityStatus || 'available',
-    primaryRoles: user?.primaryRoles || [],
-    bio: user?.bio || '',
-    languages: user?.languages || [],
-    avatar: user?.avatar || null,
-    banner: user?.banner || null,
-    bannerUrl: user?.bannerUrl || null,
-    agency: user?.agency || { name: '', contact: '' },
-    contactPreferences: user?.contactPreferences || {
+    displayName: '',
+    username: '',
+    customRole: '',
+    title: '',
+    pronouns: '',
+    location: '',
+    availabilityStatus: 'available',
+    primaryRoles: [],
+    bio: '',
+    languages: [],
+    avatar: null,
+    banner: null,
+    bannerUrl: null,
+    agency: { name: '', contact: '' },
+    contactPreferences: {
       email: true,
       phone: false,
       platform: true
     },
-    // Support both old and new link formats
-    profileLinks: convertLegacyLinks(user?.externalLinks || user?.profileLinks),
-    primaryReel: user?.primaryReel || null,
-    reelPrivacy: user?.reelPrivacy || 'public',
-    credits: user?.credits || [],
-    experience: user?.experience || [],
-    education: user?.education || [],
-    skills: user?.skills || []
+    profileLinks: [],
+    primaryReel: null,
+    reelPrivacy: 'public',
+    credits: [],
+    experience: [],
+    education: [],
+    skills: []
   });
   
   // Track initial form data for analytics
   const [initialFormData, setInitialFormData] = useState(null);
-  
-  // Set initial data once on mount
-  useEffect(() => {
-    if (!initialFormData) {
-      setInitialFormData({...formData});
-    }
-  }, []);
 
-  // Load profile from backend on mount
+  // Load profile from backend on mount (only once)
   useEffect(() => {
     const loadProfile = async () => {
-      if (user?.id) {
+      // Only load if we have a user and haven't loaded yet
+      if (user?.id && !profile && !initialFormData) {
         setIsLoadingProfile(true);
         try {
           const profileData = await getMyProfile();
-          // Update form data with backend profile data
           if (profileData) {
-            setFormData(prev => ({
-              ...prev,
-              displayName: profileData.displayName || prev.displayName,
-              username: profileData.username || prev.username,
-              title: profileData.title || prev.title,
-              bio: profileData.bio || prev.bio,
-              location: profileData.location || prev.location,
-              pronouns: profileData.pronouns || prev.pronouns,
-              avatar: profileData.avatar || prev.avatar,
-              banner: profileData.bannerUrl || prev.banner,
-              bannerUrl: profileData.bannerUrl || prev.bannerUrl,
-              primaryRoles: profileData.roles || prev.primaryRoles,
-              skills: profileData.tags || prev.skills,
-              profileLinks: profileData.socialLinks || profileData.links || prev.profileLinks,
-              education: profileData.education || prev.education,
-            }));
+            // Store the full profile object
+            setProfile(profileData);
+            
+            // Store profile ID for media uploads
+            setProfileId(profileData.id);
+            
+            // Initialize form data from profile using helper
+            const mappedFormData = mapProfileToForm(profileData);
+            setFormData(mappedFormData);
+            
+            // Set initial form data for analytics (only once)
+            setInitialFormData(mappedFormData);
           }
         } catch (error) {
           console.error('Failed to load profile from backend:', error);
-          // Continue with existing data from user context
+          // If profile fetch fails, form remains empty until retry
+          toast.error('Failed to load profile data');
         } finally {
           setIsLoadingProfile(false);
         }
@@ -121,7 +168,7 @@ export default function ProfileEdit() {
     };
 
     loadProfile();
-  }, [user?.id]);
+  }, [user?.id, profile, initialFormData]);
 
   // Education state
   const [educationList, setEducationList] = useState([]);
@@ -312,7 +359,9 @@ export default function ProfileEdit() {
     const toastId = toast.loading('Uploading banner...');
 
     try {
-      const result = await uploadMedia(user?.id || 'me', file, 'image', {
+      // Use profile.id if available, otherwise let backend auto-create profile
+      const targetProfileId = profileId || user?.id || 'me';
+      const result = await uploadMedia(targetProfileId, file, 'image', {
         title: 'Profile Banner',
         description: 'Cover banner for profile',
         privacy: 'public',
@@ -359,7 +408,9 @@ export default function ProfileEdit() {
     const toastId = toast.loading('Uploading reel...');
 
     try {
-      const result = await uploadMedia(user?.id || 'me', file, 'video', {
+      // Use profile.id if available, otherwise let backend auto-create profile
+      const targetProfileId = profileId || user?.id || 'me';
+      const result = await uploadMedia(targetProfileId, file, 'video', {
         title: formData.reelPrivacy === 'public' ? 'Demo Reel' : 'Private Reel',
         description: 'Primary demo reel',
         privacy: formData.reelPrivacy,
@@ -443,20 +494,8 @@ export default function ProfileEdit() {
       try {
         // Backend API integration - call updateMyProfile when user is authenticated
         if (user?.id) {
-          // Build profile update with all editable fields matching backend API
-          const profileUpdate = {
-            displayName: sanitizedData.displayName,
-            username: sanitizedData.username,
-            title: sanitizedData.title,
-            bio: sanitizedData.bio,
-            location: sanitizedData.location,
-            pronouns: sanitizedData.pronouns,
-            roles: sanitizedData.primaryRoles,
-            tags: sanitizedData.skills,
-            avatar: sanitizedData.avatar,
-            bannerUrl: sanitizedData.banner || sanitizedData.bannerUrl,
-            socialLinks: sanitizedData.profileLinks
-          };
+          // Build profile update using helper function
+          const profileUpdate = mapFormToProfileUpdate(sanitizedData);
           
           await updateMyProfile(profileUpdate);
           
