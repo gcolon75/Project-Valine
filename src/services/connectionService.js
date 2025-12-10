@@ -104,3 +104,102 @@ export const followBack = async (targetUserId) => {
   // Follow back is just a follow action
   return followUser(targetUserId);
 };
+
+// ========== NEW SOCIAL GRAPH FUNCTIONS ==========
+
+/**
+ * Follow a user by profile ID
+ * @param {string} profileId - Profile ID to follow
+ * @returns {Promise<Object>} { isFollowing, message }
+ */
+export const followProfile = async (profileId) => {
+  const { data } = await apiClient.post(`/profiles/${profileId}/follow`);
+  return data;
+};
+
+/**
+ * Unfollow a user by profile ID
+ * @param {string} profileId - Profile ID to unfollow
+ * @returns {Promise<Object>} { isFollowing, message }
+ */
+export const unfollowProfile = async (profileId) => {
+  const { data } = await apiClient.delete(`/profiles/${profileId}/follow`);
+  return data;
+};
+
+/**
+ * Get followers list for a profile
+ * @param {string} profileId - Profile ID
+ * @returns {Promise<Object>} { items, count }
+ */
+export const getProfileFollowers = async (profileId) => {
+  const { data } = await apiClient.get(`/profiles/${profileId}/followers`);
+  return data;
+};
+
+/**
+ * Get following list for a profile
+ * @param {string} profileId - Profile ID
+ * @returns {Promise<Object>} { items, count }
+ */
+export const getProfileFollowing = async (profileId) => {
+  const { data } = await apiClient.get(`/profiles/${profileId}/following`);
+  return data;
+};
+
+/**
+ * Get current user's followers
+ * @returns {Promise<Object>} { items, count }
+ */
+export const getMyFollowers = async () => {
+  const { data } = await apiClient.get('/me/followers');
+  return data;
+};
+
+/**
+ * Get current user's following list
+ * @returns {Promise<Object>} { items, count }
+ */
+export const getMyFollowing = async () => {
+  const { data } = await apiClient.get('/me/following');
+  return data;
+};
+
+/**
+ * Block a user by profile ID
+ * @param {string} profileId - Profile ID to block
+ * @returns {Promise<Object>} { isBlocked, message }
+ */
+export const blockProfile = async (profileId) => {
+  const { data } = await apiClient.post(`/profiles/${profileId}/block`);
+  return data;
+};
+
+/**
+ * Unblock a user by profile ID
+ * @param {string} profileId - Profile ID to unblock
+ * @returns {Promise<Object>} { isBlocked, message }
+ */
+export const unblockProfile = async (profileId) => {
+  const { data } = await apiClient.delete(`/profiles/${profileId}/block`);
+  return data;
+};
+
+/**
+ * Get list of users current user has blocked
+ * @returns {Promise<Object>} { items, count }
+ */
+export const getMyBlocks = async () => {
+  const { data } = await apiClient.get('/me/blocks');
+  return data;
+};
+
+/**
+ * Get connection status with a profile
+ * @param {string} profileId - Profile ID to check
+ * @returns {Promise<Object>} { isFollowing, isFollowedBy, isBlocked, isBlockedBy }
+ */
+export const getProfileStatus = async (profileId) => {
+  const { data } = await apiClient.get(`/profiles/${profileId}/status`);
+  return data;
+};
