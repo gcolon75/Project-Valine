@@ -44,6 +44,9 @@ const mapProfileToForm = (profileData) => {
     pronouns: profileData.pronouns || '',
     location: profileData.location || '',
     availabilityStatus: profileData.availabilityStatus || 'available',
+    showPronouns: profileData.showPronouns !== undefined ? profileData.showPronouns : true,
+    showLocation: profileData.showLocation !== undefined ? profileData.showLocation : true,
+    showAvailability: profileData.showAvailability !== undefined ? profileData.showAvailability : true,
     primaryRoles: profileData.roles || [],
     bio: profileData.bio || '',
     languages: profileData.languages || [],
@@ -78,6 +81,10 @@ const mapFormToProfileUpdate = (formData) => {
     bio: formData.bio,
     location: formData.location,
     pronouns: formData.pronouns,
+    availabilityStatus: formData.availabilityStatus,
+    showPronouns: formData.showPronouns,
+    showLocation: formData.showLocation,
+    showAvailability: formData.showAvailability,
     roles: formData.primaryRoles,
     tags: formData.skills,
     avatar: formData.avatar,
@@ -111,6 +118,9 @@ export default function ProfileEdit() {
     pronouns: '',
     location: '',
     availabilityStatus: 'available',
+    showPronouns: true,
+    showLocation: true,
+    showAvailability: true,
     primaryRoles: [],
     bio: '',
     languages: [],
@@ -724,6 +734,15 @@ export default function ProfileEdit() {
                       className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="they/them"
                     />
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showPronouns}
+                        onChange={(e) => handleChange('showPronouns', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Location">
@@ -734,6 +753,15 @@ export default function ProfileEdit() {
                       className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Seattle, WA, USA"
                     />
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showLocation}
+                        onChange={(e) => handleChange('showLocation', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Availability Status">
@@ -746,6 +774,15 @@ export default function ProfileEdit() {
                       <option value="not-available">Not Available</option>
                       <option value="booking">Accepting Bookings</option>
                     </select>
+                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={formData.showAvailability}
+                        onChange={(e) => handleChange('showAvailability', e.target.checked)}
+                        className="rounded border-neutral-300 dark:border-neutral-600"
+                      />
+                      Show on profile
+                    </label>
                   </FormField>
 
                   <FormField label="Primary Roles">

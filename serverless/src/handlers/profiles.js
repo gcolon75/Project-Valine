@@ -770,7 +770,14 @@ export const updateMyProfile = async (event) => {
       budgetMin,
       budgetMax,
       onboardingComplete,
-      profileComplete
+      profileComplete,
+      // New profile fields
+      pronouns,
+      location,
+      availabilityStatus,
+      showPronouns,
+      showLocation,
+      showAvailability
     } = body;
 
     // Map frontend fields to backend fields with explicit backend names taking precedence
@@ -935,6 +942,13 @@ export const updateMyProfile = async (event) => {
       if (bannerUrl !== undefined) {profileUpdateData.bannerUrl = bannerUrl;}
       if (budgetMin !== undefined) {profileUpdateData.budgetMin = budgetMin;}
       if (budgetMax !== undefined) {profileUpdateData.budgetMax = budgetMax;}
+      // New profile fields
+      if (pronouns !== undefined) {profileUpdateData.pronouns = pronouns;}
+      if (location !== undefined) {profileUpdateData.location = location;}
+      if (availabilityStatus !== undefined) {profileUpdateData.availabilityStatus = availabilityStatus;}
+      if (showPronouns !== undefined) {profileUpdateData.showPronouns = showPronouns;}
+      if (showLocation !== undefined) {profileUpdateData.showLocation = showLocation;}
+      if (showAvailability !== undefined) {profileUpdateData.showAvailability = showAvailability;}
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema
@@ -958,6 +972,12 @@ export const updateMyProfile = async (event) => {
             bannerUrl: bannerUrl || null,
             budgetMin: budgetMin || null,
             budgetMax: budgetMax || null,
+            pronouns: pronouns || null,
+            location: location || null,
+            availabilityStatus: availabilityStatus || null,
+            showPronouns: showPronouns !== undefined ? showPronouns : true,
+            showLocation: showLocation !== undefined ? showLocation : true,
+            showAvailability: showAvailability !== undefined ? showAvailability : true,
           },
         });
         console.log('[updateMyProfile] PROFILE CREATED', {

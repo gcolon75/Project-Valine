@@ -10,7 +10,7 @@ import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // URL validation helper to prevent XSS attacks
@@ -398,10 +398,39 @@ export default function Profile() {
           )}
           {/* Professional title shown last in header */}
           {displayData.title && (
-            <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-4">
+            <p className="text-neutral-700 dark:text-neutral-300 font-medium text-sm mb-2">
               {displayData.title}
             </p>
           )}
+          
+          {/* Additional profile details with visibility toggles */}
+          <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            {displayData.pronouns && displayData.showPronouns !== false && (
+              <span className="flex items-center gap-1">
+                <User className="w-4 h-4" />
+                {displayData.pronouns}
+              </span>
+            )}
+            {displayData.location && displayData.showLocation !== false && (
+              <span className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                {displayData.location}
+              </span>
+            )}
+            {displayData.availabilityStatus && displayData.showAvailability !== false && (
+              <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                displayData.availabilityStatus === 'available' 
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  : displayData.availabilityStatus === 'booking'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+              }`}>
+                <Briefcase className="w-3 h-3" />
+                {displayData.availabilityStatus === 'available' ? 'Available' : 
+                 displayData.availabilityStatus === 'booking' ? 'Accepting Bookings' : 'Not Available'}
+              </span>
+            )}
+          </div>
 
           {/* Stats */}
           <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
