@@ -82,17 +82,55 @@ Over the past development session, the autonomous agent has implemented **8 out 
   - Like and save posts
   - Comment on posts
   - Share posts
+  - Request access to private/gated posts
   
 - ✅ **Profile Management**
   - View own profile
   - View other user profiles
   - Edit profile information
   - Upload avatar (if backend supports)
+  - Manage education and experience (CRUD)
   
 - ✅ **Settings**
   - Toggle dark mode
   - Update preferences
   - Manage account settings
+
+### Profiles & Posts (post-PR #349)
+Profile posts are now fully integrated with robust backend filtering and proper auth handling:
+
+- ✅ **Profile Posts Fetching**
+  - Profile posts fetched via `GET /posts?authorId=<userId>` using `listPosts()` helper
+  - Backend filters posts by `authorId` parameter
+  - Posts include complete author details (displayName, username, avatar)
+  - Media attachments resolved with visibility, hasAccess, accessRequestStatus
+  
+- ✅ **Profile Stats**
+  - Stats row uses `posts.length` from live API data as primary count
+  - Falls back to `_count.posts` when posts haven't loaded yet
+  - Empty state correctly shown when API returns `[]`
+  
+- ✅ **Banner & Primary Reel Uploads**
+  - Use `uploadMedia(userId || 'me', ...)` to avoid auth race conditions
+  - Backend returns `bannerUrl` field in `GET /me/profile` response
+  - "You must be logged in" message only shown for real 401/403 responses
+  - No fake auth errors during page load/hydration
+  
+- ✅ **Create Post Auth UX**
+  - Explicit loading state (`isInitialized`) from AuthContext
+  - Shows skeleton/spinner while auth initializes
+  - Shows full form only when authenticated
+  - Shows "Please log in" prompt only after auth initialization completes
+  
+- ✅ **PostCard Features**
+  - Avatar rendering with graceful fallback to neutral placeholder
+  - "Request Access" button for non-public posts without access
+  - "Request Sent" state when `accessRequestStatus === 'pending'`
+  - Consistent layout without jumps or flickers
+  
+- ✅ **Metrics & Analytics Gating**
+  - Observability calls gated behind `VITE_ENVIRONMENT === 'production'` or `VITE_OBSERVABILITY_ENABLED === 'true'`
+  - No analytics overhead in development/staging by default
 
 ### What's Happening Behind the Scenes
 
