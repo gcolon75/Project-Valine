@@ -43,24 +43,28 @@ export default function Post() {
   const { user, isInitialized } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileId, setProfileId] = useState(null);
+  const [profileError, setProfileError] = useState(false);
   
   // Fetch profile ID for media uploads
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user?.id && !profileId) {
+      // Only fetch if we have a user, don't have a profile ID yet, and haven't errored
+      if (user?.id && !profileId && !profileError) {
         try {
           const profile = await getMyProfile();
           if (profile?.id) {
             setProfileId(profile.id);
+            setProfileError(false);
           }
         } catch (error) {
           console.warn('Failed to fetch profile for media upload:', error);
-          // Will fall back to user.id if profile fetch fails
+          setProfileError(true);
+          // Profile will be auto-created on first upload attempt by backend
         }
       }
     };
     fetchProfile();
-  }, [user?.id, profileId]);
+  }, [user?.id, profileId, profileError]);
   
   // Upload state
   const [selectedFile, setSelectedFile] = useState(null);
@@ -150,7 +154,7 @@ export default function Post() {
     // Backend will auto-create profile if it doesn't exist
     const targetProfileId = profileId || user?.id;
     if (!targetProfileId) {
-      setUploadError('Profile not found. Please complete your profile first.');
+      setUploadError('Not logged in. Please log in to upload files.');
       return;
     }
 

@@ -20,25 +20,29 @@ export default function PostComposer() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [visibility, setVisibility] = useState("PUBLIC");
   const [profileId, setProfileId] = useState(null);
+  const [profileError, setProfileError] = useState(false);
   const fileInputRef = useRef(null);
 
   // Fetch profile ID for media uploads
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user?.id && !profileId) {
+      // Only fetch if we have a user, don't have a profile ID yet, and haven't errored
+      if (user?.id && !profileId && !profileError) {
         try {
           const profile = await getMyProfile();
           if (profile?.id) {
             setProfileId(profile.id);
+            setProfileError(false);
           }
         } catch (error) {
           console.warn('Failed to fetch profile for media upload:', error);
-          // Will fall back to user.id if profile fetch fails
+          setProfileError(true);
+          // Profile will be auto-created on first upload attempt by backend
         }
       }
     };
     fetchProfile();
-  }, [user?.id, profileId]);
+  }, [user?.id, profileId, profileError]);
 
   const addTag = () => {
     const t = tagInput.trim();

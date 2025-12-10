@@ -216,6 +216,7 @@ export default function Profile() {
     const fetchPosts = async () => {
       // Use userId (user's ID) not profile.id (profile's DB ID) for posts filtering
       // Posts are created with authorId = user.id, not profile.id
+      // Fallback to profile.id only for legacy profiles where userId might not be set
       const authorId = profile?.userId || profile?.id;
       if (!authorId) return;
       
