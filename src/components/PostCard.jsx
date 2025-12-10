@@ -83,7 +83,22 @@ export default function PostCard({ post }) {
     <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
+        {post.author.avatar ? (
+          <img 
+            src={post.author.avatar} 
+            alt={post.author.name}
+            className="h-8 w-8 rounded-full object-cover"
+            onError={(e) => {
+              // Fallback to placeholder on error
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+        ) : null}
+        <div 
+          className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" 
+          style={{ display: post.author.avatar ? 'none' : 'block' }}
+        />
         <div className="min-w-0">
           <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
           <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>

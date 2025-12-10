@@ -239,26 +239,30 @@ export default function ProfileEdit() {
   };
 
   const handleBannerUpload = async (file, onProgress) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to upload media');
-      return;
-    }
-
+    // Don't check auth here - let the API call handle 401/403
+    // This prevents flaky "not logged in" errors during auth state initialization
+    
     setUploadingBanner(true);
     const toastId = toast.loading('Uploading banner...');
 
     try {
-      const result = await uploadMedia(user.id, file, 'image', {
+      const result = await uploadMedia(user?.id || 'me', file, 'image', {
         title: 'Profile Banner',
         description: 'Cover banner for profile',
         privacy: 'public',
         onProgress,
       });
 
-      // Update form data with the media URL (when available from backend)
-      // For now, use a temporary URL
-      const tempUrl = URL.createObjectURL(file);
-      handleChange('banner', tempUrl);
+      // Update form data with the actual media URL from backend
+      if (result?.url || result?.viewUrl) {
+        const bannerUrl = result.url || result.viewUrl;
+        handleChange('banner', bannerUrl);
+        handleChange('bannerUrl', bannerUrl);
+      } else {
+        // Fallback to temporary URL if backend doesn't return URL yet
+        const tempUrl = URL.createObjectURL(file);
+        handleChange('banner', tempUrl);
+      }
 
       // Track media upload
       const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
@@ -267,7 +271,14 @@ export default function ProfileEdit() {
       toast.success('Banner uploaded successfully!', { id: toastId });
     } catch (error) {
       console.error('Banner upload failed:', error);
-      toast.error(error.message || 'Failed to upload banner', { id: toastId });
+      
+      // Only show "not logged in" error if we actually got a 401/403 from the server
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.error('You must be logged in to upload media', { id: toastId });
+      } else {
+        toast.error(error.message || 'Failed to upload banner', { id: toastId });
+      }
       throw error;
     } finally {
       setUploadingBanner(false);
@@ -275,29 +286,50 @@ export default function ProfileEdit() {
   };
 
   const handleReelUpload = async (file, onProgress) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to upload media');
-      return;
-    }
-
+    // Don't check auth here - let the API call handle 401/403
+    // This prevents flaky "not logged in" errors during auth state initialization
+    
     setUploadingReel(true);
     const toastId = toast.loading('Uploading reel...');
 
     try {
-      const result = await uploadMedia(user.id, file, 'video', {
+      const result = await uploadMedia(user?.id || 'me', file, 'video', {
         title: formData.reelPrivacy === 'public' ? 'Demo Reel' : 'Private Reel',
         description: 'Primary demo reel',
         privacy: formData.reelPrivacy,
         onProgress,
       });
 
-      // Update form data with the media URL (when available from backend)
-      // For now, use a temporary URL
-      const tempUrl = URL.createObjectURL(file);
-      handleChange('primaryReel', tempUrl);
+      // Update form data with the actual media URL from backend
+      if (result?.url || result?.viewUrl) {
+        const reelUrl = result.url || result.viewUrl;
+        handleChange('primaryReel', reelUrl);
+      } else {
+        // Fallback to temporary URL if backend doesn't return URL yet
+        const tempUrl = URL.createObjectURL(file);
+        handleChange('primaryReel', tempUrl);
+      }
 
       // Track media upload
       const sizeBucket = file.size < 10 * 1024 * 1024 ? 'small' : file.size < 50 * 1024 * 1024 ? 'medium' : 'large';
+      trackMediaUpload('video', sizeBucket);
+
+      toast.success('Reel uploaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Reel upload failed:', error);
+      
+      // Only show "not logged in" error if we actually got a 401/403 from the server
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.error('You must be logged in to upload media', { id: toastId });
+      } else {
+        toast.error(error.message || 'Failed to upload reel', { id: toastId });
+      }
+      throw error;
+    } finally {
+      setUploadingReel(false);
+    }
+  };
       trackMediaUpload('video', sizeBucket);
 
       toast.success('Reel uploaded successfully!', { id: toastId });
@@ -415,7 +447,6 @@ export default function ProfileEdit() {
 
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: User },
-    { id: 'media', label: 'Media', icon: Film },
     { id: 'experience', label: 'Experience', icon: Briefcase },
     { id: 'education', label: 'Education', icon: GraduationCap }
   ];

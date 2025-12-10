@@ -8,7 +8,10 @@
 class ObservabilityClient {
   constructor() {
     this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    this.enabled = import.meta.env.VITE_OBSERVABILITY_ENABLED !== 'false';
+    // Only enable observability in development or when explicitly enabled
+    // This prevents requests to /internal/observability/metrics in production
+    this.enabled = import.meta.env.VITE_OBSERVABILITY_ENABLED === 'true' || 
+                   import.meta.env.DEV;
     this.batchSize = 10;
     this.flushInterval = 5000; // 5 seconds
     this.queue = [];
@@ -16,6 +19,8 @@ class ObservabilityClient {
 
     if (this.enabled) {
       this.startBatchProcessor();
+    } else {
+      console.log('[ObservabilityClient] Disabled in production (set VITE_OBSERVABILITY_ENABLED=true to enable)');
     }
   }
 
