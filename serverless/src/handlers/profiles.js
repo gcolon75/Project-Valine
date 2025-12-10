@@ -1361,10 +1361,12 @@ export const deleteProfile = async (event) => {
 export const listMyExperience = async (event) => {
   try {
     const userId = getUserFromEvent(event);
+    if (!userId) {
       return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
+    if (!prisma) {
       console.error('[listMyExperience] Prisma unavailable');
       return error(503, 'Database unavailable');
     }
@@ -1374,6 +1376,7 @@ export const listMyExperience = async (event) => {
       where: { userId },
     });
 
+    if (!profile) {
       return json([]);
     }
 
@@ -1400,16 +1403,19 @@ export const listMyExperience = async (event) => {
 export const createMyExperience = async (event) => {
   try {
     const userId = getUserFromEvent(event);
+    if (!userId) {
       return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
     const { title, role, company, year, description, orderIndex, metadata } = body;
 
+    if (!title || !role) {
       return error(400, 'title and role are required');
     }
 
     const prisma = getPrisma();
+    if (!prisma) {
       console.error('[createMyExperience] Prisma unavailable');
       return error(503, 'Database unavailable');
     }
@@ -1419,6 +1425,7 @@ export const createMyExperience = async (event) => {
       where: { userId },
     });
 
+    if (!profile) {
       return error(404, 'Profile not found');
     }
 
@@ -1450,10 +1457,12 @@ export const createMyExperience = async (event) => {
 export const updateMyExperience = async (event) => {
   try {
     const userId = getUserFromEvent(event);
+    if (!userId) {
       return error(401, 'Unauthorized');
     }
 
     const { id } = event.pathParameters || {};
+    if (!id) {
       return error(400, 'id is required');
     }
 
@@ -1461,6 +1470,7 @@ export const updateMyExperience = async (event) => {
     const { title, role, company, year, description, orderIndex, metadata } = body;
 
     const prisma = getPrisma();
+    if (!prisma) {
       console.error('[updateMyExperience] Prisma unavailable');
       return error(503, 'Database unavailable');
     }
@@ -1473,6 +1483,7 @@ export const updateMyExperience = async (event) => {
       },
     });
 
+    if (!credit) {
       return error(404, 'Experience not found');
     }
 
@@ -1509,14 +1520,17 @@ export const updateMyExperience = async (event) => {
 export const deleteMyExperience = async (event) => {
   try {
     const userId = getUserFromEvent(event);
+    if (!userId) {
       return error(401, 'Unauthorized');
     }
 
     const { id } = event.pathParameters || {};
+    if (!id) {
       return error(400, 'id is required');
     }
 
     const prisma = getPrisma();
+    if (!prisma) {
       console.error('[deleteMyExperience] Prisma unavailable');
       return error(503, 'Database unavailable');
     }
@@ -1529,6 +1543,7 @@ export const deleteMyExperience = async (event) => {
       },
     });
 
+    if (!credit) {
       return error(404, 'Experience not found');
     }
 

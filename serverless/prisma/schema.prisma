@@ -237,7 +237,7 @@ model Profile {
   bio                 String?
   roles               String[]
   tags                String[]
-  location            Json?
+  location            String?
   privacy             Json            @default("{}")
   socialLinks         Json?
   createdAt           DateTime        @default(now())
