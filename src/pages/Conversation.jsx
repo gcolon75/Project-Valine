@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
-import { getMessages, sendMessage } from '../services/messagesService';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { ArrowLeft, Send, Loader2, X } from 'lucide-react';
+import { getThread, sendThreadMessage } from '../services/messagesService';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Conversation() {
-  const { id: conversationId } = useParams();
+  const { id: threadId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
   
@@ -15,32 +16,29 @@ export default function Conversation() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [participant, setParticipant] = useState(null);
+  const [otherUser, setOtherUser] = useState(null);
+  const [forwardedPost, setForwardedPost] = useState(location.state?.forwardedPost || null);
 
-  // Fetch messages
+  // Fetch thread and messages
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!conversationId) return;
+    const fetchThread = async () => {
+      if (!threadId) return;
       
       setLoading(true);
       try {
-        const data = await getMessages(conversationId);
+        const data = await getThread(threadId);
         setMessages(data.messages || []);
-        // Extract participant info from first message if available
-        if (data.messages && data.messages.length > 0) {
-          const otherUser = data.messages.find(m => m.sender?.id !== user?.id)?.sender;
-          if (otherUser) setParticipant(otherUser);
-        }
+        setOtherUser(data.thread?.otherUser || null);
       } catch (err) {
-        console.error('Failed to load messages:', err);
+        console.error('Failed to load thread:', err);
         toast.error('Failed to load messages');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMessages();
-  }, [conversationId, user?.id]);
+    fetchThread();
+  }, [threadId]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -49,21 +47,30 @@ export default function Conversation() {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !forwardedPost) || sending) return;
 
     setSending(true);
     try {
-      const result = await sendMessage(conversationId, newMessage.trim());
+      const result = await sendThreadMessage(
+        threadId, 
+        newMessage.trim() || (forwardedPost ? `Shared a post` : ''), 
+        forwardedPost?.id || null
+      );
       if (result?.message) {
         setMessages(prev => [...prev, result.message]);
       }
       setNewMessage('');
+      setForwardedPost(null);
     } catch (err) {
       console.error('Failed to send message:', err);
       toast.error('Failed to send message');
     } finally {
       setSending(false);
     }
+  };
+
+  const handleRemoveForwardedPost = () => {
+    setForwardedPost(null);
   };
 
   const formatTime = (dateString) => {
@@ -92,15 +99,15 @@ export default function Conversation() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         
-        {participant && (
+        {otherUser && (
           <Link 
-            to={`/profile/${participant.username}`}
+            to={`/profile/${otherUser.username || otherUser.id}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            {participant.avatar ? (
+            {otherUser.avatar ? (
               <img 
-                src={participant.avatar} 
-                alt={participant.displayName}
+                src={otherUser.avatar} 
+                alt={otherUser.displayName}
                 className="w-10 h-10 rounded-full"
               />
             ) : (
@@ -108,9 +115,11 @@ export default function Conversation() {
             )}
             <div>
               <div className="font-semibold text-neutral-900 dark:text-white">
-                {participant.displayName}
+                {otherUser.displayName}
               </div>
-              <div className="text-sm text-neutral-500">@{participant.username}</div>
+              {otherUser.title && (
+                <div className="text-sm text-neutral-500">{otherUser.title}</div>
+              )}
             </div>
           </Link>
         )}
@@ -141,7 +150,29 @@ export default function Conversation() {
                       : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700'
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  {/* Forwarded post preview */}
+                  {message.forwardedPost && (
+                    <div className="mb-2 p-3 rounded-lg bg-white/10 border border-white/20">
+                      <div className="text-xs opacity-75 mb-1">Shared post</div>
+                      <div className="text-sm font-medium mb-1 line-clamp-2">
+                        {message.forwardedPost.title}
+                      </div>
+                      {message.forwardedPost.body && (
+                        <div className="text-xs opacity-90 mb-2 line-clamp-2">
+                          {message.forwardedPost.body}
+                        </div>
+                      )}
+                      <div className="text-xs opacity-75">
+                        by {message.forwardedPost.author?.displayName || message.forwardedPost.author?.name || 'Unknown'}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Message body */}
+                  {message.body && (
+                    <p className="text-sm">{message.body}</p>
+                  )}
+                  
                   <p className={`text-xs mt-1 ${isOwn ? 'text-white/70' : 'text-neutral-500'}`}>
                     {formatTime(message.createdAt)}
                   </p>
@@ -156,28 +187,65 @@ export default function Conversation() {
       {/* Input */}
       <form 
         onSubmit={handleSend}
-        className="p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-b-xl flex gap-2"
+        className="p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-b-xl"
       >
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
-          disabled={sending}
-        />
-        <button
-          type="submit"
-          disabled={!newMessage.trim() || sending}
-          className="px-4 py-2 bg-[#0CCE6B] text-white rounded-full font-semibold hover:bg-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        >
-          {sending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-          <span className="hidden sm:inline">Send</span>
-        </button>
+        {/* Forwarded post preview in composer */}
+        {forwardedPost && (
+          <div className="mb-3 p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  Forwarding post
+                </div>
+                <div className="text-sm font-medium text-neutral-900 dark:text-white mb-1 line-clamp-2">
+                  {forwardedPost.title}
+                </div>
+                {forwardedPost.body && (
+                  <div className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
+                    {forwardedPost.body}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveForwardedPost}
+                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded transition-colors flex-shrink-0"
+                aria-label="Remove forwarded post"
+              >
+                <X className="w-4 h-4 text-neutral-500" />
+              </button>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex gap-2">
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder={forwardedPost ? "Add a message (optional)..." : "Type a message..."}
+            className="flex-1 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] resize-none min-h-[44px] max-h-[120px]"
+            disabled={sending}
+            rows="1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            disabled={(!newMessage.trim() && !forwardedPost) || sending}
+            className="px-4 py-2 bg-[#0CCE6B] text-white rounded-full font-semibold hover:bg-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 self-end"
+          >
+            {sending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">Send</span>
+          </button>
+        </div>
       </form>
     </div>
   );
