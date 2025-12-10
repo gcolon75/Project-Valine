@@ -500,6 +500,8 @@ export default function ProfileEdit() {
     }
   };
 
+  // Sections configuration - Media section available only when feature flag is enabled
+  // Set VITE_ENABLE_PROFILE_MEDIA=true in .env to show Media section
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: User },
     { id: 'experience', label: 'Experience', icon: Briefcase },
@@ -923,8 +925,13 @@ export default function ProfileEdit() {
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       Add your professional experience, productions, and credits
                     </p>
+                    
+                    {/* Note: Full experience form similar to EducationForm will be added in future update */}
                     <button 
-                      onClick={() => toast.info('Experience form coming soon! Use the full experience management flow.')}
+                      onClick={() => {
+                        // Stub implementation - will call handleAddExperience when form is built
+                        toast.info('Experience form coming soon! Full CRUD handlers are ready.');
+                      }}
                       className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
                     >
                       <Plus className="w-5 h-5" />
