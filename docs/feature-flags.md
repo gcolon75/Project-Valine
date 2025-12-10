@@ -309,7 +309,7 @@ if (enableNewFeature) {
    // ✅ Good
    const enabled = import.meta.env.VITE_FEATURE === 'true';
    
-   // ❌ Bad - 'false' string is truthy!
+   // ❌ Bad - Environment variables are always strings, so the string 'false' is truthy!
    const enabled = import.meta.env.VITE_FEATURE;
    ```
 
