@@ -264,3 +264,43 @@ export const deleteEducation = async (id) => {
   const { data } = await apiClient.delete(`/me/profile/education/${id}`);
   return data;
 };
+
+/**
+ * List experience entries for the current user
+ * @returns {Promise<Array>} Array of experience entries
+ */
+export const listExperience = async () => {
+  const { data } = await apiClient.get('/me/profile/experience');
+  return data;
+};
+
+/**
+ * Create a new experience entry
+ * @param {Object} experience - Experience data
+ * @returns {Promise<Object>} Created experience entry
+ */
+export const createExperience = async (experience) => {
+  const { data } = await apiClient.post('/me/profile/experience', experience);
+  return data;
+};
+
+/**
+ * Update an experience entry
+ * @param {string} id - Experience entry ID
+ * @param {Object} updates - Experience updates
+ * @returns {Promise<Object>} Updated experience entry
+ */
+export const updateExperience = async (id, updates) => {
+  const { data } = await apiClient.put(`/me/profile/experience/${id}`, updates);
+  return data;
+};
+
+/**
+ * Delete an experience entry
+ * @param {string} id - Experience entry ID
+ * @returns {Promise<Object>} Success response
+ */
+export const deleteExperience = async (id) => {
+  const { data } = await apiClient.delete(`/me/profile/experience/${id}`);
+  return data;
+};

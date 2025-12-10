@@ -11,7 +11,7 @@ import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { getMyProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, createEducation, updateEducation, deleteEducation } from '../services/profileService';
+import { getMyProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, createEducation, updateEducation, deleteEducation, listExperience, createExperience, updateExperience, deleteExperience } from '../services/profileService';
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
@@ -129,6 +129,12 @@ export default function ProfileEdit() {
   const [editingEducation, setEditingEducation] = useState(null);
   const [showEducationForm, setShowEducationForm] = useState(false);
 
+  // Experience state
+  const [experienceList, setExperienceList] = useState([]);
+  const [isLoadingExperience, setIsLoadingExperience] = useState(false);
+  const [editingExperience, setEditingExperience] = useState(null);
+  const [showExperienceForm, setShowExperienceForm] = useState(false);
+
   // Load education on mount
   useEffect(() => {
     const loadEducation = async () => {
@@ -146,6 +152,25 @@ export default function ProfileEdit() {
       }
     };
     loadEducation();
+  }, [user?.id]);
+
+  // Load experience on mount
+  useEffect(() => {
+    const loadExperience = async () => {
+      if (user?.id) {
+        setIsLoadingExperience(true);
+        try {
+          const data = await listExperience();
+          const normalizedExperience = Array.isArray(data) ? data : (data?.experience || []);
+          setExperienceList(normalizedExperience);
+        } catch (error) {
+          console.error('Failed to load experience:', error);
+        } finally {
+          setIsLoadingExperience(false);
+        }
+      }
+    };
+    loadExperience();
   }, [user?.id]);
 
   const [showImageCropper, setShowImageCropper] = useState(false);
@@ -230,6 +255,47 @@ export default function ProfileEdit() {
       toast.success('Education removed!');
     } catch (error) {
       toast.error('Failed to remove education');
+    }
+  };
+
+  const experienceErrorMessage = (error, fallback) =>
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
+
+  // Experience CRUD handlers
+  const handleAddExperience = async (experienceData) => {
+    try {
+      const result = await createExperience(experienceData);
+      const created = result?.experience || result;
+      setExperienceList(prev => [...prev, created]);
+      setShowExperienceForm(false);
+      toast.success('Experience added!');
+    } catch (error) {
+      const message = experienceErrorMessage(error, 'Failed to add experience');
+      toast.error(message);
+    }
+  };
+
+  const handleUpdateExperience = async (id, updates) => {
+    try {
+      const result = await updateExperience(id, updates);
+      const updated = result?.experience || result;
+      setExperienceList(prev => prev.map(e => e.id === id ? updated : e));
+      setEditingExperience(null);
+      toast.success('Experience updated!');
+    } catch (error) {
+      const message = experienceErrorMessage(error, 'Failed to update experience');
+      toast.error(message);
+    }
+  };
+
+  const handleDeleteExperience = async (id) => {
+    try {
+      await deleteExperience(id);
+      setExperienceList(prev => prev.filter(e => e.id !== id));
+      toast.success('Experience removed!');
+    } catch (error) {
+      const message = experienceErrorMessage(error, 'Failed to delete experience');
+      toast.error(message);
     }
   };
 
@@ -756,8 +822,8 @@ export default function ProfileEdit() {
             </>
           )}
 
-          {/* Media Section */}
-          {activeSection === 'media' && (
+          {/* Media Section - Feature flagged for future release */}
+          {import.meta.env.VITE_ENABLE_PROFILE_MEDIA === 'true' && activeSection === 'media' && (
             <FormSection title="Media & Portfolio" icon={Film}>
               <div className="space-y-6">
                 <div>
@@ -814,13 +880,58 @@ export default function ProfileEdit() {
           {activeSection === 'experience' && (
             <FormSection title="Experience & Credits" icon={Briefcase}>
               <div className="space-y-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Add your professional experience, productions, and credits
-                </p>
-                <button className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors">
-                  <Plus className="w-5 h-5" />
-                  <span>Add Credit</span>
-                </button>
+                {isLoadingExperience ? (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading experience...</p>
+                ) : (
+                  <>
+                    {/* Existing Experience Entries */}
+                    {experienceList.length > 0 && (
+                      <div className="space-y-4">
+                        {experienceList.map((exp) => (
+                          <div 
+                            key={exp.id} 
+                            className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-medium text-neutral-900 dark:text-white">{exp.title}</h4>
+                                <p className="text-neutral-600 dark:text-neutral-400">{exp.company}</p>
+                                {(exp.startDate || exp.endDate) && (
+                                  <p className="text-sm text-neutral-500">
+                                    {exp.startDate || '?'} - {exp.endDate || 'Present'}
+                                  </p>
+                                )}
+                                {exp.description && (
+                                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{exp.description}</p>
+                                )}
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleDeleteExperience(exp.id)}
+                                  className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  aria-label="Delete experience"
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Add your professional experience, productions, and credits
+                    </p>
+                    <button 
+                      onClick={() => toast.info('Experience form coming soon! Use the full experience management flow.')}
+                      className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Add Experience</span>
+                    </button>
+                  </>
+                )}
               </div>
             </FormSection>
           )}
