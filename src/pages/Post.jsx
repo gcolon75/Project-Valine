@@ -39,7 +39,7 @@ const MAX_FILE_SIZES = {
 
 export default function Post() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Upload state
@@ -307,6 +307,38 @@ export default function Post() {
   };
   
   const isFormValid = formData.contentType && formData.title.trim() && formData.tags.length > 0;
+  
+  // Show loading state while auth is initializing
+  if (!isInitialized) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-neutral-600 dark:text-neutral-400">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show login prompt if not authenticated after initialization
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="text-center py-12">
+          <h1 className="text-3xl font-bold mb-4 text-neutral-900 dark:text-neutral-100">Create New Post</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+            Please log in to create a post.
+          </p>
+          <button
+            onClick={() => navigate('/login')}
+            className="px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">

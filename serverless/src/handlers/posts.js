@@ -180,7 +180,7 @@ export const createPost = async (event) => {
 
 export const listPosts = async (event) => {
   try {
-    const { limit = '20', cursor } = event.queryStringParameters || {};
+    const { limit = '20', cursor, authorId } = event.queryStringParameters || {};
     
     const prisma = getPrisma();
 
@@ -190,7 +190,14 @@ export const listPosts = async (event) => {
       return json([]);
     }
 
+    // Build where clause
+    const where = {};
+    if (authorId) {
+      where.authorId = authorId;
+    }
+
     const posts = await prisma.post.findMany({
+      where,
       take: parseInt(limit),
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: 'desc' },
