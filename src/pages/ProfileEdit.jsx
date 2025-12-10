@@ -48,6 +48,9 @@ const mapProfileToForm = (profileData) => {
     bio: profileData.bio || '',
     languages: profileData.languages || [],
     avatar: profileData.avatar || null,
+    // Note: Both banner and bannerUrl are maintained for compatibility
+    // banner: Display URL used by UI components
+    // bannerUrl: API field name expected by backend
     banner: profileData.bannerUrl || null,
     bannerUrl: profileData.bannerUrl || null,
     agency: profileData.agency || { name: '', contact: '' },
@@ -91,7 +94,7 @@ export default function ProfileEdit() {
   const BACKEND_LINKS_ENABLED = import.meta.env.VITE_ENABLE_PROFILE_LINKS_API === 'true';
   
   // Loading state
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
   // Profile state - stores the full profile object from backend
   const [profile, setProfile] = useState(null);
@@ -135,7 +138,8 @@ export default function ProfileEdit() {
   // Load profile from backend on mount (only once)
   useEffect(() => {
     const loadProfile = async () => {
-      if (user?.id) {
+      // Only load if we have a user and haven't loaded yet
+      if (user?.id && !profile && !initialFormData) {
         setIsLoadingProfile(true);
         try {
           const profileData = await getMyProfile();
@@ -151,14 +155,12 @@ export default function ProfileEdit() {
             setFormData(mappedFormData);
             
             // Set initial form data for analytics (only once)
-            if (!initialFormData) {
-              setInitialFormData(mappedFormData);
-            }
+            setInitialFormData(mappedFormData);
           }
         } catch (error) {
           console.error('Failed to load profile from backend:', error);
-          // If profile fetch fails, initialize with empty form
-          toast.error('Failed to load profile data. Please try again.');
+          // If profile fetch fails, form remains empty until retry
+          toast.error('Failed to load profile data');
         } finally {
           setIsLoadingProfile(false);
         }
@@ -166,9 +168,7 @@ export default function ProfileEdit() {
     };
 
     loadProfile();
-    // Only run once on mount when user.id is available
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, profile, initialFormData]);
 
   // Education state
   const [educationList, setEducationList] = useState([]);
