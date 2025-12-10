@@ -5,6 +5,23 @@ export const getFeedPosts = async (limit = 20, cursor = null) => {
   return data?.posts ?? data;
 };
 
+/**
+ * List posts with optional filtering
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Maximum number of posts to return
+ * @param {string} options.cursor - Pagination cursor
+ * @param {string} options.authorId - Filter by author user ID
+ * @returns {Promise<Array>} Array of posts
+ */
+export const listPosts = async ({ limit = 20, cursor = null, authorId = null } = {}) => {
+  const params = { limit };
+  if (cursor) params.cursor = cursor;
+  if (authorId) params.authorId = authorId;
+  
+  const { data } = await apiClient.get('/posts', { params });
+  return data?.posts ?? data;
+};
+
 export const createPost = async (postData) => {
   const { data } = await apiClient.post('/posts', postData);
   return data;

@@ -253,12 +253,8 @@ export default function Post() {
       return;
     }
     
-    // Check if user is authenticated
-    if (!user?.id) {
-      setErrors({ submit: 'Please log in to create a post' });
-      toast.error('Please log in to create a post');
-      return;
-    }
+    // Don't check auth state here - let the API handle 401/403
+    // This prevents flaky "not logged in" messages during auth initialization
     
     setIsSubmitting(true);
     
@@ -269,7 +265,7 @@ export default function Post() {
       // Prepare post data
       const postPayload = {
         content: formData.description || formData.title,
-        authorId: user.id,
+        authorId: user?.id, // Let backend validate this
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
@@ -290,6 +286,7 @@ export default function Post() {
       const status = error?.response?.status;
       let errorMessage = 'Failed to create post';
       
+      // Only show "Please log in" if we got 401 from server
       if (status === 401) {
         errorMessage = 'Please log in to create a post';
       } else if (status === 400) {

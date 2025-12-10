@@ -174,6 +174,15 @@ class PerformanceMonitor {
    * @param {object} metrics - Metrics to send
    */
   async sendToObservability(metrics) {
+    // Only send metrics in development or when explicitly enabled
+    const enabled = import.meta.env.VITE_OBSERVABILITY_ENABLED === 'true' || 
+                    import.meta.env.DEV;
+    
+    if (!enabled) {
+      // Silently skip in production unless explicitly enabled
+      return;
+    }
+    
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const response = await fetch(`${apiUrl}/internal/observability/metrics`, {

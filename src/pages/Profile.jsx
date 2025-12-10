@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
 import { followUser, sendConnectionRequest, unfollowUser, getConnectionStatus } from '../services/connectionService';
+import { listPosts } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
@@ -69,6 +70,10 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Posts state
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
   
   // Connection/Follow states
   const [connectionStatus, setConnectionStatus] = useState({
@@ -206,6 +211,29 @@ export default function Profile() {
     fetchProfile();
   }, [id, user, isOwnProfile]);
 
+  // Fetch posts for the profile
+  useEffect(() => {
+    const fetchPosts = async () => {
+      if (!profile?.id) return;
+      
+      setLoadingPosts(true);
+      try {
+        const postsData = await listPosts({ 
+          authorId: profile.id, 
+          limit: 20 
+        });
+        setPosts(Array.isArray(postsData) ? postsData : []);
+      } catch (err) {
+        console.error('Failed to fetch posts:', err);
+        setPosts([]);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+
+    fetchPosts();
+  }, [profile?.id]);
+
   if (loading) return <SkeletonProfile />;
   
   if (error && !profile) {
@@ -223,9 +251,24 @@ export default function Profile() {
     <div className="container mx-auto px-4 py-6 max-w-5xl">
       {/* Profile Header with Gradient Accent */}
       <Card padding="none" className="animate-slide-up">
-        {/* Cover Image with Gradient */}
+        {/* Cover Image with Gradient or Banner */}
         <div className="h-32 sm:h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/20" />
+          {(displayData.bannerUrl || displayData.banner) ? (
+            <>
+              <img 
+                src={displayData.bannerUrl || displayData.banner} 
+                alt="Profile banner" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide image on error, let gradient background show through
+                  e.target.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/20" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-black/20" />
+          )}
         </div>
 
         {/* Profile Info */}
@@ -354,15 +397,21 @@ export default function Profile() {
           {/* Stats */}
           <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.posts || displayData.postsCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
+                {posts.length || displayData._count?.posts || displayData.postsCount || 0}
+              </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Posts</span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.followers || displayData.followersCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
+                {displayData._count?.followers || displayData.followersCount || 0}
+              </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Followers</span>
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">{displayData._count?.following || displayData.followingCount || 0}</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
+                {displayData._count?.following || displayData.followingCount || 0}
+              </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Following</span>
             </div>
           </div>
@@ -406,37 +455,36 @@ export default function Profile() {
       <div className="space-y-6">
         {activeTab === 'posts' && (
           <Card title="Posts" padding="default">
-            {displayData.posts && displayData.posts.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                {displayData.posts.map(post => (
-                  <div key={post.id} className="rounded-xl border border-subtle bg-neutral-50 dark:bg-neutral-900 p-4">
-                    <div className="flex items-start gap-3 mb-2">
-                      <div 
-                        className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10 flex-shrink-0" 
-                        aria-label="Author avatar" 
-                        role="img"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
-                          {displayData.displayName || displayData.username}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{post.content}</p>
-                    {post.tags && post.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {post.tags.slice(0, 3).map(tag => (
-                          <span key={tag} className="px-2 py-0.5 bg-[#0CCE6B]/10 text-[#0CCE6B] rounded-full text-xs">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+            {loadingPosts ? (
+              <p className="text-neutral-600 dark:text-neutral-400">Loading posts...</p>
+            ) : posts && posts.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-1">
+                {posts.map(post => {
+                  // Transform post data to match PostCard expected format
+                  const transformedPost = {
+                    id: post.id,
+                    author: {
+                      name: post.author?.displayName || displayData.displayName,
+                      role: post.author?.username || displayData.username,
+                      avatar: post.author?.avatar || displayData.avatar || ''
+                    },
+                    title: post.title || '',
+                    body: post.content || '',
+                    tags: post.tags || [],
+                    createdAt: new Date(post.createdAt).getTime(),
+                    mediaUrl: post.media?.[0] || '',
+                    mediaId: post.mediaId,
+                    mediaAttachment: post.mediaAttachment,
+                    visibility: post.visibility || 'public',
+                    hasAccess: post.hasAccess,
+                    accessRequestStatus: post.accessRequestStatus,
+                    likes: post.likesCount || 0,
+                    saved: post.isSaved || false,
+                    comments: post.commentsCount || 0,
+                    price: post.price
+                  };
+                  return <PostCard key={post.id} post={transformedPost} />;
+                })}
               </div>
             ) : (
               <EmptyState
