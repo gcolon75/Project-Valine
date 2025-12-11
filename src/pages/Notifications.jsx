@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApiFallback } from '../hooks/useApiFallback';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
+import { followProfile, getProfileStatus } from '../services/connectionService';
 import { formatRelativeTime, groupNotificationsByDate } from '../utils/formatTime';
 import { useUnread } from '../context/UnreadContext';
+import toast from 'react-hot-toast';
 
 // Mock/fallback notifications data
 const FALLBACK_NOTIFICATIONS = [
@@ -112,6 +114,8 @@ export default function Notifications() {
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
   const { refresh: refreshUnreadCounts } = useUnread();
+  const [followingStates, setFollowingStates] = useState({});
+  const [followLoading, setFollowLoading] = useState({});
 
   // Fetch notifications from API with fallback
   const { data: notifications, loading, usingFallback, refetch } = useApiFallback(
@@ -119,6 +123,55 @@ export default function Notifications() {
     FALLBACK_NOTIFICATIONS,
     { diagnosticContext: 'Notifications.getNotifications' }
   );
+
+  // Check follow status for FOLLOW notifications
+  useEffect(() => {
+    const checkFollowStatus = async () => {
+      if (!notifications || usingFallback) return;
+      
+      const followNotifs = notifications.filter(n => 
+        (typeof n.type === 'string' ? n.type.toLowerCase() : n.type) === 'follow'
+      );
+      
+      const statuses = {};
+      for (const notif of followNotifs) {
+        const user = notif.triggerer || notif.user;
+        const profileId = user?.id;
+        if (profileId && !followingStates[profileId]) {
+          try {
+            const status = await getProfileStatus(profileId);
+            statuses[profileId] = status.isFollowing || false;
+          } catch (err) {
+            console.warn('Failed to check follow status:', err);
+          }
+        }
+      }
+      
+      if (Object.keys(statuses).length > 0) {
+        setFollowingStates(prev => ({ ...prev, ...statuses }));
+      }
+    };
+    
+    checkFollowStatus();
+  }, [notifications, usingFallback]);
+
+  // Handle follow back action
+  const handleFollowBack = async (profileId, e) => {
+    e.stopPropagation(); // Prevent notification click
+    if (followLoading[profileId]) return;
+
+    setFollowLoading(prev => ({ ...prev, [profileId]: true }));
+    try {
+      await followProfile(profileId);
+      setFollowingStates(prev => ({ ...prev, [profileId]: true }));
+      toast.success('Following!');
+    } catch (err) {
+      console.error('Failed to follow:', err);
+      toast.error('Failed to follow');
+    } finally {
+      setFollowLoading(prev => ({ ...prev, [profileId]: false }));
+    }
+  };
 
   // Mark all notifications as read when page loads
   useEffect(() => {
@@ -264,6 +317,9 @@ export default function Notifications() {
             const Icon = getNotificationIcon(notification.type);
             const user = notification.triggerer || notification.user;
             const timestamp = notification.createdAt || notification.timestamp;
+            const isFollowNotification = (typeof notification.type === 'string' ? notification.type.toLowerCase() : notification.type) === 'follow';
+            const isFollowing = followingStates[user?.id];
+            const isLoadingFollow = followLoading[user?.id];
             
             return (
               <div
@@ -298,6 +354,33 @@ export default function Notifications() {
                         {notification.content}
                       </p>
                     )}
+                    
+                    {/* Follow back button for FOLLOW notifications */}
+                    {isFollowNotification && !isFollowing && user?.id && (
+                      <button
+                        onClick={(e) => handleFollowBack(user.id, e)}
+                        disabled={isLoadingFollow}
+                        className="mt-2 px-4 py-1.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isLoadingFollow ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4" />
+                            Follow back
+                          </>
+                        )}
+                      </button>
+                    )}
+                    
+                    {/* Show following badge if already following */}
+                    {isFollowNotification && isFollowing && (
+                      <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-medium rounded-full">
+                        <UserCheck className="w-3 h-3" />
+                        Following
+                      </div>
+                    )}
+                    
                     {/* Show unread indicator */}
                     {!notification.read && (
                       <div className="mt-2">
