@@ -188,6 +188,39 @@ export const createThread = async (event) => {
       return error(403, 'Cannot create thread with this user');
     }
 
+    // Phase 2: Check recipient's message permission
+    const recipientProfile = await prisma.profile.findUnique({
+      where: { userId: recipientUserId },
+      select: {
+        messagePermission: true
+      }
+    });
+
+    if (recipientProfile) {
+      // NO_ONE: Reject all except self (shouldn't happen)
+      if (recipientProfile.messagePermission === 'NO_ONE') {
+        return error(403, 'This user has disabled direct messages');
+      }
+
+      // FOLLOWERS_ONLY: Check if requester follows recipient
+      if (recipientProfile.messagePermission === 'FOLLOWERS_ONLY') {
+        const isFollowing = await prisma.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: userId,
+              followingId: recipientUserId
+            }
+          }
+        });
+
+        if (!isFollowing) {
+          return error(403, 'You must follow this user to send them messages');
+        }
+      }
+
+      // EVERYONE: Allow (default behavior)
+    }
+
     // Normalize user IDs for consistent lookup
     const { userAId, userBId } = normalizeThreadUsers(userId, recipientUserId);
 

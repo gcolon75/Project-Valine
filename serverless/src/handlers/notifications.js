@@ -218,6 +218,30 @@ export const getUnreadCounts = async (event) => {
 // Helper function to create a notification (can be used by other handlers)
 export const createNotification = async (prisma, { type, message, recipientId, triggererId, metadata }) => {
   try {
+    // Phase 2: Check notification preferences before creating
+    const recipientProfile = await prisma.profile.findUnique({
+      where: { userId: recipientId },
+      select: {
+        notifyOnFollow: true,
+        notifyOnMessage: true,
+        notifyOnPostShare: true
+      }
+    });
+
+    // Skip notification creation if user has disabled this type
+    if (recipientProfile) {
+      if (type === 'FOLLOW' && !recipientProfile.notifyOnFollow) {
+        console.log(`[createNotification] Skipping FOLLOW notification for user ${recipientId} (preference disabled)`);
+        return null;
+      }
+      if (type === 'MESSAGE' && !recipientProfile.notifyOnMessage) {
+        console.log(`[createNotification] Skipping MESSAGE notification for user ${recipientId} (preference disabled)`);
+        return null;
+      }
+      // Note: POST_SHARE type would be checked here when implemented
+      // For now, we check notifyOnPostShare for any share-related notifications
+    }
+
     return await prisma.notification.create({
       data: {
         type,

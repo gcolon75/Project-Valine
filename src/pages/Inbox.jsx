@@ -152,10 +152,10 @@ export default function Inbox() {
           <div className="text-center py-12">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-              No messages yet
+              No conversations yet
             </h3>
             <p className="text-neutral-500">
-              Start a conversation from someone's profile.
+              Share a post or message a collaborator to start.
             </p>
           </div>
         ) : (

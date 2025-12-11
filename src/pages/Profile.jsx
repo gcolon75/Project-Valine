@@ -28,6 +28,34 @@ const isValidUrl = (url) => {
   }
 };
 
+/**
+ * Helper to check if user can message another user based on permissions and blocks
+ * @param {Object} status - Connection status object
+ * @returns {Object} { canMessage: boolean, tooltipText: string }
+ */
+const getMessagePermission = (status) => {
+  const { messagePermission, isFollowing, isBlocked, isBlockedBy } = status;
+  
+  // Check blocking first (highest priority)
+  if (isBlocked) {
+    return { canMessage: false, tooltipText: 'You have blocked this user' };
+  }
+  if (isBlockedBy) {
+    return { canMessage: false, tooltipText: 'You cannot message this user' };
+  }
+  
+  // Check message permissions
+  if (messagePermission === 'NO_ONE') {
+    return { canMessage: false, tooltipText: 'This user is not accepting messages' };
+  }
+  if (messagePermission === 'FOLLOWERS_ONLY' && !isFollowing) {
+    return { canMessage: false, tooltipText: 'Only followers can message this user' };
+  }
+  
+  // Default: can message
+  return { canMessage: true, tooltipText: '' };
+};
+
 // Default empty profile for showing stats as 0
 const EMPTY_PROFILE = {
   displayName: '',
@@ -88,7 +116,9 @@ export default function Profile() {
     isFollowing: false,
     isFollowedBy: false,
     isBlocked: false,
-    isBlockedBy: false
+    isBlockedBy: false,
+    visibility: 'PUBLIC',
+    messagePermission: 'EVERYONE'
   });
   const [followLoading, setFollowLoading] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
@@ -117,7 +147,9 @@ export default function Profile() {
           isFollowing: status.isFollowing || false,
           isFollowedBy: status.isFollowedBy || false,
           isBlocked: status.isBlocked || false,
-          isBlockedBy: status.isBlockedBy || false
+          isBlockedBy: status.isBlockedBy || false,
+          visibility: status.visibility || 'PUBLIC',
+          messagePermission: status.messagePermission || 'EVERYONE'
         });
       } catch (err) {
         console.warn('Failed to fetch connection status:', err);
@@ -432,21 +464,40 @@ export default function Profile() {
                       )}
                       
                       {/* Message Button */}
-                      <Button 
-                        onClick={handleMessage}
-                        variant="secondary"
-                        size="md"
-                        disabled={messageLoading}
-                      >
-                        {messageLoading ? (
-                          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Message
-                          </>
-                        )}
-                      </Button>
+                      {(() => {
+                        // Use helper to determine message permissions
+                        const { canMessage, tooltipText } = getMessagePermission(connectionStatus);
+                        const isDisabled = !canMessage;
+                        
+                        return (
+                          <div className="relative group">
+                            <Button 
+                              onClick={handleMessage}
+                              variant="secondary"
+                              size="md"
+                              disabled={isDisabled || messageLoading}
+                              title={tooltipText}
+                              aria-label={isDisabled ? tooltipText : 'Send message'}
+                            >
+                              {messageLoading ? (
+                                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  Message
+                                </>
+                              )}
+                            </Button>
+                            {/* Tooltip on hover for disabled state */}
+                            {isDisabled && tooltipText && (
+                              <div className="hidden group-hover:block absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-2 bg-neutral-900 dark:bg-neutral-700 text-white text-xs rounded-lg whitespace-nowrap z-10 pointer-events-none">
+                                {tooltipText}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral-900 dark:border-t-neutral-700" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </>
                   )}
                   
@@ -513,9 +564,17 @@ export default function Profile() {
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
             {displayData.displayName}
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-2">
-            @{displayData.username}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-neutral-600 dark:text-neutral-400">
+              @{displayData.username}
+            </p>
+            {/* Visibility Badge for FOLLOWERS_ONLY */}
+            {!isOwnProfile && connectionStatus.visibility === 'FOLLOWERS_ONLY' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded-full">
+                🔒 Only followers can see full profile
+              </span>
+            )}
+          </div>
           {/* Bio appears directly under @username per UX requirements */}
           {displayData.bio && (
             <p className="text-neutral-700 dark:text-neutral-300 mb-3">

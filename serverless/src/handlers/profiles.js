@@ -181,9 +181,58 @@ export const getProfileByVanity = async (event) => {
       return error('Profile not found', 404);
     }
 
-    // Apply privacy filtering
-    const privacy = profile.privacy || {};
+    // Phase 2: Apply profile visibility enforcement
     const isOwner = viewerId === profile.userId;
+    
+    // Check if profile is FOLLOWERS_ONLY and viewer is not a follower
+    if (!isOwner && profile.visibility === 'FOLLOWERS_ONLY' && viewerId) {
+      // Check if viewer follows this profile
+      const isFollower = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: viewerId,
+            followingId: profile.userId
+          }
+        }
+      });
+
+      if (!isFollower) {
+        // Return limited profile view
+        return json({
+          id: profile.id,
+          vanityUrl: profile.vanityUrl,
+          headline: profile.headline,
+          user: {
+            id: profile.user.id,
+            username: profile.user.username,
+            displayName: profile.user.displayName,
+            avatar: profile.user.avatar
+          },
+          visibility: 'FOLLOWERS_ONLY',
+          restricted: true,
+          message: 'This profile is only visible to followers'
+        });
+      }
+    } else if (!isOwner && profile.visibility === 'FOLLOWERS_ONLY' && !viewerId) {
+      // Unauthenticated user viewing FOLLOWERS_ONLY profile
+      return json({
+        id: profile.id,
+        vanityUrl: profile.vanityUrl,
+        headline: profile.headline,
+        user: {
+          id: profile.user.id,
+          username: profile.user.username,
+          displayName: profile.user.displayName,
+          avatar: profile.user.avatar
+        },
+        visibility: 'FOLLOWERS_ONLY',
+        restricted: true,
+        message: 'This profile is only visible to followers'
+      });
+    }
+
+    // Apply privacy filtering (legacy privacy field)
+    const privacy = profile.privacy || {};
 
     // Filter profile data based on privacy settings
     const filteredProfile = {
@@ -777,7 +826,15 @@ export const updateMyProfile = async (event) => {
       availabilityStatus,
       showPronouns,
       showLocation,
-      showAvailability
+      showAvailability,
+      // Privacy & messaging preferences (Phase 2)
+      visibility,
+      messagePermission,
+      isSearchable,
+      // Notification preferences (Phase 2)
+      notifyOnFollow,
+      notifyOnMessage,
+      notifyOnPostShare
     } = body;
 
     // Map frontend fields to backend fields with explicit backend names taking precedence
@@ -892,6 +949,32 @@ export const updateMyProfile = async (event) => {
       errors.push('budgetMin cannot be greater than budgetMax');
     }
 
+    // Privacy & messaging validation (Phase 2)
+    if (visibility !== undefined && !['PUBLIC', 'FOLLOWERS_ONLY'].includes(visibility)) {
+      errors.push('visibility must be PUBLIC or FOLLOWERS_ONLY');
+    }
+
+    if (messagePermission !== undefined && !['EVERYONE', 'FOLLOWERS_ONLY', 'NO_ONE'].includes(messagePermission)) {
+      errors.push('messagePermission must be EVERYONE, FOLLOWERS_ONLY, or NO_ONE');
+    }
+
+    if (isSearchable !== undefined && typeof isSearchable !== 'boolean') {
+      errors.push('isSearchable must be a boolean');
+    }
+
+    // Notification preferences validation (Phase 2)
+    if (notifyOnFollow !== undefined && typeof notifyOnFollow !== 'boolean') {
+      errors.push('notifyOnFollow must be a boolean');
+    }
+
+    if (notifyOnMessage !== undefined && typeof notifyOnMessage !== 'boolean') {
+      errors.push('notifyOnMessage must be a boolean');
+    }
+
+    if (notifyOnPostShare !== undefined && typeof notifyOnPostShare !== 'boolean') {
+      errors.push('notifyOnPostShare must be a boolean');
+    }
+
     if (errors.length > 0) {
       console.log('[updateMyProfile] Validation errors:', errors);
       return error(400, 'Validation failed', { errors });
@@ -949,6 +1032,14 @@ export const updateMyProfile = async (event) => {
       if (showPronouns !== undefined) {profileUpdateData.showPronouns = showPronouns;}
       if (showLocation !== undefined) {profileUpdateData.showLocation = showLocation;}
       if (showAvailability !== undefined) {profileUpdateData.showAvailability = showAvailability;}
+      // Privacy & messaging preferences (Phase 2)
+      if (visibility !== undefined) {profileUpdateData.visibility = visibility;}
+      if (messagePermission !== undefined) {profileUpdateData.messagePermission = messagePermission;}
+      if (isSearchable !== undefined) {profileUpdateData.isSearchable = isSearchable;}
+      // Notification preferences (Phase 2)
+      if (notifyOnFollow !== undefined) {profileUpdateData.notifyOnFollow = notifyOnFollow;}
+      if (notifyOnMessage !== undefined) {profileUpdateData.notifyOnMessage = notifyOnMessage;}
+      if (notifyOnPostShare !== undefined) {profileUpdateData.notifyOnPostShare = notifyOnPostShare;}
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema
@@ -978,6 +1069,14 @@ export const updateMyProfile = async (event) => {
             showPronouns: showPronouns !== undefined ? showPronouns : true,
             showLocation: showLocation !== undefined ? showLocation : true,
             showAvailability: showAvailability !== undefined ? showAvailability : true,
+            // Privacy & messaging preferences (Phase 2) - defaults from schema
+            visibility: visibility || 'PUBLIC',
+            messagePermission: messagePermission || 'EVERYONE',
+            isSearchable: isSearchable !== undefined ? isSearchable : true,
+            // Notification preferences (Phase 2) - defaults from schema
+            notifyOnFollow: notifyOnFollow !== undefined ? notifyOnFollow : true,
+            notifyOnMessage: notifyOnMessage !== undefined ? notifyOnMessage : true,
+            notifyOnPostShare: notifyOnPostShare !== undefined ? notifyOnPostShare : true,
           },
         });
         console.log('[updateMyProfile] PROFILE CREATED', {
@@ -1286,6 +1385,14 @@ export const getMyProfile = async (event) => {
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,
       createdAt: user.createdAt,
+      // Privacy & messaging preferences (Phase 2)
+      visibility: profile?.visibility || 'PUBLIC',
+      messagePermission: profile?.messagePermission || 'EVERYONE',
+      isSearchable: profile?.isSearchable !== undefined ? profile.isSearchable : true,
+      // Notification preferences (Phase 2)
+      notifyOnFollow: profile?.notifyOnFollow !== undefined ? profile.notifyOnFollow : true,
+      notifyOnMessage: profile?.notifyOnMessage !== undefined ? profile.notifyOnMessage : true,
+      notifyOnPostShare: profile?.notifyOnPostShare !== undefined ? profile.notifyOnPostShare : true,
     };
 
     console.log('[getMyProfile] RESPONSE', {
