@@ -649,7 +649,11 @@ export const getProfileStatus = async (event) => {
     // Get the target user from their profile ID
     const targetProfile = await prisma.profile.findUnique({
       where: { id: targetProfileId },
-      select: { userId: true }
+      select: { 
+        userId: true,
+        visibility: true,
+        messagePermission: true
+      }
     });
 
     if (!targetProfile) {
@@ -698,7 +702,10 @@ export const getProfileStatus = async (event) => {
       isFollowing: !!following,
       isFollowedBy: !!followedBy,
       isBlocked: !!blocking,
-      isBlockedBy: !!blockedBy
+      isBlockedBy: !!blockedBy,
+      // Phase 2: Privacy & messaging preferences
+      visibility: targetProfile.visibility || 'PUBLIC',
+      messagePermission: targetProfile.messagePermission || 'EVERYONE'
     });
   } catch (e) {
     console.error('Get profile status error:', e);

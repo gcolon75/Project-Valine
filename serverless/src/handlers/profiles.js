@@ -181,9 +181,58 @@ export const getProfileByVanity = async (event) => {
       return error('Profile not found', 404);
     }
 
-    // Apply privacy filtering
-    const privacy = profile.privacy || {};
+    // Phase 2: Apply profile visibility enforcement
     const isOwner = viewerId === profile.userId;
+    
+    // Check if profile is FOLLOWERS_ONLY and viewer is not a follower
+    if (!isOwner && profile.visibility === 'FOLLOWERS_ONLY' && viewerId) {
+      // Check if viewer follows this profile
+      const isFollower = await prisma.follow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: viewerId,
+            followingId: profile.userId
+          }
+        }
+      });
+
+      if (!isFollower) {
+        // Return limited profile view
+        return json({
+          id: profile.id,
+          vanityUrl: profile.vanityUrl,
+          headline: profile.headline,
+          user: {
+            id: profile.user.id,
+            username: profile.user.username,
+            displayName: profile.user.displayName,
+            avatar: profile.user.avatar
+          },
+          visibility: 'FOLLOWERS_ONLY',
+          restricted: true,
+          message: 'This profile is only visible to followers'
+        });
+      }
+    } else if (!isOwner && profile.visibility === 'FOLLOWERS_ONLY' && !viewerId) {
+      // Unauthenticated user viewing FOLLOWERS_ONLY profile
+      return json({
+        id: profile.id,
+        vanityUrl: profile.vanityUrl,
+        headline: profile.headline,
+        user: {
+          id: profile.user.id,
+          username: profile.user.username,
+          displayName: profile.user.displayName,
+          avatar: profile.user.avatar
+        },
+        visibility: 'FOLLOWERS_ONLY',
+        restricted: true,
+        message: 'This profile is only visible to followers'
+      });
+    }
+
+    // Apply privacy filtering (legacy privacy field)
+    const privacy = profile.privacy || {};
 
     // Filter profile data based on privacy settings
     const filteredProfile = {
