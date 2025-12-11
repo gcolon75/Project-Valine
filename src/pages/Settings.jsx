@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { 
   User, Bell, Lock, Palette, Shield, Image, Download, 
   Trash2, Eye, Mail, Key, Smartphone, ExternalLink,
-  CreditCard, FileText, Share2, Loader2, Monitor, MapPin, Clock
+  CreditCard, FileText, Share2, Loader2, Monitor, MapPin, Clock, MessageSquare, Users
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { exportAccountData, deleteAccount } from '../services/settingsService';
 import { getSessions, revokeSession, isSessionTrackingEnabled } from '../services/sessionsService';
 import { is2FAEnabled, get2FAStatus, enroll2FA, verifyEnrollment, disable2FA } from '../services/twoFactorService';
+import { getMyProfile, updateMyProfile } from '../services/profileService';
 
 export default function Settings() {
   const { theme } = useTheme();
@@ -55,6 +56,18 @@ export default function Settings() {
     pushEnabled: false
   });
 
+  // Privacy & Messaging preferences (Phase 2)
+  const [privacySettings, setPrivacySettings] = useState({
+    visibility: 'PUBLIC',
+    messagePermission: 'EVERYONE',
+    isSearchable: true,
+    notifyOnFollow: true,
+    notifyOnMessage: true,
+    notifyOnPostShare: true
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isSavingPrivacy, setIsSavingPrivacy] = useState(false);
+
   // Load sessions on mount if enabled
   useEffect(() => {
     if (isSessionTrackingEnabled()) {
@@ -68,6 +81,31 @@ export default function Settings() {
       load2FAStatus();
     }
   }, []);
+
+  // Load profile data for privacy & messaging settings
+  useEffect(() => {
+    loadProfileSettings();
+  }, []);
+
+  const loadProfileSettings = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const profile = await getMyProfile();
+      setPrivacySettings({
+        visibility: profile.visibility || 'PUBLIC',
+        messagePermission: profile.messagePermission || 'EVERYONE',
+        isSearchable: profile.isSearchable !== undefined ? profile.isSearchable : true,
+        notifyOnFollow: profile.notifyOnFollow !== undefined ? profile.notifyOnFollow : true,
+        notifyOnMessage: profile.notifyOnMessage !== undefined ? profile.notifyOnMessage : true,
+        notifyOnPostShare: profile.notifyOnPostShare !== undefined ? profile.notifyOnPostShare : true
+      });
+    } catch (error) {
+      console.error('Failed to load profile settings:', error);
+      toast.error('Failed to load privacy settings');
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   const loadSessions = async () => {
     setIsLoadingSessions(true);
@@ -221,6 +259,24 @@ export default function Settings() {
       toast.error(errorMessage, { id: toastId });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleSavePrivacySettings = async (updates) => {
+    setIsSavingPrivacy(true);
+    try {
+      await updateMyProfile(updates);
+      setPrivacySettings(prev => ({ ...prev, ...updates }));
+      toast.success('Settings updated successfully');
+    } catch (error) {
+      console.error('Failed to update privacy settings:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to update settings';
+      toast.error(errorMessage);
+    } finally {
+      setIsSavingPrivacy(false);
     }
   };
   
@@ -397,6 +453,132 @@ export default function Settings() {
           </SettingsSection>
         )}
 
+        {/* Privacy & Messaging (Phase 2) */}
+        <SettingsSection
+          icon={Lock}
+          title="Privacy & Messaging"
+          description="Control your privacy and messaging preferences"
+        >
+          {isLoadingProfile ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Profile Visibility */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-3">
+                  Profile Visibility
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-[#0CCE6B] transition-colors">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="PUBLIC"
+                      checked={privacySettings.visibility === 'PUBLIC'}
+                      onChange={(e) => handleSavePrivacySettings({ visibility: e.target.value })}
+                      disabled={isSavingPrivacy}
+                      className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="font-medium text-neutral-900 dark:text-white">Public</div>
+                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Everyone can see your full profile
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-[#0CCE6B] transition-colors">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="FOLLOWERS_ONLY"
+                      checked={privacySettings.visibility === 'FOLLOWERS_ONLY'}
+                      onChange={(e) => handleSavePrivacySettings({ visibility: e.target.value })}
+                      disabled={isSavingPrivacy}
+                      className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="font-medium text-neutral-900 dark:text-white">Followers only</div>
+                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Only your followers can see your full profile
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Searchable Toggle */}
+              <SettingToggle
+                label="Searchable"
+                description="Allow my profile to appear in search results"
+                checked={privacySettings.isSearchable}
+                onChange={(checked) => handleSavePrivacySettings({ isSearchable: checked })}
+              />
+
+              {/* Who can message you */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-3">
+                  Who can message you?
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-[#0CCE6B] transition-colors">
+                    <input
+                      type="radio"
+                      name="messagePermission"
+                      value="EVERYONE"
+                      checked={privacySettings.messagePermission === 'EVERYONE'}
+                      onChange={(e) => handleSavePrivacySettings({ messagePermission: e.target.value })}
+                      disabled={isSavingPrivacy}
+                      className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="font-medium text-neutral-900 dark:text-white">Everyone</div>
+                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Anyone can send you direct messages
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-[#0CCE6B] transition-colors">
+                    <input
+                      type="radio"
+                      name="messagePermission"
+                      value="FOLLOWERS_ONLY"
+                      checked={privacySettings.messagePermission === 'FOLLOWERS_ONLY'}
+                      onChange={(e) => handleSavePrivacySettings({ messagePermission: e.target.value })}
+                      disabled={isSavingPrivacy}
+                      className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="font-medium text-neutral-900 dark:text-white">Followers only</div>
+                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Only your followers can message you
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:border-[#0CCE6B] transition-colors">
+                    <input
+                      type="radio"
+                      name="messagePermission"
+                      value="NO_ONE"
+                      checked={privacySettings.messagePermission === 'NO_ONE'}
+                      onChange={(e) => handleSavePrivacySettings({ messagePermission: e.target.value })}
+                      disabled={isSavingPrivacy}
+                      className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="font-medium text-neutral-900 dark:text-white">No one</div>
+                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Block all direct messages
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+        </SettingsSection>
+
         {/* Privacy & Visibility */}
         <SettingsSection
           icon={Eye}
@@ -463,36 +645,32 @@ export default function Settings() {
           title="Notifications"
           description="Configure notification preferences"
         >
-          <SettingToggle 
-            label="Email Digest" 
-            description="Weekly summary of activity"
-            checked={notifications.emailDigest}
-            onChange={(checked) => setNotifications({...notifications, emailDigest: checked})}
-          />
-          <SettingToggle 
-            label="New Messages" 
-            description="Get notified when someone messages you"
-            checked={notifications.messages}
-            onChange={(checked) => setNotifications({...notifications, messages: checked})}
-          />
-          <SettingToggle 
-            label="Connection Requests" 
-            description="Notification when someone wants to connect"
-            checked={notifications.requests}
-            onChange={(checked) => setNotifications({...notifications, requests: checked})}
-          />
-          <SettingToggle 
-            label="Mentions & Tags" 
-            description="When someone mentions you in a post"
-            checked={notifications.mentions}
-            onChange={(checked) => setNotifications({...notifications, mentions: checked})}
-          />
-          <SettingToggle 
-            label="Push Notifications" 
-            description="Browser push notifications (requires permission)"
-            checked={notifications.pushEnabled}
-            onChange={(checked) => setNotifications({...notifications, pushEnabled: checked})}
-          />
+          {isLoadingProfile ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+            </div>
+          ) : (
+            <>
+              <SettingToggle 
+                label="Notify when someone follows me" 
+                description="Receive notifications when you gain a new follower"
+                checked={privacySettings.notifyOnFollow}
+                onChange={(checked) => handleSavePrivacySettings({ notifyOnFollow: checked })}
+              />
+              <SettingToggle 
+                label="Notify when I receive a new message" 
+                description="Get notified when someone sends you a direct message"
+                checked={privacySettings.notifyOnMessage}
+                onChange={(checked) => handleSavePrivacySettings({ notifyOnMessage: checked })}
+              />
+              <SettingToggle 
+                label="Notify when someone shares a post with me" 
+                description="Receive notifications when posts are shared with you"
+                checked={privacySettings.notifyOnPostShare}
+                onChange={(checked) => handleSavePrivacySettings({ notifyOnPostShare: checked })}
+              />
+            </>
+          )}
         </SettingsSection>
 
         {/* Appearance */}
