@@ -28,6 +28,34 @@ const isValidUrl = (url) => {
   }
 };
 
+/**
+ * Helper to check if user can message another user based on permissions and blocks
+ * @param {Object} status - Connection status object
+ * @returns {Object} { canMessage: boolean, tooltipText: string }
+ */
+const getMessagePermission = (status) => {
+  const { messagePermission, isFollowing, isBlocked, isBlockedBy } = status;
+  
+  // Check blocking first (highest priority)
+  if (isBlocked) {
+    return { canMessage: false, tooltipText: 'You have blocked this user' };
+  }
+  if (isBlockedBy) {
+    return { canMessage: false, tooltipText: 'You cannot message this user' };
+  }
+  
+  // Check message permissions
+  if (messagePermission === 'NO_ONE') {
+    return { canMessage: false, tooltipText: 'This user is not accepting messages' };
+  }
+  if (messagePermission === 'FOLLOWERS_ONLY' && !isFollowing) {
+    return { canMessage: false, tooltipText: 'Only followers can message this user' };
+  }
+  
+  // Default: can message
+  return { canMessage: true, tooltipText: '' };
+};
+
 // Default empty profile for showing stats as 0
 const EMPTY_PROFILE = {
   displayName: '',
@@ -437,24 +465,9 @@ export default function Profile() {
                       
                       {/* Message Button */}
                       {(() => {
-                        // Determine if Message button should be disabled
-                        const canMessage = 
-                          connectionStatus.messagePermission === 'EVERYONE' || 
-                          (connectionStatus.messagePermission === 'FOLLOWERS_ONLY' && connectionStatus.isFollowing);
-                        
-                        const isDisabled = !canMessage || connectionStatus.isBlocked || connectionStatus.isBlockedBy;
-                        
-                        // Get tooltip text for disabled state
-                        let tooltipText = '';
-                        if (connectionStatus.isBlocked) {
-                          tooltipText = 'You have blocked this user';
-                        } else if (connectionStatus.isBlockedBy) {
-                          tooltipText = 'You cannot message this user';
-                        } else if (connectionStatus.messagePermission === 'NO_ONE') {
-                          tooltipText = 'This user is not accepting messages';
-                        } else if (connectionStatus.messagePermission === 'FOLLOWERS_ONLY' && !connectionStatus.isFollowing) {
-                          tooltipText = 'Only followers can message this user';
-                        }
+                        // Use helper to determine message permissions
+                        const { canMessage, tooltipText } = getMessagePermission(connectionStatus);
+                        const isDisabled = !canMessage;
                         
                         return (
                           <div className="relative group">

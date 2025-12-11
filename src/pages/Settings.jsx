@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { 
   User, Bell, Lock, Palette, Shield, Image, Download, 
   Trash2, Eye, Mail, Key, Smartphone, ExternalLink,
-  CreditCard, FileText, Share2, Loader2, Monitor, MapPin, Clock, MessageSquare, Users
+  CreditCard, FileText, Share2, Loader2, Monitor, MapPin, Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
