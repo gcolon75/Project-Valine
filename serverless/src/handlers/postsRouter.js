@@ -36,6 +36,11 @@ export const handler = async (event, context) => {
   try {
     // ===== POST ENDPOINTS =====
 
+    // POST /posts/audio-upload-url (check specific path before generic patterns)
+    if (method === 'POST' && path === '/posts/audio-upload-url') {
+      return posts.getAudioUploadUrl(event, context);
+    }
+
     // GET /posts
     if (method === 'GET' && path === '/posts') {
       return posts.listPosts(event, context);
@@ -46,24 +51,19 @@ export const handler = async (event, context) => {
       return posts.createPost(event, context);
     }
 
-    // POST /posts/audio-upload-url
-    if (method === 'POST' && path === '/posts/audio-upload-url') {
-      return posts.getAudioUploadUrl(event, context);
+    // POST /posts/{id}/request
+    if (method === 'POST' && /^\/posts\/[^/]+\/request$/.test(path)) {
+      return posts.requestPostAccess(event, context);
     }
 
     // GET /posts/{id}
-    if (method === 'GET' && /^\/posts\/[^/]+$/.test(path) && !path.includes('/audio-upload-url')) {
+    if (method === 'GET' && /^\/posts\/[^/]+$/.test(path)) {
       return posts.getPost(event, context);
     }
 
     // DELETE /posts/{id}
     if (method === 'DELETE' && /^\/posts\/[^/]+$/.test(path)) {
       return posts.deletePost(event, context);
-    }
-
-    // POST /posts/{id}/request
-    if (method === 'POST' && /^\/posts\/[^/]+\/request$/.test(path)) {
-      return posts.requestPostAccess(event, context);
     }
 
     // Fallback

@@ -37,19 +37,9 @@ export const handler = async (event, context) => {
   try {
     // ===== PROFILE ENDPOINTS =====
 
-    // GET /profiles/{vanityUrl}
-    if (method === 'GET' && /^\/profiles\/[^/]+$/.test(path) && !path.includes('/id/')) {
-      return profiles.getProfileByVanity(event, context);
-    }
-
-    // GET /profiles/id/{id}
+    // GET /profiles/id/{id} (check specific path before vanity URL pattern)
     if (method === 'GET' && /^\/profiles\/id\/[^/]+$/.test(path)) {
       return profiles.getProfileById(event, context);
-    }
-
-    // POST /profiles
-    if (method === 'POST' && path === '/profiles') {
-      return profiles.createProfile(event, context);
     }
 
     // PUT /profiles/id/{id}
@@ -60,6 +50,16 @@ export const handler = async (event, context) => {
     // DELETE /profiles/id/{id}
     if (method === 'DELETE' && /^\/profiles\/id\/[^/]+$/.test(path)) {
       return profiles.deleteProfile(event, context);
+    }
+
+    // GET /profiles/{vanityUrl} (after /profiles/id/* checks)
+    if (method === 'GET' && /^\/profiles\/[^/]+$/.test(path)) {
+      return profiles.getProfileByVanity(event, context);
+    }
+
+    // POST /profiles
+    if (method === 'POST' && path === '/profiles') {
+      return profiles.createProfile(event, context);
     }
 
     // GET /me/profile
