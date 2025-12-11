@@ -36,6 +36,21 @@ The social graph and messaging system consists of three main layers:
 - ✅ **Follower Counts**: Denormalized counts updated transactionally
 - ✅ **Block Enforcement**: Blocks prevent follows, DMs, and filter user lists
 
+### Lambda Routing & Resource Limits
+
+Originally, each social and messaging endpoint was deployed as its own Lambda function (e.g. `followProfile`, `getMyFollowers`, `getMessageThreads`, etc.). This pushed the AWS CloudFormation stack close to (and eventually beyond) the 500-resource limit.
+
+To address this, we now route all social graph and messaging HTTP endpoints through a single Lambda function:
+
+- **Function:** `socialMessaging`
+- **Handler:** `src/handlers/socialMessaging.js`
+- **Responsibility:** Routes HTTP requests for follows, blocks, followers/following lists, profile status, and DM threads to the underlying handlers in `social.js` and `messages.js`.
+
+This consolidation significantly reduces CloudFormation resource count while preserving the public API surface:
+
+- Endpoints such as `/profiles/{profileId}/follow`, `/me/followers`, `/me/messages/threads`, etc. are unchanged.
+- Business logic remains in `social.js` and `messages.js`; `socialMessaging.js` is a thin router layer.
+
 ---
 
 ## Data Models
