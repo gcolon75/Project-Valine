@@ -166,115 +166,51 @@ functions:
           path: /meta
           method: get
   
-  # ========== AUTH ==========
-  register:
-    handler: src/handlers/auth.register
+  # ========== AUTH ROUTER ==========
+  authRouter:
+    handler: src/handlers/authRouter.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
       - httpApi:
           path: /auth/register
           method: post
-  login:
-    handler: src/handlers/auth.login
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/login
           method: post
-  me:
-    handler: src/handlers/auth.me
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/me
           method: get
-  verifyEmail:
-    handler: src/handlers/auth.verifyEmail
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/verify-email
           method: post
-  resendVerification:
-    handler: src/handlers/auth.resendVerification
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/resend-verification
           method: post
-  refresh:
-    handler: src/handlers/auth.refresh
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/refresh
           method: post
-  logout:
-    handler: src/handlers/auth.logout
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/logout
           method: post
-  setup2FA:
-    handler: src/handlers/auth.setup2FA
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/2fa/setup
           method: post
-  enable2FA:
-    handler: src/handlers/auth.enable2FA
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/2fa/enable
           method: post
-  verify2FA:
-    handler: src/handlers/auth.verify2FA
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/2fa/verify
           method: post
-  disable2FA:
-    handler: src/handlers/auth.disable2FA
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/2fa/disable
           method: post
-  seedRestricted:
-    handler: src/handlers/auth.seedRestricted
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/seed-restricted
           method: post
-  authStatus:
-    handler: src/handlers/auth.authStatus
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /auth/status
           method: get
-  authDiag:
-    handler: src/handlers/auth.authDiag
-    layers: []     # explicitly none - diagnostics only, uses isPrismaDegraded() not getPrisma()
-    events:
       - httpApi:
           path: /auth/diag
           method: get
@@ -355,52 +291,27 @@ functions:
           path: /reels/{id}/comments
           method: post
 
-  # ========== POSTS ==========
-  createPost:
-    handler: src/handlers/posts.createPost
+  # ========== POSTS ROUTER ==========
+  postsRouter:
+    handler: src/handlers/postsRouter.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
+      - httpApi:
+          path: /posts
+          method: get
       - httpApi:
           path: /posts
           method: post
-  listPosts:
-    handler: src/handlers/posts.listPosts
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /posts
-          method: get
-  getPost:
-    handler: src/handlers/posts.getPost
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /posts/{id}
-          method: get
-  deletePost:
-    handler: src/handlers/posts.deletePost
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /posts/{id}
-          method: delete
-  getAudioUploadUrl:
-    handler: src/handlers/posts.getAudioUploadUrl
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /posts/audio-upload-url
           method: post
-  requestPostAccess:
-    handler: src/handlers/posts.requestPostAccess
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
+      - httpApi:
+          path: /posts/{id}
+          method: get
+      - httpApi:
+          path: /posts/{id}
+          method: delete
       - httpApi:
           path: /posts/{id}/request
           method: post
@@ -552,38 +463,21 @@ functions:
           path: /me/messages/threads/{threadId}/messages
           method: post
 
-  # ========== NOTIFICATIONS ==========
-  listNotifications:
-    handler: src/handlers/notifications.listNotifications
+  # ========== NOTIFICATIONS ROUTER ==========
+  notificationsRouter:
+    handler: src/handlers/notificationsRouter.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
       - httpApi:
           path: /notifications
           method: get
-  markNotificationRead:
-    handler: src/handlers/notifications.markAsRead
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /notifications/{id}/read
           method: patch
-  markAllNotificationsRead:
-    handler: src/handlers/notifications.markAllAsRead
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /notifications/mark-all
           method: patch
-  
-  # ========== NEW: UNREAD COUNTS ==========
-  getUnreadCounts:
-    handler: src/handlers/notifications.getUnreadCounts
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /unread-counts
           method: get
@@ -646,62 +540,59 @@ functions:
           path: /connections/unfollow
           method: post
 
-  # ========== PROFILES ==========
-  getProfileByVanity:
-    handler: src/handlers/profiles.getProfileByVanity
+  # ========== PROFILES ROUTER ==========
+  profilesRouter:
+    handler: src/handlers/profilesRouter.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
+      # Profile endpoints
       - httpApi:
           path: /profiles/{vanityUrl}
           method: get
-  getProfileById:
-    handler: src/handlers/profiles.getProfileById
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /profiles/id/{id}
           method: get
-  createProfile:
-    handler: src/handlers/profiles.createProfile
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /profiles
           method: post
-  updateProfile:
-    handler: src/handlers/profiles.updateProfile
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /profiles/id/{id}
           method: put
-  updateMyProfile:
-    handler: src/handlers/profiles.updateMyProfile
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
-          path: /me/profile
-          method: patch
-  getMyProfile:
-    handler: src/handlers/profiles.getMyProfile
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
+          path: /profiles/id/{id}
+          method: delete
       - httpApi:
           path: /me/profile
           method: get
-  deleteProfile:
-    handler: src/handlers/profiles.deleteProfile
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
-          path: /profiles/id/{id}
+          path: /me/profile
+          method: patch
+      # Education endpoints
+      - httpApi:
+          path: /me/profile/education
+          method: get
+      - httpApi:
+          path: /me/profile/education
+          method: post
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: put
+      - httpApi:
+          path: /me/profile/education/{id}
+          method: delete
+      # Experience endpoints
+      - httpApi:
+          path: /me/profile/experience
+          method: get
+      - httpApi:
+          path: /me/profile/experience
+          method: post
+      - httpApi:
+          path: /me/profile/experience/{id}
+          method: put
+      - httpApi:
+          path: /me/profile/experience/{id}
           method: delete
 
   # ========== MEDIA ==========
@@ -778,74 +669,6 @@ functions:
     events:
       - httpApi:
           path: /credits/{id}
-          method: delete
-
-  # ========== EDUCATION ==========
-  listEducation:
-    handler: src/handlers/education.listEducation
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/education
-          method: get
-  createEducation:
-    handler: src/handlers/education.createEducation
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/education
-          method: post
-  updateEducation:
-    handler: src/handlers/education.updateEducation
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/education/{id}
-          method: put
-  deleteEducation:
-    handler: src/handlers/education.deleteEducation
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/education/{id}
-          method: delete
-
-  # ========== EXPERIENCE (my profile convenience endpoints) ==========
-  listMyExperience:
-    handler: src/handlers/profiles.listMyExperience
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/experience
-          method: get
-  createMyExperience:
-    handler: src/handlers/profiles.createMyExperience
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/experience
-          method: post
-  updateMyExperience:
-    handler: src/handlers/profiles.updateMyExperience
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/experience/{id}
-          method: put
-  deleteMyExperience:
-    handler: src/handlers/profiles.deleteMyExperience
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /me/profile/experience/{id}
           method: delete
 
   # ========== SETTINGS ==========
