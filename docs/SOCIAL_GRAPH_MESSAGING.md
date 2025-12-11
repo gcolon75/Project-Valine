@@ -38,18 +38,67 @@ The social graph and messaging system consists of three main layers:
 
 ### Lambda Routing & Resource Limits
 
-Originally, each social and messaging endpoint was deployed as its own Lambda function (e.g. `followProfile`, `getMyFollowers`, `getMessageThreads`, etc.). This pushed the AWS CloudFormation stack close to (and eventually beyond) the 500-resource limit.
+Originally, each endpoint was deployed as its own Lambda function. This pushed the AWS CloudFormation stack beyond the 500-resource limit, causing deployment failures.
 
-To address this, we now route all social graph and messaging HTTP endpoints through a single Lambda function:
+To address this, we now route related HTTP endpoints through consolidated Lambda router functions:
 
-- **Function:** `socialMessaging`
-- **Handler:** `src/handlers/socialMessaging.js`
-- **Responsibility:** Routes HTTP requests for follows, blocks, followers/following lists, profile status, and DM threads to the underlying handlers in `social.js` and `messages.js`.
+#### Router Functions
+
+1. **`socialMessaging`** - Social graph and messaging
+   - **Handler:** `src/handlers/socialMessaging.js`
+   - **Routes:** Follow/unfollow, block/unblock, followers/following lists, profile status, and DM threads
+   - **Delegates to:** `social.js` and `messages.js`
+
+2. **`authRouter`** - Authentication
+   - **Handler:** `src/handlers/authRouter.js`
+   - **Routes:** All `/auth/*` endpoints (login, register, logout, 2FA, etc.)
+   - **Delegates to:** `auth.js`
+
+3. **`profilesRouter`** - Profiles, education, and experience
+   - **Handler:** `src/handlers/profilesRouter.js`
+   - **Routes:** Profile CRUD (`/profiles/*`, `/me/profile`), education, and experience endpoints
+   - **Delegates to:** `profiles.js` and `education.js`
+
+4. **`postsRouter`** - Posts and media
+   - **Handler:** `src/handlers/postsRouter.js`
+   - **Routes:** All `/posts/*` endpoints (create, list, get, delete, audio upload)
+   - **Delegates to:** `posts.js`
+
+5. **`notificationsRouter`** - Notifications
+   - **Handler:** `src/handlers/notificationsRouter.js`
+   - **Routes:** All `/notifications/*` and `/unread-counts` endpoints
+   - **Delegates to:** `notifications.js`
+
+#### Benefits
 
 This consolidation significantly reduces CloudFormation resource count while preserving the public API surface:
 
-- Endpoints such as `/profiles/{profileId}/follow`, `/me/followers`, `/me/messages/threads`, etc. are unchanged.
-- Business logic remains in `social.js` and `messages.js`; `socialMessaging.js` is a thin router layer.
+- **Resource Reduction:** Consolidated 39 individual functions into 5 routers (35% reduction in Lambda functions)
+- **API Stability:** All endpoint paths and methods remain unchanged
+- **Clean Architecture:** Business logic stays in domain-specific handler files; routers are thin delegation layers
+- **Path Normalization:** Each router handles stage prefix removal consistently
+
+#### Router Pattern
+
+Each router follows the same pattern:
+
+```javascript
+export const handler = async (event, context) => {
+  const method = event.requestContext?.http?.method?.toUpperCase() || 'GET';
+  const path = normalizePath(event.requestContext?.http?.path || '');
+
+  try {
+    // Route based on method + path
+    if (method === 'POST' && path === '/auth/login') {
+      return auth.login(event, context);
+    }
+    // ... more routes ...
+  } catch (err) {
+    console.error('router error', err);
+    return { statusCode: 500, body: JSON.stringify({ message: 'Internal server error' }) };
+  }
+};
+```
 
 ---
 
