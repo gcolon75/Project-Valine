@@ -216,6 +216,17 @@ enum NotificationType {
   SYSTEM
 }
 
+enum MessagePermission {
+  EVERYONE
+  FOLLOWERS_ONLY
+  NO_ONE
+}
+
+enum ProfileVisibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+}
+
 model Notification {
   id               String            @id @default(uuid())
   type             String
@@ -234,6 +245,7 @@ model Notification {
   directMessage    Message?          @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
   @@index([createdAt])
   @@index([type])
   @@index([messageThreadId])
@@ -322,6 +334,7 @@ model DirectMessage {
   forwardedPost   Post?         @relation("forwardedPost", fields: [forwardedPostId], references: [id], onDelete: SetNull)
 
   @@index([threadId])
+  @@index([threadId, createdAt])
   @@index([senderId])
   @@index([createdAt])
   @@index([forwardedPostId])
@@ -329,34 +342,45 @@ model DirectMessage {
 }
 
 model Profile {
-  id                  String          @id @default(uuid())
-  userId              String          @unique
-  vanityUrl           String          @unique
+  id                  String            @id @default(uuid())
+  userId              String            @unique
+  vanityUrl           String            @unique
   headline            String?
   bio                 String?
   roles               String[]
   tags                String[]
   location            String?
-  privacy             Json            @default("{}")
+  privacy             Json              @default("{}")
   socialLinks         Json?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   title               String?
   bannerUrl           String?
   budgetMin           Int?
   budgetMax           Int?
   pronouns            String?
   availabilityStatus  String?
-  showPronouns        Boolean         @default(true)
-  showLocation        Boolean         @default(true)
-  showAvailability    Boolean         @default(true)
-  followersCount      Int             @default(0)
-  followingCount      Int             @default(0)
+  showPronouns        Boolean           @default(true)
+  showLocation        Boolean           @default(true)
+  showAvailability    Boolean           @default(true)
+  followersCount      Int               @default(0)
+  followingCount      Int               @default(0)
+  
+  // Privacy & Messaging preferences (Phase 2)
+  visibility          ProfileVisibility @default(PUBLIC)
+  messagePermission   MessagePermission @default(EVERYONE)
+  isSearchable        Boolean           @default(true)
+  
+  // Notification preferences (Phase 2)
+  notifyOnFollow      Boolean           @default(true)
+  notifyOnMessage     Boolean           @default(true)
+  notifyOnPostShare   Boolean           @default(true)
+  
   credits             Credit[]
   education           Education[]
   media               Media[]
   profile_links       profile_links[]
-  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
   @@index([roles])
