@@ -125,41 +125,45 @@ Write-Host ""
 # Create a Node.js script to generate UUIDs and hash password
 $nodeScript = @"
 const crypto = require('crypto');
+const path = require('path');
 
-// Try to load bcryptjs from serverless/node_modules first, then fallback
+// Try to load bcryptjs from serverless/node_modules first, using repo root,
+// then fall back to root-level node_modules/bcryptjs.
 let bcrypt;
 try {
-    bcrypt = require('./serverless/node_modules/bcryptjs');
+  const repoRoot = process.cwd();
+  const bcryptPath = path.join(repoRoot, 'serverless', 'node_modules', 'bcryptjs');
+  bcrypt = require(bcryptPath);
 } catch (e) {
-    try {
-        bcrypt = require('bcryptjs');
-    } catch (e2) {
-        console.error('ERROR: bcryptjs not found. Please run: cd serverless && npm install');
-        process.exit(1);
-    }
+  try {
+    bcrypt = require('bcryptjs');
+  } catch (e2) {
+    console.error('ERROR: bcryptjs not found.');
+    console.error('Please run either:');
+    console.error('  cd serverless && npm install');
+    console.error('or');
+    console.error('  npm install bcryptjs');
+    process.exit(1);
+  }
 }
 
 async function main() {
-    const password = process.argv[2];
-    
-    // Check if gen_random_uuid() is available - we'll use Node UUID instead for consistency
-    const userId = crypto.randomUUID();
-    const profileId = crypto.randomUUID();
-    
-    // Hash password with bcrypt (12 rounds)
-    const passwordHash = await bcrypt.hash(password, 12);
-    
-    // Output as JSON for PowerShell to parse
-    console.log(JSON.stringify({
-        userId: userId,
-        profileId: profileId,
-        passwordHash: passwordHash
-    }));
+  const password = process.argv[2];
+  const userId = crypto.randomUUID();
+  const profileId = crypto.randomUUID();
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  console.log(JSON.stringify({
+    userId,
+    profileId,
+    passwordHash
+  }));
 }
 
 main().catch(err => {
-    console.error('ERROR:', err.message);
-    process.exit(1);
+  console.error('ERROR:', err.message);
+  process.exit(1);
 });
 "@
 
@@ -201,7 +205,6 @@ try {
     $passwordHashEscaped = $passwordHash -replace "'", "''"
     
     # Build the SQL upsert statements
-    # Use a CTE to capture the user ID from the first upsert, then use it in the profile upsert
     $sql = @"
 -- Upsert user and capture the ID
 WITH upserted_user AS (
@@ -306,10 +309,9 @@ WHERE u.email = '$emailEscaped';
     
     Write-Host "[2/4] Executing database upsert..." -ForegroundColor Green
     
-    # Execute SQL using psql
+    # Execute the SQL and capture output
     $env:PGPASSWORD = $null  # Clear any existing password
     
-    # Execute the SQL and capture output
     $psqlOutput = & psql $dbUrl -f $tempSql 2>&1
     
     if ($LASTEXITCODE -ne 0) {
@@ -344,7 +346,6 @@ WHERE u.email = '$emailEscaped';
     Write-Host "[ERROR] Script failed: $_" -ForegroundColor Red
     exit 1
 } finally {
-    # Clean up temporary files
     if (Test-Path $tempScript) {
         Remove-Item $tempScript -Force
     }
