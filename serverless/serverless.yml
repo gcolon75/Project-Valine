@@ -501,6 +501,40 @@ functions:
           path: /conversations/{id}/messages
           method: post
 
+  # ========== DIRECT MESSAGES ==========
+  getMessageThreads:
+    handler: src/handlers/messages.getThreads
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/messages/threads
+          method: get
+  createMessageThread:
+    handler: src/handlers/messages.createThread
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/messages/threads
+          method: post
+  getMessageThread:
+    handler: src/handlers/messages.getThread
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/messages/threads/{threadId}
+          method: get
+  sendDirectMessage:
+    handler: src/handlers/messages.sendMessage
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/messages/threads/{threadId}/messages
+          method: post
+
   # ========== NOTIFICATIONS ==========
   listNotifications:
     handler: src/handlers/notifications.listNotifications
@@ -594,6 +628,88 @@ functions:
       - httpApi:
           path: /connections/unfollow
           method: post
+
+  # ========== SOCIAL (Follow/Block) ==========
+  followProfile:
+    handler: src/handlers/social.followProfile
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/follow
+          method: post
+  unfollowProfile:
+    handler: src/handlers/social.unfollowProfile
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/follow
+          method: delete
+  getProfileFollowers:
+    handler: src/handlers/social.getProfileFollowers
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/followers
+          method: get
+  getProfileFollowing:
+    handler: src/handlers/social.getProfileFollowing
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/following
+          method: get
+  getMyFollowers:
+    handler: src/handlers/social.getMyFollowers
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/followers
+          method: get
+  getMyFollowing:
+    handler: src/handlers/social.getMyFollowing
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/following
+          method: get
+  blockProfile:
+    handler: src/handlers/social.blockProfile
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/block
+          method: post
+  unblockProfile:
+    handler: src/handlers/social.unblockProfile
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/block
+          method: delete
+  getMyBlocks:
+    handler: src/handlers/social.getMyBlocks
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /me/blocks
+          method: get
+  getProfileStatus:
+    handler: src/handlers/social.getProfileStatus
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /profiles/{profileId}/status
+          method: get
 
   # ========== PROFILES ==========
   getProfileByVanity:

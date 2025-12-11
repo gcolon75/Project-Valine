@@ -89,3 +89,59 @@ export const searchConversations = async (query) => {
   });
   return data;
 };
+
+// ========== NEW DM THREAD FUNCTIONS ==========
+
+/**
+ * Get all DM threads for the current user
+ * @param {number} limit - Number of threads
+ * @param {string} cursor - Pagination cursor
+ * @returns {Promise<Object>} { items, nextCursor, hasMore }
+ */
+export const getThreads = async (limit = 50, cursor = null) => {
+  const params = { limit };
+  if (cursor) params.cursor = cursor;
+  
+  const { data } = await apiClient.get('/me/messages/threads', { params });
+  return data;
+};
+
+/**
+ * Create or get existing DM thread with another user
+ * @param {string} recipientUserId - User ID to message
+ * @returns {Promise<Object>} Thread data
+ */
+export const createThread = async (recipientUserId) => {
+  const { data } = await apiClient.post('/me/messages/threads', { recipientUserId });
+  return data;
+};
+
+/**
+ * Get messages in a DM thread
+ * @param {string} threadId - Thread ID
+ * @param {number} limit - Number of messages
+ * @param {string} cursor - Pagination cursor
+ * @returns {Promise<Object>} { thread, messages, nextCursor, hasMore }
+ */
+export const getThread = async (threadId, limit = 50, cursor = null) => {
+  const params = { limit };
+  if (cursor) params.cursor = cursor;
+  
+  const { data } = await apiClient.get(`/me/messages/threads/${threadId}`, { params });
+  return data;
+};
+
+/**
+ * Send a message in a DM thread
+ * @param {string} threadId - Thread ID
+ * @param {string} body - Message body
+ * @param {string} forwardedPostId - Optional post ID to forward
+ * @returns {Promise<Object>} { message }
+ */
+export const sendThreadMessage = async (threadId, body, forwardedPostId = null) => {
+  const { data } = await apiClient.post(`/me/messages/threads/${threadId}/messages`, {
+    body,
+    ...(forwardedPostId && { forwardedPostId })
+  });
+  return data;
+};

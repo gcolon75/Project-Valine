@@ -1,6 +1,7 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
@@ -8,10 +9,12 @@ import CommentList from "./CommentList";
 import ConfirmationModal from "./ConfirmationModal";
 import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService";
 import { deletePost } from "../services/postService";
+import { createThread } from "../services/messagesService";
 
 export default function PostCard({ post, onDelete }) {
   const { likePost, toggleSave } = useFeed();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [accessRequested, setAccessRequested] = useState(post.accessRequestStatus === 'pending');
   const [hasAccess, setHasAccess] = useState(
@@ -23,6 +26,7 @@ export default function PostCard({ post, onDelete }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [sharingViaDM, setSharingViaDM] = useState(false);
   
   // Check if current user is the post author
   const isAuthor = user && (user.id === post.author?.id || user.id === post.authorId);
@@ -106,6 +110,46 @@ export default function PostCard({ post, onDelete }) {
     }
   };
 
+  // Handle share via DM
+  const handleShareViaDM = async () => {
+    if (!user?.id) {
+      toast.error("Please log in to share via DM");
+      return;
+    }
+
+    setSharingViaDM(true);
+    setShowMenu(false);
+    
+    try {
+      // Create or get thread with post author
+      const authorId = post.author?.id || post.authorId;
+      if (!authorId) {
+        throw new Error("Post author not found");
+      }
+      
+      const threadData = await createThread(authorId);
+      
+      // Navigate to conversation with forwarded post in state
+      navigate(`/inbox/${threadData.id}`, {
+        state: {
+          forwardedPost: {
+            id: post.id,
+            title: post.title,
+            body: post.body,
+            author: post.author
+          }
+        }
+      });
+      
+      toast.success("Opening conversation...");
+    } catch (error) {
+      console.error("Share via DM failed:", error);
+      toast.error("Failed to share via DM. Please try again.");
+    } finally {
+      setSharingViaDM(false);
+    }
+  };
+
   return (
     <>
       <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
@@ -152,26 +196,39 @@ export default function PostCard({ post, onDelete }) {
               {timeAgo(post.createdAt)}
             </span>
             
-            {/* 3-dot menu for author */}
-            {isAuthor && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                  aria-label="Post options"
-                >
-                  <MoreVertical className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-                </button>
-                
-                {showMenu && (
-                  <>
-                    {/* Backdrop to close menu */}
-                    <div 
-                      className="fixed inset-0 z-10" 
-                      onClick={() => setShowMenu(false)}
-                    />
-                    {/* Menu */}
-                    <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
+            {/* 3-dot menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                aria-label="Post options"
+              >
+                <MoreVertical className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              </button>
+              
+              {showMenu && (
+                <>
+                  {/* Backdrop to close menu */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowMenu(false)}
+                  />
+                  {/* Menu */}
+                  <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
+                    {/* Share via DM - available for all posts */}
+                    {!isAuthor && (
+                      <button
+                        onClick={handleShareViaDM}
+                        disabled={sharingViaDM}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        {sharingViaDM ? "Opening..." : "Share via DM"}
+                      </button>
+                    )}
+                    
+                    {/* Delete - only for author */}
+                    {isAuthor && (
                       <button
                         onClick={() => {
                           setShowMenu(false);
@@ -182,11 +239,11 @@ export default function PostCard({ post, onDelete }) {
                         <Trash2 className="w-4 h-4" />
                         Delete post
                       </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

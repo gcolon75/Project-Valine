@@ -3,14 +3,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
-import { followUser, sendConnectionRequest, unfollowUser, getConnectionStatus } from '../services/connectionService';
+import { followProfile, unfollowProfile, blockProfile, unblockProfile, getProfileStatus } from '../services/connectionService';
+import { createThread } from '../services/messagesService';
 import { listPosts } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
+import ConfirmationModal from '../components/ConfirmationModal';
+import FollowersListModal from '../components/FollowersListModal';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase } from 'lucide-react';
+import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // URL validation helper to prevent XSS attacks
@@ -80,14 +83,21 @@ export default function Profile() {
     setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
   };
   
-  // Connection/Follow states
+  // Connection/Follow/Block states
   const [connectionStatus, setConnectionStatus] = useState({
     isFollowing: false,
     isFollowedBy: false,
-    requestPending: false,
-    requestSent: false
+    isBlocked: false,
+    isBlockedBy: false
   });
   const [followLoading, setFollowLoading] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
+  
+  // UI states
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [followersModalType, setFollowersModalType] = useState('followers');
 
   // Determine if viewing own profile
   const isOwnProfile = useMemo(() => {
@@ -102,12 +112,16 @@ export default function Profile() {
       if (isOwnProfile || !profile?.id || !user) return;
       
       try {
-        const status = await getConnectionStatus(profile.id);
-        setConnectionStatus(status);
+        const status = await getProfileStatus(profile.id);
+        setConnectionStatus({
+          isFollowing: status.isFollowing || false,
+          isFollowedBy: status.isFollowedBy || false,
+          isBlocked: status.isBlocked || false,
+          isBlockedBy: status.isBlockedBy || false
+        });
       } catch (err) {
         console.warn('Failed to fetch connection status:', err);
-        // Use default status on error - buttons will show "Follow" as default
-        // This is intentional as it allows users to still attempt to follow
+        // Use default status on error
       }
     };
 
@@ -120,17 +134,9 @@ export default function Profile() {
     
     setFollowLoading(true);
     try {
-      // For public profiles, follow directly
-      // For private profiles, send a request
-      if (profile.profileVisibility === 'private') {
-        await sendConnectionRequest(profile.id);
-        setConnectionStatus(prev => ({ ...prev, requestSent: true }));
-        toast.success('Follow request sent!');
-      } else {
-        await followUser(profile.id);
-        setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
-        toast.success(`Now following ${profile.displayName || profile.username}!`);
-      }
+      await followProfile(profile.id);
+      setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
+      toast.success(`Now following ${profile.displayName || profile.username}!`);
     } catch (err) {
       console.error('Failed to follow:', err);
       toast.error('Failed to follow. Please try again.');
@@ -145,7 +151,7 @@ export default function Profile() {
     
     setFollowLoading(true);
     try {
-      await unfollowUser(profile.id);
+      await unfollowProfile(profile.id);
       setConnectionStatus(prev => ({ ...prev, isFollowing: false }));
       toast.success('Unfollowed successfully');
     } catch (err) {
@@ -154,6 +160,68 @@ export default function Profile() {
     } finally {
       setFollowLoading(false);
     }
+  };
+
+  // Handle message button - create thread and navigate
+  const handleMessage = async () => {
+    if (!profile?.userId) {
+      toast.error('Unable to message this user');
+      return;
+    }
+    
+    setMessageLoading(true);
+    try {
+      const thread = await createThread(profile.userId);
+      navigate(`/inbox/${thread.id}`);
+    } catch (err) {
+      console.error('Failed to create thread:', err);
+      toast.error('Failed to start conversation. Please try again.');
+    } finally {
+      setMessageLoading(false);
+    }
+  };
+
+  // Handle block action
+  const handleBlock = async () => {
+    if (!profile?.id) return;
+    
+    setShowBlockConfirm(false);
+    setShowBlockMenu(false);
+    
+    try {
+      await blockProfile(profile.id);
+      setConnectionStatus(prev => ({ 
+        ...prev, 
+        isBlocked: true,
+        isFollowing: false // Blocking unfollows
+      }));
+      toast.success('User blocked');
+    } catch (err) {
+      console.error('Failed to block:', err);
+      toast.error('Failed to block user. Please try again.');
+    }
+  };
+
+  // Handle unblock action
+  const handleUnblock = async () => {
+    if (!profile?.id) return;
+    
+    setShowBlockMenu(false);
+    
+    try {
+      await unblockProfile(profile.id);
+      setConnectionStatus(prev => ({ ...prev, isBlocked: false }));
+      toast.success('User unblocked');
+    } catch (err) {
+      console.error('Failed to unblock:', err);
+      toast.error('Failed to unblock user. Please try again.');
+    }
+  };
+
+  // Open followers modal
+  const openFollowersModal = (type) => {
+    setFollowersModalType(type);
+    setShowFollowersModal(true);
   };
 
   // Fetch profile data
@@ -318,58 +386,116 @@ export default function Profile() {
                 </>
               ) : (
                 <>
-                  {/* Follow/Unfollow Button for other users */}
-                  {connectionStatus.isFollowing ? (
-                    <Button 
-                      onClick={handleUnfollow}
-                      variant="secondary"
-                      size="md"
-                      disabled={followLoading}
-                    >
-                      {followLoading ? (
-                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Following
-                        </>
-                      )}
-                    </Button>
-                  ) : connectionStatus.requestSent ? (
-                    <Button 
-                      variant="secondary"
-                      size="md"
-                      disabled
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      Requested
-                    </Button>
+                  {/* Blocked State */}
+                  {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) ? (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400">
+                      <Shield className="w-4 h-4" />
+                      <span className="font-medium">
+                        {connectionStatus.isBlocked ? 'Blocked' : 'You are blocked'}
+                      </span>
+                    </div>
                   ) : (
-                    <Button 
-                      onClick={handleFollow}
-                      variant="primary"
-                      size="md"
-                      disabled={followLoading}
-                    >
-                      {followLoading ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <>
+                      {/* Follow/Unfollow Button */}
+                      {connectionStatus.isFollowing ? (
+                        <Button 
+                          onClick={handleUnfollow}
+                          variant="secondary"
+                          size="md"
+                          disabled={followLoading}
+                        >
+                          {followLoading ? (
+                            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Following
+                            </>
+                          )}
+                        </Button>
                       ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          {displayData.profileVisibility === 'private' ? 'Request to Follow' : 'Follow'}
-                        </>
+                        <Button 
+                          onClick={handleFollow}
+                          variant="primary"
+                          size="md"
+                          disabled={followLoading}
+                        >
+                          {followLoading ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Follow
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                      
+                      {/* Message Button */}
+                      <Button 
+                        onClick={handleMessage}
+                        variant="secondary"
+                        size="md"
+                        disabled={messageLoading}
+                      >
+                        {messageLoading ? (
+                          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            Message
+                          </>
+                        )}
+                      </Button>
+                    </>
                   )}
-                  {/* Message Button */}
-                  <Button 
-                    onClick={() => navigate('/inbox')}
-                    variant="secondary"
-                    size="md"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Message
-                  </Button>
+                  
+                  {/* More Menu (Block/Report) */}
+                  <div className="relative">
+                    <Button 
+                      onClick={() => setShowBlockMenu(!showBlockMenu)}
+                      variant="secondary"
+                      size="md"
+                      aria-label="More options"
+                      className="!p-2 !min-h-[44px] !min-w-[44px]"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
+                    
+                    {/* Dropdown Menu */}
+                    {showBlockMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-10 overflow-hidden">
+                        {connectionStatus.isBlocked ? (
+                          <button
+                            onClick={handleUnblock}
+                            className="w-full px-4 py-3 text-left text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors flex items-center gap-2"
+                          >
+                            <Shield className="w-4 h-4" />
+                            Unblock User
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setShowBlockConfirm(true);
+                              setShowBlockMenu(false);
+                            }}
+                            className="w-full px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                          >
+                            <Shield className="w-4 h-4" />
+                            Block User
+                          </button>
+                        )}
+                        <button
+                          disabled
+                          className="w-full px-4 py-3 text-left text-neutral-400 dark:text-neutral-600 cursor-not-allowed flex items-center gap-2"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          Report User (Coming Soon)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button 
                     variant="secondary"
                     size="md"
@@ -440,18 +566,26 @@ export default function Profile() {
               </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Posts</span>
             </div>
-            <div>
+            <button
+              onClick={() => openFollowersModal('followers')}
+              className="text-left hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
+              aria-label="View followers"
+            >
               <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
                 {displayData._count?.followers || displayData.followersCount || 0}
               </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Followers</span>
-            </div>
-            <div>
+            </button>
+            <button
+              onClick={() => openFollowersModal('following')}
+              className="text-left hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
+              aria-label="View following"
+            >
               <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
                 {displayData._count?.following || displayData.followingCount || 0}
               </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Following</span>
-            </div>
+            </button>
           </div>
         </div>
       </Card>
@@ -493,7 +627,14 @@ export default function Profile() {
       <div className="space-y-6">
         {activeTab === 'posts' && (
           <Card title="Posts" padding="default">
-            {loadingPosts ? (
+            {/* Show blocked message if user is blocked */}
+            {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
+              <EmptyState
+                icon={Shield}
+                title="Content Not Available"
+                description={connectionStatus.isBlocked ? "You have blocked this user" : "This user has blocked you"}
+              />
+            ) : loadingPosts ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Loading skeleton - 3 cards */}
                 {[1, 2, 3].map(i => (
@@ -798,6 +939,30 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ConfirmationModal
+        isOpen={showBlockConfirm}
+        onClose={() => setShowBlockConfirm(false)}
+        onConfirm={handleBlock}
+        title="Block User"
+        message={`Are you sure you want to block @${displayData.username}? They will no longer be able to follow you or see your profile.`}
+        confirmText="Block"
+        cancelText="Cancel"
+        destructive={true}
+      />
+
+      <FollowersListModal
+        isOpen={showFollowersModal}
+        onClose={() => setShowFollowersModal(false)}
+        profileId={profile?.id}
+        type={followersModalType}
+        count={
+          followersModalType === 'followers'
+            ? displayData._count?.followers || displayData.followersCount || 0
+            : displayData._count?.following || displayData.followingCount || 0
+        }
+      />
     </div>
   );
 }
