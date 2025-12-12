@@ -338,7 +338,7 @@ model Media {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  posts           Post[]
+  posts           Post[]        @relation("PostMedia")
   reelRequests    ReelRequest[]
 
   @@index([profileId])
