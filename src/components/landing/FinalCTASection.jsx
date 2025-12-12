@@ -9,7 +9,7 @@ const FinalCTASection = () => {
           Ready to join the community?
         </h2>
         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-          Sign up now and start connecting with talented voice actors, writers, and artists.
+          Sign up now and start connecting with talented entertainment professionals, showcase your work, and land your next project.
         </p>
         <Link
           to="/join"
