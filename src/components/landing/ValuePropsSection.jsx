@@ -6,10 +6,10 @@ const ValuePropsSection = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="about-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            Empowering voice actors and creative artists
+            Empowering entertainment professionals and creative teams
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Joint is a professional networking platform designed specifically for the voice acting community.
+            Joint is a professional networking platform designed for the entire entertainment industry—from actors and voice talent to producers, directors, writers, editors, and everyone in between.
           </p>
         </div>
         
@@ -17,17 +17,17 @@ const ValuePropsSection = () => {
           <ValueCard
             icon={Target}
             title="Our Mission"
-            description="To create the premier platform where voice actors can connect, collaborate, and find opportunities."
+            description="To create the premier platform where entertainment professionals can connect, collaborate, and discover opportunities across the entire industry."
           />
           <ValueCard
             icon={Users}
             title="Our Community"
-            description="A diverse network of talented artists, from beginners to industry veterans, all supporting each other."
+            description="A diverse network of talented creators and industry professionals, from emerging artists to established veterans, all supporting each other's growth."
           />
           <ValueCard
             icon={Zap}
             title="Our Promise"
-            description="To provide the tools and connections you need to take your voice acting career to the next level."
+            description="To provide the tools and connections you need to showcase your work, monetize your talent, and take your entertainment career to the next level."
           />
         </div>
       </div>

@@ -5,7 +5,7 @@ import SocialProofSection from '../SocialProofSection';
 describe('SocialProofSection', () => {
   it('renders section heading', () => {
     render(<SocialProofSection />);
-    expect(screen.getByRole('heading', { level: 2, name: /Loved by artists everywhere/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Loved by creators everywhere/i })).toBeInTheDocument();
   });
 
   it('renders testimonials', () => {
@@ -18,6 +18,6 @@ describe('SocialProofSection', () => {
   it('renders testimonial quotes', () => {
     render(<SocialProofSection />);
     expect(screen.getByText(/completely changed how I connect/i)).toBeInTheDocument();
-    expect(screen.getByText(/platform built specifically for our community/i)).toBeInTheDocument();
+    expect(screen.getByText(/platform built for the entertainment community/i)).toBeInTheDocument();
   });
 });

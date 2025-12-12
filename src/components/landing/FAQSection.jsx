@@ -5,7 +5,7 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "What is Joint?",
-      answer: "Joint is a professional networking platform designed specifically for voice actors, writers, and creative artists. It provides tools for collaboration, portfolio showcasing, and discovering opportunities."
+      answer: "Joint is a professional networking platform designed for the entertainment industry—actors, voice talent, writers, producers, directors, editors, composers, and more. It provides tools for collaboration, portfolio showcasing, monetizing your work, and discovering opportunities."
     },
     {
       question: "Is Joint free to use?",
@@ -16,8 +16,8 @@ const FAQSection = () => {
       answer: "Simply click 'Get Started' to create your free account. You'll set up your profile, add your portfolio, and can immediately start connecting with other artists in the community."
     },
     {
-      question: "Can I showcase my voice work?",
-      answer: "Absolutely! You can upload audio samples, share video reels, post scripts, and build a comprehensive portfolio that showcases your talents and experience."
+      question: "Can I showcase my work?",
+      answer: "Absolutely! You can upload audio samples, share video reels, post scripts, pitches, storyboards, and build a comprehensive portfolio that showcases your talents and experience across any entertainment discipline."
     },
     {
       question: "How do I find collaboration opportunities?",

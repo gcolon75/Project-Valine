@@ -104,8 +104,9 @@ const MarketingFooter = () => {
             </div>
 
             {/* Copyright */}
-            <div className="text-sm text-neutral-600">
-              &copy; {currentYear} Project Valine. All rights reserved. Created by Gabriel Colon &amp; Justin Valine.
+            <div className="text-sm text-neutral-600 text-center md:text-left">
+              <div>&copy; {currentYear} Project Valine. All rights reserved.</div>
+              <div className="mt-1">Created by Gabriel Colon &amp; Justin Valine.</div>
             </div>
 
             {/* Social Links */}

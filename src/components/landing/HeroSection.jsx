@@ -17,16 +17,16 @@ const HeroSection = () => {
           <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6 animate-slide-up">
             <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
             <span className="text-sm font-medium text-[#0CCE6B]">
-              The Professional Network for Voice Actors
+              The Professional Network for the Entertainment Industry
             </span>
           </div>
           
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
-            Connect. Create. Collaborate.
+            Showcase. Connect. Get Hired.
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>
-            Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
+            Think LinkedIn meets premium content, built for the entertainment industry. Share your work, control who sees it, and get paid for your craft. Built for actors, writers, producers, directors, editors, composers, and the people who hire them.
           </p>
           
           {/* CTA Buttons */}

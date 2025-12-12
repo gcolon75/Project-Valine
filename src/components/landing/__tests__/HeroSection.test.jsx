@@ -11,12 +11,12 @@ describe('HeroSection', () => {
   it('renders main heading', () => {
     renderWithRouter(<HeroSection />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Connect. Create. Collaborate./i)).toBeInTheDocument();
+    expect(screen.getByText(/Showcase. Connect. Get Hired./i)).toBeInTheDocument();
   });
 
   it('renders tagline', () => {
     renderWithRouter(<HeroSection />);
-    expect(screen.getByText(/The Professional Network for Voice Actors/i)).toBeInTheDocument();
+    expect(screen.getByText(/The Professional Network for the Entertainment Industry/i)).toBeInTheDocument();
   });
 
   it('renders CTA buttons', () => {
