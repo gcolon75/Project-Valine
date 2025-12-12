@@ -68,8 +68,9 @@ function normalizeCookieDomain(domain) {
 /**
  * Helper to get cookie domain
  * Re-evaluated each time to allow tests to change COOKIE_DOMAIN
+ * Note: Currently not used as Domain attribute is intentionally omitted for cross-origin cookies
  */
-const getCookieDomain = () => normalizeCookieDomain(process.env.COOKIE_DOMAIN);
+const _getCookieDomain = () => normalizeCookieDomain(process.env.COOKIE_DOMAIN);
 
 /**
  * Generate access token (short-lived)

@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto';
+import { getCorsHeaders } from '../utils/headers.js';
 
 const CSRF_ENABLED = process.env.CSRF_ENABLED === 'true';
 
@@ -131,9 +132,6 @@ export const csrfProtection = (event) => {
   const isValid = verifyCsrfToken(cookieToken, headerToken);
   
   if (!isValid) {
-    // Import getCorsHeaders dynamically to avoid circular dependency
-    const { getCorsHeaders } = await import('../utils/headers.js');
-    
     return {
       statusCode: 403,
       headers: {

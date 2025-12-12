@@ -1,5 +1,5 @@
 import { getPrisma } from '../db/client.js';
-import { json, error, getCorsHeaders } from '../utils/headers.js';
+import { json, error } from '../utils/headers.js';
 
 export const createUser = async (event) => {
   try {
