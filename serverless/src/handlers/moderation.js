@@ -4,16 +4,11 @@
  */
 
 import { getPrisma } from '../db/client.js';
-import { json, error } from '../utils/headers.js';
+import { json, error, getCorsHeaders } from '../utils/headers.js';
 import { getAuthenticatedUserId } from '../utils/authMiddleware.js';
 import { requireAdmin } from '../middleware/adminMiddleware.js';
 import { redactPII } from '../utils/moderation.js';
 import { sendActionAlert } from '../utils/discord.js';
-
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': 'true',
-};
 
 /**
  * Validate decision payload
@@ -81,13 +76,13 @@ export const makeDecision = async (event) => {
     try {
       body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     } catch (err) {
-      return error('Invalid JSON body', 400, headers);
+      return error('Invalid JSON body', 400, { event });
     }
     
     // Validate payload
     const validation = validateDecisionPayload(body);
     if (!validation.valid) {
-      return json({ errors: validation.errors }, 400, headers);
+      return json({ errors: validation.errors }, 400, { event });
     }
     
     const prisma = getPrisma();
@@ -98,7 +93,7 @@ export const makeDecision = async (event) => {
     });
     
     if (!report) {
-      return error('Report not found', 404, headers);
+      return error('Report not found', 404, { event });
     }
     
     // Create moderation action
@@ -153,7 +148,7 @@ export const makeDecision = async (event) => {
     );
   } catch (err) {
     console.error('[Moderation] Decision error:', err);
-    return error('Internal server error', 500, headers);
+    return error('Internal server error', 500, { event });
   }
 };
 
@@ -195,7 +190,7 @@ export const getHealth = async (event) => {
     );
   } catch (err) {
     console.error('[Moderation] Health error:', err);
-    return error('Internal server error', 500, headers);
+    return error('Internal server error', 500, { event });
   }
 };
 

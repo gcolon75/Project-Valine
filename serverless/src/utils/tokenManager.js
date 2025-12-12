@@ -68,8 +68,9 @@ function normalizeCookieDomain(domain) {
 /**
  * Helper to get cookie domain
  * Re-evaluated each time to allow tests to change COOKIE_DOMAIN
+ * Note: Currently not used as Domain attribute is intentionally omitted for cross-origin cookies
  */
-const getCookieDomain = () => normalizeCookieDomain(process.env.COOKIE_DOMAIN);
+const _getCookieDomain = () => normalizeCookieDomain(process.env.COOKIE_DOMAIN);
 
 /**
  * Generate access token (short-lived)
@@ -146,6 +147,27 @@ export const extractToken = (event, tokenType = 'access') => {
   }
   
   return null;
+};
+
+/**
+ * Get cookie header string from event, supporting both HTTP API v2 and traditional formats
+ * Priority: event.cookies[] (HTTP API v2) → event.headers.cookie (REST API)
+ * @param {object} event - Lambda event object
+ * @returns {string} Cookie header string
+ */
+export const getCookieHeader = (event) => {
+  // HTTP API v2: Try cookies array first (production uses this format)
+  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
+    return event.cookies.join('; ');
+  }
+  
+  // Traditional format: Fall back to headers.cookie for REST API compatibility
+  const headerCookie = event?.headers?.cookie || event?.headers?.Cookie;
+  if (headerCookie) {
+    return headerCookie;
+  }
+  
+  return '';
 };
 
 /**

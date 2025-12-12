@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto';
+import { getCorsHeaders } from '../utils/headers.js';
 
 const CSRF_ENABLED = process.env.CSRF_ENABLED === 'true';
 
@@ -135,8 +136,7 @@ export const csrfProtection = (event) => {
       statusCode: 403,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': 'true',
+        ...getCorsHeaders(event),
       },
       body: JSON.stringify({
         error: 'CSRF token validation failed',

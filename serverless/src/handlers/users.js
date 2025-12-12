@@ -1,8 +1,6 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 
-const headers = { 'Access-Control-Allow-Origin': '*' };
-
 export const createUser = async (event) => {
   try {
     const { username, email, displayName, bio, avatar, role } = JSON.parse(event.body || '{}');
