@@ -79,7 +79,7 @@ model Post {
   body       String?
   price      Decimal  @default(0) @db.Decimal(10, 2)
   author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  media      Media?   @relation(fields: [mediaId], references: [id])
+  mediaItem  Media?   @relation(fields: [mediaId], references: [id])
 
   @@index([authorId])
   @@index([createdAt])

@@ -58,7 +58,7 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
       expect(result).toBe('access_token=abc123; refresh_token=xyz789');
     });
 
-    it('should prefer headers.cookie over cookies array', () => {
+    it('should prefer cookies array over headers.cookie (HTTP API v2 priority)', () => {
       const event = {
         headers: {
           cookie: 'access_token=from_header'
@@ -69,7 +69,7 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
       };
       
       const result = getCookieHeader(event);
-      expect(result).toBe('access_token=from_header');
+      expect(result).toBe('access_token=from_array');
     });
 
     it('should return empty string when no cookies present', () => {

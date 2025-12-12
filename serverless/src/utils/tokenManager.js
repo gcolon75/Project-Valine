@@ -151,19 +151,20 @@ export const extractToken = (event, tokenType = 'access') => {
 
 /**
  * Get cookie header string from event, supporting both HTTP API v2 and traditional formats
+ * Priority: event.cookies[] (HTTP API v2) → event.headers.cookie (REST API)
  * @param {object} event - Lambda event object
  * @returns {string} Cookie header string
  */
 export const getCookieHeader = (event) => {
-  // Try traditional header first (most common in REST API)
+  // HTTP API v2: Try cookies array first (production uses this format)
+  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
+    return event.cookies.join('; ');
+  }
+  
+  // Traditional format: Fall back to headers.cookie for REST API compatibility
   const headerCookie = event?.headers?.cookie || event?.headers?.Cookie;
   if (headerCookie) {
     return headerCookie;
-  }
-  
-  // HTTP API v2: Join cookies array into semicolon-separated string
-  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
-    return event.cookies.join('; ');
   }
   
   return '';
