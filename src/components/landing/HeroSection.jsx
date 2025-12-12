@@ -22,12 +22,12 @@ const HeroSection = () => {
           </div>
           
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
-            Showcase. Connect. Get Hired.
+            Your Work Deserves a Stage. This Is It.
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>
-            Think LinkedIn meets premium content, built for the entertainment industry. Share your work, control who sees it, and get paid for your craft. Built for actors, writers, producers, directors, editors, composers, and the people who hire them.
-          </p>
+            Showcase your craft, connect with collaborators, and access opportunities across the entertainment industry.
+            </p>
           
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.3s' }}>
