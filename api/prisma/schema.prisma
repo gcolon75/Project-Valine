@@ -101,7 +101,6 @@ model Post {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   mediaId       String?
-  visibility    String   @default("PUBLIC")
   author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   mediaAttached Media?   @relation(fields: [mediaId], references: [id])
 
