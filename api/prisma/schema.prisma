@@ -95,7 +95,7 @@ model Audition {
 model Post {
   id            String   @id @default(uuid())
   content       String
-  media         String[]
+  mediaUrls     String[]
   tags          String[]
   authorId      String
   createdAt     DateTime @default(now())
