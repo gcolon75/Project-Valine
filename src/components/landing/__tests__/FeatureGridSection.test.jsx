@@ -15,6 +15,7 @@ describe('FeatureGridSection', () => {
     expect(screen.getByRole('heading', { level: 3, name: /Find Opportunities/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: /Feedback & Revisions/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: /Monetize Your Craft/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: /Privacy & Access Controls/i })).toBeInTheDocument();
   });
 
   it('renders additional features section', () => {

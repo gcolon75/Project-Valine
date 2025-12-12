@@ -22,7 +22,7 @@ const HeroSection = () => {
           </div>
           
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
-            Share your work. Grow your network. Land your next project.
+            Showcase. Connect. Get Hired.
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>

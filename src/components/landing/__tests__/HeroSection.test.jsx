@@ -11,7 +11,7 @@ describe('HeroSection', () => {
   it('renders main heading', () => {
     renderWithRouter(<HeroSection />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Share your work. Grow your network. Land your next project./i)).toBeInTheDocument();
+    expect(screen.getByText(/Showcase. Connect. Get Hired./i)).toBeInTheDocument();
   });
 
   it('renders tagline', () => {
