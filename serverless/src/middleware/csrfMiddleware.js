@@ -131,12 +131,14 @@ export const csrfProtection = (event) => {
   const isValid = verifyCsrfToken(cookieToken, headerToken);
   
   if (!isValid) {
+    // Import getCorsHeaders dynamically to avoid circular dependency
+    const { getCorsHeaders } = await import('../utils/headers.js');
+    
     return {
       statusCode: 403,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': 'true',
+        ...getCorsHeaders(event),
       },
       body: JSON.stringify({
         error: 'CSRF token validation failed',

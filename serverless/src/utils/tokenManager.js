@@ -149,6 +149,26 @@ export const extractToken = (event, tokenType = 'access') => {
 };
 
 /**
+ * Get cookie header string from event, supporting both HTTP API v2 and traditional formats
+ * @param {object} event - Lambda event object
+ * @returns {string} Cookie header string
+ */
+export const getCookieHeader = (event) => {
+  // Try traditional header first (most common in REST API)
+  const headerCookie = event?.headers?.cookie || event?.headers?.Cookie;
+  if (headerCookie) {
+    return headerCookie;
+  }
+  
+  // HTTP API v2: Join cookies array into semicolon-separated string
+  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
+    return event.cookies.join('; ');
+  }
+  
+  return '';
+};
+
+/**
  * Parse cookie header string into object
  * @param {string} cookieHeader - Cookie header string
  * @returns {object} Parsed cookies as key-value pairs

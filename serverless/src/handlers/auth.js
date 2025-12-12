@@ -601,7 +601,7 @@ async function me(event) {
     if (!userId) {
       logStructured(correlationId, 'me_no_token', {
         hasAuthHeader: !!(event.headers?.authorization || event.headers?.Authorization),
-        hasCookie: !!(event.headers?.cookie || event.headers?.Cookie)
+        hasCookie: !!(event.headers?.cookie || event.headers?.Cookie) || (Array.isArray(event.cookies) && event.cookies.length > 0)
       }, 'warn');
       return error(401, 'Unauthorized', { correlationId });
     }

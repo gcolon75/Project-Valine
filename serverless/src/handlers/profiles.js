@@ -1,5 +1,5 @@
 import { getPrisma } from '../db/client.js';
-import { json, error } from '../utils/headers.js';
+import { json, error, getCorsHeaders } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
@@ -14,11 +14,6 @@ import {
   getSeverityFromCategory,
   redactPII,
 } from '../utils/moderation.js';
-
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': 'true',
-};
 
 // Validation constants
 const VALID_LINK_TYPES = ['website', 'imdb', 'showreel', 'other'];
@@ -522,7 +517,7 @@ export const updateProfile = async (event) => {
             console.error('[Moderation] Failed to create auto-report:', reportErr);
           }
           
-          return json(formatIssuesForResponse(scanResult.issues), 422, headers);
+          return json(formatIssuesForResponse(scanResult.issues), 422, { event });
         } else {
           // Warn mode: allow update but create low-severity report
           console.log('[Moderation] Profile update warning:', {
@@ -618,7 +613,7 @@ export const updateProfile = async (event) => {
                   message: `Link ${i + 1} blocked by moderation rules`,
                 },
                 422,
-                headers
+                { event }
               );
             }
           }
