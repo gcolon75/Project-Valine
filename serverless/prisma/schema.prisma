@@ -249,7 +249,7 @@ model Profile {
   budgetMin          Int?
   budgetMax          Int?
   pronouns           String?
-  availabilityStatus String?         @map("availabilityStatus")
+  availabilityStatus String?
   credits            Credit[]
   education          Education[]
   media              Media[]
