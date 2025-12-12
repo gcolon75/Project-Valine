@@ -6,8 +6,6 @@
 
 ---
 
-# Project Valine Documentation
-
 **Welcome to the Project Valine documentation hub!** This index provides quick access to all documentation organized by category.
 
 📍 **New here?** Start with:
