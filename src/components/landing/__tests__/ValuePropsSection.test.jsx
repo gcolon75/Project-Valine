@@ -5,7 +5,7 @@ import ValuePropsSection from '../ValuePropsSection';
 describe('ValuePropsSection', () => {
   it('renders section heading', () => {
     render(<ValuePropsSection />);
-    expect(screen.getByRole('heading', { level: 2, name: /Empowering voice actors/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Empowering entertainment professionals/i })).toBeInTheDocument();
   });
 
   it('renders three value cards', () => {
@@ -17,8 +17,8 @@ describe('ValuePropsSection', () => {
 
   it('renders value descriptions', () => {
     render(<ValuePropsSection />);
-    expect(screen.getByText(/premier platform where voice actors can connect/i)).toBeInTheDocument();
-    expect(screen.getByText(/diverse network of talented artists/i)).toBeInTheDocument();
+    expect(screen.getByText(/premier platform where entertainment professionals can connect/i)).toBeInTheDocument();
+    expect(screen.getByText(/diverse network of talented creators/i)).toBeInTheDocument();
     expect(screen.getByText(/tools and connections you need/i)).toBeInTheDocument();
   });
 });

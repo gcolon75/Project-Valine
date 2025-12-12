@@ -20,13 +20,13 @@ describe('FAQSection', () => {
     const question = screen.getByText(/What is Joint\?/i);
     
     // Answer should not be visible initially
-    expect(screen.queryByText(/professional networking platform designed specifically/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/professional networking platform designed for the entertainment industry/i)).not.toBeInTheDocument();
     
     // Click to expand
     fireEvent.click(question);
     
     // Answer should now be visible
-    expect(screen.getByText(/professional networking platform designed specifically/i)).toBeInTheDocument();
+    expect(screen.getByText(/professional networking platform designed for the entertainment industry/i)).toBeInTheDocument();
   });
 
   it('collapses FAQ answer when clicked again', () => {
@@ -35,10 +35,10 @@ describe('FAQSection', () => {
     
     // Expand
     fireEvent.click(question);
-    expect(screen.getByText(/professional networking platform designed specifically/i)).toBeInTheDocument();
+    expect(screen.getByText(/professional networking platform designed for the entertainment industry/i)).toBeInTheDocument();
     
     // Collapse
     fireEvent.click(question);
-    expect(screen.queryByText(/professional networking platform designed specifically/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/professional networking platform designed for the entertainment industry/i)).not.toBeInTheDocument();
   });
 });
