@@ -54,13 +54,6 @@ model User {
   sessions                  sessions[]
   two_factor_recovery_codes two_factor_recovery_codes[]
   settings                  UserSettings?
-  follows                   Follow[]                    @relation("UserFollows")
-  followers                 Follow[]                    @relation("UserFollowedBy")
-  blocks                    Block[]                     @relation("UserBlocks")
-  blockedBy                 Block[]                     @relation("UserBlockedBy")
-  messageThreadsA           MessageThread[]             @relation("UserThreadA")
-  messageThreadsB           MessageThread[]             @relation("UserThreadB")
-  dmMessages                DirectMessage[]
 
   @@index([createdAt])
   @@index([email])
@@ -73,25 +66,25 @@ model User {
 }
 
 model Post {
-  id               String          @id @default(uuid())
-  content          String
-  media            String[]
-  tags             String[]
-  authorId         String
-  mediaId          String?
-  visibility       String          @default("PUBLIC")
-  audioUrl         String?
-  price            Decimal         @default(0) @db.Decimal(10, 2)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  author           User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  forwardedInMessages Message[]    @relation("forwardedPost")
-  forwardedInDMs   DirectMessage[] @relation("forwardedPost")
+  id         String   @id @default(uuid())
+  content    String
+  media      String[]
+  tags       String[]
+  authorId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  mediaId    String?
+  visibility String   @default("PUBLIC")
+  audioUrl   String?
+  body       String?
+  price      Decimal  @default(0) @db.Decimal(10, 2)
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  media      Media?   @relation(fields: [mediaId], references: [id])
 
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
-  @@index([visibility])
+  @@index([mediaId])
   @@map("posts")
 }
 
@@ -103,7 +96,7 @@ model Reel {
   tags      String[]
   authorId  String
   createdAt DateTime   @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime   @updatedAt
   bookmarks Bookmark[]
   comments  Comment[]
   likes     Like[]
@@ -188,68 +181,35 @@ model ConversationParticipant {
 }
 
 model Message {
-  id               String       @id @default(uuid())
-  text             String
-  conversationId   String
-  senderId         String
-  createdAt        DateTime     @default(now())
-  forwardedPostId  String?
-  conversation     Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender           User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
-  forwardedPost    Post?        @relation("forwardedPost", fields: [forwardedPostId], references: [id], onDelete: SetNull)
-  notifications    Notification[]
+  id             String       @id @default(uuid())
+  text           String
+  conversationId String
+  senderId       String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
-  @@index([forwardedPostId])
   @@map("messages")
 }
 
-enum NotificationType {
-  FOLLOW
-  MESSAGE
-  LIKE
-  COMMENT
-  MENTION
-  REQUEST
-  SYSTEM
-}
-
-enum MessagePermission {
-  EVERYONE
-  FOLLOWERS_ONLY
-  NO_ONE
-}
-
-enum ProfileVisibility {
-  PUBLIC
-  FOLLOWERS_ONLY
-}
-
 model Notification {
-  id               String            @id @default(uuid())
-  type             String
-  message          String
-  recipientId      String
-  triggererId      String?
-  isRead           Boolean           @default(false)
-  metadata         Json?
-  createdAt        DateTime          @default(now())
-  postId           String?
-  messageThreadId  String?
-  messageId        String?
-  recipient        User              @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  triggerer        User?             @relation("triggerer", fields: [triggererId], references: [id])
-  messageThread    MessageThread?    @relation(fields: [messageThreadId], references: [id], onDelete: SetNull)
-  directMessage    Message?          @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  id          String   @id @default(uuid())
+  type        String
+  message     String
+  recipientId String
+  triggererId String?
+  isRead      Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])
 
   @@index([recipientId, isRead])
-  @@index([recipientId, createdAt])
   @@index([createdAt])
   @@index([type])
-  @@index([messageThreadId])
-  @@index([messageId])
   @@map("notifications")
 }
 
@@ -271,116 +231,29 @@ model ConnectionRequest {
   @@map("connection_requests")
 }
 
-model Follow {
-  id          String   @id @default(cuid())
-  followerId  String
-  followingId String
-  createdAt   DateTime @default(now())
-
-  follower    User     @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-  @@index([followerId])
-  @@index([followingId])
-  @@map("follows")
-}
-
-model Block {
-  id        String   @id @default(cuid())
-  blockerId String
-  blockedId String
-  createdAt DateTime @default(now())
-
-  blocker   User     @relation("UserBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked   User     @relation("UserBlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
-
-  @@unique([blockerId, blockedId])
-  @@index([blockerId])
-  @@index([blockedId])
-  @@map("blocks")
-}
-
-model MessageThread {
-  id            String         @id @default(cuid())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  userAId       String
-  userBId       String
-
-  userA         User           @relation("UserThreadA", fields: [userAId], references: [id], onDelete: Cascade)
-  userB         User           @relation("UserThreadB", fields: [userBId], references: [id], onDelete: Cascade)
-  messages      DirectMessage[]
-  notifications Notification[]
-
-  @@unique([userAId, userBId])
-  @@index([userAId])
-  @@index([userBId])
-  @@index([updatedAt])
-  @@map("message_threads")
-}
-
-model DirectMessage {
-  id              String        @id @default(cuid())
-  threadId        String
-  senderId        String
-  body            String
-  createdAt       DateTime      @default(now())
-  readAt          DateTime?
-  forwardedPostId String?
-
-  thread          MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sender          User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  forwardedPost   Post?         @relation("forwardedPost", fields: [forwardedPostId], references: [id], onDelete: SetNull)
-
-  @@index([threadId])
-  @@index([threadId, createdAt])
-  @@index([senderId])
-  @@index([createdAt])
-  @@index([forwardedPostId])
-  @@map("direct_messages")
-}
-
 model Profile {
-  id                  String            @id @default(uuid())
-  userId              String            @unique
-  vanityUrl           String            @unique
-  headline            String?
-  bio                 String?
-  roles               String[]
-  tags                String[]
-  location            String?
-  privacy             Json              @default("{}")
-  socialLinks         Json?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  title               String?
-  bannerUrl           String?
-  budgetMin           Int?
-  budgetMax           Int?
-  pronouns            String?
-  availabilityStatus  String?
-  showPronouns        Boolean           @default(true)
-  showLocation        Boolean           @default(true)
-  showAvailability    Boolean           @default(true)
-  followersCount      Int               @default(0)
-  followingCount      Int               @default(0)
-  
-  // Privacy & Messaging preferences (Phase 2)
-  visibility          ProfileVisibility @default(PUBLIC)
-  messagePermission   MessagePermission @default(EVERYONE)
-  isSearchable        Boolean           @default(true)
-  
-  // Notification preferences (Phase 2)
-  notifyOnFollow      Boolean           @default(true)
-  notifyOnMessage     Boolean           @default(true)
-  notifyOnPostShare   Boolean           @default(true)
-  
-  credits             Credit[]
-  education           Education[]
-  media               Media[]
-  profile_links       profile_links[]
-  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  vanityUrl     String          @unique
+  headline      String?
+  bio           String?
+  roles         String[]
+  tags          String[]
+  location      Json?
+  privacy       Json            @default("{}")
+  socialLinks   Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  title         String?
+  bannerUrl     String?
+  budgetMin     Int?
+  budgetMax     Int?
+  pronouns      String?
+  credits       Credit[]
+  education     Education[]
+  media         Media[]
+  profile_links profile_links[]
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
   @@index([roles])
@@ -420,10 +293,11 @@ model Media {
   privacy         String        @default("public")
   processedStatus String        @default("pending")
   metadata        Json?
-  mediaType       String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  mediaType       String?
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  posts           Post[]
   reelRequests    ReelRequest[]
 
   @@index([profileId])
