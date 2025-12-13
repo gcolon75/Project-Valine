@@ -4,6 +4,7 @@
  */
 
 import { getPrisma } from '../db/client.js';
+import { getCorsHeaders } from '../utils/headers.js';
 import { analyticsConfig, isEventAllowed, hasDisallowedProperties, sanitizeProperties } from '../config/analytics.js';
 
 // In-memory rate limiting cache (in production, use Redis)
@@ -65,8 +66,7 @@ function checkRateLimit(identifier) {
 export async function ingestEvents(event) {
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-    'Access-Control-Allow-Credentials': 'true',
+    ...getCorsHeaders(event),
   };
   
   // If analytics disabled, return 204 and ignore
@@ -215,8 +215,7 @@ export async function ingestEvents(event) {
 export async function getConfig(event) {
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-    'Access-Control-Allow-Credentials': 'true',
+    ...getCorsHeaders(event),
     'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
   };
   
@@ -241,8 +240,7 @@ export async function getConfig(event) {
 export async function cleanupOldEvents(event) {
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-    'Access-Control-Allow-Credentials': 'true',
+    ...getCorsHeaders(event),
   };
   
   try {

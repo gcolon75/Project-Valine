@@ -115,7 +115,6 @@ export function json(data, statusCode = 200, extra = {}) {
 }
 
 export function error(statusCode = 400, message = 'Bad Request', extra = {}) {
-  // Extract event from extra if provided for proper CORS origin detection
-  const event = extra.event;
+  // event is extracted via extra object, no need to reference directly
   return json({ error: message }, statusCode, extra);
 }

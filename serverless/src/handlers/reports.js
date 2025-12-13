@@ -4,17 +4,12 @@
  */
 
 import { getPrisma } from '../db/client.js';
-import { json, error } from '../utils/headers.js';
+import { json, error, getCorsHeaders } from '../utils/headers.js';
 import { getAuthenticatedUserId } from '../utils/authMiddleware.js';
 import { requireAdmin } from '../middleware/adminMiddleware.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { getSeverityFromCategory, redactPII } from '../utils/moderation.js';
 import { sendNewReportAlert } from '../utils/discord.js';
-
-const headers = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Credentials': 'true',
-};
 
 /**
  * Get allowed report categories from environment
@@ -82,13 +77,13 @@ export const createReport = async (event) => {
   try {
     // Check if reports are enabled
     if (process.env.REPORTS_ENABLED === 'false') {
-      return error('Reports endpoint is disabled', 503, headers);
+      return error('Reports endpoint is disabled', 503, { event });
     }
     
     // Check authentication
     const userId = getAuthenticatedUserId(event);
     if (!userId) {
-      return error('Unauthorized - Authentication required', 401, headers);
+      return error('Unauthorized - Authentication required', 401, { event });
     }
     
     // Rate limiting
@@ -102,13 +97,13 @@ export const createReport = async (event) => {
     try {
       body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
     } catch (err) {
-      return error('Invalid JSON body', 400, headers);
+      return error('Invalid JSON body', 400, { event });
     }
     
     // Validate payload
     const validation = validateReportPayload(body);
     if (!validation.valid) {
-      return json({ errors: validation.errors }, 400, headers);
+      return json({ errors: validation.errors }, 400, { event });
     }
     
     // Create report
@@ -153,13 +148,13 @@ export const createReport = async (event) => {
       },
       201,
       {
-        ...headers,
+        event,
         ...event.rateLimitHeaders,
       }
     );
   } catch (err) {
     console.error('[Reports] Create error:', err);
-    return error('Internal server error', 500, headers);
+    return error('Internal server error', 500, { event });
   }
 };
 
@@ -222,7 +217,7 @@ export const listReports = async (event) => {
     );
   } catch (err) {
     console.error('[Reports] List error:', err);
-    return error('Internal server error', 500, headers);
+    return error('Internal server error', 500, { event });
   }
 };
 
@@ -240,7 +235,7 @@ export const getReport = async (event) => {
     
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('Report ID is required', 400, headers);
+      return error('Report ID is required', 400, { event });
     }
     
     const prisma = getPrisma();
@@ -255,13 +250,13 @@ export const getReport = async (event) => {
     });
     
     if (!report) {
-      return error('Report not found', 404, headers);
+      return error('Report not found', 404, { event });
     }
     
-    return json(report, 200, headers);
+    return json(report, 200, { event });
   } catch (err) {
     console.error('[Reports] Get error:', err);
-    return error('Internal server error', 500, headers);
+    return error('Internal server error', 500, { event });
   }
 };
 
