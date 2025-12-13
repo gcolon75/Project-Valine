@@ -1,5 +1,11 @@
 # Project Valine Documentation
 
+## 📖 START HERE: [PROJECT_BIBLE.md](PROJECT_BIBLE.md)
+
+**The Bible** is the complete master reference and single source of truth for Project Valine. Start here for comprehensive information about architecture, database, API, deployment, and troubleshooting.
+
+---
+
 **Welcome to the Project Valine documentation hub!** This index provides quick access to all documentation organized by category.
 
 📍 **New here?** Start with:

@@ -17,8 +17,8 @@ A collaborative platform for voice actors, writers, and artists to create and sh
 ---
 
 > 📖 **New to Joint?** Start with:
-> - **[COMPREHENSIVE_SUMMARY.md](COMPREHENSIVE_SUMMARY.md)** - **START HERE** - Complete project overview for agents & new sessions
-> - **[WORKING_STATE_SUMMARY.md](WORKING_STATE_SUMMARY.md)** - Current working state (frontend, auth, health)
+> - **[docs/PROJECT_BIBLE.md](docs/PROJECT_BIBLE.md)** - **THE BIBLE** - Complete master reference and single source of truth
+> - **[docs/backend/COMPREHENSIVE_SUMMARY.md](docs/backend/COMPREHENSIVE_SUMMARY.md)** - Backend comprehensive summary
 > - **[PROJECT_STATUS.md](PROJECT_STATUS.md)** - Readiness, security posture, QA coverage
 > - **[docs/](docs/README.md)** - Complete documentation index
 
