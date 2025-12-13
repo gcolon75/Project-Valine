@@ -21,7 +21,7 @@ echo ""
 echo "Cleaning up previous build artifacts..."
 rm -rf "${BUILD_DIR}"
 rm -rf "${LAYER_DIR}/nodejs"
-rm -f "${LAYER_DIR}/prisma-layer.zip"
+rm -f "${LAYER_DIR}/prisma-layer.zip}"
 mkdir -p "${BUILD_DIR}/nodejs/node_modules"
 
 # Generate Prisma client in the serverless directory with Lambda binaries
