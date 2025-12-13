@@ -250,6 +250,9 @@ model Profile {
   budgetMax          Int?
   pronouns           String?
   availabilityStatus String?
+  showPronouns       Boolean         @default(true)
+  showLocation       Boolean         @default(true)
+  showAvailability   Boolean         @default(true)
   credits            Credit[]
   education          Education[]
   media              Media[]
