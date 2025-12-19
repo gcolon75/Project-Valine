@@ -46,6 +46,14 @@ Essential guides to get Project Valine up and running.
 - **[CONTRIBUTING](../CONTRIBUTING.md)** - Contribution guidelines
 - **[CHANGELOG](../CHANGELOG.md)** - Release notes and changes
 
+### 🎓 New Engineer Onboarding
+- **[Onboarding Overview](onboarding/README.md)** - ⭐ **NEW!** Start here for new engineers: architecture, build/deploy, runbooks
+- [Architecture Overview](onboarding/architecture.md) - Component responsibilities and request flow (with ASCII diagrams)
+- [Build and Run Locally](onboarding/build-and-run-locally.md) - Day 1 setup guide with PowerShell commands
+- [Frontend Build and Deploy](onboarding/frontend-build-and-deploy.md) - Frontend pipeline: Vite → S3 → CloudFront
+- [Backend Build and Deploy](onboarding/backend-build-and-deploy.md) - Backend deployment: Serverless Framework + Prisma layer
+- [CI/CD Overview](onboarding/ci-cd-overview.md) - GitHub Actions workflows and automation
+
 ### Quickstart Guides
 - [Quickstart README](quickstart/README.md) - Get started in minutes
 - [Agents Quickstart](quickstart/agents.md) - Set up AI agents
