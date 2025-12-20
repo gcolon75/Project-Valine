@@ -6,6 +6,7 @@ import {
   Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
 import ImageCropper from '../components/ImageCropper';
+import AvatarUploader from '../components/AvatarUploader';
 import MediaUploader from '../components/MediaUploader';
 import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
@@ -87,7 +88,7 @@ const mapFormToProfileUpdate = (formData) => {
     showAvailability: formData.showAvailability,
     roles: formData.primaryRoles,
     tags: formData.skills,
-    avatar: formData.avatar,
+    avatarUrl: formData.avatar,  // Map frontend 'avatar' to backend 'avatarUrl'
     bannerUrl: formData.banner || formData.bannerUrl,
     socialLinks: formData.profileLinks
   };
@@ -356,9 +357,50 @@ export default function ProfileEdit() {
     }
   };
 
-  const handleAvatarUpload = (imageUrl) => {
-    handleChange('avatar', imageUrl);
-    setShowImageCropper(false);
+  const handleAvatarUpload = async (file, onProgress) => {
+    // Avatar upload should follow the same pattern as banner upload
+    // Upload to S3 and get back a URL, not a data URL
+    
+    const toastId = toast.loading('Uploading avatar...');
+    
+    try {
+      // Use profile.id if available, otherwise let backend auto-create profile
+      const targetProfileId = profileId || user?.id || 'me';
+      const result = await uploadMedia(targetProfileId, file, 'image', {
+        title: 'Profile Avatar',
+        description: 'Profile picture',
+        privacy: 'public',
+        onProgress,
+      });
+
+      // Update form data with the actual media URL from backend
+      if (result?.url || result?.viewUrl) {
+        const avatarUrl = result.url || result.viewUrl;
+        handleChange('avatar', avatarUrl);
+      } else {
+        // Fallback to temporary URL if backend doesn't return URL yet
+        const tempUrl = URL.createObjectURL(file);
+        handleChange('avatar', tempUrl);
+      }
+
+      // Track media upload
+      const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
+      trackMediaUpload('image', sizeBucket);
+
+      toast.success('Avatar uploaded successfully!', { id: toastId });
+      setShowImageCropper(false);
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      
+      // Only show "not logged in" error if we actually got a 401/403 from the server
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.error('You must be logged in to upload media', { id: toastId });
+      } else {
+        toast.error(error.message || 'Failed to upload avatar', { id: toastId });
+      }
+      throw error;
+    }
   };
 
   const handleBannerUpload = async (file, onProgress) => {
@@ -1130,13 +1172,13 @@ export default function ProfileEdit() {
         </div>
       </div>
 
-      {/* Image Cropper Modal */}
-      {showImageCropper && (
-        <ImageCropper
-          onSave={handleAvatarUpload}
+      {/* Avatar Uploader Modal */}
+      {showImageCropper && cropperType === 'avatar' && (
+        <AvatarUploader
+          onUpload={handleAvatarUpload}
           onCancel={() => setShowImageCropper(false)}
-          aspectRatio={cropperType === 'avatar' ? 1 : 4}
-          title={cropperType === 'avatar' ? 'Crop Profile Picture' : 'Crop Banner'}
+          currentAvatar={formData.avatar}
+          title="Upload Profile Picture"
         />
       )}
     </div>
