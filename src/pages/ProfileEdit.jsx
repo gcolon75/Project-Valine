@@ -5,7 +5,6 @@ import {
   User, MapPin, Briefcase, GraduationCap, Award, 
   Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
-import ImageCropper from '../components/ImageCropper';
 import AvatarUploader from '../components/AvatarUploader';
 import MediaUploader from '../components/MediaUploader';
 import SkillsTags from '../components/SkillsTags';
@@ -16,6 +15,7 @@ import { getMyProfile, updateMyProfile, batchUpdateProfileLinks, listEducation, 
 import { uploadMedia } from '../services/mediaService';
 import { sanitizeText } from '../utils/sanitize';
 import { trackProfileUpdate, trackMediaUpload } from '../analytics/client';
+import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
 // Helper function to convert old externalLinks format to new normalized format
 const convertLegacyLinks = (externalLinks) => {
@@ -231,8 +231,7 @@ export default function ProfileEdit() {
     loadExperience();
   }, [user?.id]);
 
-  const [showImageCropper, setShowImageCropper] = useState(false);
-  const [cropperType, setCropperType] = useState(null); // 'avatar' or 'banner'
+  const [showAvatarUploader, setShowAvatarUploader] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingReel, setUploadingReel] = useState(false);
@@ -388,7 +387,7 @@ export default function ProfileEdit() {
       trackMediaUpload('image', sizeBucket);
 
       toast.success('Avatar uploaded successfully!', { id: toastId });
-      setShowImageCropper(false);
+      setShowAvatarUploader(false);
     } catch (error) {
       console.error('Avatar upload failed:', error);
       
@@ -549,6 +548,16 @@ export default function ProfileEdit() {
           // Build profile update using helper function
           const profileUpdate = mapFormToProfileUpdate(sanitizedData);
           
+          // Temporary diagnostic log to verify PATCH payload
+          console.log('[ProfileEdit] PATCH /me/profile payload:', {
+            avatarUrl: profileUpdate.avatarUrl,
+            bannerUrl: profileUpdate.bannerUrl,
+            displayName: profileUpdate.displayName,
+            username: profileUpdate.username,
+            title: profileUpdate.title,
+            allFields: Object.keys(profileUpdate)
+          });
+          
           await updateMyProfile(profileUpdate);
           
           // Refresh user data from backend to ensure consistency
@@ -701,10 +710,7 @@ export default function ProfileEdit() {
                       </div>
                       <div className="space-y-2">
                         <button
-                          onClick={() => {
-                            setCropperType('avatar');
-                            setShowImageCropper(true);
-                          }}
+                          onClick={() => setShowAvatarUploader(true)}
                           className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors text-sm font-medium"
                         >
                           {formData.avatar ? 'Change' : 'Upload'} Photo
@@ -1173,10 +1179,10 @@ export default function ProfileEdit() {
       </div>
 
       {/* Avatar Uploader Modal */}
-      {showImageCropper && cropperType === 'avatar' && (
+      {showAvatarUploader && (
         <AvatarUploader
           onUpload={handleAvatarUpload}
-          onCancel={() => setShowImageCropper(false)}
+          onCancel={() => setShowAvatarUploader(false)}
           currentAvatar={formData.avatar}
           title="Upload Profile Picture"
         />
