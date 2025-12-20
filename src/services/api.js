@@ -72,7 +72,7 @@ export const apiClient = axios.create({
   baseURL: base,
   headers: { 'Content-Type': 'application/json' },
   timeout: 8000, // 8 second timeout (configurable)
-  withCredentials: import.meta.env.VITE_ENABLE_AUTH === 'true' || import.meta.env.VITE_API_USE_CREDENTIALS === 'true', // Enable credentials for cookie auth
+  withCredentials: true, // Always enable credentials for cookie-based auth (access_token, refresh_token)
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN'
 });

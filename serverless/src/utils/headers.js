@@ -118,3 +118,20 @@ export function error(statusCode = 400, message = 'Bad Request', extra = {}) {
   // event is extracted via extra object, no need to reference directly
   return json({ error: message }, statusCode, extra);
 }
+
+/**
+ * Return JSON response with no-cache headers for user-specific data
+ * Prevents browser from caching personalized/dynamic content
+ * @param {*} data - Response data
+ * @param {number} statusCode - HTTP status code
+ * @param {object} extra - Additional headers or options
+ * @returns {object} Lambda response object with no-cache headers
+ */
+export function jsonNoCache(data, statusCode = 200, extra = {}) {
+  return json(data, statusCode, {
+    ...extra,
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+}
