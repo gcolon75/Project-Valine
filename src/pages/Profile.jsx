@@ -15,6 +15,7 @@ import FollowersListModal from '../components/FollowersListModal';
 import { Button, Card } from '../components/ui';
 import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
 // URL validation helper to prevent XSS attacks
 const isValidUrl = (url) => {
@@ -365,7 +366,7 @@ export default function Profile() {
           {(displayData.bannerUrl || displayData.banner) ? (
             <>
               <img 
-                src={displayData.bannerUrl || displayData.banner} 
+                src={getCacheBustedBannerUrl(displayData.bannerUrl || displayData.banner, displayData)} 
                 alt="Profile banner" 
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -387,7 +388,7 @@ export default function Profile() {
             <div className="relative z-10 p-1 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full shadow-xl">
               {displayData.avatar ? (
                 <img 
-                  src={displayData.avatar}
+                  src={getCacheBustedAvatarUrl(displayData.avatar, displayData)}
                   alt={displayData.displayName}
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 object-cover"
                 />

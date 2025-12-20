@@ -1,5 +1,5 @@
 import { getPrisma } from '../db/client.js';
-import { json, error, getCorsHeaders } from '../utils/headers.js';
+import { json, error, getCorsHeaders, jsonNoCache } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
@@ -1184,6 +1184,8 @@ export const updateMyProfile = async (event) => {
         budgetMax: profile.budgetMax || null,
         onboardingComplete: updatedUser.onboardingComplete || false,
         profileComplete: updatedUser.profileComplete || false,
+        // Timestamp for cache-busting images
+        updatedAt: profile.updatedAt || updatedUser.updatedAt || new Date().toISOString(),
       };
 
       console.log('[updateMyProfile] RESPONSE', {
@@ -1192,7 +1194,7 @@ export const updateMyProfile = async (event) => {
         headline: response.headline,
         onboardingComplete: response.onboardingComplete
       });
-      return json(response);
+      return jsonNoCache(response);
 
     } catch (dbError) {
       console.error('[updateMyProfile] Database error:', dbError);
@@ -1380,6 +1382,8 @@ export const getMyProfile = async (event) => {
       onboardingComplete: user.onboardingComplete || false,
       profileComplete: user.profileComplete || false,
       createdAt: user.createdAt,
+      // Timestamp for cache-busting images
+      updatedAt: profile?.updatedAt || user.updatedAt || new Date().toISOString(),
       // Privacy & messaging preferences (Phase 2)
       visibility: profile?.visibility || 'PUBLIC',
       messagePermission: profile?.messagePermission || 'EVERYONE',
@@ -1398,7 +1402,7 @@ export const getMyProfile = async (event) => {
       educationCount: education.length,
       galleryCount: gallery.length
     });
-    return json(response);
+    return jsonNoCache(response);
 
   } catch (e) {
     console.error('[getMyProfile] Error:', e);
