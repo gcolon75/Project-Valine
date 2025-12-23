@@ -29,7 +29,13 @@ export default function PostCard({ post, onDelete }) {
   const [sharingViaDM, setSharingViaDM] = useState(false);
   
   // Check if current user is the post author
-  const isAuthor = user && (user.id === post.author?.id || user.id === post.authorId);
+  // Include fallback checks for different property name variations
+  const isAuthor = user && (
+    user.id === post.author?.id || 
+    user.id === post.authorId || 
+    user.id === post.userId || 
+    user.id === post.ownerId
+  );
   
   // Check if content is gated (has a mediaId and is not public)
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
