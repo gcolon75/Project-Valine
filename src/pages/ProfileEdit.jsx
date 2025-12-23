@@ -90,7 +90,7 @@ const mapFormToProfileUpdate = (formData) => {
     tags: formData.skills,
     avatarUrl: formData.avatar,  // Map frontend 'avatar' to backend 'avatarUrl'
     bannerUrl: formData.banner || formData.bannerUrl,
-    socialLinks: formData.profileLinks
+    links: formData.profileLinks  // Map to 'links' as expected by backend
   };
 };
 
@@ -373,8 +373,9 @@ export default function ProfileEdit() {
       });
 
       // Update form data with the actual media URL from backend
-      if (result?.url || result?.viewUrl) {
-        const avatarUrl = result.url || result.viewUrl;
+      // Backend returns s3Url from completeUpload
+      if (result?.s3Url || result?.url || result?.viewUrl) {
+        const avatarUrl = result.s3Url || result.url || result.viewUrl;
         handleChange('avatar', avatarUrl);
       } else {
         // Fallback to temporary URL if backend doesn't return URL yet
@@ -420,8 +421,9 @@ export default function ProfileEdit() {
       });
 
       // Update form data with the actual media URL from backend
-      if (result?.url || result?.viewUrl) {
-        const bannerUrl = result.url || result.viewUrl;
+      // Backend returns s3Url from completeUpload
+      if (result?.s3Url || result?.url || result?.viewUrl) {
+        const bannerUrl = result.s3Url || result.url || result.viewUrl;
         handleChange('banner', bannerUrl);
         handleChange('bannerUrl', bannerUrl);
       } else {
@@ -469,8 +471,9 @@ export default function ProfileEdit() {
       });
 
       // Update form data with the actual media URL from backend
-      if (result?.url || result?.viewUrl) {
-        const reelUrl = result.url || result.viewUrl;
+      // Backend returns s3Url from completeUpload
+      if (result?.s3Url || result?.url || result?.viewUrl) {
+        const reelUrl = result.s3Url || result.url || result.viewUrl;
         handleChange('primaryReel', reelUrl);
       } else {
         // Fallback to temporary URL if backend doesn't return URL yet
