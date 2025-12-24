@@ -96,11 +96,11 @@ export default function ImageCropper({
       // Calculate output dimensions based on aspect ratio
       let outputWidth, outputHeight;
       if (aspectRatio >= 1) {
-        // Landscape or square
+        // Landscape or square: width is the larger dimension
         outputWidth = targetSize;
         outputHeight = Math.round(targetSize / aspectRatio);
       } else {
-        // Portrait
+        // Portrait: height is the larger dimension
         outputHeight = targetSize;
         outputWidth = Math.round(targetSize * aspectRatio);
       }
