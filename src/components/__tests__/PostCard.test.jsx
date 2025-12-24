@@ -13,6 +13,12 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
+// Mock react-router-dom
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}));
+
 // Mock AuthContext
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -28,6 +34,16 @@ vi.mock('../../services/mediaService', () => ({
   requestMediaAccess: vi.fn().mockResolvedValue({ status: 'pending' }),
 }));
 
+// Mock postService
+vi.mock('../../services/postService', () => ({
+  deletePost: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+// Mock messagesService
+vi.mock('../../services/messagesService', () => ({
+  createThread: vi.fn().mockResolvedValue({ id: 'thread-123' }),
+}));
+
 describe('PostCard', () => {
   const renderPostCard = (post = createMockPost()) => {
     return render(
@@ -40,6 +56,7 @@ describe('PostCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    mockNavigate.mockClear();
   });
 
   it('should render post author information', () => {
@@ -119,7 +136,8 @@ describe('PostCard', () => {
 
     renderPostCard(post);
 
-    const commentButton = screen.getAllByRole('button')[1]; // Second action button
+    // Find the comment button by its accessible label
+    const commentButton = screen.getByRole('button', { name: /view comments.*3 comments/i });
     
     // Verify comment button exists and shows count
     expect(commentButton).toBeInTheDocument();
@@ -213,5 +231,20 @@ describe('PostCard', () => {
 
     const saveButton = screen.getByText('Save').closest('button');
     expect(saveButton.className).toContain('neutral');
+  });
+
+  it('should render View button and navigate to post detail on click', async () => {
+    const user = userEvent.setup();
+    const post = createMockPost({ id: 'post-view-test' });
+
+    renderPostCard(post);
+
+    const viewButton = screen.getByText('View').closest('button');
+    expect(viewButton).toBeInTheDocument();
+
+    await user.click(viewButton);
+
+    // Should call navigate with correct post ID
+    expect(mockNavigate).toHaveBeenCalledWith('/posts/post-view-test');
   });
 });
