@@ -993,7 +993,8 @@ export const updateMyProfile = async (event) => {
       const userUpdateData = {};
       if (username !== undefined) {userUpdateData.username = username;}
       if (displayName !== undefined) {userUpdateData.displayName = displayName;}
-      if (avatarUrl !== undefined) {userUpdateData.avatar = avatarUrl;}
+      // Only update avatar if explicitly provided and not null (prevents overwriting with null)
+      if (avatarUrl !== undefined && avatarUrl !== null) {userUpdateData.avatar = avatarUrl;}
 
       // Update user if there are changes
       let updatedUser;
@@ -1017,7 +1018,8 @@ export const updateMyProfile = async (event) => {
       // Map frontend 'links' to backend 'socialLinks' (JSON field in serverless schema)
       if (links !== undefined) {profileUpdateData.socialLinks = links;}
       // bannerUrl, budgetMin, budgetMax fields
-      if (bannerUrl !== undefined) {profileUpdateData.bannerUrl = bannerUrl;}
+      // Only update bannerUrl if explicitly provided and not null (prevents overwriting with null)
+      if (bannerUrl !== undefined && bannerUrl !== null) {profileUpdateData.bannerUrl = bannerUrl;}
       if (budgetMin !== undefined) {profileUpdateData.budgetMin = budgetMin;}
       if (budgetMax !== undefined) {profileUpdateData.budgetMax = budgetMax;}
       // New profile fields
