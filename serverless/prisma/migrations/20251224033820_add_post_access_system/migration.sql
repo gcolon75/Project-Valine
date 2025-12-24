@@ -21,10 +21,9 @@ ALTER TABLE "posts"
   ADD COLUMN IF NOT EXISTS "allowDownload" BOOLEAN NOT NULL DEFAULT false;
 
 -- AlterTable: Convert visibility from TEXT to Visibility enum (idempotent)
--- Check if visibility column exists and is TEXT type
 DO $$ 
 BEGIN
-  -- Only proceed if column exists and is not already an enum
+  -- Case 1: Column exists and is TEXT type - convert to enum
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'posts' 
@@ -40,15 +39,16 @@ BEGIN
     -- Ensure default is set
     ALTER TABLE "posts" ALTER COLUMN "visibility" SET DEFAULT 'PUBLIC';
     ALTER TABLE "posts" ALTER COLUMN "visibility" SET NOT NULL;
-  END IF;
   
-  -- If column doesn't exist at all, create it
-  IF NOT EXISTS (
+  -- Case 2: Column doesn't exist at all - create it as enum
+  ELSIF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'posts' 
     AND column_name = 'visibility'
   ) THEN
     ALTER TABLE "posts" ADD COLUMN "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC';
+  
+  -- Case 3: Column exists and is already the correct enum type - do nothing
   END IF;
 END $$;
 
