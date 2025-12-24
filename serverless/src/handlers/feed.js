@@ -8,18 +8,18 @@ import { getUserFromEvent } from './auth.js';
  * 
  * Visibility semantics (Instagram + LinkedIn hybrid):
  * - PUBLIC posts: visible to everyone (followers, non-followers, explore)
- * - FOLLOWERS posts: visible only to followers + author's own profile
+ * - FOLLOWERS_ONLY posts: visible only to followers + author's own profile
  * 
  * Feed composition for current user:
- * - All posts from self (PUBLIC and FOLLOWERS visibility)
- * - PUBLIC and FOLLOWERS posts from users that current user follows
+ * - All posts from self (PUBLIC and FOLLOWERS_ONLY visibility)
+ * - PUBLIC and FOLLOWERS_ONLY posts from users that current user follows
  * 
  * Note: "following" means current user sent an accepted connection request (senderId = current user)
  * 
  * Returns:
  * - PUBLIC posts from followed users
- * - FOLLOWERS posts from followed users (current user is a follower)
- * - All posts from self (PUBLIC and FOLLOWERS)
+ * - FOLLOWERS_ONLY posts from followed users (current user is a follower)
+ * - All posts from self (PUBLIC and FOLLOWERS_ONLY)
  */
 export const getFeed = async (event) => {
   try {
@@ -44,8 +44,8 @@ export const getFeed = async (event) => {
     const followedUserIds = following.map(f => f.receiverId);
     
     // Fetch posts with visibility rules:
-    // - Self's posts: any visibility (PUBLIC or FOLLOWERS)
-    // - Followed users' posts: PUBLIC or FOLLOWERS
+    // - Self's posts: any visibility (PUBLIC or FOLLOWERS_ONLY)
+    // - Followed users' posts: PUBLIC or FOLLOWERS_ONLY
     const posts = await prisma.post.findMany({
       where: {
         OR: [
@@ -54,7 +54,7 @@ export const getFeed = async (event) => {
           // Followed users' public posts
           {
             authorId: { in: followedUserIds },
-            visibility: { in: ['PUBLIC', 'FOLLOWERS'] }
+            visibility: { in: ['PUBLIC', 'FOLLOWERS_ONLY'] }
           }
         ]
       },
