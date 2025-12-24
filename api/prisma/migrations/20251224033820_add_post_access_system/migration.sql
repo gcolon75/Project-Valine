@@ -30,10 +30,11 @@ BEGIN
     AND column_name = 'visibility' 
     AND data_type = 'text'
   ) THEN
-    -- Update any non-standard values to valid enum values
+    -- Validate and normalize data: update any non-standard values to valid enum values
+    -- This ensures the type conversion will succeed without data loss
     UPDATE "posts" SET "visibility" = 'PUBLIC' WHERE "visibility" NOT IN ('PUBLIC', 'FOLLOWERS_ONLY');
     
-    -- Convert column type from TEXT to enum (preserving data)
+    -- Convert column type from TEXT to enum (preserving validated data)
     ALTER TABLE "posts" ALTER COLUMN "visibility" TYPE "Visibility" USING "visibility"::"Visibility";
     
     -- Ensure default is set
