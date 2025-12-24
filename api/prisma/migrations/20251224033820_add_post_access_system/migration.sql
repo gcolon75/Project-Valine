@@ -31,12 +31,15 @@ BEGIN
     AND column_name = 'visibility' 
     AND data_type = 'text'
   ) THEN
-    -- Update any non-standard values
+    -- Update any non-standard values to valid enum values
     UPDATE "posts" SET "visibility" = 'PUBLIC' WHERE "visibility" NOT IN ('PUBLIC', 'FOLLOWERS_ONLY');
     
-    -- Drop the old TEXT column and recreate as enum
-    ALTER TABLE "posts" DROP COLUMN "visibility";
-    ALTER TABLE "posts" ADD COLUMN "visibility" "Visibility" NOT NULL DEFAULT 'PUBLIC';
+    -- Convert column type from TEXT to enum (preserving data)
+    ALTER TABLE "posts" ALTER COLUMN "visibility" TYPE "Visibility" USING "visibility"::"Visibility";
+    
+    -- Ensure default is set
+    ALTER TABLE "posts" ALTER COLUMN "visibility" SET DEFAULT 'PUBLIC';
+    ALTER TABLE "posts" ALTER COLUMN "visibility" SET NOT NULL;
   END IF;
   
   -- If column doesn't exist at all, create it
