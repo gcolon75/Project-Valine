@@ -356,32 +356,36 @@ export default function ProfileEdit() {
     }
   };
 
-  const handleAvatarUpload = async (file, onProgress) => {
-    // Avatar upload should follow the same pattern as banner upload
-    // Upload to S3 and get back a URL, not a data URL
+  const handleAvatarUpload = async (processedBlob) => {
+    // Avatar upload flow:
+    // 1. AvatarUploader processes/crops image client-side
+    // 2. Upload processed blob to S3 via uploadMedia
+    // 3. Store ONLY the s3Url (canonical URL) in form state
+    // 4. Never store blob: or data: URLs
     
     const toastId = toast.loading('Uploading avatar...');
     
     try {
       // Use profile.id if available, otherwise let backend auto-create profile
       const targetProfileId = profileId || user?.id || 'me';
+      
+      // Convert blob to File for uploadMedia
+      const file = new File([processedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+      
       const result = await uploadMedia(targetProfileId, file, 'image', {
         title: 'Profile Avatar',
         description: 'Profile picture',
         privacy: 'public',
-        onProgress,
       });
 
-      // Update form data with the actual media URL from backend
-      // Backend returns s3Url from completeUpload
-      if (result?.s3Url || result?.url || result?.viewUrl) {
-        const avatarUrl = result.s3Url || result.url || result.viewUrl;
-        handleChange('avatar', avatarUrl);
-      } else {
-        // Fallback to temporary URL if backend doesn't return URL yet
-        const tempUrl = URL.createObjectURL(file);
-        handleChange('avatar', tempUrl);
+      // CRITICAL: Only accept s3Url as the canonical URL
+      // Do NOT use blob URLs or fall back to temporary URLs
+      if (!result?.s3Url) {
+        throw new Error('Upload completed but no S3 URL returned. Please try again.');
       }
+      
+      // Update form data with the persisted S3 URL
+      handleChange('avatar', result.s3Url);
 
       // Track media upload
       const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
@@ -561,9 +565,17 @@ export default function ProfileEdit() {
             allFields: Object.keys(profileUpdate)
           });
           
-          await updateMyProfile(profileUpdate);
+          const updatedProfile = await updateMyProfile(profileUpdate);
           
-          // Refresh user data from backend to ensure consistency
+          // Update profile state with fresh data from backend
+          if (updatedProfile) {
+            setProfile(updatedProfile);
+            // Update form data from the saved profile to ensure consistency
+            const freshFormData = mapProfileToForm(updatedProfile);
+            setFormData(freshFormData);
+          }
+          
+          // Refresh user data from backend to ensure consistency across app
           await refreshUser();
         } else {
           // Fallback: simulate API delay for realistic UX
@@ -677,7 +689,11 @@ export default function ProfileEdit() {
                     </label>
                     {formData.banner ? (
                       <div className="relative aspect-[4/1] rounded-lg overflow-hidden">
-                        <img src={formData.banner} alt="Banner" className="w-full h-full object-cover" />
+                        <img 
+                          src={getCacheBustedBannerUrl(formData.banner, profile)} 
+                          alt="Banner" 
+                          className="w-full h-full object-cover" 
+                        />
                         <button
                           onClick={() => handleChange('banner', null)}
                           className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
@@ -704,7 +720,11 @@ export default function ProfileEdit() {
                     <div className="flex items-center space-x-4">
                       <div className="w-24 h-24 rounded-full border-2 border-neutral-200 dark:border-neutral-700 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                         {formData.avatar ? (
-                          <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                          <img 
+                            src={getCacheBustedAvatarUrl(formData.avatar, profile)} 
+                            alt="Avatar" 
+                            className="w-full h-full object-cover" 
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <User className="w-12 h-12 text-neutral-400" />

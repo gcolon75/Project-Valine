@@ -144,11 +144,11 @@ export default function AvatarUploader({
 
       // Call onUpload with processed blob
       if (onUpload) {
-        await onUpload(processedBlob, file.type);
+        await onUpload(processedBlob);
       }
 
       setUploadProgress(100);
-      toast.success('Avatar uploaded successfully!');
+      // Don't show success toast here - let parent handle it
     } catch (err) {
       if (err.name === 'AbortError') {
         toast.info('Upload cancelled');
