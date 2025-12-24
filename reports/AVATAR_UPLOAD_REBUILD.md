@@ -113,31 +113,103 @@ refreshUser() → Update context → getCacheBustedAvatarUrl() → Display
 - [x] Remove blob URL fallback from handleAvatarUpload
 - [x] Enforce s3Url as canonical source
 - [x] Add strict validation: throw error if no s3Url returned
+- [x] Fix callback signature to match AvatarUploader
 
 ### Phase 2: Fix AvatarUploader Integration ✅
-- [x] Update AvatarUploader to call onUpload with File object
-- [x] Update ProfileEdit to handle processed blob from AvatarUploader
-- [x] Ensure progress callback is properly passed through
+- [x] Update AvatarUploader to call onUpload with processed blob only
+- [x] Update ProfileEdit to convert blob to File for uploadMedia
+- [x] Remove duplicate success toast from AvatarUploader
 
 ### Phase 3: Fix Profile Save & Refresh ✅
 - [x] Verify avatarUrl field name in mapFormToProfileUpdate
-- [x] Add cache-busting to avatar display
+- [x] Add cache-busting to avatar display (getCacheBustedAvatarUrl)
+- [x] Add cache-busting to banner display (getCacheBustedBannerUrl)
+- [x] Update formData from fresh backend response after save
 - [x] Ensure refreshUser() is called after save
-- [x] Update form state from fresh backend data
 
 ### Phase 4: Add Error Handling ✅
 - [x] Clear error messages for upload failures
 - [x] Handle network errors gracefully
-- [x] Provide retry options where appropriate
+- [x] Provide meaningful error messages
 
-### Phase 5: Testing ✅
-- [x] Manual test: Upload → Save → Refresh
-- [x] Manual test: Upload twice in a row
-- [x] Manual test: Cross-browser persistence
-- [x] Manual test: No blob URLs in payload
-- [x] Manual test: Cookies sent with all requests
+### Phase 5: Code Quality ✅
+- [x] Build succeeds without errors
+- [x] No TypeScript/JSX errors
+- [x] Code follows existing patterns
+- [x] Documentation complete
+
+### Phase 6: Manual Testing Required ⚠️
+- [ ] Manual test: Upload → Save → Refresh (avatar persists)
+- [ ] Manual test: Upload twice in a row (second persists)
+- [ ] Manual test: Cross-browser persistence
+- [ ] Manual test: No blob URLs in payload
+- [ ] Manual test: Cookies sent with all requests
+
+> **Note**: Manual testing must be performed in a live environment with backend access.
+> Existing unit tests were already broken (AuthContext mock issues) and are unrelated to our changes.
 
 ## Technical Details
+
+### Code Changes Summary
+
+#### ProfileEdit.jsx
+**handleAvatarUpload function (lines 359-390)**:
+```javascript
+// BEFORE: Had dangerous fallback to blob URLs
+if (result?.s3Url || result?.url || result?.viewUrl) {
+  const avatarUrl = result.s3Url || result.url || result.viewUrl;
+  handleChange('avatar', avatarUrl);
+} else {
+  const tempUrl = URL.createObjectURL(file);  // ❌ PROBLEMATIC
+  handleChange('avatar', tempUrl);
+}
+
+// AFTER: Enforces s3Url as canonical source
+if (!result?.s3Url) {
+  throw new Error('Upload completed but no S3 URL returned.');
+}
+handleChange('avatar', result.s3Url);  // ✅ ONLY PERSISTED URLs
+```
+
+**Avatar display (line 711)**:
+```javascript
+// BEFORE: No cache-busting
+<img src={formData.avatar} alt="Avatar" />
+
+// AFTER: Cache-busting applied
+<img src={getCacheBustedAvatarUrl(formData.avatar, profile)} alt="Avatar" />
+```
+
+**Profile save (lines 568-577)**:
+```javascript
+// AFTER: Update formData from backend response
+const updatedProfile = await updateMyProfile(profileUpdate);
+if (updatedProfile) {
+  setProfile(updatedProfile);
+  const freshFormData = mapProfileToForm(updatedProfile);
+  setFormData(freshFormData);  // ✅ Sync with backend
+}
+await refreshUser();
+```
+
+#### AvatarUploader.jsx
+**onUpload callback (line 146)**:
+```javascript
+// BEFORE: Passed two arguments
+await onUpload(processedBlob, file.type);
+
+// AFTER: Simplified to one argument
+await onUpload(processedBlob);
+```
+
+**Success messaging (line 151)**:
+```javascript
+// BEFORE: Duplicate toast
+toast.success('Avatar uploaded successfully!');
+
+// AFTER: Let parent handle messaging
+// (removed - ProfileEdit already shows toast)
+```
 
 ### Backend Contract
 - **Upload endpoint**: POST `/profiles/:profileId/media/upload-url`
