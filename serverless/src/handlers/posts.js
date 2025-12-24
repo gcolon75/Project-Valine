@@ -162,7 +162,7 @@ export const createPost = async (event) => {
     }
 
     // Determine isFree based on price if not explicitly set
-    const postIsFree = isFree !== undefined ? isFree : (postPrice === 0 || postPrice === null);
+    const postIsFree = isFree !== undefined ? isFree : (!postPrice || postPrice === 0);
     
     const post = await prisma.post.create({
       data: { 
@@ -173,7 +173,7 @@ export const createPost = async (event) => {
         mediaId: mediaId || null,
         visibility: postVisibility,
         audioUrl: audioUrl || null,
-        price: postPrice > 0 ? postPrice : null,
+        price: (postPrice && postPrice > 0) ? postPrice : null,
         isFree: postIsFree,
         thumbnailUrl: thumbnailUrl || null,
         requiresAccess: requiresAccess || false,
@@ -491,8 +491,8 @@ export const requestPostAccess = async (event) => {
         authorId: true, 
         price: true, 
         isFree: true,
-        requiresAccess: true,
-        content: true
+        requiresAccess: true
+        // Note: content excluded for security - users without access shouldn't see it
       },
       include: {
         author: {

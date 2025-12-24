@@ -30,6 +30,12 @@ export default function PostDetail() {
   const [requestingAccess, setRequestingAccess] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
 
+  // Helper function to safely format price
+  const formatPrice = (price) => {
+    const parsedPrice = parseFloat(price);
+    return !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : '0.00';
+  };
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -203,7 +209,7 @@ export default function PostDetail() {
         </div>
         <p className="text-amber-700 dark:text-amber-300 mb-4">
           {isPaidPost 
-            ? `This content requires payment of $${parseFloat(post.price).toFixed(2)} to access.`
+            ? `This content requires payment of $${formatPrice(post.price)} to access.`
             : 'This content requires permission from the creator to access.'
           }
         </p>
@@ -222,7 +228,7 @@ export default function PostDetail() {
               ) : (
                 <>
                   <DollarSign className="w-4 h-4" />
-                  Pay ${parseFloat(post.price).toFixed(2)}
+                  Pay ${formatPrice(post.price)}
                 </>
               )}
             </button>
@@ -318,7 +324,7 @@ export default function PostDetail() {
             {isPaidPost && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
                 <DollarSign className="w-4 h-4" />
-                ${parseFloat(post.price).toFixed(2)}
+                ${formatPrice(post.price)}
               </span>
             )}
             {!isPaidPost && post.isFree && requiresAccess && (
@@ -376,10 +382,12 @@ export default function PostDetail() {
               {hasAccess && post.allowDownload && (post.mediaAttachment || post.audioUrl) && (
                 <div className="mb-6">
                   <button
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
+                    disabled
+                    title="Download feature coming soon"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium transition opacity-50 cursor-not-allowed"
                   >
                     <Download className="w-4 h-4" />
-                    Download (Watermarked)
+                    Download (Watermarked) - Coming Soon
                   </button>
                 </div>
               )}
