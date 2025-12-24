@@ -19,7 +19,7 @@ const CONTENT_TYPES = [
 
 const VISIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'Public', description: 'Anyone can view' },
-  { value: 'FOLLOWERS', label: 'Followers Only', description: 'Only your followers can view' },
+  { value: 'FOLLOWERS_ONLY', label: 'Followers Only', description: 'Only your followers can view' },
 ];
 
 // Accepted file types per content type
@@ -82,6 +82,9 @@ export default function Post() {
     visibility: 'PUBLIC',
     price: '',
     isFree: true,
+    requiresAccess: false,
+    allowDownload: false,
+    thumbnailUrl: '',
   });
   
   const [errors, setErrors] = useState({});
@@ -294,9 +297,13 @@ export default function Post() {
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
-        visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS
+        visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS_ONLY
         audioUrl: uploadedAudioUrl || null, // Audio file URL for audio posts
         price: priceValue, // Post price (0 for free)
+        isFree: formData.isFree, // Whether post is free
+        thumbnailUrl: formData.thumbnailUrl || null, // Thumbnail URL
+        requiresAccess: formData.requiresAccess || false, // Whether access needs to be requested
+        allowDownload: formData.allowDownload || false, // Whether download is allowed
       };
       
       // Call API to create post
@@ -709,6 +716,65 @@ export default function Post() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Thumbnail Upload */}
+        <div>
+          <label htmlFor="thumbnailUrl" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Thumbnail URL (Optional)
+          </label>
+          <input
+            type="url"
+            id="thumbnailUrl"
+            name="thumbnailUrl"
+            value={formData.thumbnailUrl}
+            onChange={(e) => handleChange('thumbnailUrl', e.target.value)}
+            placeholder="https://example.com/thumbnail.jpg"
+            className="block w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            Add a thumbnail image to make your post more engaging. Leave blank for text-only posts.
+          </p>
+        </div>
+
+        {/* Access Control */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Access Control
+          </label>
+          <div className="space-y-3">
+            {/* Requires Access Toggle */}
+            <label className="flex items-start p-4 rounded-lg border-2 border-neutral-300 dark:border-neutral-700 cursor-pointer hover:border-emerald-300 transition-all">
+              <input
+                type="checkbox"
+                checked={formData.requiresAccess}
+                onChange={(e) => handleChange('requiresAccess', e.target.checked)}
+                className="mt-1 mr-3 w-5 h-5 rounded border-neutral-300 dark:border-neutral-700 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div>
+                <div className="font-medium text-neutral-900 dark:text-neutral-100">Require Access Request</div>
+                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Users must request (or pay) before they can view the post content
+                </div>
+              </div>
+            </label>
+
+            {/* Allow Download Toggle */}
+            <label className="flex items-start p-4 rounded-lg border-2 border-neutral-300 dark:border-neutral-700 cursor-pointer hover:border-emerald-300 transition-all">
+              <input
+                type="checkbox"
+                checked={formData.allowDownload}
+                onChange={(e) => handleChange('allowDownload', e.target.checked)}
+                className="mt-1 mr-3 w-5 h-5 rounded border-neutral-300 dark:border-neutral-700 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div>
+                <div className="font-medium text-neutral-900 dark:text-neutral-100">Allow Downloads</div>
+                <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Allow users to download content (with watermark)
+                </div>
+              </div>
+            </label>
           </div>
         </div>
         
