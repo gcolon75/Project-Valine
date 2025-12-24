@@ -1,8 +1,23 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageCircle, Bookmark, Share2, Clock, DollarSign, Loader2 } from 'lucide-react';
-import { getPost, requestPostAccess } from '../services/postService';
+import { 
+  ArrowLeft, 
+  Heart, 
+  MessageCircle, 
+  Bookmark, 
+  Share2, 
+  Clock, 
+  DollarSign, 
+  Loader2,
+  Lock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  EyeOff,
+  Download
+} from 'lucide-react';
+import { getPost, requestPostAccess, payForPostAccess } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -13,6 +28,13 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requestingAccess, setRequestingAccess] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  // Helper function to safely format price
+  const formatPrice = (price) => {
+    const parsedPrice = parseFloat(price);
+    return !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : '0.00';
+  };
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -44,11 +66,35 @@ export default function PostDetail() {
       setRequestingAccess(true);
       await requestPostAccess(id);
       toast.success('Access request sent to post owner');
+      // Refresh post to get updated status
+      const data = await getPost(id);
+      setPost(data);
     } catch (err) {
       console.error('Error requesting access:', err);
       toast.error(err.response?.data?.message || 'Failed to request access');
     } finally {
       setRequestingAccess(false);
+    }
+  };
+
+  const handlePayForAccess = async () => {
+    if (!user) {
+      toast.error('Please log in to purchase access');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      await payForPostAccess(id);
+      toast.success('Payment successful! You now have access.');
+      // Refresh post to get updated status
+      const data = await getPost(id);
+      setPost(data);
+    } catch (err) {
+      console.error('Error processing payment:', err);
+      toast.error(err.response?.data?.message || 'Failed to process payment');
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -93,8 +139,122 @@ export default function PostDetail() {
     return null;
   }
 
-  const isPaidPost = post.price && parseFloat(post.price) > 0;
+  const isPaidPost = !post.isFree && post.price && parseFloat(post.price) > 0;
   const isOwnPost = user?.id === post.authorId;
+  const requiresAccess = post.requiresAccess && !isOwnPost;
+  const hasAccess = post.hasAccess || isOwnPost;
+  const accessStatus = post.accessStatus || 'granted';
+  const visibility = post.visibility || 'PUBLIC';
+  const isFollowersOnly = visibility === 'FOLLOWERS_ONLY';
+
+  // Render access control UI
+  const renderAccessControl = () => {
+    if (!requiresAccess || hasAccess) {
+      return null;
+    }
+
+    if (accessStatus === 'pending') {
+      return (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Access Request Pending</h3>
+          </div>
+          <p className="text-blue-700 dark:text-blue-300 text-sm">
+            Your access request is pending approval from the creator.
+          </p>
+        </div>
+      );
+    }
+
+    if (accessStatus === 'denied') {
+      return (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="flex items-center gap-3 mb-2">
+            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-red-900 dark:text-red-100">Access Denied</h3>
+          </div>
+          <p className="text-red-700 dark:text-red-300 text-sm mb-3">
+            Your access request was denied by the creator.
+          </p>
+          <button
+            onClick={handleRequestAccess}
+            disabled={requestingAccess}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {requestingAccess ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Requesting...
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                Request Access Again
+              </>
+            )}
+          </button>
+        </div>
+      );
+    }
+
+    // Default: not requested or expired
+    return (
+      <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+            {isPaidPost ? 'Paid Content' : 'Access Required'}
+          </h3>
+        </div>
+        <p className="text-amber-700 dark:text-amber-300 mb-4">
+          {isPaidPost 
+            ? `This content requires payment of $${formatPrice(post.price)} to access.`
+            : 'This content requires permission from the creator to access.'
+          }
+        </p>
+        <div className="flex gap-3">
+          {isPaidPost ? (
+            <button
+              onClick={handlePayForAccess}
+              disabled={processingPayment}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {processingPayment ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="w-4 h-4" />
+                  Pay ${formatPrice(post.price)}
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={handleRequestAccess}
+              disabled={requestingAccess}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {requestingAccess ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Requesting...
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Request Access
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -109,78 +269,129 @@ export default function PostDetail() {
 
       {/* Post Card */}
       <article className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+        {/* Thumbnail */}
+        {post.thumbnailUrl && (
+          <div className="w-full aspect-video bg-neutral-100 dark:bg-neutral-800">
+            <img
+              src={post.thumbnailUrl}
+              alt="Post thumbnail"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
         {/* Author Header */}
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-4">
-            {post.author?.avatar ? (
-              <img
-                src={post.author.avatar}
-                alt={post.author.displayName || post.author.username}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-lg">
-                {(post.author?.displayName || post.author?.username || 'U')[0].toUpperCase()}
+            <Link to={`/profile/${post.author?.username}`}>
+              {post.author?.avatar ? (
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.displayName || post.author.username}
+                  className="w-12 h-12 rounded-full object-cover hover:ring-2 ring-emerald-500 transition"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-lg hover:ring-2 ring-emerald-500 transition">
+                  {(post.author?.displayName || post.author?.username || 'U')[0].toUpperCase()}
+                </div>
+              )}
+            </Link>
+            <div className="flex-1">
+              <Link to={`/profile/${post.author?.username}`} className="hover:underline">
+                <h3 className="font-semibold text-neutral-900 dark:text-white">
+                  {post.author?.displayName || post.author?.username || 'Unknown User'}
+                </h3>
+              </Link>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  @{post.author?.username || 'unknown'}
+                </p>
+                {isFollowersOnly && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-xs font-medium">
+                    <EyeOff className="w-3 h-3" />
+                    Followers Only
+                  </span>
+                )}
               </div>
-            )}
-            <div>
-              <h3 className="font-semibold text-neutral-900 dark:text-white">
-                {post.author?.displayName || post.author?.username || 'Unknown User'}
-              </h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                @{post.author?.username || 'unknown'}
-              </p>
             </div>
           </div>
         </div>
 
         {/* Post Content */}
         <div className="p-6">
-          {/* Price Badge */}
-          {isPaidPost && (
-            <div className="mb-4">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {isPaidPost && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
                 <DollarSign className="w-4 h-4" />
-                ${parseFloat(post.price).toFixed(2)}
+                ${formatPrice(post.price)}
               </span>
-            </div>
-          )}
-
-          {/* Content */}
-          <div className="prose prose-neutral dark:prose-invert max-w-none mb-6">
-            <p className="text-neutral-900 dark:text-white whitespace-pre-wrap">
-              {post.content}
-            </p>
+            )}
+            {!isPaidPost && post.isFree && requiresAccess && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                <CheckCircle className="w-4 h-4" />
+                Free (Permission Required)
+              </span>
+            )}
           </div>
 
-          {/* Audio Player */}
-          {post.audioUrl && (
-            <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">Audio Post</p>
-              <audio controls className="w-full">
-                <source src={post.audioUrl} type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
-            </div>
-          )}
+          {/* Access Control UI */}
+          {renderAccessControl()}
 
-          {/* Media Attachment */}
-          {post.mediaAttachment && (
-            <div className="mb-6">
-              {post.mediaAttachment.type === 'video' ? (
-                <video
-                  src={post.mediaAttachment.s3Key}
-                  controls
-                  className="w-full rounded-lg"
-                />
-              ) : post.mediaAttachment.type === 'image' ? (
-                <img
-                  src={post.mediaAttachment.s3Key}
-                  alt="Post attachment"
-                  className="w-full rounded-lg"
-                />
-              ) : null}
-            </div>
+          {/* Content - show if has access or doesn't require access */}
+          {(hasAccess || !requiresAccess) && (
+            <>
+              {/* Content */}
+              <div className="prose prose-neutral dark:prose-invert max-w-none mb-6">
+                <p className="text-neutral-900 dark:text-white whitespace-pre-wrap">
+                  {post.content}
+                </p>
+              </div>
+
+              {/* Audio Player */}
+              {post.audioUrl && (
+                <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">Audio Post</p>
+                  <audio controls className="w-full">
+                    <source src={post.audioUrl} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              )}
+
+              {/* Media Attachment */}
+              {post.mediaAttachment && (
+                <div className="mb-6">
+                  {post.mediaAttachment.type === 'video' ? (
+                    <video
+                      src={post.mediaAttachment.s3Key}
+                      controls
+                      className="w-full rounded-lg"
+                    />
+                  ) : post.mediaAttachment.type === 'image' ? (
+                    <img
+                      src={post.mediaAttachment.s3Key}
+                      alt="Post attachment"
+                      className="w-full rounded-lg"
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {/* Download Button */}
+              {hasAccess && post.allowDownload && (post.mediaAttachment || post.audioUrl) && (
+                <div className="mb-6">
+                  <button
+                    disabled
+                    title="Download feature coming soon"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium transition opacity-50 cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download (Watermarked) - Coming Soon
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {/* Tags */}
@@ -202,32 +413,6 @@ export default function PostDetail() {
             <Clock className="w-4 h-4" />
             <span>{formatDate(post.createdAt)}</span>
           </div>
-
-          {/* Request Access Button for Paid Posts */}
-          {isPaidPost && !isOwnPost && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-neutral-700 dark:text-neutral-300 mb-3">
-                This is a paid post. Request access from the creator.
-              </p>
-              <button
-                onClick={handleRequestAccess}
-                disabled={requestingAccess}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {requestingAccess ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Requesting...
-                  </>
-                ) : (
-                  <>
-                    <DollarSign className="w-4 h-4" />
-                    Request Access (${parseFloat(post.price).toFixed(2)})
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Actions Footer */}

@@ -1,7 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  output        = "../node_modules/.prisma/client"
-  binaryTargets = ["native", "rhel-openssl-3.0.x", "windows", "darwin", "darwin-arm64"]
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -10,81 +9,128 @@ datasource db {
 }
 
 model User {
-  id                        String                      @id @default(uuid())
-  username                  String                      @unique
-  email                     String                      @unique
-  normalizedEmail           String                      @unique
-  emailVerified             Boolean                     @default(false)
-  emailVerifiedAt           DateTime?
-  passwordHash              String
-  displayName               String?
-  bio                       String?
-  avatar                    String?
-  name                      String?
-  role                      String                      @default("artist")
-  status                    String                      @default("active")
-  theme                     String?                     @default("light")
-  onboardingComplete        Boolean                     @default(false)
-  twoFactorEnabled          Boolean                     @default(false)
-  twoFactorSecret           String?
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime                    @updatedAt
-  profileComplete           Boolean                     @default(false)
-  audit_logs                audit_logs[]
-  auditions                 auditions[]
-  bookmarks                 Bookmark[]
-  comments                  Comment[]
-  receivedRequests          ConnectionRequest[]         @relation("receiver")
-  sentRequests              ConnectionRequest[]         @relation("sender")
-  conversations             ConversationParticipant[]
-  verificationTokens        EmailVerificationToken[]
-  likes                     Like[]
-  sentMessages              Message[]                   @relation("sender")
-  notifications             Notification[]              @relation("recipient")
-  triggeredNotifs           Notification[]              @relation("triggerer")
-  password_reset_tokens     password_reset_tokens[]
-  posts                     Post[]
-  profile_links             profile_links[]
-  profile                   Profile?
-  receivedReelRequests      ReelRequest[]               @relation("owner")
-  sentReelRequests          ReelRequest[]               @relation("requester")
-  reels                     Reel[]
-  refreshTokens             RefreshToken[]
-  scripts                   scripts[]
-  sessions                  sessions[]
-  two_factor_recovery_codes two_factor_recovery_codes[]
-  settings                  UserSettings?
+  id                      String                    @id @default(uuid())
+  username                String                    @unique
+  email                   String                    @unique
+  normalizedEmail         String                    @unique
+  emailVerified           Boolean                   @default(false)
+  emailVerifiedAt         DateTime?
+  passwordHash            String
+  displayName             String?
+  bio                     String?
+  avatar                  String?
+  name                    String?
+  role                    String                    @default("artist")
+  status                  String                    @default("active")
+  theme                   String?                   @default("light")
+  onboardingComplete      Boolean                   @default(false)
+  twoFactorEnabled        Boolean                   @default(false)
+  twoFactorSecret         String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  profileComplete         Boolean                   @default(false)
 
-  @@index([createdAt])
+  auditLogs               AuditLog[]
+  auditions               Audition[]
+  bookmarks               Bookmark[]
+  comments                Comment[]
+  receivedRequests        ConnectionRequest[]       @relation("receiver")
+  sentRequests            ConnectionRequest[]       @relation("sender")
+  conversations           ConversationParticipant[]
+  emailVerificationTokens EmailVerificationToken[]
+  likes                   Like[]
+  sentMessages            Message[]                 @relation("sender")
+  notifications           Notification[]            @relation("recipient")
+  triggeredNotifs         Notification[]            @relation("triggerer")
+  passwordResetTokens     PasswordResetToken[]
+  posts                   Post[]
+  profileLinks            ProfileLink[]
+  profile                 Profile?
+  receivedReelRequests    ReelRequest[]             @relation("owner")
+  sentReelRequests        ReelRequest[]             @relation("requester")
+  reels                   Reel[]
+  refresh_tokens          refresh_tokens[]
+  scripts                 Script[]
+  sessions                Session[]
+  twoFactorRecoveryCodes  TwoFactorRecoveryCode[]
+  settings                UserSettings?
+  accessRequests          AccessRequest[]           @relation("AccessRequests")
+  accessGrants            AccessGrant[]             @relation("AccessGrants")
+
   @@index([email])
   @@index([normalizedEmail])
+  @@index([username])
+  @@index([status])
+  @@index([createdAt])
   @@index([onboardingComplete], map: "users_onboardingcomplete_idx")
   @@index([profileComplete], map: "users_profilecomplete_idx")
-  @@index([status])
-  @@index([username])
   @@map("users")
 }
 
+model Script {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("scripts")
+}
+
+model Audition {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String
+  hostId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([hostId])
+  @@index([createdAt])
+  @@map("auditions")
+}
+
 model Post {
-  id         String   @id @default(uuid())
-  content    String
-  media      String[]
-  tags       String[]
-  authorId   String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  mediaId    String?
-  visibility String   @default("PUBLIC")
-  audioUrl   String?
-  body       String?
-  price      Decimal  @default(0) @db.Decimal(10, 2)
-  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  mediaItem  Media?   @relation(fields: [mediaId], references: [id])
+  id            String   @id @default(uuid())
+  content       String
+  mediaUrls     String[]
+  tags          String[]
+  authorId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Optional attachment to a Media row
+  mediaId       String?
+  
+  // 4-Tier Content System fields
+  visibility     Visibility @default(PUBLIC)
+  isFree         Boolean @default(true)
+  price          Float?
+  thumbnailUrl   String?
+  requiresAccess Boolean @default(false)
+  allowDownload  Boolean @default(false)
+  
+  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // ✅ FIX: match relation name used on Media.posts
+  mediaAttached Media?   @relation("PostMedia", fields: [mediaId], references: [id])
+  
+  // Access control relations
+  grants         AccessGrant[]
+  requests       AccessRequest[]
 
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
   @@index([mediaId])
+  @@index([visibility])
   @@map("posts")
 }
 
@@ -97,6 +143,7 @@ model Reel {
   authorId  String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
   bookmarks Bookmark[]
   comments  Comment[]
   likes     Like[]
@@ -115,6 +162,7 @@ model Comment {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
@@ -129,6 +177,7 @@ model Like {
   reelId    String
   userId    String
   createdAt DateTime @default(now())
+
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -143,6 +192,7 @@ model Bookmark {
   reelId    String
   userId    String
   createdAt DateTime @default(now())
+
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -159,6 +209,7 @@ model Conversation {
   lastMessageAt DateTime?
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
+
   participants  ConversationParticipant[]
   messages      Message[]
 
@@ -171,6 +222,7 @@ model ConversationParticipant {
   conversationId String
   userId         String
   joinedAt       DateTime     @default(now())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -186,6 +238,7 @@ model Message {
   conversationId String
   senderId       String
   createdAt      DateTime     @default(now())
+
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
@@ -204,6 +257,7 @@ model Notification {
   isRead      Boolean  @default(false)
   metadata    Json?
   createdAt   DateTime @default(now())
+
   recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
   triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])
 
@@ -221,49 +275,74 @@ model ConnectionRequest {
   message    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
   receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
-  @@index([receiverId])
   @@index([senderId])
+  @@index([receiverId])
   @@index([status])
   @@map("connection_requests")
 }
 
 model Profile {
-  id                 String          @id @default(uuid())
-  userId             String          @unique
-  vanityUrl          String          @unique
-  headline           String?
-  bio                String?
-  roles              String[]
-  tags               String[]
-  location           Json?
-  privacy            Json            @default("{}")
-  socialLinks        Json?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  title              String?
-  bannerUrl          String?
-  budgetMin          Int?
-  budgetMax          Int?
-  pronouns           String?
-  availabilityStatus String?
-  showPronouns       Boolean         @default(true)
-  showLocation       Boolean         @default(true)
-  showAvailability   Boolean         @default(true)
-  credits            Credit[]
-  education          Education[]
-  media              Media[]
-  profile_links      profile_links[]
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String        @id @default(uuid())
+  userId      String        @unique
+  vanityUrl   String        @unique
+  headline    String?
+  bio         String?
+  title       String?
+  bannerUrl   String?
+
+  // arrays stored as Postgres text[]
+  roles       String[]
+  tags        String[]
+
+  // ✅ FIX: Prisma expects this field; DB needs column too.
+  availabilityStatus String? @map("availabilityStatus")
+
+  location    Json?
+  privacy     Json          @default("{}")
+  socialLinks Json?
+  budgetMin   Int?
+  budgetMax   Int?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  credits     Credit[]
+  education   Education[]
+  media       Media[]
+  links       ProfileLink[]
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
+  @@index([userId])
   @@index([roles])
   @@index([tags])
-  @@index([userId])
   @@map("profiles")
+}
+
+model ProfileLink {
+  id        String   @id @default(uuid())
+  userId    String
+  profileId String
+  label     String
+  url       String
+  type      String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([profileId])
+  @@index([userId, position])
+  @@map("profile_links")
 }
 
 model Education {
@@ -276,6 +355,7 @@ model Education {
   achievements String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
   profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
@@ -299,9 +379,12 @@ model Media {
   metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  mediaType       String?
+
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  posts           Post[]
+
+  // ✅ FIX: relation name must match Post.mediaAttached
+  posts           Post[]        @relation("PostMedia")
+
   reelRequests    ReelRequest[]
 
   @@index([profileId])
@@ -324,6 +407,7 @@ model Credit {
   metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
@@ -341,6 +425,7 @@ model UserSettings {
   billing         Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
@@ -356,6 +441,7 @@ model ReelRequest {
   response    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
   media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
   requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
@@ -373,6 +459,7 @@ model EmailVerificationToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -381,105 +468,58 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
 }
 
-model RefreshToken {
-  id            String    @id @default(uuid())
-  userId        String
-  jti           String    @unique
-  expiresAt     DateTime
-  invalidatedAt DateTime?
-  createdAt     DateTime  @default(now())
-  lastUsedAt    DateTime  @default(now())
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([jti])
-  @@index([userId, invalidatedAt])
-  @@map("refresh_tokens")
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
-model PRIntelligence {
-  id                  String   @id @default(uuid())
-  prNumber            Int
-  changedFilesCount   Int
-  sensitivePathsCount Int
-  riskScore           Float
-  metadata            Json?
-  createdAt           DateTime @default(now())
+model TwoFactorRecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String
+  code      String
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
-  @@index([prNumber])
-  @@index([riskScore])
-  @@map("pr_intelligence")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, used])
+  @@map("two_factor_recovery_codes")
 }
 
-model TestRun {
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model AuditLog {
   id         String   @id @default(uuid())
-  suite      String
-  testName   String
-  status     String
-  durationMs Int
-  runAt      DateTime @default(now())
-  metadata   Json?
-
-  @@index([suite, testName])
-  @@index([runAt])
-  @@index([status])
-  @@map("test_runs")
-}
-
-model ModerationReport {
-  id           String             @id @default(cuid())
-  reporterId   String
-  targetType   String
-  targetId     String
-  category     String
-  description  String?
-  evidenceUrls String[]           @default([])
-  status       String             @default("open")
-  severity     Int                @default(0)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  actions      ModerationAction[]
-
-  @@index([reporterId])
-  @@index([targetType, targetId])
-  @@index([status])
-  @@index([category])
-  @@index([severity])
-  @@index([createdAt])
-  @@map("moderation_reports")
-}
-
-model ModerationAction {
-  id        String           @id @default(cuid())
-  reportId  String
-  action    String
-  reason    String?
-  actorId   String
-  createdAt DateTime         @default(now())
-  report    ModerationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
-
-  @@index([reportId])
-  @@index([actorId])
-  @@index([createdAt])
-  @@map("moderation_actions")
-}
-
-model AnalyticsEvent {
-  id         String   @id @default(cuid())
-  event      String
-  anonId     String?
-  userId     String?
-  sessionId  String?
-  properties Json?
-  createdAt  DateTime @default(now())
-
-  @@index([event])
-  @@index([createdAt])
-  @@map("analytics_events")
-}
-
-model audit_logs {
-  id         String   @id
   userId     String
   action     String
   resource   String
@@ -489,99 +529,158 @@ model audit_logs {
   userAgent  String?
   metadata   Json?
   createdAt  DateTime @default(now())
-  users      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([action])
-  @@index([createdAt])
   @@index([resource])
+  @@index([createdAt])
   @@index([userId, createdAt])
-  @@index([userId])
+  @@map("audit_logs")
 }
 
-model auditions {
-  id        String   @id
-  title     String
-  summary   String
-  hostId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+model analytics_events {
+  id         String   @id
+  event      String
+  anonId     String?
+  userId     String?
+  sessionId  String?
+  properties Json?
+  createdAt  DateTime @default(now())
 
   @@index([createdAt])
-  @@index([hostId])
+  @@index([event])
 }
 
-model password_reset_tokens {
-  id        String   @id
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model moderation_actions {
+  id                 String             @id
+  reportId           String
+  action             String
+  reason             String?
+  actorId            String
+  createdAt          DateTime           @default(now())
 
-  @@index([expiresAt])
-  @@index([token])
-  @@index([userId])
-}
+  moderation_reports moderation_reports @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-model profile_links {
-  id        String   @id
-  userId    String
-  profileId String
-  label     String
-  url       String
-  type      String
-  position  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  profiles  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([profileId])
-  @@index([userId])
-  @@index([userId, position])
-}
-
-model scripts {
-  id        String   @id
-  title     String
-  summary   String
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([authorId])
+  @@index([actorId])
   @@index([createdAt])
+  @@index([reportId])
 }
 
-model sessions {
-  id           String   @id
-  userId       String
-  token        String   @unique
-  ipAddress    String?
-  userAgent    String?
-  expiresAt    DateTime
-  lastActivity DateTime @default(now())
-  createdAt    DateTime @default(now())
-  users        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model moderation_reports {
+  id                 String               @id
+  reporterId         String
+  targetType         String
+  targetId           String
+  category           String
+  description        String?
+  evidenceUrls       String[]             @default([])
+  status             String               @default("open")
+  severity           Int                  @default(0)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
 
-  @@index([expiresAt])
-  @@index([token])
-  @@index([userId, expiresAt])
+  moderation_actions moderation_actions[]
+
+  @@index([category])
+  @@index([createdAt])
+  @@index([reporterId])
+  @@index([severity])
+  @@index([status])
+  @@index([targetType, targetId])
+}
+
+model pr_intelligence {
+  id                  String   @id
+  prNumber            Int
+  changedFilesCount   Int
+  sensitivePathsCount Int
+  riskScore           Float
+  metadata            Json?
+  createdAt           DateTime @default(now())
+
+  @@index([prNumber])
+  @@index([riskScore])
+}
+
+model refresh_tokens {
+  id            String    @id
+  userId        String
+  jti           String    @unique
+  expiresAt     DateTime
+  invalidatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime  @default(now())
+
+  users         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([jti])
   @@index([userId])
+  @@index([userId, invalidatedAt])
 }
 
-model two_factor_recovery_codes {
-  id        String    @id
+model test_runs {
+  id         String   @id
+  suite      String
+  testName   String
+  status     String
+  durationMs Int
+  runAt      DateTime @default(now())
+  metadata   Json?
+
+  @@index([runAt])
+  @@index([status])
+  @@index([suite, testName])
+}
+
+// ========================================
+// Post Access Control System
+// ========================================
+
+enum Visibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model AccessRequest {
+  id          String        @id @default(cuid())
+  postId      String
+  requesterId String
+  status      RequestStatus @default(PENDING)
+  message     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  requester   User          @relation("AccessRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, requesterId])
+  @@index([postId])
+  @@index([requesterId])
+  @@index([status])
+  @@map("access_requests")
+}
+
+model AccessGrant {
+  id        String   @id @default(cuid())
+  postId    String
   userId    String
-  code      String
-  used      Boolean   @default(false)
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  users     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedAt DateTime @default(now())
+  expiresAt DateTime?
+  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([postId, userId])
+  @@index([postId])
   @@index([userId])
-  @@index([userId, used])
+  @@index([expiresAt])
+  @@map("access_grants")
 }

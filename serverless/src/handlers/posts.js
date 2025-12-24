@@ -59,7 +59,20 @@ export const createPost = async (event) => {
       return error(400, 'Invalid JSON in request body');
     }
     
-    const { content, media, authorId, mediaId, tags, visibility, audioUrl, price } = body;
+    const { 
+      content, 
+      media, 
+      authorId, 
+      mediaId, 
+      tags, 
+      visibility, 
+      audioUrl, 
+      price,
+      thumbnailUrl,
+      requiresAccess,
+      allowDownload,
+      isFree
+    } = body;
     
     // Log incoming request (payload size for observability)
     log('create_post_request', { 
@@ -83,11 +96,11 @@ export const createPost = async (event) => {
     }
 
     // Validate visibility if provided
-    const validVisibilities = ['PUBLIC', 'FOLLOWERS'];
+    const validVisibilities = ['PUBLIC', 'FOLLOWERS_ONLY'];
     const postVisibility = visibility || 'PUBLIC';
     if (!validVisibilities.includes(postVisibility)) {
       log('validation_error', { route, userId: authUserId, reason: 'invalid_visibility', value: visibility });
-      return error(400, 'visibility must be either PUBLIC or FOLLOWERS');
+      return error(400, 'visibility must be either PUBLIC or FOLLOWERS_ONLY');
     }
     
     // Validate tags is an array if provided
@@ -148,6 +161,9 @@ export const createPost = async (event) => {
       postPrice = parsedPrice;
     }
 
+    // Determine isFree based on price if not explicitly set
+    const postIsFree = isFree !== undefined ? isFree : (!postPrice || postPrice === 0);
+    
     const post = await prisma.post.create({
       data: { 
         content, 
@@ -157,7 +173,11 @@ export const createPost = async (event) => {
         mediaId: mediaId || null,
         visibility: postVisibility,
         audioUrl: audioUrl || null,
-        price: postPrice,
+        price: (postPrice && postPrice > 0) ? postPrice : null,
+        isFree: postIsFree,
+        thumbnailUrl: thumbnailUrl || null,
+        requiresAccess: requiresAccess || false,
+        allowDownload: allowDownload || false,
       },
       include: { 
         author: { 
@@ -241,6 +261,8 @@ export const listPosts = async (event) => {
 };
 
 export const getPost = async (event) => {
+  const route = 'GET /posts/{id}';
+  
   try {
     const id = event.pathParameters?.id;
     
@@ -248,6 +270,8 @@ export const getPost = async (event) => {
       return error(400, 'id is required');
     }
 
+    const authUserId = getUserIdFromEvent(event);
+    
     const prisma = getPrisma();
 
     // Handle degraded mode (database unavailable)
@@ -280,8 +304,75 @@ export const getPost = async (event) => {
       }
     }
     
+    // Check if user has access to the post content
+    const isOwner = authUserId === post.authorId;
+    let hasAccess = isOwner; // Owner always has access
+    let accessStatus = 'granted';
+    let pendingRequest = null;
+    
+    if (!isOwner && post.requiresAccess) {
+      // Check if user has been granted access
+      if (authUserId) {
+        const grant = await prisma.accessGrant.findUnique({
+          where: {
+            postId_userId: {
+              postId: id,
+              userId: authUserId
+            }
+          }
+        });
+        
+        if (grant) {
+          // Check if grant has expired
+          if (!grant.expiresAt || grant.expiresAt > new Date()) {
+            hasAccess = true;
+          } else {
+            accessStatus = 'expired';
+          }
+        } else {
+          // Check if there's a pending request
+          const request = await prisma.accessRequest.findUnique({
+            where: {
+              postId_requesterId: {
+                postId: id,
+                requesterId: authUserId
+              }
+            }
+          });
+          
+          if (request) {
+            pendingRequest = {
+              id: request.id,
+              status: request.status,
+              createdAt: request.createdAt
+            };
+            
+            if (request.status === 'PENDING') {
+              accessStatus = 'pending';
+            } else if (request.status === 'DENIED') {
+              accessStatus = 'denied';
+            }
+          } else {
+            accessStatus = 'not_requested';
+          }
+        }
+      } else {
+        accessStatus = 'not_authenticated';
+      }
+    }
+    
+    // Add access information to response
+    responsePost = {
+      ...responsePost,
+      hasAccess,
+      accessStatus,
+      pendingRequest
+    };
+    
+    log('get_post_success', { route, postId: id, userId: authUserId, hasAccess, accessStatus });
     return json(responsePost);
   } catch (e) {
+    log('get_post_error', { route, error: e.message, stack: e.stack });
     console.error(e);
     return error(500, 'Server error: ' + e.message);
   }
@@ -376,12 +467,38 @@ export const requestPostAccess = async (event) => {
       return error(400, 'Post ID is required');
     }
     
+    let body = {};
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      // Message is optional, so empty body is OK
+    }
+    
+    const { message } = body;
+    
     const prisma = getPrisma();
+    
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
     
     // Find the post
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true, price: true }
+      select: { 
+        id: true, 
+        authorId: true, 
+        price: true, 
+        isFree: true,
+        requiresAccess: true
+        // Note: content excluded for security - users without access shouldn't see it
+      },
+      include: {
+        author: {
+          select: { id: true, email: true, username: true, displayName: true }
+        }
+      }
     });
     
     if (!post) {
@@ -393,21 +510,85 @@ export const requestPostAccess = async (event) => {
       return error(400, 'You cannot request access to your own post');
     }
     
-    // For now, just log the request and return success
-    // In a full implementation, this would create a request record
+    // Check if access request already exists
+    const existingRequest = await prisma.accessRequest.findUnique({
+      where: {
+        postId_requesterId: {
+          postId,
+          requesterId: authUserId
+        }
+      }
+    });
+    
+    if (existingRequest) {
+      if (existingRequest.status === 'PENDING') {
+        return error(400, 'You already have a pending access request for this post');
+      } else if (existingRequest.status === 'APPROVED') {
+        return error(400, 'You already have access to this post');
+      } else if (existingRequest.status === 'DENIED') {
+        // Allow re-requesting after denial
+        await prisma.accessRequest.update({
+          where: { id: existingRequest.id },
+          data: {
+            status: 'PENDING',
+            message,
+            updatedAt: new Date()
+          }
+        });
+        
+        log('post_access_re_requested', { 
+          route, 
+          userId: authUserId, 
+          postId, 
+          postAuthorId: post.authorId,
+          price: post.price 
+        });
+        
+        return json({ 
+          success: true, 
+          message: 'Access request re-submitted to post owner',
+          postId,
+          price: post.price,
+          isFree: post.isFree
+        });
+      }
+    }
+    
+    // Create new access request
+    const accessRequest = await prisma.accessRequest.create({
+      data: {
+        postId,
+        requesterId: authUserId,
+        message: message || null,
+        status: 'PENDING'
+      }
+    });
+    
+    // TODO: Send email notification to post author
+    // This would integrate with your email service (e.g., SES, SendGrid)
+    // Example:
+    // await sendEmail({
+    //   to: post.author.email,
+    //   subject: `Access request for your post`,
+    //   body: `${authUser.displayName} has requested access to your post.`
+    // });
+    
     log('post_access_requested', { 
       route, 
       userId: authUserId, 
       postId, 
       postAuthorId: post.authorId,
-      price: post.price 
+      price: post.price,
+      requestId: accessRequest.id
     });
     
     return json({ 
       success: true, 
       message: 'Access request sent to post owner',
       postId,
-      price: post.price
+      price: post.price,
+      isFree: post.isFree,
+      requestId: accessRequest.id
     });
   } catch (e) {
     log('post_access_request_error', { route, error: e.message, stack: e.stack });
@@ -480,6 +661,301 @@ export const deletePost = async (event) => {
     return json({ success: true, message: 'Post deleted successfully' }, 200);
   } catch (e) {
     log('delete_post_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * Grant or deny access to a post
+ * POST /posts/{id}/grant
+ * Body: { requestId, action: 'approve' | 'deny' }
+ */
+export const grantAccess = async (event) => {
+  const route = 'POST /posts/{id}/grant';
+  
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      log('auth_failure', { route, reason: 'missing_or_invalid_token' });
+      return error(401, 'Unauthorized - valid access token required');
+    }
+    
+    const postId = event.pathParameters?.id;
+    if (!postId) {
+      return error(400, 'Post ID is required');
+    }
+    
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      log('parse_error', { route, userId: authUserId, error: parseError.message });
+      return error(400, 'Invalid JSON in request body');
+    }
+    
+    const { requestId, action } = body;
+    
+    if (!requestId || !action) {
+      return error(400, 'requestId and action are required');
+    }
+    
+    if (!['approve', 'deny'].includes(action)) {
+      return error(400, 'action must be either "approve" or "deny"');
+    }
+    
+    const prisma = getPrisma();
+    
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
+    
+    // Find the post and verify ownership
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, authorId: true }
+    });
+    
+    if (!post) {
+      return error(404, 'Post not found');
+    }
+    
+    if (post.authorId !== authUserId) {
+      return error(403, 'Forbidden - only the post owner can grant or deny access');
+    }
+    
+    // Find the access request
+    const accessRequest = await prisma.accessRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        requester: {
+          select: { id: true, username: true, email: true, displayName: true }
+        }
+      }
+    });
+    
+    if (!accessRequest) {
+      return error(404, 'Access request not found');
+    }
+    
+    if (accessRequest.postId !== postId) {
+      return error(400, 'Access request does not belong to this post');
+    }
+    
+    if (accessRequest.status !== 'PENDING') {
+      return error(400, `Access request has already been ${accessRequest.status.toLowerCase()}`);
+    }
+    
+    // Update the request status
+    const newStatus = action === 'approve' ? 'APPROVED' : 'DENIED';
+    
+    await prisma.accessRequest.update({
+      where: { id: requestId },
+      data: { status: newStatus }
+    });
+    
+    // If approved, create an access grant
+    if (action === 'approve') {
+      await prisma.accessGrant.create({
+        data: {
+          postId,
+          userId: accessRequest.requesterId,
+          grantedAt: new Date()
+        }
+      });
+    }
+    
+    log('access_grant_processed', { 
+      route, 
+      userId: authUserId, 
+      postId,
+      requestId,
+      action,
+      requesterId: accessRequest.requesterId
+    });
+    
+    return json({ 
+      success: true, 
+      message: `Access ${action === 'approve' ? 'granted' : 'denied'}`,
+      requestId,
+      status: newStatus
+    });
+  } catch (e) {
+    log('grant_access_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * List access requests for user's posts
+ * GET /users/{id}/requests
+ */
+export const getUserRequests = async (event) => {
+  const route = 'GET /users/{id}/requests';
+  
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      log('auth_failure', { route, reason: 'missing_or_invalid_token' });
+      return error(401, 'Unauthorized - valid access token required');
+    }
+    
+    const userId = event.pathParameters?.id;
+    if (!userId) {
+      return error(400, 'User ID is required');
+    }
+    
+    // Can only view your own requests
+    if (userId !== authUserId) {
+      return error(403, 'Forbidden - you can only view your own requests');
+    }
+    
+    const prisma = getPrisma();
+    
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
+    
+    const { status = 'PENDING' } = event.queryStringParameters || {};
+    
+    // Find all posts owned by the user
+    const posts = await prisma.post.findMany({
+      where: { authorId: userId },
+      select: { id: true }
+    });
+    
+    const postIds = posts.map(p => p.id);
+    
+    // Find access requests for these posts
+    const requests = await prisma.accessRequest.findMany({
+      where: {
+        postId: { in: postIds },
+        ...(status && { status: status.toUpperCase() })
+      },
+      include: {
+        post: {
+          select: {
+            id: true,
+            content: true,
+            price: true,
+            isFree: true,
+            createdAt: true
+          }
+        },
+        requester: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatar: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    log('user_requests_fetched', { route, userId, count: requests.length, status });
+    
+    return json({ requests });
+  } catch (e) {
+    log('get_user_requests_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * Process payment for post access (stub)
+ * POST /posts/{id}/pay
+ */
+export const payForAccess = async (event) => {
+  const route = 'POST /posts/{id}/pay';
+  
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      log('auth_failure', { route, reason: 'missing_or_invalid_token' });
+      return error(401, 'Unauthorized - valid access token required');
+    }
+    
+    const postId = event.pathParameters?.id;
+    if (!postId) {
+      return error(400, 'Post ID is required');
+    }
+    
+    const prisma = getPrisma();
+    
+    if (!prisma) {
+      log('prisma_unavailable', { route, userId: authUserId, reason: 'degraded_mode' });
+      return error(503, 'Database unavailable');
+    }
+    
+    // Find the post
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { 
+        id: true, 
+        authorId: true, 
+        price: true, 
+        isFree: true 
+      }
+    });
+    
+    if (!post) {
+      return error(404, 'Post not found');
+    }
+    
+    if (post.isFree) {
+      return error(400, 'This post is free and does not require payment');
+    }
+    
+    if (!post.price || post.price <= 0) {
+      return error(400, 'This post does not have a valid price');
+    }
+    
+    // TODO: Integrate with payment processor (Stripe, etc.)
+    // For now, this is a stub that simulates successful payment
+    
+    // Automatically grant access after payment
+    const existingGrant = await prisma.accessGrant.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId: authUserId
+        }
+      }
+    });
+    
+    if (existingGrant) {
+      return error(400, 'You already have access to this post');
+    }
+    
+    await prisma.accessGrant.create({
+      data: {
+        postId,
+        userId: authUserId,
+        grantedAt: new Date()
+      }
+    });
+    
+    log('payment_processed', { 
+      route, 
+      userId: authUserId, 
+      postId,
+      price: post.price
+    });
+    
+    return json({ 
+      success: true, 
+      message: 'Payment processed successfully',
+      postId,
+      price: post.price
+    });
+  } catch (e) {
+    log('pay_for_access_error', { route, error: e.message, stack: e.stack });
     console.error(e);
     return error(500, 'Server error: ' + e.message);
   }

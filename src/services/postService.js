@@ -117,9 +117,43 @@ export const uploadAudioToS3 = (uploadUrl, file, onProgress) => {
 /**
  * Request access to a paid post
  * @param {string} postId - Post ID
+ * @param {string} message - Optional message to post owner
  * @returns {Promise<{success: boolean, message: string, postId: string, price: number}>}
  */
-export const requestPostAccess = async (postId) => {
-  const { data } = await apiClient.post(`/posts/${postId}/request`);
+export const requestPostAccess = async (postId, message = null) => {
+  const { data } = await apiClient.post(`/posts/${postId}/request`, { message });
   return data;
+};
+
+/**
+ * Grant or deny access to a post
+ * @param {string} postId - Post ID
+ * @param {string} requestId - Access request ID
+ * @param {string} action - 'approve' or 'deny'
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const grantPostAccess = async (postId, requestId, action) => {
+  const { data } = await apiClient.post(`/posts/${postId}/grant`, { requestId, action });
+  return data;
+};
+
+/**
+ * Pay for access to a post
+ * @param {string} postId - Post ID
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export const payForPostAccess = async (postId) => {
+  const { data } = await apiClient.post(`/posts/${postId}/pay`);
+  return data;
+};
+
+/**
+ * Get access requests for user's posts
+ * @param {string} userId - User ID
+ * @param {string} status - Filter by status (PENDING, APPROVED, DENIED)
+ * @returns {Promise<Array>}
+ */
+export const getUserAccessRequests = async (userId, status = 'PENDING') => {
+  const { data } = await apiClient.get(`/users/${userId}/requests`, { params: { status } });
+  return data?.requests ?? [];
 };

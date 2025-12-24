@@ -54,6 +54,8 @@ model User {
   sessions                Session[]
   twoFactorRecoveryCodes  TwoFactorRecoveryCode[]
   settings                UserSettings?
+  accessRequests          AccessRequest[]           @relation("AccessRequests")
+  accessGrants            AccessGrant[]             @relation("AccessGrants")
 
   @@index([email])
   @@index([normalizedEmail])
@@ -106,15 +108,29 @@ model Post {
 
   // Optional attachment to a Media row
   mediaId       String?
+  
+  // 4-Tier Content System fields
+  visibility     Visibility @default(PUBLIC)
+  isFree         Boolean @default(true)
+  price          Float?
+  thumbnailUrl   String?
+  requiresAccess Boolean @default(false)
+  allowDownload  Boolean @default(false)
+  
   author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // ✅ FIX: match relation name used on Media.posts
   mediaAttached Media?   @relation("PostMedia", fields: [mediaId], references: [id])
+  
+  // Access control relations
+  grants         AccessGrant[]
+  requests       AccessRequest[]
 
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
   @@index([mediaId])
+  @@index([visibility])
   @@map("posts")
 }
 
@@ -616,4 +632,55 @@ model test_runs {
   @@index([runAt])
   @@index([status])
   @@index([suite, testName])
+}
+
+// ========================================
+// Post Access Control System
+// ========================================
+
+enum Visibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model AccessRequest {
+  id          String        @id @default(cuid())
+  postId      String
+  requesterId String
+  status      RequestStatus @default(PENDING)
+  message     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  requester   User          @relation("AccessRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, requesterId])
+  @@index([postId])
+  @@index([requesterId])
+  @@index([status])
+  @@map("access_requests")
+}
+
+model AccessGrant {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  grantedAt DateTime @default(now())
+  expiresAt DateTime?
+  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("access_grants")
 }
