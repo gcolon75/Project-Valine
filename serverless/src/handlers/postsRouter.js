@@ -41,6 +41,11 @@ export const handler = async (event, context) => {
       return posts.getAudioUploadUrl(event, context);
     }
 
+    // GET /users/{id}/requests
+    if (method === 'GET' && /^\/users\/[^/]+\/requests$/.test(path)) {
+      return posts.getUserRequests(event, context);
+    }
+
     // GET /posts
     if (method === 'GET' && path === '/posts') {
       return posts.listPosts(event, context);
@@ -54,6 +59,16 @@ export const handler = async (event, context) => {
     // POST /posts/{id}/request
     if (method === 'POST' && /^\/posts\/[^/]+\/request$/.test(path)) {
       return posts.requestPostAccess(event, context);
+    }
+
+    // POST /posts/{id}/grant
+    if (method === 'POST' && /^\/posts\/[^/]+\/grant$/.test(path)) {
+      return posts.grantAccess(event, context);
+    }
+
+    // POST /posts/{id}/pay
+    if (method === 'POST' && /^\/posts\/[^/]+\/pay$/.test(path)) {
+      return posts.payForAccess(event, context);
     }
 
     // GET /posts/{id}
