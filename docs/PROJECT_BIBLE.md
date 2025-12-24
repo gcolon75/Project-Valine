@@ -223,7 +223,8 @@ Key Root Files:
 - **ORM:** Prisma 5.x
 - **Migrations:** Prisma Migrate
 - **Connection:** Connection pooling via Prisma
-- **Schema Location:** `api/prisma/schema.prisma`
+- **Schema Location:** `serverless/prisma/schema.prisma` (CANONICAL) and `api/prisma/schema.prisma` (must be kept in sync)
+- **⚠️ IMPORTANT:** Production migrations run from `serverless/prisma`. Keep both schemas synchronized to prevent drift.
 
 #### File Storage (S3)
 - **Buckets:** 
@@ -403,7 +404,7 @@ Key Root Files:
      │
      │ 1. POST /api/posts
      │    Authorization: Bearer <token>
-     │    { content, mediaUrls, tags }
+     │    { content, media, tags }
      ▼
 ┌─────────────────┐
 │  API Gateway    │
@@ -674,12 +675,15 @@ layers:
 
 **Database Migrations:**
 ```bash
-# Run migrations in production
-cd /home/runner/work/Project-Valine/Project-Valine/api
+# Run migrations in production (from canonical serverless/prisma)
+cd /home/runner/work/Project-Valine/Project-Valine/serverless
 DATABASE_URL="postgresql://user:pass@host:5432/db" npx prisma migrate deploy
 
 # Check migration status
 npx prisma migrate status
+
+# NOTE: Keep api/prisma/schema.prisma in sync with serverless/prisma/schema.prisma
+# to prevent schema drift between development and production environments.
 ```
 
 **Post-Deployment Verification:**
@@ -1329,8 +1333,8 @@ curl https://your-api-gateway-url.amazonaws.com/prod/health
 
 **Diagnosis:**
 ```bash
-# Check migration status
-cd /home/runner/work/Project-Valine/Project-Valine/api
+# Check migration status (use serverless directory for production)
+cd /home/runner/work/Project-Valine/Project-Valine/serverless
 npx prisma migrate status
 
 # Check database connection
@@ -1340,8 +1344,12 @@ npx prisma db pull
 **Solutions:**
 1. **Failed Migration:**
    ```bash
-   # Mark migration as applied (if manually fixed)
+   # Mark migration as applied (if manually fixed or columns already exist)
    npx prisma migrate resolve --applied <migration-name>
+   
+   # Example: If 20251224033820_add_post_access_system failed due to existing columns
+   cd /home/runner/work/Project-Valine/Project-Valine/serverless
+   npx prisma migrate resolve --applied "20251224033820_add_post_access_system"
    
    # Or rollback
    psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
