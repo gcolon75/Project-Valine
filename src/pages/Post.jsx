@@ -298,7 +298,7 @@ export default function Post() {
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
         visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS_ONLY
-        audioUrl: uploadedAudioUrl || null, // Audio file URL for audio posts
+        // audioUrl removed - not supported in Post schema yet
         price: priceValue, // Post price (0 for free)
         isFree: formData.isFree, // Whether post is free
         thumbnailUrl: formData.thumbnailUrl || null, // Thumbnail URL

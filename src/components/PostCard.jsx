@@ -337,6 +337,16 @@ export default function PostCard({ post, onDelete }) {
             <span>{post.saved ? "Saved" : "Save"}</span>
           </button>
           
+          {/* View button - navigate to post detail page */}
+          <button
+            onClick={() => navigate(`/posts/${post.id}`)}
+            className="rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors flex items-center gap-1.5"
+            aria-label="View full post details"
+          >
+            <Eye className="w-4 h-4" aria-hidden="true" />
+            <span>View</span>
+          </button>
+          
           {/* Request/Download button */}
           <div className="ml-auto">
             {isGated && !hasAccess ? (
