@@ -35,8 +35,8 @@ If the columns and tables already exist in production (either from a partial mig
 # 1. Connect to production database
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
-# 2. Set DATABASE_URL
-export DATABASE_URL="postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+# 2. Set DATABASE_URL (use your production database URL)
+export DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require"
 
 # 3. Check current migration status
 ./node_modules/.bin/prisma migrate status
@@ -56,8 +56,8 @@ If the migration failed partway through and you want to complete it:
 # 1. Connect to production database
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
-# 2. Set DATABASE_URL
-export DATABASE_URL="postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+# 2. Set DATABASE_URL (use your production database URL)
+export DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require"
 
 # 3. Mark the failed migration as rolled back
 ./node_modules/.bin/prisma migrate resolve --rolled-back "20251224033820_add_post_access_system"
