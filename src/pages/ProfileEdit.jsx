@@ -245,6 +245,7 @@ export default function ProfileEdit() {
   const [showAvatarUploader, setShowAvatarUploader] = useState(false);
   const [showBannerCropper, setShowBannerCropper] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingReel, setUploadingReel] = useState(false);
 
@@ -372,6 +373,7 @@ export default function ProfileEdit() {
     // Avatar upload with cropped file from ImageCropper
     // The file is already processed (cropped, scaled) by ImageCropper
     
+    setUploadingAvatar(true);
     const toastId = toast.loading('Uploading avatar...');
     
     try {
@@ -414,7 +416,9 @@ export default function ProfileEdit() {
       } else {
         toast.error(error.message || 'Failed to upload avatar', { id: toastId });
       }
-      throw error;
+      // Don't rethrow - just show error and let user retry
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -466,7 +470,7 @@ export default function ProfileEdit() {
       } else {
         toast.error(error.message || 'Failed to upload banner', { id: toastId });
       }
-      throw error;
+      // Don't rethrow - just show error and let user retry
     } finally {
       setUploadingBanner(false);
     }
@@ -523,6 +527,12 @@ export default function ProfileEdit() {
 
   const handleSave = async () => {
     try {
+      // Check if any uploads are in progress
+      if (uploadingAvatar || uploadingBanner || uploadingReel) {
+        toast.error('Please wait for uploads to complete before saving');
+        return;
+      }
+      
       // Sanitize text fields before validation and submission
       const sanitizedData = {
         ...formData,
@@ -648,10 +658,11 @@ export default function ProfileEdit() {
         </div>
         <button
           onClick={handleSave}
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
+          disabled={uploadingAvatar || uploadingBanner || uploadingReel}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="w-5 h-5" />
-          <span>Save Changes</span>
+          <span>{uploadingAvatar || uploadingBanner || uploadingReel ? 'Uploading...' : 'Save Changes'}</span>
         </button>
       </div>
 
