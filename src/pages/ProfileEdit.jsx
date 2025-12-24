@@ -75,7 +75,7 @@ const mapProfileToForm = (profileData) => {
 
 // Helper function to map form data to profile update payload
 const mapFormToProfileUpdate = (formData) => {
-  return {
+  const payload = {
     displayName: formData.displayName,
     username: formData.username,
     title: formData.title,
@@ -88,10 +88,21 @@ const mapFormToProfileUpdate = (formData) => {
     showAvailability: formData.showAvailability,
     roles: formData.primaryRoles,
     tags: formData.skills,
-    avatarUrl: formData.avatar,  // Map frontend 'avatar' to backend 'avatarUrl'
-    bannerUrl: formData.banner || formData.bannerUrl,
     links: formData.profileLinks  // Map to 'links' as expected by backend
   };
+  
+  // Only include avatar if it exists and is not null (prevents overwriting with null)
+  if (formData.avatar) {
+    payload.avatarUrl = formData.avatar;  // Map frontend 'avatar' to backend 'avatarUrl'
+  }
+  
+  // Only include banner if it exists and is not null (prevents overwriting with null)
+  const bannerValue = formData.banner || formData.bannerUrl;
+  if (bannerValue) {
+    payload.bannerUrl = bannerValue;
+  }
+  
+  return payload;
 };
 
 export default function ProfileEdit() {
