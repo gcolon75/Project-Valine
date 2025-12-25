@@ -58,6 +58,33 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
       expect(result).toBe('access_token=abc123; refresh_token=xyz789');
     });
 
+    it('should extract from event.multiValueHeaders.cookie (REST API multiValue format)', () => {
+      const event = {
+        multiValueHeaders: {
+          cookie: [
+            'access_token=abc123; refresh_token=xyz789',
+            'session_id=sess123'
+          ]
+        }
+      };
+      
+      const result = getCookieHeader(event);
+      expect(result).toBe('access_token=abc123; refresh_token=xyz789; session_id=sess123');
+    });
+
+    it('should extract from event.multiValueHeaders.Cookie (case variation)', () => {
+      const event = {
+        multiValueHeaders: {
+          Cookie: [
+            'access_token=abc123'
+          ]
+        }
+      };
+      
+      const result = getCookieHeader(event);
+      expect(result).toBe('access_token=abc123');
+    });
+
     it('should prefer cookies array over headers.cookie (HTTP API v2 priority)', () => {
       const event = {
         headers: {
@@ -66,6 +93,35 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
         cookies: [
           'access_token=from_array'
         ]
+      };
+      
+      const result = getCookieHeader(event);
+      expect(result).toBe('access_token=from_array');
+    });
+
+    it('should prefer multiValueHeaders over headers.cookie', () => {
+      const event = {
+        headers: {
+          cookie: 'access_token=from_header'
+        },
+        multiValueHeaders: {
+          cookie: ['access_token=from_multivalue']
+        }
+      };
+      
+      const result = getCookieHeader(event);
+      expect(result).toBe('access_token=from_multivalue');
+    });
+
+    it('should prefer cookies array over multiValueHeaders', () => {
+      const event = {
+        cookies: ['access_token=from_array'],
+        multiValueHeaders: {
+          cookie: ['access_token=from_multivalue']
+        },
+        headers: {
+          cookie: 'access_token=from_header'
+        }
       };
       
       const result = getCookieHeader(event);
@@ -185,6 +241,67 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
     });
   });
 
+  describe('extractToken - event.multiValueHeaders.cookie support (REST API)', () => {
+    it('should extract access token from event.multiValueHeaders.cookie', () => {
+      const event = {
+        multiValueHeaders: {
+          cookie: [
+            `access_token=${accessToken}; refresh_token=${refreshToken}`
+          ]
+        }
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const decoded = verifyToken(token);
+      expect(decoded.sub).toBe(testUserId);
+    });
+
+    it('should extract refresh token from event.multiValueHeaders.cookie', () => {
+      const event = {
+        multiValueHeaders: {
+          cookie: [
+            `access_token=${accessToken}; refresh_token=${refreshToken}`
+          ]
+        }
+      };
+      
+      const token = extractToken(event, 'refresh');
+      expect(token).toBe(refreshToken);
+    });
+
+    it('should extract from event.multiValueHeaders.Cookie (capital C)', () => {
+      const event = {
+        multiValueHeaders: {
+          Cookie: [
+            `access_token=${accessToken}`
+          ]
+        }
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+    });
+
+    it('should handle multiple cookie header values in multiValueHeaders', () => {
+      const event = {
+        multiValueHeaders: {
+          cookie: [
+            `access_token=${accessToken}`,
+            `refresh_token=${refreshToken}`
+          ]
+        }
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const decoded = verifyToken(token);
+      expect(decoded.sub).toBe(testUserId);
+    });
+  });
+
   describe('extractToken - Authorization header fallback', () => {
     it('should extract access token from Authorization header', () => {
       const event = {
@@ -227,6 +344,42 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
         cookies: [
           `access_token=${accessToken}`
         ],
+        headers: {
+          cookie: `access_token=${wrongToken}`
+        }
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const decoded = verifyToken(token);
+      expect(decoded.sub).toBe(testUserId);
+    });
+
+    it('should prioritize event.cookies over event.multiValueHeaders.cookie', () => {
+      const wrongToken = generateAccessToken('wrong-user');
+      const event = {
+        cookies: [
+          `access_token=${accessToken}`
+        ],
+        multiValueHeaders: {
+          cookie: [`access_token=${wrongToken}`]
+        }
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const decoded = verifyToken(token);
+      expect(decoded.sub).toBe(testUserId);
+    });
+
+    it('should prioritize event.multiValueHeaders.cookie over event.headers.cookie', () => {
+      const wrongToken = generateAccessToken('wrong-user');
+      const event = {
+        multiValueHeaders: {
+          cookie: [`access_token=${accessToken}`]
+        },
         headers: {
           cookie: `access_token=${wrongToken}`
         }
