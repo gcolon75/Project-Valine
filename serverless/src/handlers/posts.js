@@ -172,7 +172,7 @@ export const createPost = async (event) => {
         authorId,
         mediaId: mediaId || null,
         visibility: postVisibility,
-        audioUrl: audioUrl || null,
+        // audioUrl removed - not in Post schema
         price: (postPrice && postPrice > 0) ? postPrice : null,
         isFree: postIsFree,
         thumbnailUrl: thumbnailUrl || null,
@@ -194,6 +194,12 @@ export const createPost = async (event) => {
   } catch (e) {
     log('create_post_error', { route, error: e.message, stack: e.stack });
     console.error(e);
+    
+    // Return 400 for validation errors
+    if (e.name === 'PrismaClientValidationError' || e.message?.includes('Unknown argument')) {
+      return error(400, 'Invalid post data: ' + e.message);
+    }
+    
     return error(500, 'Server error: ' + e.message);
   }
 };
