@@ -110,6 +110,40 @@ export const verifyToken = (token) => {
 };
 
 /**
+ * Parse cookie header string into object
+ * @param {string} cookieHeader - Cookie header string
+ * @returns {object} Parsed cookies as key-value pairs
+ */
+const parseCookies = (cookieHeader) => {
+  const cookies = {};
+  if (!cookieHeader) return cookies;
+  
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, ...rest] = cookie.split('=');
+    if (name && rest.length > 0) {
+      cookies[name.trim()] = rest.join('=').trim();
+    }
+  });
+  
+  return cookies;
+};
+
+/**
+ * Log diagnostic information about token extraction (non-test environments only)
+ * @param {string} message - Log message
+ * @param {object} data - Additional data to log (optional)
+ */
+const logTokenDiagnostic = (message, data = null) => {
+  if (process.env.NODE_ENV !== 'test') {
+    if (data && Object.keys(data).length > 0) {
+      console.log(`[extractToken] ${message}`, data);
+    } else {
+      console.log(`[extractToken] ${message}`);
+    }
+  }
+};
+
+/**
  * Extract token from cookies or Authorization header
  * Supports multiple AWS API Gateway formats:
  * - HTTP API v2 (event.cookies array)
@@ -126,15 +160,13 @@ export const extractToken = (event, tokenType = 'access') => {
   const hasHeadersCookie = !!(event.headers?.cookie || event.headers?.Cookie);
   const hasMultiValueHeaders = !!(event.multiValueHeaders?.cookie || event.multiValueHeaders?.Cookie);
   
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('[extractToken]', {
-      tokenType,
-      hasCookiesArray,
-      hasHeadersCookie,
-      hasMultiValueHeaders,
-      cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0
-    });
-  }
+  logTokenDiagnostic('Attempting extraction', {
+    tokenType,
+    hasCookiesArray,
+    hasHeadersCookie,
+    hasMultiValueHeaders,
+    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0
+  });
   
   // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
   // Format: ["access_token=abc123", "refresh_token=xyz789"]
@@ -144,9 +176,7 @@ export const extractToken = (event, tokenType = 'access') => {
       if (cookie.startsWith(prefix)) {
         // Handle cookie values that may contain '=' (e.g., base64 tokens)
         const token = cookie.substring(prefix.length);
-        if (process.env.NODE_ENV !== 'test') {
-          console.log('[extractToken] Found in event.cookies[]');
-        }
+        logTokenDiagnostic('Found in event.cookies[]');
         return token;
       }
     }
@@ -160,9 +190,7 @@ export const extractToken = (event, tokenType = 'access') => {
     const combinedCookies = multiValueCookie.join('; ');
     const cookies = parseCookies(combinedCookies);
     if (cookies[cookieName]) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('[extractToken] Found in event.multiValueHeaders.cookie');
-      }
+      logTokenDiagnostic('Found in event.multiValueHeaders.cookie');
       return cookies[cookieName];
     }
   }
@@ -172,9 +200,7 @@ export const extractToken = (event, tokenType = 'access') => {
   if (headerCookie) {
     const cookies = parseCookies(headerCookie);
     if (cookies[cookieName]) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('[extractToken] Found in event.headers.cookie');
-      }
+      logTokenDiagnostic('Found in event.headers.cookie');
       return cookies[cookieName];
     }
   }
@@ -183,16 +209,12 @@ export const extractToken = (event, tokenType = 'access') => {
   if (tokenType === 'access') {
     const authHeader = event.headers?.authorization || event.headers?.Authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('[extractToken] Found in Authorization header');
-      }
+      logTokenDiagnostic('Found in Authorization header');
       return authHeader.substring(7);
     }
   }
   
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('[extractToken] Token not found');
-  }
+  logTokenDiagnostic('Token not found');
   return null;
 };
 
@@ -221,25 +243,6 @@ export const getCookieHeader = (event) => {
   }
   
   return '';
-};
-
-/**
- * Parse cookie header string into object
- * @param {string} cookieHeader - Cookie header string
- * @returns {object} Parsed cookies as key-value pairs
- */
-const parseCookies = (cookieHeader) => {
-  const cookies = {};
-  if (!cookieHeader) return cookies;
-  
-  cookieHeader.split(';').forEach(cookie => {
-    const [name, ...rest] = cookie.split('=');
-    if (name && rest.length > 0) {
-      cookies[name.trim()] = rest.join('=').trim();
-    }
-  });
-  
-  return cookies;
 };
 
 /**
