@@ -142,9 +142,13 @@ export default function AvatarUploader({
       setPreview(previewUrl);
       setUploadProgress(80);
 
-      // Call onUpload with processed blob
+      // Call onUpload with processed blob and progress callback
+      // Note: onUpload should be async (file) => Promise<void>
       if (onUpload) {
-        await onUpload(processedBlob, file.type);
+        const progressCallback = (percent) => {
+          setUploadProgress(Math.min(100, Math.max(0, percent)));
+        };
+        await onUpload(processedBlob, progressCallback);
       }
 
       setUploadProgress(100);
