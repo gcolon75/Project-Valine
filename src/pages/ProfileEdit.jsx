@@ -5,7 +5,7 @@ import {
   User, MapPin, Briefcase, GraduationCap, Award, 
   Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
-import ImageCropper from '../components/ImageCropper';
+import AvatarUploader from '../components/AvatarUploader';
 import MediaUploader from '../components/MediaUploader';
 import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
@@ -243,9 +243,7 @@ export default function ProfileEdit() {
   }, [user?.id]);
 
   const [showAvatarUploader, setShowAvatarUploader] = useState(false);
-  const [showBannerCropper, setShowBannerCropper] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingReel, setUploadingReel] = useState(false);
 
@@ -369,24 +367,20 @@ export default function ProfileEdit() {
     }
   };
 
-  const handleAvatarUpload = async (croppedFile) => {
-    // Avatar upload with cropped file from ImageCropper
-    // The file is already processed (cropped, scaled) by ImageCropper
+  const handleAvatarUpload = async (file, onProgress) => {
+    // Avatar upload should follow the same pattern as banner upload
+    // Upload to S3 and get back a URL, not a data URL
     
-    setUploadingAvatar(true);
     const toastId = toast.loading('Uploading avatar...');
     
     try {
       // Use profile.id if available, otherwise let backend auto-create profile
       const targetProfileId = profileId || user?.id || 'me';
-      const result = await uploadMedia(targetProfileId, croppedFile, 'image', {
+      const result = await uploadMedia(targetProfileId, file, 'image', {
         title: 'Profile Avatar',
         description: 'Profile picture',
         privacy: 'public',
-        onProgress: (progress) => {
-          // Optional: could show progress in toast or UI
-          console.log(`Avatar upload progress: ${progress}%`);
-        },
+        onProgress,
       });
 
       // Update form data with the actual media URL from backend
@@ -396,12 +390,12 @@ export default function ProfileEdit() {
         handleChange('avatar', avatarUrl);
       } else {
         // Fallback to temporary URL if backend doesn't return URL yet
-        const tempUrl = URL.createObjectURL(croppedFile);
+        const tempUrl = URL.createObjectURL(file);
         handleChange('avatar', tempUrl);
       }
 
       // Track media upload
-      const sizeBucket = croppedFile.size < 1024 * 1024 ? 'small' : croppedFile.size < 5 * 1024 * 1024 ? 'medium' : 'large';
+      const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
       trackMediaUpload('image', sizeBucket);
 
       toast.success('Avatar uploaded successfully!', { id: toastId });
@@ -416,15 +410,13 @@ export default function ProfileEdit() {
       } else {
         toast.error(error.message || 'Failed to upload avatar', { id: toastId });
       }
-      // Don't rethrow - just show error and let user retry
-    } finally {
-      setUploadingAvatar(false);
+      throw error;
     }
   };
 
-  const handleBannerUpload = async (croppedFile) => {
-    // Banner upload with cropped file from ImageCropper
-    // The file is already processed (cropped, scaled) by ImageCropper
+  const handleBannerUpload = async (file, onProgress) => {
+    // Don't check auth here - let the API call handle 401/403
+    // This prevents flaky "not logged in" errors during auth state initialization
     
     setUploadingBanner(true);
     const toastId = toast.loading('Uploading banner...');
@@ -432,14 +424,11 @@ export default function ProfileEdit() {
     try {
       // Use profile.id if available, otherwise let backend auto-create profile
       const targetProfileId = profileId || user?.id || 'me';
-      const result = await uploadMedia(targetProfileId, croppedFile, 'image', {
+      const result = await uploadMedia(targetProfileId, file, 'image', {
         title: 'Profile Banner',
         description: 'Cover banner for profile',
         privacy: 'public',
-        onProgress: (progress) => {
-          // Optional: could show progress in toast or UI
-          console.log(`Banner upload progress: ${progress}%`);
-        },
+        onProgress,
       });
 
       // Update form data with the actual media URL from backend
@@ -450,16 +439,15 @@ export default function ProfileEdit() {
         handleChange('bannerUrl', bannerUrl);
       } else {
         // Fallback to temporary URL if backend doesn't return URL yet
-        const tempUrl = URL.createObjectURL(croppedFile);
+        const tempUrl = URL.createObjectURL(file);
         handleChange('banner', tempUrl);
       }
 
       // Track media upload
-      const sizeBucket = croppedFile.size < 1024 * 1024 ? 'small' : croppedFile.size < 5 * 1024 * 1024 ? 'medium' : 'large';
+      const sizeBucket = file.size < 1024 * 1024 ? 'small' : file.size < 5 * 1024 * 1024 ? 'medium' : 'large';
       trackMediaUpload('image', sizeBucket);
 
       toast.success('Banner uploaded successfully!', { id: toastId });
-      setShowBannerCropper(false);
     } catch (error) {
       console.error('Banner upload failed:', error);
       
@@ -470,7 +458,7 @@ export default function ProfileEdit() {
       } else {
         toast.error(error.message || 'Failed to upload banner', { id: toastId });
       }
-      // Don't rethrow - just show error and let user retry
+      throw error;
     } finally {
       setUploadingBanner(false);
     }
@@ -527,12 +515,6 @@ export default function ProfileEdit() {
 
   const handleSave = async () => {
     try {
-      // Check if any uploads are in progress
-      if (uploadingAvatar || uploadingBanner || uploadingReel) {
-        toast.error('Please wait for uploads to complete before saving');
-        return;
-      }
-      
       // Sanitize text fields before validation and submission
       const sanitizedData = {
         ...formData,
@@ -658,11 +640,10 @@ export default function ProfileEdit() {
         </div>
         <button
           onClick={handleSave}
-          disabled={uploadingAvatar || uploadingBanner || uploadingReel}
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
         >
           <Save className="w-5 h-5" />
-          <span>{uploadingAvatar || uploadingBanner || uploadingReel ? 'Uploading...' : 'Save Changes'}</span>
+          <span>Save Changes</span>
         </button>
       </div>
 
@@ -703,44 +684,26 @@ export default function ProfileEdit() {
                   {/* Banner */}
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                      Cover Banner (1600x400 recommended, 4:1 aspect ratio)
+                      Cover Banner (1600x400 recommended)
                     </label>
                     {formData.banner ? (
                       <div className="relative aspect-[4/1] rounded-lg overflow-hidden">
                         <img src={formData.banner} alt="Banner" className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2 space-x-2 flex">
-                          <button
-                            onClick={() => setShowBannerCropper(true)}
-                            className="px-3 py-2 bg-black/50 hover:bg-black/70 text-white text-sm rounded-lg transition-colors"
-                            disabled={uploadingBanner}
-                          >
-                            Change
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleChange('banner', null);
-                              handleChange('bannerUrl', null);
-                            }}
-                            className="p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
-                            disabled={uploadingBanner}
-                          >
-                            <X className="w-5 h-5 text-white" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleChange('banner', null)}
+                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
+                          disabled={uploadingBanner}
+                        >
+                          <X className="w-5 h-5 text-white" />
+                        </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setShowBannerCropper(true)}
-                        disabled={uploadingBanner}
-                        className="w-full aspect-[4/1] border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-[#0CCE6B] hover:bg-[#0CCE6B]/5 transition-colors flex items-center justify-center"
-                      >
-                        <div className="text-center">
-                          <Plus className="w-8 h-8 mx-auto mb-2 text-neutral-400" />
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                            Upload Banner Image
-                          </p>
-                        </div>
-                      </button>
+                      <MediaUploader
+                        onUpload={handleBannerUpload}
+                        acceptedTypes="image/*"
+                        uploadType="image"
+                        maxSize={10}
+                      />
                     )}
                   </div>
 
@@ -1229,25 +1192,13 @@ export default function ProfileEdit() {
         </div>
       </div>
 
-      {/* Avatar Cropper Modal */}
+      {/* Avatar Uploader Modal */}
       {showAvatarUploader && (
-        <ImageCropper
-          onSave={handleAvatarUpload}
+        <AvatarUploader
+          onUpload={handleAvatarUpload}
           onCancel={() => setShowAvatarUploader(false)}
-          aspectRatio={1}
-          title="Crop Avatar"
-          targetSize={800}
-        />
-      )}
-      
-      {/* Banner Cropper Modal */}
-      {showBannerCropper && (
-        <ImageCropper
-          onSave={handleBannerUpload}
-          onCancel={() => setShowBannerCropper(false)}
-          aspectRatio={4}
-          title="Crop Banner"
-          targetSize={1600}
+          currentAvatar={formData.avatar}
+          title="Upload Profile Picture"
         />
       )}
     </div>
