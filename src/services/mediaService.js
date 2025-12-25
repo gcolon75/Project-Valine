@@ -82,7 +82,8 @@ export const uploadToS3 = (presignedUrl, file, mediaType, onProgress) => {
     xhr.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable) {
         const percentComplete = Math.round((event.loaded / event.total) * 100);
-        if (onProgress) {
+        // Defensive guard: only call onProgress if it's a function
+        if (typeof onProgress === 'function') {
           onProgress(percentComplete);
         }
       }
@@ -234,6 +235,15 @@ export const deleteMedia = async (mediaId) => {
 export const uploadMedia = async (profileId, file, type, options = {}) => {
   const { title, description, privacy = 'public', onProgress } = options;
 
+  // Validate file input
+  if (!file) {
+    throw new Error('File is required');
+  }
+  
+  if (!(file instanceof Blob) && !(file instanceof File)) {
+    throw new Error('Invalid file input: expected Blob or File object');
+  }
+
   // Validate file size (500MB max for videos, 10MB for images)
   const maxSize = type === 'video' ? 500 * 1024 * 1024 : 10 * 1024 * 1024;
   if (file.size > maxSize) {
@@ -243,17 +253,24 @@ export const uploadMedia = async (profileId, file, type, options = {}) => {
 
   try {
     // Step 1: Get presigned upload URL
-    if (onProgress) onProgress(0);
+    // Defensive guard: only call onProgress if it's actually a function
+    if (typeof onProgress === 'function') {
+      onProgress(0);
+    }
     const { mediaId, uploadUrl } = await getUploadUrl(profileId, type, title, description, privacy);
 
     // Step 2: Upload to S3 with progress tracking
     await uploadToS3(uploadUrl, file, type, (progress) => {
       // Scale progress to 10-90% range (reserve 0-10% for getting URL, 90-100% for completion)
-      if (onProgress) onProgress(10 + Math.floor(progress * 0.8));
+      if (typeof onProgress === 'function') {
+        onProgress(10 + Math.floor(progress * 0.8));
+      }
     });
 
     // Step 3: Mark upload as complete
-    if (onProgress) onProgress(95);
+    if (typeof onProgress === 'function') {
+      onProgress(95);
+    }
     
     // Get image dimensions if it's an image
     let metadata = { fileSize: file.size };
@@ -267,7 +284,9 @@ export const uploadMedia = async (profileId, file, type, options = {}) => {
     }
 
     const result = await completeUpload(profileId, mediaId, metadata);
-    if (onProgress) onProgress(100);
+    if (typeof onProgress === 'function') {
+      onProgress(100);
+    }
 
     return result;
   } catch (error) {
