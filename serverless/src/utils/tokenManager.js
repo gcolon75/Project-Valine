@@ -110,67 +110,6 @@ export const verifyToken = (token) => {
 };
 
 /**
- * Extract token from cookies or Authorization header
- * Supports both HTTP API v2 (event.cookies array) and traditional (event.headers.cookie) formats
- * @param {object} event - Lambda event object
- * @param {string} tokenType - 'access' or 'refresh'
- * @returns {string|null} Token string or null
- */
-export const extractToken = (event, tokenType = 'access') => {
-  const cookieName = tokenType === 'access' ? 'access_token' : 'refresh_token';
-  
-  // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
-  // Format: ["access_token=abc123", "refresh_token=xyz789"]
-  if (Array.isArray(event.cookies) && event.cookies.length > 0) {
-    const prefix = `${cookieName}=`;
-    for (const cookie of event.cookies) {
-      if (cookie.startsWith(prefix)) {
-        // Handle cookie values that may contain '=' (e.g., base64 tokens)
-        return cookie.substring(prefix.length);
-      }
-    }
-  }
-  
-  // Traditional format: Parse from headers.cookie string
-  const cookies = parseCookies(event.headers?.cookie || event.headers?.Cookie || '');
-  
-  if (cookies[cookieName]) {
-    return cookies[cookieName];
-  }
-  
-  // Fallback to Authorization header for access tokens (for tooling/testing)
-  if (tokenType === 'access') {
-    const authHeader = event.headers?.authorization || event.headers?.Authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      return authHeader.substring(7);
-    }
-  }
-  
-  return null;
-};
-
-/**
- * Get cookie header string from event, supporting both HTTP API v2 and traditional formats
- * Priority: event.cookies[] (HTTP API v2) → event.headers.cookie (REST API)
- * @param {object} event - Lambda event object
- * @returns {string} Cookie header string
- */
-export const getCookieHeader = (event) => {
-  // HTTP API v2: Try cookies array first (production uses this format)
-  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
-    return event.cookies.join('; ');
-  }
-  
-  // Traditional format: Fall back to headers.cookie for REST API compatibility
-  const headerCookie = event?.headers?.cookie || event?.headers?.Cookie;
-  if (headerCookie) {
-    return headerCookie;
-  }
-  
-  return '';
-};
-
-/**
  * Parse cookie header string into object
  * @param {string} cookieHeader - Cookie header string
  * @returns {object} Parsed cookies as key-value pairs
@@ -187,6 +126,123 @@ const parseCookies = (cookieHeader) => {
   });
   
   return cookies;
+};
+
+/**
+ * Log diagnostic information about token extraction (non-test environments only)
+ * @param {string} message - Log message
+ * @param {object} data - Additional data to log (optional)
+ */
+const logTokenDiagnostic = (message, data = null) => {
+  if (process.env.NODE_ENV !== 'test') {
+    if (data && Object.keys(data).length > 0) {
+      console.log(`[extractToken] ${message}`, data);
+    } else {
+      console.log(`[extractToken] ${message}`);
+    }
+  }
+};
+
+/**
+ * Extract token from cookies or Authorization header
+ * Supports multiple AWS API Gateway formats:
+ * - HTTP API v2 (event.cookies array)
+ * - REST API (event.headers.cookie and event.multiValueHeaders.cookie)
+ * @param {object} event - Lambda event object
+ * @param {string} tokenType - 'access' or 'refresh'
+ * @returns {string|null} Token string or null
+ */
+export const extractToken = (event, tokenType = 'access') => {
+  const cookieName = tokenType === 'access' ? 'access_token' : 'refresh_token';
+  
+  // Diagnostic: Log what we're looking for (safe, no secrets)
+  const hasCookiesArray = Array.isArray(event.cookies) && event.cookies.length > 0;
+  const hasHeadersCookie = !!(event.headers?.cookie || event.headers?.Cookie);
+  const hasMultiValueHeaders = !!(event.multiValueHeaders?.cookie || event.multiValueHeaders?.Cookie);
+  
+  logTokenDiagnostic('Attempting extraction', {
+    tokenType,
+    hasCookiesArray,
+    hasHeadersCookie,
+    hasMultiValueHeaders,
+    cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0
+  });
+  
+  // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
+  // Format: ["access_token=abc123", "refresh_token=xyz789"]
+  if (hasCookiesArray) {
+    const prefix = `${cookieName}=`;
+    for (const cookie of event.cookies) {
+      if (cookie.startsWith(prefix)) {
+        // Handle cookie values that may contain '=' (e.g., base64 tokens)
+        const token = cookie.substring(prefix.length);
+        logTokenDiagnostic('Found in event.cookies[]');
+        return token;
+      }
+    }
+  }
+  
+  // REST API: Check multiValueHeaders.cookie (array of cookie strings)
+  // Some API Gateway configurations put cookies here
+  const multiValueCookie = event.multiValueHeaders?.cookie || event.multiValueHeaders?.Cookie;
+  if (Array.isArray(multiValueCookie) && multiValueCookie.length > 0) {
+    // Join all cookie header values with '; ' and parse
+    const combinedCookies = multiValueCookie.join('; ');
+    const cookies = parseCookies(combinedCookies);
+    if (cookies[cookieName]) {
+      logTokenDiagnostic('Found in event.multiValueHeaders.cookie');
+      return cookies[cookieName];
+    }
+  }
+  
+  // Traditional format: Parse from headers.cookie string
+  const headerCookie = event.headers?.cookie || event.headers?.Cookie || '';
+  if (headerCookie) {
+    const cookies = parseCookies(headerCookie);
+    if (cookies[cookieName]) {
+      logTokenDiagnostic('Found in event.headers.cookie');
+      return cookies[cookieName];
+    }
+  }
+  
+  // Fallback to Authorization header for access tokens (for tooling/testing)
+  if (tokenType === 'access') {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      logTokenDiagnostic('Found in Authorization header');
+      return authHeader.substring(7);
+    }
+  }
+  
+  logTokenDiagnostic('Token not found');
+  return null;
+};
+
+/**
+ * Get cookie header string from event, supporting multiple AWS API Gateway formats
+ * Priority: event.cookies[] (HTTP API v2) → event.multiValueHeaders.cookie (REST API) → event.headers.cookie (REST API)
+ * @param {object} event - Lambda event object
+ * @returns {string} Cookie header string
+ */
+export const getCookieHeader = (event) => {
+  // HTTP API v2: Try cookies array first (production uses this format)
+  if (Array.isArray(event?.cookies) && event.cookies.length > 0) {
+    return event.cookies.join('; ');
+  }
+  
+  // REST API: Check multiValueHeaders.cookie (array of cookie strings)
+  const multiValueCookie = event?.multiValueHeaders?.cookie || event?.multiValueHeaders?.Cookie;
+  if (Array.isArray(multiValueCookie) && multiValueCookie.length > 0) {
+    return multiValueCookie.join('; ');
+  }
+  
+  // Traditional format: Fall back to headers.cookie for REST API compatibility
+  const headerCookie = event?.headers?.cookie || event?.headers?.Cookie;
+  if (headerCookie) {
+    return headerCookie;
+  }
+  
+  return '';
 };
 
 /**
