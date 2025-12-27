@@ -1,5 +1,12 @@
-# Correct DATABASE_URL with NO SPACES
-$dbUrl = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres? sslmode=require"
+# ⚠️ ARCHIVAL FILE - DO NOT COPY/PASTE WITHOUT REVIEW ⚠️
+# This file is archived and may contain outdated or incorrect configuration.
+# Always verify against current deployment documentation before use.
+# See: docs/DEPLOYMENT_BIBLE.md for current deployment procedures.
+
+# CORRECT DATABASE_URL FORMAT (NO SPACES):
+# postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+
+$dbUrl = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 $jwtSecret = "oHnvIQ0wx5P1fxADM4UKXkv7k+VP05clPNTD9RDfROo="
 $allowedEmails = "ghawk075@gmail.com,valinejustin@gmail.com"
 

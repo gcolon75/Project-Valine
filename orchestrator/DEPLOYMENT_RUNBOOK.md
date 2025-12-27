@@ -35,7 +35,7 @@ This runbook provides step-by-step instructions for safely deploying the agents-
 
 ### Step 1: Build the Application
 
-```bash
+```powershell
 cd orchestrator
 
 # Build SAM application
@@ -49,19 +49,19 @@ Expected output: "Template is a valid SAM Template"
 
 ### Step 2: Deploy to Development
 
-```bash
+```powershell
 # Deploy with default settings (LLM disabled)
-sam deploy \
-  --stack-name valine-orchestrator-dev \
-  --parameter-overrides \
-    Stage=dev \
-    UseLLMParsing=false \
-    OpenAIApiKey="" \
-    DiscordPublicKey="$DISCORD_PUBLIC_KEY" \
-    DiscordBotToken="$DISCORD_BOT_TOKEN" \
-    GitHubToken="$GITHUB_TOKEN" \
-    GitHubWebhookSecret="$GITHUB_WEBHOOK_SECRET" \
-  --capabilities CAPABILITY_IAM \
+sam deploy `
+  --stack-name valine-orchestrator-dev `
+  --parameter-overrides `
+    Stage=dev `
+    UseLLMParsing=false `
+    OpenAIApiKey="" `
+    DiscordPublicKey="$env:DISCORD_PUBLIC_KEY" `
+    DiscordBotToken="$env:DISCORD_BOT_TOKEN" `
+    GitHubToken="$env:GITHUB_TOKEN" `
+    GitHubWebhookSecret="$env:GITHUB_WEBHOOK_SECRET" `
+  --capabilities CAPABILITY_IAM `
   --no-confirm-changeset
 ```
 
@@ -69,33 +69,33 @@ sam deploy \
 
 ### Step 3: Verify Deployment
 
-```bash
+```powershell
 # Check stack status
-aws cloudformation describe-stacks \
-  --stack-name valine-orchestrator-dev \
+aws cloudformation describe-stacks `
+  --stack-name valine-orchestrator-dev `
   --query 'Stacks[0].StackStatus'
 
 # Get API endpoints
-aws cloudformation describe-stacks \
-  --stack-name valine-orchestrator-dev \
+aws cloudformation describe-stacks `
+  --stack-name valine-orchestrator-dev `
   --query 'Stacks[0].Outputs'
 
 # Check Lambda functions
-aws lambda get-function \
+aws lambda get-function `
   --function-name valine-orchestrator-discord-dev
 ```
 
 ### Step 4: Smoke Tests
 
 #### Test 1: Discord Handler Health
-```bash
+```powershell
 # From Discord channel:
 /agents
 ```
 Expected: List of available agents including UXAgent
 
 #### Test 2: UX Update (Dry-Run)
-```bash
+```powershell
 # From Discord channel:
 /ux-update command:"section:header text:\"Test Deploy\""
 ```
@@ -106,7 +106,7 @@ Click "❌ Cancel" button
 Expected: "Request cancelled" message
 
 #### Test 4: Confirm Flow (Optional - creates real PR)
-```bash
+```powershell
 /ux-update command:"section:footer text:\"Test\""
 ```
 Click "✅ Confirm"
@@ -114,16 +114,16 @@ Expected: Draft PR created in GitHub
 
 ### Step 5: Monitor Logs
 
-```bash
+```powershell
 # Tail Lambda logs
-sam logs \
-  --stack-name valine-orchestrator-dev \
-  --name DiscordHandlerFunction \
+sam logs `
+  --stack-name valine-orchestrator-dev `
+  --name DiscordHandlerFunction `
   --tail
 
 # Check for errors
-aws logs filter-log-events \
-  --log-group-name /aws/lambda/valine-orchestrator-discord-dev \
+aws logs filter-log-events `
+  --log-group-name /aws/lambda/valine-orchestrator-discord-dev `
   --filter-pattern "ERROR"
 ```
 
@@ -133,24 +133,24 @@ aws logs filter-log-events \
 
 ### Step 1: Update Stack with LLM Enabled
 
-```bash
-sam deploy \
-  --stack-name valine-orchestrator-dev \
-  --parameter-overrides \
-    Stage=dev \
-    UseLLMParsing=true \
-    OpenAIApiKey="$OPENAI_API_KEY" \
-    DiscordPublicKey="$DISCORD_PUBLIC_KEY" \
-    DiscordBotToken="$DISCORD_BOT_TOKEN" \
-    GitHubToken="$GITHUB_TOKEN" \
-    GitHubWebhookSecret="$GITHUB_WEBHOOK_SECRET" \
-  --capabilities CAPABILITY_IAM \
+```powershell
+sam deploy `
+  --stack-name valine-orchestrator-dev `
+  --parameter-overrides `
+    Stage=dev `
+    UseLLMParsing=true `
+    OpenAIApiKey="$env:OPENAI_API_KEY" `
+    DiscordPublicKey="$env:DISCORD_PUBLIC_KEY" `
+    DiscordBotToken="$env:DISCORD_BOT_TOKEN" `
+    GitHubToken="$env:GITHUB_TOKEN" `
+    GitHubWebhookSecret="$env:GITHUB_WEBHOOK_SECRET" `
+  --capabilities CAPABILITY_IAM `
   --no-confirm-changeset
 ```
 
 ### Step 2: Test LLM Parsing
 
-```bash
+```powershell
 # From Discord channel:
 /ux-update description:"Make the navbar blue"
 ```
@@ -159,20 +159,20 @@ Expected: LLM parses intent and generates preview
 
 ### Step 3: Monitor Costs
 
-```bash
+```powershell
 # Check CloudWatch metrics for LLM calls
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/Lambda \
-  --metric-name Duration \
-  --dimensions Name=FunctionName,Value=valine-orchestrator-discord-dev \
-  --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
-  --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
-  --period 300 \
+aws cloudwatch get-metric-statistics `
+  --namespace AWS/Lambda `
+  --metric-name Duration `
+  --dimensions Name=FunctionName,Value=valine-orchestrator-discord-dev `
+  --start-time (Get-Date).AddHours(-1).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss") `
+  --end-time (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss") `
+  --period 300 `
   --statistics Sum
 
 # Check Lambda logs for cost tracking
-aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
-  --format short \
+aws logs tail /aws/lambda/valine-orchestrator-discord-dev `
+  --format short `
   --filter-pattern "cost_usd"
 ```
 
@@ -190,33 +190,33 @@ aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
 
 ### Step 2: Deploy to Production
 
-```bash
+```powershell
 # Deploy with LLM DISABLED initially (canary approach)
-sam deploy \
-  --stack-name valine-orchestrator-prod \
-  --parameter-overrides \
-    Stage=prod \
-    UseLLMParsing=false \
-    OpenAIApiKey="" \
-    DiscordPublicKey="$PROD_DISCORD_PUBLIC_KEY" \
-    DiscordBotToken="$PROD_DISCORD_BOT_TOKEN" \
-    GitHubToken="$PROD_GITHUB_TOKEN" \
-    GitHubWebhookSecret="$PROD_GITHUB_WEBHOOK_SECRET" \
-  --capabilities CAPABILITY_IAM \
+sam deploy `
+  --stack-name valine-orchestrator-prod `
+  --parameter-overrides `
+    Stage=prod `
+    UseLLMParsing=false `
+    OpenAIApiKey="" `
+    DiscordPublicKey="$env:PROD_DISCORD_PUBLIC_KEY" `
+    DiscordBotToken="$env:PROD_DISCORD_BOT_TOKEN" `
+    GitHubToken="$env:PROD_GITHUB_TOKEN" `
+    GitHubWebhookSecret="$env:PROD_GITHUB_WEBHOOK_SECRET" `
+  --capabilities CAPABILITY_IAM `
   --no-confirm-changeset
 ```
 
 ### Step 3: Verify Production Deployment
 
-```bash
+```powershell
 # Check stack status
-aws cloudformation describe-stacks \
-  --stack-name valine-orchestrator-prod \
+aws cloudformation describe-stacks `
+  --stack-name valine-orchestrator-prod `
   --query 'Stacks[0].StackStatus'
 
 # Verify environment variables
-aws lambda get-function-configuration \
-  --function-name valine-orchestrator-discord-prod \
+aws lambda get-function-configuration `
+  --function-name valine-orchestrator-discord-prod `
   --query 'Environment.Variables'
 ```
 
@@ -228,13 +228,13 @@ Run the same smoke tests as development, but in production Discord channel.
 
 ### Scenario 1: Deployment Fails
 
-```bash
+```powershell
 # Rollback to previous version
-aws cloudformation cancel-update-stack \
+aws cloudformation cancel-update-stack `
   --stack-name valine-orchestrator-{dev|prod}
 
 # Or delete and redeploy previous version
-aws cloudformation delete-stack \
+aws cloudformation delete-stack `
   --stack-name valine-orchestrator-{dev|prod}
 
 # Then redeploy previous version from git tag
@@ -244,25 +244,25 @@ sam deploy --stack-name valine-orchestrator-{dev|prod}
 
 ### Scenario 2: Feature Flag Needs Disabling
 
-```bash
+```powershell
 # Quick disable LLM parsing without full redeployment
-aws lambda update-function-configuration \
-  --function-name valine-orchestrator-discord-{dev|prod} \
+aws lambda update-function-configuration `
+  --function-name valine-orchestrator-discord-{dev|prod} `
   --environment "Variables={USE_LLM_PARSING=false,STAGE={dev|prod},...}"
 
 # Or full redeployment
-sam deploy \
-  --stack-name valine-orchestrator-{dev|prod} \
-  --parameter-overrides UseLLMParsing=false \
+sam deploy `
+  --stack-name valine-orchestrator-{dev|prod} `
+  --parameter-overrides UseLLMParsing=false `
   ...
 ```
 
 ### Scenario 3: Critical Bug in New Code
 
-```bash
+```powershell
 # Immediate: Disable new commands via environment variable
-aws lambda update-function-configuration \
-  --function-name valine-orchestrator-discord-{dev|prod} \
+aws lambda update-function-configuration `
+  --function-name valine-orchestrator-discord-{dev|prod} `
   --environment "Variables={DISABLE_UX_UPDATES=true,...}"
 
 # Then rollback and investigate
@@ -275,43 +275,43 @@ sam deploy --stack-name valine-orchestrator-{dev|prod}
 ### Key Metrics to Monitor
 
 1. **Lambda Errors**
-   ```bash
-   aws cloudwatch get-metric-statistics \
-     --namespace AWS/Lambda \
-     --metric-name Errors \
+   ```powershell
+   aws cloudwatch get-metric-statistics `
+     --namespace AWS/Lambda `
+     --metric-name Errors `
      --dimensions Name=FunctionName,Value=valine-orchestrator-discord-{dev|prod}
    ```
 
 2. **Lambda Duration** (check for timeouts)
-   ```bash
-   aws cloudwatch get-metric-statistics \
-     --namespace AWS/Lambda \
-     --metric-name Duration \
+   ```powershell
+   aws cloudwatch get-metric-statistics `
+     --namespace AWS/Lambda `
+     --metric-name Duration `
      --dimensions Name=FunctionName,Value=valine-orchestrator-discord-{dev|prod}
    ```
 
 3. **DynamoDB Throttles**
-   ```bash
-   aws cloudwatch get-metric-statistics \
-     --namespace AWS/DynamoDB \
-     --metric-name UserErrors \
+   ```powershell
+   aws cloudwatch get-metric-statistics `
+     --namespace AWS/DynamoDB `
+     --metric-name UserErrors `
      --dimensions Name=TableName,Value=ux-agent-conversations
    ```
 
 ### CloudWatch Alarms (Recommended)
 
-```bash
+```powershell
 # Create alarm for Lambda errors
-aws cloudwatch put-metric-alarm \
-  --alarm-name valine-discord-errors-prod \
-  --alarm-description "Alert on Lambda errors" \
-  --metric-name Errors \
-  --namespace AWS/Lambda \
-  --statistic Sum \
-  --period 300 \
-  --evaluation-periods 1 \
-  --threshold 5 \
-  --comparison-operator GreaterThanThreshold \
+aws cloudwatch put-metric-alarm `
+  --alarm-name valine-discord-errors-prod `
+  --alarm-description "Alert on Lambda errors" `
+  --metric-name Errors `
+  --namespace AWS/Lambda `
+  --statistic Sum `
+  --period 300 `
+  --evaluation-periods 1 `
+  --threshold 5 `
+  --comparison-operator GreaterThanThreshold `
   --dimensions Name=FunctionName,Value=valine-orchestrator-discord-prod
 ```
 
@@ -322,10 +322,10 @@ aws cloudwatch put-metric-alarm \
 **Cause**: Discord public key mismatch or timestamp drift
 
 **Solution**:
-```bash
+```powershell
 # Verify Discord public key
-aws lambda get-function-configuration \
-  --function-name valine-orchestrator-discord-{dev|prod} \
+aws lambda get-function-configuration `
+  --function-name valine-orchestrator-discord-{dev|prod} `
   --query 'Environment.Variables.DISCORD_PUBLIC_KEY'
 
 # Update if needed
@@ -337,7 +337,7 @@ sam deploy --parameter-overrides DiscordPublicKey="<correct-key>"
 **Cause**: Table name mismatch or table doesn't exist
 
 **Solution**:
-```bash
+```powershell
 # List tables
 aws dynamodb list-tables
 
@@ -353,10 +353,10 @@ sam deploy --stack-name valine-orchestrator-{dev|prod}
 **Cause**: Too many LLM requests
 
 **Solution**:
-```bash
+```powershell
 # Temporarily disable LLM
-aws lambda update-function-configuration \
-  --function-name valine-orchestrator-discord-{dev|prod} \
+aws lambda update-function-configuration `
+  --function-name valine-orchestrator-discord-{dev|prod} `
   --environment "Variables={USE_LLM_PARSING=false,...}"
 
 # Check OpenAI usage dashboard
