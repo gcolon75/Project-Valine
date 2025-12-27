@@ -35,7 +35,7 @@ Step-by-step manual verification procedures for authentication and authorization
 
 | Environment | Frontend URL | API URL |
 |-------------|-------------|---------|
-| **Production** | `https://dkmxy676d3vgc.cloudfront.net` | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` |
+| **Production** | `https://dkmxy676d3vgc.cloudfront.net` | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` |
 | **Localhost** | `http://localhost:5173` | `http://localhost:3001` (if running local backend) |
 
 ### Test User Accounts
@@ -327,7 +327,7 @@ document.cookie;
 
 2. Attempt cross-origin request from disallowed domain:
    ```javascript
-   fetch('https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me', {
+   fetch('https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/me', {
      credentials: 'include',
      headers: {
        'Origin': 'https://evil-site.com'

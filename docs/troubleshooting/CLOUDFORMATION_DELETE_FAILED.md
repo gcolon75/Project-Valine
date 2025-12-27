@@ -152,7 +152,7 @@ The `--verbose` flag helps you see exactly what's happening during deployment.
 
 ```powershell
 # Test health endpoint
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Check layer was deployed
 aws lambda list-layer-versions \

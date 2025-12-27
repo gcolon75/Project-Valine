@@ -32,7 +32,7 @@ The API base URL is configured through the `VITE_API_BASE` environment variable,
 
 ```powershell
 # .env.production
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 ### Known Deprecated Hosts
@@ -82,10 +82,10 @@ Set to `true` to bypass DNS resolution failure. Use only when:
 
 #### `STACK_API_ID`
 
-Set to your expected API Gateway ID (e.g., `i72dxlcfcc`) for additional validation:
+Set to your expected API Gateway ID (e.g., `wkndtj22ab`) for additional validation:
 
 ```powershell
-STACK_API_ID=i72dxlcfcc node scripts/validate-api-base.js
+STACK_API_ID=wkndtj22ab node scripts/validate-api-base.js
 ```
 
 The script will verify that the configured host matches the expected API ID.
@@ -103,7 +103,7 @@ When `VITE_DEBUG_API=true` or in development mode, the API client (`src/services
 Example console output:
 
 ```
-[API Client] Initializing with base URL: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+[API Client] Initializing with base URL: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 If a deprecated host is detected:
@@ -166,7 +166,7 @@ node scripts/scan-api-base.js
     Line: [string]$ApiBase = "https://fb9pxd6m09..."
 
 ✅ No stale hosts detected
-   Valid host configured: i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+   Valid host configured: wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 ### 2. `validate-api-base.js`
@@ -259,7 +259,7 @@ node scripts/scan-api-base.js
 
 ```powershell
 # Update .env.production
-echo "VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com" > .env.production
+echo "VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com" > .env.production
 ```
 
 #### 3. Rebuild Application

@@ -22,7 +22,7 @@ All frontend variables must be prefixed with `VITE_` to be exposed to the client
 
 | Variable | Required | Default | Description | Example |
 |----------|----------|---------|-------------|---------|
-| `VITE_API_BASE` | **Yes** | `http://localhost:3001` | Backend API base URL (API Gateway, NOT CloudFront) | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` |
+| `VITE_API_BASE` | **Yes** | `http://localhost:3001` | Backend API base URL (API Gateway, NOT CloudFront) | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` |
 | `VITE_FRONTEND_URL` | No | `http://localhost:5173` | Frontend URL for CORS and build checks | `https://d1abc.cloudfront.net` |
 
 **Important Notes:**

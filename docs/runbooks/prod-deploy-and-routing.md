@@ -58,7 +58,7 @@
                       ↓ (API Calls)
 ┌─────────────────────────────────────────────────────────────┐
 │ API Gateway HTTP API                                         │
-│ - API ID: i72dxlcfcc                                        │
+│ - API ID: wkndtj22ab                                        │
 │ - Region: us-west-2                                         │
 │ - Resource Policy: Optional IP restrictions                │
 └─────────────────────┬───────────────────────────────────────┘
@@ -112,15 +112,15 @@ aws cloudfront get-distribution --id dkmxy676d3vgc \
 | Property | Value |
 |----------|-------|
 | API Type | HTTP API (v2) |
-| API ID | `i72dxlcfcc` |
+| API ID | `wkndtj22ab` |
 | Region | `us-west-2` |
 | Stage | `$default` |
 | CORS | Enabled (specific origins) |
-| Endpoint | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` |
+| Endpoint | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` |
 
 **Verification:**
 ```powershell
-aws apigatewayv2 get-api --api-id i72dxlcfcc \
+aws apigatewayv2 get-api --api-id wkndtj22ab \
   --query '{Name:Name,ProtocolType:ProtocolType,ApiEndpoint:ApiEndpoint}'
 ```
 
@@ -165,7 +165,7 @@ See dedicated runbook: [`docs/runbooks/frontend-deployment.md`](./frontend-deplo
 **Quick Reference:**
 ```powershell
 # 1. Set environment variables in .env.production
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 VITE_ENABLE_REGISTRATION=false
 VITE_ENABLE_DEV_BYPASS=false  # CRITICAL: Must be false
 
@@ -198,7 +198,7 @@ npm install
 serverless deploy --stage prod
 
 # 3. Verify deployment
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected: {"status":"healthy","timestamp":"..."}
 ```
@@ -239,7 +239,7 @@ https://{api-id}.execute-api.{region}.amazonaws.com
 **Example:**
 ```powershell
 # Production API Gateway (HTTP API)
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 # Development (local serverless-offline)
 VITE_API_BASE=http://localhost:3001
@@ -269,7 +269,7 @@ VITE_ENABLE_DEV_BYPASS=true  # Localhost only
 
 **Production (.env.production):**
 ```powershell
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 VITE_ANALYTICS_ENABLED=true
 VITE_API_STRIP_LEGACY_API_PREFIX=false
 VITE_ENABLE_DEV_BYPASS=false  # CRITICAL: Must be false
@@ -335,7 +335,7 @@ console.log(import.meta.env.VITE_API_BASE)
 **Test API connectivity:**
 ```powershell
 # From terminal
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected: {"status":"healthy","timestamp":"..."}
 ```
@@ -360,7 +360,7 @@ Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/h
 ### Current Setup
 
 **Frontend:** `https://dkmxy676d3vgc.cloudfront.net` → S3 bucket  
-**API:** `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` → Lambda
+**API:** `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` → Lambda
 
 ### Future Custom Domain Setup
 
@@ -570,7 +570,7 @@ aws wafv2 update-ip-set \
       "Effect": "Deny",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*",
+      "Resource": "arn:aws:execute-api:us-west-2:*:wkndtj22ab/*",
       "Condition": {
         "NotIpAddress": {
           "aws:SourceIp": ["<owner-ip>/32", "<friend-ip>/32"]
@@ -744,7 +744,7 @@ aws cloudwatch put-metric-alarm \
 **Solution:**
 1. Verify source IP: `Invoke-RestMethod -Uri "https://ifconfig.me"`
 2. Update WAF IP set (see Section 6) OR detach WAF (see Section 13)
-3. Verify: `Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"`
+3. Verify: `Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health"`
 
 **Issue: JWT Token Invalid**
 
@@ -859,7 +859,7 @@ const prisma = new PrismaClient({
 **Protect backend from overload:**
 ```powershell
 aws apigatewayv2 update-stage \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --stage-name $default \
   --throttle-settings RateLimit=1000,BurstLimit=2000
 ```
@@ -1059,7 +1059,7 @@ aws cloudfront get-distribution --id dkmxy676d3vgc \
 
 **Via AWS Console:**
 
-1. Navigate to API Gateway → APIs → `i72dxlcfcc`
+1. Navigate to API Gateway → APIs → `wkndtj22ab`
 2. Go to "Authorization" → "Resource Policy"
 3. Remove the Deny statement with `NotIpAddress` condition
 4. Save changes and deploy
@@ -1068,14 +1068,14 @@ aws cloudfront get-distribution --id dkmxy676d3vgc \
 
 ```powershell
 # Get current resource policy
-aws apigatewayv2 get-api --api-id i72dxlcfcc \
+aws apigatewayv2 get-api --api-id wkndtj22ab \
   --query 'Policy' > api-policy.json
 
 # Edit api-policy.json: Remove IP-based Deny statement
 
 # Update policy
 aws apigatewayv2 update-api \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --policy file://api-policy-updated.json
 ```
 
@@ -1088,7 +1088,7 @@ aws apigatewayv2 update-api \
       "Effect": "Allow",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*"
+      "Resource": "arn:aws:execute-api:us-west-2:*:wkndtj22ab/*"
     }
   ]
 }

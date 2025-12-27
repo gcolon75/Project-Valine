@@ -4,7 +4,7 @@
 | Resource | Value |
 |----------|-------|
 | Frontend | https://dkmxy676d3vgc.cloudfront.net |
-| API | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
+| API | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com |
 | DB Host | project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com |
 | S3 Bucket | valine-frontend-prod |
 | AWS Region | us-west-2 |
@@ -57,7 +57,7 @@ npx serverless deploy --stage prod --region us-west-2
 
 ### Step 6: Verify
 ```powershell
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health"
 ```
 
 ## Frontend Deployment
@@ -159,12 +159,12 @@ aws s3api list-object-versions --bucket valine-frontend-prod --prefix index.html
 
 ### API Health
 ```powershell
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health"
 ```
 
 ### Auth System
 ```powershell
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/status"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/status"
 ```
 
 ### Frontend

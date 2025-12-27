@@ -127,7 +127,7 @@ The easiest approach for frontend development is to point your frontend at the d
 
 ```env
 # .env file
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 This avoids the need to run the backend locally and matches the production environment.

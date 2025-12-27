@@ -180,10 +180,10 @@ npx serverless deploy --stage prod --region us-west-2 --verbose
 
 ```powershell
 # Test health endpoint
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method GET
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method GET
 
 # Test auth diagnostics
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/diag" -Method GET
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/diag" -Method GET
 ```
 
 ---
@@ -431,9 +431,9 @@ See [CloudFormation DELETE_FAILED Recovery Guide](troubleshooting/CLOUDFORMATION
 | Endpoint | URL |
 |----------|-----|
 | Frontend | https://dkmxy676d3vgc.cloudfront.net |
-| API Base | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
-| Health Check | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health |
-| Auth Diagnostics | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/diag |
+| API Base | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com |
+| Health Check | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health |
+| Auth Diagnostics | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/diag |
 
 ---
 

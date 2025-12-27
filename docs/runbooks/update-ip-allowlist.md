@@ -77,7 +77,7 @@ Region: Global (CloudFront)
 WAF Scope: CLOUDFRONT
 
 # API Gateway
-API ID: i72dxlcfcc
+API ID: wkndtj22ab
 Region: us-west-2
 Type: HTTP API
 
@@ -201,7 +201,7 @@ API Gateway resource policy provides an additional layer of IP-based access cont
 ```powershell
 # Get API Gateway details
 aws apigatewayv2 get-api \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --region us-west-2 \
   > /tmp/api-gateway.json
 
@@ -218,7 +218,7 @@ jq -r '.Policy' /tmp/api-gateway.json | jq '.' || echo "No policy set"
       "Effect": "Deny",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:123456789012:i72dxlcfcc/*",
+      "Resource": "arn:aws:execute-api:us-west-2:123456789012:wkndtj22ab/*",
       "Condition": {
         "NotIpAddress": {
           "aws:SourceIp": ["203.0.113.10/32"]
@@ -244,7 +244,7 @@ Get-Content > /tmp/new-policy.json << EOF
       "Effect": "Deny",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*",
+      "Resource": "arn:aws:execute-api:us-west-2:*:wkndtj22ab/*",
       "Condition": {
         "NotIpAddress": {
           "aws:SourceIp": ["${NEW_IP}/32"]
@@ -269,7 +269,7 @@ Get-Content /tmp/new-policy.json | jq
 ```powershell
 # Update the resource policy
 aws apigatewayv2 update-api \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --region us-west-2 \
   --policy file:///tmp/new-policy.json
 ```
@@ -277,7 +277,7 @@ aws apigatewayv2 update-api \
 **Expected Output:**
 ```json
 {
-  "ApiId": "i72dxlcfcc",
+  "ApiId": "wkndtj22ab",
   "Name": "valine-api-prod",
   "ProtocolType": "HTTP",
   "Policy": "{\"Version\":\"2012-10-17\",\"Statement\":[...]}",
@@ -292,7 +292,7 @@ aws apigatewayv2 update-api \
 ```powershell
 # Confirm new policy
 aws apigatewayv2 get-api \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --region us-west-2 \
   --query 'Policy' \
   --output text \
@@ -495,7 +495,7 @@ aws wafv2 get-ip-set \
 ```powershell
 # Check API Gateway resource policy
 aws apigatewayv2 get-api \
-  --api-id i72dxlcfcc \
+  --api-id wkndtj22ab \
   --region us-west-2 \
   --query 'Policy' \
   --output text \
@@ -600,7 +600,7 @@ For operators who prefer GUI:
    - Region: **us-west-2**
 
 2. **Find API**
-   - Select: `valine-api-prod` (ID: i72dxlcfcc)
+   - Select: `valine-api-prod` (ID: wkndtj22ab)
 
 3. **Edit Resource Policy**
    - Left menu → **Resource policy**
@@ -672,7 +672,7 @@ aws wafv2 update-ip-set --scope CLOUDFRONT --region us-east-1 \
   --addresses "<NEW_IP>/32" --lock-token <LOCK_TOKEN>
 
 # Update API Gateway
-aws apigatewayv2 update-api --api-id i72dxlcfcc --region us-west-2 \
+aws apigatewayv2 update-api --api-id wkndtj22ab --region us-west-2 \
   --policy file:///tmp/new-policy.json
 
 # Test access

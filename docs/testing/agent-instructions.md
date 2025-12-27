@@ -9,7 +9,7 @@ description: API testing, E2E testing, and QA expert
 
 ### Test Auth Flow
 ```powershell
-$api = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$api = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 
 # Login
 $body = @{ email = "test@example.com"; password = "Test123!" } | ConvertTo-Json

@@ -146,7 +146,7 @@ Database: Staging RDS instance
 ### Production
 ```
 Frontend: https://dkmxy676d3vgc.cloudfront.net
-Backend: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+Backend: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 Database: Production RDS instance
 ```
 
