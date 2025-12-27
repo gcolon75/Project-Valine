@@ -15,9 +15,9 @@ The system includes a small default profanity list. This list is intentionally c
 #### Option 1: Override with Custom File
 Create a custom profanity list file:
 
-```bash
+```powershell
 # Create custom list
-cat > /path/to/custom-profanity.txt << EOF
+Get-Content > /path/to/custom-profanity.txt << EOF
 badword1
 badword2
 badword3
@@ -73,7 +73,7 @@ Text is normalized before matching:
 Default: `http:https:mailto:`
 
 **Configuration:**
-```bash
+```powershell
 URL_ALLOWED_PROTOCOLS=http:https:mailto:
 ```
 
@@ -89,12 +89,12 @@ URL_ALLOWED_PROTOCOLS=http:https:mailto:
 When `MODERATION_STRICT_MODE=true`, only allowlisted domains are permitted.
 
 **Default allowlist:**
-```bash
+```powershell
 URL_ALLOWED_DOMAINS=imdb.com,youtube.com,vimeo.com,linkedin.com,github.com
 ```
 
 **Adding domains:**
-```bash
+```powershell
 URL_ALLOWED_DOMAINS=imdb.com,youtube.com,vimeo.com,linkedin.com,github.com,mysite.com,anothersite.net
 ```
 
@@ -105,7 +105,7 @@ URL_ALLOWED_DOMAINS=imdb.com,youtube.com,vimeo.com,linkedin.com,github.com,mysit
 #### Blocked Domains
 Always blocked regardless of mode:
 
-```bash
+```powershell
 URL_BLOCKED_DOMAINS=malware.com,phishing.test,scam.xyz
 ```
 
@@ -136,7 +136,7 @@ These top-level domains trigger warnings (still allowed by default, blocked in s
 - During incident response
 
 **Enabling strict mode:**
-```bash
+```powershell
 MODERATION_STRICT_MODE=true
 ```
 
@@ -144,21 +144,21 @@ MODERATION_STRICT_MODE=true
 
 #### Example 1: Social Media Platform
 Allow common social and portfolio sites:
-```bash
+```powershell
 URL_ALLOWED_DOMAINS=imdb.com,youtube.com,vimeo.com,linkedin.com,github.com,twitter.com,facebook.com,instagram.com,tiktok.com,threads.net
 MODERATION_STRICT_MODE=false  # Allow other domains too
 ```
 
 #### Example 2: Corporate Network
 Strict allowlist only:
-```bash
+```powershell
 URL_ALLOWED_DOMAINS=company.com,partner1.com,partner2.com
 MODERATION_STRICT_MODE=true  # Block everything else
 ```
 
 #### Example 3: Adding to Blocklist
 Block known spam domains:
-```bash
+```powershell
 URL_BLOCKED_DOMAINS=spam.com,phishing.test,malware.xyz,scam123.click
 ```
 
@@ -168,7 +168,7 @@ URL_BLOCKED_DOMAINS=spam.com,phishing.test,malware.xyz,scam123.click
 Default: `spam,abuse,unsafe_link,profanity,privacy,other`
 
 **Configuration:**
-```bash
+```powershell
 REPORT_CATEGORY_ALLOWLIST=spam,abuse,unsafe_link,profanity,privacy,other
 ```
 
@@ -186,7 +186,7 @@ REPORT_CATEGORY_ALLOWLIST=spam,abuse,unsafe_link,profanity,privacy,other
 ### Adding Custom Categories
 
 1. Update environment:
-   ```bash
+   ```powershell
    REPORT_CATEGORY_ALLOWLIST=spam,abuse,unsafe_link,profanity,privacy,copyright,impersonation,other
    ```
 
@@ -212,7 +212,7 @@ REPORT_CATEGORY_ALLOWLIST=spam,abuse,unsafe_link,profanity,privacy,other
 ### Block Mode (Default)
 Returns 422 error when profanity is detected:
 
-```bash
+```powershell
 PROFANITY_ACTION=block
 ```
 
@@ -238,7 +238,7 @@ PROFANITY_ACTION=block
 ### Warn Mode
 Allows content but creates low-severity report:
 
-```bash
+```powershell
 PROFANITY_ACTION=warn
 ```
 
@@ -257,7 +257,7 @@ PROFANITY_ACTION=warn
 ### Report Rate Limits
 Prevent report spam:
 
-```bash
+```powershell
 REPORTS_MAX_PER_HOUR=5      # Per authenticated user
 REPORTS_MAX_PER_DAY=20      # Per authenticated user
 REPORTS_IP_MAX_PER_HOUR=10  # Per IP address
@@ -279,30 +279,18 @@ REPORTS_IP_MAX_PER_HOUR=10  # Per IP address
 ## Testing and Validation
 
 ### Testing Profanity Detection
-```bash
+```powershell
 # Should be blocked
-curl -X PUT /profiles/id/123 \
-  -d '{"headline": "Damn good actor"}'
-
-# Should pass
-curl -X PUT /profiles/id/123 \
-  -d '{"headline": "Great actor"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Put -Body '{"headline": "Damn good actor"}' -ContentType 'application/json'```
 
 ### Testing URL Validation
-```bash
+```powershell
 # Should be blocked
-curl -X PUT /profiles/id/123 \
-  -d '{"socialLinks": {"website": "javascript:alert()"}}'
-
-# Should pass
-curl -X PUT /profiles/id/123 \
-  -d '{"socialLinks": {"website": "https://imdb.com"}}'
-```
+Invoke-RestMethod -Uri "-X" -Method Put -Body '{"socialLinks": {"website": "javascript:alert()"}}' -ContentType 'application/json'```
 
 ### Checking Current Configuration
-```bash
-curl /moderation/health
+```powershell
+Invoke-RestMethod -Uri "/moderation/health" -Method Get
 ```
 
 Response shows active rules:

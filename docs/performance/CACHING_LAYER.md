@@ -36,7 +36,7 @@ Example: `search:v1:voice actor:page:1`
 
 ### Environment Variables
 
-```bash
+```powershell
 # Enable/disable caching
 CACHE_ENABLED=false
 
@@ -164,8 +164,8 @@ The cache layer tracks:
 ### Accessing Metrics
 
 **Via API**:
-```bash
-curl http://localhost:5000/api/cache/metrics
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 ```
 
 **Via Code**:
@@ -180,11 +180,11 @@ console.log('Cache hit ratio:', metrics.hitRatio)
 
 Run baseline performance tests:
 
-```bash
+```powershell
 # Set test configuration
-export API_URL=http://localhost:5000
-export TEST_USER_ID=<valid-user-id>
-export TEST_SEARCH_QUERY=<search-term>
+$env:API_URL = "http://localhost:5000"
+$env:TEST_USER_ID = "<valid-user-id>"
+$env:TEST_SEARCH_QUERY = "<search-term>"
 
 # Run baseline (cache disabled)
 CACHE_ENABLED=false node server/scripts/perf/baseline-profiles-search.mjs
@@ -235,7 +235,7 @@ Cache does NOT bypass rate limiting. All security checks remain in place.
 
 Use the provided script for manual cache operations:
 
-```bash
+```powershell
 # Invalidate specific user profile
 node server/scripts/cache/invalidate-profile.mjs <userId>
 
@@ -286,7 +286,7 @@ Monitor these metrics:
 
 Set environment variable and restart:
 
-```bash
+```powershell
 CACHE_ENABLED=false
 ```
 
@@ -296,7 +296,7 @@ Application continues to function normally with all requests hitting the databas
 
 If Redis cache needs to be cleared:
 
-```bash
+```powershell
 # Using provided script
 node server/scripts/cache/invalidate-profile.mjs --all
 

@@ -14,14 +14,14 @@ Get Project Valine up and running in minutes.
 
 ### 1. Setup Database (1 min)
 
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+```powershell
+$env:DATABASE_URL = "postgresql://user:password@host:5432/valine_db"
 ./scripts/deployment/setup-database.sh
 ```
 
 ### 2. Deploy Backend (2 min)
 
-```bash
+```powershell
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
@@ -29,20 +29,20 @@ export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
 
 ### 3. Test API (1 min)
 
-```bash
-export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+```powershell
+$env:API_BASE = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 ```
 
 ### 4. Configure Frontend (30 sec)
 
-```bash
+```powershell
 ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
 ```
 
 ### 5. Run Locally (30 sec)
 
-```bash
+```powershell
 npm install
 npm run dev
 ```
@@ -53,8 +53,8 @@ Visit: http://localhost:5173
 
 For experienced users:
 
-```bash
-export DATABASE_URL="postgresql://user:pass@host:5432/db" && \
+```powershell
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/db" && \"
 ./scripts/deployment/setup-database.sh && \
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2 && \
 read -p "Enter API Gateway URL: " API_BASE && \
@@ -66,7 +66,7 @@ npm run dev
 
 ## 📝 Common Commands
 
-```bash
+```powershell
 # Database
 npx prisma studio              # View database GUI
 npx prisma migrate deploy      # Run migrations
@@ -83,13 +83,13 @@ npm run build                  # Production build
 npm run preview                # Preview production build
 
 # Testing
-curl $API_BASE/health          # Health check
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 ```
 
 ## 🐛 Quick Fixes
 
 ### Connection Failed
-```bash
+```powershell
 # Check database URL
 echo $DATABASE_URL
 
@@ -98,7 +98,7 @@ psql "$DATABASE_URL" -c "SELECT 1;"
 ```
 
 ### API Not Responding
-```bash
+```powershell
 # View Lambda logs
 cd serverless
 npx serverless logs -f getUser --stage dev --tail
@@ -108,12 +108,12 @@ aws sts get-caller-identity
 ```
 
 ### Frontend Not Loading Data
-```bash
+```powershell
 # Verify .env
-cat .env
+Get-Content .env
 
 # Test API directly
-curl $API_BASE/health
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Restart dev server
 npm run dev
@@ -140,24 +140,24 @@ npm run dev
 ## 💡 Pro Tips
 
 1. **Use SQLite for quick local testing:**
-   ```bash
-   export DATABASE_URL="file:./dev.db"
+   ```powershell
+$env:DATABASE_URL = "file:./dev.db"
    ```
 
 2. **Watch logs during development:**
-   ```bash
+   ```powershell
    npx serverless logs -f getUser --stage dev --tail
    ```
 
 3. **Test API with Postman/Insomnia** - Import OpenAPI spec (coming soon)
 
 4. **Use Prisma Studio** to inspect/modify data:
-   ```bash
+   ```powershell
    cd api && npx prisma studio
    ```
 
 5. **Deploy to multiple stages:**
-   ```bash
+   ```powershell
    # Development
    ./scripts/deployment/deploy-backend.sh --stage dev
    

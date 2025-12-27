@@ -26,7 +26,7 @@ _Run `npm run build:analyze` to get current metrics_
 ## Analyzing Current Bundle
 
 ### Quick Analysis
-```bash
+```powershell
 # Build and analyze
 npm run build:analyze
 
@@ -43,7 +43,7 @@ npm run build:analyze
 ### Detailed Analysis
 
 #### Using Build Output
-```bash
+```powershell
 npm run build
 
 # Check dist/ directory
@@ -56,7 +56,7 @@ ls -lh dist/assets/
 ```
 
 #### Visualizing Bundle
-```bash
+```powershell
 # For Vite (if rollup-plugin-visualizer is added)
 npm install --save-dev rollup-plugin-visualizer
 
@@ -196,7 +196,7 @@ import { Search, Menu, User, Bell } from 'lucide-react';
 ### 3. Dependency Optimization
 
 #### Audit Dependencies
-```bash
+```powershell
 # List all dependencies with sizes
 npx vite-bundle-visualizer
 
@@ -205,7 +205,7 @@ npm install --save-dev webpack-bundle-analyzer
 ```
 
 #### Find Heavy Dependencies
-```bash
+```powershell
 # Check what's taking up space
 du -sh node_modules/* | sort -rh | head -20
 
@@ -218,7 +218,7 @@ du -sh node_modules/* | sort -rh | head -20
 #### Replace Heavy Libraries
 
 **Date Libraries**:
-```bash
+```powershell
 # ❌ moment.js (288 KB)
 npm uninstall moment
 
@@ -230,7 +230,7 @@ npm install dayjs
 ```
 
 **Utility Libraries**:
-```bash
+```powershell
 # ❌ lodash (71 KB)
 # Use lodash-es instead (better tree shaking)
 npm install lodash-es
@@ -242,7 +242,7 @@ npm install lodash-es
 ```
 
 **Animation Libraries**:
-```bash
+```powershell
 # Current: framer-motion (large)
 # Consider if all features are needed
 
@@ -252,7 +252,7 @@ npm install lodash-es
 ```
 
 #### Remove Unused Dependencies
-```bash
+```powershell
 # Find unused dependencies
 npx depcheck
 
@@ -310,7 +310,7 @@ module.exports = {
 ```
 
 **Verification**:
-```bash
+```powershell
 # Build and check CSS size
 npm run build
 ls -lh dist/assets/*.css
@@ -394,7 +394,7 @@ export default {
 ### 7. Asset Optimization
 
 #### Images
-```bash
+```powershell
 # Already have script
 npm run optimize:images
 
@@ -438,7 +438,7 @@ The `bundle-analysis.yml` workflow runs on every PR:
 - Review job summary in Actions tab
 
 ### Manual Checks
-```bash
+```powershell
 # Before making changes
 npm run build:analyze > before.txt
 
@@ -491,7 +491,7 @@ diff before.txt after.txt
 - ❌ Inline large data (move to API)
 
 ### Periodic Maintenance
-```bash
+```powershell
 # Monthly:
 # 1. Check for outdated dependencies
 npm outdated
@@ -514,7 +514,7 @@ npm dedupe
 ### Issue: Bundle Size Exceeds Budget
 
 **Diagnose**:
-```bash
+```powershell
 npm run build:analyze
 # Look for largest files
 ```
@@ -534,7 +534,7 @@ npm run build:analyze
 ### Issue: Vendor Bundle Too Large
 
 **Diagnose**:
-```bash
+```powershell
 # Check what's in vendor bundle
 npm run build
 # Look at vendor-*.js size
@@ -554,13 +554,13 @@ manualChunks: {
 ### Issue: Duplicate Dependencies
 
 **Diagnose**:
-```bash
+```powershell
 npm ls <package-name>
 # Shows all versions installed
 ```
 
 **Solution**:
-```bash
+```powershell
 # Deduplicate
 npm dedupe
 
@@ -621,7 +621,7 @@ Link: </style.css>; rel=preload; as=style
 ## Project Valine Specifics
 
 ### Current Dependencies Analysis
-```bash
+```powershell
 # Run to get current state
 npm run build:analyze
 ```

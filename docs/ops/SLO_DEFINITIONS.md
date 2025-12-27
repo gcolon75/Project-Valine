@@ -268,9 +268,9 @@ Error Budget (hours) = (1 - SLO) × Total Hours in Month
 ## Rollback Plan
 
 **To disable metrics collection:**
-```bash
+```powershell
 # Set feature flag
-export METRICS_ENABLED=false
+$env:METRICS_ENABLED = "false"
 
 # Redeploy
 serverless deploy --stage prod

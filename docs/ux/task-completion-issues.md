@@ -133,12 +133,12 @@ Measurable checklists for each issue:
 All artifacts are ready for GitHub issue creation but **have not been created yet** as per task requirements to "return drafted issue payloads (do not open unless confirmed)."
 
 ### To Create Milestones:
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high,medium --create-milestones
 ```
 
 ### To Create Issues:
-```bash
+```powershell
 # Dry run first (preview)
 npm run ux:audit-to-issues -- --severity high,medium --create --dry-run
 
@@ -163,7 +163,7 @@ All files are in the repository root (excluded from git by design - regenerable)
 ```
 
 **Note:** The JSON and roadmap files are in `.gitignore` because they can be regenerated at any time with:
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high,medium
 ```
 
@@ -213,7 +213,7 @@ npm run ux:audit-to-issues -- --severity high,medium
    - Check `docs/UX_AUDIT_ISSUES_SUMMARY.md` for clarity
 
 2. **Create Labels in GitHub** (if not exist):
-   ```bash
+   ```powershell
    gh label create "ux-audit" --color F9E79F
    gh label create "high priority" --color E74C3C
    gh label create "medium priority" --color F39C12
@@ -223,12 +223,12 @@ npm run ux:audit-to-issues -- --severity high,medium
    ```
 
 3. **Create Milestones** (when ready):
-   ```bash
+   ```powershell
    npm run ux:audit-to-issues -- --create-milestones
    ```
 
 4. **Create Issues** (when confirmed):
-   ```bash
+   ```powershell
    npm run ux:audit-to-issues -- --severity high,medium --create
    ```
 

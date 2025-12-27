@@ -1,5 +1,8 @@
 # Deployment Guide
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 ## Overview
 
 This guide explains how to deploy the Project Valine frontend to S3 and CloudFront with correct MIME types and cache headers to prevent white screen issues.
@@ -35,7 +38,7 @@ Without proper cache headers:
 
 ### Step 1: Build the Application
 
-```bash
+```powershell
 npm run build
 ```
 
@@ -49,7 +52,7 @@ This will:
 
 **Option A: Using the deployment script (recommended)**
 
-```bash
+```powershell
 # With environment variables
 S3_BUCKET=your-bucket-name \
 CLOUDFRONT_DISTRIBUTION_ID=E1234567890ABC \
@@ -63,7 +66,7 @@ CLOUDFRONT_DISTRIBUTION_ID=E1234567890ABC \
 
 If you prefer to deploy manually:
 
-```bash
+```powershell
 # Upload index.html with no-cache headers
 aws s3 cp dist/index.html s3://your-bucket/index.html \
   --content-type "text/html; charset=utf-8" \
@@ -93,7 +96,7 @@ aws s3 sync dist s3://your-bucket \
 
 After uploading to S3, create a CloudFront invalidation to ensure users get the new version:
 
-```bash
+```powershell
 aws cloudfront create-invalidation \
   --distribution-id E1234567890ABC \
   --paths "/*"
@@ -124,7 +127,7 @@ aws cloudfront create-invalidation \
 ### Users Still See White Screen After Deployment
 
 1. **Check CloudFront invalidation status:**
-   ```bash
+   ```powershell
    aws cloudfront list-invalidations --distribution-id E1234567890ABC
    ```
 
@@ -139,18 +142,18 @@ aws cloudfront create-invalidation \
    - This bypasses browser cache
 
 4. **Check for corrupted build:**
-   ```bash
-   grep -r "C:\\\\" dist/
-   grep -r 'cd=""' dist/
+   ```powershell
+   Select-String -r "C:\\\\" dist/
+   Select-String -r 'cd=""' dist/
    ```
    If found, the build is corrupted. Check your build environment.
 
 ### Deployment Script Errors
 
 **Error: AWS CLI not found**
-```bash
+```powershell
 # Install AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+Invoke-RestMethod -Uri "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -Method Get
 unzip awscliv2.zip
 sudo ./aws/install
 ```
@@ -180,7 +183,7 @@ The application includes error instrumentation that:
 5. Logs to CloudWatch for debugging
 
 Check CloudWatch logs to see client-side errors:
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 ```
 
@@ -211,7 +214,7 @@ To integrate deployment into your CI/CD pipeline:
 If deployment causes issues:
 
 1. **Revert S3 to previous version:**
-   ```bash
+   ```powershell
    # List versions
    aws s3api list-object-versions --bucket your-bucket --prefix index.html
    
@@ -223,7 +226,7 @@ If deployment causes issues:
    ```
 
 2. **Invalidate CloudFront again:**
-   ```bash
+   ```powershell
    aws cloudfront create-invalidation --distribution-id E1234567890ABC --paths "/*"
    ```
 

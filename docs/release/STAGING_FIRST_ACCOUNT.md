@@ -43,11 +43,11 @@ Located in `serverless/prisma/migrations/`:
 
 ### Apply Migrations
 
-```bash
+```powershell
 cd serverless
 
 # Ensure DATABASE_URL is set
-export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 
 # Generate Prisma client
 npm run prisma:generate
@@ -70,7 +70,7 @@ Database schema is up to date!
 
 Create or update `serverless/.env` with the following:
 
-```bash
+```powershell
 # Database
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 
@@ -121,7 +121,7 @@ SYNTHETIC_JOURNEY_ENABLED=false
 ### Development Mode (No SMTP)
 
 If testing without SMTP credentials, set:
-```bash
+```powershell
 EMAIL_ENABLED=false
 ```
 
@@ -140,11 +140,11 @@ This link will expire in 24 hours.
 
 ## 3. Deploy API (if using AWS Lambda)
 
-```bash
+```powershell
 cd serverless
 
 # Deploy to staging
-export STAGE=staging
+$env:STAGE = "staging"
 npm run deploy
 
 # Note the API Gateway URL from output
@@ -155,28 +155,20 @@ npm run deploy
 
 ### Test Setup
 
-```bash
+```powershell
 # Set API base URL
-export API_BASE="https://your-api-gateway-url.amazonaws.com/staging"
+$env:API_BASE = "https://your-api-gateway-url.amazonaws.com/staging"
 
 # Or for local testing with serverless-offline:
-export API_BASE="http://localhost:3000"
+$env:API_BASE = "http://localhost:3000"
 ```
 
 ### Test 1: Register New Account (Expect 201)
 
-```bash
-curl -X POST "$API_BASE/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "testuser@example.com",
-    "password": "SecurePass123!",
-    "username": "testuser",
-    "displayName": "Test User"
-  }' \
-  -c cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 **Expected Response:**
 - Status: `201 Created`
@@ -192,22 +184,11 @@ curl -X POST "$API_BASE/auth/register" \
 
 First 5 requests should succeed. 6th and beyond should get rate limited.
 
-```bash
+```powershell
 # Requests 1-5: Should succeed (200 OK)
 for i in {1..5}; do
   echo "Request $i:"
-  curl -X POST "$API_BASE/auth/resend-verification" \
-    -b cookies.txt \
-    -v 2>&1 | grep -E "(< HTTP|X-RateLimit)"
-  sleep 1
-done
-
-# Request 6+: Should be rate limited (429 Too Many Requests)
-echo "Request 6 (should be rate limited):"
-curl -X POST "$API_BASE/auth/resend-verification" \
-  -b cookies.txt \
-  -v 2>&1 | grep -E "(< HTTP|X-RateLimit|Retry-After)"
-```
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 **Expected Response for 6th Request:**
 - Status: `429 Too Many Requests`
@@ -218,15 +199,13 @@ curl -X POST "$API_BASE/auth/resend-verification" \
 
 ### Test 3: Verify Email (Expect 200)
 
-```bash
+```powershell
 # Use token from email/logs
 TOKEN="your-verification-token-from-email"
 
-curl -X POST "$API_BASE/auth/verify-email" \
-  -H "Content-Type: application/json" \
-  -d "{\"token\": \"$TOKEN\"}" \
-  -v
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{\' -ContentType 'application/json'```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -234,16 +213,10 @@ curl -X POST "$API_BASE/auth/verify-email" \
 
 ### Test 4: Login (Expect Set-Cookie Headers)
 
-```bash
-curl -X POST "$API_BASE/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "testuser@example.com",
-    "password": "SecurePass123!"
-  }' \
-  -c cookies.txt \
-  -v 2>&1 | grep -E "(< HTTP|Set-Cookie)"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -255,11 +228,8 @@ curl -X POST "$API_BASE/auth/login" \
 
 ### Test 5: Get Current User (Expect 200)
 
-```bash
-curl -X GET "$API_BASE/auth/me" \
-  -b cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -269,14 +239,11 @@ curl -X GET "$API_BASE/auth/me" \
 
 Example: Update user profile/bio (if endpoint exists)
 
-```bash
+```powershell
 # Note: This may vary based on your API structure
-curl -X PATCH "$API_BASE/users/me" \
-  -H "Content-Type: application/json" \
-  -b cookies.txt \
-  -d '{"bio": "Updated bio from staging test"}' \
-  -v
-```
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"bio": "Updated bio from staging test"}' -ContentType 'application/json'```
 
 **Expected Response:**
 - Status: `200 OK` (or `204 No Content`)
@@ -284,11 +251,8 @@ curl -X PATCH "$API_BASE/users/me" \
 
 ### Test 7: List Sessions (Expect Current Session)
 
-```bash
-curl -X GET "$API_BASE/auth/sessions" \
-  -b cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/auth/sessions" -Method Get```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -332,7 +296,7 @@ curl -X GET "$API_BASE/auth/sessions" \
 ## 6. Troubleshooting
 
 ### "User already exists" Error
-```bash
+```powershell
 # Check if user exists in database
 psql $DATABASE_URL -c "SELECT id, email, username, \"emailVerified\" FROM users WHERE email = 'testuser@example.com';"
 
@@ -357,7 +321,7 @@ psql $DATABASE_URL -c "DELETE FROM users WHERE email = 'testuser@example.com';"
 
 1. Verify `RATE_LIMITING_ENABLED=true`
 2. Check Redis connection:
-   ```bash
+   ```powershell
    redis-cli -u $REDIS_URL ping
    # Should return: PONG
    ```
@@ -370,28 +334,26 @@ Expected behavior. Logout invalidates refresh tokens. User must login again.
 ### CSRF Token Errors (403 Forbidden)
 
 If `CSRF_ENABLED=true`, frontend must send X-CSRF-Token header:
-```bash
+```powershell
 # Extract CSRF token from cookie
-CSRF_TOKEN=$(grep csrfToken cookies.txt | awk '{print $7}')
+CSRF_TOKEN=$(Select-String csrfToken cookies.txt | awk '{print $7}')
 
 # Include in request
-curl -X POST "$API_BASE/some/protected/endpoint" \
-  -b cookies.txt \
-  -H "X-CSRF-Token: $CSRF_TOKEN" \
-  -d '...'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "X-CSRF-Token" = "$CSRF_TOKEN"
+} -Body '...' -ContentType 'application/json'```
 
 ## 7. Next Steps
 
 After successful first account creation:
 
 1. **Enable CSRF Protection** (when frontend ready):
-   ```bash
+   ```powershell
    CSRF_ENABLED=true
    ```
 
 2. **Enable 2FA** (optional, for high-security accounts):
-   ```bash
+   ```powershell
    TWO_FACTOR_ENABLED=true
    ```
 
@@ -415,7 +377,7 @@ After successful first account creation:
 If issues arise, rollback by:
 
 1. **Disable new registrations** (API Gateway throttling to 0):
-   ```bash
+   ```powershell
    aws apigateway update-stage \
      --rest-api-id YOUR_API_ID \
      --stage-name staging \
@@ -423,7 +385,7 @@ If issues arise, rollback by:
    ```
 
 2. **Revert migrations** (if database issues):
-   ```bash
+   ```powershell
    # NOTE: Migrations are additive. Rolling back will DROP tables!
    # Only do this if no production data exists.
    

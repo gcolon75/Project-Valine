@@ -385,18 +385,18 @@ Used for tracking and correlating multiple verification runs.
 ## Usage Examples
 
 ### Quick Run
-```bash
+```powershell
 npm run verify:post-merge
 ```
 
 ### View Report
-```bash
-cat logs/verification/verification-report.md
+```powershell
+Get-Content logs/verification/verification-report.md
 ```
 
 ### Check Recommendations
-```bash
-cat logs/verification/artifacts/draft-prs.json | jq .
+```powershell
+Get-Content logs/verification/artifacts/draft-prs.json | jq .
 ```
 
 ### CI/CD (Automatic)
@@ -461,13 +461,13 @@ The script is designed to be extended:
 ## Testing
 
 ### Build Verification
-```bash
+```powershell
 npm run build
 ✓ built in 3.59s
 ```
 
 ### Script Execution
-```bash
+```powershell
 npm run verify:post-merge
 ✅ VERIFICATION COMPLETE
 ```

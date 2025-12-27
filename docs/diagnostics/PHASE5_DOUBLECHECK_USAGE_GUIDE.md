@@ -12,7 +12,7 @@ The Phase 5 Double-Check Agent is a secondary verification tool that independent
 
 ### Basic Usage
 
-```bash
+```powershell
 cd orchestrator/scripts
 
 # Run double-check against a primary validation report
@@ -21,7 +21,7 @@ cd orchestrator/scripts
 
 ### With Custom Configuration
 
-```bash
+```powershell
 ./run_phase5_doublecheck.sh \
   ../validation_evidence/validation_report_*.json \
   ./my_doublecheck_config.json
@@ -33,7 +33,7 @@ cd orchestrator/scripts
 
 Copy the example configuration:
 
-```bash
+```powershell
 cp doublecheck_config.example.json doublecheck_config.json
 ```
 
@@ -245,14 +245,14 @@ For artifacts verification:
 
 Set these environment variables before running:
 
-```bash
+```powershell
 # GitHub token for artifacts checks
-export STAGING_GITHUB_TOKEN="ghp_..."
+$env:STAGING_GITHUB_TOKEN = "ghp_..."
 
 # AWS credentials (if not using default profile)
-export AWS_ACCESS_KEY_ID="AKIA..."
-export AWS_SECRET_ACCESS_KEY="..."
-export AWS_REGION="us-west-2"
+$env:AWS_ACCESS_KEY_ID = "AKIA..."
+$env:AWS_SECRET_ACCESS_KEY = "..."
+$env:AWS_REGION = "us-west-2"
 ```
 
 ## Safety Guardrails
@@ -356,7 +356,7 @@ Status: ❌ NEEDS REVIEW - Significant inconsistencies detected
 
 ### Example 1: Basic Double-Check
 
-```bash
+```powershell
 cd orchestrator/scripts
 
 # Run double-check with default configuration
@@ -365,9 +365,9 @@ cd orchestrator/scripts
 
 ### Example 2: Custom Configuration
 
-```bash
+```powershell
 # Create custom config
-cat > my_config.json << 'EOF'
+Get-Content > my_config.json << 'EOF'
 {
   "staging_urls": ["https://my-staging.example.com"],
   "aws_region": "us-east-1",

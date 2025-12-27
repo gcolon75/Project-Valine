@@ -423,27 +423,27 @@ Content-Security-Policy:
 ### 5.3 Automated Checks
 
 **Build Verification**:
-```bash
+```powershell
 npm run build
 # ✅ Successful build with no errors
 # ✅ Chunk sizes reasonable
 ```
 
 **Linting** (if configured):
-```bash
+```powershell
 npm run lint
 # Should pass or note non-blocking warnings
 ```
 
 **Unit Tests**:
-```bash
+```powershell
 npm run test:run
 # Note: Some backend integration tests may fail without server
 # Frontend unit tests should pass
 ```
 
 **E2E Tests**:
-```bash
+```powershell
 npx playwright test
 # Requires running dev server or backend mocks
 ```

@@ -507,7 +507,7 @@ Thank you for using Valine.
 ### Procedure
 
 #### 1. Verify Authorization
-```bash
+```powershell
 # Check approval
 SELECT * FROM deletion_approvals
 WHERE user_id = 'usr_abc123'
@@ -516,7 +516,7 @@ AND approved_by IS NOT NULL
 ```
 
 #### 2. Run Manual Deletion Script
-```bash
+```powershell
 # Execute on secure admin console
 node scripts/manual-user-deletion.js \
   --user-id usr_abc123 \
@@ -534,7 +534,7 @@ node scripts/manual-user-deletion.js \
 ```
 
 #### 3. Verify Deletion
-```bash
+```powershell
 # Verify user removed
 psql $DATABASE_URL -c "SELECT * FROM users WHERE id = 'usr_abc123'"
 # Should return 0 rows
@@ -571,7 +571,7 @@ await supportTickets.update({
 ### Deletion Job Fails
 
 **Check Status**:
-```bash
+```powershell
 # Query job queue
 redis-cli HGET "bull:user-deletion:jobs" "del_abc123"
 
@@ -613,14 +613,14 @@ aws logs filter-log-events \
 3. **Third-party cache**: Clear external caches
 
 **Resolution**:
-```bash
+```powershell
 # Purge CDN
 aws cloudfront create-invalidation \
   --distribution-id E123ABC \
   --paths "/users/usr_abc123/*"
 
 # Reindex search
-curl -X DELETE "http://elasticsearch:9200/users/_doc/usr_abc123"
+Invoke-RestMethod -Uri "-X" -Method Delete
 ```
 
 ### Retained Data Concerns

@@ -87,7 +87,7 @@ if (trimmedCookie.startsWith(prefix)) {
 
 **Key Features**:
 - Consolidated info from 7+ scattered deployment docs
-- Correct S3 bucket name: `valine-frontend-prod` (not `project-valine-frontend-prod`)
+- Correct S3 bucket name: `valine-frontend-prod` (not `valine-frontend-prod`)
 - Troubleshooting section specifically for 401 auth issues
 - Environment variable validation guide
 
@@ -185,27 +185,18 @@ Script automatically performs:
 2. ✅ Smoke tests (health, meta endpoints)
 
 **Manual Verification**:
-```bash
+```powershell
 API_URL="https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 FRONTEND="https://dkmxy676d3vgc.cloudfront.net"
 
 # 1. Login
-curl -X POST "$API_URL/auth/login" \
-  -H "Content-Type: application/json" \
-  -H "Origin: $FRONTEND" \
-  -d '{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"}' \
-  -c cookies.txt -v
-
-# 2. Test previously failing endpoints
-curl "$API_URL/me/profile" -b cookies.txt -H "Origin: $FRONTEND" -v
-# Expected: 200 OK (was 401 before fix)
-
-curl "$API_URL/me/preferences" -b cookies.txt -H "Origin: $FRONTEND" -v
-# Expected: 200 OK (was 401 before fix)
-
-curl "$API_URL/feed?limit=20" -b cookies.txt -H "Origin: $FRONTEND" -v
-# Expected: 200 OK (was 401 before fix)
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Origin" = "$FRONTEND"
+    "Origin" = "$FRONTEND"
+    "Origin" = "$FRONTEND"
+    "Origin" = "$FRONTEND"
+} -Body '{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"}' -ContentType 'application/json'```
 
 ### Rollback (if needed)
 ```powershell

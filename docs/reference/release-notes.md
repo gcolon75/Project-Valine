@@ -90,7 +90,7 @@ Project Valine v1.0.0 marks the first production-ready release of our profession
 
 Create a `.env.local` file in the root directory:
 
-```bash
+```powershell
 # API Configuration
 VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/dev
 
@@ -131,7 +131,7 @@ DATABASE_URL
 
 ### Local Development
 
-```bash
+```powershell
 # Install dependencies
 npm install
 
@@ -150,7 +150,7 @@ npm run preview
 
 ### Production Deployment
 
-```bash
+```powershell
 # Build production bundle
 npm run build
 
@@ -168,7 +168,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
 ```
 
 Or use the automated deployment workflow:
-```bash
+```powershell
 # Trigger via GitHub Actions
 git push origin main  # Automatically deploys to production
 ```
@@ -243,13 +243,13 @@ git push origin main  # Automatically deploys to production
 ### From Development to Production
 
 1. **Remove Dev Mode Features**
-   ```bash
+   ```powershell
    # Dev-bypass login is automatically disabled in production
    # No code changes needed
    ```
 
 2. **Configure Environment**
-   ```bash
+   ```powershell
    # Copy example env file
    cp .env.example .env.local
    
@@ -258,19 +258,19 @@ git push origin main  # Automatically deploys to production
    ```
 
 3. **Optimize Images**
-   ```bash
+   ```powershell
    # Follow guide in docs/IMAGE_OPTIMIZATION_GUIDE.md
    # Use Squoosh.app or sharp CLI
    ```
 
 4. **Deploy Backend**
-   ```bash
+   ```powershell
    cd serverless
    serverless deploy --stage prod
    ```
 
 5. **Deploy Frontend**
-   ```bash
+   ```powershell
    npm run build
    aws s3 sync dist/ s3://prod-bucket/
    ```

@@ -75,7 +75,7 @@ Analyzes PR #58 and creates a fix PR with no file/line limits
 
 The `/triage` command needs to be registered with Discord using the slash command agent:
 
-```bash
+```powershell
 cd orchestrator
 
 # Check current commands
@@ -86,7 +86,7 @@ python register_slash_commands_agent.py register
 ```
 
 Or use the shell wrapper:
-```bash
+```powershell
 ./register_slash_commands.sh register
 ```
 
@@ -145,7 +145,7 @@ All existing triage safety features are preserved:
 
 ### Test Coverage
 
-```bash
+```powershell
 cd orchestrator
 python3 -m pytest tests/test_triage_command.py -v
 ```
@@ -167,7 +167,7 @@ python3 -m pytest tests/test_triage_command.py -v
 ### Full Test Suite
 
 All existing tests still pass:
-```bash
+```powershell
 python3 -m pytest tests/ -v
 ```
 
@@ -225,7 +225,7 @@ The implementation passes CodeQL security scanning with:
 ### Prerequisites
 
 1. **Update Discord Command Registration**
-   ```bash
+   ```powershell
    cd orchestrator
    ./register_slash_commands.sh register
    ```
@@ -239,7 +239,7 @@ The implementation passes CodeQL security scanning with:
      - `DISCORD_BOT_TOKEN`
 
 3. **Verify Deployment**
-   ```bash
+   ```powershell
    # In Discord, type /triage and verify autocomplete shows
    # Test with a known PR number
    /triage pr:58

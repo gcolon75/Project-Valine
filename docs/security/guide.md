@@ -636,10 +636,10 @@ CSP_REPORT_URI=https://csp-reports.example.com
 - `action`: Filter by action type
 
 **Example**:
-```bash
-curl -H "Authorization: Bearer <token>" \
-  "https://api.valine.app/api/privacy/audit-log?limit=20&action=auth.login"
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 ### Retention Policy
 
@@ -795,7 +795,7 @@ For legal/audit requirements:
 
 ### Environment Variables
 
-```bash
+```powershell
 # JWT
 JWT_SECRET=<strong-random-string>
 JWT_EXPIRES_IN=7d
@@ -840,7 +840,7 @@ AUDIT_LOG_RETENTION_DAYS=90
 ### Database Migration
 
 **Run Migration**:
-```bash
+```powershell
 cd api
 npx prisma migrate deploy
 ```
@@ -869,7 +869,7 @@ UPDATE users SET "emailVerified" = true WHERE "createdAt" < NOW();
 ### Application Updates
 
 **Update Dependencies**:
-```bash
+```powershell
 cd server
 npm install bcryptjs jsonwebtoken otplib qrcode express-rate-limit helmet crypto-js nodemailer
 ```
@@ -880,7 +880,7 @@ npm install bcryptjs jsonwebtoken otplib qrcode express-rate-limit helmet crypto
 - Configure environment variables
 
 **Test All Endpoints**:
-```bash
+```powershell
 cd server
 npm test
 ```
@@ -943,7 +943,7 @@ npm test
 ### Emergency Disable
 
 **1. Disable All Security Features**:
-```bash
+```powershell
 # In production environment
 CSRF_ENABLED=false
 USE_SESSION_TRACKING=false
@@ -952,14 +952,14 @@ EMAIL_ENABLED=false
 ```
 
 **2. Restart Server**:
-```bash
+```powershell
 npm run start
 ```
 
 ### Database Rollback
 
 **Rollback Migration**:
-```bash
+```powershell
 cd api
 npx prisma migrate resolve --rolled-back 20251105225000_add_security_features
 ```
@@ -982,17 +982,17 @@ DROP TABLE audit_logs;
 ### Gradual Rollback
 
 **Phase 1**: Disable 2FA
-```bash
+```powershell
 FEATURE_2FA_ENABLED=false
 ```
 
 **Phase 2**: Disable CSRF
-```bash
+```powershell
 CSRF_ENABLED=false
 ```
 
 **Phase 3**: Disable session tracking
-```bash
+```powershell
 USE_SESSION_TRACKING=false
 ```
 
@@ -1035,13 +1035,13 @@ USE_SESSION_TRACKING=false
 
 ### Debug Mode
 
-```bash
+```powershell
 # Enable verbose logging
 NODE_ENV=development
 DEBUG=*
 
 # Check security configuration
-curl http://localhost:5000/
+Invoke-RestMethod -Uri "http://localhost:5000/" -Method Get
 ```
 
 ### Contact

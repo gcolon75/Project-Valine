@@ -338,7 +338,7 @@ jobs:
 
 ### Environment Variables
 
-```bash
+```powershell
 # Security Agent Configuration
 SECURITY_SCAN_ENABLED=true
 SECURITY_FAIL_ON_HIGH=true

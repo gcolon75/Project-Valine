@@ -16,8 +16,8 @@ This guide provides instructions for common cache maintenance and troubleshootin
 
 **Via API Endpoint**:
 
-```bash
-curl http://localhost:5000/api/cache/metrics
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 ```
 
 **Expected Response** (cache enabled):
@@ -51,14 +51,14 @@ curl http://localhost:5000/api/cache/metrics
 
 **Command**:
 
-```bash
+```powershell
 cd /path/to/project-valine/server
 node scripts/cache/invalidate-profile.mjs <userId>
 ```
 
 **Example**:
 
-```bash
+```powershell
 node scripts/cache/invalidate-profile.mjs user-123abc
 ```
 
@@ -80,7 +80,7 @@ node scripts/cache/invalidate-profile.mjs user-123abc
 
 **Command**:
 
-```bash
+```powershell
 node scripts/cache/invalidate-profile.mjs --all-search
 ```
 
@@ -102,7 +102,7 @@ node scripts/cache/invalidate-profile.mjs --all-search
 
 **Command**:
 
-```bash
+```powershell
 node scripts/cache/invalidate-profile.mjs --all
 ```
 
@@ -118,10 +118,10 @@ node scripts/cache/invalidate-profile.mjs --all
 
 **In Development**:
 
-```bash
+```powershell
 # Set environment variable
-export CACHE_ENABLED=true
-export REDIS_URL=redis://localhost:6379
+$env:CACHE_ENABLED = "true"
+$env:REDIS_URL = "redis://localhost:6379"
 
 # Restart server
 npm run dev
@@ -130,41 +130,41 @@ npm run dev
 **In Production** (depends on deployment method):
 
 **Docker**:
-```bash
+```powershell
 docker run -e CACHE_ENABLED=true -e REDIS_URL=redis://redis:6379 ...
 ```
 
 **Environment File** (`.env`):
-```bash
+```powershell
 CACHE_ENABLED=true
 REDIS_URL=redis://your-redis-host:6379
 ```
 
 **Verify**:
 
-```bash
+```powershell
 # Check server logs for:
 [Cache] Redis cache initialized
 [Cache] Cache layer initialized
 
 # Or check metrics endpoint:
-curl http://localhost:5000/api/cache/metrics
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 ```
 
 ### 6. Disable Caching
 
 **Quick Disable** (no code changes):
 
-```bash
+```powershell
 # Set environment variable
-export CACHE_ENABLED=false
+$env:CACHE_ENABLED = "false"
 
 # Restart server
 ```
 
 **Verify**:
 
-```bash
+```powershell
 # Check server logs for:
 [Cache] Caching is disabled (CACHE_ENABLED=false)
 
@@ -186,19 +186,19 @@ export CACHE_ENABLED=false
 **Diagnosis Steps**:
 
 1. **Check if caching is enabled**:
-   ```bash
-   curl http://localhost:5000/api/cache/metrics
+   ```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
    ```
    Should show `"enabled": true`
 
 2. **Check server logs** for initialization:
-   ```bash
-   grep -i cache server.log
+   ```powershell
+   Select-String -i cache server.log
    ```
    Look for: `[Cache] Cache layer initialized`
 
 3. **Verify environment variables**:
-   ```bash
+   ```powershell
    echo $CACHE_ENABLED
    echo $REDIS_URL
    ```
@@ -219,25 +219,25 @@ export CACHE_ENABLED=false
 **Diagnosis Steps**:
 
 1. **Check TTL settings**:
-   ```bash
+   ```powershell
    echo $CACHE_TTL_PROFILE
    echo $CACHE_TTL_SEARCH
    ```
    Should be reasonable values (e.g., 300, 60)
 
 2. **Monitor cache invalidations** in logs:
-   ```bash
-   grep -i "invalidat" server.log
+   ```powershell
+   Select-String -i "invalidat" server.log
    ```
 
 3. **Test cache directly**:
-   ```bash
+   ```powershell
    # First request (should be cache miss)
-   curl -i http://localhost:5000/profiles/user-123
+Invoke-RestMethod -Uri "-i" -Method Get
    # Check header: X-Cache-Hit: false
 
    # Second request immediately after (should be cache hit)
-   curl -i http://localhost:5000/profiles/user-123
+Invoke-RestMethod -Uri "-i" -Method Get
    # Check header: X-Cache-Hit: true
    ```
 
@@ -258,17 +258,17 @@ export CACHE_ENABLED=false
 **Diagnosis Steps**:
 
 1. **Test Redis connectivity**:
-   ```bash
+   ```powershell
    redis-cli -h <host> -p <port> ping
    ```
 
 2. **Check Redis server status**:
-   ```bash
+   ```powershell
    redis-cli info server
    ```
 
 3. **Verify credentials** (if using AUTH):
-   ```bash
+   ```powershell
    redis-cli -h <host> -p <port> -a <password> ping
    ```
 
@@ -291,17 +291,17 @@ export CACHE_ENABLED=false
 **Diagnosis Steps**:
 
 1. **Check Redis memory usage**:
-   ```bash
+   ```powershell
    redis-cli info memory
    ```
 
 2. **Check key count**:
-   ```bash
+   ```powershell
    redis-cli DBSIZE
    ```
 
 3. **Check largest keys**:
-   ```bash
+   ```powershell
    redis-cli --bigkeys
    ```
 
@@ -321,7 +321,7 @@ export CACHE_ENABLED=false
 
 **Immediate Fix**:
 
-```bash
+```powershell
 # Invalidate affected user
 node scripts/cache/invalidate-profile.mjs <userId>
 
@@ -366,13 +366,13 @@ In-memory cache resides in server process memory and cannot be externally invali
    - Alert on p95 latency increases
 
 3. **Cache Size** (Redis):
-   ```bash
-   redis-cli INFO memory | grep used_memory_human
+   ```powershell
+   redis-cli INFO memory | Select-String used_memory_human
    ```
 
 4. **Error Rate**:
-   ```bash
-   grep -c "Cache.*error" server.log
+   ```powershell
+   Select-String -c "Cache.*error" server.log
    ```
 
 ### Automated Monitoring Setup
@@ -398,7 +398,7 @@ scrape_configs:
 
 ### Daily
 
-- Check hit ratio: `curl http://localhost:5000/api/cache/metrics`
+- Check hit ratio: `Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics"`
 - Review error logs for cache issues
 
 ### Weekly
@@ -425,7 +425,7 @@ scrape_configs:
 
 ### Environment Variables
 
-```bash
+```powershell
 CACHE_ENABLED=true              # Enable/disable caching
 REDIS_URL=redis://localhost:6379  # Redis connection string
 CACHE_TTL_PROFILE=300           # Profile cache TTL (seconds)
@@ -436,9 +436,9 @@ CACHE_MAX_KEYS_PROFILE=1000     # Max in-memory cache size
 
 ### Useful Commands
 
-```bash
+```powershell
 # Check cache status
-curl http://localhost:5000/api/cache/metrics
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 
 # Invalidate user profile
 node scripts/cache/invalidate-profile.mjs <userId>

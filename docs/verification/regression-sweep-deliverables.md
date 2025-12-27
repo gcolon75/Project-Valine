@@ -171,7 +171,7 @@ REGRESSION_SWEEP_REPORT.md             # Consolidated markdown report
 - Color-coded progress output
 
 **Usage:**
-```bash
+```powershell
 ./tests/e2e/run-regression-sweep.sh
 ```
 
@@ -188,7 +188,7 @@ REGRESSION_SWEEP_REPORT.md             # Consolidated markdown report
 - Outputs both Markdown and JSON reports
 
 **Usage:**
-```bash
+```powershell
 node scripts/generate-regression-report.mjs
 ```
 
@@ -208,7 +208,7 @@ node scripts/generate-regression-report.mjs
 
 ### Step 1: Prerequisites
 
-```bash
+```powershell
 # Install dependencies (if not already done)
 npm install
 
@@ -218,7 +218,7 @@ npx playwright install chromium webkit firefox --with-deps
 
 ### Step 2: Run Full Test Suite
 
-```bash
+```powershell
 # Execute complete regression sweep
 ./tests/e2e/run-regression-sweep.sh
 ```
@@ -234,7 +234,7 @@ npx playwright install chromium webkit firefox --with-deps
 
 ### Step 3: Generate Consolidated Report
 
-```bash
+```powershell
 # Create markdown report
 node scripts/generate-regression-report.mjs
 ```
@@ -245,12 +245,12 @@ node scripts/generate-regression-report.mjs
 
 ### Step 4: Review Results
 
-```bash
+```powershell
 # Open interactive HTML report
 npx playwright show-report playwright-report
 
 # View markdown report
-cat REGRESSION_SWEEP_REPORT.md
+Get-Content REGRESSION_SWEEP_REPORT.md
 ```
 
 ## Deliverable Checklist
@@ -379,7 +379,7 @@ As specified in the requirements:
 ## Next Steps
 
 1. **Execute test suite:**
-   ```bash
+   ```powershell
    ./tests/e2e/run-regression-sweep.sh
    ```
 

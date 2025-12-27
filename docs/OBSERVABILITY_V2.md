@@ -257,7 +257,7 @@ const stats = await observabilityClient.getStats();
 ### Environment Variables
 
 #### Backend (serverless/.env)
-```bash
+```powershell
 # Synthetic Journey
 SYNTHETIC_JOURNEY_ENABLED=true
 SYNTHETIC_USE_REAL_REQUESTS=true
@@ -268,7 +268,7 @@ OBSERVABILITY_ENABLED=true
 ```
 
 #### Frontend (.env or .env.local)
-```bash
+```powershell
 VITE_API_URL=http://localhost:3000
 VITE_OBSERVABILITY_ENABLED=true
 ```
@@ -326,55 +326,43 @@ functions:
 
 ### Running Synthetic Journeys
 
-```bash
+```powershell
 # Using curl
-curl -X POST http://localhost:3000/internal/journey/run \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "real", "scenarios": ["register", "login", "logout"]}'
-
-# Using simulated mode for testing
-curl -X POST http://localhost:3000/internal/journey/run \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "simulated"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"mode": "real", "scenarios": ["register", "login", "logout"]}' -ContentType 'application/json'```
 
 ### Checking Health
 
-```bash
-curl http://localhost:3000/internal/observability/health
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/health" -Method Get
 ```
 
 ### Viewing Stats
 
-```bash
-curl http://localhost:3000/internal/observability/stats
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/stats" -Method Get
 ```
 
 ### Sending Test Metrics
 
-```bash
-curl -X POST http://localhost:3000/internal/observability/metrics \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "performance",
-    "data": {
-      "pageLoadTime": 1234,
-      "metric": "test"
-    }
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "type": "performance", "data": { "pageLoadTime": 1234, "metric": "test" } }' -ContentType 'application/json'```
 
 ### Retrieving Metrics
 
-```bash
+```powershell
 # All metrics from last 15 minutes
-curl http://localhost:3000/internal/observability/metrics
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/metrics" -Method Get
 
 # Only performance metrics
-curl http://localhost:3000/internal/observability/metrics?type=performance
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/metrics?type=performance" -Method Get
 
 # Metrics since specific timestamp
-curl "http://localhost:3000/internal/observability/metrics?since=1699999999000"
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/metrics?since=1699999999000" -Method Get
 ```
 
 ## Monitoring Best Practices
@@ -429,9 +417,9 @@ observabilityClient.trackApiRequest(
 
 Run synthetic journeys regularly:
 
-```bash
+```powershell
 # Set up a cron job or scheduled task
-0 */6 * * * curl -X POST http://api/internal/journey/run -d '{"mode": "real"}'
+Invoke-RestMethod -Uri "-X" -Method Post -Body '{"mode": "real"}' -ContentType 'application/json'
 ```
 
 ## Architecture Notes
@@ -482,13 +470,13 @@ All observability endpoints are under `/internal/*` and should be:
 ### Metrics Not Appearing
 
 1. Check if observability is enabled:
-   ```bash
+   ```powershell
    echo $OBSERVABILITY_ENABLED
    ```
 
 2. Verify backend is receiving metrics:
-   ```bash
-   curl http://localhost:3000/internal/observability/health
+   ```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/health" -Method Get
    ```
 
 3. Check browser console for errors
@@ -496,17 +484,15 @@ All observability endpoints are under `/internal/*` and should be:
 ### Synthetic Journey Failures
 
 1. Verify environment variables:
-   ```bash
+   ```powershell
    echo $SYNTHETIC_JOURNEY_ENABLED
    echo $SYNTHETIC_USE_REAL_REQUESTS
    echo $API_BASE_URL
    ```
 
 2. Test in simulated mode first:
-   ```bash
-   curl -X POST http://localhost:3000/internal/journey/run \
-     -d '{"mode": "simulated"}'
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Body '{"mode": "simulated"}' -ContentType 'application/json'```
 
 3. Check individual step failures in the response
 

@@ -44,7 +44,7 @@
 ### What Works Right Now
 
 **Frontend (100%):**
-```bash
+```powershell
 npm run dev              # Start development server (port 3000)
 npm run build            # Production build (3.39s, 236.47 KB)
 npm test                 # Run 107 tests (6.44s)
@@ -61,7 +61,7 @@ npm run test:coverage    # Generate coverage report
 - ✅ API fallback (works offline or without backend)
 
 **Backend (Serverless - Not Deployed):**
-```bash
+```powershell
 cd serverless
 npm install              # Install dependencies
 npx serverless deploy    # Deploy to AWS (requires configuration)
@@ -86,7 +86,7 @@ npx serverless deploy    # Deploy to AWS (requires configuration)
 **Steps:**
 
 #### A. Create AWS Resources
-```bash
+```powershell
 # 1. Create S3 bucket for frontend
 aws s3 mb s3://project-valine-staging --region us-west-2
 
@@ -116,12 +116,12 @@ STAGING_URL               → https://staging.projectvaline.com
 ```
 
 #### C. Deploy Backend (Serverless)
-```bash
+```powershell
 cd serverless
 npm install
 
 # Configure environment variables
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 
 # Deploy to AWS Lambda
 npx serverless deploy --stage staging --region us-west-2
@@ -130,7 +130,7 @@ npx serverless deploy --stage staging --region us-west-2
 ```
 
 #### D. Test Deployment
-```bash
+```powershell
 # Trigger staging deployment
 git push origin develop
 
@@ -149,7 +149,7 @@ git push origin develop
 **Steps:**
 
 #### A. Create PostgreSQL Database
-```bash
+```powershell
 # Option 1: AWS RDS (Recommended for production)
 # - Create RDS PostgreSQL instance
 # - Note connection string
@@ -163,12 +163,12 @@ docker run --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgre
 ```
 
 #### B. Run Migrations
-```bash
+```powershell
 cd api
 npm install
 
 # Set database URL
-export DATABASE_URL="postgresql://user:password@host:5432/dbname"
+$env:DATABASE_URL = "postgresql://user:password@host:5432/dbname"
 
 # Run Prisma migrations
 npx prisma migrate deploy
@@ -178,7 +178,7 @@ npx prisma generate
 ```
 
 #### C. Seed Initial Data (Optional)
-```bash
+```powershell
 npx prisma db seed
 ```
 
@@ -191,7 +191,7 @@ npx prisma db seed
 **Steps:**
 
 #### Create `.env.local` file:
-```bash
+```powershell
 # Copy example
 cp .env.local.example .env.local
 
@@ -200,7 +200,7 @@ VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/staging
 ```
 
 #### For Production:
-```bash
+```powershell
 # Set in CI/CD workflow or hosting platform
 VITE_API_BASE=https://api.projectvaline.com
 ```
@@ -303,7 +303,7 @@ VITE_API_BASE=https://api.projectvaline.com
 ## 🛠️ Quick Start Commands
 
 ### **Development:**
-```bash
+```powershell
 # Start development server
 npm run dev
 
@@ -321,7 +321,7 @@ npm run preview
 ```
 
 ### **Testing:**
-```bash
+```powershell
 # Run all 107 tests
 npm run test:run
 
@@ -333,7 +333,7 @@ npm test src/hooks/__tests__/useApiFallback.test.js
 ```
 
 ### **Deployment:**
-```bash
+```powershell
 # Deploy to staging (via GitHub Actions)
 git push origin develop
 
@@ -370,7 +370,7 @@ npx serverless deploy --stage staging --region us-west-2
 ## 🔧 Troubleshooting
 
 ### **Tests Failing?**
-```bash
+```powershell
 # Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm install
@@ -380,7 +380,7 @@ npm test
 ```
 
 ### **Build Failing?**
-```bash
+```powershell
 # Check for syntax errors
 npm run build
 
@@ -389,9 +389,9 @@ npx tsc --noEmit
 ```
 
 ### **API Not Working?**
-```bash
+```powershell
 # Check if backend is deployed
-curl https://your-api-url/health
+Invoke-RestMethod -Uri "https://your-api-url/health" -Method Get
 
 # Check environment variables
 echo $VITE_API_BASE
@@ -401,7 +401,7 @@ echo $VITE_API_BASE
 ```
 
 ### **CI/CD Failing?**
-```bash
+```powershell
 # Check GitHub Actions logs
 # GitHub → Actions → Click failed workflow → View logs
 
@@ -423,7 +423,7 @@ echo $VITE_API_BASE
 - `.github/workflows/` - CI/CD workflows
 
 ### **Useful Commands:**
-```bash
+```powershell
 # View all npm scripts
 npm run
 

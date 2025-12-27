@@ -24,11 +24,11 @@ Use this checklist to ensure a successful deployment of Project Valine.
 ## Phase 1: Database Setup
 
 - [ ] Set DATABASE_URL environment variable
-  ```bash
-  export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+  ```powershell
+$env:DATABASE_URL = "postgresql://user:password@host:5432/valine_db"
   ```
 - [ ] Run database setup script
-  ```bash
+  ```powershell
   ./scripts/deployment/setup-database.sh
   ```
 - [ ] Verify Prisma client generated successfully
@@ -40,7 +40,7 @@ Use this checklist to ensure a successful deployment of Project Valine.
   - [ ] `scripts` table exists
   - [ ] `auditions` table exists
 - [ ] Test database connection with Prisma Studio (optional)
-  ```bash
+  ```powershell
   cd api && npx prisma studio
   ```
 
@@ -48,14 +48,14 @@ Use this checklist to ensure a successful deployment of Project Valine.
 
 - [ ] Navigate to serverless directory or use deployment script
 - [ ] Run deployment script
-  ```bash
+  ```powershell
   ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
   ```
 - [ ] Deployment completed without errors
 - [ ] API Gateway URL obtained from deployment output
 - [ ] Save API Gateway base URL
-  ```bash
-  export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+  ```powershell
+$env:API_BASE = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
   ```
 - [ ] All Lambda functions deployed:
   - [ ] api (health/hello/requests)
@@ -73,7 +73,7 @@ Use this checklist to ensure a successful deployment of Project Valine.
 
 - [ ] Set API_BASE environment variable
 - [ ] Run API testing script
-  ```bash
+  ```powershell
   ./scripts/deployment/test-endpoints.sh
   ```
 - [ ] Health check endpoint returns 200
@@ -93,24 +93,24 @@ Use this checklist to ensure a successful deployment of Project Valine.
 ## Phase 4: Frontend Configuration
 
 - [ ] Run frontend configuration script
-  ```bash
+  ```powershell
   ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
   ```
 - [ ] .env file created/updated with VITE_API_BASE
 - [ ] Verify .env file contents
-  ```bash
-  cat .env
+  ```powershell
+  Get-Content .env
   ```
 - [ ] API connectivity test passed (if curl available)
 
 ## Phase 5: Frontend Testing
 
 - [ ] Install frontend dependencies (if not already done)
-  ```bash
+  ```powershell
   npm install
   ```
 - [ ] Start development server
-  ```bash
+  ```powershell
   npm run dev
   ```
 - [ ] Frontend loads at http://localhost:5173
@@ -143,12 +143,12 @@ Use this checklist to ensure a successful deployment of Project Valine.
 ## Phase 6: Production Build
 
 - [ ] Build frontend for production
-  ```bash
+  ```powershell
   npm run build
   ```
 - [ ] Build completed successfully
 - [ ] Preview production build
-  ```bash
+  ```powershell
   npm run preview
   ```
 - [ ] Production build works correctly
@@ -158,16 +158,16 @@ Use this checklist to ensure a successful deployment of Project Valine.
 ### Backend Production
 
 - [ ] Set production DATABASE_URL
-  ```bash
-  export DATABASE_URL="postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
+  ```powershell
+$env:DATABASE_URL = "postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
   ```
 - [ ] Run production database migrations
-  ```bash
+  ```powershell
   cd api
   npx prisma migrate deploy
   ```
 - [ ] Deploy backend to production stage
-  ```bash
+  ```powershell
   ./scripts/deployment/deploy-backend.sh --stage prod --region us-west-2
   ```
 - [ ] Save production API URL
@@ -249,7 +249,7 @@ Use this checklist to ensure a successful deployment of Project Valine.
 - [ ] Rollback procedure documented
 - [ ] Database migration rollback tested
 - [ ] Quick rollback command available:
-  ```bash
+  ```powershell
   # Backend
   cd serverless && npx serverless deploy --stage prod --verbose
   

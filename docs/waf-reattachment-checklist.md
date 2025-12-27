@@ -18,12 +18,12 @@ This checklist guides you through safely reattaching AWS WAF (Web Application Fi
 ### 1.1 Document Current State
 
 - [ ] Run current distribution diagnostic
-  ```bash
+  ```powershell
   ./scripts/guard-cloudfront-config.sh --distribution-id $DISTRIBUTION_ID
   ```
 
 - [ ] Capture current access patterns
-  ```bash
+  ```powershell
   # Save current CloudWatch metrics
   aws cloudwatch get-metric-statistics \
     --namespace AWS/CloudFront \
@@ -36,7 +36,7 @@ This checklist guides you through safely reattaching AWS WAF (Web Application Fi
   ```
 
 - [ ] Save current distribution config
-  ```bash
+  ```powershell
   aws cloudfront get-distribution-config \
     --id $DISTRIBUTION_ID \
     > dist-config-no-waf.json
@@ -76,7 +76,7 @@ Review `infra/waf/README.md` and confirm allow rules cover:
   ```
 
 - [ ] Attach WebACL to distribution
-  ```bash
+  ```powershell
   # Update distribution config with WebACL ARN
   # Edit dist-config.json and add: "WebACLId": "arn:aws:wafv2:..."
   
@@ -87,7 +87,7 @@ Review `infra/waf/README.md` and confirm allow rules cover:
   ```
 
 - [ ] Wait for distribution to deploy (Status: `Deployed`)
-  ```bash
+  ```powershell
   aws cloudfront wait distribution-deployed --id $DISTRIBUTION_ID
   ```
 
@@ -133,7 +133,7 @@ If legitimate requests are being counted:
 - [ ] Keep default action as **ALLOW** (only blocking on specific rules)
 
 - [ ] Update WebACL
-  ```bash
+  ```powershell
   aws wafv2 update-web-acl \
     --scope CLOUDFRONT \
     --id $WEB_ACL_ID \
@@ -155,7 +155,7 @@ Monitor for 24-48 hours:
 ### 3.3 Set Up Alerts
 
 - [ ] Create CloudWatch alarm for spike in blocked requests
-  ```bash
+  ```powershell
   aws cloudwatch put-metric-alarm \
     --alarm-name waf-blocked-requests-spike \
     --alarm-description "Alert when WAF blocks more than expected" \
@@ -199,7 +199,7 @@ If legitimate traffic is being blocked after any phase:
 ### Immediate Rollback
 
 1. **Detach WAF immediately**
-   ```bash
+   ```powershell
    aws cloudfront update-distribution \
      --id $DISTRIBUTION_ID \
      --if-match $ETAG \
@@ -212,7 +212,7 @@ If legitimate traffic is being blocked after any phase:
    - Monitor error rates
 
 3. **Wait for distribution deployment**
-   ```bash
+   ```powershell
    aws cloudfront wait distribution-deployed --id $DISTRIBUTION_ID
    ```
 

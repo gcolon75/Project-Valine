@@ -9,7 +9,7 @@ Lambda's `DISCORD_PUBLIC_KEY` doesn't match the staging bot's actual public key 
 ## ⚡ 5-Minute Fix
 
 ### Step 1: Diagnose
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh
 ```
@@ -17,7 +17,7 @@ cd orchestrator/scripts
 ### Step 2: Fix (Choose One)
 
 **Option A - Quick Fix (updates Lambda directly):**
-```bash
+```powershell
 ./verify_discord_config.sh --fix
 # Enter public key from Discord Portal when prompted
 ```
@@ -57,7 +57,7 @@ cd orchestrator/scripts
 
 ## 🛠️ Common Commands
 
-```bash
+```powershell
 # Check Lambda config
 aws lambda get-function-configuration \
   --function-name valine-orchestrator-discord-dev \
@@ -74,11 +74,10 @@ aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
   --follow
 
 # Test API endpoint
-curl -X POST https://3n6t1f7pw1.execute-api.us-west-2.amazonaws.com/dev/discord \
-  -H "x-signature-ed25519: test" \
-  -H "x-signature-timestamp: 1234567890" \
-  -d '{"type":1}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "x-signature-ed25519" = "test"
+    "x-signature-timestamp" = "1234567890"
+} -Body '{"type":1}' -ContentType 'application/json'```
 
 ## ✅ Success = Discord Verification ✅
 

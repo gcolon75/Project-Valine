@@ -14,11 +14,11 @@ This validation confirms PR #49 works end-to-end in staging. Run via GitHub Acti
 
 ### Local Execution (45-60 minutes)
 
-```bash
+```powershell
 cd orchestrator/scripts
-export STAGING_DISCORD_BOT_TOKEN="your-token"
-export STAGING_GITHUB_TOKEN="your-token"
-export AWS_PROFILE="staging"
+$env:STAGING_DISCORD_BOT_TOKEN = "your-token"
+$env:STAGING_GITHUB_TOKEN = "your-token"
+$env:AWS_PROFILE = "staging"
 ./run_phase5_validation.sh
 ```
 
@@ -169,7 +169,7 @@ The workflow creates a PR with:
 
 ### AWS Credentials
 
-```bash
+```powershell
 # Verify AWS access
 aws sts get-caller-identity
 
@@ -183,14 +183,14 @@ aws logs describe-log-groups --region us-west-2 \
 
 ### Discord Bot
 
-```bash
+```powershell
 # Verify bot token (redacted)
 echo "Token: ***$(echo $STAGING_DISCORD_BOT_TOKEN | tail -c 5)"
 
 # Test Discord API access (requires valid token)
-curl -H "Authorization: Bot $STAGING_DISCORD_BOT_TOKEN" \
-  https://discord.com/api/v10/users/@me
-```
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $STAGING_DISCORD_BOT_TOKEN"
+}```
 
 ### Common Errors
 

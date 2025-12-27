@@ -367,20 +367,20 @@ If you find issues or have suggestions:
 
 ## ✨ Quick Commands
 
-```bash
+```powershell
 # Quick deployment (all-in-one)
-export DATABASE_URL="..." && \
+$env:DATABASE_URL = "..." && \"
 ./scripts/deployment/setup-database.sh && \
 ./scripts/deployment/deploy-backend.sh && \
-export API_BASE="..." && \
+$env:API_BASE = "..." && \"
 ./scripts/deployment/test-endpoints.sh && \
 ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
 
 # View all documentation
-ls -lh *.md docs/*.md | grep -E "(DEPLOYMENT|API|QUICK|TROUBLE)"
+ls -lh *.md docs/*.md | Select-String -E "(DEPLOYMENT|API|QUICK|TROUBLE)"
 
 # Search documentation
-grep -r "keyword" *.md docs/*.md
+Select-String -r "keyword" *.md docs/*.md
 
 # Get help with scripts
 ./scripts/deployment/deploy-backend.sh --help

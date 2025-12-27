@@ -63,13 +63,13 @@ Instead of running the full automation workflow (which was the original task for
 - Validated fallback mechanisms
 
 ### 2. Syntax Validation ✅
-```bash
+```powershell
 $ python -m py_compile orchestrator/scripts/auto_triage_pr58.py
 ✓ Syntax validation passed
 ```
 
 ### 3. CLI Testing ✅
-```bash
+```powershell
 $ python orchestrator/scripts/auto_triage_pr58.py --help
 ✓ Help output displays correctly
 ✓ All options present and documented
@@ -130,7 +130,7 @@ $ python orchestrator/scripts/auto_triage_pr58.py --help
 
 The implementation is ready to use immediately:
 
-```bash
+```powershell
 # 1. Navigate to repository
 cd /home/runner/work/Project-Valine/Project-Valine
 

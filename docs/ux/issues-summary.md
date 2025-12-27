@@ -184,22 +184,22 @@ The draft issue payloads are ready for creation but **have not been created yet*
 ### Commands
 
 #### Preview Issues (Dry Run)
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high,medium --create --dry-run
 ```
 
 #### Create Milestones Only
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high,medium --create-milestones
 ```
 
 #### Create All Issues
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high,medium --create
 ```
 
 #### Create in Batches (Avoid Rate Limiting)
-```bash
+```powershell
 # Create high priority first (18 issues)
 npm run ux:audit-to-issues -- --severity high --create --delay 2000
 
@@ -208,7 +208,7 @@ npm run ux:audit-to-issues -- --severity medium --create --delay 2000
 ```
 
 #### Create by Category
-```bash
+```powershell
 # Responsive issues only (18 issues)
 npm run ux:audit-to-issues -- --category responsive --create
 
@@ -244,7 +244,7 @@ All deliverables are in the root directory:
    - Set up GitHub Projects board (optional)
 
 3. **Create Milestones**
-   ```bash
+   ```powershell
    npm run ux:audit-to-issues -- --create-milestones
    ```
 

@@ -13,7 +13,7 @@ Sentry provides real-time error tracking and performance monitoring for Project 
 
 ### 1. Install Dependencies
 
-```bash
+```powershell
 npm install --save @sentry/react @sentry/tracing
 ```
 
@@ -24,7 +24,7 @@ npm install --save @sentry/react @sentry/tracing
 3. Copy the DSN (Data Source Name)
 4. Add to `.env.local`:
 
-```bash
+```powershell
 VITE_SENTRY_DSN=https://your-key@o123456.ingest.sentry.io/789012
 VITE_SENTRY_ENVIRONMENT=production
 ```
@@ -521,7 +521,7 @@ Sentry.init({
 
 Upload source maps for better stack traces:
 
-```bash
+```powershell
 # Install Sentry CLI
 npm install --save-dev @sentry/cli
 

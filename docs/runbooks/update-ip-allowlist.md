@@ -31,9 +31,9 @@ Operational procedures for updating Web Application Firewall (WAF) IP allowlists
 
 ### How to Check Your Current IP
 
-```bash
+```powershell
 # Method 1: Using curl
-curl -s https://api.ipify.org
+Invoke-RestMethod -Uri "-s" -Method Get
 # Output: 203.0.113.42
 
 # Method 2: Using dig
@@ -59,7 +59,7 @@ dig +short myip.opendns.com @resolver1.opendns.com
 - [x] AWS CloudFront:GetDistribution permission
 
 ### Required Tools
-```bash
+```powershell
 # Verify AWS CLI
 aws --version
 aws sts get-caller-identity
@@ -93,7 +93,7 @@ CloudFront WAF operates at the edge and blocks traffic before it reaches your in
 
 ### Step 1: Get Current IP Set Configuration
 
-```bash
+```powershell
 # List all IP sets in CloudFront scope (us-east-1 for global)
 aws wafv2 list-ip-sets \
   --scope CLOUDFRONT \
@@ -113,7 +113,7 @@ aws wafv2 list-ip-sets \
 ```
 
 **Save these values:**
-```bash
+```powershell
 IP_SET_ID="12345678-abcd-1234-5678-abcdefghijkl"
 IP_SET_NAME="valine-owner-ip-allowlist"
 ```
@@ -122,7 +122,7 @@ IP_SET_NAME="valine-owner-ip-allowlist"
 
 > ⚠️ **Important**: WAFv2 requires a lock token for updates to prevent concurrent modifications.
 
-```bash
+```powershell
 # Get current IP set details including lock token
 aws wafv2 get-ip-set \
   --scope CLOUDFRONT \
@@ -146,9 +146,9 @@ jq -r '.IPSet.Addresses[]' /tmp/current-ipset.json
 
 ### Step 3: Update IP Set with New IP
 
-```bash
+```powershell
 # Get your new IP address
-NEW_IP=$(curl -s https://api.ipify.org)
+Invoke-RestMethod -Uri "-s" -Method Get
 echo "New IP address: $NEW_IP"
 
 # Update IP set (replace old IP with new IP)
@@ -162,7 +162,7 @@ aws wafv2 update-ip-set \
 ```
 
 > 💡 **Multiple IPs**: To allow multiple IPs (e.g., office + home), use:
-> ```bash
+> ```powershell
 > --addresses "${IP1}/32" "${IP2}/32" "${IP3}/32"
 > ```
 
@@ -175,7 +175,7 @@ aws wafv2 update-ip-set \
 
 ### Step 4: Verify CloudFront WAF Update
 
-```bash
+```powershell
 # Confirm new IP is in the set
 aws wafv2 get-ip-set \
   --scope CLOUDFRONT \
@@ -198,7 +198,7 @@ API Gateway resource policy provides an additional layer of IP-based access cont
 
 ### Step 1: Get Current Resource Policy
 
-```bash
+```powershell
 # Get API Gateway details
 aws apigatewayv2 get-api \
   --api-id i72dxlcfcc \
@@ -231,12 +231,12 @@ jq -r '.Policy' /tmp/api-gateway.json | jq '.' || echo "No policy set"
 
 ### Step 2: Create Updated Policy
 
-```bash
+```powershell
 # Get your new IP
-NEW_IP=$(curl -s https://api.ipify.org)
+Invoke-RestMethod -Uri "-s" -Method Get
 
 # Create new policy JSON
-cat > /tmp/new-policy.json << EOF
+Get-Content > /tmp/new-policy.json << EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -256,7 +256,7 @@ cat > /tmp/new-policy.json << EOF
 EOF
 
 # View the policy
-cat /tmp/new-policy.json | jq
+Get-Content /tmp/new-policy.json | jq
 ```
 
 > 💡 **Multiple IPs**: To allow multiple IPs:
@@ -266,7 +266,7 @@ cat /tmp/new-policy.json | jq
 
 ### Step 3: Update API Gateway Policy
 
-```bash
+```powershell
 # Update the resource policy
 aws apigatewayv2 update-api \
   --api-id i72dxlcfcc \
@@ -289,7 +289,7 @@ aws apigatewayv2 update-api \
 
 ### Step 4: Verify API Gateway Update
 
-```bash
+```powershell
 # Confirm new policy
 aws apigatewayv2 get-api \
   --api-id i72dxlcfcc \
@@ -312,9 +312,9 @@ aws apigatewayv2 get-api \
 
 ### Test 1: Access from New IP (Should Work)
 
-```bash
+```powershell
 # Test frontend (CloudFront)
-curl -I https://valine.app
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Expected Response:**
@@ -332,9 +332,9 @@ x-amz-cf-id: ...
 
 ### Test 2: Access API Directly (Should Work)
 
-```bash
+```powershell
 # Test API Gateway endpoint directly
-curl -I https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Expected Response:**
@@ -352,15 +352,11 @@ HTTP/2 403
 
 ### Test 3: Full Login Flow
 
-```bash
+```powershell
 # Test complete authentication flow
-curl -X POST https://api.valine.app/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "owner@example.com",
-    "password": "YourPassword123!"
-  }' | jq
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "owner@example.com", "password": "YourPassword123!" }' -ContentType 'application/json'```
 
 **Expected Response:**
 ```json
@@ -378,10 +374,10 @@ curl -X POST https://api.valine.app/auth/login \
 
 > ⚠️ **Testing Limitation**: You can only test this if you still have access to the old IP.
 
-```bash
+```powershell
 # If you have VPN or old network access
 # This should return 403 Forbidden
-curl -I https://valine.app
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Expected Response:**
@@ -410,10 +406,10 @@ If you lose access after updating the IP allowlist:
 
 #### Option 2: Using AWS CLI from Different Network
 
-```bash
+```powershell
 # From a different network (mobile hotspot, coffee shop, etc.)
 # Get your current IP
-NEW_IP=$(curl -s https://api.ipify.org)
+Invoke-RestMethod -Uri "-s" -Method Get
 
 # Update WAF IP set
 aws wafv2 update-ip-set \
@@ -427,7 +423,7 @@ aws wafv2 update-ip-set \
 
 #### Option 3: Emergency Access (Open Temporarily)
 
-```bash
+```powershell
 # EMERGENCY ONLY: Open access to all IPs
 aws wafv2 update-ip-set \
   --scope CLOUDFRONT \
@@ -443,7 +439,7 @@ echo "URGENT: Restore IP allowlist restrictions!" | mail -s "Security Alert" ops
 
 ### Restore Previous IP
 
-```bash
+```powershell
 # Restore to previous IP (from backup)
 OLD_IP="203.0.113.10"
 
@@ -469,9 +465,9 @@ x-amz-cf-id: ABCDEFGHIJKLMNOPQRSTUVWXYZ-1234567890
 ```
 
 **Diagnosis:**
-```bash
+```powershell
 # Check if your IP is in CloudFront WAF allowlist
-MY_IP=$(curl -s https://api.ipify.org)
+Invoke-RestMethod -Uri "-s" -Method Get
 echo "My IP: $MY_IP"
 
 aws wafv2 get-ip-set \
@@ -480,7 +476,7 @@ aws wafv2 get-ip-set \
   --id "$IP_SET_ID" \
   --name "$IP_SET_NAME" \
   | jq -r '.IPSet.Addresses[]' \
-  | grep "$MY_IP"
+  | Select-String "$MY_IP"
 ```
 
 **Solution:**
@@ -495,7 +491,7 @@ aws wafv2 get-ip-set \
 ```
 
 **Diagnosis:**
-```bash
+```powershell
 # Check API Gateway resource policy
 aws apigatewayv2 get-api \
   --api-id i72dxlcfcc \
@@ -503,7 +499,7 @@ aws apigatewayv2 get-api \
   --query 'Policy' \
   --output text \
   | jq '.Statement[0].Condition.NotIpAddress."aws:SourceIp"[]' \
-  | grep "$(curl -s https://api.ipify.org)"
+Invoke-RestMethod -Uri "-s" -Method Get
 ```
 
 **Solution:**
@@ -519,7 +515,7 @@ The lock token provided is stale.
 ```
 
 **Solution:**
-```bash
+```powershell
 # Get fresh lock token
 LOCK_TOKEN=$(aws wafv2 get-ip-set \
   --scope CLOUDFRONT \
@@ -548,7 +544,7 @@ aws wafv2 update-ip-set \
 **Solutions:**
 
 1. **Allow IP Range** (if consistent ISP):
-   ```bash
+   ```powershell
    # Use CIDR block for your ISP's range
    # Example: Allow 203.0.113.0 - 203.0.113.255
    --addresses "203.0.113.0/24"
@@ -559,7 +555,7 @@ aws wafv2 update-ip-set \
    - Update allowlist to VPN IP (remains constant)
 
 3. **Multiple IPs** (home + office + VPN):
-   ```bash
+   ```powershell
    --addresses "203.0.113.42/32" "198.51.100.10/32" "192.0.2.5/32"
    ```
 
@@ -620,7 +616,7 @@ For operators who prefer GUI:
 
 ### CloudWatch Metrics
 
-```bash
+```powershell
 # Monitor WAF blocked requests
 aws cloudwatch get-metric-statistics \
   --namespace AWS/WAFV2 \
@@ -635,7 +631,7 @@ aws cloudwatch get-metric-statistics \
 
 ### Set Up Alerts
 
-```bash
+```powershell
 # Alert when owner is blocked
 aws cloudwatch put-metric-alarm \
   --alarm-name valine-owner-blocked \
@@ -665,9 +661,9 @@ aws cloudwatch put-metric-alarm \
 
 ## Quick Reference
 
-```bash
+```powershell
 # Get my current IP
-curl -s https://api.ipify.org
+Invoke-RestMethod -Uri "-s" -Method Get
 
 # Update CloudFront WAF
 aws wafv2 update-ip-set --scope CLOUDFRONT --region us-east-1 \
@@ -679,8 +675,8 @@ aws apigatewayv2 update-api --api-id i72dxlcfcc --region us-west-2 \
   --policy file:///tmp/new-policy.json
 
 # Test access
-curl -I https://valine.app
-curl -I https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/
+Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 ---

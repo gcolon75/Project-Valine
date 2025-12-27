@@ -85,7 +85,7 @@ async function compareScreenshots(baselinePath, currentPath) {
 
 ## Example Usage
 
-```bash
+```powershell
 # Analyze with visual diff
 node scripts/analyze-orchestration-run.mjs 123456 --visual-diff
 

@@ -414,16 +414,16 @@ if value.startswith("ENV:"):
 
 ### Example 1: Quick Start
 
-```bash
+```powershell
 cd orchestrator/scripts
 
 # Generate config
 python phase5_super_agent.py generate-config
 
 # Set environment variables
-export DISCORD_BOT_TOKEN="..."
-export DISCORD_APP_ID="..."
-export DISCORD_GUILD_ID_STAGING="..."
+$env:DISCORD_BOT_TOKEN = "..."
+$env:DISCORD_APP_ID = "..."
+$env:DISCORD_GUILD_ID_STAGING = "..."
 
 # Run validation
 python phase5_super_agent.py run --config super_agent_config.json
@@ -431,7 +431,7 @@ python phase5_super_agent.py run --config super_agent_config.json
 
 ### Example 2: Dry Run
 
-```bash
+```powershell
 python phase5_super_agent.py run \
   --config super_agent_config.json \
   --dry-run
@@ -439,7 +439,7 @@ python phase5_super_agent.py run \
 
 ### Example 3: Verbose Output
 
-```bash
+```powershell
 python phase5_super_agent.py run \
   --config super_agent_config.json \
   --verbose
@@ -457,7 +457,7 @@ python phase5_super_agent.py run \
 
 ### Example 5: CI/CD Integration
 
-```bash
+```powershell
 #!/bin/bash
 set -e
 

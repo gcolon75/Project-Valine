@@ -84,13 +84,13 @@ iwr -UseBasicParsing -Headers @{Authorization="Bot $env:STAGING_DISCORD_BOT_TOKE
 
 **Bash/curl:**
 
-```bash
-export STAGING_DISCORD_APPLICATION_ID="1428568840958251109"
-export STAGING_DISCORD_BOT_TOKEN="your_raw_token_here"
+```powershell
+$env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
+$env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
 
-curl -H "Authorization: Bot $STAGING_DISCORD_BOT_TOKEN" \
-  https://discord.com/api/v10/applications/$STAGING_DISCORD_APPLICATION_ID/commands
-```
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $STAGING_DISCORD_BOT_TOKEN"
+}```
 
 ### Troubleshooting
 

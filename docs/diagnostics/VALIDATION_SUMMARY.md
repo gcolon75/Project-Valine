@@ -96,19 +96,19 @@ Test Coverage:
 ## 🚀 Usage
 
 ### Quick Start (30 seconds)
-```bash
-export GITHUB_TOKEN=ghp_your_token
+```powershell
+$env:GITHUB_TOKEN = "ghp_your_token"
 cd orchestrator
 python run_qa_checker.py 27 28
 ```
 
 ### Post Reviews to GitHub
-```bash
+```powershell
 python run_qa_checker.py 27 28 --post-reviews
 ```
 
 ### Get Help
-```bash
+```powershell
 python run_qa_checker.py --help
 ```
 
@@ -193,12 +193,12 @@ orchestrator/
 ### To Use the QA Checker:
 
 1. **Set up GitHub token**
-   ```bash
-   export GITHUB_TOKEN=ghp_your_token
+   ```powershell
+$env:GITHUB_TOKEN = "ghp_your_token"
    ```
 
 2. **Run validation** (replace with actual PR numbers)
-   ```bash
+   ```powershell
    cd orchestrator
    python run_qa_checker.py <pr1_number> <pr2_number>
    ```
@@ -206,7 +206,7 @@ orchestrator/
 3. **Review output** in terminal
 
 4. **Post reviews** (optional)
-   ```bash
+   ```powershell
    python run_qa_checker.py <pr1_number> <pr2_number> --post-reviews
    ```
 

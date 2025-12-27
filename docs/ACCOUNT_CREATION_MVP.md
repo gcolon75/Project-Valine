@@ -163,7 +163,7 @@ Authorization: Bearer <jwt-token>
 
 ### Required
 
-```bash
+```powershell
 # Database connection (PostgreSQL recommended)
 DATABASE_URL=postgresql://user:password@host:5432/valine_db
 
@@ -174,7 +174,7 @@ AUTH_JWT_SECRET=your-256-bit-secret-key-here
 
 ### Optional
 
-```bash
+```powershell
 # JWT token expiration (default: 24h)
 JWT_EXPIRATION=24h
 
@@ -189,7 +189,7 @@ EMAIL_ENABLED=false
 
 ### 1. Install Dependencies
 
-```bash
+```powershell
 # Root dependencies
 npm install
 
@@ -200,7 +200,7 @@ npm install
 
 ### 2. Configure Environment
 
-```bash
+```powershell
 # Copy example environment file
 cp .env.example .env
 
@@ -211,7 +211,7 @@ cp .env.example .env
 
 ### 3. Run Database Migrations
 
-```bash
+```powershell
 cd api
 npx prisma migrate deploy
 npx prisma generate
@@ -219,7 +219,7 @@ npx prisma generate
 
 ### 4. Start the Server
 
-```bash
+```powershell
 cd server
 npm run dev
 # Server runs on http://localhost:5000
@@ -227,7 +227,7 @@ npm run dev
 
 ### 5. Start the Frontend (Optional)
 
-```bash
+```powershell
 # In another terminal, from project root
 npm run dev
 # Frontend runs on http://localhost:5173
@@ -235,28 +235,14 @@ npm run dev
 
 ### 6. Test the API
 
-```bash
+```powershell
 # Sign up
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"TestPassword123"}'
-
-# Check server logs for verification token
-
-# Verify email
-curl -X POST http://localhost:5000/api/auth/verify-email \
-  -H "Content-Type: application/json" \
-  -d '{"token":"<token-from-logs>"}'
-
-# Login
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"TestPassword123"}'
-
-# Get current user
-curl http://localhost:5000/api/auth/me \
-  -H "Authorization: Bearer <token-from-login>"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer <token-from-login>"
+} -Body '{"email":"test@example.com","password":"TestPassword123"}' -ContentType 'application/json'```
 
 ## Email Verification (MVP Implementation)
 
@@ -337,7 +323,7 @@ curl http://localhost:5000/api/auth/me \
 
 Located in `server/src/__tests__/`:
 
-```bash
+```powershell
 cd server
 npm test
 
@@ -353,7 +339,7 @@ npm run test:coverage
 
 Located in `tests/e2e/`:
 
-```bash
+```powershell
 # Install Playwright
 npx playwright install
 
@@ -382,7 +368,7 @@ npx playwright show-report
 
 The Playwright tests output JSON results to `test-results/results.json`, which is consumed by the orchestration analyzer:
 
-```bash
+```powershell
 # Run analyzer on workflow run
 node scripts/analyze-orchestration-run.mjs <run-id> \
   --out-dir analysis-output \
@@ -407,7 +393,7 @@ node scripts/analyze-orchestration-run.mjs <run-id> \
 
 Migration: `20251110195138_add_account_creation_fields`
 
-```bash
+```powershell
 cd api
 npx prisma migrate deploy
 ```
@@ -632,16 +618,10 @@ Creates a new user account with email verification workflow.
 ### Example 1: Successful Registration
 
 **Request**:
-```bash
-curl -X POST http://localhost:5000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@example.com",
-    "username": "alicewonder",
-    "password": "MySecurePass123!",
-    "displayName": "Alice Wonder"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "alice@example.com", "username": "alicewonder", "password": "MySecurePass123!", "displayName": "Alice Wonder" }' -ContentType 'application/json'```
 
 **Response** (201):
 ```json
@@ -662,16 +642,10 @@ curl -X POST http://localhost:5000/auth/register \
 ### Example 2: Email Already Registered
 
 **Request**:
-```bash
-curl -X POST http://localhost:5000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@example.com",
-    "username": "anotheralice",
-    "password": "Password123!",
-    "displayName": "Another Alice"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "alice@example.com", "username": "anotheralice", "password": "Password123!", "displayName": "Another Alice" }' -ContentType 'application/json'```
 
 **Response** (409):
 ```json
@@ -684,14 +658,10 @@ curl -X POST http://localhost:5000/auth/register \
 ### Example 3: Missing Required Fields
 
 **Request**:
-```bash
-curl -X POST http://localhost:5000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "bob@example.com",
-    "password": "BobPass123!"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "bob@example.com", "password": "BobPass123!" }' -ContentType 'application/json'```
 
 **Response** (400):
 ```json
@@ -738,9 +708,9 @@ The following environment variables are required for the Account Creation MVP:
 
 First, ensure your PostgreSQL database is running and accessible. The database schema will be automatically created via Prisma migrations.
 
-```bash
+```powershell
 # Set your database URL
-export DATABASE_URL="postgresql://username:password@localhost:5432/valine_db"
+$env:DATABASE_URL = "postgresql://username:password@localhost:5432/valine_db"
 
 # Run Prisma migrations (from project root)
 cd api
@@ -749,7 +719,7 @@ npx prisma migrate deploy
 
 ### 2. Start the Backend Server
 
-```bash
+```powershell
 # Navigate to server directory
 cd server
 
@@ -772,7 +742,7 @@ The server will start on `http://localhost:5000` by default.
 
 ### 3. Start the Frontend
 
-```bash
+```powershell
 # Navigate to project root
 cd ..
 
@@ -800,16 +770,10 @@ The frontend will start on `http://localhost:5173` (or `http://localhost:5174` i
 3. Submit and verify you receive a JWT token
 
 **Using curl**:
-```bash
-curl -X POST http://localhost:5000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "username": "testuser",
-    "password": "TestPass123!",
-    "displayName": "Test User"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "username": "testuser", "password": "TestPass123!", "displayName": "Test User" }' -ContentType 'application/json'```
 
 ## Security Notes
 

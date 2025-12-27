@@ -83,11 +83,11 @@ Every run generates:
 ## Usage
 
 ### Quick Start
-```bash
+```powershell
 # Set credentials
-export DISCORD_APPLICATION_ID="your_app_id"
-export DISCORD_BOT_TOKEN="your_bot_token"
-export DISCORD_GUILD_ID_STAGING="your_guild_id"
+$env:DISCORD_APPLICATION_ID = "your_app_id"
+$env:DISCORD_BOT_TOKEN = "your_bot_token"
+$env:DISCORD_GUILD_ID_STAGING = "your_guild_id"
 
 # Check current status
 ./orchestrator/register_slash_commands.sh check

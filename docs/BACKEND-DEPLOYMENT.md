@@ -113,9 +113,9 @@ cd serverless
 ```
 
 **Linux/macOS (Bash):**
-```bash
+```powershell
 cd serverless
-chmod +x ./scripts/build-prisma-layer.sh
+# Note: chmod not needed in PowerShell
 ./scripts/build-prisma-layer.sh
 ```
 
@@ -287,7 +287,7 @@ UPDATE_FAILED: FunctionLambdaFunction - Unzipped size must be smaller than 26214
    ```
    
    **Bash equivalent:**
-   ```bash
+   ```powershell
    # Package the application
    npx serverless package --stage prod --region us-west-2 --verbose
    
@@ -374,7 +374,7 @@ Stack is in DELETE_FAILED state and can not be updated
 **Quick Recovery:**
 
 1. **Automated Recovery (Recommended):**
-   ```bash
+   ```powershell
    cd serverless
    ./scripts/recover-failed-stack.sh pv-api-prod us-west-2
    ```
@@ -385,7 +385,7 @@ Stack is in DELETE_FAILED state and can not be updated
    - Delete the stack (with optional resource retention)
 
 2. **Manual Recovery via AWS CLI:**
-   ```bash
+   ```powershell
    # Force delete the failed stack
    aws cloudformation delete-stack \
      --stack-name pv-api-prod \
@@ -398,7 +398,7 @@ Stack is in DELETE_FAILED state and can not be updated
    ```
 
 3. **After Stack Deletion - Rebuild and Deploy:**
-   ```bash
+   ```powershell
    # Build the Prisma layer (REQUIRED)
    cd serverless
    ./scripts/build-prisma-layer.sh

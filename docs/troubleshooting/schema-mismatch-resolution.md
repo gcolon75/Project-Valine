@@ -86,7 +86,7 @@ To prevent similar issues in the future:
 
 Add a pre-deployment check to ensure Prisma schema matches the database:
 
-```bash
+```powershell
 # In CI pipeline before deployment
 cd api
 npx prisma db pull --force
@@ -99,14 +99,14 @@ If the diff shows changes, the pipeline should fail with a clear message about s
 
 Always regenerate Prisma Client after schema changes:
 
-```bash
+```powershell
 cd api
 npx prisma generate
 ```
 
 Ensure this is included in the Lambda layer build process:
 
-```bash
+```powershell
 cd serverless
 npm run build:layer:powershell
 ```
@@ -188,22 +188,22 @@ npx serverless deploy --stage prod --region us-west-2
 ```powershell
 # List Prisma Client in layer
 cd serverless
-unzip -l .serverless/prisma-layer.zip | grep -i prisma
+unzip -l .serverless/prisma-layer.zip | Select-String -i prisma
 ```
 
 #### Verify Schema in Deployed Lambda
 
 Check CloudWatch logs for Prisma initialization errors:
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-getMyProfile --region us-west-2 --follow
 ```
 
 #### Test Locally
 
-```bash
+```powershell
 # Set DATABASE_URL to production connection string
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 
 # Test query
 cd api

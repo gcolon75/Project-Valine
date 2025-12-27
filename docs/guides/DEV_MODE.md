@@ -1,16 +1,19 @@
 # Development Bypass Mode
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 ## Quick Start
 
 1. Copy environment file:
-   ```bash
+   ```powershell
    cp client/.env.local.example client/.env.local
    ```
 
 2. Ensure `VITE_DEV_BYPASS_AUTH=true` or `VITE_ENABLE_DEV_BYPASS=true` is set
 
 3. Start dev server:
-   ```bash
+   ```powershell
    npm run dev
    ```
 
@@ -105,7 +108,7 @@ A **purple gradient banner** appears at the top of the app:
 
 The prebuild script (`scripts/prebuild.js`) validates that dev bypass is disabled for production:
 
-```bash
+```powershell
 npm run build
 # If VITE_DEV_BYPASS_AUTH=true with production FRONTEND_URL:
 # Error: VITE_DEV_BYPASS_AUTH must not be set for production builds
@@ -126,13 +129,13 @@ These files are already in `.gitignore`:
 ### Dev bypass not working?
 
 1. **Check environment file:**
-   ```bash
-   cat .env.local | grep DEV_BYPASS
+   ```powershell
+   cat .env.local | Select-String DEV_BYPASS
    # Should show: VITE_DEV_BYPASS_AUTH=true or VITE_ENABLE_DEV_BYPASS=true
    ```
 
 2. **Restart dev server:**
-   ```bash
+   ```powershell
    # Stop server (Ctrl+C)
    npm run dev
    ```
@@ -162,7 +165,7 @@ If MSW (Mock Service Worker) is not active:
 
 ### UI/UX Work (No Backend)
 
-```bash
+```powershell
 # 1. Copy dev environment
 cp client/.env.local.example client/.env.local
 
@@ -175,7 +178,7 @@ npm run dev
 
 ### Full Stack Development
 
-```bash
+```powershell
 # 1. Start backend (separate terminal)
 cd serverless
 npm run dev

@@ -142,7 +142,7 @@ Comprehensive post-merge audit completed for PRs 155-183, covering security infr
 - Tests API response structure
 
 **Usage**: Requires running server
-```bash
+```powershell
 cd server && npm run dev &
 ./scripts/verify-security-behaviors.sh
 ```
@@ -155,7 +155,7 @@ cd server && npm run dev &
 - Lists all available configurations
 
 **Usage**:
-```bash
+```powershell
 node scripts/csp-rollout-config.js generate reportOnly > .env.staging
 node scripts/csp-rollout-config.js checklist reportOnly
 node scripts/csp-rollout-config.js analyze

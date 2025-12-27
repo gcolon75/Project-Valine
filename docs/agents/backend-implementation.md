@@ -222,7 +222,7 @@ The agent is ready for:
 
 ## Quick Start
 
-```bash
+```powershell
 # Run the example
 cd orchestrator
 python3 examples/backend_agent_example.py

@@ -7,18 +7,18 @@ Trigger automated PR triage and fixes from Discord in 3 steps.
 ## Prerequisites (30 seconds)
 
 Ensure Discord bot is configured:
-```bash
+```powershell
 # Required environment variables
-export DISCORD_APPLICATION_ID="your_app_id"
-export DISCORD_BOT_TOKEN="your_bot_token"
-export DISCORD_PUBLIC_KEY="your_public_key"
-export GITHUB_TOKEN="your_github_token"
+$env:DISCORD_APPLICATION_ID = "your_app_id"
+$env:DISCORD_BOT_TOKEN = "your_bot_token"
+$env:DISCORD_PUBLIC_KEY = "your_public_key"
+$env:GITHUB_TOKEN = "your_github_token"
 ```
 
 ## Setup (1 minute)
 
 ### 1. Register the Command
-```bash
+```powershell
 cd orchestrator
 ./register_slash_commands.sh register
 ```
@@ -168,7 +168,7 @@ If commands are registered but don't respond:
 1. **Quick fix guide:** See [orchestrator/DISCORD_NO_RESPONSE_QUICKFIX.md](./orchestrator/DISCORD_NO_RESPONSE_QUICKFIX.md)
 
 2. **Run validation:**
-   ```bash
+   ```powershell
    cd orchestrator
    python scripts/validate_deployment.py --stage dev
    ```
@@ -187,7 +187,7 @@ Most common causes:
 - Check bot has `applications.commands` scope
 
 ### "Missing GITHUB_TOKEN" Error
-```bash
+```powershell
 # Set token in Lambda environment
 aws lambda update-function-configuration \
   --function-name valine-orchestrator-discord-dev \

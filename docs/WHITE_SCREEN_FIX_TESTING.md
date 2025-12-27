@@ -16,7 +16,7 @@ This document provides step-by-step instructions to test and verify the white sc
 ### 1. Build Validation Tests
 
 #### Test 1.1: Normal Build
-```bash
+```powershell
 npm run build
 ```
 
@@ -27,7 +27,7 @@ npm run build
 - No local filesystem paths (C:\, C:/) in index.html
 
 #### Test 1.2: Simulated Corrupted Build
-```bash
+```powershell
 # After build, manually corrupt the index.html
 echo '<script type="module" cd="" c:\temp\frontend-fixts="" index-cdu5hbqs.js=""></script>' > dist/index.html
 
@@ -40,7 +40,7 @@ node scripts/postbuild-validate.js
 - Exit code 1
 
 #### Test 1.3: Source Maps Generated
-```bash
+```powershell
 npm run build
 ls -la dist/assets/*.js.map
 ```
@@ -52,7 +52,7 @@ ls -la dist/assets/*.js.map
 ### 2. Error Boundary Tests
 
 #### Test 2.1: Unit Tests
-```bash
+```powershell
 npm test -- ErrorBoundary.test.jsx --run
 ```
 
@@ -72,7 +72,7 @@ if (window.location.search.includes('test-error')) {
 ```
 
 2. Start dev server:
-```bash
+```powershell
 npm run dev
 ```
 
@@ -140,51 +140,23 @@ window.__errorInstrumentation.logError(new Error('Manual test error'), {
 **Note:** Requires backend to be deployed
 
 #### Test 4.1: Single Error Log
-```bash
-curl -X POST https://your-api-gateway-url/internal/observability/log \
-  -H "Content-Type: application/json" \
-  -d '{
-    "level": "error",
-    "message": "Test error from curl",
-    "context": {"source": "manual-test"}
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "level": "error", "message": "Test error from curl", "context": {"source": "manual-test"} }' -ContentType 'application/json'```
 
 **Expected Result:**
 - Returns 204 status code
 - Check CloudWatch logs for the entry:
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 ```
 
 #### Test 4.2: Batched Client Errors
-```bash
-curl -X POST https://your-api-gateway-url/internal/observability/log \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "client",
-    "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
-    "url": "https://example.com/test",
-    "userAgent": "Test/1.0",
-    "errors": [
-      {
-        "type": "error",
-        "message": "Test error 1",
-        "filename": "test.js",
-        "lineno": 10,
-        "colno": 5,
-        "stack": "Error: Test error 1\n    at test.js:10:5",
-        "timestamp": '$(date +%s)'000'
-      },
-      {
-        "type": "unhandledrejection",
-        "message": "Test promise rejection",
-        "stack": "Error: Test promise rejection",
-        "timestamp": '$(date +%s)'000'
-      }
-    ]
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "source": "client", "timestamp": "' -ContentType 'application/json'```
 
 **Expected Result:**
 - Returns 204 status code
@@ -195,7 +167,7 @@ curl -X POST https://your-api-gateway-url/internal/observability/log \
 #### Test 5.1: Deploy Script Dry Run
 
 Check the deploy script is executable and has correct syntax:
-```bash
+```powershell
 bash -n scripts/deploy-static-with-mime.sh
 echo $?  # Should output 0
 ```
@@ -204,7 +176,7 @@ echo $?  # Should output 0
 
 **IMPORTANT:** Use a test bucket, not production!
 
-```bash
+```powershell
 # Create test bucket if needed
 aws s3 mb s3://test-valine-frontend
 
@@ -220,7 +192,7 @@ S3_BUCKET=test-valine-frontend \
 
 #### Test 5.3: Verify MIME Types
 
-```bash
+```powershell
 # Check index.html
 aws s3api head-object --bucket test-valine-frontend --key index.html
 
@@ -246,7 +218,7 @@ aws s3api head-object --bucket test-valine-frontend --key assets/index-[hash].cs
 
 #### Test 5.4: CloudFront Deployment with Invalidation
 
-```bash
+```powershell
 S3_BUCKET=test-valine-frontend \
 CLOUDFRONT_DISTRIBUTION_ID=E1234567890ABC \
 ./scripts/deploy-static-with-mime.sh
@@ -301,7 +273,7 @@ After deploying to production:
 
 #### Test 7.1: Monitor Client Errors
 
-```bash
+```powershell
 # Tail CloudWatch logs
 aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 ```
@@ -321,7 +293,7 @@ window.__errorInstrumentation.logError(new Error('Production test error'), {
 
 If something goes wrong:
 
-```bash
+```powershell
 # List S3 versions
 aws s3api list-object-versions \
   --bucket your-bucket \

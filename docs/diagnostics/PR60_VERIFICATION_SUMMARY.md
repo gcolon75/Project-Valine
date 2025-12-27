@@ -81,7 +81,7 @@
 
 ## Testing Evidence
 
-```bash
+```powershell
 # Syntax validation
 $ python -m py_compile orchestrator/scripts/auto_triage_pr58.py
 ✓ PASS
@@ -98,7 +98,7 @@ $ python orchestrator/scripts/auto_triage_pr58.py --help
 
 ## Quick Start (Ready to Use)
 
-```bash
+```powershell
 # 1. Navigate to repo
 cd /home/runner/work/Project-Valine/Project-Valine
 

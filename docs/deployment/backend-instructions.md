@@ -22,7 +22,7 @@ Before deploying, ensure you have:
 #### Option A: AWS RDS (Production-Ready)
 
 1. **Create RDS PostgreSQL Instance:**
-   ```bash
+   ```powershell
    # Via AWS Console or CLI
    aws rds create-db-instance \
      --db-instance-identifier valine-db-dev \
@@ -48,7 +48,7 @@ Before deploying, ensure you have:
 
 #### Option C: Local PostgreSQL (Development Only)
 
-```bash
+```powershell
 # Install PostgreSQL
 brew install postgresql  # macOS
 sudo apt install postgresql  # Ubuntu
@@ -57,15 +57,15 @@ sudo apt install postgresql  # Ubuntu
 createdb valine_db
 
 # Connection string
-export DATABASE_URL="postgresql://localhost:5432/valine_db"
+$env:DATABASE_URL = "postgresql://localhost:5432/valine_db"
 ```
 
 ### Step 2: Configure Environment Variables
 
 Create `.env` file in project root:
 
-```bash
-cat > .env << 'EOF'
+```powershell
+Get-Content > .env << 'EOF'
 # Database (REQUIRED)
 DATABASE_URL=postgresql://user:password@host:5432/valine_db
 
@@ -82,7 +82,7 @@ EOF
 
 ### Step 3: Install Dependencies
 
-```bash
+```powershell
 # Install serverless dependencies
 cd serverless
 npm install
@@ -96,7 +96,7 @@ cd ..
 
 ### Step 4: Generate Prisma Client
 
-```bash
+```powershell
 cd api
 npx prisma generate
 cd ..
@@ -106,7 +106,7 @@ cd ..
 
 The Prisma schema has been updated with all required models. Create and apply the migration:
 
-```bash
+```powershell
 cd api
 
 # Create migration (generates SQL)
@@ -231,13 +231,13 @@ CREATE INDEX idx_notifications_created_at ON notifications(created_at);
 
 ### Step 6: Deploy to AWS
 
-```bash
+```powershell
 cd serverless
 
 # Set environment variables (if not in .env)
-export DATABASE_URL="your-database-url"
-export AWS_REGION="us-west-2"
-export STAGE="dev"
+$env:DATABASE_URL = "your-database-url"
+$env:AWS_REGION = "us-west-2"
+$env:STAGE = "dev"
 
 # Deploy using deployment script (recommended)
 cd ..
@@ -276,18 +276,18 @@ https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev
 
 Test your API endpoints:
 
-```bash
+```powershell
 # Set your API URL
-export API_BASE="https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
 
 # Test health endpoint
-curl "$API_BASE/health"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Expected response:
 # {"status":"ok","timestamp":1699000000000,"service":"Project Valine API","version":"1.0.0"}
 
 # Test meta endpoint (shows all available endpoints)
-curl "$API_BASE/meta"
+Invoke-RestMethod -Uri "$API_BASE/meta" -Method Get
 
 # Run full test suite
 cd serverless
@@ -298,9 +298,9 @@ cd serverless
 
 Update your frontend environment variables:
 
-```bash
+```powershell
 # In client/.env or .env.local
-cat > client/.env << EOF
+Get-Content > client/.env << EOF
 VITE_API_BASE=https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev
 EOF
 ```
@@ -311,33 +311,13 @@ Restart your frontend development server to pick up the new environment variable
 
 Create test users and content:
 
-```bash
+```powershell
 # Register a test user
-curl -X POST "$API_BASE/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "test123",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-
-# Save the token from response
-export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-# Create a test reel
-curl -X POST "$API_BASE/reels" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "videoUrl": "https://example.com/video.mp4",
-    "thumbnail": "https://example.com/thumb.jpg",
-    "caption": "My first test reel!"
-  }'
-
-# List reels
-curl "$API_BASE/reels"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "test123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 ## 📝 Dev API_BASE URL Format
 
@@ -367,8 +347,8 @@ Components:
 - **Algorithm**: HS256
 
 **To set custom JWT secret:**
-```bash
-export JWT_SECRET="your-custom-secret-key-min-32-chars"
+```powershell
+$env:JWT_SECRET = "your-custom-secret-key-min-32-chars"
 ```
 
 ### Authentication Flow
@@ -378,18 +358,12 @@ export JWT_SECRET="your-custom-secret-key-min-32-chars"
 3. **Token format**: `Authorization: Bearer <token>`
 
 Example:
-```bash
+```powershell
 # Login
-RESPONSE=$(curl -X POST "$API_BASE/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}')
-
-# Extract token
-TOKEN=$(echo $RESPONSE | jq -r '.token')
-
-# Use in requests
-curl "$API_BASE/auth/me" -H "Authorization: Bearer $TOKEN"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer $TOKEN"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 ## 📚 Complete API Reference
 
@@ -405,44 +379,29 @@ See `serverless/API_DOCUMENTATION.md` for:
 
 ### Manual Testing
 
-```bash
-export API_BASE="your-api-url"
+```powershell
+$env:API_BASE = "your-api-url"
 
 # Health check
-curl "$API_BASE/health"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # API metadata
-curl "$API_BASE/meta"
+Invoke-RestMethod -Uri "$API_BASE/meta" -Method Get
 
 # Register user
-curl -X POST "$API_BASE/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"pass123","username":"user","displayName":"User"}'
-
-# Login
-curl -X POST "$API_BASE/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"pass123"}'
-
-# Get current user (requires token)
-curl "$API_BASE/auth/me" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# List reels
-curl "$API_BASE/reels?limit=10"
-
-# Create reel (requires token)
-curl -X POST "$API_BASE/reels" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"videoUrl":"https://example.com/video.mp4","caption":"Test"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer YOUR_TOKEN"
+    "Authorization" = "Bearer YOUR_TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"email":"user@example.com","password":"pass123","username":"user","displayName":"User"}' -ContentType 'application/json'```
 
 ### Automated Testing
 
 Use the provided test script:
 
-```bash
+```powershell
 cd serverless
 ./test-endpoints.sh "$API_BASE"
 ```
@@ -458,27 +417,27 @@ This will:
 ### Issue: DATABASE_URL not set
 
 **Solution:**
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/database"
+```powershell
+$env:DATABASE_URL = "postgresql://user:password@host:5432/database"
 ```
 
 ### Issue: AWS credentials not found
 
 **Solution:**
-```bash
+```powershell
 # Configure AWS CLI
 aws configure
 
 # Or set environment variables
-export AWS_ACCESS_KEY_ID="your-key"
-export AWS_SECRET_ACCESS_KEY="your-secret"
-export AWS_REGION="us-west-2"
+$env:AWS_ACCESS_KEY_ID = "your-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret"
+$env:AWS_REGION = "us-west-2"
 ```
 
 ### Issue: Prisma Client generation fails
 
 **Solution:**
-```bash
+```powershell
 cd api
 npm install
 npx prisma generate
@@ -515,7 +474,7 @@ npx prisma generate
 - Unhandled error in handler
 
 **Debug:**
-```bash
+```powershell
 npx serverless logs -f functionName --tail
 ```
 
@@ -523,7 +482,7 @@ npx serverless logs -f functionName --tail
 
 ### View Lambda Logs
 
-```bash
+```powershell
 # Tail logs for specific function
 npx serverless logs -f register --tail
 
@@ -642,19 +601,19 @@ Reels:      GET  {API_BASE}/reels
 
 ### Quick Deploy Commands
 
-```bash
+```powershell
 # Full deployment from scratch
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 cd api && npx prisma generate && npx prisma migrate deploy && cd ..
 cd serverless && npm install && npx serverless deploy --stage dev
 ```
 
 ### Quick Test Commands
 
-```bash
-export API_BASE="https://..."
-curl "$API_BASE/health"
-curl "$API_BASE/meta"
+```powershell
+$env:API_BASE = "https://..."
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
+Invoke-RestMethod -Uri "$API_BASE/meta" -Method Get
 cd serverless && ./test-endpoints.sh "$API_BASE"
 ```
 

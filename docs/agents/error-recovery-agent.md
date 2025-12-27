@@ -222,7 +222,7 @@ agent.monitorLogs({
 
 ### Environment Variables
 
-```bash
+```powershell
 # Error Recovery Configuration
 ERROR_RECOVERY_ENABLED=true
 ERROR_RECOVERY_MAX_RETRIES=3

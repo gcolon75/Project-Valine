@@ -266,7 +266,7 @@ If rollback needed, restore:
 - `src/layouts/MarketingLayout.jsx` (footer)
 
 ### Commands
-```bash
+```powershell
 # Restore original pages
 git checkout main -- src/pages/Home.jsx src/pages/About.jsx src/pages/Features.jsx
 

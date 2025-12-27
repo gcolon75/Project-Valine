@@ -176,7 +176,7 @@ Type Checking:
 ### Environment Configuration
 - Location: `orchestrator/.env.example`
 - Added Phase 5 flags:
-  ```bash
+  ```powershell
   ENABLE_DEBUG_CMD=false
   ENABLE_ALERTS=false
   ALERT_CHANNEL_ID=

@@ -107,7 +107,7 @@ The middleware extracts client IP addresses from:
 **Format**: `redis://hostname:port` or `rediss://hostname:port` (SSL)
 
 **Examples**:
-```bash
+```powershell
 # Local development
 REDIS_URL=redis://localhost:6379
 
@@ -137,7 +137,7 @@ REDIS_URL=rediss://your-cluster.cache.amazonaws.com:6379
 - Temporary bypass during incident response
 
 **Example**:
-```bash
+```powershell
 # Disable rate limiting
 RATE_LIMITING_ENABLED=false
 ```
@@ -147,7 +147,7 @@ RATE_LIMITING_ENABLED=false
 #### Local Development
 
 **Install Redis**:
-```bash
+```powershell
 # macOS
 brew install redis
 brew services start redis
@@ -161,7 +161,7 @@ docker run -d -p 6379:6379 redis:alpine
 ```
 
 **Configure**:
-```bash
+```powershell
 # .env
 REDIS_URL=redis://localhost:6379
 ```
@@ -198,7 +198,7 @@ resource "aws_elasticache_cluster" "redis" {
    - Use VPC endpoints for better performance
 
 **Environment Configuration**:
-```bash
+```powershell
 # serverless.yml
 environment:
   REDIS_URL: ${env:REDIS_URL}
@@ -324,7 +324,7 @@ export const handler = withRateLimit(profileHandler, '/api/profiles');
 
 Run the test suite:
 
-```bash
+```powershell
 cd serverless
 npm test tests/rateLimit.test.js
 ```
@@ -333,43 +333,30 @@ npm test tests/rateLimit.test.js
 
 #### Test Rate Limiting
 
-```bash
+```powershell
 # Test auth endpoint limit (10 requests/15min)
 for i in {1..12}; do
-  curl -X POST http://localhost:3000/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"test@example.com","password":"test123"}' \
-    -i
-  echo "Request $i"
-done
-
-# Should see 429 on requests 11 and 12
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 #### Verify Response Headers
 
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}' \
-  -i | grep -E "X-RateLimit|Retry-After"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 #### Test Different IPs
 
-```bash
+```powershell
 # Request 1 (IP 1)
-curl -X POST http://localhost:3000/auth/login \
-  -H "X-Forwarded-For: 192.168.1.1" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Request 2 (IP 2 - different limit)
-curl -X POST http://localhost:3000/auth/login \
-  -H "X-Forwarded-For: 192.168.1.2" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "X-Forwarded-For" = "192.168.1.1"
+    "Content-Type" = "application/json"
+    "X-Forwarded-For" = "192.168.1.2"
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 ## Troubleshooting
 
@@ -381,7 +368,7 @@ curl -X POST http://localhost:3000/auth/login \
 
 **Solutions**:
 1. Check `RATE_LIMITING_ENABLED` environment variable:
-   ```bash
+   ```powershell
    echo $RATE_LIMITING_ENABLED
    # Should be 'true' or unset (defaults to true)
    ```
@@ -405,7 +392,7 @@ curl -X POST http://localhost:3000/auth/login \
 
 **Solutions**:
 1. Verify Redis URL:
-   ```bash
+   ```powershell
    echo $REDIS_URL
    redis-cli -u $REDIS_URL ping
    # Should return PONG
@@ -417,14 +404,14 @@ curl -X POST http://localhost:3000/auth/login \
    - ElastiCache subnet accessible?
 
 3. Check Redis server status:
-   ```bash
+   ```powershell
    redis-cli ping
    # Local: redis-cli
    # Remote: redis-cli -h hostname -p 6379
    ```
 
 4. Review Lambda logs:
-   ```bash
+   ```powershell
    # Look for Redis connection errors
    aws logs tail /aws/lambda/your-function-name --follow
    ```
@@ -440,7 +427,7 @@ curl -X POST http://localhost:3000/auth/login \
 
 **Solutions**:
 1. Verify Redis is actually being used:
-   ```bash
+   ```powershell
    # Check Redis for keys
    redis-cli --scan --pattern 'rl:*'
    ```
@@ -473,22 +460,22 @@ curl -X POST http://localhost:3000/auth/login \
 **Solutions**:
 
 1. **Clear specific key**:
-   ```bash
+   ```powershell
    redis-cli DEL "rl:/auth/login:ip:192.168.1.1"
    ```
 
 2. **Clear all rate limit keys**:
-   ```bash
+   ```powershell
    redis-cli --scan --pattern 'rl:*' | xargs redis-cli DEL
    ```
 
 3. **Disable rate limiting temporarily**:
-   ```bash
-   export RATE_LIMITING_ENABLED=false
+   ```powershell
+$env:RATE_LIMITING_ENABLED = "false"
    ```
 
 4. **Restart Lambda (local)**:
-   ```bash
+   ```powershell
    # Kill and restart serverless offline
    pkill -f "serverless offline"
    npm run dev

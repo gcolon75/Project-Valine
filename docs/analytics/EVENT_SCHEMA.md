@@ -339,9 +339,9 @@ window.__analytics = {
 ## Rollback Plan
 
 **To disable analytics:**
-```bash
+```powershell
 # Set feature flag
-export ANALYTICS_ENABLED=false
+$env:ANALYTICS_ENABLED = "false"
 
 # Clear frontend env
 VITE_ANALYTICS_ENABLED=false

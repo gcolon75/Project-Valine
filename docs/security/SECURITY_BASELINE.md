@@ -111,7 +111,7 @@ This document establishes the security baseline for Project Valine's serverless 
 #### Email Modes
 
 **Development Mode (`EMAIL_ENABLED=false`):**
-```bash
+```powershell
 # Verification emails logged to console
 [EmailVerification] Token: abc123def456...
 [EmailVerification] Link: http://localhost:5173/verify-email?token=abc123def456...
@@ -125,61 +125,34 @@ This document establishes the security baseline for Project Valine's serverless 
 #### Testing Procedures
 
 **Positive Test - Successful Verification:**
-```bash
+```powershell
 # 1. Register a new user
-curl -X POST http://localhost:3001/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "SecurePass123!",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-
-# Expected: 201 Created, emailVerified: false
-# Note the verification token from console logs
-
-# 2. Verify email with token
-curl -X POST http://localhost:3001/auth/verify-email \
-  -H "Content-Type: application/json" \
-  -d '{"token": "abc123def456..."}'
-
-# Expected: 200 OK, verified: true
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 **Negative Test - Expired Token:**
-```bash
+```powershell
 # Use a token older than 24 hours
-curl -X POST http://localhost:3001/auth/verify-email \
-  -H "Content-Type: application/json" \
-  -d '{"token": "expired-token-123"}'
-
-# Expected: 400 Bad Request
-# Error: "Invalid or expired verification token"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"token": "expired-token-123"}' -ContentType 'application/json'```
 
 **Negative Test - Invalid Token:**
-```bash
-curl -X POST http://localhost:3001/auth/verify-email \
-  -H "Content-Type: application/json" \
-  -d '{"token": "invalid-token"}'
-
-# Expected: 400 Bad Request
-# Error: "Invalid or expired verification token"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"token": "invalid-token"}' -ContentType 'application/json'```
 
 **Rate Limit Test - Resend Verification:**
-```bash
+```powershell
 # Resend verification multiple times rapidly
 for i in {1..15}; do
-  curl -X POST http://localhost:3001/auth/resend-verification \
-    -H "Authorization: Bearer <token>" \
-    -H "Content-Type: application/json"
-  echo "Request $i"
-done
-
-# Expected: 429 Too Many Requests after 10 requests
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+}```
 
 ---
 
@@ -203,83 +176,46 @@ done
 #### Enrollment Flow
 
 **Step 1: Start Enrollment**
-```bash
-curl -X POST http://localhost:3001/auth/2fa/enroll \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json"
-
-# Response:
-{
-  "qrCode": "data:image/png;base64,...",
-  "secret": "JBSWY3DPEHPK3PXP",
-  "manualEntry": "JBSWY3DPEHPK3PXP"
-}
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+}```
 
 **Step 2: Verify and Complete**
-```bash
-curl -X POST http://localhost:3001/auth/2fa/verify-enrollment \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"code": "123456"}'
-
-# Response:
-{
-  "recoveryCodes": [
-    "1234-5678-9012",
-    "3456-7890-1234",
-    ...
-  ],
-  "message": "2FA enabled successfully"
-}
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{"code": "123456"}' -ContentType 'application/json'```
 
 #### Testing Procedures
 
 **Positive Test - Successful Enrollment:**
-```bash
+```powershell
 # 1. Enroll
 TOKEN="<valid-jwt>"
-RESPONSE=$(curl -X POST http://localhost:3001/auth/2fa/enroll \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json")
-
-echo $RESPONSE | jq '.secret'
-
-# 2. Generate TOTP code (using authenticator app or oathtool)
-CODE=$(oathtool --totp --base32 "JBSWY3DPEHPK3PXP")
-
-# 3. Verify enrollment
-curl -X POST http://localhost:3001/auth/2fa/verify-enrollment \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"code\": \"$CODE\"}"
-
-# Expected: 200 OK, recovery codes returned
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{\' -ContentType 'application/json'```
 
 **Negative Test - Invalid Code:**
-```bash
-curl -X POST http://localhost:3001/auth/2fa/verify-enrollment \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"code": "000000"}'
-
-# Expected: 400 Bad Request
-# Error: "Invalid verification code"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"code": "000000"}' -ContentType 'application/json'```
 
 **Negative Test - Expired Code:**
-```bash
+```powershell
 # Wait >30 seconds, use old code
-curl -X POST http://localhost:3001/auth/2fa/verify-enrollment \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"code": "<old-code>"}'
-
-# Expected: 400 Bad Request
-# Error: "Invalid verification code"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"code": "<old-code>"}' -ContentType 'application/json'```
 
 ---
 
@@ -303,72 +239,46 @@ curl -X POST http://localhost:3001/auth/2fa/verify-enrollment \
 #### CSRF Flow
 
 **1. Get CSRF Token (Safe Request):**
-```bash
-curl -X GET http://localhost:3001/auth/me \
-  -H "Authorization: Bearer <token>" \
-  -c cookies.txt \
-  -v
-
-# Response Headers:
-# Set-Cookie: csrf-token=abc123...; Path=/; SameSite=Lax
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **2. Use CSRF Token (Mutating Request):**
-```bash
-CSRF_TOKEN=$(grep csrf-token cookies.txt | awk '{print $7}')
+```powershell
+CSRF_TOKEN=$(Select-String csrf-token cookies.txt | awk '{print $7}')
 
-curl -X POST http://localhost:3001/api/profiles \
-  -H "Authorization: Bearer <token>" \
-  -H "X-CSRF-Token: $CSRF_TOKEN" \
-  -H "Content-Type: application/json" \
-  -b cookies.txt \
-  -d '{"headline": "Updated Headline"}'
-
-# Expected: 200 OK
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "X-CSRF-Token" = "$CSRF_TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"headline": "Updated Headline"}' -ContentType 'application/json'```
 
 #### Testing Procedures
 
 **Positive Test - Valid CSRF Token:**
-```bash
+```powershell
 # 1. Get token from safe endpoint
-curl -X GET http://localhost:3001/auth/me \
-  -H "Authorization: Bearer <token>" \
-  -c cookies.txt
-
-# 2. Use token in mutating request
-CSRF=$(grep csrf-token cookies.txt | awk '{print $7}')
-curl -X POST http://localhost:3001/api/settings \
-  -H "Authorization: Bearer <token>" \
-  -H "X-CSRF-Token: $CSRF" \
-  -b cookies.txt \
-  -d '{"theme": "dark"}'
-
-# Expected: 200 OK
-```
+Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Authorization" = "Bearer <token>"
+    "X-CSRF-Token" = "$CSRF"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 **Negative Test - Missing CSRF Token:**
-```bash
-curl -X POST http://localhost:3001/api/settings \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "dark"}'
-
-# Expected: 403 Forbidden (if CSRF_ENABLED=true)
-# Error: "CSRF token missing or invalid"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 **Negative Test - Invalid CSRF Token:**
-```bash
-curl -X POST http://localhost:3001/api/settings \
-  -H "Authorization: Bearer <token>" \
-  -H "X-CSRF-Token: invalid-token-123" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "dark"}'
-
-# Expected: 403 Forbidden (if CSRF_ENABLED=true)
-# Error: "CSRF token missing or invalid"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "X-CSRF-Token" = "invalid-token-123"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 **Note:** CSRF protection is currently disabled by default (`CSRF_ENABLED=false`). When enabled, it applies to cookie-based authentication flows.
 
@@ -416,60 +326,35 @@ curl -X POST http://localhost:3001/api/settings \
 #### Testing Procedures
 
 **Positive Test - Within Limit:**
-```bash
+```powershell
 # Make requests within limit
 for i in {1..5}; do
-  curl -X POST http://localhost:3001/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"test@example.com","password":"wrong"}' \
-    -i | grep -E "HTTP|X-RateLimit"
-  echo "Request $i"
-done
-
-# Expected: All return 401, with decreasing X-RateLimit-Remaining
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
 
 **Negative Test - Exceed Limit:**
-```bash
+```powershell
 # Exceed auth endpoint limit (10/15min)
 for i in {1..12}; do
-  curl -X POST http://localhost:3001/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"test@example.com","password":"wrong"}' \
-    -i | grep -E "HTTP|Retry-After"
-  echo "Request $i"
-done
-
-# Expected: Requests 11-12 return 429 Too Many Requests
-# Headers: Retry-After: 900 (seconds)
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
 
 **Response Headers Test:**
-```bash
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}' \
-  -i | grep "X-RateLimit"
-
-# Expected Headers:
-# X-RateLimit-Limit: 10
-# X-RateLimit-Remaining: 9
-# X-RateLimit-Reset: 1699564800
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 **Redis Failover Test:**
-```bash
+```powershell
 # Stop Redis (simulated)
 # Rate limiting should fall back to in-memory
 
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}' \
-  -v 2>&1 | grep -i "rate"
-
-# Expected: Rate limiting still works (in-memory fallback)
-# Warning in logs: "Using in-memory fallback for rate limiting"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 ---
 
@@ -518,68 +403,37 @@ curl -X POST http://localhost:3001/auth/login \
 #### Testing Procedures
 
 **Positive Test - JWT Session:**
-```bash
+```powershell
 # 1. Login
-RESPONSE=$(curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!"}' \
-  -c cookies.txt)
-
-# 2. Verify session with /auth/me
-curl -X GET http://localhost:3001/auth/me \
-  -b cookies.txt
-
-# Expected: 200 OK, user data returned
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 **Positive Test - Token Refresh:**
-```bash
+```powershell
 # Wait 31 minutes or manually expire access token
 
 # Refresh token
-curl -X POST http://localhost:3001/auth/refresh \
-  -b cookies.txt \
-  -c cookies.txt
-
-# Expected: 200 OK, new tokens in Set-Cookie headers
-```
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 **Negative Test - Expired Access Token:**
-```bash
+```powershell
 # Use expired access token
-curl -X GET http://localhost:3001/auth/me \
-  -H "Authorization: Bearer <expired-token>"
-
-# Expected: 401 Unauthorized
-# Error: "Invalid or expired token"
-```
+Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer <expired-token>"
+}```
 
 **Negative Test - Invalid Token:**
-```bash
-curl -X GET http://localhost:3001/auth/me \
-  -H "Authorization: Bearer invalid.token.here"
-
-# Expected: 401 Unauthorized
-# Error: "Invalid or expired token"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer invalid.token.here"
+}```
 
 #### Session Revocation Test
 
 **Logout:**
-```bash
-curl -X POST http://localhost:3001/auth/logout \
-  -b cookies.txt
-
-# Expected: 200 OK
-# Set-Cookie: access_token=; Max-Age=0
-# Set-Cookie: refresh_token=; Max-Age=0
-
-# Verify session is revoked
-curl -X GET http://localhost:3001/auth/me \
-  -b cookies.txt
-
-# Expected: 401 Unauthorized
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 ---
 
@@ -629,95 +483,45 @@ User                     API                      Database
 #### Testing Procedures
 
 **Positive Test - Full Reset Flow:**
-```bash
+```powershell
 # 1. Request password reset
-curl -X POST http://localhost:3001/auth/request-password-reset \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com"}'
-
-# Expected: 200 OK (always, to prevent user enumeration)
-# Response: {"message": "If the email exists, a reset link has been sent"}
-# Note token from console logs (dev mode)
-
-# 2. Reset password with token
-curl -X POST http://localhost:3001/auth/reset-password \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "abc123def456...",
-    "newPassword": "NewSecurePass456!"
-  }'
-
-# Expected: 200 OK
-# Response: {"message": "Password reset successfully"}
-
-# 3. Login with new password
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "NewSecurePass456!"
-  }'
-
-# Expected: 200 OK, JWT token returned
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"email": "test@example.com"}' -ContentType 'application/json'```
 
 **Negative Test - Expired Token:**
-```bash
+```powershell
 # Use token older than 1 hour
-curl -X POST http://localhost:3001/auth/reset-password \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "expired-token-123",
-    "newPassword": "NewPassword123!"
-  }'
-
-# Expected: 400 Bad Request
-# Error: "Invalid or expired reset token"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "token": "expired-token-123", "newPassword": "NewPassword123!" }' -ContentType 'application/json'```
 
 **Negative Test - Reused Token:**
-```bash
+```powershell
 # Use same token twice
 TOKEN="abc123def456..."
 
 # First use (should succeed)
-curl -X POST http://localhost:3001/auth/reset-password \
-  -H "Content-Type: application/json" \
-  -d "{\"token\": \"$TOKEN\", \"newPassword\": \"Pass1!\"}"
-
-# Second use (should fail)
-curl -X POST http://localhost:3001/auth/reset-password \
-  -H "Content-Type: application/json" \
-  -d "{\"token\": \"$TOKEN\", \"newPassword\": \"Pass2!\"}"
-
-# Expected: 400 Bad Request
-# Error: "Invalid or expired reset token"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{\' -ContentType 'application/json'```
 
 **Negative Test - Non-existent Email:**
-```bash
-curl -X POST http://localhost:3001/auth/request-password-reset \
-  -H "Content-Type: application/json" \
-  -d '{"email": "nonexistent@example.com"}'
-
-# Expected: 200 OK (prevents user enumeration)
-# Response: {"message": "If the email exists, a reset link has been sent"}
-# Note: No email sent, no token generated
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email": "nonexistent@example.com"}' -ContentType 'application/json'```
 
 **Rate Limit Test:**
-```bash
+```powershell
 # Attempt 12 password reset requests
 for i in {1..12}; do
-  curl -X POST http://localhost:3001/auth/request-password-reset \
-    -H "Content-Type: application/json" \
-    -d '{"email": "test@example.com"}' \
-    -i | grep -E "HTTP|Retry"
-  echo "Request $i"
-done
-
-# Expected: Requests 11-12 return 429 Too Many Requests
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email": "test@example.com"}' -ContentType 'application/json'```
 
 ---
 
@@ -757,16 +561,10 @@ refresh_token=<jwt>; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=604800
 #### Testing Procedures
 
 **Verify Cookie Attributes:**
-```bash
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!"}' \
-  -v 2>&1 | grep -i "set-cookie"
-
-# Expected Output:
-# Set-Cookie: access_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=1800
-# Set-Cookie: refresh_token=...; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 **Verify HttpOnly (JavaScript Cannot Access):**
 ```javascript
@@ -789,15 +587,11 @@ console.log(document.cookie);
 ```
 
 **Verify Secure Flag (Production):**
-```bash
+```powershell
 # In production with HTTPS
-curl https://api.valine.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!"}' \
-  -v 2>&1 | grep -i "secure"
-
-# Expected: Secure flag present in Set-Cookie headers
-```
+Invoke-RestMethod -Uri "https://api.valine.com/auth/login" -Method Get -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 ---
 
@@ -827,7 +621,7 @@ Content-Security-Policy-Report-Only:
 #### Testing Procedures
 
 **Monitor CSP Violations:**
-```bash
+```powershell
 # Check browser console for CSP reports
 # Open: Chrome DevTools > Console > Filter: "CSP"
 
@@ -835,9 +629,9 @@ Content-Security-Policy-Report-Only:
 ```
 
 **Test Resource Loading:**
-```bash
+```powershell
 # Verify allowed resources load correctly
-curl -I https://fonts.googleapis.com/css2?family=Inter
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Expected: 200 OK
 
@@ -847,7 +641,7 @@ curl -I https://fonts.googleapis.com/css2?family=Inter
 ```
 
 **Activation Test (when ready):**
-```bash
+```powershell
 # Set CSP_REPORT_ONLY=false in production
 # Monitor for broken functionality
 # Review violation reports
@@ -898,24 +692,17 @@ curl -I https://fonts.googleapis.com/css2?family=Inter
 #### Testing Procedures
 
 **Verify Login Logging:**
-```bash
+```powershell
 # 1. Login
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!"}'
-
-# 2. Check CloudWatch Logs or console
-# Expected: Log entry with action: "auth.login", success: true
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 **Verify Failed Login Logging:**
-```bash
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"wrongpassword"}'
-
-# Expected: Log entry with action: "auth.login", success: false
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"wrongpassword"}' -ContentType 'application/json'```
 
 **Note:** Full audit logging implementation (database-backed, user-queryable) is planned for Phase 2.
 
@@ -947,7 +734,7 @@ if (!JWT_SECRET || JWT_SECRET === 'dev-secret-key-change-in-production') {
 ```
 
 **Generate Secure Secret:**
-```bash
+```powershell
 # Method 1: OpenSSL
 openssl rand -base64 64
 
@@ -959,7 +746,7 @@ head -c 64 /dev/urandom | base64
 ```
 
 **Testing:**
-```bash
+```powershell
 # Test fail-fast on missing JWT_SECRET (production)
 unset JWT_SECRET
 NODE_ENV=production npm start
@@ -968,7 +755,7 @@ NODE_ENV=production npm start
 # Error: "FATAL: JWT_SECRET must be set in production"
 
 # Test warning on dev secret (production)
-export JWT_SECRET="dev-secret-key-change-in-production"
+$env:JWT_SECRET = "dev-secret-key-change-in-production"
 NODE_ENV=production npm start
 
 # Expected: Application fails to start or logs critical warning
@@ -989,7 +776,7 @@ if (!process.env.DATABASE_URL) {
 ```
 
 **Testing:**
-```bash
+```powershell
 # Test fail-fast on missing DATABASE_URL
 unset DATABASE_URL
 npm start
@@ -1117,7 +904,7 @@ if (process.env.TWO_FACTOR_ENABLED === 'true' && !process.env.TOTP_ENCRYPTION_KE
 #### Activation Steps
 
 **Step 1: Configure SMTP Settings**
-```bash
+```powershell
 # Set in serverless.yml or AWS Systems Manager Parameter Store
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -1127,25 +914,17 @@ SMTP_FROM=noreply@valine.app
 ```
 
 **Step 2: Test Email Sending (Staging)**
-```bash
+```powershell
 # Deploy to staging with EMAIL_ENABLED=false
 serverless deploy --stage staging
 
 # Test email in dev mode (logs)
-curl -X POST https://staging-api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "username": "testuser",
-    "displayName": "Test",
-    "password": "SecurePass123!"
-  }'
-
-# Verify token in logs, manually test email flow
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "username": "testuser", "displayName": "Test", "password": "SecurePass123!" }' -ContentType 'application/json'```
 
 **Step 3: Enable Email Sending (Staging)**
-```bash
+```powershell
 # Update serverless.yml or parameter store
 EMAIL_ENABLED=true
 
@@ -1153,15 +932,12 @@ EMAIL_ENABLED=true
 serverless deploy --stage staging
 
 # Test actual email sending
-curl -X POST https://staging-api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"real@example.com","username":"test","displayName":"Test","password":"SecurePass123!"}'
-
-# Verify email received and link works
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"real@example.com","username":"test","displayName":"Test","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 **Step 4: Monitor and Validate**
-```bash
+```powershell
 # Monitor CloudWatch Logs for email errors
 aws logs tail /aws/lambda/valine-staging-auth --follow
 
@@ -1173,7 +949,7 @@ aws logs tail /aws/lambda/valine-staging-auth --follow
 ```
 
 **Step 5: Production Rollout**
-```bash
+```powershell
 # After successful staging validation
 
 # Update production environment
@@ -1188,7 +964,7 @@ serverless deploy --stage prod
 
 #### Rollback Procedure
 
-```bash
+```powershell
 # Set EMAIL_ENABLED=false
 EMAIL_ENABLED=false
 
@@ -1219,7 +995,7 @@ serverless deploy --stage prod
 #### Activation Steps
 
 **Step 1: Generate Encryption Key**
-```bash
+```powershell
 # Generate strong encryption key
 TOTP_ENCRYPTION_KEY=$(openssl rand -base64 32)
 
@@ -1230,44 +1006,27 @@ aws secretsmanager create-secret \
 ```
 
 **Step 2: Update Environment Configuration**
-```bash
+```powershell
 # serverless.yml or parameter store
 TOTP_ENCRYPTION_KEY=${ssm:/valine/prod/totp-encryption-key~true}
 TWO_FACTOR_ENABLED=false  # Keep disabled for testing
 ```
 
 **Step 3: Test 2FA Flow (Staging)**
-```bash
+```powershell
 # Deploy to staging
 serverless deploy --stage staging
 
 # Test enrollment
-TOKEN=$(curl -X POST https://staging-api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!"}' \
-  | jq -r '.token')
-
-# Start enrollment
-curl -X POST https://staging-api/auth/2fa/enroll \
-  -H "Authorization: Bearer $TOKEN" \
-  | jq '.secret' > secret.txt
-
-# Generate TOTP code
-CODE=$(oathtool --totp --base32 "$(cat secret.txt)")
-
-# Complete enrollment
-curl -X POST https://staging-api/auth/2fa/verify-enrollment \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"code\": \"$CODE\"}" \
-  | jq '.recoveryCodes' > recovery.txt
-
-# Test login with 2FA
-# Test recovery code
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer $TOKEN"
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
 
 **Step 4: Beta Rollout (Gradual)**
-```bash
+```powershell
 # Enable for beta users only
 TWO_FACTOR_ENABLED=true
 FEATURE_2FA_BETA=true  # If implementing beta flag
@@ -1283,7 +1042,7 @@ serverless deploy --stage prod
 ```
 
 **Step 5: Full Rollout**
-```bash
+```powershell
 # After 2-4 weeks of beta testing
 TWO_FACTOR_ENABLED=true
 
@@ -1293,7 +1052,7 @@ TWO_FACTOR_ENABLED=true
 
 #### Rollback Procedure
 
-```bash
+```powershell
 # Disable 2FA enrollment (keeps existing enabled)
 TWO_FACTOR_ENABLED=false
 
@@ -1347,36 +1106,21 @@ axios.interceptors.request.use((config) => {
 ```
 
 **Step 2: Test CSRF Protection (Staging)**
-```bash
+```powershell
 # Deploy with CSRF enabled
 CSRF_ENABLED=true
 serverless deploy --stage staging
 
 # Test positive case
-curl -X GET https://staging-api/auth/me \
-  -H "Authorization: Bearer $TOKEN" \
-  -c cookies.txt
-
-CSRF=$(grep csrf-token cookies.txt | awk '{print $7}')
-
-curl -X POST https://staging-api/api/settings \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "X-CSRF-Token: $CSRF" \
-  -b cookies.txt \
-  -d '{"theme":"dark"}'
-
-# Expected: 200 OK
-
-# Test negative case (no CSRF token)
-curl -X POST https://staging-api/api/settings \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"theme":"dark"}'
-
-# Expected: 403 Forbidden
-```
+Invoke-RestMethod -Uri "https://staging-api/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Authorization" = "Bearer $TOKEN"
+    "X-CSRF-Token" = "$CSRF"
+    "Authorization" = "Bearer $TOKEN"
+} -Body '{"theme":"dark"}' -ContentType 'application/json'```
 
 **Step 3: Enable in Production**
-```bash
+```powershell
 # Update environment
 CSRF_ENABLED=true
 
@@ -1389,7 +1133,7 @@ serverless deploy --stage prod
 
 #### Rollback Procedure
 
-```bash
+```powershell
 # Disable CSRF protection
 CSRF_ENABLED=false
 
@@ -1420,7 +1164,7 @@ serverless deploy --stage prod
 #### Activation Steps
 
 **Step 1: Analyze CSP Reports (Ongoing)**
-```bash
+```powershell
 # Review browser console violations
 # Check for patterns:
 # - Unauthorized scripts
@@ -1435,7 +1179,7 @@ serverless deploy --stage prod
 ```
 
 **Step 2: Address Violations**
-```bash
+```powershell
 # Common fixes:
 
 # 1. Inline styles → Extract to CSS files
@@ -1455,7 +1199,7 @@ serverless deploy --stage prod
 ```
 
 **Step 3: Test Enforcement (Staging)**
-```bash
+```powershell
 # Update CSP to enforcement mode (staging)
 CSP_REPORT_ONLY=false
 
@@ -1475,7 +1219,7 @@ serverless deploy --stage staging
 ```
 
 **Step 4: Gradual Production Rollout**
-```bash
+```powershell
 # Option A: Enable for 10% of users (A/B test)
 # Requires feature flag system
 
@@ -1492,7 +1236,7 @@ serverless deploy --stage prod
 
 #### Rollback Procedure
 
-```bash
+```powershell
 # Revert to report-only mode
 CSP_REPORT_ONLY=true
 
@@ -1515,34 +1259,31 @@ serverless deploy --stage prod --force
 - Immediate mitigation required
 
 **Procedure:**
-```bash
+```powershell
 # 1. Disable all optional security features
-export EMAIL_ENABLED=false
-export TWO_FACTOR_ENABLED=false
-export CSRF_ENABLED=false
-export USE_SESSION_TRACKING=false
+$env:EMAIL_ENABLED = "false"
+$env:TWO_FACTOR_ENABLED = "false"
+$env:CSRF_ENABLED = "false"
+$env:USE_SESSION_TRACKING = "false"
 
 # 2. Keep essential features (rate limiting is safe to keep)
-export RATE_LIMITING_ENABLED=true
+$env:RATE_LIMITING_ENABLED = "true"
 
 # 3. CSP to report-only
-export CSP_REPORT_ONLY=true
+$env:CSP_REPORT_ONLY = "true"
 
 # 4. Deploy immediately
 serverless deploy --stage prod --force
 
 # 5. Verify basic auth still works
-curl -X POST https://api.valine.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-
-# Expected: 200 OK, JWT returned
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 ### Selective Feature Rollback
 
 #### Rollback Email Verification
-```bash
+```powershell
 EMAIL_ENABLED=false
 serverless deploy --stage prod
 
@@ -1551,7 +1292,7 @@ serverless deploy --stage prod
 ```
 
 #### Rollback 2FA
-```bash
+```powershell
 TWO_FACTOR_ENABLED=false
 serverless deploy --stage prod
 
@@ -1560,7 +1301,7 @@ serverless deploy --stage prod
 ```
 
 #### Rollback CSRF Protection
-```bash
+```powershell
 CSRF_ENABLED=false
 serverless deploy --stage prod
 
@@ -1569,7 +1310,7 @@ serverless deploy --stage prod
 ```
 
 #### Rollback Rate Limiting
-```bash
+```powershell
 RATE_LIMITING_ENABLED=false
 serverless deploy --stage prod
 
@@ -1583,7 +1324,7 @@ serverless deploy --stage prod
 **Not Required** - All security features are flag-based, no schema changes for disabling.
 
 **If Database Rollback Needed (schema changes):**
-```bash
+```powershell
 # Example: Reverting migration that added 2FA columns
 cd api
 npx prisma migrate resolve --rolled-back 20241105_add_2fa_fields
@@ -1599,7 +1340,7 @@ EOF
 ### Recovery Steps After Rollback
 
 **1. Incident Documentation**
-```bash
+```powershell
 # Document in incident log:
 # - What was rolled back
 # - Why (root cause)
@@ -1609,7 +1350,7 @@ EOF
 ```
 
 **2. Root Cause Analysis**
-```bash
+```powershell
 # Investigate:
 # - CloudWatch logs
 # - Error patterns
@@ -1624,7 +1365,7 @@ EOF
 ```
 
 **3. Fix and Re-deploy**
-```bash
+```powershell
 # Fix root cause
 # Test in staging thoroughly
 # Gradual re-rollout (not immediate full deployment)

@@ -98,8 +98,8 @@ $env:DATABASE_URL = "postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5
 **CRITICAL**: URLs must NEVER contain spaces. Spaces in URLs cause connection failures and authentication errors.
 
 **Common Mistakes:**
-- ❌ `postgres? sslmode=require` (space after `?`)
-- ❌ `rds. amazonaws.com` (space in hostname)
+- ❌ `postgres?sslmode=require` (space after `?`)
+- ❌ `rds.amazonaws.com` (space in hostname)
 - ❌ Extra whitespace from copy/paste errors
 
 **Canonical Database URL** (Production - Dev instance):
@@ -110,7 +110,7 @@ postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-wes
 **Validation Checklist:**
 - [ ] No spaces anywhere in the URL
 - [ ] `?sslmode=require` has NO space between `?` and `sslmode`
-- [ ] Hostname has NO spaces (e.g., `rds.amazonaws.com` not `rds. amazonaws.com`)
+- [ ] Hostname has NO spaces (e.g., `rds.amazonaws.com` not `rds.amazonaws.com`)
 - [ ] If copying from documentation, use triple-click to select entire line
 - [ ] After pasting, visually verify no extra spaces were introduced
 
@@ -183,7 +183,7 @@ $bytes = New-Object byte[] 32
 
 ### S3 Bucket Name
 
-**IMPORTANT**: Use `valine-frontend-prod`, NOT `project-valine-frontend-prod`
+**IMPORTANT**: Use `valine-frontend-prod`, NOT `valine-frontend-prod`
 
 The correct frontend bucket is:
 - **Production**: `valine-frontend-prod`
@@ -580,7 +580,7 @@ Error: connect ETIMEDOUT
 aws s3 ls s3://valine-frontend-prod
 
 # If using wrong name, update deployment scripts
-Select-String -Pattern "project-valine-frontend-prod" -Path . -Recurse -Exclude node_modules
+Select-String -Pattern "valine-frontend-prod" -Path . -Recurse -Exclude node_modules
 # Replace with: valine-frontend-prod
 ```
 

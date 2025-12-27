@@ -1131,7 +1131,7 @@ issues:
 
 To reproduce these audits, run:
 
-```bash
+```powershell
 # Install Lighthouse
 npm install -g lighthouse
 

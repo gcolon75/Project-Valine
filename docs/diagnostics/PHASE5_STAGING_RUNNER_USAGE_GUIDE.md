@@ -88,7 +88,7 @@ You need the following information:
 
 ### 1. Generate Configuration
 
-```bash
+```powershell
 cd orchestrator/scripts
 python phase5_staging_validator.py generate-config --output staging_config.json
 ```
@@ -117,7 +117,7 @@ Open `staging_config.json` and fill in your values:
 
 ### 3. Run Preflight Checks
 
-```bash
+```powershell
 python phase5_staging_validator.py preflight --config staging_config.json
 ```
 
@@ -129,7 +129,7 @@ Expected output:
 
 ### 4. Run Full Validation
 
-```bash
+```powershell
 python phase5_staging_validator.py full-validation --config staging_config.json
 ```
 
@@ -149,15 +149,15 @@ See [Manual Testing Procedures](#manual-testing-procedures) below.
 
 ### 6. Review Evidence
 
-```bash
+```powershell
 ls -la validation_evidence/
-cat validation_evidence/executive_summary_*.md
-cat validation_evidence/validation_report_*.md
+Get-Content validation_evidence/executive_summary_*.md
+Get-Content validation_evidence/validation_report_*.md
 ```
 
 ### 7. Create Pull Request
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 git checkout -b staging/phase5-validation-evidence
 git add PHASE5_VALIDATION.md orchestrator/scripts/validation_evidence/
@@ -166,7 +166,7 @@ git push origin staging/phase5-validation-evidence
 ```
 
 Then create PR via GitHub UI or:
-```bash
+```powershell
 gh pr create --title "docs: Phase 5 staging validation evidence" \
   --body "Staging validation completed. See PHASE5_VALIDATION.md for evidence."
 ```
@@ -177,23 +177,23 @@ gh pr create --title "docs: Phase 5 staging validation evidence" \
 
 **1.1 Configure AWS Credentials**
 
-```bash
+```powershell
 # Option A: AWS CLI configuration
 aws configure
 
 # Option B: Environment variables
-export AWS_ACCESS_KEY_ID="your-key"
-export AWS_SECRET_ACCESS_KEY="your-secret"
-export AWS_DEFAULT_REGION="us-west-2"
+$env:AWS_ACCESS_KEY_ID = "your-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret"
+$env:AWS_DEFAULT_REGION = "us-west-2"
 
 # Option C: AWS SSO
 aws sso login --profile staging
-export AWS_PROFILE=staging
+$env:AWS_PROFILE = "staging"
 ```
 
 **1.2 Verify AWS Access**
 
-```bash
+```powershell
 # Test Lambda access
 aws lambda get-function-configuration \
   --function-name valine-orchestrator-discord-staging \
@@ -212,7 +212,7 @@ aws logs describe-log-groups \
 
 **1.3 Generate and Edit Configuration**
 
-```bash
+```powershell
 cd orchestrator/scripts
 python phase5_staging_validator.py generate-config --output staging_config.json
 
@@ -224,7 +224,7 @@ vim staging_config.json
 
 **1.4 Validate Configuration**
 
-```bash
+```powershell
 python phase5_staging_validator.py preflight --config staging_config.json
 ```
 
@@ -234,7 +234,7 @@ Fix any errors before proceeding.
 
 **2.1 Verify IAM Permissions**
 
-```bash
+```powershell
 python phase5_staging_validator.py verify-iam --config staging_config.json
 ```
 
@@ -245,7 +245,7 @@ This tests:
 
 **2.2 Read Current SSM Values**
 
-```bash
+```powershell
 python phase5_staging_validator.py read-ssm --config staging_config.json
 ```
 
@@ -261,7 +261,7 @@ Current SSM values (redacted):
 
 If values don't match expectations:
 
-```bash
+```powershell
 # Set correct values
 aws ssm put-parameter \
   --name /valine/staging/ENABLE_DEBUG_CMD \
@@ -282,7 +282,7 @@ aws ssm put-parameter \
 
 **3.1 Enable Debug Command**
 
-```bash
+```powershell
 python phase5_staging_validator.py enable-debug --config staging_config.json
 ```
 
@@ -344,7 +344,7 @@ Save to: `validation_evidence/debug-last-transcript.txt`
 
 **3.5 Verify in CloudWatch**
 
-```bash
+```powershell
 python phase5_staging_validator.py collect-logs \
   --config staging_config.json \
   --trace-id abc123de-456f-789g-hij0-klmnopqrstuv
@@ -356,13 +356,13 @@ Confirm trace_id appears in logs.
 
 **4.1 Disable Alerts (Clean State)**
 
-```bash
+```powershell
 python phase5_staging_validator.py disable-alerts --config staging_config.json
 ```
 
 **4.2 Enable Alerts with Staging Channel**
 
-```bash
+```powershell
 python phase5_staging_validator.py enable-alerts \
   --config staging_config.json \
   --channel-id YOUR_STAGING_CHANNEL_ID
@@ -373,20 +373,19 @@ Wait 30 seconds for Lambda configuration to propagate.
 **4.3 Trigger Controlled Failure (Manual)**
 
 Option A: Invalid workflow dispatch
-```bash
+```powershell
 # In Discord staging channel
 /deploy workflow:invalid-workflow-name wait:false
 ```
 
 Option B: Test endpoint (if available)
-```bash
-curl -X POST https://your-staging-api/test/alert \
-  -H "Authorization: Bearer YOUR_TEST_TOKEN" \
-  -d '{"severity": "critical", "message": "Test alert"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer YOUR_TEST_TOKEN"
+} -Body '{"severity": "critical", "message": "Test alert"}' -ContentType 'application/json'```
 
 Option C: Manual trigger via AWS CLI
-```bash
+```powershell
 aws lambda invoke \
   --function-name valine-orchestrator-discord-staging \
   --payload '{"body": "test alert trigger"}' \
@@ -436,7 +435,7 @@ Take screenshot and save to: `validation_evidence/alert-screenshot.png`
 
 **5.1 Collect CloudWatch Logs**
 
-```bash
+```powershell
 # Get logs for specific trace
 python phase5_staging_validator.py collect-logs \
   --config staging_config.json \
@@ -449,25 +448,25 @@ python phase5_staging_validator.py collect-logs \
 
 **5.2 Review Evidence Files**
 
-```bash
+```powershell
 ls -la validation_evidence/
-cat validation_evidence/validation_report_*.md
-cat validation_evidence/executive_summary_*.md
+Get-Content validation_evidence/validation_report_*.md
+Get-Content validation_evidence/executive_summary_*.md
 ```
 
 **5.3 Verify Redaction**
 
 Check that all evidence has secrets redacted:
-```bash
-grep -r "ghp_" validation_evidence/  # Should find nothing
-grep -r "token" validation_evidence/ # Should show ***last4 format
+```powershell
+Select-String -r "ghp_" validation_evidence/  # Should find nothing
+Select-String -r "token" validation_evidence/ # Should show ***last4 format
 ```
 
 ### Phase 6: Step 7 - Revert Flags to Safe Defaults (2 minutes)
 
 **6.1 Revert All Flags**
 
-```bash
+```powershell
 python phase5_staging_validator.py revert-flags --config staging_config.json
 ```
 
@@ -477,7 +476,7 @@ This sets:
 
 **6.2 Verify Reversion**
 
-```bash
+```powershell
 python phase5_staging_validator.py read-ssm --config staging_config.json
 ```
 
@@ -493,7 +492,7 @@ Current SSM values (redacted):
 
 **7.1 Update PHASE5_VALIDATION.md**
 
-```bash
+```powershell
 python phase5_staging_validator.py update-docs --config staging_config.json
 ```
 
@@ -507,13 +506,13 @@ This automatically updates PHASE5_VALIDATION.md with:
 
 **7.2 Review Changes**
 
-```bash
+```powershell
 git diff PHASE5_VALIDATION.md
 ```
 
 **7.3 Create Branch and Commit**
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 git checkout -b staging/phase5-validation-evidence
 
@@ -538,7 +537,7 @@ git push origin staging/phase5-validation-evidence
 **7.4 Create Pull Request**
 
 Option A: GitHub CLI
-```bash
+```powershell
 gh pr create \
   --title "docs: Phase 5 staging validation evidence" \
   --body "## Phase 5 Staging Validation Completed
@@ -576,7 +575,7 @@ Option B: GitHub UI
 
 ### Configuration
 
-```bash
+```powershell
 # Generate example config
 python phase5_staging_validator.py generate-config --output CONFIG_FILE
 
@@ -586,7 +585,7 @@ python phase5_staging_validator.py generate-config --output staging_config.json
 
 ### Validation Commands
 
-```bash
+```powershell
 # Preflight checks
 python phase5_staging_validator.py preflight --config CONFIG_FILE
 
@@ -602,7 +601,7 @@ python phase5_staging_validator.py full-validation --config CONFIG_FILE
 
 ### Feature Flag Management
 
-```bash
+```powershell
 # Enable debug command
 python phase5_staging_validator.py enable-debug --config CONFIG_FILE
 
@@ -620,7 +619,7 @@ python phase5_staging_validator.py revert-flags --config CONFIG_FILE
 
 ### Validation Testing
 
-```bash
+```powershell
 # Validate debug command (documents manual test)
 python phase5_staging_validator.py validate-debug --config CONFIG_FILE
 
@@ -630,7 +629,7 @@ python phase5_staging_validator.py validate-alerts --config CONFIG_FILE
 
 ### Evidence Collection
 
-```bash
+```powershell
 # Collect logs for this validation run
 python phase5_staging_validator.py collect-logs --config CONFIG_FILE
 
@@ -642,7 +641,7 @@ python phase5_staging_validator.py collect-logs \
 
 ### Report Generation
 
-```bash
+```powershell
 # Generate executive summary
 python phase5_staging_validator.py generate-summary --config CONFIG_FILE
 
@@ -725,21 +724,21 @@ python phase5_staging_validator.py update-docs --config CONFIG_FILE
 
 ### Files to Review
 
-```bash
+```powershell
 cd orchestrator/scripts/validation_evidence
 
 # Executive summary (for stakeholders)
-cat executive_summary_STG-*.md
+Get-Content executive_summary_STG-*.md
 
 # Detailed report (for technical review)
-cat validation_report_STG-*.md
+Get-Content validation_report_STG-*.md
 
 # Evidence section (for PHASE5_VALIDATION.md)
-cat phase5_evidence_section_STG-*.md  # if auto-update failed
+Get-Content phase5_evidence_section_STG-*.md  # if auto-update failed
 
 # Manual test evidence
-cat debug-last-transcript.txt
-cat alert-message.txt
+Get-Content debug-last-transcript.txt
+Get-Content alert-message.txt
 ls -la alert-screenshot.png
 ```
 
@@ -773,12 +772,12 @@ ls -la alert-screenshot.png
 
 ### Error: AWS CLI not found
 
-```bash
+```powershell
 # Install AWS CLI
 pip install awscli
 
 # Or download from AWS
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+Invoke-RestMethod -Uri "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -Method Get
 unzip awscliv2.zip
 sudo ./aws/install
 
@@ -788,7 +787,7 @@ aws --version
 
 ### Error: Permission denied (SSM)
 
-```bash
+```powershell
 # Check IAM permissions
 aws sts get-caller-identity
 
@@ -804,7 +803,7 @@ aws ssm get-parameter \
 
 ### Error: Permission denied (CloudWatch)
 
-```bash
+```powershell
 # Test CloudWatch access
 aws logs describe-log-groups \
   --log-group-name-prefix /aws/lambda/valine \
@@ -830,11 +829,11 @@ ERROR: Aborting to prevent production alerts
 
 ### Error: Lambda function not found
 
-```bash
+```powershell
 # Verify function exists
 aws lambda list-functions \
   --region us-west-2 \
-  | grep orchestrator
+  | Select-String orchestrator
 
 # Check function name spelling
 aws lambda get-function-configuration \
@@ -853,7 +852,7 @@ aws lambda get-function-configuration \
 4. Logs not yet available (wait 1-2 minutes)
 
 **Solutions:**
-```bash
+```powershell
 # Verify log group exists
 aws logs describe-log-groups \
   --log-group-name-prefix /aws/lambda/valine \
@@ -878,7 +877,7 @@ python phase5_staging_validator.py collect-logs \
 2. Lambda configuration not yet propagated
 
 **Solutions:**
-```bash
+```powershell
 # Check current value
 python phase5_staging_validator.py read-ssm --config staging_config.json
 
@@ -901,7 +900,7 @@ sleep 60
 4. Lambda configuration not propagated
 
 **Solutions:**
-```bash
+```powershell
 # Check current values
 python phase5_staging_validator.py read-ssm --config staging_config.json
 
@@ -925,7 +924,7 @@ sleep 60
 
 1. **Stop immediately** - Do not commit or share files
 2. **Delete evidence files:**
-   ```bash
+   ```powershell
    rm -rf validation_evidence/
    ```
 3. **Report the bug** with details (but not the actual secrets)
@@ -934,7 +933,7 @@ sleep 60
 
 ### PHASE5_VALIDATION.md update failed
 
-```bash
+```powershell
 # Check if file exists
 ls -la /home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md
 
@@ -943,7 +942,7 @@ ls -la /home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md
 python phase5_staging_validator.py generate-summary --config staging_config.json
 
 # 2. Copy evidence section
-cat validation_evidence/phase5_evidence_section_*.md
+Get-Content validation_evidence/phase5_evidence_section_*.md
 
 # 3. Manually add to PHASE5_VALIDATION.md
 nano /home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md
@@ -999,7 +998,7 @@ nano /home/runner/work/Project-Valine/Project-Valine/PHASE5_VALIDATION.md
 
 ### Commands
 
-```bash
+```powershell
 # Show all available commands
 python phase5_staging_validator.py --help
 

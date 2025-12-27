@@ -22,7 +22,7 @@
 
 ### Required Tools
 
-```bash
+```powershell
 # PostgreSQL client (psql)
 sudo apt-get install postgresql-client
 
@@ -35,9 +35,9 @@ sudo apt-get install jq
 
 ### Environment Setup
 
-```bash
+```powershell
 # Set DATABASE_URL (from .env or AWS Parameter Store)
-export DATABASE_URL="postgresql://user:pass@host:5432/dbname?sslmode=require"
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/dbname?sslmode=require"
 
 # Verify connection
 psql $DATABASE_URL -c "SELECT NOW();"
@@ -58,7 +58,7 @@ psql $DATABASE_URL -c "SELECT NOW();"
 
 #### 1. Check if user exists
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, email, username, \"displayName\" FROM users WHERE email = 'ghawk075@gmail.com';"
 ```
 
@@ -71,7 +71,7 @@ psql $DATABASE_URL -c "SELECT id, email, username, \"displayName\" FROM users WH
 
 #### 2. Check if profile exists for user
 
-```bash
+```powershell
 # Replace <user-id> with the id from step 1
 psql $DATABASE_URL -c "SELECT id, \"userId\", \"vanityUrl\", title, bio FROM profiles WHERE \"userId\" = '<user-id>';"
 ```
@@ -85,7 +85,7 @@ psql $DATABASE_URL -c "SELECT id, \"userId\", \"vanityUrl\", title, bio FROM pro
 
 **If profile is missing:**
 
-```bash
+```powershell
 # Create profile manually
 psql $DATABASE_URL << 'SQL'
 INSERT INTO profiles (id, "userId", "vanityUrl", roles, tags, privacy)
@@ -103,21 +103,18 @@ SQL
 
 #### 3. Verify profile can be fetched via API
 
-```bash
+```powershell
 # Get profile by user ID
-curl -X GET https://api.projectvaline.com/profiles/<user-id> \
-  -H "Authorization: Bearer <token>"
-
-# Get profile by vanity URL
-curl -X GET https://api.projectvaline.com/profiles/vanity/<vanity-url> \
-  -H "Authorization: Bearer <token>"
-```
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:** Profile JSON with all fields populated.
 
 #### 4. Check Lambda logs for errors
 
-```bash
+```powershell
 # Tail logs for profile handler
 aws logs tail /aws/lambda/pv-api-prod-getProfileById --since 10m --follow
 
@@ -143,7 +140,7 @@ aws logs tail /aws/lambda/pv-api-prod-updateProfile --since 10m
 
 #### 1. Verify user credentials
 
-```bash
+```powershell
 # Check if user exists and is active
 psql $DATABASE_URL -c "SELECT id, email, username, status, \"emailVerified\" FROM users WHERE email = 'user@example.com';"
 ```
@@ -154,14 +151,10 @@ psql $DATABASE_URL -c "SELECT id, email, username, status, \"emailVerified\" FRO
 
 #### 2. Test login endpoint directly
 
-```bash
-curl -X POST https://api.projectvaline.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "user@example.com", "password": "password123" }' -ContentType 'application/json'```
 
 **Expected Response:**
 ```json
@@ -174,7 +167,7 @@ curl -X POST https://api.projectvaline.com/auth/login \
 
 #### 3. Check email allowlist (if enabled)
 
-```bash
+```powershell
 # Check backend environment variable
 aws lambda get-function-configuration \
   --function-name pv-api-prod-login \
@@ -185,7 +178,7 @@ aws lambda get-function-configuration \
 
 #### 4. Verify JWT secret is set
 
-```bash
+```powershell
 # Check JWT secret is configured
 aws lambda get-function-configuration \
   --function-name pv-api-prod-login \
@@ -196,7 +189,7 @@ aws lambda get-function-configuration \
 
 #### 5. Test token validity
 
-```bash
+```powershell
 # Decode JWT (without verification)
 echo "<your-jwt-token>" | cut -d. -f2 | base64 -d | jq '.'
 ```
@@ -220,21 +213,17 @@ echo "<your-jwt-token>" | cut -d. -f2 | base64 -d | jq '.'
 
 #### 1. Check update endpoint response
 
-```bash
-curl -X PATCH https://api.projectvaline.com/profiles/<profile-id> \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Senior Voice Actor",
-    "bio": "Updated bio content"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "title": "Senior Voice Actor", "bio": "Updated bio content" }' -ContentType 'application/json'```
 
 **Expected:** Returns updated profile with new `title` and `bio`.
 
 #### 2. Verify database was updated
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, title, bio, \"updatedAt\" FROM profiles WHERE id = '<profile-id>';"
 ```
 
@@ -244,7 +233,7 @@ psql $DATABASE_URL -c "SELECT id, title, bio, \"updatedAt\" FROM profiles WHERE 
 
 #### 3. Check for validation errors in Lambda logs
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-updateProfile --since 5m
 ```
 
@@ -255,13 +244,12 @@ aws logs tail /aws/lambda/pv-api-prod-updateProfile --since 5m
 
 #### 4. Test with minimal payload
 
-```bash
+```powershell
 # Send only one field at a time to isolate issue
-curl -X PATCH https://api.projectvaline.com/profiles/<profile-id> \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{ "title": "Test Title" }' | jq '.'
-```
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "title": "Test Title" }' -ContentType 'application/json'```
 
 ---
 
@@ -276,7 +264,7 @@ curl -X PATCH https://api.projectvaline.com/profiles/<profile-id> \
 
 #### 1. Check if profile_links table has data
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT * FROM profile_links WHERE \"profileId\" = '<profile-id>' ORDER BY position;"
 ```
 
@@ -284,7 +272,7 @@ psql $DATABASE_URL -c "SELECT * FROM profile_links WHERE \"profileId\" = '<profi
 
 #### 2. Add a link manually (for testing)
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 INSERT INTO profile_links (id, "userId", "profileId", label, url, type, position)
 VALUES (
@@ -302,23 +290,18 @@ SQL
 
 #### 3. Test GET endpoint
 
-```bash
-curl https://api.projectvaline.com/profiles/<profile-id>/links \
-  -H "Authorization: Bearer <token>" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/links" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 #### 4. Test POST endpoint
 
-```bash
-curl -X POST https://api.projectvaline.com/profiles/<profile-id>/links \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "label": "LinkedIn",
-    "url": "https://www.linkedin.com/in/username/",
-    "type": "social"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "label": "LinkedIn", "url": "https://www.linkedin.com/in/username/", "type": "social" }' -ContentType 'application/json'```
 
 ---
 
@@ -335,7 +318,7 @@ curl -X POST https://api.projectvaline.com/profiles/<profile-id>/links \
 
 #### 1. Check education records in database
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT * FROM education WHERE \"profileId\" = '<profile-id>' ORDER BY \"startYear\" DESC;"
 ```
 
@@ -344,7 +327,7 @@ psql $DATABASE_URL -c "SELECT * FROM education WHERE \"profileId\" = '<profile-i
 
 #### 2. Verify profile exists (education requires valid profile)
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id FROM profiles WHERE id = '<profile-id>';"
 ```
 
@@ -352,18 +335,11 @@ psql $DATABASE_URL -c "SELECT id FROM profiles WHERE id = '<profile-id>';"
 
 #### 3. Test adding education via API
 
-```bash
-curl -X POST https://api.projectvaline.com/profiles/<profile-id>/education \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "institution": "Juilliard School",
-    "program": "BFA in Drama",
-    "startYear": 2018,
-    "endYear": 2022,
-    "achievements": "Dean'\''s List"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "institution": "Juilliard School", "program": "BFA in Drama", "startYear": 2018, "endYear": 2022, "achievements": "Dean' -ContentType 'application/json'```
 
 **Common Errors:**
 - `400`: Missing required fields (`institution` or `program`)
@@ -372,13 +348,13 @@ curl -X POST https://api.projectvaline.com/profiles/<profile-id>/education \
 
 #### 4. Check Lambda logs for validation errors
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-createEducation --since 5m
 ```
 
 #### 5. Add education entry manually (for testing)
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 INSERT INTO education (id, "profileId", institution, program, "startYear", "endYear", achievements)
 VALUES (
@@ -396,10 +372,10 @@ SQL
 
 #### 6. Verify via GET endpoint
 
-```bash
-curl https://api.projectvaline.com/profiles/<profile-id>/education \
-  -H "Authorization: Bearer <token>" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/education" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 ---
 
@@ -416,7 +392,7 @@ curl https://api.projectvaline.com/profiles/<profile-id>/education \
 
 #### 1. Check if post exists in database
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, content, visibility, \"authorId\", \"createdAt\" FROM posts WHERE \"authorId\" = '<user-id>' ORDER BY \"createdAt\" DESC LIMIT 10;"
 ```
 
@@ -426,16 +402,11 @@ psql $DATABASE_URL -c "SELECT id, content, visibility, \"authorId\", \"createdAt
 
 #### 2. Test creating a post
 
-```bash
-curl -X POST https://api.projectvaline.com/posts \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Test post for debugging",
-    "tags": ["test"],
-    "visibility": "PUBLIC"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "content": "Test post for debugging", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
 
 **Expected Response:**
 ```json
@@ -450,18 +421,18 @@ curl -X POST https://api.projectvaline.com/posts \
 
 #### 3. Test public feed endpoint (Explore)
 
-```bash
-curl https://api.projectvaline.com/posts | jq '.posts | length'
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/posts" -Method Get
 ```
 
 **Expected:** Number > 0 (if any public posts exist).
 
 #### 4. Test personalized feed endpoint
 
-```bash
-curl https://api.projectvaline.com/feed \
-  -H "Authorization: Bearer <token>" | jq '.posts | length'
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:**
 - Shows posts from followed users
@@ -469,7 +440,7 @@ curl https://api.projectvaline.com/feed \
 
 #### 5. Check connection status (for FOLLOWERS-only posts)
 
-```bash
+```powershell
 # Check if connection exists between users
 psql $DATABASE_URL -c "SELECT id, \"senderId\", \"receiverId\", status FROM connection_requests WHERE (\"senderId\" = '<user-a>' AND \"receiverId\" = '<user-b>') OR (\"senderId\" = '<user-b>' AND \"receiverId\" = '<user-a>');"
 ```
@@ -480,7 +451,7 @@ psql $DATABASE_URL -c "SELECT id, \"senderId\", \"receiverId\", status FROM conn
 
 #### 6. Check Lambda logs for feed handler
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-listPosts --since 5m
 aws logs tail /aws/lambda/pv-api-prod-getFeed --since 5m
 ```
@@ -493,23 +464,23 @@ aws logs tail /aws/lambda/pv-api-prod-getFeed --since 5m
 
 #### 1. Check posts for specific user
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, content, visibility, \"createdAt\" FROM posts WHERE \"authorId\" = '<user-id>' ORDER BY \"createdAt\" DESC;"
 ```
 
 #### 2. Test profile posts endpoint
 
-```bash
-curl https://api.projectvaline.com/profiles/<user-id>/posts \
-  -H "Authorization: Bearer <token>" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>/posts" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Note:** Endpoint may not exist - check backend handler routing.
 
 **Alternative:** Frontend may fetch all posts and filter client-side:
 
-```bash
-curl https://api.projectvaline.com/posts | jq '.posts[] | select(.authorId == "<user-id>")'
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/posts" -Method Get
 ```
 
 ---
@@ -527,22 +498,18 @@ curl https://api.projectvaline.com/posts | jq '.posts[] | select(.authorId == "<
 
 #### 1. Check connection requests
 
-```bash
+```powershell
 # All requests for a user
 psql $DATABASE_URL -c "SELECT id, \"senderId\", \"receiverId\", status, \"createdAt\" FROM connection_requests WHERE \"receiverId\" = '<user-id>' OR \"senderId\" = '<user-id>' ORDER BY \"createdAt\" DESC;"
 ```
 
 #### 2. Test sending a follow request
 
-```bash
-curl -X POST https://api.projectvaline.com/connections/request \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "receiverId": "<target-user-id>",
-    "message": "Test connection request"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "receiverId": "<target-user-id>", "message": "Test connection request" }' -ContentType 'application/json'```
 
 **Common Errors:**
 - `400`: Cannot send request to yourself
@@ -550,16 +517,16 @@ curl -X POST https://api.projectvaline.com/connections/request \
 
 #### 3. Test accepting a request
 
-```bash
-curl -X POST https://api.projectvaline.com/connections/<request-id>/accept \
-  -H "Authorization: Bearer <token>" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:** Request status changes to `'accepted'`.
 
 #### 4. Verify status in database
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, status, \"updatedAt\" FROM connection_requests WHERE id = '<request-id>';"
 ```
 
@@ -569,7 +536,7 @@ psql $DATABASE_URL -c "SELECT id, status, \"updatedAt\" FROM connection_requests
 
 #### 5. Check Lambda logs
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-sendConnectionRequest --since 5m
 aws logs tail /aws/lambda/pv-api-prod-approveConnectionRequest --since 5m
 ```
@@ -580,7 +547,7 @@ aws logs tail /aws/lambda/pv-api-prod-approveConnectionRequest --since 5m
 
 ### Get Lambda function configuration
 
-```bash
+```powershell
 # List all Lambda functions
 aws lambda list-functions --query 'Functions[?contains(FunctionName, `pv-api`)].FunctionName' --output table
 
@@ -600,7 +567,7 @@ aws lambda get-function-configuration \
 
 ### Tail Lambda logs in real-time
 
-```bash
+```powershell
 # Tail logs (requires awslogs or AWS CLI v2)
 aws logs tail /aws/lambda/pv-api-prod-<function-name> --follow --since 5m
 
@@ -612,7 +579,7 @@ aws logs tail /aws/lambda/pv-api-prod-<function-name> --follow --since 5m --filt
 
 ### Get recent Lambda errors
 
-```bash
+```powershell
 # Get last 50 log events with errors
 aws logs filter-log-events \
   --log-group-name /aws/lambda/pv-api-prod-<function-name> \
@@ -626,14 +593,14 @@ aws logs filter-log-events \
 
 ### Test Lambda function directly
 
-```bash
+```powershell
 # Invoke function with test payload
 aws lambda invoke \
   --function-name pv-api-prod-health \
   --payload '{}' \
   response.json
 
-cat response.json | jq '.'
+Get-Content response.json | jq '.'
 ```
 
 ---
@@ -644,13 +611,13 @@ cat response.json | jq '.'
 
 #### Get user by email
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, email, username, \"displayName\", status FROM users WHERE email = '<email>';"
 ```
 
 #### Get user with profile
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 SELECT 
   u.id as user_id,
@@ -668,13 +635,13 @@ SQL
 
 #### Count posts by user
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT COUNT(*) as post_count FROM posts WHERE \"authorId\" = '<user-id>';"
 ```
 
 #### Get recent activity
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 SELECT 
   'post' as type,
@@ -698,7 +665,7 @@ SQL
 
 #### Check for orphaned records
 
-```bash
+```powershell
 # Profiles without users
 psql $DATABASE_URL -c 'SELECT p.id, p."userId" FROM profiles p LEFT JOIN users u ON p."userId" = u.id WHERE u.id IS NULL;'
 
@@ -712,13 +679,13 @@ psql $DATABASE_URL -c 'SELECT e.id, e."profileId" FROM education e LEFT JOIN pro
 
 #### Connection test
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT version();"
 ```
 
 #### Check table sizes
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 SELECT 
   schemaname,
@@ -732,7 +699,7 @@ SQL
 
 #### Check for missing indexes
 
-```bash
+```powershell
 psql $DATABASE_URL << 'SQL'
 SELECT 
   schemaname,
@@ -751,7 +718,7 @@ SQL
 
 ### Reset user password (manual)
 
-```bash
+```powershell
 # Generate bcrypt hash (requires bcrypt tool or Node.js)
 node -e "console.log(require('bcrypt').hashSync('NewPassword123!', 10));"
 
@@ -761,13 +728,13 @@ psql $DATABASE_URL -c "UPDATE users SET \"passwordHash\" = '<hashed-password>' W
 
 ### Invalidate all refresh tokens for user
 
-```bash
+```powershell
 psql $DATABASE_URL -c "UPDATE refresh_tokens SET \"invalidatedAt\" = NOW() WHERE \"userId\" = '<user-id>' AND \"invalidatedAt\" IS NULL;"
 ```
 
 ### Delete user account (with cascade)
 
-```bash
+```powershell
 # WARNING: This deletes user and all related data
 psql $DATABASE_URL -c "DELETE FROM users WHERE id = '<user-id>';"
 ```

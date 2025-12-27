@@ -15,7 +15,7 @@ This guide explains how to convert UX Deep Audit findings (from CSV/JSON) into t
 
 Use the provided script to generate issue drafts:
 
-```bash
+```powershell
 node scripts/ux-audit-to-issues.mjs
 ```
 
@@ -403,7 +403,7 @@ Add to each issue:
 
 ### Example Issue Creation Command
 
-```bash
+```powershell
 gh issue create \
   --title "[Responsive] Add responsive breakpoints to AuditionDetail" \
   --body-file issue-templates/audition-detail-responsive.md \
@@ -415,17 +415,17 @@ gh issue create \
 
 ### Generate Issue Drafts
 
-```bash
+```powershell
 # Generate JSON file with all issue payloads
 node scripts/ux-audit-to-issues.mjs --output ux-audit-issues.json
 
 # Review generated issues
-cat ux-audit-issues.json | jq '.issues | length'
+Get-Content ux-audit-issues.json | jq '.issues | length'
 ```
 
 ### Batch Create Issues
 
-```bash
+```powershell
 # Create all high-priority issues
 node scripts/ux-audit-to-issues.mjs --severity high --create
 
@@ -438,7 +438,7 @@ node scripts/ux-audit-to-issues.mjs --dry-run
 
 ### Filter Options
 
-```bash
+```powershell
 # Only high and critical severity
 --severity high,critical
 
@@ -457,29 +457,29 @@ node scripts/ux-audit-to-issues.mjs --dry-run
 ### Step-by-Step Process
 
 1. **Run UX Audit**
-   ```bash
+   ```powershell
    npm run ux:audit
    ```
 
 2. **Review Findings**
-   ```bash
-   cat UX_AUDIT_SUMMARY.json | jq '.summary'
+   ```powershell
+   Get-Content UX_AUDIT_SUMMARY.json | jq '.summary'
    # Shows: high: 21, medium: 88, low: 5
    ```
 
 3. **Generate Issue Drafts**
-   ```bash
+   ```powershell
    node scripts/ux-audit-to-issues.mjs --severity high --output high-priority-issues.json
    ```
 
 4. **Review Drafts**
-   ```bash
-   cat high-priority-issues.json | jq '.issues[0]'
+   ```powershell
+   Get-Content high-priority-issues.json | jq '.issues[0]'
    # Review first issue structure
    ```
 
 5. **Create Issues in Batches**
-   ```bash
+   ```powershell
    # Batch 1: Responsive issues (21 high priority)
    node scripts/ux-audit-to-issues.mjs --category responsive --severity high --create
    
@@ -620,19 +620,19 @@ Track in project board:
 ### Script Errors
 
 **Error: Cannot find UX_AUDIT_FINDINGS.csv**
-```bash
+```powershell
 # Run audit first
 npm run ux:audit
 ```
 
 **Error: GitHub CLI not authenticated**
-```bash
+```powershell
 # Authenticate gh CLI
 gh auth login
 ```
 
 **Error: Duplicate issues created**
-```bash
+```powershell
 # Always use --dry-run first
 node scripts/ux-audit-to-issues.mjs --dry-run
 
@@ -643,7 +643,7 @@ gh issue list --label ux-audit
 ### Rate Limiting
 
 If hitting GitHub API rate limits:
-```bash
+```powershell
 # Check rate limit status
 gh api rate_limit
 

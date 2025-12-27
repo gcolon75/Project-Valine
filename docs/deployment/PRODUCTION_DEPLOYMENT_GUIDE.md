@@ -33,37 +33,37 @@ This is the **definitive deployment guide** based on actual scripts, workflows, 
 
 Set these environment variables before deployment:
 
-```bash
+```powershell
 # Database Connection (REQUIRED)
 # ⚠️ SECURITY: Use a strong, unique password for production
 # ⚠️ Rotate default database credentials before deployment
-export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
+$env:DATABASE_URL = "postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 
 # JWT Secret (REQUIRED - Generate new for production!)
 # ⚠️ SECURITY: Store this securely and NEVER commit to version control
 # ⚠️ Save this value - you'll need it for all Lambda functions
-export JWT_SECRET="$(openssl rand -base64 32)"
+$env:JWT_SECRET = "$(openssl rand -base64 32)"
 
 # AWS Configuration
-export AWS_REGION="us-west-2"
-export STAGE="prod"
+$env:AWS_REGION = "us-west-2"
+$env:STAGE = "prod"
 
 # Allowlist Configuration
-export ALLOWED_USER_EMAILS="admin@example.com,user@example.com"
-export ENABLE_REGISTRATION="false"
+$env:ALLOWED_USER_EMAILS = "admin@example.com,user@example.com"
+$env:ENABLE_REGISTRATION = "false"
 
 # Frontend Configuration
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
-export FRONTEND_URL="https://dkmxy676d3vgc.cloudfront.net"
-export S3_BUCKET="your-s3-bucket-name"
-export CLOUDFRONT_DISTRIBUTION_ID="your-distribution-id"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
+$env:S3_BUCKET = "your-s3-bucket-name"
+$env:CLOUDFRONT_DISTRIBUTION_ID = "your-distribution-id"
 ```
 
 ### Required Tools
 
 Ensure these tools are installed:
 
-```bash
+```powershell
 # Check Node.js (v20+)
 node -v
 
@@ -90,16 +90,16 @@ Configure AWS credentials with permissions for:
 - CloudFront (invalidation)
 - CloudWatch Logs
 
-```bash
+```powershell
 # Option 1: AWS CLI configure
 aws configure
 
 # Option 2: Environment variables
-export AWS_ACCESS_KEY_ID="your-access-key"
-export AWS_SECRET_ACCESS_KEY="your-secret-key"
+$env:AWS_ACCESS_KEY_ID = "your-access-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret-key"
 
 # Option 3: AWS Profile
-export AWS_PROFILE="project-valine"
+$env:AWS_PROFILE = "project-valine"
 ```
 
 ### Security Checklist
@@ -117,7 +117,7 @@ export AWS_PROFILE="project-valine"
 
 ### Pre-Flight Verification
 
-```bash
+```powershell
 # Test database connection
 psql "$DATABASE_URL" -c "SELECT version();"
 
@@ -179,13 +179,13 @@ The Prisma layer contains the database client and Lambda-compatible binary. It's
 
 ### Location of Build Script
 
-```bash
+```powershell
 serverless/build-prisma-layer.sh
 ```
 
 ### Check if Layer Already Exists
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # Check if layer directory exists
@@ -197,7 +197,7 @@ ls -lh layers/
 
 ### Build Prisma Layer
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # Run build script
@@ -242,7 +242,7 @@ Rebuild the layer when:
 ### Troubleshooting Layer Build
 
 **Error: "prisma command not found"**
-```bash
+```powershell
 cd ../api
 npm ci
 cd ../serverless
@@ -266,7 +266,7 @@ Database migrations add/modify schema. They MUST run BEFORE deploying code that 
 
 Check what migrations exist:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/api
 
 # List migrations
@@ -275,7 +275,7 @@ ls -la prisma/migrations/
 
 ### Apply Migrations to Production
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/api
 
 # Ensure DATABASE_URL is set
@@ -299,7 +299,7 @@ Database is now in sync with Prisma schema
 
 ### Verify Migration Status
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/api
 
 # Check migration status
@@ -313,7 +313,7 @@ npx prisma migrate status
 
 ### Verify Schema in Database
 
-```bash
+```powershell
 # Connect to database
 psql "$DATABASE_URL"
 
@@ -340,7 +340,7 @@ psql "$DATABASE_URL"
 
 **CAUTION: Only if deployment fails and you need to rollback**
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/api
 
 # Mark migration as rolled back
@@ -360,7 +360,7 @@ psql "$DATABASE_URL" -c "ALTER TABLE users DROP COLUMN IF EXISTS status;"
 
 **Automatic on push to main:**
 
-```bash
+```powershell
 # Commit and push to main branch
 git add .
 git commit -m "Deploy backend to production"
@@ -383,7 +383,7 @@ GitHub Actions workflow (`.github/workflows/backend-deploy.yml`) will:
 
 #### Method B: Using Deployment Script
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # Run deployment script
@@ -397,7 +397,7 @@ This script:
 
 #### Method C: Manual Deployment
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # Install dependencies (if not already done)
@@ -436,9 +436,9 @@ layers:
 
 ### Verify Backend Deployment
 
-```bash
+```powershell
 # Test health endpoint
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected response:
 # {"status":"ok","secretsStatus":{...}}
@@ -468,7 +468,7 @@ curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
 
 **Automatic on push to main:**
 
-```bash
+```powershell
 # Commit and push to main branch
 git add .
 git commit -m "Deploy frontend to production"
@@ -496,13 +496,13 @@ GitHub Actions workflow (`.github/workflows/client-deploy.yml`) will:
 
 #### Method B: Using Deployment Script
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set environment variables
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
-export S3_BUCKET="your-s3-bucket"
-export CLOUDFRONT_DISTRIBUTION_ID="your-dist-id"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:S3_BUCKET = "your-s3-bucket"
+$env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
 # Run deployment script
 node scripts/deploy-frontend.js --bucket "$S3_BUCKET" --distribution "$CLOUDFRONT_DISTRIBUTION_ID"
@@ -520,11 +520,11 @@ This script:
 
 #### Method C: Manual Deployment
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set API base URL
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 
 # Install dependencies (if needed)
 npm ci
@@ -598,9 +598,9 @@ Deployment completed successfully!
 
 ### Verify Frontend Deployment
 
-```bash
+```powershell
 # Visit frontend URL
-curl -I https://dkmxy676d3vgc.cloudfront.net
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Should return HTTP 200 OK
 
@@ -638,11 +638,11 @@ After backend and database are deployed, create admin user account(s) for produc
 
 This script checks database, adds missing columns, and creates user account:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
+$env:DATABASE_URL = "postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 
 # Run script
 node fix-user-schema-complete.mjs \
@@ -688,11 +688,11 @@ Step 5: Creating User Profile...
 
 If user already exists, just reset password:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 
 # Run script
 node scripts/admin-set-password.mjs "admin@example.com" "NewPassword123!"
@@ -702,11 +702,11 @@ node scripts/admin-set-password.mjs "admin@example.com" "NewPassword123!"
 
 Create or update user with all fields:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 
 # Run script
 node scripts/admin-upsert-user.mjs \
@@ -717,17 +717,11 @@ node scripts/admin-upsert-user.mjs \
 
 ### Verify User Creation
 
-```bash
+```powershell
 # Test login via API
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@example.com",
-    "password": "YourProductionPassword123!"
-  }'
-
-# Expected response: HTTP 200 with Set-Cookie headers
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
 
 ---
 
@@ -735,12 +729,12 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
 
 ### Automated Verification Script
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set environment variables
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
-export FRONTEND_URL="https://dkmxy676d3vgc.cloudfront.net"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 
 # Run verification script
 node scripts/verify-production-deployment.mjs
@@ -777,8 +771,8 @@ node scripts/verify-production-deployment.mjs
 
 #### 1. API Health Check
 
-```bash
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+```powershell
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
 ```
 
 Expected:
@@ -794,31 +788,19 @@ Expected:
 
 #### 2. Test Registration (Allowlisted Email)
 
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@example.com",
-    "username": "admin",
-    "password": "TestPassword123!",
-    "displayName": "Admin User"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "admin@example.com", "username": "admin", "password": "TestPassword123!", "displayName": "Admin User" }' -ContentType 'application/json'```
 
 Expected: HTTP 201 Created (if email not already registered)
 
 #### 3. Test Registration (Non-Allowlisted Email)
 
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "hacker@evil.com",
-    "username": "hacker",
-    "password": "Test123!",
-    "displayName": "Hacker"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "hacker@evil.com", "username": "hacker", "password": "Test123!", "displayName": "Hacker" }' -ContentType 'application/json'```
 
 Expected: HTTP 403 Forbidden
 ```json
@@ -829,14 +811,10 @@ Expected: HTTP 403 Forbidden
 
 #### 4. Test Login
 
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@example.com",
-    "password": "YourProductionPassword123!"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
 
 Expected: HTTP 200 OK with Set-Cookie headers
 
@@ -858,7 +836,7 @@ Verify:
 
 Check Lambda logs for errors:
 
-```bash
+```powershell
 # Health check function
 aws logs tail /aws/lambda/pv-api-prod-health --region us-west-2 --since 10m
 
@@ -883,7 +861,7 @@ aws logs tail /aws/lambda/pv-api-prod-health --region us-west-2 --follow
 - Lambda timeout errors in CloudWatch
 
 **Diagnosis:**
-```bash
+```powershell
 # Check Lambda logs
 aws logs tail /aws/lambda/pv-api-prod-health --region us-west-2 --since 30m
 
@@ -899,7 +877,7 @@ aws lambda get-function-configuration \
 3. Timeout (increase Lambda timeout in serverless.yml)
 
 **Fix:**
-```bash
+```powershell
 # Verify environment variables
 aws lambda get-function-configuration \
   --function-name pv-api-prod-register \
@@ -931,7 +909,7 @@ provider:
 ```
 
 Redeploy:
-```bash
+```powershell
 cd serverless
 npx serverless deploy --stage prod --region us-west-2
 ```
@@ -943,7 +921,7 @@ npx serverless deploy --stage prod --region us-west-2
 - No changes visible in browser
 
 **Fix:**
-```bash
+```powershell
 # Clear CloudFront cache
 aws cloudfront create-invalidation \
   --distribution-id "your-dist-id" \
@@ -961,7 +939,7 @@ Error: column already exists
 ```
 
 **Fix:**
-```bash
+```powershell
 cd api
 
 # Check migration status
@@ -985,7 +963,7 @@ Error: Unknown argument `status` provided to User.create()
 **Cause:** Database missing required columns
 
 **Fix:**
-```bash
+```powershell
 # Run complete schema fix script
 node fix-user-schema-complete.mjs \
   --email "admin@example.com" \
@@ -1003,9 +981,9 @@ node fix-user-schema-complete.mjs \
 ```
 
 **Fix:**
-```bash
+```powershell
 # Generate new secure JWT secret
-export JWT_SECRET="$(openssl rand -base64 32)"
+$env:JWT_SECRET = "$(openssl rand -base64 32)"
 
 # Update Lambda environment variable
 aws lambda update-function-configuration \
@@ -1026,7 +1004,7 @@ npx serverless deploy --stage prod --region us-west-2
 
 #### Option 1: Via Serverless Framework
 
-```bash
+```powershell
 cd serverless
 
 # List deployments
@@ -1046,7 +1024,7 @@ serverless rollback --timestamp TIMESTAMP --stage prod --region us-west-2
 
 #### Option 3: Redeploy Previous Version
 
-```bash
+```powershell
 # Checkout previous commit
 git checkout PREVIOUS_COMMIT_SHA
 
@@ -1062,12 +1040,12 @@ git checkout main
 
 #### Option 1: Redeploy Previous Version
 
-```bash
+```powershell
 # Checkout previous commit
 git checkout PREVIOUS_COMMIT_SHA
 
 # Build and deploy
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 npm run build
 aws s3 sync dist "s3://your-bucket" --delete
 aws cloudfront create-invalidation --distribution-id "your-dist-id" --paths "/*"
@@ -1080,7 +1058,7 @@ git checkout main
 
 If S3 bucket has versioning enabled:
 
-```bash
+```powershell
 # List object versions
 aws s3api list-object-versions \
   --bucket "your-bucket" \
@@ -1102,7 +1080,7 @@ aws cloudfront create-invalidation \
 
 **⚠️ CAUTION: Only if absolutely necessary**
 
-```bash
+```powershell
 cd api
 
 # Mark migration as rolled back
@@ -1145,7 +1123,7 @@ When you push to `main` branch:
 3. Frontend builds with VITE_API_BASE from secrets
 4. Frontend deploys to S3 and invalidates CloudFront
 
-```bash
+```powershell
 # Make changes
 git add .
 git commit -m "feat: add new feature"
@@ -1175,7 +1153,7 @@ git push origin main
 
 ### Monitoring GitHub Actions Deployments
 
-```bash
+```powershell
 # View workflow runs
 gh run list --workflow=backend-deploy.yml
 
@@ -1192,16 +1170,16 @@ gh run watch RUN_ID
 
 ### Full Production Deployment (All Steps)
 
-```bash
+```powershell
 #!/bin/bash
 # Complete production deployment script
 
 # Step 0: Set environment variables
-export DATABASE_URL="postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
-export JWT_SECRET="$(openssl rand -base64 32)"
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
-export S3_BUCKET="your-s3-bucket"
-export CLOUDFRONT_DISTRIBUTION_ID="your-dist-id"
+$env:DATABASE_URL = "postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
+$env:JWT_SECRET = "$(openssl rand -base64 32)"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:S3_BUCKET = "your-s3-bucket"
+$env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
 # Step 1: Build Prisma Layer
 cd serverless
@@ -1233,7 +1211,7 @@ node fix-user-schema-complete.mjs \
   --display-name "Admin User"
 
 # Step 6: Verify Deployment
-export FRONTEND_URL="https://dkmxy676d3vgc.cloudfront.net"
+$env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 node scripts/verify-production-deployment.mjs
 
 echo "✅ Production deployment complete!"
@@ -1243,13 +1221,13 @@ echo "✅ Production deployment complete!"
 
 If database schema hasn't changed and layer already built:
 
-```bash
+```powershell
 # Backend only
 cd serverless
 npx serverless deploy --stage prod --region us-west-2
 
 # Frontend only
-export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 npm run build
 aws s3 sync dist "s3://$S3_BUCKET" --delete
 aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"

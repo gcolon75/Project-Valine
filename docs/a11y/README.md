@@ -54,7 +54,7 @@ Our accessibility test suite is divided into three main areas:
 
 Tests semantic structure, ARIA usage, color contrast, and automated accessibility checks using axe-core.
 
-```bash
+```powershell
 # Run all accessibility tests (WCAG + keyboard navigation)
 npm run a11y:test
 
@@ -83,7 +83,7 @@ npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts -g "Landing page"
 
 Validates tab order, focus management, keyboard traps, and interactive element accessibility.
 
-```bash
+```powershell
 # Run keyboard navigation tests
 npx playwright test tests/e2e/keyboard-navigation.spec.ts
 
@@ -109,7 +109,7 @@ npx playwright test tests/e2e/keyboard-navigation.spec.ts --headed --debug
 
 Ensures consistent visual appearance and responsive layout across browsers and viewports.
 
-```bash
+```powershell
 # Run visual regression tests
 npm run visual:test
 
@@ -131,7 +131,7 @@ npx playwright test tests/e2e/visual-qa-phase.spec.ts --project=chromium
 
 After running tests, generate comprehensive reports:
 
-```bash
+```powershell
 # Generate markdown + JSON accessibility report
 npm run a11y:report
 
@@ -370,7 +370,7 @@ None at this time. All WCAG AA success criteria are met.
 #### Before Committing Code
 
 1. **Run accessibility tests locally**:
-   ```bash
+   ```powershell
    npm run a11y:test
    ```
 
@@ -470,7 +470,7 @@ Use this checklist when reviewing PRs:
 
 ### Test Commands
 
-```bash
+```powershell
 # Accessibility
 npm run a11y:test          # WCAG + keyboard tests
 npm run a11y:report        # Generate reports

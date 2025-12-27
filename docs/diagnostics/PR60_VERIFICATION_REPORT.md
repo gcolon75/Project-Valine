@@ -34,7 +34,7 @@ PR #60 successfully implements a comprehensive automation agent for Phase-5 tria
 - **Executable:** ✅ Yes (chmod +x)
 - **Help Output:** ✅ Working correctly
 
-```bash
+```powershell
 # Verified commands:
 python -m py_compile orchestrator/scripts/auto_triage_pr58.py  # ✓ PASS
 python orchestrator/scripts/auto_triage_pr58.py --help          # ✓ PASS
@@ -296,13 +296,13 @@ title = f"Auto-fix: Phase‑5 triage fixes for PR #{pr_number}"
 ## Command-Line Interface (✅ COMPLETE)
 
 ### Required Arguments
-```bash
+```powershell
 --repo OWNER/REPO          # Repository to analyze
 --pr NUMBER                # PR number to triage
 ```
 
 ### Optional Arguments
-```bash
+```powershell
 --workflow-file PATH       # Workflow file path (default: phase5-triage-agent.yml)
 --mode {triage-only|apply-fixes}  # Operation mode (default: apply-fixes)
 --allow-invasive           # Allow changes to >10 files or >500 lines
@@ -320,13 +320,13 @@ title = f"Auto-fix: Phase‑5 triage fixes for PR #{pr_number}"
 ## Testing Evidence
 
 ### Syntax Validation
-```bash
+```powershell
 $ python -m py_compile orchestrator/scripts/auto_triage_pr58.py
 ✓ Syntax validation passed
 ```
 
 ### Help Output
-```bash
+```powershell
 $ python orchestrator/scripts/auto_triage_pr58.py --help
 usage: auto_triage_pr58.py [-h] --repo REPO --pr PR 
                            [--workflow-file WORKFLOW_FILE]
@@ -372,7 +372,7 @@ jobs:
 ```
 
 ### Command-Line Integration
-```bash
+```powershell
 # Direct execution for any PR
 python orchestrator/scripts/auto_triage_pr58.py \
   --repo gcolon75/Project-Valine \
@@ -461,7 +461,7 @@ python orchestrator/scripts/auto_triage_pr58.py \
 ### Immediate Use
 The implementation is **production-ready** and can be used immediately:
 
-```bash
+```powershell
 # Quick start (60 seconds)
 cd /home/runner/work/Project-Valine/Project-Valine
 gh auth login

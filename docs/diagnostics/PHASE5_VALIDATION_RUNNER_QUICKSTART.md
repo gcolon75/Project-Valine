@@ -13,27 +13,27 @@ Get up and running with the Phase 5 Staging Validation Runner in 5 minutes.
 
 ### 1. Install Python Dependencies
 
-```bash
+```powershell
 pip install requests boto3
 ```
 
 ### 2. Set Environment Variables
 
-```bash
+```powershell
 # GitHub token (for CI/artifact checks)
-export GITHUB_TOKEN="ghp_your_token_here"
+$env:GITHUB_TOKEN = "ghp_your_token_here"
 
 # AWS credentials (for CloudWatch logs)
-export AWS_ACCESS_KEY_ID="your_aws_key"
-export AWS_SECRET_ACCESS_KEY="your_aws_secret"
-export AWS_DEFAULT_REGION="us-west-2"
+$env:AWS_ACCESS_KEY_ID = "your_aws_key"
+$env:AWS_SECRET_ACCESS_KEY = "your_aws_secret"
+$env:AWS_DEFAULT_REGION = "us-west-2"
 ```
 
 ## Quick Start
 
 ### Step 1: Generate Configuration
 
-```bash
+```powershell
 cd orchestrator/scripts
 python3 phase5_validation_runner.py generate-config
 ```
@@ -68,7 +68,7 @@ Edit `validation_config.example.json` with your values:
 
 ### Step 3: Run Validation
 
-```bash
+```powershell
 python3 phase5_validation_runner.py --config validation_config.example.json
 ```
 
@@ -149,7 +149,7 @@ Steps 3-6 will run. Step 8 (observability) will be skipped.
 
 For quick tests without a config file:
 
-```bash
+```powershell
 python3 phase5_validation_runner.py --config-json '{
   "repo": "gcolon75/Project-Valine",
   "base_ref": "main",
@@ -233,7 +233,7 @@ The Markdown report includes:
 
 **Solution**: Verify GitHub token and repository name:
 
-```bash
+```powershell
 gh auth status
 gh repo view gcolon75/Project-Valine
 ```
@@ -242,8 +242,8 @@ gh repo view gcolon75/Project-Valine
 
 **Solution**: Test URLs manually:
 
-```bash
-curl -I https://staging.valine.app
+```powershell
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 Ensure staging environment is running and accessible.
@@ -273,9 +273,9 @@ Not:
 
 **Solution**: Either set environment variables or update config:
 
-```bash
-export AWS_ACCESS_KEY_ID="..."
-export AWS_SECRET_ACCESS_KEY="..."
+```powershell
+$env:AWS_ACCESS_KEY_ID = "..."
+$env:AWS_SECRET_ACCESS_KEY = "..."
 ```
 
 Or set in config:

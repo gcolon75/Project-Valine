@@ -32,8 +32,8 @@ A comprehensive validation framework to confirm PR #49 (Phase 5 Staging Validati
 ### For First-Time Execution
 
 1. **Read the Quick Start:**
-   ```bash
-   cat PHASE5_VALIDATION_QUICKSTART.md
+   ```powershell
+   Get-Content PHASE5_VALIDATION_QUICKSTART.md
    ```
 
 2. **Configure GitHub Secrets:**

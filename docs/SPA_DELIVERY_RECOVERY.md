@@ -43,7 +43,7 @@ This will:
 
 **Option 2: Manual AWS CLI repair**
 
-```bash
+```powershell
 # For a specific bundle
 aws s3api copy-object \
   --bucket valine-frontend-prod \
@@ -61,7 +61,7 @@ aws cloudfront create-invalidation \
 
 ### Verification
 
-```bash
+```powershell
 # Check S3 metadata
 aws s3api head-object \
   --bucket valine-frontend-prod \
@@ -100,12 +100,12 @@ The current bundle referenced in `dist/index.html` does not exist in S3, causing
 
 **Step 1: Identify the actual current bundle in production**
 
-```bash
+```powershell
 # Check what index.html is currently served
-curl -s https://your-domain.com/ | grep -o '/assets/index-[A-Za-z0-9_-]*\.js'
+Invoke-RestMethod -Uri "-s" -Method Get
 
 # List all bundles in S3
-aws s3 ls s3://valine-frontend-prod/assets/ | grep 'index-.*\.js'
+aws s3 ls s3://valine-frontend-prod/assets/ | Select-String 'index-.*\.js'
 ```
 
 **Step 2: Choose recovery approach**
@@ -121,7 +121,7 @@ aws s3 ls s3://valine-frontend-prod/assets/ | grep 'index-.*\.js'
 
 **Approach B: Upload missing bundle** (if you have the exact build artifacts)
 
-```bash
+```powershell
 # Upload the missing bundle from local dist/
 aws s3api put-object \
   --bucket valine-frontend-prod \
@@ -146,7 +146,7 @@ aws cloudfront create-invalidation \
 
 **Approach C: Emergency rollback** (use previous working bundle)
 
-```bash
+```powershell
 # Find a recent working bundle
 aws s3api list-objects-v2 \
   --bucket valine-frontend-prod \
@@ -196,7 +196,7 @@ $key = ($rel -replace '\\','/')
 
 If you have existing backslash keys in S3:
 
-```bash
+```powershell
 # List objects with backslashes (may appear as URL-encoded %5C)
 aws s3api list-objects-v2 \
   --bucket valine-frontend-prod \
@@ -255,7 +255,7 @@ Assets not cached properly, causing:
    ```
 
 3. **Invalidate CloudFront cache**: Force clients to fetch new headers
-   ```bash
+   ```powershell
    aws cloudfront create-invalidation \
      --distribution-id E16LPJDBIL5DEE \
      --paths "/*"
@@ -273,7 +273,7 @@ Comprehensive diagnostic tool that checks:
 - S3 metadata (if credentials available)
 - CloudFront configuration
 
-```bash
+```powershell
 # Basic usage
 node scripts/diagnose-white-screen.js --domain your-domain.com
 
@@ -342,13 +342,13 @@ Validates CloudFront distribution configuration:
 
 **Steps**:
 1. Run diagnostics:
-   ```bash
+   ```powershell
    node scripts/diagnose-white-screen.js --domain your-domain.com --verbose
    ```
 
 2. Check if bundle exists in S3:
-   ```bash
-   aws s3 ls s3://valine-frontend-prod/assets/ | grep 'index-'
+   ```powershell
+   aws s3 ls s3://valine-frontend-prod/assets/ | Select-String 'index-'
    ```
 
 3. If bundle missing, re-deploy:

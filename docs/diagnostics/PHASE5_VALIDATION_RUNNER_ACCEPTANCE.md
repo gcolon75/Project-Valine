@@ -269,7 +269,7 @@ This document verifies that all requirements from the problem statement have bee
 **Status**: ✅ COMPLETE
 
 **Usage**:
-```bash
+```powershell
 python3 phase5_validation_runner.py --config-json '{
   "repo": "gcolon75/Project-Valine",
   "base_ref": "main",
@@ -371,7 +371,7 @@ python3 phase5_validation_runner.py --config-json '{
 
 ### Manual Testing
 
-```bash
+```powershell
 # Test 1: Generate config
 ✅ python3 phase5_validation_runner.py generate-config
 ✅ Config file created successfully
@@ -391,7 +391,7 @@ python3 phase5_validation_runner.py --config-json '{
 
 ### Automated Testing
 
-```bash
+```powershell
 # Run unit tests
 ✅ python3 -m unittest orchestrator/tests/test_phase5_validation_runner.py -v
 ----------------------------------------------------------------------
@@ -402,7 +402,7 @@ OK
 
 ### Security Testing
 
-```bash
+```powershell
 # Run CodeQL
 ✅ codeql_checker
 Analysis Result for 'python'. Found 0 alert(s):

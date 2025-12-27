@@ -140,7 +140,7 @@ function redactSecrets(text, patterns = SECRET_PATTERNS) {
 
 ## Example Usage
 
-```bash
+```powershell
 # Automatic redaction (default)
 node scripts/analyze-orchestration-run.mjs 123456
 

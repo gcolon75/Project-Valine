@@ -246,7 +246,7 @@ LINK TYPE
 ## 🧪 Testing & Verification
 
 ### Build Verification
-```bash
+```powershell
 npm run build
 ✅ PASSED
 - Built in 3.48s
@@ -256,7 +256,7 @@ npm run build
 ```
 
 ### Unit Tests
-```bash
+```powershell
 npm run test:run
 ✅ PASSED (Frontend)
 - 24/30 test files passed
@@ -266,7 +266,7 @@ npm run test:run
 ```
 
 ### TypeScript Validation
-```bash
+```powershell
 npx tsc --noEmit tests/e2e/profile-edit.spec.ts
 ✅ PASSED
 - No syntax errors
@@ -275,7 +275,7 @@ npx tsc --noEmit tests/e2e/profile-edit.spec.ts
 ```
 
 ### Test Discovery
-```bash
+```powershell
 npx playwright test --list
 ✅ Found 2 tests:
 1. complete auth and profile edit flow
@@ -283,7 +283,7 @@ npx playwright test --list
 ```
 
 ### Security Scan
-```bash
+```powershell
 CodeQL Analysis
 ✅ PASSED
 - 0 security vulnerabilities
@@ -292,7 +292,7 @@ CodeQL Analysis
 ```
 
 ### Code Review
-```bash
+```powershell
 Automated Review
 ✅ PASSED (all feedback addressed)
 - Simplified selectors
@@ -379,7 +379,7 @@ PATCH /profiles/:userId
 ## 🎬 How to Run Tests
 
 ### Prerequisites
-```bash
+```powershell
 # 1. Install dependencies
 npm install
 
@@ -388,7 +388,7 @@ npx playwright install chromium
 ```
 
 ### Execution
-```bash
+```powershell
 # Start dev server (Terminal 1)
 npm run dev
 
@@ -409,7 +409,7 @@ npx playwright test --headed
 ```
 
 ### Environment Variables
-```bash
+```powershell
 # Custom base URL
 PW_BASE_URL=http://localhost:3000 npx playwright test
 

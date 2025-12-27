@@ -94,7 +94,7 @@ orchestrator/scripts/
 
 If you want to actually use the automation agent that was implemented in PR #60:
 
-```bash
+```powershell
 # 1. Navigate to repository
 cd /home/runner/work/Project-Valine/Project-Valine
 

@@ -83,7 +83,7 @@ provider:
 5. Set value: `ghawk075@gmail.com,valinejustin@gmail.com`
 
 **Local Development** (`.env` file):
-```bash
+```powershell
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
@@ -92,12 +92,12 @@ ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 Set the `VITE_ALLOWED_USER_EMAILS` environment variable:
 
 **Production** (`.env.production`):
-```bash
+```powershell
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
 **Development** (`.env` or `.env.local`):
-```bash
+```powershell
 # Optional in development - leave empty to allow open registration locally
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
@@ -110,7 +110,7 @@ VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 - Empty string = no allowlist enforcement
 
 **Valid Examples**:
-```bash
+```powershell
 # Two users
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 
@@ -129,12 +129,12 @@ ALLOWED_USER_EMAILS=
 ### To Add a New User
 
 1. **Update Backend Environment Variable**:
-   ```bash
+   ```powershell
    ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com,newuser@example.com
    ```
 
 2. **Update Frontend Environment Variable**:
-   ```bash
+   ```powershell
    VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com,newuser@example.com
    ```
 
@@ -155,12 +155,12 @@ ALLOWED_USER_EMAILS=
 ### To Remove a User
 
 1. **Remove from Backend Environment Variable**:
-   ```bash
+   ```powershell
    ALLOWED_USER_EMAILS=ghawk075@gmail.com
    ```
 
 2. **Remove from Frontend Environment Variable**:
-   ```bash
+   ```powershell
    VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com
    ```
 
@@ -172,8 +172,8 @@ ALLOWED_USER_EMAILS=
 
 The `/health` endpoint returns allowlist status:
 
-```bash
-curl https://your-api.execute-api.us-west-2.amazonaws.com/health
+```powershell
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/health" -Method Get
 ```
 
 **Response**:
@@ -267,8 +267,8 @@ fields @timestamp, @message
 
 **Fix**:
 1. Set environment variable before build:
-   ```bash
-   export VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
+   ```powershell
+$env:VITE_ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
    npm run build
    ```
 2. Or add to `.env.production` file
@@ -288,7 +288,7 @@ fields @timestamp, @message
 **Cause**: Environment variable not set correctly.
 
 **Debugging**:
-1. Check health endpoint: `curl .../health`
+1. Check health endpoint: `Invoke-RestMethod -Uri ".../health"`
 2. Verify `allowlistActive: true` and `allowlistCount > 0`
 3. Check Lambda environment variables in AWS Console
 4. Check CloudWatch logs for allowlist parsing errors
@@ -313,14 +313,14 @@ For detailed rollback procedures, see the [Allowlist Deployment Runbook](ALLOWLI
 ### Immediate Rollback (Backend Only)
 
 1. **Remove allowlist env var**:
-   ```bash
+   ```powershell
    # AWS Lambda Console
    # Delete ALLOWED_USER_EMAILS environment variable
    # OR set to empty string
    ```
 
 2. **Redeploy serverless**:
-   ```bash
+   ```powershell
    cd serverless/login_unpack
    npm run deploy
    ```
@@ -336,7 +336,7 @@ This restores open registration while keeping all other features intact.
 ### Git Revert
 
 Revert this entire PR:
-```bash
+```powershell
 git revert <this-pr-merge-commit>
 git push origin main
 ```
@@ -348,20 +348,16 @@ Then redeploy both backend and frontend.
 ### Manual Testing
 
 1. **Test Allowlisted Email**:
-   ```bash
-   curl -X POST https://api.../auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"email":"ghawk075@gmail.com","password":"test123","username":"test","displayName":"Test User"}'
-   # Expected: 201 Created
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"ghawk075@gmail.com","password":"test123","username":"test","displayName":"Test User"}' -ContentType 'application/json'```
 
 2. **Test Non-Allowlisted Email**:
-   ```bash
-   curl -X POST https://api.../auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"email":"unauthorized@example.com","password":"test123","username":"test2","displayName":"Test User 2"}'
-   # Expected: 403 Forbidden with error message
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"unauthorized@example.com","password":"test123","username":"test2","displayName":"Test User 2"}' -ContentType 'application/json'```
 
 3. **Test Frontend**:
    - Visit `/join` → Should show restriction notice (if allowlist active)
@@ -371,7 +367,7 @@ Then redeploy both backend and frontend.
 ### Automated Tests
 
 Run test suites:
-```bash
+```powershell
 # Backend tests
 cd serverless/login_unpack
 npm test

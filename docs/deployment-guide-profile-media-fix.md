@@ -36,13 +36,13 @@
 ### Local Testing
 
 - [ ] **Build succeeds**:
-  ```bash
+  ```powershell
   npm install
   ALLOW_API_BASE_DNS_FAILURE=true npm run build
   ```
 
 - [ ] **Production preview works**:
-  ```bash
+  ```powershell
   npm run preview
   # Open http://localhost:4173
   ```
@@ -94,7 +94,7 @@
 
 ### Step 1: Deploy Frontend
 
-```bash
+```powershell
 # 1. Ensure clean working directory
 git status
 
@@ -136,9 +136,9 @@ aws cloudfront create-invalidation \
 
 ### Step 2: Verify Deployment
 
-```bash
+```powershell
 # 1. Check deployed version
-curl https://your-domain.com/ | grep -o '<script.*src="[^"]*"' | head -1
+Invoke-RestMethod -Uri "https://your-domain.com/" -Method Get
 # Should see new asset hash
 
 # 2. Test in browser
@@ -160,7 +160,7 @@ curl https://your-domain.com/ | grep -o '<script.*src="[^"]*"' | head -1
 
 ### Step 3: Monitor
 
-```bash
+```powershell
 # 1. Watch CloudWatch logs (if using AWS Lambda backend)
 aws logs tail /aws/lambda/pv-api-prod-me --follow
 
@@ -283,7 +283,7 @@ describe('Profile Media Upload', () => {
 ### If Issues Detected
 
 **Scenario 1: Upload completely broken**
-```bash
+```powershell
 # 1. Revert to previous deployment
 git revert HEAD~5..HEAD  # Revert last 5 commits
 npm run build
@@ -297,7 +297,7 @@ aws cloudfront create-invalidation --distribution-id ID --paths "/*"
 ```
 
 **Scenario 2: Cropper not working but old flow needed**
-```bash
+```powershell
 # Quick fix: Temporarily hide cropper button
 # Add to ProfileEdit.jsx:
 const DISABLE_CROPPER = true;
@@ -311,12 +311,12 @@ npm run build && deploy
 ```
 
 **Scenario 3: Backend errors after frontend deploy**
-```bash
+```powershell
 # Check if backend needs update
 # If backend out of sync with frontend expectations:
 
 # 1. Check which fields frontend sends
-grep "PATCH /me/profile payload" cloudwatch-logs
+Select-String "PATCH /me/profile payload" cloudwatch-logs
 
 # 2. Update backend to handle new fields
 # (Should not be needed - backend already flexible)
@@ -375,7 +375,7 @@ Deployment is successful when:
 ### Issue: Cache not invalidated
 **Cause**: Old assets still served by CDN  
 **Fix**: 
-```bash
+```powershell
 # Clear browser cache (Ctrl+Shift+Delete)
 # Force CDN invalidation
 aws cloudfront create-invalidation --distribution-id ID --paths "/*"
@@ -448,27 +448,27 @@ Thanks!
 ## Appendix: Quick Commands
 
 ### Build & Deploy
-```bash
+```powershell
 npm run build && npm run deploy
 ```
 
 ### Test Locally
-```bash
+```powershell
 npm run preview
 ```
 
 ### Check Logs
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-me --follow
 ```
 
 ### Invalidate Cache
-```bash
+```powershell
 aws cloudfront create-invalidation --distribution-id XXX --paths "/*"
 ```
 
 ### Rollback
-```bash
+```powershell
 git revert HEAD~5..HEAD && npm run build && npm run deploy
 ```
 

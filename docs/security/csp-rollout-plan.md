@@ -188,7 +188,7 @@ functions:
 
 ### 1.2 Deploy to Production
 
-```bash
+```powershell
 # Deploy serverless CSP endpoint
 cd serverless
 npm run deploy -- --stage prod
@@ -346,7 +346,7 @@ const cspHeader = Object.entries(cspDirectives)
 
 ### 2.4 Test Thoroughly
 
-```bash
+```powershell
 # Run automated tests
 npm run test
 
@@ -377,7 +377,7 @@ res.setHeader('Content-Security-Policy-Report-Only', stricterPolicy) // Keep rep
 ```
 
 **Deploy**:
-```bash
+```powershell
 npm run deploy:staging
 ```
 
@@ -396,7 +396,7 @@ npm run deploy:staging
 
 ### 3.3 Load Testing
 
-```bash
+```powershell
 # Run load tests
 artillery run load-tests/csp-staging.yml
 

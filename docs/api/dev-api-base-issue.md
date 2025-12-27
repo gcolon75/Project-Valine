@@ -50,7 +50,7 @@ This environment variable is not set in the GitHub Actions deployment environmen
 **Cost:** ~$15/month for db.t3.micro
 
 1. Create RDS PostgreSQL instance:
-   ```bash
+   ```powershell
    aws rds create-db-instance \
      --db-instance-identifier valine-dev-db \
      --db-instance-class db.t3.micro \
@@ -116,13 +116,13 @@ env:
 
 After deploying, run migrations:
 
-```bash
+```powershell
 cd api
 npx prisma migrate deploy
 ```
 
 Or use the deployment script:
-```bash
+```powershell
 ./scripts/deployment/setup-database.sh
 ```
 
@@ -140,14 +140,14 @@ https://<api-id>.execute-api.us-west-2.amazonaws.com/prod
 ```
 
 Test health endpoint:
-```bash
-curl https://<api-id>.execute-api.us-west-2.amazonaws.com/prod/health
+```powershell
+Invoke-RestMethod -Uri "https://<api-id>.execute-api.us-west-2.amazonaws.com/prod/health" -Method Get
 ```
 
 ### 6. Update Frontend
 
 Configure frontend with API_BASE:
-```bash
+```powershell
 # Create .env file
 echo "VITE_API_BASE=https://<api-id>.execute-api.us-west-2.amazonaws.com/prod" > .env
 ```
@@ -174,32 +174,19 @@ After deployment, verify:
 
 Once deployed, test with:
 
-```bash
+```powershell
 # Set API_BASE
-export API_BASE="https://your-api.execute-api.us-west-2.amazonaws.com/prod"
+$env:API_BASE = "https://your-api.execute-api.us-west-2.amazonaws.com/prod"
 
 # Health check
-curl $API_BASE/health
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Register test user
-curl -X POST $API_BASE/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "testpass123",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-
-# Login
-curl -X POST $API_BASE/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "testpass123"}'
-
-# Get current user (requires token from login)
-curl $API_BASE/auth/me \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer YOUR_TOKEN"
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 ## Related Files
 

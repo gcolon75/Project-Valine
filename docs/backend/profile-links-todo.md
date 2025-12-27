@@ -9,7 +9,7 @@ This document outlines the backend integration requirements for the Profile Edit
 The frontend UI has been implemented with optimistic updates and client-side validation. Backend integration is required to persist changes.
 
 ## Feature Flag
-```bash
+```powershell
 # Set this environment variable to enable backend API calls
 VITE_ENABLE_PROFILE_LINKS_API=true
 ```

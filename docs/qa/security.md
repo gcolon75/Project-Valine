@@ -27,7 +27,7 @@ The `security-audit.yml` workflow runs:
 
 ### Manual Dependency Checks
 
-```bash
+```powershell
 # Run npm audit
 npm audit
 
@@ -54,7 +54,7 @@ npm view <package-name> versions
 ### Fixing Vulnerabilities
 
 #### Automatic Fixes
-```bash
+```powershell
 # Try automatic fix (may update dependencies)
 npm audit fix
 
@@ -68,7 +68,7 @@ npm audit fix --force
 **⚠️ Warning**: Always test after `npm audit fix`, especially with `--force`
 
 #### Manual Fixes
-```bash
+```powershell
 # Update specific package
 npm install package@latest
 
@@ -121,7 +121,7 @@ npm ls vulnerable-package
 
 ### Checking Before Adding
 
-```bash
+```powershell
 # Before: npm install new-package
 
 # Check size
@@ -174,7 +174,7 @@ const API_KEY = import.meta.env.VITE_API_KEY || 'dev_key_for_testing';
 ### Environment Variables
 
 #### Local Development (.env)
-```bash
+```powershell
 # .env (ignored by git)
 VITE_API_BASE=http://localhost:3000
 VITE_SANITY_PROJECT_ID=your-project-id
@@ -185,7 +185,7 @@ VITE_SANITY_DATASET=production
 ```
 
 #### .env.example
-```bash
+```powershell
 # .env.example (committed to git)
 VITE_API_BASE=https://api.example.com
 VITE_SANITY_PROJECT_ID=your-project-id
@@ -233,7 +233,7 @@ Our CI runs automated secret scanning on every commit:
 
 **⚠️ Warning**: Rewriting history affects all collaborators
 
-```bash
+```powershell
 # Using git-filter-repo (recommended)
 pip install git-filter-repo
 git filter-repo --path path/to/secret/file --invert-paths
@@ -253,7 +253,7 @@ git push --force
 ### Preventing Secret Commits
 
 #### Pre-commit Hook
-```bash
+```powershell
 # Install husky
 npm install --save-dev husky
 
@@ -271,7 +271,7 @@ npx husky add .husky/pre-commit "npm run check-secrets"
 ```
 
 #### Git Secrets Tool
-```bash
+```powershell
 # Install git-secrets
 # macOS: brew install git-secrets
 # Ubuntu: apt-get install git-secrets

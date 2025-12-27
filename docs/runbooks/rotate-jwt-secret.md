@@ -47,7 +47,7 @@ Operational procedures for safely rotating the `AUTH_JWT_SECRET` in production P
 - [x] AWS CloudWatch:GetLogEvents permission (for monitoring)
 
 ### Required Tools
-```bash
+```powershell
 # Verify AWS CLI
 aws --version
 aws sts get-caller-identity
@@ -82,7 +82,7 @@ This approach allows both old and new JWTs to be valid during a grace period, pr
 
 ### Step 1: Generate New Secret
 
-```bash
+```powershell
 # Generate a cryptographically secure 256-bit secret
 NEW_SECRET=$(openssl rand -base64 32)
 
@@ -108,7 +108,7 @@ aws secretsmanager create-secret \
 
 ### Step 2: Get Current Secret
 
-```bash
+```powershell
 # Retrieve current JWT secret
 OLD_SECRET=$(aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -130,7 +130,7 @@ aws secretsmanager create-secret \
 
 > ⚠️ **Code Requirement**: This step assumes your backend supports `AUTH_JWT_SECRET_SECONDARY` for dual verification.
 
-```bash
+```powershell
 # Update Lambda with both secrets
 aws lambda update-function-configuration \
   --function-name valine-api-prod \
@@ -155,7 +155,7 @@ aws lambda update-function-configuration \
 
 ### Step 4: Wait for Grace Period
 
-```bash
+```powershell
 # Grace period allows old tokens to be used while new ones are issued
 # Recommended: 7 days (refresh token TTL)
 
@@ -180,7 +180,7 @@ aws logs filter-log-events \
 
 After grace period (7+ days), remove the secondary secret:
 
-```bash
+```powershell
 # Remove secondary secret
 aws lambda update-function-configuration \
   --function-name valine-api-prod \
@@ -204,7 +204,7 @@ aws lambda update-function-configuration \
 
 ### Step 6: Verify Rotation Complete
 
-```bash
+```powershell
 # Confirm only new secret is active
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -221,7 +221,7 @@ This approach immediately invalidates all sessions. Use this for emergency rotat
 
 ### Step 1: Announce Maintenance
 
-```bash
+```powershell
 # Send notification to users
 # (Use your notification system or email)
 
@@ -230,7 +230,7 @@ echo "Maintenance window: $(date -Iseconds) - All users will be logged out"
 
 ### Step 2: Generate New Secret
 
-```bash
+```powershell
 # Generate new secret
 NEW_SECRET=$(openssl rand -base64 32)
 
@@ -247,7 +247,7 @@ aws secretsmanager create-secret \
 
 ### Step 3: Update Lambda Configuration
 
-```bash
+```powershell
 # Backup current configuration
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -286,7 +286,7 @@ aws lambda update-function-configuration \
 
 ### Step 4: Wait for Deployment
 
-```bash
+```powershell
 # Monitor deployment status
 while true; do
   STATE=$(aws lambda get-function-configuration \
@@ -308,14 +308,14 @@ done
 
 ### Step 5: Verify All Sessions Invalidated
 
-```bash
+```powershell
 # Test with old token (should fail)
 OLD_TOKEN="<previous-access-token>"
 
-curl -X GET https://api.valine.app/profile/me \
-  -H "Authorization: Bearer $OLD_TOKEN" \
-  -H "Content-Type: application/json"
-```
+Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $OLD_TOKEN"
+    "Content-Type" = "application/json"
+}```
 
 **Expected Response:**
 ```json
@@ -333,7 +333,7 @@ For immediate security threats (leaked secret, active breach):
 
 ### Quick Rotation Script
 
-```bash
+```powershell
 #!/bin/bash
 set -e
 
@@ -392,8 +392,8 @@ fi
 
 **Save as:** `/tmp/emergency-jwt-rotation.sh`
 
-```bash
-chmod +x /tmp/emergency-jwt-rotation.sh
+```powershell
+# Note: chmod not needed in PowerShell
 ./tmp/emergency-jwt-rotation.sh
 ```
 
@@ -403,28 +403,20 @@ chmod +x /tmp/emergency-jwt-rotation.sh
 
 ### Test 1: New Logins Work
 
-```bash
+```powershell
 # User logs in with credentials
-curl -X POST https://api.valine.app/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "owner@example.com",
-    "password": "SecurePassword123!"
-  }' | jq -r '.accessToken' > /tmp/new_token.txt
-
-NEW_TOKEN=$(cat /tmp/new_token.txt)
-
-echo "New access token obtained: ${NEW_TOKEN:0:20}..."
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "owner@example.com", "password": "SecurePassword123!" }' -ContentType 'application/json'```
 
 ### Test 2: New Tokens Are Valid
 
-```bash
+```powershell
 # Use new token to access protected endpoint
-curl -X GET https://api.valine.app/profile/me \
-  -H "Authorization: Bearer $NEW_TOKEN" \
-  -H "Content-Type: application/json" | jq
-```
+Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $NEW_TOKEN"
+    "Content-Type" = "application/json"
+}```
 
 **Expected Response:**
 ```json
@@ -437,14 +429,14 @@ curl -X GET https://api.valine.app/profile/me \
 
 ### Test 3: Old Tokens Are Invalid (Approach 2 Only)
 
-```bash
+```powershell
 # Try using old token
 OLD_TOKEN="<token-from-before-rotation>"
 
-curl -X GET https://api.valine.app/profile/me \
-  -H "Authorization: Bearer $OLD_TOKEN" \
-  -H "Content-Type: application/json"
-```
+Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $OLD_TOKEN"
+    "Content-Type" = "application/json"
+}```
 
 **Expected Response:**
 ```json
@@ -456,14 +448,13 @@ curl -X GET https://api.valine.app/profile/me \
 
 ### Test 4: Token Refresh Works
 
-```bash
+```powershell
 # Refresh token to get new access token
 REFRESH_TOKEN="<refresh-token>"
 
-curl -X POST https://api.valine.app/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d "{\"refreshToken\": \"$REFRESH_TOKEN\"}" | jq
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{\' -ContentType 'application/json'```
 
 **Expected Response:**
 ```json
@@ -475,7 +466,7 @@ curl -X POST https://api.valine.app/auth/refresh \
 
 ### Test 5: Monitor Logs for Errors
 
-```bash
+```powershell
 # Check for JWT verification errors
 aws logs tail /aws/lambda/valine-api-prod \
   --region us-west-2 \
@@ -495,7 +486,7 @@ aws logs tail /aws/lambda/valine-api-prod \
 
 If the rotation causes unexpected problems:
 
-```bash
+```powershell
 # Retrieve backup secret
 BACKUP_SECRET=$(aws secretsmanager get-secret-value \
   --secret-id valine/prod/jwt-secret-old \
@@ -540,7 +531,7 @@ echo "⚠️ Old user sessions should work again"
 - Widespread 401 responses
 
 **Diagnosis:**
-```bash
+```powershell
 # Check if secret was changed recently
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -561,7 +552,7 @@ aws lambda get-function-configuration \
 - Some users can login, others can't
 
 **Diagnosis:**
-```bash
+```powershell
 # Check for dual-secret configuration
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -582,7 +573,7 @@ openssl: command not found
 ```
 
 **Solution:**
-```bash
+```powershell
 # Alternative: Use Node.js
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
@@ -602,7 +593,7 @@ Environment variables cannot exceed 4 KB
 ```
 
 **Solution:**
-```bash
+```powershell
 # Store secret in AWS Secrets Manager instead
 aws secretsmanager create-secret \
   --name valine/prod/jwt-secret \
@@ -619,7 +610,7 @@ aws secretsmanager create-secret \
 
 ### CloudWatch Metrics
 
-```bash
+```powershell
 # Monitor 401 error rate
 aws cloudwatch put-metric-alarm \
   --alarm-name valine-high-401-rate \
@@ -636,7 +627,7 @@ aws cloudwatch put-metric-alarm \
 
 ### Log Insights Queries
 
-```bash
+```powershell
 # Detect failed JWT verifications
 aws logs start-query \
   --log-group-name /aws/lambda/valine-api-prod \
@@ -650,9 +641,9 @@ aws logs start-query \
 
 Document the rotation:
 
-```bash
+```powershell
 # Create audit record
-cat >> /var/log/valine/jwt-rotations.log << EOF
+Get-Content >> /var/log/valine/jwt-rotations.log << EOF
 ---
 Date: $(date -Iseconds)
 Operator: $(aws sts get-caller-identity --query Arn --output text)

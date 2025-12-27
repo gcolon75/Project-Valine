@@ -220,7 +220,7 @@ Phase 5 implementation is **COMPLETE** and ready for merge to main. All acceptan
 
 ### Unit Tests
 
-```bash
+```powershell
 $ cd orchestrator && pytest tests/ -v
 
 ============================= test session starts ==============================
@@ -242,7 +242,7 @@ tests/test_trace_store.py::TestExecutionTrace::test_trace_initialization ...... 
 
 ### Linting
 
-```bash
+```powershell
 $ cd orchestrator && flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
 0
 ```
@@ -251,7 +251,7 @@ $ cd orchestrator && flake8 app --count --select=E9,F63,F7,F82 --show-source --s
 
 ### Type Checking
 
-```bash
+```powershell
 $ cd orchestrator && mypy app --ignore-missing-imports
 Success: no issues found in X source files
 ```
@@ -522,14 +522,14 @@ fields @timestamp, fn, msg
 ### Week 1 (Logging Deployment)
 
 2. **Deploy to staging**
-   ```bash
+   ```powershell
    cd orchestrator
    sam build
    sam deploy --config-env staging
    ```
 
 3. **Deploy to production**
-   ```bash
+   ```powershell
    sam deploy --config-env prod
    ```
 
@@ -569,14 +569,14 @@ fields @timestamp, fn, msg
 ### Local Testing
 
 **Test Execution:**
-```bash
+```powershell
 $ cd orchestrator
 $ pytest tests/ -v
 ============================= 199 passed in 4.57s ==============================
 ```
 
 **Linting:**
-```bash
+```powershell
 $ flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
 0
 ```

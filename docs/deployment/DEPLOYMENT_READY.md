@@ -140,9 +140,9 @@ All requirements met. Safe to proceed with:
 
 ### Step 1: Create Production Accounts
 
-```bash
-export DATABASE_URL="postgresql://..."
-export ALLOWED_USER_EMAILS="ghawk075@gmail.com"
+```powershell
+$env:DATABASE_URL = "postgresql://..."
+$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com"
 
 # Owner account
 node scripts/provision-production-accounts.mjs \
@@ -159,7 +159,7 @@ node scripts/provision-production-accounts.mjs \
 
 ### Step 2: Deploy Backend (if needed)
 
-```bash
+```powershell
 cd serverless
 npx prisma migrate deploy  # Run migrations first
 npx serverless deploy --stage prod
@@ -167,17 +167,17 @@ npx serverless deploy --stage prod
 
 ### Step 3: Deploy Frontend
 
-```bash
-export VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
-export S3_BUCKET=your-bucket
-export CLOUDFRONT_DISTRIBUTION_ID=your-dist-id
+```powershell
+$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:S3_BUCKET = "your-bucket"
+$env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
 ./scripts/deploy-ux-only.sh
 ```
 
 ### Step 4: Verify Deployment
 
-```bash
+```powershell
 node scripts/verify-production-deployment.mjs
 ```
 

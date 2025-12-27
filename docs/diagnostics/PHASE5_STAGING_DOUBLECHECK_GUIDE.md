@@ -78,14 +78,14 @@ The easiest way to run validation is through GitHub Actions:
 
 For local execution with AWS credentials:
 
-```bash
+```powershell
 # Navigate to scripts directory
 cd orchestrator/scripts
 
 # Set environment variables
-export STAGING_DISCORD_BOT_TOKEN="your-token-here"
-export STAGING_GITHUB_TOKEN="your-token-here"
-export AWS_PROFILE="staging-profile"  # or configure default credentials
+$env:STAGING_DISCORD_BOT_TOKEN = "your-token-here"
+$env:STAGING_GITHUB_TOKEN = "your-token-here"
+$env:AWS_PROFILE = "staging-profile"  # or configure default credentials"
 
 # Run validation
 ./run_phase5_validation.sh
@@ -226,7 +226,7 @@ All evidence is collected with automatic redaction:
 
 ### CloudWatch Logs
 
-```bash
+```powershell
 # Filter by trace_id
 aws logs filter-log-events \
   --region us-west-2 \
@@ -335,7 +335,7 @@ Solution: Verify using staging channel 1428102811832553554
 
 ### Debug Commands
 
-```bash
+```powershell
 # Verify AWS access
 aws sts get-caller-identity
 

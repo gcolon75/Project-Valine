@@ -153,7 +153,7 @@ permissions:
 
 ### Running Workflows Manually
 
-```bash
+```powershell
 # Via GitHub CLI
 gh workflow run accessibility-audit.yml
 gh workflow run lighthouse-ci.yml
@@ -180,7 +180,7 @@ gh workflow run security-audit.yml
 
 ### Local Testing
 
-```bash
+```powershell
 # Run tests
 npm run test:run
 

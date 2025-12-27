@@ -362,7 +362,7 @@ await sendVerificationEmail(user.email, newToken)
 ### Procedure
 
 #### 1. Verify Admin Authorization
-```bash
+```powershell
 # Check admin permissions
 SELECT role FROM users WHERE id = ?
 # Must have role = 'admin' or 'support_tier1'
@@ -427,7 +427,7 @@ If you have any questions, please refer to support ticket: SUP-67890
 **Check**:
 1. **Spam folder**
 2. **Email service operational**:
-   ```bash
+   ```powershell
    # Check email service status
    aws cloudwatch get-metric-statistics \
      --namespace AWS/SES \

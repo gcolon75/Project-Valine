@@ -63,7 +63,7 @@ def list_conversations(
 Created `scripts/list_backend_conversations.py` - a command-line interface for listing conversations.
 
 **Usage:**
-```bash
+```powershell
 # List all conversations (JSON output)
 python scripts/list_backend_conversations.py
 
@@ -184,7 +184,7 @@ print(json.dumps(all_conversations, indent=2))
 
 ### Command Line
 
-```bash
+```powershell
 # Simple query
 python scripts/list_backend_conversations.py
 
@@ -273,7 +273,7 @@ Potential improvements for future iterations:
 ## Testing
 
 Run tests with:
-```bash
+```powershell
 cd orchestrator
 python -m unittest tests.test_backend_agent -v
 ```

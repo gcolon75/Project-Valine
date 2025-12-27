@@ -128,7 +128,7 @@ async function processLargeData(data) {
 **Current script**: `npm run optimize:images`
 
 **Best Practices**:
-```bash
+```powershell
 # Convert to modern formats
 # WebP: 25-35% smaller than JPEG
 # AVIF: 20% smaller than WebP (newer)
@@ -206,7 +206,7 @@ import { debounce } from 'lodash-es';
 ```
 
 #### Remove Unused Code
-```bash
+```powershell
 # Check for unused dependencies
 npx depcheck
 
@@ -266,7 +266,7 @@ module.exports = {
 ```
 
 **Subsetting**:
-```bash
+```powershell
 # Include only needed characters
 # Example for English + common symbols
 pyftsubset font.ttf \
@@ -342,7 +342,7 @@ workbox.routing.registerRoute(
 5. Click "Analyze page load"
 
 ### Via CLI
-```bash
+```powershell
 # Install Lighthouse globally
 npm install -g lighthouse
 
@@ -357,7 +357,7 @@ lighthouse https://localhost:4173 \
 ```
 
 ### Via CI Workflow
-```bash
+```powershell
 # Trigger manual run
 gh workflow run lighthouse-ci.yml
 
@@ -479,7 +479,7 @@ The workflow fails if:
 - Document reason in PR
 
 ### Tracking Over Time
-```bash
+```powershell
 # Store results for comparison
 # Consider integrating with:
 # - Lighthouse CI Server

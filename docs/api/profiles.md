@@ -32,10 +32,10 @@ Get user profile information.
 ```
 
 **Example Request:**
-```bash
-curl -X GET http://localhost:5000/profiles/user_123 \
-  -H "Authorization: Bearer dev-token"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get -Headers @{
+    "Authorization" = "Bearer dev-token"
+}```
 
 ---
 
@@ -133,18 +133,11 @@ Invalid social link key (400):
 ```
 
 **Example Request:**
-```bash
-curl -X PATCH http://localhost:5000/profiles/user_123 \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Voice Actor",
-    "socialLinks": {
-      "website": "https://example.com",
-      "imdb": "https://imdb.com/name/nm1234567"
-    }
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com", "imdb": "https://imdb.com/name/nm1234567" } }' -ContentType 'application/json'```
 
 ---
 
@@ -320,50 +313,34 @@ All string inputs are sanitized:
 ### Manual Testing with curl
 
 **Test GET:**
-```bash
-curl -X GET http://localhost:5000/profiles/user_123
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get
 ```
 
 **Test PATCH with valid data:**
-```bash
-curl -X PATCH http://localhost:5000/profiles/user_123 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Voice Actor",
-    "socialLinks": {
-      "website": "https://example.com"
-    }
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com" } }' -ContentType 'application/json'```
 
 **Test PATCH with invalid URL (should return 400):**
-```bash
-curl -X PATCH http://localhost:5000/profiles/user_123 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "socialLinks": {
-      "website": "ftp://example.com"
-    }
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "socialLinks": { "website": "ftp://example.com" } }' -ContentType 'application/json'```
 
 **Test PATCH with invalid key (should return 400):**
-```bash
-curl -X PATCH http://localhost:5000/profiles/user_123 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "socialLinks": {
-      "twitter": "https://twitter.com/user"
-    }
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "socialLinks": { "twitter": "https://twitter.com/user" } }' -ContentType 'application/json'```
 
 ### Contract Tests
 
 Contract tests are located in `server/src/routes/__tests__/profiles.test.js`
 
 Run tests:
-```bash
+```powershell
 cd server
 npm test -- profiles.test.js
 ```

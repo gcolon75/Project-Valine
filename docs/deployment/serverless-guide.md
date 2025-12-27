@@ -16,7 +16,7 @@
 
 Create a `.env` file in the project root:
 
-```bash
+```powershell
 # Database URL (required)
 DATABASE_URL="postgresql://username:password@host:5432/valine_db"
 
@@ -32,14 +32,14 @@ JWT_SECRET=your-secret-key-for-production
 
 ### 2. Install Dependencies
 
-```bash
+```powershell
 cd serverless
 npm install
 ```
 
 ### 3. Generate Prisma Client
 
-```bash
+```powershell
 cd ../api
 npx prisma generate
 cd ../serverless
@@ -47,7 +47,7 @@ cd ../serverless
 
 ### 4. Run Database Migrations
 
-```bash
+```powershell
 cd ../api
 npx prisma migrate deploy
 cd ../serverless
@@ -55,7 +55,7 @@ cd ../serverless
 
 ### 5. Deploy to AWS
 
-```bash
+```powershell
 # Deploy using the deployment script
 cd ..
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
@@ -93,7 +93,7 @@ Your **API_BASE** is: `https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev
 
 #### Option 2: Local PostgreSQL (Development)
 
-```bash
+```powershell
 # Install PostgreSQL
 brew install postgresql  # macOS
 sudo apt install postgresql  # Ubuntu
@@ -102,7 +102,7 @@ sudo apt install postgresql  # Ubuntu
 createdb valine_db
 
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://localhost:5432/valine_db"
+$env:DATABASE_URL = "postgresql://localhost:5432/valine_db"
 ```
 
 #### Option 3: Supabase (Free Tier)
@@ -115,7 +115,7 @@ export DATABASE_URL="postgresql://localhost:5432/valine_db"
 
 #### Method 1: AWS CLI Profile
 
-```bash
+```powershell
 # Configure AWS CLI
 aws configure
 
@@ -128,10 +128,10 @@ AWS_PROFILE=valine-dev npx serverless deploy
 
 #### Method 2: Environment Variables
 
-```bash
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
-export AWS_REGION=us-west-2
+```powershell
+$env:AWS_ACCESS_KEY_ID = "your-access-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret-key"
+$env:AWS_REGION = "us-west-2"
 ```
 
 #### Method 3: IAM Role (CI/CD)
@@ -144,7 +144,7 @@ For GitHub Actions or other CI/CD, use IAM roles with OIDC.
 
 ### Create a New Migration
 
-```bash
+```powershell
 cd api
 npx prisma migrate dev --name add_feature_name
 ```
@@ -156,7 +156,7 @@ This will:
 
 ### Apply Migrations (Production)
 
-```bash
+```powershell
 cd api
 npx prisma migrate deploy
 ```
@@ -165,7 +165,7 @@ npx prisma migrate deploy
 
 ### Reset Database (Development Only)
 
-```bash
+```powershell
 cd api
 npx prisma migrate reset
 ```
@@ -191,35 +191,35 @@ Optional variables:
 
 ### Development
 
-```bash
-export STAGE=dev
-export DATABASE_URL="postgresql://localhost:5432/valine_dev"
-export JWT_SECRET="dev-secret-key-change-in-production"
+```powershell
+$env:STAGE = "dev"
+$env:DATABASE_URL = "postgresql://localhost:5432/valine_dev"
+$env:JWT_SECRET = "dev-secret-key-change-in-production"
 npx serverless deploy --stage dev
 ```
 
 ### Staging
 
-```bash
-export STAGE=staging
-export DATABASE_URL="postgresql://...staging_db"
-export JWT_SECRET="$(openssl rand -base64 32)"
+```powershell
+$env:STAGE = "staging"
+$env:DATABASE_URL = "postgresql://...staging_db"
+$env:JWT_SECRET = "$(openssl rand -base64 32)"
 npx serverless deploy --stage staging
 ```
 
 ### Production
 
-```bash
-export STAGE=prod
-export DATABASE_URL="postgresql://...prod_db"
-export JWT_SECRET="your-production-secret-key"
-export EMAIL_ENABLED=true
-export FRONTEND_URL="https://valine.app"
+```powershell
+$env:STAGE = "prod"
+$env:DATABASE_URL = "postgresql://...prod_db"
+$env:JWT_SECRET = "your-production-secret-key"
+$env:EMAIL_ENABLED = "true"
+$env:FRONTEND_URL = "https://valine.app"
 npx serverless deploy --stage prod
 ```
 
 **Security Note:** Always use a strong, randomly generated JWT_SECRET in staging and production. Generate one with:
-```bash
+```powershell
 openssl rand -base64 32
 ```
 
@@ -229,9 +229,9 @@ openssl rand -base64 32
 
 ### 1. Test Health Endpoint
 
-```bash
-export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
-curl "$API_BASE/health"
+```powershell
+$env:API_BASE = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 ```
 
 Expected response:
@@ -246,8 +246,8 @@ Expected response:
 
 ### 2. Test Meta Endpoint
 
-```bash
-curl "$API_BASE/meta"
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/meta" -Method Get
 ```
 
 This will show all available endpoints.
@@ -266,16 +266,10 @@ The serverless backend implements a complete authentication system with email ve
 
 #### Example: Register a New User
 
-```bash
-curl -X POST "$API_BASE/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "securePass123",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "securePass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 **Response (201 Created):**
 ```json
@@ -298,14 +292,10 @@ curl -X POST "$API_BASE/auth/register" \
 
 #### Example: Login
 
-```bash
-curl -X POST "$API_BASE/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "securePass123"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "securePass123" }' -ContentType 'application/json'```
 
 **Response (200 OK):**
 ```json
@@ -328,14 +318,14 @@ curl -X POST "$API_BASE/auth/login" \
 
 #### Example: Get Current User
 
-```bash
+```powershell
 # Save the token from login/register response
-export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+$env:TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # Get current user profile
-curl "$API_BASE/auth/me" \
-  -H "Authorization: Bearer $TOKEN"
-```
+Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+}```
 
 **Response (200 OK):**
 ```json
@@ -362,14 +352,11 @@ curl "$API_BASE/auth/me" \
 
 #### Example: Verify Email
 
-```bash
+```powershell
 # Token comes from verification email link
-curl -X POST "$API_BASE/auth/verify-email" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "abc123def456..."
-  }'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "token": "abc123def456..." }' -ContentType 'application/json'```
 
 **Response (200 OK):**
 ```json
@@ -381,10 +368,10 @@ curl -X POST "$API_BASE/auth/verify-email" \
 
 #### Example: Resend Verification Email
 
-```bash
-curl -X POST "$API_BASE/auth/resend-verification" \
-  -H "Authorization: Bearer $TOKEN"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+}```
 
 **Response (200 OK):**
 ```json
@@ -421,7 +408,7 @@ curl -X POST "$API_BASE/auth/resend-verification" \
 
 Use the provided test script:
 
-```bash
+```powershell
 ./scripts/deployment/test-endpoints.sh
 ```
 
@@ -431,7 +418,7 @@ Use the provided test script:
 
 After deployment, update your frontend `.env` file:
 
-```bash
+```powershell
 # In client/.env or .env.local
 VITE_API_BASE=https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev
 ```
@@ -446,7 +433,7 @@ Restart your frontend dev server to pick up the new environment variable.
 
 View Lambda logs in AWS CloudWatch:
 
-```bash
+```powershell
 # View logs for a specific function
 npx serverless logs -f login --stage dev --tail
 
@@ -558,7 +545,7 @@ functions:
 
 If deployment fails or has issues:
 
-```bash
+```powershell
 # List deployments
 npx serverless deploy list
 
@@ -572,7 +559,7 @@ npx serverless rollback --timestamp TIMESTAMP
 
 To remove all deployed resources:
 
-```bash
+```powershell
 npx serverless remove --stage dev
 ```
 

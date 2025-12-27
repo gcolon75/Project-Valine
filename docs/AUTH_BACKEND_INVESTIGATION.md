@@ -17,7 +17,7 @@ This runbook provides step-by-step guidance for diagnosing and fixing authentica
 Before diving into detailed troubleshooting, run the diagnostic script:
 
 ### Node.js (Cross-platform)
-```bash
+```powershell
 node scripts/check-auth-backend.js --domain fb9pxd6m09.execute-api.us-west-2.amazonaws.com
 ```
 
@@ -43,10 +43,10 @@ The script will identify the failure point (DNS, TCP, or HTTP) and provide targe
 **Symptom:** DNS resolution fails, or wrong hostname is being used.
 
 **Check:**
-```bash
+```powershell
 # In the frontend repository, check environment files
-cat .env.production
-cat .env.local
+Get-Content .env.production
+Get-Content .env.local
 
 # Look for these variables:
 # VITE_API_BASE=https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com
@@ -59,13 +59,13 @@ cat .env.local
 2. Check for typos in the domain name
 3. If using a custom domain, ensure it's configured correctly
 4. Rebuild and redeploy frontend if environment variables changed:
-   ```bash
+   ```powershell
    npm run build
    # Deploy updated build
    ```
 
 **AWS Console Check:**
-```bash
+```powershell
 # List all API Gateway REST APIs
 aws apigateway get-rest-apis \
   --query 'items[*].[name,id]' \
@@ -88,7 +88,7 @@ aws apigatewayv2 get-apis \
 **Symptom:** DNS lookup fails, domain doesn't resolve to an IP address.
 
 **Test DNS locally:**
-```bash
+```powershell
 # Test with nslookup
 nslookup fb9pxd6m09.execute-api.us-west-2.amazonaws.com
 
@@ -107,7 +107,7 @@ Resolve-DnsName -Name fb9pxd6m09.execute-api.us-west-2.amazonaws.com
 **If DNS fails:**
 
 1. **Check if API Gateway endpoint exists:**
-   ```bash
+   ```powershell
    # List stages for a REST API
    aws apigateway get-stages --rest-api-id YOUR_API_ID
    
@@ -121,7 +121,7 @@ Resolve-DnsName -Name fb9pxd6m09.execute-api.us-west-2.amazonaws.com
    - Check if the stage name matches the URL being used
 
 3. **If using a custom domain (e.g., api.valine.com):**
-   ```bash
+   ```powershell
    # List custom domain names
    aws apigateway get-domain-names \
      --query 'items[*].[domainName,regionalDomainName]' \
@@ -141,7 +141,7 @@ Resolve-DnsName -Name fb9pxd6m09.execute-api.us-west-2.amazonaws.com
    - If DNS record was recently added, wait 5-15 minutes for propagation
    - Test from different DNS servers: `dig @8.8.8.8 api.valine.com`
    - Clear local DNS cache:
-     ```bash
+     ```powershell
      # Linux
      sudo systemd-resolve --flush-caches
      
@@ -159,7 +159,7 @@ Resolve-DnsName -Name fb9pxd6m09.execute-api.us-west-2.amazonaws.com
 **Symptom:** DNS resolves but API doesn't respond, or returns 403/404.
 
 **Verify API is deployed:**
-```bash
+```powershell
 # Check deployment status for REST API
 aws apigateway get-deployments --rest-api-id YOUR_API_ID
 
@@ -177,7 +177,7 @@ aws apigatewayv2 get-stages --api-id YOUR_API_ID
 - API Gateway deployments are separate from Lambda deployments
 
 **Force new deployment:**
-```bash
+```powershell
 # Create a new deployment (REST API)
 aws apigateway create-deployment \
   --rest-api-id YOUR_API_ID \
@@ -195,7 +195,7 @@ aws apigatewayv2 create-deployment --api-id YOUR_API_ID
 **Symptom:** API is behind CloudFront and requests are being blocked or not routed correctly.
 
 **Check if CloudFront is in front of API:**
-```bash
+```powershell
 # List CloudFront distributions
 aws cloudfront list-distributions \
   --query 'DistributionList.Items[*].[Id,DomainName,Origins.Items[0].DomainName]' \
@@ -206,7 +206,7 @@ aws cloudfront get-distribution --id YOUR_DISTRIBUTION_ID
 ```
 
 **Verify origin configuration:**
-```bash
+```powershell
 # Check if API Gateway is configured as an origin
 aws cloudfront get-distribution-config \
   --id YOUR_DISTRIBUTION_ID \
@@ -214,7 +214,7 @@ aws cloudfront get-distribution-config \
 ```
 
 **Test CloudFront directly:**
-```bash
+```powershell
 # Get CloudFront domain name
 CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution \
   --id YOUR_DISTRIBUTION_ID \
@@ -222,12 +222,12 @@ CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution \
   --output text)
 
 # Test requests
-curl -I "https://$CLOUDFRONT_DOMAIN/auth/me"
-curl -I "https://$CLOUDFRONT_DOMAIN/"
+Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Check CloudFront Function (if SPA routing is needed):**
-```bash
+```powershell
 # List CloudFront functions
 aws cloudfront list-functions
 
@@ -246,7 +246,7 @@ aws cloudfront get-distribution-config --id YOUR_DISTRIBUTION_ID \
 **Symptom:** Requests reach CloudFront but are blocked by WAF.
 
 **Check if WAF is attached:**
-```bash
+```powershell
 # For CloudFront (WAFv2)
 aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1
 
@@ -259,7 +259,7 @@ aws wafv2 get-web-acl \
 ```
 
 **Check WAF rules:**
-```bash
+```powershell
 # List rules in web ACL
 aws wafv2 get-web-acl \
   --scope CLOUDFRONT \
@@ -270,7 +270,7 @@ aws wafv2 get-web-acl \
 ```
 
 **Check WAF logs (if enabled):**
-```bash
+```powershell
 # WAF logs are stored in S3 or CloudWatch Logs
 # Check S3 bucket for WAF logs
 aws s3 ls s3://aws-waf-logs-YOUR_BUCKET/
@@ -280,7 +280,7 @@ aws s3 cp s3://aws-waf-logs-YOUR_BUCKET/RECENT_LOG.gz - | gunzip | jq '.action'
 ```
 
 **Temporarily disable WAF for testing:**
-```bash
+```powershell
 # Get current web ACL configuration
 aws wafv2 get-web-acl \
   --scope CLOUDFRONT \
@@ -299,22 +299,16 @@ aws wafv2 get-web-acl \
 **Symptom:** Browser shows CORS errors in console alongside network errors.
 
 **Test CORS with OPTIONS request:**
-```bash
+```powershell
 # Test OPTIONS request
-curl -X OPTIONS https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://your-frontend-domain.com" \
-  -H "Access-Control-Request-Method: POST" \
-  -H "Access-Control-Request-Headers: Content-Type" \
-  -v
-
-# Expected headers in response:
-# Access-Control-Allow-Origin: https://your-frontend-domain.com
-# Access-Control-Allow-Methods: POST, GET, OPTIONS
-# Access-Control-Allow-Headers: Content-Type, Authorization
-```
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://your-frontend-domain.com"
+    "Access-Control-Request-Method" = "POST"
+    "Access-Control-Request-Headers" = "Content-Type"
+}```
 
 **Check API Gateway CORS settings (REST API):**
-```bash
+```powershell
 # Get resource methods
 aws apigateway get-resources --rest-api-id YOUR_API_ID
 
@@ -337,7 +331,7 @@ aws apigateway get-method-response \
 **Symptom:** DNS resolves, but TCP connection fails or times out.
 
 **Test basic connectivity:**
-```bash
+```powershell
 # Test TCP connection
 nc -zv fb9pxd6m09.execute-api.us-west-2.amazonaws.com 443
 telnet fb9pxd6m09.execute-api.us-west-2.amazonaws.com 443
@@ -347,12 +341,12 @@ Test-NetConnection -ComputerName fb9pxd6m09.execute-api.us-west-2.amazonaws.com 
 ```
 
 **Check local firewall:**
-```bash
+```powershell
 # Linux (iptables)
-sudo iptables -L -n -v | grep 443
+sudo iptables -L -n -v | Select-String 443
 
 # macOS
-sudo pfctl -s rules | grep 443
+sudo pfctl -s rules | Select-String 443
 
 # Windows (PowerShell as Administrator)
 Get-NetFirewallRule | Where-Object {$_.LocalPort -eq 443}
@@ -364,7 +358,7 @@ Get-NetFirewallRule | Where-Object {$_.LocalPort -eq 443}
 - Use a VPN or mobile hotspot to bypass corporate firewalls
 
 **Check VPC Security Groups (if accessing from within AWS):**
-```bash
+```powershell
 # List security groups
 aws ec2 describe-security-groups \
   --query 'SecurityGroups[*].[GroupId,GroupName,VpcId]'
@@ -382,7 +376,7 @@ aws ec2 describe-security-groups \
 **Symptom:** API Gateway responds but Lambda functions are failing.
 
 **Check Lambda function logs:**
-```bash
+```powershell
 # List log groups
 aws logs describe-log-groups --log-group-name-prefix /aws/lambda/
 
@@ -397,18 +391,18 @@ aws logs filter-log-events \
 ```
 
 **Test Lambda function directly:**
-```bash
+```powershell
 # Invoke Lambda function
 aws lambda invoke \
   --function-name YOUR_FUNCTION_NAME \
   --payload '{"httpMethod":"GET","path":"/auth/me"}' \
   response.json
 
-cat response.json
+Get-Content response.json
 ```
 
 **Check Lambda function configuration:**
-```bash
+```powershell
 # Get function configuration
 aws lambda get-function-configuration \
   --function-name YOUR_FUNCTION_NAME
@@ -488,10 +482,10 @@ aws lambda get-function-configuration \
 
 Use the test auth login helper scripts (see below) to verify credentials work:
 
-```bash
+```powershell
 # Bash
-export TEST_EMAIL="user@example.com"
-export TEST_PASSWORD="password123"
+$env:TEST_EMAIL = "user@example.com"
+$env:TEST_PASSWORD = "password123"
 ./scripts/test-auth-login.sh
 
 # PowerShell
@@ -516,13 +510,12 @@ fetch('https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/auth/me', {
 
 ### Test CORS
 
-```bash
-curl -X OPTIONS https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://your-frontend-domain.com" \
-  -H "Access-Control-Request-Method: POST" \
-  -H "Access-Control-Request-Headers: Content-Type" \
-  -i
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://your-frontend-domain.com"
+    "Access-Control-Request-Method" = "POST"
+    "Access-Control-Request-Headers" = "Content-Type"
+}```
 
 ---
 
@@ -532,7 +525,7 @@ curl -X OPTIONS https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/auth/logi
 
 Add a pre-build check to validate environment variables:
 
-```bash
+```powershell
 # In package.json scripts or CI/CD
 if [ -z "$VITE_API_BASE" ]; then
   echo "Error: VITE_API_BASE not set"
@@ -557,9 +550,9 @@ Set up CloudWatch alarms or external monitoring (e.g., Pingdom, UptimeRobot) to:
 
 Create a simple health check endpoint:
 
-```bash
+```powershell
 # Test health endpoint
-curl https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected: {"status":"ok","timestamp":"2025-11-19T21:00:00Z"}
 ```
@@ -570,7 +563,7 @@ Schedule regular health checks in CI/CD or monitoring tool.
 
 Add post-deployment verification:
 
-```bash
+```powershell
 # After deploying backend
 node scripts/check-auth-backend.js --domain $API_DOMAIN
 
@@ -585,7 +578,7 @@ npm run verify:post-merge
 If issue persists after following this runbook:
 
 1. **Collect diagnostic information:**
-   ```bash
+   ```powershell
    # Run diagnostic script and save output
    node scripts/check-auth-backend.js --domain YOUR_DOMAIN --verbose > diagnostic-output.txt 2>&1
    

@@ -94,7 +94,7 @@ The Express server (`/server`) is maintained for:
 
 ### ✅ Correct: Deploy Serverless
 
-```bash
+```powershell
 # Deploy to staging
 cd serverless
 npx serverless deploy --stage staging
@@ -105,7 +105,7 @@ npx serverless deploy --stage prod
 
 ### ❌ Incorrect: Deploy Express
 
-```bash
+```powershell
 # DO NOT DO THIS
 cd server
 node index.js  # Only for local dev, never deploy
@@ -129,7 +129,7 @@ S3_BUCKET: ${ssm:/valine/${self:provider.stage}/S3_BUCKET}
 
 Set in `server/.env`:
 
-```bash
+```powershell
 JWT_SECRET=dev-secret-change-in-production
 DATABASE_URL=postgresql://user:pass@localhost:5432/valine_dev
 AWS_REGION=us-west-2
@@ -140,9 +140,9 @@ S3_BUCKET=valine-media-dev-local
 
 ### Serverless (Staging/Production)
 
-```bash
+```powershell
 # Run smoke tests against deployed API
-export API_BASE="https://your-api.execute-api.us-west-2.amazonaws.com/staging"
+$env:API_BASE = "https://your-api.execute-api.us-west-2.amazonaws.com/staging"
 ./scripts/deployment/test-endpoints.sh
 
 # Check orchestration analyzer
@@ -151,7 +151,7 @@ node scripts/analyze-orchestration-run.mjs
 
 ### Express (Local Development)
 
-```bash
+```powershell
 # Run unit tests
 cd server
 npm test

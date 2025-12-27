@@ -33,34 +33,22 @@ A synthetic journey consists of multiple steps that mimic real user actions:
 
 ### Command Line
 
-```bash
+```powershell
 # Run simulated journey
-curl -X POST http://localhost:3000/internal/journey/run \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "simulated"}'
-
-# Run real journey
-curl -X POST http://localhost:3000/internal/journey/run \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "real"}'
-
-# Run specific scenarios
-curl -X POST http://localhost:3000/internal/journey/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "mode": "real",
-    "scenarios": ["register", "login", "logout"]
-  }'
+Invoke-RestMethod -Uri "http://localhost:3000/internal/journey/run" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"mode": "simulated"}' -ContentType 'application/json'
 ```
 
 ### Using the Test Script
 
-```bash
+```powershell
 # Run the comprehensive test suite
-./scripts/test-observability-v2.sh
+& .\scripts\test-observability-v2.ps1
 
 # Test against a different API
-API_URL=https://staging.example.com ./scripts/test-observability-v2.sh
+$env:API_URL = "https://staging.example.com"
+& .\scripts\test-observability-v2.ps1
 ```
 
 ### Programmatically
@@ -85,7 +73,7 @@ console.log('Success rate:', result.journey.summary.successRate + '%');
 
 ### Environment Variables
 
-```bash
+```powershell
 # Enable synthetic journeys
 SYNTHETIC_JOURNEY_ENABLED=true
 
@@ -273,16 +261,16 @@ jobs:
     steps:
       - name: Run Synthetic Journey
         run: |
-          response=$(curl -X POST ${{ secrets.API_URL }}/internal/journey/run \
-            -H "Content-Type: application/json" \
-            -d '{"mode": "real"}')
-          echo "$response" | jq .
+          $response = Invoke-RestMethod -Uri "${{ secrets.API_URL }}/internal/journey/run" -Method Post -Headers @{
+              "Content-Type" = "application/json"
+          } -Body '{"mode": "real"}' -ContentType 'application/json'
           
-          status=$(echo "$response" | jq -r '.journey.status')
-          if [ "$status" != "passed" ]; then
-            echo "Journey failed!"
-            exit 1
-          fi
+          $response | ConvertTo-Json
+          
+          if ($response.journey.status -ne "passed") {
+              Write-Error "Journey failed!"
+              exit 1
+          }
 ```
 
 ## Troubleshooting

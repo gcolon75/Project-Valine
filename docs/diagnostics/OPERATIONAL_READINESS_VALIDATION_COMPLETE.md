@@ -149,7 +149,7 @@ The agent maintains a professional yet approachable tone:
 
 ### Manual Testing ✅
 
-```bash
+```powershell
 # Basic run
 python3 operational_readiness_agent.py run
 ✅ PASS - Completed in 1.2s

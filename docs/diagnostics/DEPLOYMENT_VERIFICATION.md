@@ -17,7 +17,7 @@ The Project-Valine repository now includes a comprehensive verification system t
 
 Verify repository configuration and files:
 
-```bash
+```powershell
 ./scripts/verify-deployment.sh --skip-aws --skip-discord
 ```
 
@@ -30,7 +30,7 @@ Verify repository configuration and files:
 
 Verify complete deployment:
 
-```bash
+```powershell
 ./scripts/verify-deployment.sh \
   --s3-bucket your-bucket-name \
   --cloudfront-id E1234567890ABC \
@@ -96,7 +96,7 @@ Verify complete deployment:
 
 Use in CI/CD pipelines:
 
-```bash
+```powershell
 if ./scripts/verify-deployment.sh $ARGS; then
   echo "Deployment verified successfully"
 else
@@ -139,11 +139,11 @@ jobs:
 
 For manual deployment verification:
 
-```bash
+```powershell
 # Set environment variables
-export S3_BUCKET="my-valine-frontend"
-export CLOUDFRONT_ID="E1234567890ABC"
-export API_BASE="https://api.execute-api.us-west-2.amazonaws.com"
+$env:S3_BUCKET = "my-valine-frontend"
+$env:CLOUDFRONT_ID = "E1234567890ABC"
+$env:API_BASE = "https://api.execute-api.us-west-2.amazonaws.com"
 
 # Run verification
 ./scripts/verify-deployment.sh \
@@ -156,7 +156,7 @@ export API_BASE="https://api.execute-api.us-west-2.amazonaws.com"
 
 Create a cron job for periodic verification:
 
-```bash
+```powershell
 # Run every hour
 0 * * * * cd /path/to/Project-Valine && ./scripts/verify-deployment.sh --skip-discord
 ```
@@ -165,7 +165,7 @@ Create a cron job for periodic verification:
 
 Test Discord integration separately:
 
-```bash
+```powershell
 ./scripts/verify-deployment.sh \
   --discord-webhook-url "$WEBHOOK_URL" \
   --discord-bot-token "$BOT_TOKEN" \
@@ -177,7 +177,7 @@ Test Discord integration separately:
 
 ### Pre-Production Validation
 
-```bash
+```powershell
 #!/bin/bash
 # Validate staging before promoting to production
 
@@ -199,7 +199,7 @@ fi
 
 ### Rollback Detection
 
-```bash
+```powershell
 #!/bin/bash
 # Check if rollback is needed after deployment
 
@@ -217,7 +217,7 @@ fi
 
 ### Multi-Region Verification
 
-```bash
+```powershell
 #!/bin/bash
 # Verify deployments across multiple regions
 
@@ -238,7 +238,7 @@ done
 
 Track verification results over time:
 
-```bash
+```powershell
 # Log verification results
 RESULT_FILE="/var/log/valine-verification.log"
 TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S")
@@ -258,24 +258,16 @@ fi
 
 Send alerts on verification failure:
 
-```bash
+```powershell
 #!/bin/bash
 # verify-and-alert.sh
 
 if ! ./scripts/verify-deployment.sh $ARGS; then
   # Send to Slack
-  curl -X POST -H 'Content-type: application/json' \
-    --data '{"text":"❌ Deployment verification failed"}' \
-    "$SLACK_WEBHOOK_URL"
-  
-  # Send to Discord
-  curl -X POST -H 'Content-type: application/json' \
-    --data '{"content":"❌ Deployment verification failed"}' \
-    "$DISCORD_WEBHOOK_URL"
-  
-  exit 1
-fi
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-type" = "application/json"
+    "Content-type" = "application/json"
+}```
 
 ## Best Practices
 

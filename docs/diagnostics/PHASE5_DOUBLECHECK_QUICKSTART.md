@@ -4,7 +4,7 @@
 
 Run independent secondary verification of Phase 5 validation results to catch inconsistencies.
 
-```bash
+```powershell
 cd orchestrator/scripts
 ./run_phase5_doublecheck.sh ../validation_evidence/validation_report_*.json
 ```
@@ -22,7 +22,7 @@ The Phase 5 Double-Check Agent is your QA safety net. It re-verifies each valida
 
 ### Example 1: Basic Usage
 
-```bash
+```powershell
 # After running Phase 5 Staging Validator, run double-check
 cd orchestrator/scripts
 ./run_phase5_doublecheck.sh \
@@ -31,9 +31,9 @@ cd orchestrator/scripts
 
 ### Example 2: With Custom Config
 
-```bash
+```powershell
 # Create config
-cat > my_config.json << 'EOF'
+Get-Content > my_config.json << 'EOF'
 {
   "staging_urls": ["https://my-staging.example.com"],
   "aws_region": "us-east-1",
@@ -49,7 +49,7 @@ EOF
 
 ### Example 3: Direct Python
 
-```bash
+```powershell
 python3 phase5_doublecheck_agent.py \
   --primary-report ../validation_evidence/validation_report_20251017.json \
   --config doublecheck_config.json \
@@ -149,11 +149,11 @@ Primary passed but secondary failed. Investigate the discrepancy note.
 
 ### Environment Variables
 
-```bash
-export STAGING_GITHUB_TOKEN="ghp_..."
-export AWS_ACCESS_KEY_ID="AKIA..."
-export AWS_SECRET_ACCESS_KEY="..."
-export AWS_REGION="us-west-2"
+```powershell
+$env:STAGING_GITHUB_TOKEN = "ghp_..."
+$env:AWS_ACCESS_KEY_ID = "AKIA..."
+$env:AWS_SECRET_ACCESS_KEY = "..."
+$env:AWS_REGION = "us-west-2"
 ```
 
 ## Prerequisites
@@ -165,7 +165,7 @@ export AWS_REGION="us-west-2"
 
 Install Python dependencies:
 
-```bash
+```powershell
 pip install boto3 requests
 ```
 
@@ -236,13 +236,13 @@ See `PHASE5_DOUBLECHECK_USAGE_GUIDE.md` for complete documentation.
 
 ## Quick Reference
 
-```bash
+```powershell
 # Help
 ./run_phase5_doublecheck.sh --help
 
 # View reports
 ls -lh doublecheck_evidence/
-cat doublecheck_evidence/phase5_double_check_report_*.md
+Get-Content doublecheck_evidence/phase5_double_check_report_*.md
 
 # Run tests
 cd .. && python3 -m unittest tests.test_phase5_doublecheck_agent

@@ -40,7 +40,7 @@ This documentation is based on the **implemented backend code** (PR #146) but **
 ### Obtaining a Token
 
 **Option 1: Register a new user**
-```bash
+```powershell
 POST /auth/register
 Content-Type: application/json
 
@@ -59,7 +59,7 @@ Response:
 ```
 
 **Option 2: Login with existing credentials**
-```bash
+```powershell
 POST /auth/login
 Content-Type: application/json
 
@@ -109,9 +109,9 @@ Check API health status.
 }
 ```
 
-**curl Example:**
-```bash
-curl https://API_BASE/health
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "https://API_BASE/health" -Method Get
 ```
 
 ---
@@ -132,9 +132,9 @@ Get API metadata and available endpoints.
 }
 ```
 
-**curl Example:**
-```bash
-curl https://API_BASE/meta
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "https://API_BASE/meta" -Method Get
 ```
 
 ---
@@ -177,17 +177,11 @@ Register a new user account.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "testpass123",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 ---
 
@@ -225,15 +219,11 @@ Login with email and password.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "testpass123"
-  }'
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "testpass123" }' -ContentType 'application/json'```
 
 ---
 
@@ -263,11 +253,11 @@ Get current authenticated user profile.
 }
 ```
 
-**curl Example:**
-```bash
-curl https://API_BASE/auth/me \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "https://API_BASE/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+}```
 
 ---
 
@@ -308,14 +298,14 @@ List reels with pagination.
 }
 ```
 
-**curl Example:**
-```bash
-curl "https://API_BASE/reels?limit=20"
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "https://API_BASE/reels?limit=20" -Method Get
 
 # With authentication
-curl "https://API_BASE/reels?limit=20" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+Invoke-RestMethod -Uri "https://API_BASE/reels?limit=20" -Method Get -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+}```
 
 ---
 
@@ -342,16 +332,12 @@ Create a new reel.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/reels \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Check out this amazing moment!",
-    "media": ["https://example.com/video.mp4"]
-  }'
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{ "content": "Check out this amazing moment!", "media": ["https://example.com/video.mp4"] }' -ContentType 'application/json'```
 
 ---
 
@@ -370,11 +356,11 @@ Toggle like on a reel.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/reels/REEL_ID/like \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+}```
 
 ---
 
@@ -392,11 +378,11 @@ Toggle bookmark on a reel.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/reels/REEL_ID/bookmark \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+}```
 
 ---
 
@@ -431,9 +417,9 @@ Get comments for a reel.
 }
 ```
 
-**curl Example:**
-```bash
-curl "https://API_BASE/reels/REEL_ID/comments?limit=20"
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "https://API_BASE/reels/REEL_ID/comments?limit=20" -Method Get
 ```
 
 ---
@@ -461,13 +447,12 @@ Add a comment to a reel.
 }
 ```
 
-**curl Example:**
-```bash
-curl -X POST https://API_BASE/reels/REEL_ID/comments \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Amazing work!"}'
-```
+**PowerShell Example:**
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"content": "Amazing work!"}' -ContentType 'application/json'```
 
 ---
 
@@ -947,38 +932,32 @@ GET /endpoint?limit=20&cursor=<nextCursor-from-previous-response>
 ### Quick Start
 
 1. **Get API_BASE URL** (after deployment):
-   ```bash
+   ```powershell
    # Will be in format:
    https://abc123.execute-api.us-west-2.amazonaws.com/dev
    ```
 
 2. **Health Check:**
-   ```bash
-   curl $API_BASE/health
+   ```powershell
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
    ```
 
 3. **Register a Test User:**
-   ```bash
-   curl -X POST $API_BASE/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{
-       "email": "test@example.com",
-       "password": "testpass123",
-       "username": "testuser",
-       "displayName": "Test User"
-     }'
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 4. **Save Token:**
-   ```bash
+   ```powershell
    TOKEN="<token-from-register-response>"
    ```
 
 5. **Test Authenticated Endpoint:**
-   ```bash
-   curl $API_BASE/auth/me \
-     -H "Authorization: Bearer $TOKEN"
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+}```
 
 ---
 
@@ -987,7 +966,7 @@ GET /endpoint?limit=20&cursor=<nextCursor-from-previous-response>
 ### Environment Configuration
 
 Create `.env` file:
-```bash
+```powershell
 VITE_API_BASE=https://your-api-id.execute-api.us-west-2.amazonaws.com/dev
 ```
 

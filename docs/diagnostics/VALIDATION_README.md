@@ -26,7 +26,7 @@ All Phases 1-5 have been **fully implemented, tested, and validated** as of 2025
 
 All 199 unit tests passing (100% success rate):
 
-```bash
+```powershell
 $ cd orchestrator
 $ python3 -m pytest tests/ -v
 ============================= 199 passed in 4.54s ==============================
@@ -189,9 +189,9 @@ $ python3 -m pytest tests/ -v
 Phase 5 features are feature-flagged OFF by default. To validate in staging:
 
 ### 1. Debug Command
-```bash
+```powershell
 # Enable the debug command
-export ENABLE_DEBUG_CMD=true
+$env:ENABLE_DEBUG_CMD = "true"
 
 # Test sequence
 1. Run /diagnose
@@ -201,10 +201,10 @@ export ENABLE_DEBUG_CMD=true
 ```
 
 ### 2. Alerts
-```bash
+```powershell
 # Enable alerts
-export ALERT_CHANNEL_ID=<staging-channel-id>
-export ENABLE_ALERTS=true
+$env:ALERT_CHANNEL_ID = "<staging-channel-id>"
+$env:ENABLE_ALERTS = "true"
 
 # Test sequence
 1. Induce controlled failure (mock dispatch error)
@@ -259,7 +259,7 @@ export ENABLE_ALERTS=true
 
 To run tests yourself:
 
-```bash
+```powershell
 cd orchestrator
 pip install -r requirements.txt
 pip install pytest

@@ -81,7 +81,7 @@ npx serverless deploy --stage prod --region us-west-2
 
 ### Linux/macOS (Bash)
 
-```bash
+```powershell
 cd serverless
 ./scripts/build-prisma-layer.sh
 npx serverless deploy --stage prod --region us-west-2

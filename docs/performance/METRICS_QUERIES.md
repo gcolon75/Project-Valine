@@ -10,12 +10,12 @@ This document provides queries and methods to measure and compare performance me
 
 **Before Caching (Baseline)**:
 
-```bash
+```powershell
 # Ensure caching is disabled
-export CACHE_ENABLED=false
-export API_URL=http://localhost:5000
-export TEST_USER_ID=<valid-user-id>
-export TEST_SEARCH_QUERY=actor
+$env:CACHE_ENABLED = "false"
+$env:API_URL = "http://localhost:5000"
+$env:TEST_USER_ID = "<valid-user-id>"
+$env:TEST_SEARCH_QUERY = "actor"
 
 # Start server
 npm run start &
@@ -30,10 +30,10 @@ node server/scripts/perf/baseline-profiles-search.mjs \
 
 **After Caching**:
 
-```bash
+```powershell
 # Enable caching
-export CACHE_ENABLED=true
-export REDIS_URL=redis://localhost:6379
+$env:CACHE_ENABLED = "true"
+$env:REDIS_URL = "redis://localhost:6379"
 
 # Restart server
 pkill node
@@ -51,7 +51,7 @@ node server/scripts/perf/baseline-profiles-search.mjs \
 
 **Extract Key Metrics**:
 
-```bash
+```powershell
 # Before caching - p95 latencies
 jq '.tests.profileWarm.stats.p95' docs/performance/BASELINE_BEFORE.json
 jq '.tests.searchWarm.stats.p95' docs/performance/BASELINE_BEFORE.json
@@ -63,7 +63,7 @@ jq '.tests.searchWarm.stats.p95' docs/performance/BASELINE_AFTER.json
 
 **Calculate Improvement**:
 
-```bash
+```powershell
 # Profile improvement
 before_profile=$(jq '.tests.profileWarm.stats.p95' docs/performance/BASELINE_BEFORE.json)
 after_profile=$(jq '.tests.profileWarm.stats.p95' docs/performance/BASELINE_AFTER.json)
@@ -134,7 +134,7 @@ console.log(`✓ Search p95 ≥15% improvement: ${searchP95Improvement >= 15 ? '
 
 **Usage**:
 
-```bash
+```powershell
 node server/scripts/perf/compare-results.mjs \
   docs/performance/BASELINE_BEFORE.json \
   docs/performance/BASELINE_AFTER.json
@@ -144,27 +144,27 @@ node server/scripts/perf/compare-results.mjs \
 
 ### Via API
 
-```bash
+```powershell
 # Make some requests to warm cache
 for i in {1..10}; do
-  curl -s http://localhost:5000/profiles/user-123 > /dev/null
+Invoke-RestMethod -Uri "-s" -Method Get
 done
 
 # Check hit ratio
-curl http://localhost:5000/api/cache/metrics | jq '.metrics.hitRatio'
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 ```
 
 **Expected**: ≥0.7 (70%)
 
 ### Via Response Headers
 
-```bash
+```powershell
 # First request (cold)
-curl -i http://localhost:5000/profiles/user-123 2>&1 | grep X-Cache-Hit
+Invoke-RestMethod -Uri "-i" -Method Get
 # Expected: X-Cache-Hit: false
 
 # Second request (warm)
-curl -i http://localhost:5000/profiles/user-123 2>&1 | grep X-Cache-Hit
+Invoke-RestMethod -Uri "-i" -Method Get
 # Expected: X-Cache-Hit: true
 ```
 
@@ -200,9 +200,9 @@ setInterval(() => {
 
 **Parse Response Time Headers**:
 
-```bash
+```powershell
 # Extract response times from access logs
-grep "X-Response-Time" /var/log/nginx/access.log | \
+Select-String "X-Response-Time" /var/log/nginx/access.log | \
   awk '{print $NF}' | \
   sed 's/ms//' | \
   sort -n | \
@@ -221,10 +221,10 @@ grep "X-Response-Time" /var/log/nginx/access.log | \
 
 **Parse Cache Hit Headers**:
 
-```bash
+```powershell
 # Calculate hit ratio from logs
-hits=$(grep -c "X-Cache-Hit: true" /var/log/nginx/access.log)
-misses=$(grep -c "X-Cache-Hit: false" /var/log/nginx/access.log)
+hits=$(Select-String -c "X-Cache-Hit: true" /var/log/nginx/access.log)
+misses=$(Select-String -c "X-Cache-Hit: false" /var/log/nginx/access.log)
 total=$((hits + misses))
 ratio=$(echo "scale=2; $hits / $total" | bc)
 echo "Hit ratio: $ratio"
@@ -265,7 +265,7 @@ setInterval(async () => {
 
 **Query CloudWatch**:
 
-```bash
+```powershell
 # Get average hit ratio over last hour
 aws cloudwatch get-metric-statistics \
   --namespace Valine/Cache \
@@ -300,7 +300,7 @@ histogram_quantile(0.95,
 
 Run after caching implementation:
 
-```bash
+```powershell
 # 1. Run performance tests
 node server/scripts/perf/baseline-profiles-search.mjs
 
@@ -309,7 +309,7 @@ node server/scripts/perf/baseline-profiles-search.mjs
 # Search p95: Before vs. After (target: ≥15% reduction)
 
 # 3. Verify hit ratio
-curl http://localhost:5000/api/cache/metrics | jq '.metrics.hitRatio'
+Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 # Target: ≥0.7 for profiles after warm-up
 
 # 4. Test rollback

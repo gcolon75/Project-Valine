@@ -77,16 +77,16 @@ Your IAM user/role needs these permissions:
    ```
 
 4. **Export DATABASE_URL:**
-   ```bash
+   ```powershell
    # Replace [YOUR-PASSWORD] with your actual password
-   export DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
    
    # Verify it's set
    echo $DATABASE_URL
    ```
 
 5. **Test Connection:**
-   ```bash
+   ```powershell
    # Install psql if needed: sudo apt-get install postgresql-client
    psql "$DATABASE_URL" -c "SELECT version();"
    ```
@@ -98,7 +98,7 @@ Your IAM user/role needs these permissions:
 **Setup Instructions:**
 
 1. **Create RDS Instance:**
-   ```bash
+   ```powershell
    aws rds create-db-instance \
      --db-instance-identifier valine-dev-db \
      --db-instance-class db.t3.micro \
@@ -117,7 +117,7 @@ Your IAM user/role needs these permissions:
    ```
 
 2. **Get Endpoint:**
-   ```bash
+   ```powershell
    aws rds describe-db-instances \
      --db-instance-identifier valine-dev-db \
      --query 'DBInstances[0].Endpoint.Address' \
@@ -126,12 +126,12 @@ Your IAM user/role needs these permissions:
    ```
 
 3. **Export DATABASE_URL:**
-   ```bash
-   export DATABASE_URL="postgresql://valineadmin:YourStrongPassword123!@YOUR-RDS-ENDPOINT.us-west-2.rds.amazonaws.com:5432/postgres"
+   ```powershell
+$env:DATABASE_URL = "postgresql://valineadmin:YourStrongPassword123!@YOUR-RDS-ENDPOINT.us-west-2.rds.amazonaws.com:5432/postgres"
    ```
 
 4. **Update Security Group:**
-   ```bash
+   ```powershell
    # Allow your IP to connect for initial setup
    RDS_SG=$(aws rds describe-db-instances \
      --db-instance-identifier valine-dev-db \
@@ -139,7 +139,7 @@ Your IAM user/role needs these permissions:
      --output text \
      --region us-west-2)
    
-   MY_IP=$(curl -s https://checkip.amazonaws.com)
+Invoke-RestMethod -Uri "-s" -Method Get
    
    aws ec2 authorize-security-group-ingress \
      --group-id $RDS_SG \
@@ -158,7 +158,7 @@ AWS Systems Manager Parameter Store securely stores your database credentials.
 ### Create SSM Parameters
 
 1. **Create parameters JSON file:**
-   ```bash
+   ```powershell
    cd /home/runner/work/Project-Valine/Project-Valine
    
    # Copy example and edit
@@ -166,7 +166,7 @@ AWS Systems Manager Parameter Store securely stores your database credentials.
    ```
 
 2. **Edit parameters file:**
-   ```bash
+   ```powershell
    # Edit scripts/ssm-params-dev.json
    nano scripts/ssm-params-dev.json
    ```
@@ -182,12 +182,12 @@ AWS Systems Manager Parameter Store securely stores your database credentials.
    ```
 
 3. **Store parameters in AWS SSM:**
-   ```bash
+   ```powershell
    ./scripts/put-ssm-params.sh dev us-west-2 scripts/ssm-params-dev.json
    ```
 
 4. **Verify parameters were stored:**
-   ```bash
+   ```powershell
    aws ssm get-parameter \
      --name "/valine/dev/database_url" \
      --with-decryption \
@@ -200,9 +200,9 @@ AWS Systems Manager Parameter Store securely stores your database credentials.
 
 If you prefer not to use SSM Parameter Store for now:
 
-```bash
+```powershell
 # Just keep DATABASE_URL in your environment
-export DATABASE_URL="your-connection-string"
+$env:DATABASE_URL = "your-connection-string"
 
 # Make sure it persists for your shell session
 echo "export DATABASE_URL='your-connection-string'" >> ~/.bashrc
@@ -215,7 +215,7 @@ source ~/.bashrc
 
 Run the database setup script to create tables and apply migrations:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Ensure DATABASE_URL is set
@@ -258,7 +258,7 @@ Expected tables created:
 
 Open Prisma Studio to inspect your database:
 
-```bash
+```powershell
 cd api
 npx prisma studio
 ```
@@ -276,7 +276,7 @@ Visit http://localhost:5555 and verify these tables exist:
 
 ### Configure AWS Credentials
 
-```bash
+```powershell
 # If not already configured
 aws configure
 
@@ -286,7 +286,7 @@ aws sts get-caller-identity
 
 ### Deploy Serverless Backend
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Ensure DATABASE_URL is set
@@ -334,9 +334,9 @@ endpoints:
 
 ### Save Your API Base URL
 
-```bash
+```powershell
 # Extract base URL from deployment output
-export API_BASE="https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
 
 # Save for future sessions
 echo "export API_BASE='$API_BASE'" >> ~/.bashrc
@@ -349,7 +349,7 @@ source ~/.bashrc
 
 ### Automated Testing Script
 
-```bash
+```powershell
 # Ensure API_BASE is set
 echo $API_BASE
 
@@ -361,8 +361,8 @@ echo $API_BASE
 
 #### Test 1: Health Check
 
-```bash
-curl -X GET "$API_BASE/health" | jq '.'
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 ```
 
 **Expected Response:**
@@ -375,18 +375,10 @@ curl -X GET "$API_BASE/health" | jq '.'
 
 #### Test 2: Create User
 
-```bash
-curl -X POST "$API_BASE/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "johndoe",
-    "email": "john@valine.com",
-    "displayName": "John Doe",
-    "bio": "Voice actor and content creator",
-    "avatar": "https://i.pravatar.cc/150?img=12",
-    "role": "artist"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "username": "johndoe", "email": "john@valine.com", "displayName": "John Doe", "bio": "Voice actor and content creator", "avatar": "https://i.pravatar.cc/150?img=12", "role": "artist" }' -ContentType 'application/json'```
 
 **Expected Response (201 Created):**
 ```json
@@ -404,14 +396,14 @@ curl -X POST "$API_BASE/users" \
 ```
 
 **Save the user ID:**
-```bash
+```powershell
 USER_ID="uuid-from-response"
 ```
 
 #### Test 3: Get User Profile
 
-```bash
-curl -X GET "$API_BASE/users/johndoe" | jq '.'
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/users/johndoe" -Method Get
 ```
 
 **Expected Response (200 OK):**
@@ -435,15 +427,10 @@ curl -X GET "$API_BASE/users/johndoe" | jq '.'
 
 #### Test 4: Update User Profile
 
-```bash
-curl -X PUT "$API_BASE/users/$USER_ID" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "displayName": "John \"The Voice\" Doe",
-    "bio": "Professional voice actor with 10+ years experience",
-    "avatar": "https://i.pravatar.cc/150?img=13"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "displayName": "John \"The Voice\" Doe", "bio": "Professional voice actor with 10+ years experience", "avatar": "https://i.pravatar.cc/150?img=13" }' -ContentType 'application/json'```
 
 **Expected Response (200 OK):**
 ```json
@@ -460,15 +447,10 @@ curl -X PUT "$API_BASE/users/$USER_ID" \
 
 #### Test 5: Create Post
 
-```bash
-curl -X POST "$API_BASE/posts" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"content\": \"Just finished recording for an amazing new project! Can't wait to share more details soon. #VoiceActing #ProjectValine\",
-    \"media\": [\"https://picsum.photos/seed/post1/800/600\"],
-    \"authorId\": \"$USER_ID\"
-  }" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ \' -ContentType 'application/json'```
 
 **Expected Response (201 Created):**
 ```json
@@ -482,14 +464,14 @@ curl -X POST "$API_BASE/posts" \
 ```
 
 **Save the post ID:**
-```bash
+```powershell
 POST_ID="post-uuid-from-response"
 ```
 
 #### Test 6: List Posts (Feed)
 
-```bash
-curl -X GET "$API_BASE/posts?limit=10" | jq '.'
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/posts?limit=10" -Method Get
 ```
 
 **Expected Response (200 OK):**
@@ -517,35 +499,22 @@ curl -X GET "$API_BASE/posts?limit=10" | jq '.'
 
 #### Test 7: Create Second User (for Connection Requests)
 
-```bash
-curl -X POST "$API_BASE/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "janedoe",
-    "email": "jane@valine.com",
-    "displayName": "Jane Doe",
-    "bio": "Audio engineer and producer",
-    "avatar": "https://i.pravatar.cc/150?img=5",
-    "role": "observer"
-  }' | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "username": "janedoe", "email": "jane@valine.com", "displayName": "Jane Doe", "bio": "Audio engineer and producer", "avatar": "https://i.pravatar.cc/150?img=5", "role": "observer" }' -ContentType 'application/json'```
 
 **Save the second user ID:**
-```bash
+```powershell
 USER2_ID="uuid-from-response"
 ```
 
 #### Test 8: Send Connection Request
 
-```bash
-curl -X POST "$API_BASE/connections/request" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"senderId\": \"$USER_ID\",
-    \"receiverId\": \"$USER2_ID\",
-    \"message\": \"Hey! I saw your work and would love to collaborate on a project.\"
-  }" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ \' -ContentType 'application/json'```
 
 **Expected Response (201 Created):**
 ```json
@@ -560,14 +529,14 @@ curl -X POST "$API_BASE/connections/request" \
 ```
 
 **Save the request ID:**
-```bash
+```powershell
 REQUEST_ID="request-uuid-from-response"
 ```
 
 #### Test 9: List Connection Requests (Received)
 
-```bash
-curl -X GET "$API_BASE/connections/requests?userId=$USER2_ID&type=received" | jq '.'
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/connections/requests?userId=$USER2_ID&type=received" -Method Get
 ```
 
 **Expected Response (200 OK):**
@@ -594,16 +563,16 @@ curl -X GET "$API_BASE/connections/requests?userId=$USER2_ID&type=received" | jq
 
 #### Test 10: List Connection Requests (Sent)
 
-```bash
-curl -X GET "$API_BASE/connections/requests?userId=$USER_ID&type=sent" | jq '.'
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/connections/requests?userId=$USER_ID&type=sent" -Method Get
 ```
 
 #### Test 11: Approve Connection Request
 
-```bash
-curl -X POST "$API_BASE/connections/requests/$REQUEST_ID/approve" \
-  -H "Content-Type: application/json" | jq '.'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+}```
 
 **Expected Response (200 OK):**
 ```json
@@ -619,23 +588,12 @@ curl -X POST "$API_BASE/connections/requests/$REQUEST_ID/approve" \
 
 #### Test 12: Create and Reject Another Request
 
-```bash
+```powershell
 # Send another request
-curl -X POST "$API_BASE/connections/request" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"senderId\": \"$USER2_ID\",
-    \"receiverId\": \"$USER_ID\",
-    \"message\": \"Thanks for connecting! Let's work together.\"
-  }" | jq '.'
-
-# Get the new request ID from response
-REQUEST_ID_2="new-request-uuid"
-
-# Reject it
-curl -X POST "$API_BASE/connections/requests/$REQUEST_ID_2/reject" \
-  -H "Content-Type: application/json" | jq '.'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{ \' -ContentType 'application/json'```
 
 **Expected Response (200 OK):**
 ```json
@@ -652,7 +610,7 @@ curl -X POST "$API_BASE/connections/requests/$REQUEST_ID_2/reject" \
 
 ### View Lambda Function Logs
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # View logs for specific function
@@ -666,7 +624,7 @@ npx serverless logs -f sendConnectionRequest --stage dev --tail
 
 ### Check API Gateway Metrics
 
-```bash
+```powershell
 # Get API ID
 API_ID=$(aws apigatewayv2 get-apis \
   --query "Items[?Name=='pv-api-dev'].ApiId" \
@@ -684,7 +642,7 @@ echo "View metrics: https://console.aws.amazon.com/apigateway/home?region=us-wes
 
 If you want to test with the frontend:
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Configure frontend with API URL
@@ -727,7 +685,7 @@ Visit http://localhost:5173 to test the full application.
 ### Issue: Database connection timeout
 
 **Solution:**
-```bash
+```powershell
 # Test database connectivity
 psql "$DATABASE_URL" -c "SELECT 1;"
 
@@ -758,7 +716,7 @@ headers: {
 ### Issue: "Module not found: @prisma/client"
 
 **Solution:**
-```bash
+```powershell
 cd api
 npx prisma generate
 cd ../serverless
@@ -768,7 +726,7 @@ npm install
 ### Issue: Deployment fails with AWS credentials error
 
 **Solution:**
-```bash
+```powershell
 # Reconfigure AWS CLI
 aws configure
 

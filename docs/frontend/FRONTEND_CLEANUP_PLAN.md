@@ -28,12 +28,12 @@ Before deleting anything, verify these files are actually unused:
 
 ### Verification Steps
 
-```bash
+```powershell
 # Check if file is imported anywhere
-grep -r "Home.jsx\|'./Home'\|\"./Home\"" src/
+Select-String -r "Home.jsx\|'./Home'\|\"./Home\"" src/
 
 # Check if component is used in routes
-grep -r "HomePage\|Home " src/routes/
+Select-String -r "HomePage\|Home " src/routes/
 
 # Check git history for context
 git log --oneline -- src/pages/Home.jsx
@@ -69,10 +69,10 @@ The following features may be planned but not yet integrated:
 - `src/components/ui/Card.jsx`
 
 **Analysis Steps:**
-```bash
+```powershell
 # Find all imports of each Card
-grep -r "from '.*Card'" src/ | grep -v "__tests__"
-grep -r "from '.*ui/Card'" src/ | grep -v "__tests__"
+Select-String -r "from '.*Card'" src/ | Select-String -v "__tests__"
+Select-String -r "from '.*ui/Card'" src/ | Select-String -v "__tests__"
 ```
 
 **Resolution Options:**
@@ -85,14 +85,14 @@ Keep `src/components/ui/Card.jsx` as it follows the ui component pattern.
 
 ### Migration Script (if needed)
 
-```bash
+```powershell
 # Update imports from Card to ui/Card
 # ⚠️ CAUTION: Run these commands with care and verify results
 # Recommended approach: Use IDE refactoring tools instead (VS Code: F2 rename symbol)
 
 # Option 1: Preview changes first (recommended)
-find src -name "*.jsx" -exec grep -l "from '\.\./Card'" {} \;
-find src -name "*.jsx" -exec grep -l "from '\./Card'" {} \;
+find src -name "*.jsx" -exec Select-String -l "from '\.\./Card'" {} \;
+find src -name "*.jsx" -exec Select-String -l "from '\./Card'" {} \;
 
 # Option 2: Manual sed (backup first!)
 # find src -name "*.jsx" -exec sed -i "s|from '\.\./Card'|from '../ui/Card'|g" {} \;
@@ -245,7 +245,7 @@ import { Button } from '@/components/ui/Button';
 If any phase causes issues:
 
 1. **Git revert:**
-   ```bash
+   ```powershell
    git revert HEAD
    ```
 

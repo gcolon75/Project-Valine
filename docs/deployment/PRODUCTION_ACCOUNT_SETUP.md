@@ -11,14 +11,14 @@
 
 ### 1. Set Production Database URL
 
-```bash
+```powershell
 # Use PRODUCTION RDS endpoint
-export DATABASE_URL="postgresql://ValineColon_75:NEW_PRODUCTION_PASSWORD@project-valine-prod.REGION.rds.amazonaws.com:5432/postgres?sslmode=require"
+$env:DATABASE_URL = "postgresql://ValineColon_75:NEW_PRODUCTION_PASSWORD@project-valine-prod.REGION.rds.amazonaws.com:5432/postgres?sslmode=require"
 ```
 
 ### 2. Run Schema Migration
 
-```bash
+```powershell
 node fix-user-schema-complete.mjs \
   --email "ghawk075@gmail.com" \
   --password "YourProductionPassword123!" \
@@ -27,17 +27,11 @@ node fix-user-schema-complete.mjs \
 
 ### 3. Verify Account Created
 
-```bash
+```powershell
 # Test login via API
-curl -X POST https://YOUR_API_URL/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "ghawk075@gmail.com",
-    "password": "YourProductionPassword123!"
-  }'
-
-# Should return JWT token
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "ghawk075@gmail.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
 
 ### 4. Test Frontend Login
 
@@ -70,22 +64,22 @@ If login fails:
 
 ### Deploy Backend
 
-```bash
+```powershell
 cd serverless
 
 # Deploy to production
 npx serverless deploy --stage production
 
 # Verify deployment
-curl https://YOUR_API_URL/health
+Invoke-RestMethod -Uri "https://YOUR_API_URL/health" -Method Get
 ```
 
 ### Deploy Frontend
 
-```bash
+```powershell
 # Set production environment variables
-export VITE_API_BASE="https://YOUR_API_URL"
-export NODE_ENV="production"
+$env:VITE_API_BASE = "https://YOUR_API_URL"
+$env:NODE_ENV = "production"
 
 # Build
 npm run build
@@ -101,9 +95,9 @@ aws cloudfront create-invalidation \
 
 ### Create Production Account
 
-```bash
+```powershell
 # Set production DATABASE_URL
-export DATABASE_URL="postgresql://USER:PASS@prod-rds-endpoint:5432/postgres"
+$env:DATABASE_URL = "postgresql://USER:PASS@prod-rds-endpoint:5432/postgres"
 
 # Run account creation
 node fix-user-schema-complete.mjs \
@@ -114,7 +108,7 @@ node fix-user-schema-complete.mjs \
 
 ### Verify Deployment
 
-```bash
+```powershell
 # Run verification script
 node scripts/verify-production-deployment.mjs
 
@@ -128,7 +122,7 @@ node scripts/verify-production-deployment.mjs
 
 If deployment breaks production:
 
-```bash
+```powershell
 # Rollback backend
 cd serverless
 npx serverless rollback --timestamp PREVIOUS_TIMESTAMP
@@ -161,7 +155,7 @@ has been blocked by CORS policy
 
 Deploy fix:
 
-```bash
+```powershell
 cd serverless
 npx serverless deploy
 ```
@@ -182,9 +176,9 @@ VITE_API_BASE=https://YOUR_ACTUAL_API_GATEWAY_URL
 ```
 
 2. Rebuild and redeploy frontend:
-```bash
+```powershell
 # Set correct API URL
-export VITE_API_BASE="https://YOUR_API_GATEWAY_URL"
+$env:VITE_API_BASE = "https://YOUR_API_GATEWAY_URL"
 
 # Build
 npm run build
@@ -206,14 +200,14 @@ aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
 **Fix:**
 
 1. Generate new secure JWT secret:
-```bash
+```powershell
 openssl rand -base64 32
 ```
 
 2. Update GitHub Secret `JWT_SECRET`
 
 3. Redeploy backend:
-```bash
+```powershell
 cd serverless
 npx serverless deploy
 ```
@@ -231,7 +225,7 @@ Database connection failed
 2. Check RDS security group allows Lambda connections
 3. Verify RDS instance is running
 4. Test connection from Lambda:
-```bash
+```powershell
 # Run verification script
 node scripts/verify-env-contract.mjs
 ```
@@ -249,9 +243,9 @@ node scripts/verify-env-contract.mjs
 
 Production database may not have your user account. You need to run the account creation script against production database:
 
-```bash
+```powershell
 # Set PRODUCTION database URL
-export DATABASE_URL="postgresql://USER:PASS@production-rds-endpoint:5432/postgres?sslmode=require"
+$env:DATABASE_URL = "postgresql://USER:PASS@production-rds-endpoint:5432/postgres?sslmode=require"
 
 # Run the schema fix script
 node fix-user-schema-complete.mjs \

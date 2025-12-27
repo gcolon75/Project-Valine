@@ -220,7 +220,7 @@ After deployment, look for diagnostic logging in CloudWatch:
 **Test Profile Retrieval**:
 ```powershell
 # Should return 200 with user profile
-curl -X GET https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile `
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile" -Method Get
   -H "Cookie: access_token=YOUR_TOKEN" `
   -b cookies.txt
 ```
@@ -228,7 +228,7 @@ curl -X GET https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile `
 **Test Media Upload URL**:
 ```powershell
 # Should return 200 with presigned URL
-curl -X POST https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/profiles/PROFILE_ID/media/upload-url `
+Invoke-RestMethod -Uri "-X" -Method Post
   -H "Cookie: access_token=YOUR_TOKEN" `
   -H "Content-Type: application/json" `
   -d '{"type":"image","title":"Test","privacy":"public"}' `
@@ -238,7 +238,7 @@ curl -X POST https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/profiles/PRO
 **Test Feed**:
 ```powershell
 # Should return 200 with feed data
-curl -X GET https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/feed `
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/feed" -Method Get
   -H "Cookie: access_token=YOUR_TOKEN" `
   -b cookies.txt
 ```

@@ -44,7 +44,7 @@ Discord endpoint verification fails with: **"The specified interactions endpoint
 ### Quick Fix (5 minutes)
 
 **Step 1: Run diagnostic script**
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh
 ```
@@ -72,7 +72,7 @@ The script will show you:
    - Wait for completion
 
 **Option B - Update Lambda Directly (Quick Fix):**
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh --fix
 # Enter the correct public key when prompted
@@ -197,13 +197,13 @@ After following the fix:
 ### For the User (Developer)
 
 **To diagnose the issue:**
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh
 ```
 
 **To fix the issue (if keys don't match):**
-```bash
+```powershell
 # Quick fix (updates Lambda directly):
 ./verify_discord_config.sh --fix
 
@@ -213,9 +213,9 @@ cd orchestrator/scripts
 ```
 
 **To test the fix:**
-```bash
+```powershell
 # Follow the test plan:
-cat orchestrator/DISCORD_VERIFICATION_TEST_PLAN.md
+Get-Content orchestrator/DISCORD_VERIFICATION_TEST_PLAN.md
 ```
 
 **To verify endpoint in Discord:**

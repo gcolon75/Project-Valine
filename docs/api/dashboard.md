@@ -105,25 +105,25 @@ Missing userId:
 **Example Requests:**
 
 Default range (7 days):
-```bash
-curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123" -Method Get
 ```
 
 Last 7 days:
-```bash
-curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123&range=7d"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=7d" -Method Get
 ```
 
 All time:
-```bash
-curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123&range=all"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=all" -Method Get
 ```
 
 With authentication header:
-```bash
-curl -X GET "http://localhost:5000/dashboard/stats?userId=user_123&range=30d" \
-  -H "Authorization: Bearer dev-token"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=30d" -Method Get -Headers @{
+    "Authorization" = "Bearer dev-token"
+}```
 
 ---
 
@@ -443,25 +443,25 @@ GET /dashboard/stats?userId=user_123&start=2025-01-01&end=2025-01-31
 ### Manual Testing
 
 Test default range:
-```bash
-curl "http://localhost:5000/dashboard/stats?userId=user_123"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123" -Method Get
 ```
 
 Test different ranges:
-```bash
-curl "http://localhost:5000/dashboard/stats?userId=user_123&range=7d"
-curl "http://localhost:5000/dashboard/stats?userId=user_123&range=90d"
-curl "http://localhost:5000/dashboard/stats?userId=user_123&range=all"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=7d" -Method Get
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=90d" -Method Get
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=all" -Method Get
 ```
 
 Test invalid range (should return 400):
-```bash
-curl "http://localhost:5000/dashboard/stats?userId=user_123&range=invalid"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats?userId=user_123&range=invalid" -Method Get
 ```
 
 Test missing userId (should return 400):
-```bash
-curl "http://localhost:5000/dashboard/stats"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/dashboard/stats" -Method Get
 ```
 
 ### Contract Tests
@@ -469,7 +469,7 @@ curl "http://localhost:5000/dashboard/stats"
 Contract tests are located in `server/src/routes/__tests__/dashboard.test.js`
 
 Run tests:
-```bash
+```powershell
 cd server
 npm test -- dashboard.test.js
 ```

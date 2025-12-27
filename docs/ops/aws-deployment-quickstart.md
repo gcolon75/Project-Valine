@@ -4,9 +4,9 @@ Fast-track guide to deploy Project Valine backend to AWS in 30 minutes.
 
 ## TL;DR
 
-```bash
+```powershell
 # 1. Setup database (Supabase recommended)
-export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
 
 # 2. Run database migrations
 ./scripts/deployment/setup-database.sh
@@ -15,7 +15,7 @@ export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-2.pooler.s
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
 # 4. Test endpoints
-export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 ```
 
@@ -29,7 +29,7 @@ export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 - [ ] Database chosen (see recommendation below)
 
 **Check prerequisites:**
-```bash
+```powershell
 node --version   # Should be v20.x or later
 aws --version    # Should show version
 aws sts get-caller-identity  # Should show your AWS account
@@ -62,8 +62,8 @@ postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-us-west-2.pooler.supabase.c
 ```
 
 **Export to environment:**
-```bash
-export DATABASE_URL="your-connection-string-here"
+```powershell
+$env:DATABASE_URL = "your-connection-string-here"
 
 # Verify
 echo $DATABASE_URL
@@ -75,7 +75,7 @@ echo $DATABASE_URL
 
 ## Step 2: Setup Database Schema (5 minutes)
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Ensure DATABASE_URL is set
@@ -102,7 +102,7 @@ Expected tables created:
 ```
 
 **Verify database:**
-```bash
+```powershell
 cd api
 npx prisma studio
 # Opens http://localhost:5555 - check that 5 tables exist
@@ -112,7 +112,7 @@ npx prisma studio
 
 ## Step 3: Deploy Backend to AWS (10 minutes)
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Ensure DATABASE_URL is still set
@@ -142,9 +142,9 @@ endpoints:
 ```
 
 **Save your API URL:**
-```bash
+```powershell
 # Copy the base URL from output above
-export API_BASE="https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
 
 # Save for future sessions
 echo "export API_BASE='$API_BASE'" >> ~/.bashrc
@@ -156,7 +156,7 @@ echo "export API_BASE='$API_BASE'" >> ~/.bashrc
 
 ### Automated Testing
 
-```bash
+```powershell
 # Ensure API_BASE is set
 echo $API_BASE
 
@@ -176,32 +176,21 @@ echo $API_BASE
 
 ### Quick Manual Test
 
-```bash
+```powershell
 # Test health endpoint
-curl "$API_BASE/health"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Should return: {"ok":true,"status":"healthy"}
 
 # Create a test user
-curl -X POST "$API_BASE/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "email": "test@valine.com",
-    "displayName": "Test User",
-    "role": "artist"
-  }'
-# Should return user object with ID
-
-# Get user profile
-curl "$API_BASE/users/testuser"
-# Should return user details
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "role": "artist" }' -ContentType 'application/json'```
 
 ---
 
 ## Step 5: Optional - Configure Frontend (5 minutes)
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Configure frontend
@@ -236,9 +225,9 @@ After deployment, verify:
 
 ### Issue: "DATABASE_URL not set"
 
-```bash
+```powershell
 # Set the environment variable
-export DATABASE_URL="your-connection-string"
+$env:DATABASE_URL = "your-connection-string"
 
 # Make it persist
 echo "export DATABASE_URL='your-connection-string'" >> ~/.bashrc
@@ -247,7 +236,7 @@ source ~/.bashrc
 
 ### Issue: "Cannot connect to database"
 
-```bash
+```powershell
 # Test database connection
 psql "$DATABASE_URL" -c "SELECT 1;"
 
@@ -258,7 +247,7 @@ psql "$DATABASE_URL" -c "SELECT 1;"
 
 ### Issue: AWS deployment fails
 
-```bash
+```powershell
 # Check AWS credentials
 aws sts get-caller-identity
 
@@ -269,7 +258,7 @@ aws configure
 
 ### Issue: API returns 500 errors
 
-```bash
+```powershell
 # View Lambda logs
 cd serverless
 npx serverless logs -f getUser --stage dev --tail
@@ -317,7 +306,7 @@ headers: {
 
 ## Useful Commands
 
-```bash
+```powershell
 # View deployment info
 cd serverless
 npx serverless info --stage dev

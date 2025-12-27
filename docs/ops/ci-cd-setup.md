@@ -62,7 +62,7 @@ STAGING_URL               - Frontend URL for staging
 ### Step 2: Setup AWS Resources
 
 **S3 Bucket:**
-```bash
+```powershell
 # Create S3 bucket for static hosting
 aws s3 mb s3://your-staging-bucket --region us-west-2
 
@@ -78,7 +78,7 @@ aws s3api put-bucket-policy \
 ```
 
 **CloudFront Distribution:**
-```bash
+```powershell
 # Create CloudFront distribution pointing to S3 bucket
 aws cloudfront create-distribution \
   --origin-domain-name your-staging-bucket.s3.amazonaws.com \
@@ -195,7 +195,7 @@ Validates deployment health:
 **Problem:** Tests pass locally but fail in CI
 
 **Solution:**
-```bash
+```powershell
 # Run tests in CI mode locally
 npm run test:run
 
@@ -210,7 +210,7 @@ npm run test:run
 **Problem:** Build succeeds locally but fails in CI
 
 **Solution:**
-```bash
+```powershell
 # Clean install dependencies
 npm ci
 
@@ -230,19 +230,19 @@ npm run build
 **Solutions:**
 
 1. **AWS Credentials:**
-   ```bash
+   ```powershell
    # Verify secrets are set correctly
    # Check AWS permissions for S3 and CloudFront
    ```
 
 2. **S3 Bucket:**
-   ```bash
+   ```powershell
    # Verify bucket exists and is accessible
    aws s3 ls s3://your-bucket-name
    ```
 
 3. **CloudFront:**
-   ```bash
+   ```powershell
    # Verify distribution exists
    aws cloudfront get-distribution --id YOUR_DISTRIBUTION_ID
    ```

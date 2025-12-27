@@ -173,7 +173,7 @@ console.table(perfReport);
 
 ## Example Usage
 
-```bash
+```powershell
 # Enable performance profiling
 node scripts/analyze-orchestration-run.mjs 123456 --profile
 

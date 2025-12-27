@@ -62,11 +62,11 @@ orchestrator/
 
 ### 1. Register Discord Command
 
-```bash
+```powershell
 # Set environment variables
-export DISCORD_APPLICATION_ID="your_app_id"
-export DISCORD_BOT_TOKEN="your_bot_token"  
-export DISCORD_GUILD_ID="your_guild_id"  # For instant guild commands
+$env:DISCORD_APPLICATION_ID = "your_app_id"
+$env:DISCORD_BOT_TOKEN = "your_bot_token"
+$env:DISCORD_GUILD_ID = "your_guild_id"  # For instant guild commands"
 
 # Register command
 cd orchestrator
@@ -88,7 +88,7 @@ python3 scripts/register_triage_command.py --list
 
 ### 3. Test Agents Locally
 
-```bash
+```powershell
 # Run agent tests
 cd orchestrator
 python3 -m unittest tests.test_triage_agents -v
@@ -191,7 +191,7 @@ base_confidence = 50
 ## 🧪 Testing
 
 ### Unit Tests
-```bash
+```powershell
 # Run all agent tests
 python3 -m unittest orchestrator.tests.test_triage_agents -v
 
@@ -203,7 +203,7 @@ python3 -m unittest orchestrator.tests.test_triage_agents.TestDevAgent.test_anal
 ```
 
 ### Integration Testing
-```bash
+```powershell
 # Test on real PR (read-only)
 python3 orchestrator/scripts/auto_triage_with_agents.py \
   --repo gcolon75/Project-Valine \
@@ -268,7 +268,7 @@ Bot: 🔍 Starting triage for PR #60...
 ## 🔧 Configuration
 
 ### Environment Variables
-```bash
+```powershell
 # Discord
 DISCORD_APPLICATION_ID="123456789"
 DISCORD_BOT_TOKEN="your_bot_token"

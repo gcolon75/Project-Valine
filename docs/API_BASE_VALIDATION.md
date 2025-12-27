@@ -30,7 +30,7 @@ The API base URL is configured through the `VITE_API_BASE` environment variable,
 
 ### Current Production Configuration
 
-```bash
+```powershell
 # .env.production
 VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 ```
@@ -57,7 +57,7 @@ The build process includes automated validation via `scripts/prebuild.js`, which
 
 ### Running Validation Manually
 
-```bash
+```powershell
 # Validate API base configuration
 node scripts/validate-api-base.js
 
@@ -84,7 +84,7 @@ Set to `true` to bypass DNS resolution failure. Use only when:
 
 Set to your expected API Gateway ID (e.g., `i72dxlcfcc`) for additional validation:
 
-```bash
+```powershell
 STACK_API_ID=i72dxlcfcc node scripts/validate-api-base.js
 ```
 
@@ -121,7 +121,7 @@ If a deprecated host is detected:
 
 ### Enable Debug Mode
 
-```bash
+```powershell
 # .env.local or .env.production
 VITE_DEBUG_API=true
 ```
@@ -136,7 +136,7 @@ Scans source code and built assets for API configuration issues.
 
 **Usage:**
 
-```bash
+```powershell
 node scripts/scan-api-base.js
 ```
 
@@ -175,7 +175,7 @@ Validates the configured API base URL before build.
 
 **Usage:**
 
-```bash
+```powershell
 node scripts/validate-api-base.js
 ```
 
@@ -198,7 +198,7 @@ Analyzes Git/PR history for API base configuration changes.
 
 **Usage:**
 
-```bash
+```powershell
 node scripts/analyze-api-base-history.js [--count=25]
 
 # With GitHub token for higher rate limits
@@ -218,7 +218,7 @@ Compares two production bundles to detect API hostname changes.
 
 **Usage:**
 
-```bash
+```powershell
 # Auto-detect latest two bundles in dist/assets
 node scripts/diff-bundles-api-base.js
 
@@ -247,9 +247,9 @@ node scripts/diff-bundles-api-base.js \
 
 #### 1. Verify Current Configuration
 
-```bash
+```powershell
 # Check .env.production
-cat .env.production | grep VITE_API_BASE
+cat .env.production | Select-String VITE_API_BASE
 
 # Scan for stale hosts
 node scripts/scan-api-base.js
@@ -257,14 +257,14 @@ node scripts/scan-api-base.js
 
 #### 2. Update Configuration
 
-```bash
+```powershell
 # Update .env.production
 echo "VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com" > .env.production
 ```
 
 #### 3. Rebuild Application
 
-```bash
+```powershell
 # Clean build
 rm -rf dist node_modules/.vite
 
@@ -275,7 +275,7 @@ npm run build
 
 #### 4. Validate Build
 
-```bash
+```powershell
 # Validate API base
 node scripts/validate-api-base.js
 
@@ -288,7 +288,7 @@ node scripts/diff-bundles-api-base.js
 
 #### 5. Deploy
 
-```bash
+```powershell
 # Deploy to hosting service (e.g., Netlify, Vercel, S3+CloudFront)
 # Follow your standard deployment procedure
 
@@ -302,7 +302,7 @@ aws cloudfront create-invalidation \
 
 **CloudFront invalidation:**
 
-```bash
+```powershell
 aws cloudfront create-invalidation \
   --distribution-id YOUR_DISTRIBUTION_ID \
   --paths "/*"
@@ -429,7 +429,7 @@ env:
 
 **Solution:**
 
-```bash
+```powershell
 # Generate GitHub personal access token (no scopes needed for public repo)
 # https://github.com/settings/tokens
 
@@ -439,12 +439,12 @@ GITHUB_TOKEN=ghp_your_token node scripts/analyze-api-base-history.js
 ## Best Practices
 
 1. **Always validate before deploying**
-   ```bash
+   ```powershell
    npm run build  # Includes validation via prebuild
    ```
 
 2. **Scan after merging PRs that touch API config**
-   ```bash
+   ```powershell
    node scripts/scan-api-base.js
    ```
 

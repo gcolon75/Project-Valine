@@ -47,13 +47,13 @@ This guide provides step-by-step instructions for deploying the profile links fe
 ### Phase 1: Database Schema Update
 
 1. **Backup Database**
-   ```bash
+   ```powershell
    # PostgreSQL
    pg_dump -h localhost -U username valine_db > backup_$(date +%Y%m%d).sql
    ```
 
 2. **Apply Ordering Migration**
-   ```bash
+   ```powershell
    cd api
    npx prisma migrate deploy
    ```
@@ -69,7 +69,7 @@ This guide provides step-by-step instructions for deploying the profile links fe
      - Creates composite index on `userId` and `position`
 
 3. **Verify Migration**
-   ```bash
+   ```powershell
    # Check position column exists
    psql -h localhost -U username -d valine_db -c "SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'profile_links' AND column_name = 'position';"
    
@@ -81,7 +81,7 @@ This guide provides step-by-step instructions for deploying the profile links fe
    ```
 
 4. **Rollback Plan** (if needed)
-   ```bash
+   ```powershell
    # Run rollback SQL (see api/prisma/migrations/20251105210000_add_profile_links_ordering/ROLLBACK.md)
    psql -h localhost -U username -d valine_db < rollback.sql
    ```
@@ -89,20 +89,20 @@ This guide provides step-by-step instructions for deploying the profile links fe
 ### Phase 2: Deploy Backend Changes
 
 1. **Update Dependencies**
-   ```bash
+   ```powershell
    cd api
    npm install
    npx prisma generate
    ```
 
 2. **Test API Endpoints**
-   ```bash
+   ```powershell
    # Start server
    cd server/src
    node index.js
    
    # In another terminal, test health endpoint
-   curl http://localhost:5000/health
+Invoke-RestMethod -Uri "http://localhost:5000/health" -Method Get
    ```
 
 3. **Deploy to Staging**
@@ -120,7 +120,7 @@ This guide provides step-by-step instructions for deploying the profile links fe
 Migrate existing `socialLinks` JSON data to normalized `profile_links` table using the provided script.
 
 1. **Run Dry Run First (Recommended)**
-   ```bash
+   ```powershell
    cd api
    npm run migrate:social-links:dry-run
    ```
@@ -160,7 +160,7 @@ Migrate existing `socialLinks` JSON data to normalized `profile_links` table usi
    - Identify any profiles that will be skipped
 
 3. **Run Live Migration**
-   ```bash
+   ```powershell
    cd api
    npm run migrate:social-links
    ```
@@ -172,7 +172,7 @@ Migrate existing `socialLinks` JSON data to normalized `profile_links` table usi
    - Assign sequential positions (0, 1, 2, ...)
 
 4. **Verify Migration**
-   ```bash
+   ```powershell
    # Check migrated links count
    psql -h localhost -U username -d valine_db -c "SELECT COUNT(*) FROM profile_links;"
    
@@ -193,12 +193,12 @@ Migrate existing `socialLinks` JSON data to normalized `profile_links` table usi
    ```
 
 5. **Post-Migration Testing**
-   ```bash
+   ```powershell
    # Test fetching profile with migrated links
-   curl http://localhost:5000/profiles/user_123
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get
    
    # Verify links are ordered by position
-   curl http://localhost:5000/profiles/user_123/links
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123/links" -Method Get
    ```
 
 ### Migration Script Details
@@ -325,7 +325,7 @@ migrateProfileLinks()
 ## Testing Strategy
 
 ### Unit Tests
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 npm run test:run -- server/src/utils
 ```
@@ -337,12 +337,12 @@ npm run test:run -- server/src/utils
 Integration tests require a running API server and database:
 
 1. **Setup Test Database**
-   ```bash
+   ```powershell
    # Create test database
    createdb valine_test
    
    # Set test database URL
-   export DATABASE_URL="postgresql://username:password@localhost:5432/valine_test"
+$env:DATABASE_URL = "postgresql://username:password@localhost:5432/valine_test"
    
    # Run migrations
    cd api
@@ -350,14 +350,14 @@ Integration tests require a running API server and database:
    ```
 
 2. **Start Test Server**
-   ```bash
+   ```powershell
    cd server/src
-   export PORT=5000
+$env:PORT = "5000"
    node index.js
    ```
 
 3. **Run Integration Tests**
-   ```bash
+   ```powershell
    # In another terminal
    cd /home/runner/work/Project-Valine/Project-Valine
    npm run test:run -- server/src/routes
@@ -366,41 +366,24 @@ Integration tests require a running API server and database:
 ### Manual Testing
 
 1. **Test Profile Links API**
-   ```bash
+   ```powershell
    # Get profile with links
-   curl http://localhost:5000/profiles/user_123
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get
    
    # Create a link
-   curl -X POST http://localhost:5000/profiles/user_123/links \
-     -H "Content-Type: application/json" \
-     -d '{"label":"My Website","url":"https://example.com","type":"website"}'
-   
-   # Update a link
-   curl -X PATCH http://localhost:5000/profiles/user_123/links/link_id \
-     -H "Content-Type: application/json" \
-     -d '{"label":"Updated Website"}'
-   
-   # Delete a link
-   curl -X DELETE http://localhost:5000/profiles/user_123/links/link_id
-   ```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"label":"My Website","url":"https://example.com","type":"website"}' -ContentType 'application/json'```
 
 2. **Test Validation**
-   ```bash
+   ```powershell
    # Test invalid URL
-   curl -X POST http://localhost:5000/profiles/user_123/links \
-     -H "Content-Type: application/json" \
-     -d '{"label":"Bad Link","url":"not-a-url","type":"website"}'
-   
-   # Test label too long
-   curl -X POST http://localhost:5000/profiles/user_123/links \
-     -H "Content-Type: application/json" \
-     -d '{"label":"'$(printf 'A%.0s' {1..41})'","url":"https://example.com","type":"website"}'
-   
-   # Test invalid type
-   curl -X POST http://localhost:5000/profiles/user_123/links \
-     -H "Content-Type: application/json" \
-     -d '{"label":"Link","url":"https://example.com","type":"invalid"}'
-   ```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"label":"Bad Link","url":"not-a-url","type":"website"}' -ContentType 'application/json'```
 
 ## Rollback Plan
 
@@ -409,7 +392,7 @@ If issues are encountered after deployment:
 ### Quick Rollback (No Data Loss)
 
 1. **Revert Backend Code**
-   ```bash
+   ```powershell
    git revert <commit-hash>
    git push origin main
    ```
@@ -427,13 +410,13 @@ If issues are encountered after deployment:
    ```
 
 2. **Run Rollback SQL**
-   ```bash
+   ```powershell
    cd api/prisma/migrations/20251105030800_add_profile_links_table
    psql -h localhost -U username -d valine_db -f ROLLBACK.md
    ```
 
 3. **Revert Code Changes**
-   ```bash
+   ```powershell
    git revert <commit-hash>
    git push origin main
    cd api

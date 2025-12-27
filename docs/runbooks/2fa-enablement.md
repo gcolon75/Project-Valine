@@ -468,7 +468,7 @@ if (codeMatched) {
    - Completes identity verification
 
 2. **Admin Reviews Request**:
-   ```bash
+   ```powershell
    # Check user account details
    psql $DATABASE_URL -c "
    SELECT id, email, username, two_factor_enabled, created_at, last_login
@@ -560,7 +560,7 @@ if (codeMatched) {
 **Procedure**:
 
 1. **Generate Bypass Token**:
-   ```bash
+   ```powershell
    # Run on secure admin console
    node scripts/generate-2fa-bypass.js \
      --user-id usr_123 \

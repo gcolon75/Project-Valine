@@ -6,9 +6,9 @@ This migration adds the `profileComplete` column to the `users` table. The colum
 
 ## Quick Fix (Production)
 
-```bash
+```powershell
 # Set DATABASE_URL
-export DATABASE_URL="postgresql://USER:PASS@HOST:PORT/DB?sslmode=require"
+$env:DATABASE_URL = "postgresql://USER:PASS@HOST:PORT/DB?sslmode=require"
 
 # Run migration
 node scripts/add-profilecomplete-column.mjs
@@ -18,7 +18,7 @@ node scripts/add-profilecomplete-column.mjs
 
 After running, check CloudWatch logs for the login function:
 
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-prod-login --region us-west-2 --since 1m
 ```
 
@@ -58,7 +58,7 @@ An index `users_profileComplete_idx` is created on the column for query optimiza
 
 If you see SSL errors, ensure your `DATABASE_URL` includes `?sslmode=require` and that you're running with the correct `NODE_ENV`:
 
-```bash
+```powershell
 NODE_ENV=production node scripts/add-profilecomplete-column.mjs
 ```
 
