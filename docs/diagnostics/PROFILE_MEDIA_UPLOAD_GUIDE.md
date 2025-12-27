@@ -344,13 +344,16 @@ Expected CORS config:
 ```
 
 ### Check Database Schema
-```bash
-# Connect to database and verify tables
-psql $DATABASE_URL -c "\d profiles"
-psql $DATABASE_URL -c "\d media"
+```powershell
+# Connect to database and verify tables (requires psql installed)
+& psql $env:DATABASE_URL -c "\d profiles"
+& psql $env:DATABASE_URL -c "\d media"
 
 # Check for missing columns
-psql $DATABASE_URL -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'profiles' ORDER BY ordinal_position;"
+& psql $env:DATABASE_URL -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'profiles' ORDER BY ordinal_position;"
+
+# Alternative: Use AWS RDS Query Editor or pgAdmin
+# Query Editor: AWS Console → RDS → Query Editor
 ```
 
 ---
@@ -378,10 +381,11 @@ psql $DATABASE_URL -c "SELECT column_name, data_type FROM information_schema.col
    - Verify foreign keys are valid
 
 5. **Monitor CloudWatch:**
-   ```bash
+   ```powershell
    # Get recent errors from upload endpoints
    aws logs tail /aws/lambda/pv-api-prod-getUploadUrl --follow
    aws logs tail /aws/lambda/pv-api-prod-completeUpload --follow
+   ```
    ```
 
 ---

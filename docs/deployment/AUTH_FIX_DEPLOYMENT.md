@@ -37,31 +37,42 @@ This PR fixes the authentication 401 regression and adds safeguards to prevent e
 ### ☐ 1. Verify Environment Variables
 Before deploying, ensure these are set in AWS Systems Manager Parameter Store or environment:
 
-```bash
+```powershell
 # Critical - MUST be set
-DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
-JWT_SECRET="<64-character-random-hex-string>"
-NODE_ENV="production"
+$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+$env:JWT_SECRET = "<generate-with-command-below>"
+$env:NODE_ENV = "production"
 
 # Important - should be set
-MEDIA_BUCKET="valine-media-uploads"
-FRONTEND_URL="https://dkmxy676d3vgc.cloudfront.net"
-API_BASE_URL="https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$env:MEDIA_BUCKET = "valine-media-uploads"
+$env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
+$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 ```
 
 **Generate a secure JWT_SECRET:**
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```powershell
+# Option 1: OpenSSL (recommended - cryptographically secure)
+openssl rand -base64 32
+
+# Option 2: PowerShell (cryptographically secure)
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+[Convert]::ToBase64String($bytes)
 ```
 
 ### ☐ 2. Verify Database Connection
 Test DATABASE_URL before deploying:
-```bash
-psql "$DATABASE_URL" -c "SELECT 1;"
+```powershell
+# Using psql (if installed)
+& psql $env:DATABASE_URL -c "SELECT 1;"
+
+# Or test via Lambda health endpoint after deployment
+aws lambda invoke --function-name pv-api-prod-health response.json
+Get-Content response.json
 ```
 
 ### ☐ 3. Run Tests Locally
-```bash
+```powershell
 cd serverless
 npm install
 npm test
@@ -69,7 +80,7 @@ npm test
 ```
 
 ### ☐ 4. Review Changes
-```bash
+```powershell
 git log --oneline origin/main..copilot/fix-authentication-401-regression
 git diff origin/main..copilot/fix-authentication-401-regression
 ```
@@ -79,11 +90,11 @@ git diff origin/main..copilot/fix-authentication-401-regression
 ## Deployment Steps
 
 ### Deploy to Production
-```bash
+```powershell
 cd serverless
 
 # Ensure environment variables are set
-export AWS_PROFILE=production  # or your profile name
+$env:AWS_PROFILE = "production"  # or your profile name
 
 # Deploy
 npm run deploy
@@ -93,14 +104,14 @@ aws lambda list-functions --query 'Functions[?starts_with(FunctionName, `pv-api-
 ```
 
 ### Verify Each Lambda Has Environment Variables
-```bash
+```powershell
 # Check a few critical functions
-aws lambda get-function-configuration \
-  --function-name pv-api-prod-api \
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-api `
   --query 'Environment.Variables.{DATABASE_URL: DATABASE_URL, JWT_SECRET: JWT_SECRET, NODE_ENV: NODE_ENV}'
 
-aws lambda get-function-configuration \
-  --function-name pv-api-prod-getUploadUrl \
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-getUploadUrl `
   --query 'Environment.Variables.{DATABASE_URL: DATABASE_URL, JWT_SECRET: JWT_SECRET, NODE_ENV: NODE_ENV, MEDIA_BUCKET: MEDIA_BUCKET}'
 ```
 
@@ -152,7 +163,7 @@ Write-Host "✅ /auth/me successful: Email = $($meResponse.user.email)"
 4. Check Network tab for successful requests to API Gateway
 
 ### 4. Check CloudWatch Logs
-```bash
+```powershell
 # Check for validation errors (should be none after deployment)
 aws logs tail /aws/lambda/pv-api-prod-api --since 5m --filter-pattern "EnvValidation"
 
@@ -173,7 +184,7 @@ Use the PowerShell script in `docs/diagnostics/PROFILE_MEDIA_UPLOAD_GUIDE.md`:
 If issues occur after deployment:
 
 ### Quick Rollback
-```bash
+```powershell
 # Option 1: Redeploy from main branch
 git checkout main
 cd serverless
@@ -184,7 +195,7 @@ npm run deploy
 ```
 
 ### Verify Rollback
-```bash
+```powershell
 # Check function versions
 aws lambda list-versions-by-function --function-name pv-api-prod-api
 ```
