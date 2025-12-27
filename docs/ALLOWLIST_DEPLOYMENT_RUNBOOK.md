@@ -150,7 +150,7 @@ Verify the health endpoint returns allowlist diagnostics:
 
 **PowerShell**:
 ```powershell
-$response = Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -UseBasicParsing
+$response = Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -UseBasicParsing
 $json = $response.Content | ConvertFrom-Json
 Write-Host "Allowlist Active: $($json.allowlistActive)"
 Write-Host "Allowlist Count: $($json.allowlistCount)"
@@ -238,7 +238,7 @@ $body = @{
     displayName = "Test User"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register" `
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register" `
     -Method POST `
     -ContentType "application/json" `
     -Body $body `
@@ -265,7 +265,7 @@ $body = @{
     displayName = "Unauthorized User"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register" `
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register" `
     -Method POST `
     -ContentType "application/json" `
     -Body $body `

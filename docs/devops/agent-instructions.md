@@ -9,7 +9,7 @@ You are the DevOps Agent for Project Valine's AWS infrastructure.
 
 ## INFRASTRUCTURE OVERVIEW
 - Frontend: S3 + CloudFront (https://dkmxy676d3vgc.cloudfront.net)
-- Backend: AWS Lambda + API Gateway (https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com)
+- Backend: AWS Lambda + API Gateway (https://wkndtj22ab.execute-api.us-west-2.amazonaws.com)
 - Database: AWS RDS PostgreSQL (project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com)
 - Region: us-west-2
 
@@ -69,8 +69,8 @@ $env:JWT_SECRET="<YOUR_JWT_SECRET>"
 ## HEALTH CHECKS
 ```powershell
 # Backend health
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health"
 
 # Database connection test (via API)
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/status"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/status"
 ```

@@ -144,8 +144,8 @@ Deploying pv-api to stage prod (us-west-2)
 ✔ Service deployed to stack pv-api-prod (112s)
 
 endpoints:
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
-  ANY - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/{proxy+}
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health
+  ANY - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/{proxy+}
 
 functions:
   api: pv-api-prod-api (250 kB)
@@ -160,10 +160,10 @@ layers:
 
 ```powershell
 # Test health endpoint
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method GET
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method GET
 
 # Test auth diagnostics
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/diag" -Method GET
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/diag" -Method GET
 ```
 
 **Expected Health Response:**
@@ -338,9 +338,9 @@ See the [Backend Deployment Guide - CloudFormation DELETE_FAILED](../BACKEND-DEP
 
 | Endpoint | URL |
 |----------|-----|
-| API Base | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` |
-| Health Check | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health` |
-| Auth Diagnostics | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/diag` |
+| API Base | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` |
+| Health Check | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health` |
+| Auth Diagnostics | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/diag` |
 
 ## Quick Reference Commands
 

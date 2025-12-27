@@ -22,7 +22,7 @@ All issues have been resolved. Production is stable.
 
 | Resource | Value |
 |----------|-------|
-| API Base | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
+| API Base | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com |
 | Frontend | https://dkmxy676d3vgc.cloudfront.net |
 | Prisma Layer | arn:aws:lambda:us-west-2:579939802800:layer:prisma:12 |
 | DB URL | postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require |
@@ -125,7 +125,7 @@ Confirmed `ALLOWED_USER_EMAILS` includes production users. See [docs/allowlist.m
 ### Step 1: Login and Capture Tokens
 
 ```powershell
-$api = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$api = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 
 $loginBody = @{
     email = "ghawk075@gmail.com"

@@ -248,14 +248,14 @@ Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/aut
 
 ```powershell
 # Login
-$loginResponse = Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login" `
+$loginResponse = Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"email":"your-email@example.com","password":"your-password"}' `
   -SessionVariable session
 
 # Test profile endpoint
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/me/profile" `
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile" `
   -Method GET `
   -WebSession $session
 ```

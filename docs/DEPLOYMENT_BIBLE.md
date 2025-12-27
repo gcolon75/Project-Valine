@@ -311,7 +311,70 @@ layers:
 
 ## Post-Deploy Verification
 
-### 1. Verify Lambda Environment Variables
+**CRITICAL:** Always run these checks after every deployment to prevent auth/infra outages.
+
+### 1. Environment Variable Drift Check (Automated)
+
+Run this PowerShell script to verify all Lambda functions have consistent env vars:
+
+```powershell
+# Define critical environment variables that must be set on ALL functions
+$criticalVars = @('NODE_ENV', 'DATABASE_URL', 'JWT_SECRET', 'FRONTEND_URL')
+
+# Get all prod functions
+$functions = aws lambda list-functions `
+  --query 'Functions[?starts_with(FunctionName, `pv-api-prod`)].FunctionName' `
+  --output json | ConvertFrom-Json
+
+Write-Host "`n=== Environment Variable Drift Check ===" -ForegroundColor Cyan
+Write-Host "Checking $($functions.Count) Lambda functions`n"
+
+$issues = @()
+
+foreach ($functionName in $functions) {
+    Write-Host "Checking: $functionName" -ForegroundColor Yellow
+    
+    $config = aws lambda get-function-configuration `
+      --function-name $functionName `
+      --output json | ConvertFrom-Json
+    
+    $envVars = $config.Environment.Variables
+    
+    foreach ($varName in $criticalVars) {
+        $value = $envVars.$varName
+        
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            $issue = "❌ $functionName is missing $varName"
+            Write-Host "  $issue" -ForegroundColor Red
+            $issues += $issue
+        } elseif ($varName -eq 'NODE_ENV' -and $value -ne 'production') {
+            $issue = "⚠️  $functionName has NODE_ENV=$value (expected: production)"
+            Write-Host "  $issue" -ForegroundColor Yellow
+            $issues += $issue
+        } elseif ($varName -eq 'DATABASE_URL' -and $value -match '\s') {
+            $issue = "❌ $functionName DATABASE_URL contains spaces"
+            Write-Host "  $issue" -ForegroundColor Red
+            $issues += $issue
+        } else {
+            Write-Host "  ✅ $varName is set" -ForegroundColor Green
+        }
+    }
+    Write-Host ""
+}
+
+if ($issues.Count -eq 0) {
+    Write-Host "✅ All checks passed - no environment drift detected" -ForegroundColor Green
+} else {
+    Write-Host "❌ Found $($issues.Count) issues - IMMEDIATE ACTION REQUIRED" -ForegroundColor Red
+    $issues | ForEach-Object { Write-Host "  $_" }
+}
+```
+
+**Save this script as:** `serverless/scripts/check-env-drift.ps1`
+
+**Why this matters:** Missing `NODE_ENV=production` causes auth cookies to be set as `SameSite=Lax` instead of `SameSite=None; Secure`, breaking cross-site authentication. Missing `DATABASE_URL` causes 503 errors.
+
+### 2. Verify Lambda Environment Variables (Manual)
 
 Check that ALL critical functions have the required env vars:
 
@@ -341,7 +404,22 @@ aws lambda get-function-configuration `
 - `ALLOWED_USER_EMAILS` (same value across all)
 - `NODE_ENV=production`
 
-### 2. Manual Smoke Tests
+### 3. Verify Cookie Attributes (Browser)
+
+1. Open browser to: `https://dkmxy676d3vgc.cloudfront.net`
+2. Open DevTools → **Application** → **Cookies**
+3. Login via the UI
+4. Verify cookies have correct attributes:
+
+| Cookie | SameSite | Secure | HttpOnly |
+|--------|----------|--------|----------|
+| `access_token` | **None** | ✅ Yes | ✅ Yes |
+| `refresh_token` | **None** | ✅ Yes | ✅ Yes |
+| `XSRF-TOKEN` | **None** | ✅ Yes | ❌ No |
+
+**❌ If cookies show `SameSite=Lax`:** This means `NODE_ENV` is not set to "production" in authRouter Lambda. Redeploy immediately and have users clear cookies + re-login.
+
+### 4. Manual Smoke Tests
 
 Test critical auth flow:
 
@@ -399,7 +477,7 @@ Invoke-WebRequest -Uri "$API_URL/unread-counts" `
 # Expected: 200 OK, notification/message counts
 ```
 
-### 3. CloudWatch Logs Check
+### 5. CloudWatch Logs Check
 
 ```powershell
 # View recent logs for authRouter
@@ -418,7 +496,7 @@ Look for:
 - ✅ No `Token not found` messages for authenticated requests
 - ❌ No `JsonWebTokenError` or `invalid token` errors
 
-### 4. Frontend Integration Test
+### 6. Frontend Integration Test
 
 1. Open CloudFront URL: `https://dkmxy676d3vgc.cloudfront.net`
 2. Login with allowlisted email
@@ -426,6 +504,8 @@ Look for:
 4. Navigate to Settings/Preferences
 5. Check feed page
 6. Verify no intermittent 401 errors in browser Network panel
+
+**See also:** `docs/runbooks/prevent-auth-env-drift.md` for detailed incident prevention procedures.
 
 ---
 

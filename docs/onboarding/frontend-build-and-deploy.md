@@ -57,7 +57,7 @@ These validations have prevented multiple white screen incidents by catching bui
 
 ```powershell
 # Set API base URL (production API Gateway)
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 
 # Optional: Set other production variables
 $env:VITE_ALLOWED_USER_EMAILS = "email1@example.com,email2@example.com"
@@ -67,7 +67,7 @@ $env:VITE_ENABLE_DEV_BYPASS = "false"
 
 **Alternatively, create `.env.production` file:**
 ```env
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=email1@example.com,email2@example.com
 VITE_ENABLE_REGISTRATION=false
 VITE_ENABLE_DEV_BYPASS=false
@@ -258,7 +258,7 @@ Use this checklist before deploying to production:
 **Solution:**
 ```powershell
 # Set the variable before building
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 npm run build
 ```
 

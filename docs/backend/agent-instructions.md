@@ -571,7 +571,7 @@ $env:JWT_SECRET="your-secret"
 npx serverless deploy --stage prod --region us-west-2
 
 # Verify
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health"
 ```
 
 ### Post-Deployment Verification
@@ -582,6 +582,6 @@ Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/h
 
 ## PRODUCTION URLS
 
-- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
 - **Database:** project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com

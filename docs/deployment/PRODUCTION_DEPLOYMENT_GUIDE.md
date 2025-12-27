@@ -53,7 +53,7 @@ $env:ALLOWED_USER_EMAILS = "admin@example.com,user@example.com"
 $env:ENABLE_REGISTRATION = "false"
 
 # Frontend Configuration
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 $env:S3_BUCKET = "your-s3-bucket-name"
 $env:CLOUDFRONT_DISTRIBUTION_ID = "your-distribution-id"
@@ -144,7 +144,7 @@ serverless --version
 │                         │                                        │
 │                         ▼                                        │
 │  Backend (API Gateway + Lambda)                                 │
-│  https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com        │
+│  https://wkndtj22ab.execute-api.us-west-2.amazonaws.com        │
 │                         │                                        │
 │                         ▼                                        │
 │  Database (RDS PostgreSQL)                                      │
@@ -418,10 +418,10 @@ Deploying pv-api to stage prod (us-west-2)
 ✔ Service deployed to stack pv-api-prod (112s)
 
 endpoints:
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
-  POST - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register
-  POST - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health
+  POST - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register
+  POST - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/login
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/me
   ...
 
 functions:
@@ -438,7 +438,7 @@ layers:
 
 ```powershell
 # Test health endpoint
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected response:
 # {"status":"ok","secretsStatus":{...}}
@@ -500,7 +500,7 @@ GitHub Actions workflow (`.github/workflows/client-deploy.yml`) will:
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set environment variables
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:S3_BUCKET = "your-s3-bucket"
 $env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
@@ -524,7 +524,7 @@ This script:
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set API base URL
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 
 # Install dependencies (if needed)
 npm ci
@@ -611,7 +611,7 @@ open https://dkmxy676d3vgc.cloudfront.net
 ### Troubleshooting Frontend Deployment
 
 **Error: "VITE_API_BASE is required"**
-- Set: `export VITE_API_BASE="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"`
+- Set: `export VITE_API_BASE="https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"`
 
 **Error: "S3 bucket not found"**
 - Verify bucket name: `aws s3 ls`
@@ -734,7 +734,7 @@ Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/aut
 cd /home/runner/work/Project-Valine/Project-Valine
 
 # Set environment variables
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 
 # Run verification script
@@ -773,7 +773,7 @@ node scripts/verify-production-deployment.mjs
 #### 1. API Health Check
 
 ```powershell
-Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 ```
 
 Expected:
@@ -1049,7 +1049,7 @@ git checkout main
 git checkout PREVIOUS_COMMIT_SHA
 
 # Build and deploy
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 npm run build
 aws s3 sync dist "s3://your-bucket" --delete
 aws cloudfront create-invalidation --distribution-id "your-dist-id" --paths "/*"
@@ -1181,7 +1181,7 @@ gh run watch RUN_ID
 # Step 0: Set environment variables
 $env:DATABASE_URL = "postgresql://YOUR_USERNAME:YOUR_PASSWORD@YOUR_RDS_ENDPOINT.rds.amazonaws.com:5432/YOUR_DATABASE?sslmode=require"
 $env:JWT_SECRET = "$(openssl rand -base64 32)"
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:S3_BUCKET = "your-s3-bucket"
 $env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
@@ -1231,7 +1231,7 @@ cd serverless
 npx serverless deploy --stage prod --region us-west-2
 
 # Frontend only
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 npm run build
 aws s3 sync dist "s3://$S3_BUCKET" --delete
 aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
@@ -1243,7 +1243,7 @@ aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_I
 
 ### Production Endpoints
 
-- **API Gateway:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API Gateway:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 - **Frontend (CloudFront):** https://dkmxy676d3vgc.cloudfront.net
 - **Database:** project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432
 

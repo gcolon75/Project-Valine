@@ -64,8 +64,8 @@ Create `.env.production` file:
 
 # API Base URL - MUST be API Gateway URL, NOT CloudFront
 # ❌ WRONG: https://valine.app (CloudFront CDN)
-# ✅ CORRECT: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+# ✅ CORRECT: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 # Disable registration in production (security)
 VITE_ENABLE_REGISTRATION=false
@@ -109,9 +109,9 @@ Domain: valine.app
 Origin: valine-frontend-prod.s3.us-west-2.amazonaws.com
 
 # API Gateway
-API ID: i72dxlcfcc
+API ID: wkndtj22ab
 Region: us-west-2
-Endpoint: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+Endpoint: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 ---
@@ -406,7 +406,7 @@ cache-control: public, max-age=31536000, immutable
 # Open browser DevTools and check Network tab
 # Visit: https://valine.app
 # Expected API calls should go to:
-# ✅ https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/...
+# ✅ https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/...
 # ❌ NOT https://valine.app/auth/...
 
 # Test login endpoint directly
@@ -455,7 +455,7 @@ console.log('Check for errors above');
 
 // 2. API base is correct
 console.log('API Base:', import.meta.env.VITE_API_BASE);
-// Expected: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+// Expected: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 // 3. Registration disabled
 console.log('Registration enabled:', import.meta.env.VITE_ENABLE_REGISTRATION);
@@ -486,7 +486,7 @@ Select-String -o "VITE_API_BASE[^\"]*" dist/assets/*.js | head -1
 ```powershell
 # Update .env.production
 Get-Content > .env.production << 'EOF'
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 VITE_ENABLE_REGISTRATION=false
 EOF
 
@@ -501,7 +501,7 @@ aws cloudfront create-invalidation --distribution-id dkmxy676d3vgc --paths "/*"
 
 **Symptoms:**
 ```
-Access to fetch at 'https://i72dxlcfcc...' from origin 'https://valine.app' 
+Access to fetch at 'https://wkndtj22ab...' from origin 'https://valine.app' 
 has been blocked by CORS policy
 ```
 

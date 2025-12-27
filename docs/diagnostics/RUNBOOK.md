@@ -10,7 +10,7 @@ This document provides unified deployment procedures for Project Valine's backen
 |----------|-------|
 | S3 Bucket | s3://valine-frontend-prod |
 | CloudFront Distribution | E16LPJDBIL5DEE |
-| API Base URL | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
+| API Base URL | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com |
 | Database URL | postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require |
 | Prisma Layer ARN | arn:aws:lambda:us-west-2:579939802800:layer:prisma:12 |
 | AWS Region | us-west-2 |
@@ -204,7 +204,7 @@ aws lambda get-function-configuration `
   --query "Layers[].Arn"
 
 # Test login endpoint
-$api = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$api = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $body = @{ email = "ghawk075@gmail.com"; password = "Test123!" } | ConvertTo-Json
 Invoke-WebRequest -Uri "$api/auth/login" -Method POST -Body $body -ContentType "application/json"
 ```
@@ -364,7 +364,7 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ### API Health
 
 ```powershell
-Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method GET
+Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method GET
 ```
 
 ### Frontend Health

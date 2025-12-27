@@ -660,7 +660,7 @@ export default UserProfileCard;
 ## PRODUCTION URLS
 
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
-- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 ## CURRENT API ENDPOINTS AND HOW TO CALL THEM
 

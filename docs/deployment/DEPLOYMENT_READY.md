@@ -168,7 +168,7 @@ npx serverless deploy --stage prod
 ### Step 3: Deploy Frontend
 
 ```powershell
-$env:VITE_API_BASE = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:VITE_API_BASE = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:S3_BUCKET = "your-bucket"
 $env:CLOUDFRONT_DISTRIBUTION_ID = "your-dist-id"
 
