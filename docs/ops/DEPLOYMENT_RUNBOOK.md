@@ -6,7 +6,7 @@
 | Frontend | https://dkmxy676d3vgc.cloudfront.net |
 | API | https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com |
 | DB Host | project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com |
-| S3 Bucket | project-valine-frontend-prod |
+| S3 Bucket | valine-frontend-prod |
 | AWS Region | us-west-2 |
 
 **Note:** To find your CloudFront Distribution ID, run:
@@ -71,7 +71,7 @@ npm run build
 
 ### Step 2: Deploy to S3
 ```powershell
-aws s3 sync dist/ s3://project-valine-frontend-prod --delete
+aws s3 sync dist/ s3://valine-frontend-prod --delete
 ```
 
 ### Step 3: Invalidate CloudFront
@@ -152,7 +152,7 @@ npx serverless rollback --timestamp TIMESTAMP --stage prod
 ### Frontend Rollback
 ```powershell
 # S3 versioning must be enabled
-aws s3api list-object-versions --bucket project-valine-frontend-prod --prefix index.html
+aws s3api list-object-versions --bucket valine-frontend-prod --prefix index.html
 ```
 
 ## Post-Deployment Verification
