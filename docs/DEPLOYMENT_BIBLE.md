@@ -141,11 +141,13 @@ $env:REPORTS_ENABLED = "true"
 ### Generate Secure JWT Secret
 
 ```powershell
-# Option 1: OpenSSL (recommended)
+# Option 1: OpenSSL (recommended - cryptographically secure)
 openssl rand -base64 32
 
-# Option 2: PowerShell
-[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
+# Option 2: PowerShell (cryptographically secure)
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+[Convert]::ToBase64String($bytes)
 ```
 
 ### S3 Bucket Name
@@ -451,11 +453,17 @@ Run post-deploy verification tests again to ensure system is stable.
 
 **Verify**:
 ```powershell
-# Check Lambda code includes the fix
-$codeUrl = aws lambda get-function --function-name pv-api-prod-profilesRouter `
-  --query 'Code.Location' --output text
-Invoke-WebRequest -Uri $codeUrl -OutFile temp.zip
-# Manually inspect or extract to verify
+# Check Lambda code includes the fix by downloading and inspecting the deployment package
+$functionName = "pv-api-prod-profilesRouter"
+$codeUrl = (aws lambda get-function --function-name $functionName --query 'Code.Location' --output text)
+
+if ($codeUrl) {
+    Invoke-WebRequest -Uri $codeUrl -OutFile "$env:TEMP\lambda-code.zip"
+    Write-Host "Lambda code downloaded to $env:TEMP\lambda-code.zip"
+    Write-Host "Extract and search for 'trimmedCookie' to verify the fix is included"
+} else {
+    Write-Warning "Could not retrieve Lambda code URL"
+}
 ```
 
 ### Issue 2: Missing Prisma Layer
@@ -568,7 +576,7 @@ Before deploying to production:
 If secrets are committed to git:
 
 ```powershell
-# 1. Generate new JWT secret
+# 1. Generate new JWT secret (cryptographically secure)
 $NEW_JWT_SECRET = openssl rand -base64 32
 
 # 2. Update Lambda env vars
