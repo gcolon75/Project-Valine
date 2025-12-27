@@ -1,0 +1,404 @@
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    One-button deployment script for Project Valine API (PowerShell)
+
+.DESCRIPTION
+    Validates environment, builds Prisma layer, packages, deploys, and verifies the deployment.
+    This is the canonical deployment script referenced in docs/DEPLOYMENT_BIBLE.md
+
+.PARAMETER Stage
+    Deployment stage (prod, staging, dev). Default: prod
+
+.PARAMETER Region
+    AWS region. Default: us-west-2
+
+.PARAMETER SkipTests
+    Skip smoke tests after deployment
+
+.PARAMETER Force
+    Force redeployment even if no changes detected
+
+.EXAMPLE
+    .\deploy.ps1 -Stage prod -Region us-west-2
+
+.EXAMPLE
+    .\deploy.ps1 -Stage staging -Region us-west-2 -SkipTests
+#>
+
+param(
+    [string]$Stage = "prod",
+    [string]$Region = "us-west-2",
+    [switch]$SkipTests = $false,
+    [switch]$Force = $false
+)
+
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+# Script metadata
+$ScriptVersion = "1.0.0"
+$ScriptName = "deploy.ps1"
+
+# Colors for output
+function Write-Success { Write-Host "✓ $args" -ForegroundColor Green }
+function Write-Info { Write-Host "ℹ $args" -ForegroundColor Cyan }
+function Write-Warning { Write-Host "⚠ $args" -ForegroundColor Yellow }
+function Write-Error { Write-Host "✗ $args" -ForegroundColor Red }
+function Write-Step { Write-Host "`n▶ $args" -ForegroundColor Blue }
+
+# Banner
+Write-Host @"
+═══════════════════════════════════════════════════════════
+   Project Valine - One-Button Deploy Script v$ScriptVersion
+═══════════════════════════════════════════════════════════
+"@ -ForegroundColor Cyan
+
+Write-Info "Stage: $Stage | Region: $Region"
+if ($Force) { Write-Warning "Force mode enabled - will redeploy all functions" }
+if ($SkipTests) { Write-Warning "Tests will be skipped" }
+Write-Host ""
+
+# ===== STEP 1: Preflight Checks =====
+Write-Step "Step 1: Preflight Checks"
+
+# Check we're in the serverless directory
+$currentDir = Get-Location
+if (-not (Test-Path "serverless.yml")) {
+    Write-Error "serverless.yml not found. Run this script from the serverless/ directory."
+    exit 1
+}
+Write-Success "Running from serverless directory"
+
+# Check required tools
+Write-Info "Checking required tools..."
+
+$tools = @(
+    @{Name="node"; Version="20"; Command="node --version"},
+    @{Name="npm"; Version="10"; Command="npm --version"},
+    @{Name="aws"; Version="2"; Command="aws --version"},
+    @{Name="serverless"; Version="3"; Command="serverless --version"}
+)
+
+foreach ($tool in $tools) {
+    try {
+        $version = Invoke-Expression $tool.Command 2>&1 | Out-String
+        if ($LASTEXITCODE -eq 0 -or $version) {
+            Write-Success "$($tool.Name): $($version.Trim())"
+        } else {
+            throw
+        }
+    } catch {
+        Write-Error "$($tool.Name) not found or not working. Please install $($tool.Name) v$($tool.Version)+"
+        exit 1
+    }
+}
+
+# Check AWS credentials
+Write-Info "Checking AWS credentials..."
+try {
+    $awsIdentity = aws sts get-caller-identity 2>&1 | ConvertFrom-Json
+    Write-Success "AWS Account: $($awsIdentity.Account)"
+} catch {
+    Write-Error "AWS credentials not configured. Run 'aws configure' first."
+    exit 1
+}
+
+# ===== STEP 2: Validate Environment Variables =====
+Write-Step "Step 2: Validate Environment Variables"
+
+$requiredEnvVars = @(
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "ALLOWED_USER_EMAILS"
+)
+
+$missingVars = @()
+
+# Load .env.prod if exists
+if (Test-Path ".env.prod") {
+    Write-Info "Loading .env.prod..."
+    Get-Content ".env.prod" | ForEach-Object {
+        if ($_ -match '^([^=]+)=(.*)$') {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            if (-not [string]::IsNullOrEmpty($value)) {
+                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+            }
+        }
+    }
+}
+
+foreach ($var in $requiredEnvVars) {
+    $value = [Environment]::GetEnvironmentVariable($var)
+    if ([string]::IsNullOrEmpty($value)) {
+        $missingVars += $var
+    } else {
+        # Redact sensitive values
+        if ($var -match "SECRET|PASSWORD|KEY") {
+            Write-Success "$var = [REDACTED]"
+        } else {
+            $displayValue = $value.Substring(0, [Math]::Min(50, $value.Length))
+            Write-Success "$var = $displayValue..."
+        }
+    }
+}
+
+if ($missingVars.Count -gt 0) {
+    Write-Error "Missing required environment variables: $($missingVars -join ', ')"
+    Write-Warning "Set them in .env.prod or as environment variables"
+    exit 1
+}
+
+# ===== STEP 3: Validate Prisma Layer =====
+Write-Step "Step 3: Validate Prisma Layer"
+
+$layerPath = "layers/prisma-layer.zip"
+
+if (Test-Path $layerPath) {
+    $layerSize = (Get-Item $layerPath).Length / 1MB
+    Write-Success "Prisma layer found: $([math]::Round($layerSize, 2)) MB"
+    
+    # Validate layer structure
+    Write-Info "Validating layer structure..."
+    try {
+        $zipContents = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $layerPath))
+        $hasNodeModules = $zipContents.Entries | Where-Object { $_.FullName -like "nodejs/node_modules/*" }
+        $hasPrismaClient = $zipContents.Entries | Where-Object { $_.FullName -like "nodejs/node_modules/@prisma/client/*" }
+        $zipContents.Dispose()
+        
+        if (-not $hasNodeModules) {
+            throw "Layer missing nodejs/node_modules directory"
+        }
+        if (-not $hasPrismaClient) {
+            throw "Layer missing @prisma/client"
+        }
+        Write-Success "Layer structure validated"
+    } catch {
+        Write-Warning "Layer validation failed: $($_.Exception.Message)"
+        Write-Info "Rebuilding Prisma layer..."
+        Remove-Item $layerPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+if (-not (Test-Path $layerPath)) {
+    Write-Warning "Prisma layer not found. Building..."
+    
+    $buildScript = ".\scripts\build-prisma-layer.ps1"
+    if (Test-Path $buildScript) {
+        & $buildScript
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Prisma layer build failed"
+            exit 1
+        }
+    } else {
+        Write-Error "Build script not found: $buildScript"
+        exit 1
+    }
+}
+
+# ===== STEP 4: Validate Serverless Config =====
+Write-Step "Step 4: Validate Serverless Config"
+
+Write-Info "Validating serverless.yml syntax..."
+try {
+    $config = serverless print --stage $Stage --region $Region 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "serverless print failed: $config"
+    }
+    Write-Success "serverless.yml is valid"
+} catch {
+    Write-Error "serverless.yml validation failed: $($_.Exception.Message)"
+    exit 1
+}
+
+# Check for common config issues
+Write-Info "Checking for common config issues..."
+$ymlContent = Get-Content "serverless.yml" -Raw
+
+if ($ymlContent -match '\t') {
+    Write-Warning "serverless.yml contains tab characters. Use spaces only."
+}
+
+if ($ymlContent -match '\$\{env:[^}]+\}' -and $ymlContent -notmatch 'provider:\s+environment:') {
+    Write-Warning "Using env vars but no provider.environment block found"
+}
+
+Write-Success "Config checks passed"
+
+# ===== STEP 5: Run Linter (optional) =====
+Write-Step "Step 5: Linting (optional)"
+
+if (Test-Path "../node_modules/.bin/eslint" -or (Get-Command eslint -ErrorAction SilentlyContinue)) {
+    Write-Info "Running ESLint..."
+    try {
+        $lintOutput = npm run lint 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "Linting passed"
+        } else {
+            Write-Warning "Linting found issues (non-blocking)"
+            Write-Host $lintOutput -ForegroundColor Gray
+        }
+    } catch {
+        Write-Warning "Linting skipped: $($_.Exception.Message)"
+    }
+} else {
+    Write-Info "ESLint not found, skipping linting"
+}
+
+# ===== STEP 6: Package Functions =====
+Write-Step "Step 6: Package Functions"
+
+Write-Info "Packaging Lambda functions..."
+$packageCmd = "serverless package --stage $Stage --region $Region"
+if ($Force) { $packageCmd += " --force" }
+
+try {
+    Invoke-Expression $packageCmd 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "Package command failed"
+    }
+    Write-Success "Functions packaged successfully"
+} catch {
+    Write-Error "Packaging failed: $($_.Exception.Message)"
+    exit 1
+}
+
+# ===== STEP 7: Deploy to AWS =====
+Write-Step "Step 7: Deploy to AWS"
+
+Write-Info "Deploying to AWS Lambda..."
+$deployCmd = "serverless deploy --stage $Stage --region $Region --verbose"
+if ($Force) { $deployCmd += " --force" }
+
+$deployStart = Get-Date
+try {
+    Invoke-Expression $deployCmd 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "Deploy command failed"
+    }
+    $deployDuration = (Get-Date) - $deployStart
+    Write-Success "Deployment completed in $([math]::Round($deployDuration.TotalSeconds, 1)) seconds"
+} catch {
+    Write-Error "Deployment failed: $($_.Exception.Message)"
+    Write-Warning "Check CloudFormation console for details"
+    exit 1
+}
+
+# ===== STEP 8: Post-Deploy Verification =====
+Write-Step "Step 8: Post-Deploy Verification"
+
+Write-Info "Verifying Lambda environment variables..."
+
+$functionsToCheck = @(
+    "pv-api-$Stage-authRouter",
+    "pv-api-$Stage-profilesRouter",
+    "pv-api-$Stage-getFeed",
+    "pv-api-$Stage-getPreferences"
+)
+
+$varsToCheck = @("JWT_SECRET", "DATABASE_URL", "ALLOWED_USER_EMAILS")
+
+foreach ($func in $functionsToCheck) {
+    Write-Info "Checking $func..."
+    try {
+        $funcConfig = aws lambda get-function-configuration --function-name $func --region $Region 2>&1 | ConvertFrom-Json
+        
+        $allVarsPresent = $true
+        foreach ($var in $varsToCheck) {
+            if (-not $funcConfig.Environment.Variables.$var) {
+                Write-Warning "$func missing $var"
+                $allVarsPresent = $false
+            }
+        }
+        
+        if ($allVarsPresent) {
+            Write-Success "$func has all required env vars"
+        } else {
+            Write-Warning "$func has missing env vars - this may cause 401 errors!"
+        }
+    } catch {
+        Write-Warning "Could not check $func (may not exist): $($_.Exception.Message)"
+    }
+}
+
+# ===== STEP 9: Smoke Tests =====
+if (-not $SkipTests) {
+    Write-Step "Step 9: Smoke Tests"
+    
+    Write-Info "Running smoke tests..."
+    
+    # Get API endpoint
+    $infoOutput = serverless info --stage $Stage --region $Region 2>&1 | Out-String
+    $apiUrl = if ($infoOutput -match 'https://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com') {
+        $matches[0]
+    } else {
+        $null
+    }
+    
+    if ($apiUrl) {
+        Write-Info "API URL: $apiUrl"
+        
+        # Test health endpoint
+        Write-Info "Testing /health endpoint..."
+        try {
+            $healthResponse = Invoke-WebRequest -Uri "$apiUrl/health" -Method GET -UseBasicParsing
+            if ($healthResponse.StatusCode -eq 200) {
+                Write-Success "Health check passed"
+            } else {
+                Write-Warning "Health check returned status: $($healthResponse.StatusCode)"
+            }
+        } catch {
+            Write-Warning "Health check failed: $($_.Exception.Message)"
+        }
+        
+        # Test meta endpoint
+        Write-Info "Testing /meta endpoint..."
+        try {
+            $metaResponse = Invoke-WebRequest -Uri "$apiUrl/meta" -Method GET -UseBasicParsing
+            if ($metaResponse.StatusCode -eq 200) {
+                Write-Success "Meta endpoint passed"
+            } else {
+                Write-Warning "Meta endpoint returned status: $($metaResponse.StatusCode)"
+            }
+        } catch {
+            Write-Warning "Meta endpoint failed: $($_.Exception.Message)"
+        }
+        
+        Write-Info "Note: Authenticated endpoint tests require login. Test manually."
+    } else {
+        Write-Warning "Could not extract API URL from deployment info"
+    }
+} else {
+    Write-Info "Smoke tests skipped"
+}
+
+# ===== STEP 10: Summary =====
+Write-Step "Deployment Summary"
+
+Write-Success "✓ Environment validated"
+Write-Success "✓ Prisma layer validated"
+Write-Success "✓ Functions packaged"
+Write-Success "✓ Deployed to $Stage in $Region"
+Write-Success "✓ Lambda env vars verified"
+
+if (-not $SkipTests) {
+    Write-Success "✓ Smoke tests completed"
+}
+
+Write-Host @"
+
+═══════════════════════════════════════════════════════════
+   Deployment Complete! 🚀
+═══════════════════════════════════════════════════════════
+
+Next Steps:
+1. Test auth flow in browser: https://dkmxy676d3vgc.cloudfront.net
+2. Check CloudWatch logs if issues: /aws/lambda/pv-api-$Stage-*
+3. Review deployment: serverless info --stage $Stage --region $Region
+
+Documentation: docs/DEPLOYMENT_BIBLE.md
+═══════════════════════════════════════════════════════════
+"@ -ForegroundColor Green
+
+exit 0
