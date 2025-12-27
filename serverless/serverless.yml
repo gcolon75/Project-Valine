@@ -35,12 +35,42 @@ provider:
       maxAge: 86400  # Cache preflight requests for 24 hours
   environment:
     STAGE: ${env:STAGE, "prod"}
-    # DATABASE_URL must be a valid PostgreSQL connection string with NO SPACES.
+    
+    # ========== CRITICAL ENVIRONMENT VARIABLES ==========
+    # These variables are REQUIRED and validated at runtime.
+    # Missing or invalid values will cause Lambda functions to fail-fast.
+    # DO NOT deploy without setting these correctly!
+    
+    # DATABASE_URL - REQUIRED
+    # Must be a valid PostgreSQL connection string with NO SPACES.
     # Format: postgresql://user:password@host:port/database?sslmode=require
-    # Special characters in password must be URL-encoded (e.g., @ ? %40, # ? %23)
+    # Special characters in password must be URL-encoded (e.g., @ → %40, # → %23)
+    # Runtime validation: checks for existence, spaces, and postgresql:// prefix
     DATABASE_URL: ${env:DATABASE_URL}
-    MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
+    
+    # JWT_SECRET - REQUIRED
+    # Must be at least 32 characters long.
+    # MUST NOT use default value in production.
+    # Generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+    # Runtime validation: checks length, rejects default value in production
     JWT_SECRET: ${env:JWT_SECRET}
+    
+    # NODE_ENV - REQUIRED
+    # Must be one of: development, test, production
+    # Controls cookie SameSite attribute (Lax in dev, None in prod)
+    # Runtime validation: checks for valid values
+    NODE_ENV: ${env:NODE_ENV, "production"}
+    
+    # ========== IMPORTANT ENVIRONMENT VARIABLES ==========
+    # These should be set but have defaults or graceful degradation
+    
+    MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
+    FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
+    API_BASE_URL: ${env:API_BASE_URL, "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"}
+    
+    # ========== OPTIONAL ENVIRONMENT VARIABLES ==========
+    # These have defaults and are not validated at startup
+    
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}

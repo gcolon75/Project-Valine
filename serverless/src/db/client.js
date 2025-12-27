@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { validateEnvVar } from '../utils/envValidation.js';
 
 let prisma = null;
 let prismaInitError = null;
@@ -97,26 +98,25 @@ export function getPrismaInitError() {
 
 /**
  * Validate DATABASE_URL format
- * Validates in order: existence → spaces → protocol prefix
+ * Uses the centralized validation from envValidation.js
  * @param {string} url
  * @returns {{ valid: boolean, error?: string, sanitizedUrl?: string }}
  */
 export function validateDatabaseUrl(url) {
-  // Check 1: URL must be set
-  if (!url) {
-    return { valid: false, error: 'DATABASE_URL is not set' };
-  }
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const validation = validateEnvVar('DATABASE_URL', url, nodeEnv);
   
-  // Check 2: No spaces allowed (common copy-paste error)
-  if (url.includes(' ')) {
+  if (!validation.valid) {
     // Create sanitized version for logging (hide password)
-    const sanitized = url.replace(/:([^@]+)@/, ':***@');
-    return { valid: false, error: 'DATABASE_URL contains spaces', sanitizedUrl: sanitized };
-  }
-  
-  // Check 3: Must have PostgreSQL protocol prefix
-  if (!url.startsWith('postgresql://') && !url.startsWith('postgres://')) {
-    return { valid: false, error: 'DATABASE_URL must start with postgresql:// or postgres://' };
+    const sanitizedUrl = url && url.includes(':') 
+      ? url.replace(/:([^@]+)@/, ':***@') 
+      : undefined;
+    
+    return { 
+      valid: false, 
+      error: validation.error,
+      ...(sanitizedUrl && { sanitizedUrl })
+    };
   }
   
   return { valid: true };
