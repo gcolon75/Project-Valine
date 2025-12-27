@@ -152,7 +152,7 @@ npx serverless rollback --timestamp TIMESTAMP --stage prod
 ### Frontend Rollback
 ```powershell
 # S3 versioning must be enabled
-aws s3api list-object-versions --bucket project-valine-frontend-prod --prefix index.html
+aws s3api list-object-versions --bucket valine-frontend-prod --prefix index.html
 ```
 
 ## Post-Deployment Verification
