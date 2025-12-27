@@ -1270,13 +1270,13 @@ Generated files in `validation_evidence/`:
 
 **Before Fix:**
 ```powershell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get -Headers @{
     "Authorization" = "Bot $BOT_TOKEN"
 }```
 
 **After Fix:**
 ```powershell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bot $BOT_TOKEN"
 }```
 

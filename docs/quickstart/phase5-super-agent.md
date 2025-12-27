@@ -374,7 +374,7 @@ aws ssm describe-parameters --region us-west-2 --max-results 1
 ### Test Discord Token
 
 ```powershell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bot $DISCORD_BOT_TOKEN"
 }```
 

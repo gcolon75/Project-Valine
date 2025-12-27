@@ -173,11 +173,12 @@ gh run watch
 
 ```powershell
 # Get workflow ID
-Invoke-RestMethod -Uri "-H" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "token YOUR_TOKEN"
     "Authorization" = "token YOUR_TOKEN"
     "Accept" = "application/vnd.github.v3+json"
-} -Body '{"ref":"main","inputs":{"description":"API triggered run"}}' -ContentType 'application/json'```
+} -Body '{"ref":"main","inputs":{"description":"API triggered run"}}' -ContentType 'application/json'
+```
 
 ---
 
@@ -278,7 +279,7 @@ Before running the workflow, verify staging health:
 #### 1. Staging Availability
 ```powershell
 # Check if staging is accessible
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected response:
 # HTTP/2 200
@@ -298,9 +299,10 @@ Invoke-RestMethod -Uri "https://staging.valine.app/api/health" -Method Get
 #### 3. Authentication Service
 ```powershell
 # Test login endpoint availability
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"dummy"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"dummy"}' -ContentType 'application/json'
+```
 
 ### Login Verification Commands
 
@@ -309,9 +311,10 @@ Test authentication with configured test user:
 #### Valid Login Test
 ```powershell
 # Replace with your actual test credentials
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "' -ContentType 'application/json'```
+} -Body '{ "email": "' -ContentType 'application/json'
+```
 
 #### Session Validation
 ```powershell
@@ -320,7 +323,8 @@ TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
 Invoke-RestMethod -Uri "https://staging.valine.app/api/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 ---
 

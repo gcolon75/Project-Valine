@@ -190,13 +190,14 @@ API_URL="https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 FRONTEND="https://dkmxy676d3vgc.cloudfront.net"
 
 # 1. Login
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Origin" = "$FRONTEND"
     "Origin" = "$FRONTEND"
     "Origin" = "$FRONTEND"
     "Origin" = "$FRONTEND"
-} -Body '{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"}' -ContentType 'application/json'```
+} -Body '{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"}' -ContentType 'application/json'
+```
 
 ### Rollback (if needed)
 ```powershell

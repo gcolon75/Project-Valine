@@ -396,17 +396,19 @@ If issues occur:
 $env:API_BASE = "https://your-api-id.execute-api.us-west-2.amazonaws.com/dev"
 
 # Register user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "jane@example.com", "password": "securePass123", "username": "janedoe", "displayName": "Jane Doe" }' -ContentType 'application/json'```
+} -Body '{ "email": "jane@example.com", "password": "securePass123", "username": "janedoe", "displayName": "Jane Doe" }' -ContentType 'application/json'
+```
 
 #### Login
 
 ```powershell
 # Login with email and password
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "jane@example.com", "password": "securePass123" }' -ContentType 'application/json'```
+} -Body '{ "email": "jane@example.com", "password": "securePass123" }' -ContentType 'application/json'
+```
 
 #### Get Current User
 
@@ -414,23 +416,26 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 # Get authenticated user profile
 Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 #### Verify Email
 
 ```powershell
 # Verify email with token from email
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "token": "abc123def456..." }' -ContentType 'application/json'```
+} -Body '{ "token": "abc123def456..." }' -ContentType 'application/json'
+```
 
 #### Resend Verification Email
 
 ```powershell
 # Resend verification email (requires authentication)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 ### Profile Management
 
@@ -438,10 +443,11 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 ```powershell
 # Create profile for authenticated user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "vanityUrl": "janedoe", "headline": "Actor & Director", "bio": "Award-winning performer with 10 years experience", "roles": ["Actor", "Director"], "location": { "city": "Los Angeles", "state": "CA", "country": "USA" }, "profileLinks": { "instagram": "https://instagram.com/janedoe", "imdb": "https://www.imdb.com/name/nm1234567/", "website": "https://janedoe.com" } }' -ContentType 'application/json'```
+} -Body '{ "vanityUrl": "janedoe", "headline": "Actor & Director", "bio": "Award-winning performer with 10 years experience", "roles": ["Actor", "Director"], "location": { "city": "Los Angeles", "state": "CA", "country": "USA" }, "profileLinks": { "instagram": "https://instagram.com/janedoe", "imdb": "https://www.imdb.com/name/nm1234567/", "website": "https://janedoe.com" } }' -ContentType 'application/json'
+```
 
 #### Get Profile by Vanity URL
 
@@ -456,10 +462,11 @@ Invoke-RestMethod -Uri "$API_BASE/profiles/janedoe" -Method Get
 
 ```powershell
 # Update profile (requires auth and ownership)
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "headline": "Award-Winning Actor & Director", "bio": "Updated bio with latest achievements", "profileLinks": { "instagram": "https://instagram.com/janedoe_official", "twitter": "https://twitter.com/janedoe", "website": "https://janedoe.com" } }' -ContentType 'application/json'```
+} -Body '{ "headline": "Award-Winning Actor & Director", "bio": "Updated bio with latest achievements", "profileLinks": { "instagram": "https://instagram.com/janedoe_official", "twitter": "https://twitter.com/janedoe", "website": "https://janedoe.com" } }' -ContentType 'application/json'
+```
 
 ### Media Upload Flow
 
@@ -467,31 +474,34 @@ Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
 
 ```powershell
 # 1. Request upload URL
-Invoke-RestMethod -Uri "-s" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/username" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
     "Content-Type" = "video/mp4"
     "Content-Type" = "image/jpeg"
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "type": "video", "title": "Demo Reel 2024", "privacy": "public" }' -ContentType 'application/json'```
+} -Body '{ "type": "video", "title": "Demo Reel 2024", "privacy": "public" }' -ContentType 'application/json'
+```
 
 #### Update Media Privacy
 
 ```powershell
 # Update media privacy setting
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Put -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "privacy": "on-request", "title": "Updated Demo Reel Title" }' -ContentType 'application/json'```
+} -Body '{ "privacy": "on-request", "title": "Updated Demo Reel Title" }' -ContentType 'application/json'
+```
 
 #### Delete Media
 
 ```powershell
 # Delete media (requires ownership)
-Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Delete -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 ### Reel Request Workflow
 
@@ -499,10 +509,11 @@ Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
 
 ```powershell
 # Request access to someone's private reel
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "message": "Hi! I am casting for an upcoming project and would love to see your work." }' -ContentType 'application/json'```
+} -Body '{ "message": "Hi! I am casting for an upcoming project and would love to see your work." }' -ContentType 'application/json'
+```
 
 #### View Received Requests
 
@@ -510,25 +521,28 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 # Get reel requests you've received
 Invoke-RestMethod -Uri "$API_BASE/reel-requests?type=received&status=pending" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 #### Approve Request
 
 ```powershell
 # Approve a reel request
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "message": "Thanks for your interest! Here is the link..." }' -ContentType 'application/json'```
+} -Body '{ "message": "Thanks for your interest! Here is the link..." }' -ContentType 'application/json'
+```
 
 #### Deny Request
 
 ```powershell
 # Deny a reel request
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "message": "Thank you for your interest, but this reel is not available at this time." }' -ContentType 'application/json'```
+} -Body '{ "message": "Thank you for your interest, but this reel is not available at this time." }' -ContentType 'application/json'
+```
 
 ### Search & Discovery
 
@@ -538,7 +552,8 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 # Search profiles by query and filters
 Invoke-RestMethod -Uri "$API_BASE/search?query=actor&role=Actor&location=Los%20Angeles&limit=20" -Method Get -Headers @{
     "Content-Type" = "application/json"
-}```
+}
+```
 
 #### Search with Pagination
 
@@ -562,18 +577,20 @@ Invoke-RestMethod -Uri "$API_BASE/search/users?query=jane" -Method Get
 
 ```powershell
 # Export all account data (GDPR compliance)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 #### Delete Account
 
 ```powershell
 # Delete account and all associated data
-Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts/{id}" -Method Delete -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "confirm": true, "reason": "No longer needed" }' -ContentType 'application/json'```
+} -Body '{ "confirm": true, "reason": "No longer needed" }' -ContentType 'application/json'
+```
 
 ### Credits Management
 
@@ -581,10 +598,11 @@ Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
 
 ```powershell
 # Add professional credit to profile
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "title": "The Great Film", "role": "Lead Actor", "company": "Production Company Inc.", "year": 2023, "order": 1 }' -ContentType 'application/json'```
+} -Body '{ "title": "The Great Film", "role": "Lead Actor", "company": "Production Company Inc.", "year": 2023, "order": 1 }' -ContentType 'application/json'
+```
 
 #### List Credits
 
@@ -599,18 +617,20 @@ Invoke-RestMethod -Uri "$API_BASE/profiles/$PROFILE_ID/credits" -Method Get
 
 ```powershell
 # Update existing credit
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "role": "Lead Actor (updated)", "year": 2024 }' -ContentType 'application/json'```
+} -Body '{ "role": "Lead Actor (updated)", "year": 2024 }' -ContentType 'application/json'
+```
 
 #### Delete Credit
 
 ```powershell
 # Delete credit
-Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Delete -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 ### Settings Management
 
@@ -620,16 +640,18 @@ Invoke-RestMethod -Uri "-X" -Method Delete -Headers @{
 # Get user settings and preferences
 Invoke-RestMethod -Uri "$API_BASE/settings" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 #### Update Settings
 
 ```powershell
 # Update user settings
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Put -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "notificationPreferences": { "emailNotifications": true, "reelRequests": true, "messages": false }, "privacySettings": { "profileVisibility": "public", "showEmail": false } }' -ContentType 'application/json'```
+} -Body '{ "notificationPreferences": { "emailNotifications": true, "reelRequests": true, "messages": false }, "privacySettings": { "profileVisibility": "public", "showEmail": false } }' -ContentType 'application/json'
+```
 
 ## Testing the Deployment
 

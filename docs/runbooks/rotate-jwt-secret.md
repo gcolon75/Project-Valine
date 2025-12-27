@@ -315,7 +315,8 @@ OLD_TOKEN="<previous-access-token>"
 Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
     "Authorization" = "Bearer $OLD_TOKEN"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Expected Response:**
 ```json
@@ -405,9 +406,10 @@ fi
 
 ```powershell
 # User logs in with credentials
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "owner@example.com", "password": "SecurePassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "owner@example.com", "password": "SecurePassword123!" }' -ContentType 'application/json'
+```
 
 ### Test 2: New Tokens Are Valid
 
@@ -416,7 +418,8 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
     "Authorization" = "Bearer $NEW_TOKEN"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Expected Response:**
 ```json
@@ -436,7 +439,8 @@ OLD_TOKEN="<token-from-before-rotation>"
 Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
     "Authorization" = "Bearer $OLD_TOKEN"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Expected Response:**
 ```json
@@ -452,9 +456,10 @@ Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers 
 # Refresh token to get new access token
 REFRESH_TOKEN="<refresh-token>"
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{\' -ContentType 'application/json'```
+} -Body '{\' -ContentType 'application/json'
+```
 
 **Expected Response:**
 ```json

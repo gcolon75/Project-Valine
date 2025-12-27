@@ -124,9 +124,10 @@ Invoke-RestMethod -Uri "https://api.valine.app/health" -Method Get
 2. **Test Email Sending**
    ```powershell
    # Create test user and verify email received
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","username":"testuser","password":"Test123!","displayName":"Test User"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","username":"testuser","password":"Test123!","displayName":"Test User"}' -ContentType 'application/json'
+```
 
 3. **Monitor Email Delivery**
    - Check SMTP logs
@@ -171,9 +172,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
    ```powershell
    # Test rate limiting
    for i in {1..10}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'
+```
 
 2. **Monitor Rate Limit Hits**
    - Track 429 responses
@@ -235,7 +237,7 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 5. **Verify Other Headers**
    ```powershell
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
    # Check for:
    # - Strict-Transport-Security
    # - X-Frame-Options
@@ -389,9 +391,10 @@ Invoke-RestMethod -Uri "-I" -Method Get
 1. **Verify Logging**
    ```powershell
    # Check audit logs
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 2. **Configure Retention**
    ```powershell
@@ -433,9 +436,10 @@ Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
 
 1. **Test Data Export**
    ```powershell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 2. **Test Account Deletion**
    - Create test account

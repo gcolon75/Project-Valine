@@ -97,9 +97,10 @@ Prepare the following test accounts:
 
 **cURL Test:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"owner@example.com","password":"<valid-password>"}' -ContentType 'application/json'```
+} -Body '{"email":"owner@example.com","password":"<valid-password>"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -131,9 +132,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **cURL Test:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"testuser@example.com","password":"<valid-password>"}' -ContentType 'application/json'```
+} -Body '{"email":"testuser@example.com","password":"<valid-password>"}' -ContentType 'application/json'
+```
 
 **Important:** This test verifies that password authentication SUCCEEDS first (user exists, password correct), but access is denied due to email allowlist. This is Layer 2 protection (application-level).
 
@@ -167,9 +169,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **cURL Test:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"owner@example.com","password":"wrongpassword123"}' -ContentType 'application/json'```
+} -Body '{"email":"owner@example.com","password":"wrongpassword123"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -344,17 +347,19 @@ document.cookie;
 
 **cURL Test (Allowed Origin):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
     "Access-Control-Request-Method" = "POST"
-}```
+}
+```
 
 **cURL Test (Disallowed Origin):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts/{id}" -Method Get -Headers @{
     "Origin" = "https://evil-site.com"
     "Access-Control-Request-Method" = "POST"
-}```
+}
+```
 
 ---
 
@@ -367,12 +372,12 @@ Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
 1. Access frontend from non-allowlisted IP:
    ```powershell
    # Use mobile hotspot, VPN, or different network
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
    ```
 
 2. Check that static assets load:
    ```powershell
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
    ```
 
 3. Attempt to access login page
@@ -390,7 +395,8 @@ Invoke-RestMethod -Uri "-I" -Method Get
 # Test from mobile hotspot or VPN
 Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net" -Method Get -Headers @{
     "User-Agent" = "Mozilla/5.0"
-}```
+}
+```
 
 ---
 
@@ -402,9 +408,10 @@ Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net" -Method Get -Heade
 
 1. Attempt to register new user:
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "newuser@example.com", "password": "password123", "username": "newuser", "displayName": "New User" }' -ContentType 'application/json'```
+} -Body '{ "email": "newuser@example.com", "password": "password123", "username": "newuser", "displayName": "New User" }' -ContentType 'application/json'
+```
 
 2. Check response
 
@@ -577,9 +584,10 @@ aws cloudfront create-invalidation --distribution-id dkmxy676d3vgc --paths "/*"
 **Debugging:**
 ```powershell
 # Check response headers
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"owner@example.com","password":"<password>"}' -ContentType 'application/json'```
+} -Body '{"email":"owner@example.com","password":"<password>"}' -ContentType 'application/json'
+```
 
 **Solution:**
 - Verify `multiValueHeaders` in Lambda response includes Set-Cookie
@@ -597,10 +605,11 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 **Debugging:**
 ```powershell
 # Test OPTIONS preflight
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
     "Access-Control-Request-Method" = "POST"
-}```
+}
+```
 
 **Solution:**
 Update `FRONTEND_URL` in `serverless/serverless.yml` to match actual origin.

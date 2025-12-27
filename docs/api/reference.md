@@ -514,10 +514,11 @@ Common HTTP status codes:
 Invoke-RestMethod -Uri "https://api-url/health" -Method Get
 
 # Create user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'```
+} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'
+```
 
 ### Using the Test Script
 

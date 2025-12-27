@@ -264,7 +264,7 @@ Send alerts on verification failure:
 
 if ! ./scripts/verify-deployment.sh $ARGS; then
   # Send to Slack
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-type" = "application/json"
     "Content-type" = "application/json"
 }```

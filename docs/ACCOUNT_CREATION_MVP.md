@@ -237,12 +237,11 @@ npm run dev
 
 ```powershell
 # Sign up
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
-    "Content-Type" = "application/json"
-    "Content-Type" = "application/json"
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Authorization" = "Bearer <token-from-login>"
-} -Body '{"email":"test@example.com","password":"TestPassword123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"TestPassword123"}' -ContentType 'application/json'
+```
 
 ## Email Verification (MVP Implementation)
 
@@ -619,9 +618,10 @@ Creates a new user account with email verification workflow.
 
 **Request**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "alice@example.com", "username": "alicewonder", "password": "MySecurePass123!", "displayName": "Alice Wonder" }' -ContentType 'application/json'```
+} -Body '{ "email": "alice@example.com", "username": "alicewonder", "password": "MySecurePass123!", "displayName": "Alice Wonder" }' -ContentType 'application/json'
+```
 
 **Response** (201):
 ```json
@@ -643,9 +643,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **Request**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "alice@example.com", "username": "anotheralice", "password": "Password123!", "displayName": "Another Alice" }' -ContentType 'application/json'```
+} -Body '{ "email": "alice@example.com", "username": "anotheralice", "password": "Password123!", "displayName": "Another Alice" }' -ContentType 'application/json'
+```
 
 **Response** (409):
 ```json
@@ -659,9 +660,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **Request**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "bob@example.com", "password": "BobPass123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "bob@example.com", "password": "BobPass123!" }' -ContentType 'application/json'
+```
 
 **Response** (400):
 ```json
@@ -771,9 +773,10 @@ The frontend will start on `http://localhost:5173` (or `http://localhost:5174` i
 
 **Using curl**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "username": "testuser", "password": "TestPass123!", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "username": "testuser", "password": "TestPass123!", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 ## Security Notes
 

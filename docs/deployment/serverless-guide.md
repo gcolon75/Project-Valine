@@ -267,9 +267,10 @@ The serverless backend implements a complete authentication system with email ve
 #### Example: Register a New User
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "securePass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "securePass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 **Response (201 Created):**
 ```json
@@ -293,9 +294,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 #### Example: Login
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "securePass123" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "securePass123" }' -ContentType 'application/json'
+```
 
 **Response (200 OK):**
 ```json
@@ -325,7 +327,8 @@ $env:TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 # Get current user profile
 Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 **Response (200 OK):**
 ```json
@@ -354,9 +357,10 @@ Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
 
 ```powershell
 # Token comes from verification email link
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "token": "abc123def456..." }' -ContentType 'application/json'```
+} -Body '{ "token": "abc123def456..." }' -ContentType 'application/json'
+```
 
 **Response (200 OK):**
 ```json
@@ -369,9 +373,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 #### Example: Resend Verification Email
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 **Response (200 OK):**
 ```json

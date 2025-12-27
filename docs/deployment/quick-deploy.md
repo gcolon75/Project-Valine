@@ -115,7 +115,7 @@ npx serverless logs -f createUser --stage dev --tail
 Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Check specific endpoint
-Invoke-RestMethod -Uri "-v" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/health" -Method Get
 ```
 
 ---
@@ -151,9 +151,10 @@ npx serverless logs -f FUNCTION_NAME --stage dev --tail
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
 # Test specific endpoint
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'```
+} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'
+```
 
 ---
 

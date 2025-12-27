@@ -190,9 +190,10 @@ EOF
 #### 1.3 Alert Team
 ```powershell
 # Post to incident channel
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "text": "🚨 P1 Security Incident: Authentication Abuse Detected", "attachments": [{ "color": "danger", "fields": [ {"title": "Type", "value": "Brute Force / Credential Stuffing", "short": true}, {"title": "Severity", "value": "P1", "short": true}, {"title": "Failed Attempts", "value": "1,247 in last 10 min", "short": true}, {"title": "Affected IPs", "value": "3 primary IPs", "short": true} ] }] }' -ContentType 'application/json'```
+} -Body '{ "text": "🚨 P1 Security Incident: Authentication Abuse Detected", "attachments": [{ "color": "danger", "fields": [ {"title": "Type", "value": "Brute Force / Credential Stuffing", "short": true}, {"title": "Severity", "value": "P1", "short": true}, {"title": "Failed Attempts", "value": "1,247 in last 10 min", "short": true}, {"title": "Affected IPs", "value": "3 primary IPs", "short": true} ] }] }' -ContentType 'application/json'
+```
 
 ### Phase 2: Containment (5-15 minutes)
 

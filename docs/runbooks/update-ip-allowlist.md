@@ -33,7 +33,7 @@ Operational procedures for updating Web Application Firewall (WAF) IP allowlists
 
 ```powershell
 # Method 1: Using curl
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 # Output: 203.0.113.42
 
 # Method 2: Using dig
@@ -148,7 +148,7 @@ jq -r '.IPSet.Addresses[]' /tmp/current-ipset.json
 
 ```powershell
 # Get your new IP address
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 echo "New IP address: $NEW_IP"
 
 # Update IP set (replace old IP with new IP)
@@ -233,7 +233,7 @@ jq -r '.Policy' /tmp/api-gateway.json | jq '.' || echo "No policy set"
 
 ```powershell
 # Get your new IP
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 
 # Create new policy JSON
 Get-Content > /tmp/new-policy.json << EOF
@@ -314,7 +314,7 @@ aws apigatewayv2 get-api \
 
 ```powershell
 # Test frontend (CloudFront)
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 ```
 
 **Expected Response:**
@@ -334,7 +334,7 @@ x-amz-cf-id: ...
 
 ```powershell
 # Test API Gateway endpoint directly
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 ```
 
 **Expected Response:**
@@ -354,9 +354,10 @@ HTTP/2 403
 
 ```powershell
 # Test complete authentication flow
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "owner@example.com", "password": "YourPassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "owner@example.com", "password": "YourPassword123!" }' -ContentType 'application/json'
+```
 
 **Expected Response:**
 ```json
@@ -377,7 +378,7 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 # If you have VPN or old network access
 # This should return 403 Forbidden
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 ```
 
 **Expected Response:**
@@ -409,7 +410,7 @@ If you lose access after updating the IP allowlist:
 ```powershell
 # From a different network (mobile hotspot, coffee shop, etc.)
 # Get your current IP
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 
 # Update WAF IP set
 aws wafv2 update-ip-set \
@@ -467,7 +468,7 @@ x-amz-cf-id: ABCDEFGHIJKLMNOPQRSTUVWXYZ-1234567890
 **Diagnosis:**
 ```powershell
 # Check if your IP is in CloudFront WAF allowlist
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 echo "My IP: $MY_IP"
 
 aws wafv2 get-ip-set \
@@ -499,7 +500,7 @@ aws apigatewayv2 get-api \
   --query 'Policy' \
   --output text \
   | jq '.Statement[0].Condition.NotIpAddress."aws:SourceIp"[]' \
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 ```
 
 **Solution:**
@@ -663,7 +664,7 @@ aws cloudwatch put-metric-alarm \
 
 ```powershell
 # Get my current IP
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 
 # Update CloudFront WAF
 aws wafv2 update-ip-set --scope CLOUDFRONT --region us-east-1 \
@@ -675,8 +676,8 @@ aws apigatewayv2 update-api --api-id i72dxlcfcc --region us-west-2 \
   --policy file:///tmp/new-policy.json
 
 # Test access
-Invoke-RestMethod -Uri "-I" -Method Get
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 ```
 
 ---

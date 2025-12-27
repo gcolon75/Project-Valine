@@ -371,19 +371,21 @@ $env:PORT = "5000"
 Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get
    
    # Create a link
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/username" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"label":"My Website","url":"https://example.com","type":"website"}' -ContentType 'application/json'```
+} -Body '{"label":"My Website","url":"https://example.com","type":"website"}' -ContentType 'application/json'
+```
 
 2. **Test Validation**
    ```powershell
    # Test invalid URL
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"label":"Bad Link","url":"not-a-url","type":"website"}' -ContentType 'application/json'```
+} -Body '{"label":"Bad Link","url":"not-a-url","type":"website"}' -ContentType 'application/json'
+```
 
 ## Rollback Plan
 

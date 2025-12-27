@@ -102,7 +102,7 @@ The current bundle referenced in `dist/index.html` does not exist in S3, causing
 
 ```powershell
 # Check what index.html is currently served
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # List all bundles in S3
 aws s3 ls s3://valine-frontend-prod/assets/ | Select-String 'index-.*\.js'

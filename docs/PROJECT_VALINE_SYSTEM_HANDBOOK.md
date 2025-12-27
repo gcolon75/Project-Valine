@@ -1121,9 +1121,10 @@ Get 7-day dashboard statistics.
 #### Step 1: Create Account
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "username": "johndoe", "email": "john@example.com", "password": "SecurePass123!", "displayName": "John Doe" }' -ContentType 'application/json'```
+} -Body '{ "username": "johndoe", "email": "john@example.com", "password": "SecurePass123!", "displayName": "John Doe" }' -ContentType 'application/json'
+```
 
 **Response:**
 ```json
@@ -1137,16 +1138,18 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 #### Step 2: Login (if not using registration token)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "john@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "john@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'
+```
 
 #### Step 3: Get Own Profile
 
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}```
+}
+```
 
 **Expected Flow:**
 1. User data returned from `/auth/me`
@@ -1162,22 +1165,25 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/auth/me" -Method Get -Head
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 #### Step 2: Update Profile Title
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "title": "Senior Voice Actor" }' -ContentType 'application/json'```
+} -Body '{ "title": "Senior Voice Actor" }' -ContentType 'application/json'
+```
 
 #### Step 3: Verify Changes
 
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:**
 - `profile.title` should now be `"Senior Voice Actor"`
@@ -1190,10 +1196,11 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Metho
 #### Step 1: Add Education Entry
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "institution": "Yale School of Drama", "program": "MFA in Acting", "startYear": 2018, "endYear": 2021, "achievements": "Outstanding Performance Award" }' -ContentType 'application/json'```
+} -Body '{ "institution": "Yale School of Drama", "program": "MFA in Acting", "startYear": 2018, "endYear": 2021, "achievements": "Outstanding Performance Award" }' -ContentType 'application/json'
+```
 
 **Response:**
 ```json
@@ -1211,7 +1218,8 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/education" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:**
 - Array contains newly added education entry
@@ -1224,10 +1232,11 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/educ
 #### Step 1: Create Public Post
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "content": "Just wrapped filming my latest project!", "tags": ["acting", "film"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
+} -Body '{ "content": "Just wrapped filming my latest project!", "tags": ["acting", "film"], "visibility": "PUBLIC" }' -ContentType 'application/json'
+```
 
 **Response:**
 ```json
@@ -1248,7 +1257,8 @@ Navigate to: `https://app.projectvaline.com/dashboard`
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:**
 - Post appears in personalized feed
@@ -1262,7 +1272,8 @@ Navigate to: `https://app.projectvaline.com/profile/{vanityUrl}`
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>/posts" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:**
 - Post appears in user's post list
@@ -1289,7 +1300,8 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/posts" -Method Get
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/search/users?q=janedoe" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Response:**
 ```json
@@ -1308,10 +1320,11 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/search/users?q=janedoe" -M
 #### Step 2: Send Follow Request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "receiverId": "target-user-uuid", "message": "Love your work!" }' -ContentType 'application/json'```
+} -Body '{ "receiverId": "target-user-uuid", "message": "Love your work!" }' -ContentType 'application/json'
+```
 
 **Response:**
 ```json
@@ -1328,9 +1341,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 (Jane Doe logs in and accepts)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <jane-token>"
-}```
+}
+```
 
 **Response:**
 ```json
@@ -1345,7 +1359,8 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
     "Authorization" = "Bearer <your-token>"
-}```
+}
+```
 
 **Expected:**
 - Jane's `FOLLOWERS` visibility posts now appear in your feed

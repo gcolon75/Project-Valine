@@ -328,10 +328,11 @@ functions:
 
 ```powershell
 # Using curl
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"mode": "real", "scenarios": ["register", "login", "logout"]}' -ContentType 'application/json'```
+} -Body '{"mode": "real", "scenarios": ["register", "login", "logout"]}' -ContentType 'application/json'
+```
 
 ### Checking Health
 
@@ -348,9 +349,10 @@ Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/stats" -Met
 ### Sending Test Metrics
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "type": "performance", "data": { "pageLoadTime": 1234, "metric": "test" } }' -ContentType 'application/json'```
+} -Body '{ "type": "performance", "data": { "pageLoadTime": 1234, "metric": "test" } }' -ContentType 'application/json'
+```
 
 ### Retrieving Metrics
 
@@ -419,7 +421,7 @@ Run synthetic journeys regularly:
 
 ```powershell
 # Set up a cron job or scheduled task
-Invoke-RestMethod -Uri "-X" -Method Post -Body '{"mode": "real"}' -ContentType 'application/json'
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Body '{"mode": "real"}' -ContentType 'application/json'
 ```
 
 ## Architecture Notes
@@ -492,7 +494,8 @@ Invoke-RestMethod -Uri "http://localhost:3000/internal/observability/health" -Me
 
 2. Test in simulated mode first:
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Body '{"mode": "simulated"}' -ContentType 'application/json'```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Body '{"mode": "simulated"}' -ContentType 'application/json'
+```
 
 3. Check individual step failures in the response
 

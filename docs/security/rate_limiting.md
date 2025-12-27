@@ -336,27 +336,30 @@ npm test tests/rateLimit.test.js
 ```powershell
 # Test auth endpoint limit (10 requests/15min)
 for i in {1..12}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 #### Verify Response Headers
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 #### Test Different IPs
 
 ```powershell
 # Request 1 (IP 1)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "X-Forwarded-For" = "192.168.1.1"
     "Content-Type" = "application/json"
     "X-Forwarded-For" = "192.168.1.2"
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 ## Troubleshooting
 

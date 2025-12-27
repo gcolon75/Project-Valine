@@ -188,7 +188,7 @@ aws logs describe-log-groups --region us-west-2 \
 echo "Token: ***$(echo $STAGING_DISCORD_BOT_TOKEN | tail -c 5)"
 
 # Test Discord API access (requires valid token)
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bot $STAGING_DISCORD_BOT_TOKEN"
 }```
 

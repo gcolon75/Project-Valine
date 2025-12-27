@@ -141,9 +141,10 @@ window.__errorInstrumentation.logError(new Error('Manual test error'), {
 
 #### Test 4.1: Single Error Log
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "level": "error", "message": "Test error from curl", "context": {"source": "manual-test"} }' -ContentType 'application/json'```
+} -Body '{ "level": "error", "message": "Test error from curl", "context": {"source": "manual-test"} }' -ContentType 'application/json'
+```
 
 **Expected Result:**
 - Returns 204 status code
@@ -154,9 +155,10 @@ aws logs tail /aws/lambda/pv-api-prod-logEvent --follow
 
 #### Test 4.2: Batched Client Errors
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "source": "client", "timestamp": "' -ContentType 'application/json'```
+} -Body '{ "source": "client", "timestamp": "' -ContentType 'application/json'
+```
 
 **Expected Result:**
 - Returns 204 status code

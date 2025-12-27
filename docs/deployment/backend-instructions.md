@@ -313,11 +313,12 @@ Create test users and content:
 
 ```powershell
 # Register a test user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "test123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "test123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 ## 📝 Dev API_BASE URL Format
 
@@ -360,10 +361,11 @@ $env:JWT_SECRET = "your-custom-secret-key-min-32-chars"
 Example:
 ```powershell
 # Login
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Authorization" = "Bearer $TOKEN"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 ## 📚 Complete API Reference
 
@@ -389,13 +391,14 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 Invoke-RestMethod -Uri "$API_BASE/meta" -Method Get
 
 # Register user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
     "Authorization" = "Bearer YOUR_TOKEN"
     "Authorization" = "Bearer YOUR_TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"email":"user@example.com","password":"pass123","username":"user","displayName":"User"}' -ContentType 'application/json'```
+} -Body '{"email":"user@example.com","password":"pass123","username":"user","displayName":"User"}' -ContentType 'application/json'
+```
 
 ### Automated Testing
 

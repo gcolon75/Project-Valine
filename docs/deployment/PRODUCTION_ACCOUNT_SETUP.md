@@ -29,9 +29,10 @@ node fix-user-schema-complete.mjs \
 
 ```powershell
 # Test login via API
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "ghawk075@gmail.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "ghawk075@gmail.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'
+```
 
 ### 4. Test Frontend Login
 

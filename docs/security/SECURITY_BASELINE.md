@@ -127,32 +127,35 @@ This document establishes the security baseline for Project Valine's serverless 
 **Positive Test - Successful Verification:**
 ```powershell
 # 1. Register a new user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-    "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 **Negative Test - Expired Token:**
 ```powershell
 # Use a token older than 24 hours
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/verify-email" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"token": "expired-token-123"}' -ContentType 'application/json'```
+} -Body '{"token": "expired-token-123"}' -ContentType 'application/json'
+```
 
 **Negative Test - Invalid Token:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/verify-email" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"token": "invalid-token"}' -ContentType 'application/json'```
+} -Body '{"token": "invalid-token"}' -ContentType 'application/json'
+```
 
 **Rate Limit Test - Resend Verification:**
 ```powershell
 # Resend verification multiple times rapidly
 for i in {1..15}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/resend-verification" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 ---
 
@@ -177,17 +180,19 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **Step 1: Start Enrollment**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Step 2: Verify and Complete**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{"code": "123456"}' -ContentType 'application/json'```
+} -Body '{"code": "123456"}' -ContentType 'application/json'
+```
 
 #### Testing Procedures
 
@@ -195,27 +200,30 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 # 1. Enroll
 TOKEN="<valid-jwt>"
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{\' -ContentType 'application/json'```
+} -Body '{\' -ContentType 'application/json'
+```
 
 **Negative Test - Invalid Code:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"code": "000000"}' -ContentType 'application/json'```
+} -Body '{"code": "000000"}' -ContentType 'application/json'
+```
 
 **Negative Test - Expired Code:**
 ```powershell
 # Wait >30 seconds, use old code
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"code": "<old-code>"}' -ContentType 'application/json'```
+} -Body '{"code": "<old-code>"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -242,17 +250,19 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **2. Use CSRF Token (Mutating Request):**
 ```powershell
 CSRF_TOKEN=$(Select-String csrf-token cookies.txt | awk '{print $7}')
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "X-CSRF-Token" = "$CSRF_TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"headline": "Updated Headline"}' -ContentType 'application/json'```
+} -Body '{"headline": "Updated Headline"}' -ContentType 'application/json'
+```
 
 #### Testing Procedures
 
@@ -263,22 +273,25 @@ Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
     "Authorization" = "Bearer <token>"
     "X-CSRF-Token" = "$CSRF"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 **Negative Test - Missing CSRF Token:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 **Negative Test - Invalid CSRF Token:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "X-CSRF-Token" = "invalid-token-123"
     "Content-Type" = "application/json"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 **Note:** CSRF protection is currently disabled by default (`CSRF_ENABLED=false`). When enabled, it applies to cookie-based authentication flows.
 
@@ -329,32 +342,36 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ```powershell
 # Make requests within limit
 for i in {1..5}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'
+```
 
 **Negative Test - Exceed Limit:**
 ```powershell
 # Exceed auth endpoint limit (10/15min)
 for i in {1..12}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'
+```
 
 **Response Headers Test:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 **Redis Failover Test:**
 ```powershell
 # Stop Redis (simulated)
 # Rate limiting should fall back to in-memory
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -405,35 +422,38 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 **Positive Test - JWT Session:**
 ```powershell
 # 1. Login
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 **Positive Test - Token Refresh:**
 ```powershell
 # Wait 31 minutes or manually expire access token
 
 # Refresh token
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post```
 
 **Negative Test - Expired Access Token:**
 ```powershell
 # Use expired access token
 Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer <expired-token>"
-}```
+}
+```
 
 **Negative Test - Invalid Token:**
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer invalid.token.here"
-}```
+}
+```
 
 #### Session Revocation Test
 
 **Logout:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 ---
 
@@ -485,18 +505,20 @@ User                     API                      Database
 **Positive Test - Full Reset Flow:**
 ```powershell
 # 1. Request password reset
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"email": "test@example.com"}' -ContentType 'application/json'```
+} -Body '{"email": "test@example.com"}' -ContentType 'application/json'
+```
 
 **Negative Test - Expired Token:**
 ```powershell
 # Use token older than 1 hour
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "token": "expired-token-123", "newPassword": "NewPassword123!" }' -ContentType 'application/json'```
+} -Body '{ "token": "expired-token-123", "newPassword": "NewPassword123!" }' -ContentType 'application/json'
+```
 
 **Negative Test - Reused Token:**
 ```powershell
@@ -504,24 +526,27 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 TOKEN="abc123def456..."
 
 # First use (should succeed)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{\' -ContentType 'application/json'```
+} -Body '{\' -ContentType 'application/json'
+```
 
 **Negative Test - Non-existent Email:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email": "nonexistent@example.com"}' -ContentType 'application/json'```
+} -Body '{"email": "nonexistent@example.com"}' -ContentType 'application/json'
+```
 
 **Rate Limit Test:**
 ```powershell
 # Attempt 12 password reset requests
 for i in {1..12}; do
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email": "test@example.com"}' -ContentType 'application/json'```
+} -Body '{"email": "test@example.com"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -562,9 +587,10 @@ refresh_token=<jwt>; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=604800
 
 **Verify Cookie Attributes:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 **Verify HttpOnly (JavaScript Cannot Access):**
 ```javascript
@@ -591,7 +617,8 @@ console.log(document.cookie);
 # In production with HTTPS
 Invoke-RestMethod -Uri "https://api.valine.com/auth/login" -Method Get -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -631,7 +658,7 @@ Content-Security-Policy-Report-Only:
 **Test Resource Loading:**
 ```powershell
 # Verify allowed resources load correctly
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
 
 # Expected: 200 OK
 
@@ -694,15 +721,17 @@ Invoke-RestMethod -Uri "-I" -Method Get
 **Verify Login Logging:**
 ```powershell
 # 1. Login
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 **Verify Failed Login Logging:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"wrongpassword"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"wrongpassword"}' -ContentType 'application/json'
+```
 
 **Note:** Full audit logging implementation (database-backed, user-queryable) is planned for Phase 2.
 
@@ -919,9 +948,10 @@ SMTP_FROM=noreply@valine.app
 serverless deploy --stage staging
 
 # Test email in dev mode (logs)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "username": "testuser", "displayName": "Test", "password": "SecurePass123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "username": "testuser", "displayName": "Test", "password": "SecurePass123!" }' -ContentType 'application/json'
+```
 
 **Step 3: Enable Email Sending (Staging)**
 ```powershell
@@ -932,9 +962,10 @@ EMAIL_ENABLED=true
 serverless deploy --stage staging
 
 # Test actual email sending
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"real@example.com","username":"test","displayName":"Test","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"real@example.com","username":"test","displayName":"Test","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 **Step 4: Monitor and Validate**
 ```powershell
@@ -1018,12 +1049,13 @@ TWO_FACTOR_ENABLED=false  # Keep disabled for testing
 serverless deploy --stage staging
 
 # Test enrollment
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Authorization" = "Bearer $TOKEN"
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"SecurePass123!"}' -ContentType 'application/json'
+```
 
 **Step 4: Beta Rollout (Gradual)**
 ```powershell
@@ -1117,7 +1149,8 @@ Invoke-RestMethod -Uri "https://staging-api/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "X-CSRF-Token" = "$CSRF"
     "Authorization" = "Bearer $TOKEN"
-} -Body '{"theme":"dark"}' -ContentType 'application/json'```
+} -Body '{"theme":"dark"}' -ContentType 'application/json'
+```
 
 **Step 3: Enable in Production**
 ```powershell
@@ -1276,9 +1309,10 @@ $env:CSP_REPORT_ONLY = "true"
 serverless deploy --stage prod --force
 
 # 5. Verify basic auth still works
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 ### Selective Feature Rollback
 

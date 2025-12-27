@@ -164,35 +164,40 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get -Headers @{
     "Authorization" = "Bearer dev-token"
-}```
+}
+```
 
 **3. PATCH theme to "light":**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": "light"}' -ContentType 'application/json'```
+} -Body '{"theme": "light"}' -ContentType 'application/json'
+```
 
 **4. PATCH theme to "dark":**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 **5. PATCH with invalid theme (should return 400):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": "invalid"}' -ContentType 'application/json'```
+} -Body '{"theme": "invalid"}' -ContentType 'application/json'
+```
 
 **6. PATCH to clear theme (set to null):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": null}' -ContentType 'application/json'```
+} -Body '{"theme": null}' -ContentType 'application/json'
+```
 
 ### Contract Tests
 

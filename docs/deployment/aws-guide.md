@@ -139,7 +139,7 @@ $env:DATABASE_URL = "postgresql://valineadmin:YourStrongPassword123!@YOUR-RDS-EN
      --output text \
      --region us-west-2)
    
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
    
    aws ec2 authorize-security-group-ingress \
      --group-id $RDS_SG \
@@ -376,9 +376,10 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 #### Test 2: Create User
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "username": "johndoe", "email": "john@valine.com", "displayName": "John Doe", "bio": "Voice actor and content creator", "avatar": "https://i.pravatar.cc/150?img=12", "role": "artist" }' -ContentType 'application/json'```
+} -Body '{ "username": "johndoe", "email": "john@valine.com", "displayName": "John Doe", "bio": "Voice actor and content creator", "avatar": "https://i.pravatar.cc/150?img=12", "role": "artist" }' -ContentType 'application/json'
+```
 
 **Expected Response (201 Created):**
 ```json
@@ -428,9 +429,10 @@ Invoke-RestMethod -Uri "$API_BASE/users/johndoe" -Method Get
 #### Test 4: Update User Profile
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "displayName": "John \"The Voice\" Doe", "bio": "Professional voice actor with 10+ years experience", "avatar": "https://i.pravatar.cc/150?img=13" }' -ContentType 'application/json'```
+} -Body '{ "displayName": "John \"The Voice\" Doe", "bio": "Professional voice actor with 10+ years experience", "avatar": "https://i.pravatar.cc/150?img=13" }' -ContentType 'application/json'
+```
 
 **Expected Response (200 OK):**
 ```json
@@ -448,9 +450,10 @@ Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
 #### Test 5: Create Post
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ \' -ContentType 'application/json'```
+} -Body '{ \' -ContentType 'application/json'
+```
 
 **Expected Response (201 Created):**
 ```json
@@ -500,9 +503,10 @@ Invoke-RestMethod -Uri "$API_BASE/posts?limit=10" -Method Get
 #### Test 7: Create Second User (for Connection Requests)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "username": "janedoe", "email": "jane@valine.com", "displayName": "Jane Doe", "bio": "Audio engineer and producer", "avatar": "https://i.pravatar.cc/150?img=5", "role": "observer" }' -ContentType 'application/json'```
+} -Body '{ "username": "janedoe", "email": "jane@valine.com", "displayName": "Jane Doe", "bio": "Audio engineer and producer", "avatar": "https://i.pravatar.cc/150?img=5", "role": "observer" }' -ContentType 'application/json'
+```
 
 **Save the second user ID:**
 ```powershell
@@ -512,9 +516,10 @@ USER2_ID="uuid-from-response"
 #### Test 8: Send Connection Request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ \' -ContentType 'application/json'```
+} -Body '{ \' -ContentType 'application/json'
+```
 
 **Expected Response (201 Created):**
 ```json
@@ -570,9 +575,10 @@ Invoke-RestMethod -Uri "$API_BASE/connections/requests?userId=$USER_ID&type=sent
 #### Test 11: Approve Connection Request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Expected Response (200 OK):**
 ```json
@@ -590,10 +596,11 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 ```powershell
 # Send another request
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{ \' -ContentType 'application/json'```
+} -Body '{ \' -ContentType 'application/json'
+```
 
 **Expected Response (200 OK):**
 ```json

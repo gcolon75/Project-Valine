@@ -349,15 +349,17 @@ Then redeploy both backend and frontend.
 
 1. **Test Allowlisted Email**:
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"ghawk075@gmail.com","password":"test123","username":"test","displayName":"Test User"}' -ContentType 'application/json'```
+} -Body '{"email":"ghawk075@gmail.com","password":"test123","username":"test","displayName":"Test User"}' -ContentType 'application/json'
+```
 
 2. **Test Non-Allowlisted Email**:
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"unauthorized@example.com","password":"test123","username":"test2","displayName":"Test User 2"}' -ContentType 'application/json'```
+} -Body '{"email":"unauthorized@example.com","password":"test123","username":"test2","displayName":"Test User 2"}' -ContentType 'application/json'
+```
 
 3. **Test Frontend**:
    - Visit `/join` → Should show restriction notice (if allowlist active)

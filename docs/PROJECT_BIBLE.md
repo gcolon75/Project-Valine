@@ -622,8 +622,8 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE
 
 # Verify SPA routing
-Invoke-RestMethod -Uri "-I" -Method Get
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts/{id}" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts/{id}" -Method Get
 
 # Run automated verification
 npm run verify:deployment
@@ -1161,11 +1161,11 @@ Rin is a unified Discord bot with specialized agent personalities for different 
 node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE
 
 # Verify SPA routing
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 # Should return 200, NOT 404
 
 # Check bundle integrity
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 # Should have Content-Type: application/javascript
 ```
 
@@ -1512,11 +1512,12 @@ node scripts/check-cloudfront.js         # Check CloudFront status
 Invoke-RestMethod -Uri "https://api-url.amazonaws.com/prod/health" -Method Get
 
 # Register
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
     "Authorization" = "Bearer <access-token>"
-} -Body '{"email":"user@example.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'```
+} -Body '{"email":"user@example.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'
+```
 
 ### Troubleshooting Commands
 ```powershell

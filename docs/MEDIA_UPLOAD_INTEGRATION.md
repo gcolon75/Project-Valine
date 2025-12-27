@@ -351,23 +351,26 @@ npm test src/pages/__tests__/ProfileEdit.upload.test.jsx
 PROFILE_ID="your-profile-id"
 TOKEN="your-auth-token"
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"type": "video", "title": "Demo Reel"}' -ContentType 'application/json'```
+} -Body '{"type": "video", "title": "Demo Reel"}' -ContentType 'application/json'
+```
 
 2. **Upload to S3:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Headers @{
     "Content-Type" = "video/mp4"
-}```
+}
+```
 
 3. **Mark complete:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{\' -ContentType 'application/json'```
+} -Body '{\' -ContentType 'application/json'
+```
 
 ## Security Considerations
 
