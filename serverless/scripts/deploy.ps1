@@ -251,7 +251,6 @@ Write-Step "Step 6: Package Functions"
 
 Write-Info "Packaging Lambda functions..."
 $packageCmd = "serverless package --stage $Stage --region $Region"
-if ($Force) { $packageCmd += " --force" }
 
 try {
     Invoke-Expression $packageCmd 2>&1 | Out-Host

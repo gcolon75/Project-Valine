@@ -27,13 +27,8 @@ This is the **SINGLE SOURCE OF TRUTH** for deploying Project Valine to productio
 **For experienced deployers:**
 
 ```powershell
-# Windows (PowerShell)
 cd serverless
 .\scripts\deploy.ps1 -Stage prod -Region us-west-2
-
-# Linux/Mac (Bash)
-cd serverless
-./scripts/deploy.sh prod us-west-2
 ```
 
 This runs: validation → build → package → deploy → verify → smoke tests.
@@ -60,14 +55,14 @@ Configure AWS credentials with permissions for:
 - S3 (deployment artifacts)
 - CloudWatch Logs (view logs)
 
-```bash
+```powershell
 # Option 1: AWS CLI configure
 aws configure
 
-# Option 2: Environment variables
-export AWS_ACCESS_KEY_ID="your-access-key"
-export AWS_SECRET_ACCESS_KEY="your-secret-key"
-export AWS_REGION="us-west-2"
+# Option 2: Environment variables (PowerShell)
+$env:AWS_ACCESS_KEY_ID = "your-access-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret-key"
+$env:AWS_REGION = "us-west-2"
 ```
 
 ### Database
@@ -92,10 +87,10 @@ postgresql://username:password@hostname:5432/database?sslmode=require
 - ` ` (space) → `%20`
 
 **Example**:
-```bash
+```powershell
 # Password: "P@ss#word!"
 # Encoded: "P%40ss%23word%21"
-DATABASE_URL="postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5432/valine?sslmode=require"
+$env:DATABASE_URL = "postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5432/valine?sslmode=require"
 ```
 
 ---
@@ -110,47 +105,47 @@ All variables must be set in **BOTH** locations:
 
 #### Core Variables
 
-```bash
+```powershell
 # Database
-DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require"
 
 # Authentication
-JWT_SECRET=<generate-with-openssl-rand-base64-32>
-ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
-ENABLE_REGISTRATION=false
-STRICT_ALLOWLIST=0
+$env:JWT_SECRET = "<generate-with-openssl-rand-base64-32>"
+$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
+$env:ENABLE_REGISTRATION = "false"
+$env:STRICT_ALLOWLIST = "0"
 
 # Application
-NODE_ENV=production
-STAGE=prod
-API_BASE_URL=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
-FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
+$env:NODE_ENV = "production"
+$env:STAGE = "prod"
+$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 
 # Cookies
-COOKIE_DOMAIN=.cloudfront.net
+$env:COOKIE_DOMAIN = ".cloudfront.net"
 
 # Storage
-MEDIA_BUCKET=valine-media-uploads
+$env:MEDIA_BUCKET = "valine-media-uploads"
 
 # Features (Production Defaults)
-EMAIL_ENABLED=false
-TWO_FACTOR_ENABLED=false
-CSRF_ENABLED=false
-RATE_LIMITING_ENABLED=true
-OBSERVABILITY_ENABLED=true
-ANALYTICS_ENABLED=false
-MODERATION_ENABLED=false
-REPORTS_ENABLED=true
+$env:EMAIL_ENABLED = "false"
+$env:TWO_FACTOR_ENABLED = "false"
+$env:CSRF_ENABLED = "false"
+$env:RATE_LIMITING_ENABLED = "true"
+$env:OBSERVABILITY_ENABLED = "true"
+$env:ANALYTICS_ENABLED = "false"
+$env:MODERATION_ENABLED = "false"
+$env:REPORTS_ENABLED = "true"
 ```
 
 ### Generate Secure JWT Secret
 
-```bash
+```powershell
 # Option 1: OpenSSL (recommended)
 openssl rand -base64 32
 
-# Option 2: Node.js
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+# Option 2: PowerShell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
 ```
 
 ### S3 Bucket Name
@@ -167,7 +162,7 @@ The correct frontend bucket is:
 
 ### 1. Install Dependencies
 
-```bash
+```powershell
 cd serverless
 npm ci --production
 ```
@@ -176,16 +171,9 @@ npm ci --production
 
 The Prisma layer contains the Prisma client and native binaries (~93MB compressed). It's shared across all Lambda functions to avoid exceeding the 250MB limit.
 
-**Windows (PowerShell)**:
 ```powershell
 cd serverless
 .\scripts\build-prisma-layer.ps1
-```
-
-**Linux/Mac (Bash)**:
-```bash
-cd serverless
-./scripts/build-prisma-layer.sh
 ```
 
 **Output**: `serverless/layers/prisma-layer.zip` (~93MB)
@@ -204,7 +192,7 @@ cd serverless
 
 ### 3. Run Database Migrations (if needed)
 
-```bash
+```powershell
 # Review pending migrations
 npx prisma migrate status
 
@@ -214,9 +202,10 @@ npx prisma migrate deploy
 
 **IMPORTANT**: Always backup database before migrations!
 
-```bash
-# Backup users table
-pg_dump -h <rds-hostname> -U <username> -d <database> -t users -f backup_$(date +%Y%m%d_%H%M%S).sql
+```powershell
+# Backup users table (requires pg_dump installed)
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+pg_dump -h <rds-hostname> -U <username> -d <database> -t users -f "backup_$timestamp.sql"
 ```
 
 ---
@@ -225,16 +214,9 @@ pg_dump -h <rds-hostname> -U <username> -d <database> -t users -f backup_$(date 
 
 ### Using Deploy Script (Recommended)
 
-**Windows (PowerShell)**:
 ```powershell
 cd serverless
 .\scripts\deploy.ps1 -Stage prod -Region us-west-2
-```
-
-**Linux/Mac (Bash)**:
-```bash
-cd serverless
-./scripts/deploy.sh prod us-west-2
 ```
 
 **What the script does**:
@@ -252,11 +234,11 @@ cd serverless
 
 If the script fails, deploy manually:
 
-```bash
+```powershell
 cd serverless
 
 # 1. Validate configuration
-serverless print | head -20
+serverless print | Select-Object -First 20
 
 # 2. Package functions
 serverless package --stage prod --region us-west-2
@@ -300,24 +282,24 @@ layers:
 
 Check that ALL critical functions have the required env vars:
 
-```bash
+```powershell
 # Check authRouter function
-aws lambda get-function-configuration \
-  --function-name pv-api-prod-authRouter \
-  --query 'Environment.Variables' \
-  --output json | grep -E "JWT_SECRET|DATABASE_URL|ALLOWED_USER_EMAILS"
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-authRouter `
+  --query 'Environment.Variables' `
+  --output json | Select-String "JWT_SECRET|DATABASE_URL|ALLOWED_USER_EMAILS"
 
 # Check profilesRouter function
-aws lambda get-function-configuration \
-  --function-name pv-api-prod-profilesRouter \
-  --query 'Environment.Variables' \
-  --output json | grep -E "JWT_SECRET|DATABASE_URL"
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-profilesRouter `
+  --query 'Environment.Variables' `
+  --output json | Select-String "JWT_SECRET|DATABASE_URL"
 
 # Check getFeed function
-aws lambda get-function-configuration \
-  --function-name pv-api-prod-getFeed \
-  --query 'Environment.Variables' \
-  --output json | grep -E "JWT_SECRET|DATABASE_URL"
+aws lambda get-function-configuration `
+  --function-name pv-api-prod-getFeed `
+  --query 'Environment.Variables' `
+  --output json | Select-String "JWT_SECRET|DATABASE_URL"
 ```
 
 **Expected**: All functions should have:
@@ -330,58 +312,63 @@ aws lambda get-function-configuration \
 
 Test critical auth flow:
 
-```bash
-API_URL="https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
-FRONTEND_ORIGIN="https://dkmxy676d3vgc.cloudfront.net"
+```powershell
+$API_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$FRONTEND_ORIGIN = "https://dkmxy676d3vgc.cloudfront.net"
 
 # 1. Test login
-curl -X POST "$API_URL/auth/login" \
-  -H "Content-Type: application/json" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -d '{"email":"ghawk075@gmail.com","password":"YOUR_PASSWORD"}' \
-  -c cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/auth/login" `
+  -Method POST `
+  -Headers @{"Content-Type"="application/json"; "Origin"=$FRONTEND_ORIGIN} `
+  -Body '{"email":"ghawk075@gmail.com","password":"YOUR_PASSWORD"}' `
+  -SessionVariable session
 
 # Expected: 200 OK, Set-Cookie headers for access_token and refresh_token
 
 # 2. Test /auth/me (should work)
-curl -X GET "$API_URL/auth/me" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -b cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/auth/me" `
+  -Method GET `
+  -Headers @{"Origin"=$FRONTEND_ORIGIN} `
+  -WebSession $session
 
 # Expected: 200 OK, user object returned
 
 # 3. Test /me/profile (previously failing)
-curl -X GET "$API_URL/me/profile" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -b cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/me/profile" `
+  -Method GET `
+  -Headers @{"Origin"=$FRONTEND_ORIGIN} `
+  -WebSession $session
 
 # Expected: 200 OK, profile object returned
 
 # 4. Test /me/preferences (previously failing)
-curl -X GET "$API_URL/me/preferences" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -b cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/me/preferences" `
+  -Method GET `
+  -Headers @{"Origin"=$FRONTEND_ORIGIN} `
+  -WebSession $session
 
 # Expected: 200 OK, preferences object returned
 
 # 5. Test /feed (previously failing)
-curl -X GET "$API_URL/feed?limit=20" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -b cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/feed?limit=20" `
+  -Method GET `
+  -Headers @{"Origin"=$FRONTEND_ORIGIN} `
+  -WebSession $session
 
 # Expected: 200 OK, posts array returned
 
 # 6. Test /unread-counts (should still work)
-curl -X GET "$API_URL/unread-counts" \
-  -H "Origin: $FRONTEND_ORIGIN" \
-  -b cookies.txt -v
+Invoke-WebRequest -Uri "$API_URL/unread-counts" `
+  -Method GET `
+  -Headers @{"Origin"=$FRONTEND_ORIGIN} `
+  -WebSession $session
 
 # Expected: 200 OK, notification/message counts
 ```
 
 ### 3. CloudWatch Logs Check
 
-```bash
+```powershell
 # View recent logs for authRouter
 aws logs tail /aws/lambda/pv-api-prod-authRouter --follow
 
@@ -415,18 +402,18 @@ If deployment causes issues:
 
 ### 1. Identify Previous Version
 
-```bash
+```powershell
 # List recent deployments
-aws cloudformation describe-stack-events \
-  --stack-name pv-api-prod \
-  --max-items 20 \
-  --query 'StackEvents[?ResourceType==`AWS::CloudFormation::Stack`].[Timestamp,ResourceStatus]' \
+aws cloudformation describe-stack-events `
+  --stack-name pv-api-prod `
+  --max-items 20 `
+  --query 'StackEvents[?ResourceType==`AWS::CloudFormation::Stack`].[Timestamp,ResourceStatus]' `
   --output table
 ```
 
 ### 2. Rollback Code
 
-```bash
+```powershell
 # Option A: Redeploy previous git commit
 git checkout <previous-commit-sha>
 cd serverless
@@ -438,7 +425,7 @@ serverless deploy --stage prod --region us-west-2 --force
 
 ### 3. Rollback Database (if migrations were applied)
 
-```bash
+```powershell
 # Restore from backup
 psql -h <rds-hostname> -U <username> -d <database> -f backup_<timestamp>.sql
 
@@ -463,10 +450,12 @@ Run post-deploy verification tests again to ensure system is stable.
 **Fix**: Deploy with latest tokenManager.js that trims cookies (fixed in commit 24c5c08)
 
 **Verify**:
-```bash
+```powershell
 # Check Lambda code includes the fix
-aws lambda get-function --function-name pv-api-prod-profilesRouter \
-  --query 'Code.Location' --output text | xargs curl -s | strings | grep "trimmedCookie"
+$codeUrl = aws lambda get-function --function-name pv-api-prod-profilesRouter `
+  --query 'Code.Location' --output text
+Invoke-WebRequest -Uri $codeUrl -OutFile temp.zip
+# Manually inspect or extract to verify
 ```
 
 ### Issue 2: Missing Prisma Layer
@@ -478,11 +467,10 @@ Runtime.ImportModuleError
 ```
 
 **Fix**:
-```bash
+```powershell
 cd serverless
-rm -rf layers/
-.\scripts\build-prisma-layer.ps1  # Windows
-./scripts/build-prisma-layer.sh    # Linux/Mac
+Remove-Item -Recurse -Force layers/ -ErrorAction SilentlyContinue
+.\scripts\build-prisma-layer.ps1
 serverless deploy --stage prod --region us-west-2 --force
 ```
 
@@ -491,15 +479,16 @@ serverless deploy --stage prod --region us-west-2 --force
 **Symptoms**: Some Lambdas work, others don't; inconsistent auth behavior
 
 **Fix**:
-```bash
+```powershell
 # Verify all functions have same env vars
-for func in authRouter profilesRouter getFeed getPreferences updatePreferences; do
-  echo "=== $func ==="
-  aws lambda get-function-configuration \
-    --function-name "pv-api-prod-$func" \
-    --query 'Environment.Variables.JWT_SECRET' \
+$functions = @("authRouter", "profilesRouter", "getFeed", "getPreferences", "updatePreferences")
+foreach ($func in $functions) {
+  Write-Host "=== $func ==="
+  aws lambda get-function-configuration `
+    --function-name "pv-api-prod-$func" `
+    --query 'Environment.Variables.JWT_SECRET' `
     --output text
-done
+}
 ```
 
 If different, redeploy with `--force` flag.
@@ -512,15 +501,15 @@ Invalid serverless.yml syntax
 ```
 
 **Fix**:
-```bash
+```powershell
 # Validate YAML syntax
 serverless print
 
 # Check for tab characters (use spaces only)
-grep -P '\t' serverless/serverless.yml
+Select-String -Pattern "`t" -Path serverless/serverless.yml
 
 # Check for invalid environment variable references
-grep '${env:' serverless/serverless.yml
+Select-String -Pattern '\$\{env:' -Path serverless/serverless.yml
 ```
 
 ### Issue 5: Database Connection Timeout
@@ -532,11 +521,14 @@ Error: connect ETIMEDOUT
 
 **Fix**:
 1. Check RDS security group allows inbound from Lambda VPC
-2. Verify DATABASE_URL has no spaces: `echo "$DATABASE_URL" | od -c`
+2. Verify DATABASE_URL has no spaces: 
+   ```powershell
+   $env:DATABASE_URL | Format-Hex
+   ```
 3. Test connection from Lambda:
-   ```bash
+   ```powershell
    aws lambda invoke --function-name pv-api-prod-health response.json
-   cat response.json
+   Get-Content response.json
    ```
 
 ### Issue 6: S3 Bucket Not Found (Frontend Deploy)
@@ -544,12 +536,12 @@ Error: connect ETIMEDOUT
 **Symptoms**: Frontend assets fail to upload
 
 **Fix**: Use correct bucket name `valine-frontend-prod`:
-```bash
+```powershell
 # Check bucket exists
 aws s3 ls s3://valine-frontend-prod
 
 # If using wrong name, update deployment scripts
-grep -r "project-valine-frontend-prod" . --exclude-dir=node_modules
+Select-String -Pattern "project-valine-frontend-prod" -Path . -Recurse -Exclude node_modules
 # Replace with: valine-frontend-prod
 ```
 
@@ -575,17 +567,17 @@ Before deploying to production:
 
 If secrets are committed to git:
 
-```bash
+```powershell
 # 1. Generate new JWT secret
-NEW_JWT_SECRET=$(openssl rand -base64 32)
+$NEW_JWT_SECRET = openssl rand -base64 32
 
 # 2. Update Lambda env vars
-aws lambda update-function-configuration \
-  --function-name pv-api-prod-authRouter \
+aws lambda update-function-configuration `
+  --function-name pv-api-prod-authRouter `
   --environment "Variables={JWT_SECRET=$NEW_JWT_SECRET,...}"
 
 # 3. Update .env.prod (do NOT commit)
-echo "JWT_SECRET=$NEW_JWT_SECRET" >> serverless/.env.prod
+Add-Content -Path serverless/.env.prod -Value "JWT_SECRET=$NEW_JWT_SECRET"
 
 # 4. Redeploy all functions
 serverless deploy --stage prod --region us-west-2 --force
@@ -619,12 +611,11 @@ serverless deploy --stage prod --region us-west-2 --force
 
 ### Deploy Script Locations
 
-- Windows: `serverless/scripts/deploy.ps1`
-- Linux/Mac: `serverless/scripts/deploy.sh`
+- PowerShell: `serverless/scripts/deploy.ps1`
 
 ### Useful AWS CLI Commands
 
-```bash
+```powershell
 # List all Lambda functions
 aws lambda list-functions --query 'Functions[?starts_with(FunctionName, `pv-api-prod`)].FunctionName'
 

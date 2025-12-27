@@ -35,7 +35,7 @@ npx serverless deploy --stage prod --region us-west-2
 cd C:\Users\ghawk\Documents\GitHub\Project-Valine
 npm ci
 npm run build
-aws s3 sync dist/ s3://project-valine-frontend-prod --delete
+aws s3 sync dist/ s3://valine-frontend-prod --delete
 aws cloudfront create-invalidation --distribution-id <YOUR_CLOUDFRONT_DISTRIBUTION_ID> --paths "/*"
 ```
 Note: Get your distribution ID from the AWS CloudFront console or by running:
