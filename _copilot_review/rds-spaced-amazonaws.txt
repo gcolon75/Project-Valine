@@ -1,0 +1,10 @@
+﻿
+Path                                                                                           LineNumber Line                                                    
+----                                                                                           ---------- ----                                                    
+C:\Users\ghawk\Documents\GitHub\Project-Valine\docs\archive\deployment-old\DEPLOYMENT_GUIDE.md         57 1. **Spaces in hostname**: ❌ `rds. amazonaws.com` → ✅...
+C:\Users\ghawk\Documents\GitHub\Project-Valine\docs\archive\deployment-old\DEPLOYMENT_GUIDE.md        656    ❌ rds. amazonaws.com  (space after rds.)             
+C:\Users\ghawk\Documents\GitHub\Project-Valine\docs\POWERSHELL_CONVERSION_SUMMARY.md                   25   - `rds. amazonaws.com` → `rds.amazonaws.com`          
+C:\Users\ghawk\Documents\GitHub\Project-Valine\_copilot_review\amazonaws-occurrences.txt               40 C:\Users\ghawk\Documents\GitHub\Project-Valine\docs\a...
+C:\Users\ghawk\Documents\GitHub\Project-Valine\_copilot_review\amazonaws-occurrences.txt              421 C:\Users\ghawk\Documents\GitHub\Project-Valine\docs\P...
+
+
