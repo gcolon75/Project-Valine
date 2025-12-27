@@ -88,7 +88,7 @@ All migrations use `IF NOT EXISTS` / `IF EXISTS` patterns:
 
 Staging configuration (from .env.example):
 
-```bash
+```powershell
 EMAIL_ENABLED=true              # ✅ Required for account verification
 TWO_FACTOR_ENABLED=false        # ✅ Disabled for initial rollout
 CSRF_ENABLED=false              # ✅ Disabled until frontend ready
@@ -99,8 +99,8 @@ RATE_LIMITING_ENABLED=true      # ✅ Required for production
 
 **Scan Results:**
 
-```bash
-$ grep -r "Math.random" serverless/src/ --include="*.js" | grep -v "rateLimit.js"
+```powershell
+$ Select-String -r "Math.random" serverless/src/ --include="*.js" | Select-String -v "rateLimit.js"
 # No results - Clean
 ```
 
@@ -120,15 +120,15 @@ $ grep -r "Math.random" serverless/src/ --include="*.js" | grep -v "rateLimit.js
 
 To reproduce this verification:
 
-```bash
+```powershell
 # Check for insecure randomness in auth code
-grep -r "Math.random" serverless/src/ --include="*.js" | grep -v "rateLimit.js"
+Select-String -r "Math.random" serverless/src/ --include="*.js" | Select-String -v "rateLimit.js"
 
 # Verify crypto.randomBytes usage
-grep -n "crypto.randomBytes" serverless/src/handlers/auth.js
+Select-String -n "crypto.randomBytes" serverless/src/handlers/auth.js
 
 # Verify otplib usage
-grep -n "authenticator.generateSecret" serverless/src/handlers/auth.js
+Select-String -n "authenticator.generateSecret" serverless/src/handlers/auth.js
 
 # Check migration idempotency
 ./serverless/verify-migration.sh

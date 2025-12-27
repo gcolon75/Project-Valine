@@ -247,7 +247,7 @@ npx prisma migrate deploy
 If a migration fails, see the migration's `ROLLBACK.md` file for rollback instructions:
 ```powershell
 # Example rollback path
-cat .\prisma\migrations\<migration-name>\ROLLBACK.md
+Get-Content .\prisma\migrations\<migration-name>\ROLLBACK.md
 ```
 
 See the [Backend Deployment Guide - Database Migrations](../BACKEND-DEPLOYMENT.md#database-migrations) for complete migration procedures.

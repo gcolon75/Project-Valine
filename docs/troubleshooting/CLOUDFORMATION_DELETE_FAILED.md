@@ -18,7 +18,7 @@ Stack is in DELETE_FAILED state and can not be updated
 ## Quick Diagnosis
 
 ### Check Stack Status
-```bash
+```powershell
 aws cloudformation describe-stacks \
   --stack-name pv-api-prod \
   --region us-west-2 \
@@ -28,7 +28,7 @@ aws cloudformation describe-stacks \
 Expected output if affected: `"DELETE_FAILED"`
 
 ### Check Layer Status
-```bash
+```powershell
 # List all layer versions for the Prisma layer
 aws lambda list-layer-versions \
   --layer-name pv-api-prod-prisma-v2 \
@@ -38,7 +38,7 @@ aws lambda list-layer-versions \
 ```
 
 ### Check if Layer Artifact Exists Locally
-```bash
+```powershell
 cd serverless
 ls -lh layers/prisma-layer.zip
 ```
@@ -51,7 +51,7 @@ If the file doesn't exist, you need to build it first (see below).
 
 This is the fastest way to recover from DELETE_FAILED state:
 
-```bash
+```powershell
 # 1. Force delete the stack, retaining resources if needed
 aws cloudformation delete-stack \
   --stack-name pv-api-prod \
@@ -65,12 +65,12 @@ aws cloudformation wait stack-delete-complete \
 # 3. Verify the stack is gone
 aws cloudformation describe-stacks \
   --stack-name pv-api-prod \
-  --region us-west-2 2>&1 | grep "does not exist"
+  --region us-west-2 2>&1 | Select-String "does not exist"
 ```
 
 **If the delete still fails**, you may need to manually delete stuck resources:
 
-```bash
+```powershell
 # List failed resources
 aws cloudformation describe-stack-resources \
   --stack-name pv-api-prod \
@@ -96,7 +96,7 @@ For each failed resource, manually delete it via AWS Console or CLI, then retry 
 
 If specific resources can't be deleted, you can force CloudFormation to skip them:
 
-```bash
+```powershell
 # Get list of resources that failed to delete
 aws cloudformation describe-stack-resources \
   --stack-name pv-api-prod \
@@ -122,7 +122,7 @@ After successfully deleting the failed stack:
 The layer artifact is gitignored and must be built before deployment.
 
 **On Linux/Mac:**
-```bash
+```powershell
 cd serverless
 ./scripts/build-prisma-layer.sh
 ```
@@ -134,14 +134,14 @@ powershell -ExecutionPolicy Bypass -File scripts/build-prisma-layer.ps1
 ```
 
 **Verify the layer was built:**
-```bash
+```powershell
 ls -lh layers/prisma-layer.zip
 # Should show a file around 9-12 MB
 ```
 
 ### Step 2: Deploy Fresh Stack
 
-```bash
+```powershell
 cd serverless
 npx serverless deploy --stage prod --region us-west-2 --verbose
 ```
@@ -150,9 +150,9 @@ The `--verbose` flag helps you see exactly what's happening during deployment.
 
 ### Step 3: Verify Deployment
 
-```bash
+```powershell
 # Test health endpoint
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Check layer was deployed
 aws lambda list-layer-versions \
@@ -175,7 +175,7 @@ To prevent this issue from happening again:
 
 Add this to your deployment checklist:
 
-```bash
+```powershell
 # Before deploying
 cd serverless
 ./scripts/build-prisma-layer.sh  # or .ps1 on Windows
@@ -190,7 +190,7 @@ The GitHub Actions workflow (`.github/workflows/backend-deploy.yml`) automatical
 
 The updated `deploy.sh` script now validates the layer exists before deploying:
 
-```bash
+```powershell
 cd serverless
 ./deploy.sh  # Will fail fast if layer is missing
 ```
@@ -199,7 +199,7 @@ cd serverless
 
 Watch stack events during deployment to catch issues early:
 
-```bash
+```powershell
 # In a separate terminal, tail CloudFormation events
 aws cloudformation describe-stack-events \
   --stack-name pv-api-prod \

@@ -113,7 +113,7 @@ All requirements from the problem statement have been fully implemented:
 ## Usage
 
 ### Quick Start
-```bash
+```powershell
 # 1. Authenticate
 gh auth login
 
@@ -131,7 +131,7 @@ gh pr list --label auto-triage
 ### Common Commands
 
 **Dry Run:**
-```bash
+```powershell
 python orchestrator/scripts/auto_triage_pr58.py \
   --repo gcolon75/Project-Valine \
   --pr 58 \
@@ -141,7 +141,7 @@ python orchestrator/scripts/auto_triage_pr58.py \
 ```
 
 **Triage Only:**
-```bash
+```powershell
 python orchestrator/scripts/auto_triage_pr58.py \
   --repo gcolon75/Project-Valine \
   --pr 58 \
@@ -149,7 +149,7 @@ python orchestrator/scripts/auto_triage_pr58.py \
 ```
 
 **Conservative Fixes:**
-```bash
+```powershell
 python orchestrator/scripts/auto_triage_pr58.py \
   --repo gcolon75/Project-Valine \
   --pr 58 \
@@ -159,20 +159,20 @@ python orchestrator/scripts/auto_triage_pr58.py \
 ## Testing
 
 ### Syntax Validation
-```bash
+```powershell
 $ python -m py_compile orchestrator/scripts/auto_triage_pr58.py
 ✓ Syntax validation passed
 ```
 
 ### Help Output
-```bash
+```powershell
 $ python orchestrator/scripts/auto_triage_pr58.py --help
 ✓ Help displays correctly
 ✓ All options documented
 ```
 
 ### Dry Run Execution
-```bash
+```powershell
 $ python orchestrator/scripts/auto_triage_pr58.py \
     --repo gcolon75/Project-Valine \
     --pr 58 \

@@ -19,7 +19,7 @@ This tool is designed to:
 
 ### Run the Audit
 
-```bash
+```powershell
 npm run ux:audit
 ```
 
@@ -33,8 +33,8 @@ This will:
 
 After running the audit, open the generated report:
 
-```bash
-cat UX_AUDIT_REPORT.md
+```powershell
+Get-Content UX_AUDIT_REPORT.md
 # or open in your editor
 ```
 
@@ -199,12 +199,12 @@ After implementing fixes:
 
 ## Example Workflow
 
-```bash
+```powershell
 # 1. Run initial audit
 npm run ux:audit
 
 # 2. Review report
-cat UX_AUDIT_REPORT.md
+Get-Content UX_AUDIT_REPORT.md
 
 # 3. Create branch for high-priority fixes
 git checkout -b fix/accessibility-improvements
@@ -305,12 +305,12 @@ The agent may report issues that are not actually problems:
 ## Troubleshooting
 
 ### Agent Fails to Run
-```bash
+```powershell
 # Check Node version (requires Node 14+)
 node --version
 
 # Ensure script is executable
-chmod +x scripts/ux-audit-agent.mjs
+# Note: chmod not needed in PowerShell
 
 # Run directly
 node scripts/ux-audit-agent.mjs

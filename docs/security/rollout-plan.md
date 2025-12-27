@@ -38,7 +38,7 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Deploy Code**
-   ```bash
+   ```powershell
    # Deploy to staging
    git checkout main
    git pull origin main
@@ -47,7 +47,7 @@ This document provides a phased approach to deploying the new account security a
    ```
 
 2. **Run Database Migration**
-   ```bash
+   ```powershell
    cd api
    npx prisma migrate deploy
    ```
@@ -59,7 +59,7 @@ This document provides a phased approach to deploying the new account security a
    ```
 
 4. **Configure Environment**
-   ```bash
+   ```powershell
    # Minimal configuration
    JWT_SECRET=<strong-random-string>
    TOTP_ENCRYPTION_KEY=<strong-random-string>
@@ -72,15 +72,15 @@ This document provides a phased approach to deploying the new account security a
    ```
 
 5. **Deploy Server**
-   ```bash
+   ```powershell
    cd server
    npm start
    ```
 
 6. **Verify Health**
-   ```bash
-   curl https://api.valine.app/
-   curl https://api.valine.app/health
+   ```powershell
+Invoke-RestMethod -Uri "https://api.valine.app/" -Method Get
+Invoke-RestMethod -Uri "https://api.valine.app/health" -Method Get
    ```
 
 ### Success Criteria
@@ -111,7 +111,7 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Configure Email Service**
-   ```bash
+   ```powershell
    EMAIL_ENABLED=true
    SMTP_HOST=smtp.sendgrid.net
    SMTP_PORT=587
@@ -122,12 +122,11 @@ This document provides a phased approach to deploying the new account security a
    ```
 
 2. **Test Email Sending**
-   ```bash
+   ```powershell
    # Create test user and verify email received
-   curl -X POST https://api.valine.app/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"email":"test@example.com","username":"testuser","password":"Test123!","displayName":"Test User"}'
-   ```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","username":"testuser","password":"Test123!","displayName":"Test User"}' -ContentType 'application/json'```
 
 3. **Monitor Email Delivery**
    - Check SMTP logs
@@ -169,14 +168,12 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Verify Rate Limiting**
-   ```bash
+   ```powershell
    # Test rate limiting
    for i in {1..10}; do
-     curl -X POST https://api.valine.app/auth/login \
-       -H "Content-Type: application/json" \
-       -d '{"email":"test@example.com","password":"wrong"}'
-   done
-   ```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"wrong"}' -ContentType 'application/json'```
 
 2. **Monitor Rate Limit Hits**
    - Track 429 responses
@@ -215,7 +212,7 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Deploy with CSP Report-Only**
-   ```bash
+   ```powershell
    CSP_REPORT_ONLY=true
    CSP_REPORT_URI=https://csp-reports.valine.app
    ```
@@ -232,13 +229,13 @@ This document provides a phased approach to deploying the new account security a
    ```
 
 4. **Enable CSP Enforcement**
-   ```bash
+   ```powershell
    CSP_REPORT_ONLY=false
    ```
 
 5. **Verify Other Headers**
-   ```bash
-   curl -I https://valine.app
+   ```powershell
+Invoke-RestMethod -Uri "-I" -Method Get
    # Check for:
    # - Strict-Transport-Security
    # - X-Frame-Options
@@ -273,7 +270,7 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Enable Session Tracking**
-   ```bash
+   ```powershell
    USE_SESSION_TRACKING=true
    ```
 
@@ -323,7 +320,7 @@ This document provides a phased approach to deploying the new account security a
 **Week 6: Beta Testing**
 
 1. **Enable for Beta Users**
-   ```bash
+   ```powershell
    FEATURE_2FA_ENABLED=true
    ```
 
@@ -390,19 +387,19 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Verify Logging**
-   ```bash
+   ```powershell
    # Check audit logs
-   curl -H "Authorization: Bearer <token>" \
-     https://api.valine.app/api/privacy/audit-log
-   ```
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 2. **Configure Retention**
-   ```bash
+   ```powershell
    AUDIT_LOG_RETENTION_DAYS=90
    ```
 
 3. **Set Up Cleanup Job**
-   ```bash
+   ```powershell
    # Run monthly on 1st at 1 AM
    0 1 1 * * node scripts/cleanup-audit-logs.js
    ```
@@ -435,10 +432,10 @@ This document provides a phased approach to deploying the new account security a
 ### Steps
 
 1. **Test Data Export**
-   ```bash
-   curl -H "Authorization: Bearer <token>" \
-     https://api.valine.app/api/privacy/export
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 2. **Test Account Deletion**
    - Create test account
@@ -513,7 +510,7 @@ This document provides a phased approach to deploying the new account security a
 
 **Trigger**: Critical security issue or major functionality broken
 
-```bash
+```powershell
 # Disable all security features
 CSRF_ENABLED=false
 USE_SESSION_TRACKING=false
@@ -528,7 +525,7 @@ pm2 restart valine-api
 
 **Trigger**: Single feature causing issues
 
-```bash
+```powershell
 # Disable specific feature
 FEATURE_2FA_ENABLED=false  # Example: disable 2FA only
 
@@ -540,7 +537,7 @@ pm2 restart valine-api
 
 **Trigger**: Database migration issues
 
-```bash
+```powershell
 # Revert migration
 cd api
 npx prisma migrate resolve --rolled-back 20251105225000_add_security_features
@@ -553,7 +550,7 @@ psql -d valine_db -f rollback.sql
 
 **Trigger**: Need to return to pre-security state
 
-```bash
+```powershell
 # Deploy previous version
 git checkout <previous-commit>
 npm install

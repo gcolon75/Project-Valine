@@ -4,7 +4,7 @@ Quick reference guide for converting UX audit findings into tracked GitHub issue
 
 ## Quick Commands
 
-```bash
+```powershell
 # 1. Run UX audit
 npm run ux:audit
 
@@ -28,12 +28,12 @@ npm run ux:audit-to-issues -- --category responsive --severity high --create
 
 ### Scenario 1: Convert all high-severity findings to issues
 
-```bash
+```powershell
 # Generate JSON file first (review before creating)
 npm run ux:audit-to-issues -- --severity high --output high-priority.json
 
 # Review the JSON
-cat high-priority.json | jq '.issues | length'
+Get-Content high-priority.json | jq '.issues | length'
 
 # Create issues
 npm run ux:audit-to-issues -- --severity high --create
@@ -41,7 +41,7 @@ npm run ux:audit-to-issues -- --severity high --create
 
 ### Scenario 2: Focus on specific category (e.g., Responsive Design)
 
-```bash
+```powershell
 # Responsive design issues only
 npm run ux:audit-to-issues -- --category responsive --severity high --create
 
@@ -51,7 +51,7 @@ npm run ux:audit-to-issues -- --category accessibility --severity high,medium --
 
 ### Scenario 3: Process in batches (rate limiting)
 
-```bash
+```powershell
 # Create 10 issues at a time with 2-second delay
 npm run ux:audit-to-issues -- --severity high --limit 10 --delay 2000 --create
 
@@ -61,7 +61,7 @@ npm run ux:audit-to-issues -- --severity high --limit 10 --delay 2000 --create
 
 ### Scenario 4: Specific pages only
 
-```bash
+```powershell
 # Marketing pages only
 npm run ux:audit-to-issues -- --page "Home,Features,About" --create
 
@@ -205,19 +205,19 @@ All of the above, plus:
 
 ### Complete Workflow
 
-```bash
+```powershell
 # Step 1: Run audit
 npm run ux:audit
 
 # Step 2: Review audit report
-cat UX_AUDIT_REPORT.md
+Get-Content UX_AUDIT_REPORT.md
 
 # Step 3: Generate issue drafts, roadmap, and milestone definitions
 npm run ux:audit-to-issues -- --severity high,medium
 
 # Step 4: Review generated artifacts
-cat ux-audit-issues.json | jq '.metadata'
-cat UX_AUDIT_ROADMAP.md
+Get-Content ux-audit-issues.json | jq '.metadata'
+Get-Content UX_AUDIT_ROADMAP.md
 
 # Step 5: Preview before creating (dry run)
 npm run ux:audit-to-issues -- --severity high,medium --create-milestones --create --dry-run
@@ -300,14 +300,14 @@ jobs:
 
 ### Error: UX_AUDIT_FINDINGS.csv not found
 
-```bash
+```powershell
 # Run the audit first
 npm run ux:audit
 ```
 
 ### Error: gh CLI not authenticated
 
-```bash
+```powershell
 # Authenticate with GitHub
 gh auth login
 
@@ -317,7 +317,7 @@ gh auth status
 
 ### Error: Rate limit exceeded
 
-```bash
+```powershell
 # Check rate limit status
 gh api rate_limit
 
@@ -330,7 +330,7 @@ npm run ux:audit-to-issues -- --create --limit 10
 
 ### Issues Created with Wrong Labels
 
-```bash
+```powershell
 # Create labels in GitHub first
 gh label create "ux-audit" --color F9E79F
 gh label create "high priority" --color E74C3C
@@ -342,7 +342,7 @@ gh label create "design-tokens" --color E67E22
 
 ### Duplicate Issues Created
 
-```bash
+```powershell
 # Always check existing issues first
 gh issue list --label ux-audit
 

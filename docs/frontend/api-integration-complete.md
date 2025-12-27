@@ -349,7 +349,7 @@ Tests cover:
 ```
 
 ### Build Status
-```bash
+```powershell
 ✓ Build successful in 3.33s
 ✓ Bundle size: 242.49 kB (gzipped: 82.27 kB)
 ✓ 40 modules bundled
@@ -823,7 +823,7 @@ Register → Email Sent → Click Link → Verify Token
 ### Environment Variables
 
 **Required for Auth:**
-```bash
+```powershell
 VITE_ENABLE_AUTH=true           # Enable real auth
 VITE_API_BASE=<api-url>         # Backend endpoint
 FRONTEND_BASE_URL=<app-url>     # For email links
@@ -831,7 +831,7 @@ AUTH_JWT_SECRET=<secret>         # Backend JWT secret
 ```
 
 **Development:**
-```bash
+```powershell
 VITE_ENABLE_AUTH=false          # Dev bypass available
 ```
 

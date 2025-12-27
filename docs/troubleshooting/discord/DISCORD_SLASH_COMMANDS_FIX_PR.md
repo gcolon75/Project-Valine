@@ -91,21 +91,21 @@ Quick reference guide with:
 
 ### Quick Setup (Recommended)
 
-```bash
+```powershell
 cd orchestrator
 ./setup_staging_bot.sh
 ```
 
 ### Manual Setup
 
-```bash
+```powershell
 cd orchestrator
 ./register_discord_commands_staging.sh
 ```
 
 ### Diagnostics
 
-```bash
+```powershell
 cd orchestrator
 ./diagnose_discord_commands.sh
 ```
@@ -120,7 +120,7 @@ cd orchestrator
 - `STAGING_DISCORD_BOT_TOKEN` - Bot token from Discord Developer Portal
 
 ### AWS SSM Parameters (us-west-2)
-```bash
+```powershell
 /valine/staging/ENABLE_DEBUG_CMD=true
 /valine/staging/ENABLE_ALERTS=false
 /valine/staging/ALERT_CHANNEL_ID=1428102811832553554

@@ -61,18 +61,18 @@ A 1,600+ line Python script that performs:
 ## Usage Examples
 
 ### Basic Run
-```bash
+```powershell
 cd orchestrator/scripts
 python3 operational_readiness_agent.py run
 ```
 
 ### With Test PR
-```bash
+```powershell
 python3 operational_readiness_agent.py run --test-pr 71
 ```
 
 ### With Config File
-```bash
+```powershell
 python3 operational_readiness_agent.py generate-config
 # Edit operational_readiness_config.json
 python3 operational_readiness_agent.py run --config operational_readiness_config.json

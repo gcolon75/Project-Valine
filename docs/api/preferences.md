@@ -36,10 +36,10 @@ Get the authenticated user's preferences including theme.
 ```
 
 **Example Request:**
-```bash
-curl -X GET http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+}```
 
 ---
 
@@ -92,12 +92,11 @@ Update the authenticated user's preferences.
 ```
 
 **Example Request:**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "dark"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer YOUR_TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 ---
 
@@ -203,53 +202,49 @@ ALTER TABLE "users" DROP COLUMN IF EXISTS "theme";
 ### Manual Testing with curl
 
 **Test GET without authentication (should return 401):**
-```bash
-curl -X GET http://localhost:5000/api/me/preferences
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get
 ```
 
 **Test GET with authentication:**
-```bash
-curl -X GET http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get -Headers @{
+    "Authorization" = "Bearer dev-token"
+}```
 
 **Test PATCH with valid theme:**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "dark"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 **Test PATCH with invalid theme (should return 400):**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "invalid"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "invalid"}' -ContentType 'application/json'```
 
 **Test PATCH without authentication (should return 401):**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "light"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"theme": "light"}' -ContentType 'application/json'```
 
 **Test PATCH to clear theme (set to null):**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": null}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": null}' -ContentType 'application/json'```
 
 ### Contract Tests
 
 Contract tests are located in `server/src/routes/__tests__/preferences.test.js`
 
 Run tests:
-```bash
+```powershell
 cd server
 npm test -- preferences.test.js
 ```

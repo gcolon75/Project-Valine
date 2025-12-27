@@ -102,7 +102,7 @@
 | Origin Protocol | HTTPS only |
 
 **Verification:**
-```bash
+```powershell
 aws cloudfront get-distribution --id dkmxy676d3vgc \
   --query 'Distribution.{Status:Status,DomainName:DomainName,Origins:Origins}'
 ```
@@ -119,7 +119,7 @@ aws cloudfront get-distribution --id dkmxy676d3vgc \
 | Endpoint | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` |
 
 **Verification:**
-```bash
+```powershell
 aws apigatewayv2 get-api --api-id i72dxlcfcc \
   --query '{Name:Name,ProtocolType:ProtocolType,ApiEndpoint:ApiEndpoint}'
 ```
@@ -134,7 +134,7 @@ Deployed via Serverless Framework from `serverless/serverless.yml`:
 - **Internal Tooling**: PR Intel, test analytics, observability
 
 **Deployment Command:**
-```bash
+```powershell
 cd serverless
 serverless deploy --stage prod --region us-west-2
 ```
@@ -163,7 +163,7 @@ postgresql://username:password@endpoint:5432/dbname?schema=public
 See dedicated runbook: [`docs/runbooks/frontend-deployment.md`](./frontend-deployment.md)
 
 **Quick Reference:**
-```bash
+```powershell
 # 1. Set environment variables in .env.production
 VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 VITE_ENABLE_REGISTRATION=false
@@ -183,14 +183,14 @@ aws cloudfront create-invalidation \
 
 ### Backend Deployment
 
-```bash
+```powershell
 # 1. Set environment variables
-export AWS_REGION=us-west-2
-export STAGE=prod
-export DATABASE_URL=postgresql://...
-export JWT_SECRET=$(openssl rand -base64 32)
-export ALLOWED_USER_EMAILS=owner@example.com,friend@example.com
-export ENABLE_REGISTRATION=false
+$env:AWS_REGION = "us-west-2"
+$env:STAGE = "prod"
+$env:DATABASE_URL = "postgresql://..."
+$env:JWT_SECRET = "$(openssl rand -base64 32)"
+$env:ALLOWED_USER_EMAILS = "owner@example.com,friend@example.com"
+$env:ENABLE_REGISTRATION = "false"
 
 # 2. Deploy Lambda functions
 cd serverless
@@ -198,14 +198,14 @@ npm install
 serverless deploy --stage prod
 
 # 3. Verify deployment
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected: {"status":"healthy","timestamp":"..."}
 ```
 
 ### Database Migrations
 
-```bash
+```powershell
 cd serverless
 
 # Run migrations (creates/updates tables)
@@ -217,7 +217,7 @@ npx prisma generate
 ```
 
 **⚠️ CRITICAL**: Always backup database before migrations:
-```bash
+```powershell
 pg_dump -h <endpoint> -U <user> -d <dbname> > backup-$(date +%Y%m%d).sql
 ```
 
@@ -237,7 +237,7 @@ https://{api-id}.execute-api.{region}.amazonaws.com
 ```
 
 **Example:**
-```bash
+```powershell
 # Production API Gateway (HTTP API)
 VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 
@@ -254,7 +254,7 @@ VITE_API_BASE=http://localhost:3001
 ### Environment Configuration
 
 **Development (.env.local):**
-```bash
+```powershell
 # Local backend
 VITE_API_BASE=http://localhost:3001
 
@@ -268,7 +268,7 @@ VITE_ENABLE_DEV_BYPASS=true  # Localhost only
 ```
 
 **Production (.env.production):**
-```bash
+```powershell
 VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 VITE_ANALYTICS_ENABLED=true
 VITE_API_STRIP_LEGACY_API_PREFIX=false
@@ -311,7 +311,7 @@ In development mode, the app performs a non-blocking health check on startup:
 **Issue: "Network Error" or "ERR_NETWORK"**
 - Check console for enhanced diagnostic message
 - Verify VITE_API_BASE points to correct region
-- Test with curl: `curl ${VITE_API_BASE}/health`
+- Test with PowerShell: `Invoke-RestMethod -Uri "$env:VITE_API_BASE/health"`
 - Check CORS settings in backend
 
 **Issue: "403 Forbidden" after login**
@@ -333,9 +333,9 @@ console.log(import.meta.env.VITE_API_BASE)
 ```
 
 **Test API connectivity:**
-```bash
+```powershell
 # From terminal
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Expected: {"status":"healthy","timestamp":"..."}
 ```
@@ -365,7 +365,7 @@ curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
 ### Future Custom Domain Setup
 
 **Step 1: Request SSL Certificate**
-```bash
+```powershell
 aws acm request-certificate \
   --domain-name projectvaline.com \
   --subject-alternative-names www.projectvaline.com \
@@ -374,7 +374,7 @@ aws acm request-certificate \
 ```
 
 **Step 2: Configure CloudFront**
-```bash
+```powershell
 # Update distribution to use custom domain
 aws cloudfront update-distribution --id dkmxy676d3vgc \
   --distribution-config file://cf-config-custom-domain.json
@@ -387,7 +387,7 @@ www.projectvaline.com.   CNAME   dkmxy676d3vgc.cloudfront.net
 ```
 
 **Step 4: Update CORS in API**
-```bash
+```powershell
 # Update serverless.yml
 FRONTEND_URL=https://projectvaline.com
 COOKIE_DOMAIN=.projectvaline.com
@@ -400,13 +400,13 @@ COOKIE_DOMAIN=.projectvaline.com
 ### Access Control Configuration
 
 **Registration Lockdown:**
-```bash
+```powershell
 # serverless/serverless.yml
 ENABLE_REGISTRATION=false
 ```
 
 **Email Allowlist (Post-Auth Gate):**
-```bash
+```powershell
 # serverless/serverless.yml
 ALLOWED_USER_EMAILS=owner@example.com,friend@example.com
 ```
@@ -445,21 +445,12 @@ For each function:
 6. Click "Save"
 
 **Step 3: Verify Changes**
-```bash
+```powershell
 # Test login with allowed email
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"owner@example.com","password":"test"}'
-
-# Expected: 200 OK (or 401 if password wrong)
-
-# Test login with non-allowed email
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"blocked@example.com","password":"test"}'
-
-# Expected: 403 Forbidden with message "Account not authorized for access"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"email":"owner@example.com","password":"test"}' -ContentType 'application/json'```
 
 **Alternative: Update via serverless.yml**
 
@@ -472,8 +463,8 @@ To set allowlist at deployment time (recommended for consistency):
    ```
 
 2. Set environment variable before deploy:
-   ```bash
-   export ALLOWED_USER_EMAILS="owner@example.com,friend@example.com"
+   ```powershell
+$env:ALLOWED_USER_EMAILS = "owner@example.com,friend@example.com"
    cd serverless
    serverless deploy --stage prod
    ```
@@ -492,12 +483,12 @@ To set allowlist at deployment time (recommended for consistency):
 - Refresh Token: 7 days
 
 **Secret Management:**
-```bash
+```powershell
 # Generate strong secret (256 bits)
 openssl rand -base64 32
 
 # Set in environment
-export JWT_SECRET=<generated-secret>
+$env:JWT_SECRET = "<generated-secret>"
 
 # Future: Migrate to AWS Secrets Manager
 aws secretsmanager create-secret \
@@ -523,7 +514,7 @@ aws secretsmanager create-secret \
 ### CORS Policy
 
 **Allowed Origins:**
-```bash
+```powershell
 FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
 # Future: https://projectvaline.com
 ```
@@ -552,7 +543,7 @@ API Gateway Resource Policy: IP-based Deny rules
 
 **To Update Owner IP (Legacy - If Not Yet Detached):**
 
-```bash
+```powershell
 # 1. Get current IP set
 aws wafv2 get-ip-set \
   --scope CLOUDFRONT \
@@ -593,7 +584,7 @@ aws wafv2 update-ip-set \
 
 Use WAF for rate limiting and basic threat protection, NOT static IP gating:
 
-```bash
+```powershell
 # Create rate-based rule (100 req/5min per IP)
 aws wafv2 create-web-acl \
   --scope CLOUDFRONT \
@@ -643,7 +634,7 @@ See dedicated runbook: [`docs/runbooks/rotate-jwt-secret.md`](./rotate-jwt-secre
 6. Rename `JWT_SECRET_NEW` → `JWT_SECRET`
 
 **Redeploy Lambda:**
-```bash
+```powershell
 cd serverless
 serverless deploy function -f login --stage prod
 serverless deploy function -f me --stage prod
@@ -669,7 +660,7 @@ serverless deploy function -f refresh --stage prod
 - Latency
 
 **Dashboard Creation:**
-```bash
+```powershell
 aws cloudwatch put-dashboard \
   --dashboard-name Valine-Production \
   --dashboard-body file://cloudwatch-dashboard.json
@@ -696,7 +687,7 @@ fields @timestamp, @message
 ### Alerting
 
 **SNS Topic Setup:**
-```bash
+```powershell
 aws sns create-topic --name valine-prod-alerts
 
 aws sns subscribe \
@@ -706,7 +697,7 @@ aws sns subscribe \
 ```
 
 **CloudWatch Alarms:**
-```bash
+```powershell
 # High 5XX error rate
 aws cloudwatch put-metric-alarm \
   --alarm-name valine-high-errors \
@@ -750,9 +741,9 @@ aws cloudwatch put-metric-alarm \
 **Cause:** IP not in allowlist (if legacy WAF still active)
 
 **Solution:**
-1. Verify source IP: `curl https://ifconfig.me`
+1. Verify source IP: `Invoke-RestMethod -Uri "https://ifconfig.me"`
 2. Update WAF IP set (see Section 6) OR detach WAF (see Section 13)
-3. Verify: `curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health`
+3. Verify: `Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"`
 
 **Issue: JWT Token Invalid**
 
@@ -784,14 +775,14 @@ aws cloudwatch put-metric-alarm \
 - Encryption: Enabled (AWS KMS)
 
 **Manual Snapshot:**
-```bash
+```powershell
 aws rds create-db-snapshot \
   --db-instance-identifier valine-prod \
   --db-snapshot-identifier valine-manual-$(date +%Y%m%d)
 ```
 
 **Restore from Snapshot:**
-```bash
+```powershell
 aws rds restore-db-instance-from-db-snapshot \
   --db-instance-identifier valine-restored \
   --db-snapshot-identifier valine-manual-20251113
@@ -800,7 +791,7 @@ aws rds restore-db-instance-from-db-snapshot \
 ### Frontend Backups
 
 **Before each deployment:**
-```bash
+```powershell
 BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
 
 aws s3 sync s3://valine-frontend-prod/ \
@@ -808,7 +799,7 @@ aws s3 sync s3://valine-frontend-prod/ \
 ```
 
 **Restore:**
-```bash
+```powershell
 aws s3 sync s3://valine-frontend-backups/backup-20251113_120000/ \
   s3://valine-frontend-prod/ \
   --delete
@@ -817,7 +808,7 @@ aws s3 sync s3://valine-frontend-backups/backup-20251113_120000/ \
 ### Lambda Code Backups
 
 **Serverless Framework automatically versions:**
-```bash
+```powershell
 # List versions
 aws lambda list-versions-by-function --function-name pv-api-prod-login
 
@@ -865,7 +856,7 @@ const prisma = new PrismaClient({
 ### API Gateway Throttling
 
 **Protect backend from overload:**
-```bash
+```powershell
 aws apigatewayv2 update-stage \
   --api-id i72dxlcfcc \
   --stage-name $default \
@@ -911,13 +902,13 @@ Build **fails** if dev bypass is enabled AND `VITE_FRONTEND_URL` contains produc
 **Step 1: Set Environment Variables**
 
 Create `.env.local`:
-```bash
+```powershell
 VITE_ENABLE_DEV_BYPASS=true
 VITE_FRONTEND_URL=http://localhost:5173
 ```
 
 **Step 2: Start Development Server**
-```bash
+```powershell
 npm run dev
 ```
 
@@ -972,7 +963,7 @@ Before deploying to production, verify:
 A backend endpoint stub exists at `serverless/src/handlers/devBypass.js` but is **NOT wired** to API Gateway and **NOT enabled**. This stub documents future implementation if server-side dev bypass is needed.
 
 **Environment Variable:**
-```bash
+```powershell
 # serverless/serverless.yml
 DEV_BYPASS_ENABLED=false  # Always false, disabled by default
 ```
@@ -1040,7 +1031,7 @@ This section documents how to retire the legacy static IP allowlist at the Cloud
 
 **Via AWS CLI:**
 
-```bash
+```powershell
 # Get current distribution config
 aws cloudfront get-distribution-config \
   --id dkmxy676d3vgc \
@@ -1056,7 +1047,7 @@ aws cloudfront update-distribution \
 ```
 
 **Verification:**
-```bash
+```powershell
 aws cloudfront get-distribution --id dkmxy676d3vgc \
   --query 'Distribution.DistributionConfig.WebACLId'
 
@@ -1074,7 +1065,7 @@ aws cloudfront get-distribution --id dkmxy676d3vgc \
 
 **Via AWS CLI:**
 
-```bash
+```powershell
 # Get current resource policy
 aws apigatewayv2 get-api --api-id i72dxlcfcc \
   --query 'Policy' > api-policy.json
@@ -1106,7 +1097,7 @@ aws apigatewayv2 update-api \
 
 Instead of completely removing WAF, configure it for DDoS protection and rate limiting without static IP gating:
 
-```bash
+```powershell
 # Create new rate-limit-only WebACL
 aws wafv2 create-web-acl \
   --scope CLOUDFRONT \
@@ -1145,9 +1136,9 @@ See detailed manual verification guide: [`docs/runbooks/verify-auth-hardening.md
 - [ ] Verify static assets load correctly
 
 **Test:**
-```bash
+```powershell
 # From any IP (not owner IP)
-curl -I https://dkmxy676d3vgc.cloudfront.net
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Expected: HTTP/2 200
 ```
@@ -1159,23 +1150,12 @@ curl -I https://dkmxy676d3vgc.cloudfront.net
 - [ ] Login with invalid credentials → 401 Unauthorized
 
 **Test Script:**
-```bash
+```powershell
 # Allowlisted user (should succeed)
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"owner@example.com","password":"validpassword"}' \
-  -v
-
-# Expected: 200 OK, Set-Cookie headers present
-
-# Non-allowlisted user (should fail)
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"hacker@evil.com","password":"validpassword"}' \
-  -v
-
-# Expected: 403 Forbidden, "not authorized" message
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"email":"owner@example.com","password":"validpassword"}' -ContentType 'application/json'```
 
 #### Dev Bypass Absence in Production
 
@@ -1204,16 +1184,11 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
 - [ ] Credentials allowed only for whitelisted origins
 
 **Test:**
-```bash
-curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://dkmxy676d3vgc.cloudfront.net" \
-  -H "Access-Control-Request-Method: POST" \
-  -v
-
-# Expected headers:
-# access-control-allow-origin: https://dkmxy676d3vgc.cloudfront.net
-# access-control-allow-credentials: true
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
+    "Access-Control-Request-Method" = "POST"
+}```
 
 #### Performance & Availability
 
@@ -1223,7 +1198,7 @@ curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/logi
 - [ ] RDS connections stable (no timeouts)
 
 **CloudWatch Metrics Check:**
-```bash
+```powershell
 aws cloudwatch get-metric-statistics \
   --namespace AWS/CloudFront \
   --metric-name CacheHitRate \

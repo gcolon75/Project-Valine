@@ -22,11 +22,11 @@ A quick reference guide for deploying frontend/UX changes to production.
 
 ### Quick Deploy (One Command)
 
-```bash
+```powershell
 # Set environment variables
-export VITE_API_BASE=https://YOUR_API_GATEWAY_URL
-export S3_BUCKET=your-s3-bucket-name
-export CLOUDFRONT_DISTRIBUTION_ID=your-distribution-id
+$env:VITE_API_BASE = "https://YOUR_API_GATEWAY_URL"
+$env:S3_BUCKET = "your-s3-bucket-name"
+$env:CLOUDFRONT_DISTRIBUTION_ID = "your-distribution-id"
 
 # Run deployment
 ./scripts/deploy-ux-only.sh
@@ -36,10 +36,10 @@ export CLOUDFRONT_DISTRIBUTION_ID=your-distribution-id
 
 If you need more control:
 
-```bash
+```powershell
 # 1. Set environment
-export NODE_ENV=production
-export VITE_API_BASE=https://YOUR_API_URL
+$env:NODE_ENV = "production"
+$env:VITE_API_BASE = "https://YOUR_API_URL"
 
 # 2. Build
 npm run build
@@ -77,7 +77,7 @@ aws cloudfront create-invalidation \
 
 ### Quick Rollback
 
-```bash
+```powershell
 # Checkout previous working commit
 git checkout PREVIOUS_COMMIT_SHA
 
@@ -90,7 +90,7 @@ git checkout main
 
 ### Manual Rollback
 
-```bash
+```powershell
 # If you have a backup in S3:
 aws s3 sync s3://YOUR_BUCKET/backup/ s3://YOUR_BUCKET/ --delete
 aws cloudfront create-invalidation \
@@ -118,7 +118,7 @@ aws cloudfront create-invalidation \
 
 1. CloudFront cache may not be invalidated
 2. Run invalidation again:
-   ```bash
+   ```powershell
    aws cloudfront create-invalidation \
      --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
      --paths "/*"

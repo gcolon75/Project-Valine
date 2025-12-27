@@ -96,7 +96,7 @@ Even though PR #82 fixed import paths, there could still be runtime import issue
 
 Run this test script to compare keys:
 
-```bash
+```powershell
 #!/bin/bash
 # Test script to verify Discord public key configuration
 
@@ -134,7 +134,7 @@ Note: For actual testing, you'll need a valid signature. Use the test script bel
 
 ### Step 3: Check CloudWatch Logs
 
-```bash
+```powershell
 # Get latest log streams
 aws logs describe-log-streams \
   --log-group-name /aws/lambda/valine-orchestrator-discord-dev \

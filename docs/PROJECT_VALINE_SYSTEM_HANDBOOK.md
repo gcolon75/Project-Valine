@@ -1120,16 +1120,10 @@ Get 7-day dashboard statistics.
 
 #### Step 1: Create Account
 
-```bash
-curl -X POST https://api.projectvaline.com/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "johndoe",
-    "email": "john@example.com",
-    "password": "SecurePass123!",
-    "displayName": "John Doe"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "username": "johndoe", "email": "john@example.com", "password": "SecurePass123!", "displayName": "John Doe" }' -ContentType 'application/json'```
 
 **Response:**
 ```json
@@ -1142,21 +1136,17 @@ curl -X POST https://api.projectvaline.com/auth/register \
 
 #### Step 2: Login (if not using registration token)
 
-```bash
-curl -X POST https://api.projectvaline.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "SecurePass123!"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "john@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'```
 
 #### Step 3: Get Own Profile
 
-```bash
-curl https://api.projectvaline.com/auth/me \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}```
 
 **Expected Flow:**
 1. User data returned from `/auth/me`
@@ -1169,28 +1159,25 @@ curl https://api.projectvaline.com/auth/me \
 
 #### Step 1: Get Current Profile
 
-```bash
-curl https://api.projectvaline.com/profiles/<user-id> \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 #### Step 2: Update Profile Title
 
-```bash
-curl -X PATCH https://api.projectvaline.com/profiles/<profile-id> \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Senior Voice Actor"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "title": "Senior Voice Actor" }' -ContentType 'application/json'```
 
 #### Step 3: Verify Changes
 
-```bash
-curl https://api.projectvaline.com/profiles/<user-id> \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:**
 - `profile.title` should now be `"Senior Voice Actor"`
@@ -1202,18 +1189,11 @@ curl https://api.projectvaline.com/profiles/<user-id> \
 
 #### Step 1: Add Education Entry
 
-```bash
-curl -X POST https://api.projectvaline.com/profiles/<profile-id>/education \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "institution": "Yale School of Drama",
-    "program": "MFA in Acting",
-    "startYear": 2018,
-    "endYear": 2021,
-    "achievements": "Outstanding Performance Award"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "institution": "Yale School of Drama", "program": "MFA in Acting", "startYear": 2018, "endYear": 2021, "achievements": "Outstanding Performance Award" }' -ContentType 'application/json'```
 
 **Response:**
 ```json
@@ -1228,10 +1208,10 @@ curl -X POST https://api.projectvaline.com/profiles/<profile-id>/education \
 
 #### Step 2: Verify Education on Profile
 
-```bash
-curl https://api.projectvaline.com/profiles/<profile-id>/education \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/education" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:**
 - Array contains newly added education entry
@@ -1243,16 +1223,11 @@ curl https://api.projectvaline.com/profiles/<profile-id>/education \
 
 #### Step 1: Create Public Post
 
-```bash
-curl -X POST https://api.projectvaline.com/posts \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Just wrapped filming my latest project!",
-    "tags": ["acting", "film"],
-    "visibility": "PUBLIC"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "content": "Just wrapped filming my latest project!", "tags": ["acting", "film"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
 
 **Response:**
 ```json
@@ -1270,10 +1245,10 @@ curl -X POST https://api.projectvaline.com/posts \
 Navigate to: `https://app.projectvaline.com/dashboard`
 
 **API Call:**
-```bash
-curl https://api.projectvaline.com/feed \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:**
 - Post appears in personalized feed
@@ -1284,10 +1259,10 @@ curl https://api.projectvaline.com/feed \
 Navigate to: `https://app.projectvaline.com/profile/{vanityUrl}`
 
 **API Call:**
-```bash
-curl https://api.projectvaline.com/profiles/<user-id>/posts \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>/posts" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Expected:**
 - Post appears in user's post list
@@ -1297,8 +1272,8 @@ curl https://api.projectvaline.com/profiles/<user-id>/posts \
 Navigate to: `https://app.projectvaline.com/explore`
 
 **API Call:**
-```bash
-curl https://api.projectvaline.com/posts
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/posts" -Method Get
 ```
 
 **Expected:**
@@ -1311,10 +1286,10 @@ curl https://api.projectvaline.com/posts
 
 #### Step 1: Search for User
 
-```bash
-curl "https://api.projectvaline.com/search/users?q=janedoe" \
-  -H "Authorization: Bearer <token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/search/users?q=janedoe" -Method Get -Headers @{
+    "Authorization" = "Bearer <token>"
+}```
 
 **Response:**
 ```json
@@ -1332,15 +1307,11 @@ curl "https://api.projectvaline.com/search/users?q=janedoe" \
 
 #### Step 2: Send Follow Request
 
-```bash
-curl -X POST https://api.projectvaline.com/connections/request \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "receiverId": "target-user-uuid",
-    "message": "Love your work!"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <token>"
+    "Content-Type" = "application/json"
+} -Body '{ "receiverId": "target-user-uuid", "message": "Love your work!" }' -ContentType 'application/json'```
 
 **Response:**
 ```json
@@ -1356,10 +1327,10 @@ curl -X POST https://api.projectvaline.com/connections/request \
 
 (Jane Doe logs in and accepts)
 
-```bash
-curl -X POST https://api.projectvaline.com/connections/<request-uuid>/accept \
-  -H "Authorization: Bearer <jane-token>"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer <jane-token>"
+}```
 
 **Response:**
 ```json
@@ -1371,10 +1342,10 @@ curl -X POST https://api.projectvaline.com/connections/<request-uuid>/accept \
 
 #### Step 4: See Jane's Posts in Your Feed
 
-```bash
-curl https://api.projectvaline.com/feed \
-  -H "Authorization: Bearer <your-token>"
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
+    "Authorization" = "Bearer <your-token>"
+}```
 
 **Expected:**
 - Jane's `FOLLOWERS` visibility posts now appear in your feed
@@ -1390,31 +1361,31 @@ See dedicated troubleshooting guide: [docs/backend/troubleshooting-auth-profile-
 
 ### Check User Profile
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, email, username, \"displayName\" FROM users WHERE email = 'ghawk075@gmail.com';"
 ```
 
 ### Check Profile Record
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT * FROM profiles WHERE \"userId\" = '<user-id>';"
 ```
 
 ### Check Education Entries
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT * FROM education WHERE \"profileId\" = '<profile-id>';"
 ```
 
 ### Check Posts
 
-```bash
+```powershell
 psql $DATABASE_URL -c "SELECT id, content, visibility, \"authorId\", \"createdAt\" FROM posts WHERE \"authorId\" = '<user-id>' ORDER BY \"createdAt\" DESC LIMIT 10;"
 ```
 
 ### Check Lambda Logs (AWS)
 
-```bash
+```powershell
 # Tail recent logs
 aws logs tail /aws/lambda/pv-api-prod-<function-name> --since 5m
 
@@ -1454,7 +1425,7 @@ See: [docs/ENV_CHECKLIST.md](./ENV_CHECKLIST.md) for complete environment variab
 
 ### Backend Deployment
 
-```bash
+```powershell
 cd serverless
 npm install
 npx serverless deploy --stage prod
@@ -1464,11 +1435,11 @@ npx serverless deploy --stage prod
 1. Note API Gateway URL from output
 2. Update frontend `VITE_API_BASE` environment variable
 3. Run database migrations: `npx prisma migrate deploy`
-4. Verify health endpoint: `curl https://<api-url>/health`
+4. Verify health endpoint: `Invoke-RestMethod -Uri "https://<api-url>/health"`
 
 ### Frontend Deployment
 
-```bash
+```powershell
 # Build frontend
 npm run build
 

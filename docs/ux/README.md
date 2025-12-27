@@ -166,7 +166,7 @@ This directory contains the results of the automated UX Deep Audit performed on 
 ## Running the Audit
 
 ### Generate New Report
-```bash
+```powershell
 npm run ux:audit
 ```
 
@@ -182,7 +182,7 @@ This will:
 
 After running the audit, convert findings to GitHub issues and create a roadmap:
 
-```bash
+```powershell
 # Generate issue payloads and roadmap (High and Medium severity)
 npm run ux:audit-to-issues -- --severity high,medium
 
@@ -241,7 +241,7 @@ Edit `scripts/ux-audit-agent.mjs` to:
 
 The `ux:audit-to-issues` script automates GitHub issue creation:
 
-```bash
+```powershell
 # 1. Generate issue payloads (review before creating)
 npm run ux:audit-to-issues -- --severity high,medium
 
@@ -280,12 +280,12 @@ console.log(`High priority: ${auditData.summary.high}`);
 ```
 
 ### Filter by Severity (CSV)
-```bash
+```powershell
 # Get only high-priority findings
-grep "High" UX_AUDIT_FINDINGS.csv > high_priority.csv
+Select-String "High" UX_AUDIT_FINDINGS.csv > high_priority.csv
 
 # Get responsive issues only
-grep "Responsive" UX_AUDIT_FINDINGS.csv > responsive_issues.csv
+Select-String "Responsive" UX_AUDIT_FINDINGS.csv > responsive_issues.csv
 ```
 
 ## Questions?

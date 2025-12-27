@@ -112,19 +112,19 @@ The AWS role (`AWS_ROLE_ARN_STAGING`) must have:
 ### Option 2: Local Execution
 
 1. **Configure AWS Credentials:**
-   ```bash
-   export AWS_PROFILE=staging
+   ```powershell
+$env:AWS_PROFILE = "staging"
    # or configure default credentials
    ```
 
 2. **Set Environment Variables:**
-   ```bash
-   export STAGING_DISCORD_BOT_TOKEN="your-token"
-   export STAGING_GITHUB_TOKEN="your-token"
+   ```powershell
+$env:STAGING_DISCORD_BOT_TOKEN = "your-token"
+$env:STAGING_GITHUB_TOKEN = "your-token"
    ```
 
 3. **Run Validation:**
-   ```bash
+   ```powershell
    cd orchestrator/scripts
    ./run_phase5_validation.sh
    ```

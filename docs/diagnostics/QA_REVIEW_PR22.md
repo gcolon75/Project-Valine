@@ -354,7 +354,7 @@ flake8 app/verification/ tests/test_*.py --max-line-length=120
 
 ### Test Execution Results
 
-```bash
+```powershell
 $ python3 -m unittest discover -s tests -p "test_*.py" -v
 test_calculate_duration ... ok
 test_get_cloudfront_status ... ok

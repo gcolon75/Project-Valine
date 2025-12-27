@@ -39,19 +39,19 @@ Phase 09 Performance Audit identified 6 oversized images totaling ~12.2 MB that 
 
 ### Command Line Tools
 1. **sharp** (Node.js)
-   ```bash
+   ```powershell
    npm install -g sharp-cli
    sharp -i input.jpg -o output.webp --webp
    ```
 
 2. **imagemagick**
-   ```bash
+   ```powershell
    convert input.jpg -quality 85 -resize 1920x output.jpg
    magick convert input.png -define webp:lossless=false output.webp
    ```
 
 3. **cwebp** (Google's WebP encoder)
-   ```bash
+   ```powershell
    cwebp -q 80 input.jpg -o output.webp
    ```
 
@@ -166,7 +166,7 @@ console.log('All images optimized!');
 ```
 
 Run with:
-```bash
+```powershell
 npm install sharp
 node scripts/optimize-images.js
 ```
@@ -212,7 +212,7 @@ import LazyImage from '../components/LazyImage';
 ### 3. Verify Optimization
 
 Run the performance audit:
-```bash
+```powershell
 npm run build
 npm run perf:audit
 ```
@@ -293,13 +293,13 @@ When adding new images:
 
 Consider adding a pre-commit hook to check image sizes:
 
-```bash
+```powershell
 #!/bin/bash
 # .git/hooks/pre-commit
 
 MAX_SIZE=512000 # 500 KB in bytes
 
-for file in $(git diff --cached --name-only | grep -E '\.(jpg|jpeg|png)$'); do
+for file in $(git diff --cached --name-only | Select-String -E '\.(jpg|jpeg|png)$'); do
   size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
   if [ "$size" -gt "$MAX_SIZE" ]; then
     echo "❌ Error: $file is too large ($size bytes)"

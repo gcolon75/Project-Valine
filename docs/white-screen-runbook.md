@@ -1,5 +1,8 @@
 # White Screen Runbook
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 ## Quick Reference
 
 **Symptoms:** Blank white screen, no content loading, or "Unexpected token '<'" JavaScript errors.
@@ -11,7 +14,7 @@
 4. Incorrect Cache-Control headers causing stale content
 
 **Fast Diagnosis:** Run diagnostic script
-```bash
+```powershell
 # Bash (Linux/Mac)
 ./scripts/diagnose-white-screen.sh --domain your-domain.com
 
@@ -66,12 +69,12 @@ CloudFront doesn't have viewer-request function to rewrite extension-less paths 
 .\scripts\cloudfront-associate-spa-function.ps1 -DistributionId "E1234567890ABC"
 
 # 3. Wait 2-5 minutes for propagation, then test
-curl https://your-domain.com/join
+Invoke-RestMethod -Uri "https://your-domain.com/join" -Method Get
 # Should return HTML (200), not XML (403/404)
 ```
 
 ### Quick Fix (Bash)
-```bash
+```powershell
 # 1. Check current config
 aws cloudfront get-distribution-config --id E1234567890ABC \
   --query 'DistributionConfig.DefaultCacheBehavior.FunctionAssociations.Items[?EventType==`viewer-request`]'
@@ -79,12 +82,12 @@ aws cloudfront get-distribution-config --id E1234567890ABC \
 # 2. If empty, need to attach function (use PowerShell script or manual AWS console)
 
 # 3. Test
-curl -I https://your-domain.com/join
+Invoke-RestMethod -Uri "-I" -Method Get
 # Should return: HTTP/2 200, content-type: text/html
 ```
 
 ### Verification
-```bash
+```powershell
 node scripts/diagnose-white-screen.js --domain your-domain.com
 # Should pass: "✅ /join → 200 HTML"
 ```
@@ -121,7 +124,7 @@ aws cloudfront create-invalidation `
 ```
 
 ### Quick Fix (Bash)
-```bash
+```powershell
 # 1. Rebuild and deploy
 npm run build
 
@@ -143,7 +146,7 @@ aws s3api head-object \
 ```
 
 ### Verification
-```bash
+```powershell
 node scripts/diagnose-white-screen.js \
   --domain your-domain.com \
   --bucket your-frontend-bucket
@@ -184,7 +187,7 @@ aws cloudfront list-invalidations `
 ```
 
 ### Quick Fix (Bash)
-```bash
+```powershell
 # 1. Create invalidation
 aws cloudfront create-invalidation \
   --distribution-id E1234567890ABC \
@@ -201,9 +204,9 @@ aws cloudfront get-invalidation \
 ```
 
 ### Verification
-```bash
+```powershell
 # Test with cache-busting
-curl -I "https://your-domain.com/?nocache=$(date +%s)"
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Should return:
 # HTTP/2 200
@@ -243,11 +246,11 @@ aws cloudfront create-invalidation `
 
 # 4. Verify
 Start-Sleep -Seconds 60
-curl https://your-domain.com
+Invoke-RestMethod -Uri "https://your-domain.com" -Method Get
 ```
 
 ### Bash
-```bash
+```powershell
 # 1. List recent versions
 aws s3api list-object-versions \
   --bucket your-frontend-bucket \
@@ -274,7 +277,7 @@ aws cloudfront create-invalidation \
 
 # 4. Verify
 sleep 60
-curl -I https://your-domain.com
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 ---
@@ -282,7 +285,7 @@ curl -I https://your-domain.com
 ## 5. Advanced Diagnostics
 
 ### Check CloudFront Logs
-```bash
+```powershell
 # Enable logging in CloudFront (if not already)
 aws cloudfront get-distribution-config \
   --id E1234567890ABC \
@@ -294,7 +297,7 @@ aws s3 sync s3://your-cloudfront-logs-bucket/ ./cf-logs/ \
   --include "$(date +%Y-%m-%d)*"
 
 # Check for 404s on bundles
-grep "404" cf-logs/*.gz | zcat | grep "assets/index-"
+Select-String "404" cf-logs/*.gz | zcat | Select-String "assets/index-"
 ```
 
 ### Check Browser Console Errors
@@ -316,7 +319,7 @@ window.__errorInstrumentation.logError(
 ```
 
 ### Check Backend Error Logs
-```bash
+```powershell
 # Tail CloudWatch logs for client errors
 aws logs tail /aws/lambda/pv-api-prod-logEvent \
   --follow \
@@ -336,7 +339,7 @@ aws logs filter-log-events \
 ### Before Every Deployment
 
 1. **Build validation**
-   ```bash
+   ```powershell
    npm run build
    # Postbuild validation runs automatically
    # Should output: "✅ Build validation passed"
@@ -349,7 +352,7 @@ aws logs filter-log-events \
    ```
 
 3. **Test in staging first**
-   ```bash
+   ```powershell
    # Deploy to staging
    ./scripts/deploy-static-with-mime.sh staging-bucket STAGING_DIST_ID
    
@@ -362,7 +365,7 @@ aws logs filter-log-events \
 ### Monitoring Setup
 
 1. **Enable CloudWatch alarms**
-   ```bash
+   ```powershell
    # Create alarm for 4xx errors
    aws cloudwatch put-metric-alarm \
      --alarm-name frontend-4xx-errors \
@@ -381,7 +384,7 @@ aws logs filter-log-events \
    - Set up alerts on error count spikes
 
 3. **Regular health checks**
-   ```bash
+   ```powershell
    # Add to cron or GitHub Actions
    */30 * * * * node /path/to/scripts/diagnose-white-screen.js --domain your-domain.com
    ```
@@ -407,14 +410,14 @@ After building the project, SRI hashes are automatically generated for the main 
 ### SRI in Build Pipeline
 
 1. **Generate SRI hashes** (automatically run after build):
-   ```bash
+   ```powershell
    npm run build:sri
    # Or manually:
    node scripts/generate-sri.js
    ```
 
 2. **Verify SRI hashes** (in CI/CD):
-   ```bash
+   ```powershell
    npm run verify:sri
    # Or manually:
    node scripts/verify-sri.js
@@ -429,7 +432,7 @@ After building the project, SRI hashes are automatically generated for the main 
 **Solutions:**
 
 1. **Regenerate SRI hashes:**
-   ```bash
+   ```powershell
    npm run build
    node scripts/generate-sri.js
    npm run verify:sri
@@ -440,7 +443,7 @@ After building the project, SRI hashes are automatically generated for the main 
    - Don't modify files in `dist/` after running `generate-sri.js`
 
 3. **Disable SRI temporarily (emergency only):**
-   ```bash
+   ```powershell
    # Remove integrity attributes from dist/index.html
    sed -i 's/ integrity="[^"]*"//g' dist/index.html
    sed -i 's/ crossorigin="anonymous"//g' dist/index.html
@@ -461,7 +464,7 @@ Access-Control-Allow-Methods: GET, HEAD, OPTIONS
 ```
 
 Check headers:
-```bash
+```powershell
 ./scripts/assert-headers.sh --domain your-domain.com
 ```
 
@@ -469,7 +472,7 @@ Check headers:
 
 The retention guard in deployment scripts checks SRI status before pruning old bundles:
 
-```bash
+```powershell
 # scripts/deploy-frontend.js (excerpt)
 if (!verifySRI()) {
   console.error('SRI verification failed - aborting deployment');
@@ -524,13 +527,13 @@ This prevents:
 
 If you're experiencing authentication failures with `net::ERR_NAME_NOT_RESOLVED` errors:
 
-```bash
+```powershell
 # Run auth backend diagnostics
 node scripts/check-auth-backend.js --domain fb9pxd6m09.execute-api.us-west-2.amazonaws.com
 
 # Test login credentials
-export TEST_EMAIL="user@example.com"
-export TEST_PASSWORD="password123"
+$env:TEST_EMAIL = "user@example.com"
+$env:TEST_PASSWORD = "password123"
 ./scripts/test-auth-login.sh
 ```
 
@@ -538,7 +541,7 @@ See the **[Auth Backend Investigation Runbook](./AUTH_BACKEND_INVESTIGATION.md)*
 
 ### Common Commands Quick Reference
 
-```bash
+```powershell
 # Diagnosis (Bash)
 ./scripts/diagnose-white-screen.sh --domain your-domain.com
 ./scripts/assert-headers.sh --domain your-domain.com

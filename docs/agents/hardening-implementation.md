@@ -170,11 +170,11 @@ agent = BackendAgent(persistence_adapter=DynamoDBPersistenceAdapter(table_name='
 - **`auto`**: Try real commands, fall back to mock on error (default)
 
 **Configuration:**
-```bash
-export CHECK_MODE=real
-export CHECK_COMMAND_LINT="npm run lint"
-export CHECK_COMMAND_TEST="npm run test:run"
-export CHECK_COMMAND_BUILD="npm run build"
+```powershell
+$env:CHECK_MODE = "real"
+$env:CHECK_COMMAND_LINT = "npm run lint"
+$env:CHECK_COMMAND_TEST = "npm run test:run"
+$env:CHECK_COMMAND_BUILD = "npm run build"
 ```
 
 **Features:**
@@ -186,13 +186,13 @@ export CHECK_COMMAND_BUILD="npm run build"
 ### Retry Logic with Backoff
 
 **Configuration:**
-```bash
-export GITHUB_API_MAX_RETRIES=3
-export GITHUB_API_BASE_DELAY=1.0
-export GITHUB_API_MAX_DELAY=60.0
-export GITHUB_API_EXPONENTIAL_BASE=2.0
-export GITHUB_API_JITTER=true
-export GITHUB_API_TOKEN_POOL="token1,token2,token3"
+```powershell
+$env:GITHUB_API_MAX_RETRIES = "3"
+$env:GITHUB_API_BASE_DELAY = "1.0"
+$env:GITHUB_API_MAX_DELAY = "60.0"
+$env:GITHUB_API_EXPONENTIAL_BASE = "2.0"
+$env:GITHUB_API_JITTER = "true"
+$env:GITHUB_API_TOKEN_POOL = "token1,token2,token3"
 ```
 
 **Features:**
@@ -260,34 +260,34 @@ export GITHUB_API_TOKEN_POOL="token1,token2,token3"
 ## Configuration
 
 ### Development (Minimal Setup)
-```bash
+```powershell
 # No configuration needed - uses memory adapter and mock checks
-export PERSISTENCE_ADAPTER=memory
-export CHECK_MODE=auto
+$env:PERSISTENCE_ADAPTER = "memory"
+$env:CHECK_MODE = "auto"
 ```
 
 ### Production (SQLite)
-```bash
-export PERSISTENCE_ADAPTER=sqlite
-export SQLITE_DB_PATH=/opt/backend-agent/data/conversations.db
-export CHECK_MODE=real
-export CHECK_COMMAND_LINT="npm run lint -- --max-warnings 0"
-export CHECK_COMMAND_TEST="npm run test:ci"
-export CHECK_COMMAND_BUILD="npm run build -- --mode production"
-export GITHUB_API_MAX_RETRIES=5
-export GITHUB_API_TOKEN_POOL="${TOKEN1},${TOKEN2},${TOKEN3}"
+```powershell
+$env:PERSISTENCE_ADAPTER = "sqlite"
+$env:SQLITE_DB_PATH = "/opt/backend-agent/data/conversations.db"
+$env:CHECK_MODE = "real"
+$env:CHECK_COMMAND_LINT = "npm run lint -- --max-warnings 0"
+$env:CHECK_COMMAND_TEST = "npm run test:ci"
+$env:CHECK_COMMAND_BUILD = "npm run build -- --mode production"
+$env:GITHUB_API_MAX_RETRIES = "5"
+$env:GITHUB_API_TOKEN_POOL = "${TOKEN1},${TOKEN2},${TOKEN3}"
 ```
 
 ### Production (DynamoDB)
-```bash
-export PERSISTENCE_ADAPTER=dynamodb
-export DYNAMODB_TABLE_NAME=backend-agent-prod
-export DYNAMODB_REGION=us-east-1
-export AWS_ACCESS_KEY_ID=${AWS_KEY}
-export AWS_SECRET_ACCESS_KEY=${AWS_SECRET}
-export CHECK_MODE=real
-export GITHUB_API_MAX_RETRIES=5
-export GITHUB_API_TOKEN_POOL="${TOKEN1},${TOKEN2},${TOKEN3}"
+```powershell
+$env:PERSISTENCE_ADAPTER = "dynamodb"
+$env:DYNAMODB_TABLE_NAME = "backend-agent-prod"
+$env:DYNAMODB_REGION = "us-east-1"
+$env:AWS_ACCESS_KEY_ID = "${AWS_KEY}"
+$env:AWS_SECRET_ACCESS_KEY = "${AWS_SECRET}"
+$env:CHECK_MODE = "real"
+$env:GITHUB_API_MAX_RETRIES = "5"
+$env:GITHUB_API_TOKEN_POOL = "${TOKEN1},${TOKEN2},${TOKEN3}"
 ```
 
 ## Backward Compatibility

@@ -81,7 +81,7 @@ All moderation features are controlled by environment variables:
 ## Environment Configuration
 
 ### Required Variables
-```bash
+```powershell
 # Core Feature Flags
 MODERATION_ENABLED=false
 REPORTS_ENABLED=true
@@ -91,7 +91,7 @@ ADMIN_ROLE_IDS=user-id-1,user-id-2  # Comma-separated admin user IDs
 ```
 
 ### Optional Variables
-```bash
+```powershell
 # Moderation Behavior
 MODERATION_STRICT_MODE=false
 MODERATION_ALERTS_ENABLED=false
@@ -120,7 +120,7 @@ REPORT_CATEGORY_ALLOWLIST=spam,abuse,unsafe_link,profanity,privacy,other
 ## Quick Start
 
 ### 1. Enable Moderation
-```bash
+```powershell
 # In .env or deployment config
 MODERATION_ENABLED=true
 PROFANITY_ACTION=block
@@ -129,11 +129,10 @@ ADMIN_ROLE_IDS=your-admin-user-id
 
 ### 2. Test Content Scanning
 Try updating a profile with profanity:
-```bash
-curl -X PUT /profiles/id/123 \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"headline": "Shitty actor looking for work"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+} -Body '{"headline": "Shitty actor looking for work"}' -ContentType 'application/json'```
 
 Expected response (422):
 ```json
@@ -150,33 +149,22 @@ Expected response (422):
 ```
 
 ### 3. Create a Report
-```bash
-curl -X POST /reports \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{
-    "targetType": "profile",
-    "targetId": "profile-456",
-    "category": "spam",
-    "description": "User is posting spam links"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+} -Body '{ "targetType": "profile", "targetId": "profile-456", "category": "spam", "description": "User is posting spam links" }' -ContentType 'application/json'```
 
 ### 4. Review Reports (Admin)
-```bash
-curl -X GET '/reports?status=open' \
-  -H "Authorization: Bearer $ADMIN_TOKEN"
-```
+```powershell
+Invoke-RestMethod -Uri "/reports?status=open" -Method Get -Headers @{
+    "Authorization" = "Bearer $ADMIN_TOKEN"
+}```
 
 ### 5. Take Action (Admin)
-```bash
-curl -X POST /moderation/decision \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{
-    "reportId": "report-789",
-    "action": "remove",
-    "reason": "Confirmed spam"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $ADMIN_TOKEN"
+} -Body '{ "reportId": "report-789", "action": "remove", "reason": "Confirmed spam" }' -ContentType 'application/json'```
 
 ## Architecture
 
@@ -247,7 +235,7 @@ All moderation actions are logged with:
    - Copy webhook URL
 
 2. Configure environment:
-   ```bash
+   ```powershell
    MODERATION_ALERTS_ENABLED=true
    MODERATION_ALERT_CHANNEL_ID=https://discord.com/api/webhooks/...
    ```

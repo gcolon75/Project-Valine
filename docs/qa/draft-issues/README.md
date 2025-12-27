@@ -95,7 +95,7 @@ Each markdown file contains all the information needed to create a GitHub issue:
 
 If you have GitHub CLI (`gh`) installed and authenticated with appropriate permissions:
 
-```bash
+```powershell
 # Create individual issue
 gh issue create \
   --title "Rate Limiting & Exponential Backoff for REST Retrieval" \

@@ -67,7 +67,7 @@ Key features:
 
 ## Example Usage
 
-```bash
+```powershell
 # Automatic retry with exponential backoff
 node scripts/analyze-orchestration-run.mjs 123456 --no-gh
 

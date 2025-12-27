@@ -29,7 +29,7 @@ Operational procedures for adding additional users (the friend) to production Pr
 - [x] User's registered email address
 
 ### Required Tools
-```bash
+```powershell
 # Verify AWS CLI is installed and configured
 aws --version
 aws sts get-caller-identity
@@ -51,7 +51,7 @@ This method uses the `ALLOWED_USER_EMAILS` environment variable to control post-
 
 ### Step 1: Get Current Allowlist
 
-```bash
+```powershell
 # Get current Lambda environment variables
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -67,7 +67,7 @@ owner@example.com
 
 ### Step 2: Add Friend's Email
 
-```bash
+```powershell
 # Set new allowlist (comma-separated, no spaces)
 aws lambda update-function-configuration \
   --function-name valine-api-prod \
@@ -101,7 +101,7 @@ aws lambda update-function-configuration \
 
 ### Step 3: Wait for Deployment
 
-```bash
+```powershell
 # Monitor function update status
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -116,7 +116,7 @@ aws lambda get-function-configuration \
 
 ### Step 4: Verify Update
 
-```bash
+```powershell
 # Confirm new allowlist
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -138,9 +138,9 @@ This method uses a database `enabled` field on the `Users` table. **Note**: This
 
 ### Prerequisites Check
 
-```bash
+```powershell
 # Connect to database
-export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+$env:DATABASE_URL = "postgresql://user:password@host:5432/valine_db"
 
 # Check if 'enabled' column exists
 psql "$DATABASE_URL" -c "
@@ -167,7 +167,7 @@ WHERE table_name = 'User'
 
 ### Step 1: Find User Record
 
-```bash
+```powershell
 # Find user by email
 psql "$DATABASE_URL" -c "
 SELECT id, email, username, enabled, \"createdAt\" 
@@ -205,7 +205,7 @@ RETURNING id, email, enabled;
 
 ### Step 3: Verify Database Change
 
-```bash
+```powershell
 psql "$DATABASE_URL" -c "
 SELECT id, email, username, enabled 
 FROM \"User\" 
@@ -226,15 +226,11 @@ WHERE email = 'friend@example.com';
 
 ### Test 1: User Can Login
 
-```bash
+```powershell
 # Test login endpoint
-curl -X POST https://api.valine.app/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "friend@example.com",
-    "password": "TheirSecurePassword123!"
-  }' | jq
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "friend@example.com", "password": "TheirSecurePassword123!" }' -ContentType 'application/json'```
 
 **Expected Response (Success):**
 ```json
@@ -260,15 +256,15 @@ curl -X POST https://api.valine.app/auth/login \
 
 ### Test 2: User Can Access Protected Endpoints
 
-```bash
+```powershell
 # Get access token from login response
 ACCESS_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # Test authenticated endpoint
-curl -X GET https://api.valine.app/profile/me \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" | jq
-```
+Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $ACCESS_TOKEN"
+    "Content-Type" = "application/json"
+}```
 
 **Expected Response:**
 ```json
@@ -284,7 +280,7 @@ curl -X GET https://api.valine.app/profile/me \
 
 ### Test 3: Verify CloudWatch Logs
 
-```bash
+```powershell
 # Check Lambda logs for successful authentication
 aws logs tail /aws/lambda/valine-api-prod \
   --region us-west-2 \
@@ -305,7 +301,7 @@ aws logs tail /aws/lambda/valine-api-prod \
 
 ### Rollback Method A: Remove from Allowlist
 
-```bash
+```powershell
 # Remove friend's email from allowlist
 aws lambda update-function-configuration \
   --function-name valine-api-prod \
@@ -328,7 +324,7 @@ aws lambda update-function-configuration \
 ```
 
 **Verification:**
-```bash
+```powershell
 # Confirm rollback
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -359,7 +355,7 @@ RETURNING id, email, enabled;
 
 If you need to immediately revoke access:
 
-```bash
+```powershell
 # Rotate JWT secret (see rotate-jwt-secret.md runbook)
 # This invalidates ALL active sessions for ALL users
 ```
@@ -381,7 +377,7 @@ If you need to immediately revoke access:
 ```
 
 **Diagnosis:**
-```bash
+```powershell
 # Check if user account exists
 psql "$DATABASE_URL" -c "
 SELECT id, email, username, email_verified 
@@ -393,7 +389,7 @@ WHERE email = 'friend@example.com';
 **Solutions:**
 
 1. **No account found** → User needs to register first
-   ```bash
+   ```powershell
    # Temporarily enable registration
    aws lambda update-function-configuration \
      --function-name valine-api-prod \
@@ -430,7 +426,7 @@ Environment variable cannot exceed 4 KB
 - Move large environment variables to AWS Systems Manager Parameter Store
 - Reference parameters in Lambda configuration
 
-```bash
+```powershell
 # Store DATABASE_URL in Parameter Store
 aws ssm put-parameter \
   --name /valine/prod/database-url \
@@ -453,7 +449,7 @@ aws ssm put-parameter \
 ```
 
 **Diagnosis:**
-```bash
+```powershell
 # Check current allowlist
 aws lambda get-function-configuration \
   --function-name valine-api-prod \
@@ -468,7 +464,7 @@ aws lambda get-function-configuration \
 3. **Cached configuration** → Wait 60 seconds for Lambda to pick up new config
 
 **Solution:**
-```bash
+```powershell
 # Force Lambda to restart with new config
 aws lambda update-function-configuration \
   --function-name valine-api-prod \
@@ -482,7 +478,7 @@ aws lambda update-function-configuration \
 
 ### Key Metrics to Monitor
 
-```bash
+```powershell
 # Monitor failed login attempts
 aws logs filter-log-events \
   --log-group-name /aws/lambda/valine-api-prod \
@@ -507,7 +503,7 @@ aws logs filter-log-events \
 
 Keep a record of user additions:
 
-```bash
+```powershell
 # Document in ops log
 echo "$(date -Iseconds) - Added friend@example.com to production allowlist - Operator: $(aws sts get-caller-identity --query Arn --output text)" >> /var/log/valine/user-additions.log
 ```

@@ -271,7 +271,7 @@ These files were kept in place but should be reviewed for potential reorganizati
 
 ## Commands Run
 
-```bash
+```powershell
 # Inventory
 python3 /tmp/markdown-inventory.py
 
@@ -297,9 +297,9 @@ git add <new-files>           # 5 times
 
 If rollback is needed:
 
-```bash
+```powershell
 # View the reorganization log
-cat docs/ci/reorganization-log.json
+Get-Content docs/ci/reorganization-log.json
 
 # Revert all moves (example for one file)
 git mv docs/api/contract.md API_CONTRACT.md

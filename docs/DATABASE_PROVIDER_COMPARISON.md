@@ -294,7 +294,7 @@ AWS Aurora or Multiple RDS instances
 
 All providers use PostgreSQL, so migration is straightforward:
 
-```bash
+```powershell
 # Export from current database
 pg_dump $SOURCE_DATABASE_URL > backup.sql
 
@@ -302,7 +302,7 @@ pg_dump $SOURCE_DATABASE_URL > backup.sql
 psql $TARGET_DATABASE_URL < backup.sql
 
 # Update DATABASE_URL environment variable
-export DATABASE_URL="new-connection-string"
+$env:DATABASE_URL = "new-connection-string"
 
 # Redeploy backend
 ./scripts/deployment/deploy-backend.sh --stage prod
@@ -325,9 +325,9 @@ export DATABASE_URL="new-connection-string"
 6. **No credit card** - No barrier to getting started
 
 **Setup Command:**
-```bash
+```powershell
 # After getting Supabase connection string
-export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-2.pooler.supabase.com:6543/postgres"
 ./scripts/deployment/setup-database.sh
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```

@@ -186,27 +186,27 @@ Project-Valine/
 ## 🚀 Deployment
 
 ### Development
-```bash
+```powershell
 npm install          # Install dependencies
 npm run dev         # Start dev server (port 3000)
 npm test            # Run tests in watch mode
 ```
 
 ### Production Build
-```bash
+```powershell
 npm run build       # Build for production
 npm run preview     # Preview production build
 ```
 
 ### Staging Deployment (Automated)
-```bash
+```powershell
 git push origin develop    # Triggers CI/CD pipeline
 # or
 # GitHub Actions → CI/CD Staging → Run workflow
 ```
 
 ### Testing
-```bash
+```powershell
 npm test              # Watch mode
 npm run test:ui       # Interactive UI
 npm run test:run      # CI mode
@@ -455,7 +455,7 @@ npm run test:coverage # Generate coverage
 
 ## 🚀 Quick Start Commands
 
-```bash
+```powershell
 # Development
 npm run dev              # Start dev server
 
@@ -1583,7 +1583,7 @@ For detailed changelog, see [CHANGELOG.md](CHANGELOG.md).
 See [orchestrator/README.md](orchestrator/README.md) for deployment instructions.
 
 **Quick Start:**
-```bash
+```powershell
 cd orchestrator
 cp samconfig.toml.example samconfig.toml
 # Edit samconfig.toml with credentials
@@ -1777,7 +1777,7 @@ sam deploy --guided
    - Discord will verify the endpoint
 
 4. **Register Slash Commands**
-   ```bash
+   ```powershell
    cd orchestrator
    # For production (global commands)
    ./register_discord_commands.sh
@@ -2222,31 +2222,12 @@ The UX Agent follows a **direct execution pattern** (not workflow-based like Tri
 
 **Phase 1: Discord Command Registration** (Estimated: 30 minutes)
 1. Add `/ux-update` command to `orchestrator/register_discord_commands.sh`
-   ```bash
+   ```powershell
    echo "📝 Registering /ux-update command..."
-   curl -X POST "${BASE_URL}" \
-     -H "Authorization: Bot ${BOT_TOKEN}" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "name": "ux-update",
-       "description": "Interactive UX/UI updates with confirmation",
-**Status**: Active Development
-
-
----
-
-## Content from: docs/PROJECT_SUMMARY.md
-
-<!-- merged-from: docs/PROJECT_SUMMARY.md -->
-
-# Project Valine - Rin Discord Bot Summary
-
-## TL;DR
-
-**Rin** is the orchestrator bot for Project Valine, managing automated workflows via Discord. Currently, Rin uses the **GLOBAL registration flow** for the `/ux-update` command, which requires only `APP_ID + BOT_TOKEN` but accepts a ~1 hour UI propagation delay.
-
-**Quick Deploy:**
-```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bot ${BOT_TOKEN}"
+    "Content-Type" = "application/json"
+}```powershell
 $env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
 $env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
 .\orchestrator\scripts\min_register_global.ps1

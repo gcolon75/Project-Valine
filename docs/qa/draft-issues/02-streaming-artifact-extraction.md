@@ -99,7 +99,7 @@ Key features:
 
 ## Example Usage
 
-```bash
+```powershell
 # Enable streaming mode (default)
 node scripts/analyze-orchestration-run.mjs 123456
 

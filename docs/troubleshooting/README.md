@@ -26,13 +26,13 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Verify DATABASE_URL format**
-   ```bash
+   ```powershell
    echo $DATABASE_URL
    # Should be: postgresql://username:password@host:port/database
    ```
 
    Valid formats:
-   ```bash
+   ```powershell
    # PostgreSQL
    postgresql://user:pass@localhost:5432/dbname
    
@@ -47,7 +47,7 @@ Common issues and solutions for Project Valine deployment and operation.
    ```
 
 2. **Test database connectivity**
-   ```bash
+   ```powershell
    # PostgreSQL
    psql "$DATABASE_URL" -c "SELECT 1;"
    
@@ -61,7 +61,7 @@ Common issues and solutions for Project Valine deployment and operation.
    - Check network ACLs and route tables
 
 4. **Verify database exists**
-   ```bash
+   ```powershell
    cd api
    npx prisma db pull
    ```
@@ -81,13 +81,13 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Generate Prisma Client**
-   ```bash
+   ```powershell
    cd api
    npx prisma generate
    ```
 
 2. **Install dependencies**
-   ```bash
+   ```powershell
    cd api
    npm install
    cd ../serverless
@@ -95,7 +95,7 @@ Common issues and solutions for Project Valine deployment and operation.
    ```
 
 3. **Regenerate and redeploy**
-   ```bash
+   ```powershell
    cd api
    npx prisma generate
    cd ../serverless
@@ -118,13 +118,13 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Check migration status**
-   ```bash
+   ```powershell
    cd api
    npx prisma migrate status
    ```
 
 2. **Apply migrations**
-   ```bash
+   ```powershell
    # Development
    npx prisma migrate dev
    
@@ -133,12 +133,12 @@ Common issues and solutions for Project Valine deployment and operation.
    ```
 
 3. **Reset database (development only)**
-   ```bash
+   ```powershell
    npx prisma migrate reset
    ```
 
 4. **Force push schema (use with caution)**
-   ```bash
+   ```powershell
    npx prisma db push --force-reset
    ```
 
@@ -156,12 +156,12 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Verify AWS credentials**
-   ```bash
+   ```powershell
    aws sts get-caller-identity
    ```
 
 2. **Configure AWS CLI**
-   ```bash
+   ```powershell
    aws configure
    # Enter AWS Access Key ID, Secret Access Key, Region
    ```
@@ -174,14 +174,14 @@ Common issues and solutions for Project Valine deployment and operation.
    - IAM: CreateRole, AttachRolePolicy
 
 4. **Check serverless version**
-   ```bash
+   ```powershell
    serverless --version
    # Should be 3.x
    npm install -g serverless@3
    ```
 
 5. **Clean and redeploy**
-   ```bash
+   ```powershell
    cd serverless
    rm -rf .serverless node_modules
    npm install
@@ -211,13 +211,13 @@ Common issues and solutions for Project Valine deployment and operation.
    ```
 
 2. **Export before deployment**
-   ```bash
-   export DATABASE_URL="postgresql://user:pass@host:5432/db"
+   ```powershell
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/db"
    npx serverless deploy
    ```
 
 3. **Use AWS Systems Manager Parameter Store**
-   ```bash
+   ```powershell
    aws ssm put-parameter \
      --name "/valine/dev/DATABASE_URL" \
      --value "postgresql://..." \
@@ -323,13 +323,13 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **View logs**
-   ```bash
+   ```powershell
    cd serverless
    npx serverless logs -f getUser --stage dev --tail
    ```
 
 2. **Check specific error**
-   ```bash
+   ```powershell
    # View last 100 lines
    npx serverless logs -f getUser --stage dev --count 100
    ```
@@ -367,18 +367,18 @@ Common issues and solutions for Project Valine deployment and operation.
    - Look for errors
 
 2. **Verify API_BASE URL**
-   ```bash
-   cat .env
+   ```powershell
+   Get-Content .env
    # Should show: VITE_API_BASE=https://...
    ```
 
 3. **Test API directly**
-   ```bash
-   curl $VITE_API_BASE/health
+   ```powershell
+Invoke-RestMethod -Uri "$VITE_API_BASE/health" -Method Get
    ```
 
 4. **Restart dev server**
-   ```bash
+   ```powershell
    # Stop with Ctrl+C
    npm run dev
    ```
@@ -403,9 +403,9 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Verify .env file exists**
-   ```bash
+   ```powershell
    ls -la .env
-   cat .env
+   Get-Content .env
    ```
 
 2. **Check variable prefix**
@@ -415,7 +415,7 @@ Common issues and solutions for Project Valine deployment and operation.
 
 3. **Restart dev server**
    - Environment changes require restart
-   ```bash
+   ```powershell
    npm run dev
    ```
 
@@ -496,7 +496,7 @@ Common issues and solutions for Project Valine deployment and operation.
    - Check for typos in URL
 
 2. **Verify deployment**
-   ```bash
+   ```powershell
    cd serverless
    npx serverless info --stage dev
    ```
@@ -507,7 +507,7 @@ Common issues and solutions for Project Valine deployment and operation.
    - Check Routes and Integrations
 
 4. **Redeploy**
-   ```bash
+   ```powershell
    npx serverless deploy --stage dev
    ```
 
@@ -610,7 +610,7 @@ Common issues and solutions for Project Valine deployment and operation.
 **Solutions:**
 
 1. **Remove from git history**
-   ```bash
+   ```powershell
    git filter-branch --force --index-filter \
      "git rm --cached --ignore-unmatch .env" \
      --prune-empty --tag-name-filter cat -- --all
@@ -680,7 +680,7 @@ If you can't resolve an issue:
 
 ## Useful Commands
 
-```bash
+```powershell
 # View Lambda logs
 npx serverless logs -f functionName --stage dev --tail
 
@@ -694,7 +694,7 @@ npx serverless invoke local -f functionName
 cd api && npx prisma studio
 
 # Test API endpoint
-curl -v https://api-url/endpoint
+Invoke-RestMethod -Uri "-v" -Method Get
 
 # Check AWS credentials
 aws sts get-caller-identity

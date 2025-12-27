@@ -151,13 +151,13 @@ All 32 existing UX Agent tests still pass - no regressions.
 
 ## Validation
 Run the validation script to see the flow in action:
-```bash
+```powershell
 cd orchestrator
 PYTHONPATH=app:$PYTHONPATH python scripts/validate_button_flow.py
 ```
 
 Run the tests:
-```bash
+```powershell
 cd orchestrator
 PYTHONPATH=app:$PYTHONPATH python -m unittest tests.test_ux_button_interactions -v
 ```

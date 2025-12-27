@@ -37,7 +37,7 @@ Transform Project Valine from functional to **stunning**. Make it look like a mo
 ### Phase 1: Foundation & Dependencies
 
 **Install Required Packages:**
-```bash
+```powershell
 npm install lucide-react react-hot-toast framer-motion
 ```
 
@@ -1007,7 +1007,7 @@ After each phase, verify:
 
 **If anything breaks:**
 
-```bash
+```powershell
 # View recent commits
 git log --oneline
 
@@ -1019,7 +1019,7 @@ git reset --hard <commit-hash>
 ```
 
 **Git commit before starting:**
-```bash
+```powershell
 git add .
 git commit -m "Checkpoint before UX transformation (2025-10-30 02:06:18 UTC)"
 git push origin main

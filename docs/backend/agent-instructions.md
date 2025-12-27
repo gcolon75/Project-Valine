@@ -250,11 +250,10 @@ When asked to create a new endpoint:
    ```
 
 5. **Provide test command**:
-   ```bash
-   curl -X POST https://api-url/resource \
-     -H "Content-Type: application/json" \
-     -d '{"field": "value"}'
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"field": "value"}' -ContentType 'application/json'```
 
 ## PERFORMANCE CONSIDERATIONS
 
@@ -301,14 +300,14 @@ When asked to create a new endpoint:
 
 After creating/modifying handlers:
 
-```bash
+```powershell
 cd serverless
 npm install
 npx serverless deploy --stage dev --region us-west-2
 ```
 
 Or use the deployment script:
-```bash
+```powershell
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
@@ -335,14 +334,13 @@ Or use the deployment script:
 
 Always provide curl commands for testing new endpoints:
 
-```bash
+```powershell
 # Example test command
-export API_BASE="https://your-api-gateway-url.amazonaws.com/dev"
+$env:API_BASE = "https://your-api-gateway-url.amazonaws.com/dev"
 
-curl -X POST "$API_BASE/resource" \
-  -H "Content-Type: application/json" \
-  -d '{"field": "value"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"field": "value"}' -ContentType 'application/json'```
 
 ## RESPONSE FORMATS
 
@@ -411,7 +409,7 @@ postgresql://USER:PASSWORD@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazona
 $env:DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 
 # Bash
-export DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+$env:DATABASE_URL = "postgresql://<USERNAME>:<PASSWORD>@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 ```
 **Note:** Replace `<USERNAME>` and `<PASSWORD>` with your actual database credentials.
 
@@ -454,7 +452,7 @@ CloudFormation has a 500 resource limit per stack. If adding new Lambda function
 3. **Use nested stacks** - Reference child stacks from parent stack
 
 ### Checking Resource Count
-```bash
+```powershell
 aws cloudformation describe-stack-resources --stack-name project-valine-prod | jq '.StackResources | length'
 ```
 

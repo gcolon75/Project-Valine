@@ -164,22 +164,22 @@
 ## 🚀 How to Execute
 
 ### Prerequisites (5 minutes)
-```bash
+```powershell
 npx playwright install chromium webkit firefox --with-deps
 ```
 
 ### Full Execution (25-30 minutes)
-```bash
+```powershell
 ./tests/e2e/run-regression-sweep.sh
 ```
 
 ### View Results
-```bash
+```powershell
 # Interactive HTML report
 npx playwright show-report playwright-report
 
 # Markdown summary
-cat REGRESSION_SWEEP_REPORT.md
+Get-Content REGRESSION_SWEEP_REPORT.md
 
 # Generate consolidated report
 node scripts/generate-regression-report.mjs

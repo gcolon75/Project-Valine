@@ -256,7 +256,7 @@ function renderPRComment(data, locale = 'en', template = 'pr-comment-full') {
 
 ## Example Usage
 
-```bash
+```powershell
 # Use default template (English)
 node scripts/analyze-orchestration-run.mjs 123456
 

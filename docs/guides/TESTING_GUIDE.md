@@ -10,9 +10,9 @@ This guide covers testing procedures for Project Valine, including account creat
 - Backend deployed (for production testing)
 
 ### Create Owner Account
-```bash
+```powershell
 # Replace YOUR_USER, YOUR_PASS, YOUR_HOST, YOUR_DATABASE with real values
-export DATABASE_URL="postgresql://YOUR_USER:YOUR_PASS@YOUR_HOST:5432/YOUR_DATABASE?sslmode=require"
+$env:DATABASE_URL = "postgresql://YOUR_USER:YOUR_PASS@YOUR_HOST:5432/YOUR_DATABASE?sslmode=require"
 
 node scripts/provision-production-accounts.mjs \
   --email=ghawk075@gmail.com \
@@ -21,7 +21,7 @@ node scripts/provision-production-accounts.mjs \
 ```
 
 ### Create Friend Account
-```bash
+```powershell
 node scripts/provision-production-accounts.mjs \
   --email=[FRIEND_EMAIL] \
   --password=FriendSecurePassword123! \
@@ -29,7 +29,7 @@ node scripts/provision-production-accounts.mjs \
 ```
 
 ### Alternative: Using admin-upsert-user.mjs
-```bash
+```powershell
 node scripts/admin-upsert-user.mjs \
   --email=ghawk075@gmail.com \
   --password=YourSecurePassword123! \
@@ -39,7 +39,7 @@ node scripts/admin-upsert-user.mjs \
 ## Local Development Testing
 
 ### 1. Quick Start with Dev Bypass
-```bash
+```powershell
 # Copy dev environment
 cp client/.env.local.example client/.env.local
 
@@ -50,7 +50,7 @@ npm run dev
 ```
 
 ### 2. Test with Real Auth
-```bash
+```powershell
 # Update .env.local
 VITE_ENABLE_DEV_BYPASS=false
 VITE_ENABLE_AUTH=true
@@ -153,21 +153,20 @@ Database: Production RDS instance
 ## Verification Scripts
 
 ### Health Check
-```bash
+```powershell
 # Test API health
-curl https://YOUR_API_URL/health
+Invoke-RestMethod -Uri "https://YOUR_API_URL/health" -Method Get
 ```
 
 ### Login Test
-```bash
+```powershell
 # Test login endpoint
-curl -X POST https://YOUR_API_URL/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"ghawk075@gmail.com","password":"YourPassword123!"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"ghawk075@gmail.com","password":"YourPassword123!"}' -ContentType 'application/json'```
 
 ### Full Verification
-```bash
+```powershell
 # Run comprehensive verification
 node scripts/verify-production-deployment.mjs
 ```
@@ -206,7 +205,7 @@ node scripts/verify-production-deployment.mjs
 ## Performance Testing
 
 ### Lighthouse Audit
-```bash
+```powershell
 npm run seo:audit
 ```
 

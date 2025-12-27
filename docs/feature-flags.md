@@ -32,7 +32,7 @@ Feature flags are primarily injected via **Vite environment variables** (e.g., `
 
 **Configuration:**
 
-```bash
+```powershell
 # .env.development
 VITE_ENVIRONMENT=development
 
@@ -70,7 +70,7 @@ VITE_ENVIRONMENT=production
 
 **Configuration:**
 
-```bash
+```powershell
 # .env.local (development - enable media features)
 VITE_ENABLE_PROFILE_MEDIA=true
 
@@ -118,7 +118,7 @@ const sections = [
 
 **Configuration:**
 
-```bash
+```powershell
 # .env.local (development)
 VITE_ENABLE_EDUCATION=true
 
@@ -168,7 +168,7 @@ const sections = [
 
 **Configuration:**
 
-```bash
+```powershell
 # .env.local (development with backend)
 VITE_ENABLE_PROFILE_LINKS_API=true
 
@@ -366,7 +366,7 @@ Project Valine uses multiple environment files:
 
 **Example `.env.local`:**
 
-```bash
+```powershell
 # API
 VITE_API_BASE_URL=http://localhost:3000
 

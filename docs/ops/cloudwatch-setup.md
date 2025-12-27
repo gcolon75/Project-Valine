@@ -104,7 +104,7 @@ export const metrics = {
 
 #### 1. Lambda High Error Rate
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-lambda-high-errors" \
   --alarm-description "Lambda error rate > 5% for 5 minutes" \
@@ -122,7 +122,7 @@ aws cloudwatch put-metric-alarm \
 
 #### 2. API Gateway High Latency
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-api-high-latency" \
   --alarm-description "API p95 latency > 3 seconds" \
@@ -139,7 +139,7 @@ aws cloudwatch put-metric-alarm \
 
 #### 3. Database Connection Exhaustion
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-db-connections-high" \
   --alarm-description "Database connections > 80% of max" \
@@ -156,7 +156,7 @@ aws cloudwatch put-metric-alarm \
 
 #### 4. Lambda Throttling
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-lambda-throttles" \
   --alarm-description "Lambda throttles detected" \
@@ -175,7 +175,7 @@ aws cloudwatch put-metric-alarm \
 
 #### 5. CloudFront Low Cache Hit Rate
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-cf-low-cache-hit" \
   --alarm-description "CloudFront cache hit rate < 80%" \
@@ -192,7 +192,7 @@ aws cloudwatch put-metric-alarm \
 
 #### 6. Lambda Cold Starts
 
-```bash
+```powershell
 aws cloudwatch put-metric-alarm \
   --alarm-name "valine-prod-lambda-cold-starts" \
   --alarm-description "High cold start rate" \
@@ -213,7 +213,7 @@ aws cloudwatch put-metric-alarm \
 
 ### Create SNS Topics
 
-```bash
+```powershell
 # Critical alerts (PagerDuty)
 aws sns create-topic --name critical-alerts
 aws sns subscribe \
@@ -245,9 +245,9 @@ Use AWS Chatbot to forward SNS to Slack:
 
 ### Create Production Dashboard
 
-```bash
+```powershell
 # Save this as dashboard.json
-cat > dashboard.json << 'EOF'
+Get-Content > dashboard.json << 'EOF'
 {
   "widgets": [
     {
@@ -331,7 +331,7 @@ Visit: https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboard
 
 All Lambda functions automatically log to CloudWatch Logs:
 
-```bash
+```powershell
 # View logs
 aws logs tail /aws/lambda/valine-prod-posts --follow
 
@@ -357,7 +357,7 @@ defaultValue=0
 
 Enable API Gateway logging:
 
-```bash
+```powershell
 # Enable execution logging
 aws apigatewayv2 update-stage \
   --api-id abc123 \
@@ -371,7 +371,7 @@ aws apigatewayv2 update-stage \
 
 Enable CloudFront access logs:
 
-```bash
+```powershell
 aws cloudfront update-distribution \
   --id E1234567890 \
   --distribution-config '{
@@ -432,7 +432,7 @@ fields @timestamp, @initDuration
 
 ### Lambda Performance
 
-```bash
+```powershell
 # Get function performance metrics
 aws cloudwatch get-metric-statistics \
   --namespace AWS/Lambda \
@@ -447,7 +447,7 @@ aws cloudwatch get-metric-statistics \
 
 ### API Gateway Performance
 
-```bash
+```powershell
 # Get API latency
 aws cloudwatch get-metric-statistics \
   --namespace AWS/ApiGateway \
@@ -474,7 +474,7 @@ aws cloudwatch get-metric-statistics \
 ### Reduce Costs
 
 1. **Set log retention:**
-```bash
+```powershell
 aws logs put-retention-policy \
   --log-group-name /aws/lambda/valine-prod-posts \
   --retention-in-days 14
@@ -485,7 +485,7 @@ aws logs put-retention-policy \
 3. **Sample high-volume metrics**
 
 4. **Delete unused alarms:**
-```bash
+```powershell
 aws cloudwatch delete-alarms --alarm-names old-alarm-name
 ```
 
@@ -497,7 +497,7 @@ aws cloudwatch delete-alarms --alarm-names old-alarm-name
 
 Create `scripts/setup-cloudwatch.sh`:
 
-```bash
+```powershell
 #!/bin/bash
 
 # Configuration
@@ -546,8 +546,8 @@ echo "CloudWatch alarms created successfully"
 ```
 
 Make it executable:
-```bash
-chmod +x scripts/setup-cloudwatch.sh
+```powershell
+# Note: chmod not needed in PowerShell
 ./scripts/setup-cloudwatch.sh
 ```
 

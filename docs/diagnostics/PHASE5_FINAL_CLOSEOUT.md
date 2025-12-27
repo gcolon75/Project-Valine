@@ -312,9 +312,9 @@ All Phase 5 features are **OFF by default** for production safety:
 ### Phase 1: Enable /debug-last in Staging
 
 **Configuration:**
-```bash
-export ENABLE_DEBUG_CMD=true
-export ENABLE_ALERTS=false  # Keep alerts off initially
+```powershell
+$env:ENABLE_DEBUG_CMD = "true"
+$env:ENABLE_ALERTS = "false  # Keep alerts off initially"
 ```
 
 **Test Cases:**
@@ -340,10 +340,10 @@ export ENABLE_ALERTS=false  # Keep alerts off initially
 ### Phase 2: Enable Alerts in Staging
 
 **Configuration:**
-```bash
-export ENABLE_DEBUG_CMD=true
-export ENABLE_ALERTS=true
-export ALERT_CHANNEL_ID=<staging-alerts-channel-id>
+```powershell
+$env:ENABLE_DEBUG_CMD = "true"
+$env:ENABLE_ALERTS = "true"
+$env:ALERT_CHANNEL_ID = "<staging-alerts-channel-id>"
 ```
 
 **Test Cases:**
@@ -372,7 +372,7 @@ export ALERT_CHANNEL_ID=<staging-alerts-channel-id>
 **Timeline:** Day 1
 
 **Configuration:**
-```bash
+```powershell
 ENABLE_DEBUG_CMD=false  # Default
 ENABLE_ALERTS=false     # Default
 ```
@@ -396,7 +396,7 @@ ENABLE_ALERTS=false     # Default
 **Timeline:** Day 2-3
 
 **Configuration:**
-```bash
+```powershell
 ENABLE_DEBUG_CMD=true   # Enable for troubleshooting
 ENABLE_ALERTS=false     # Keep off
 ```
@@ -420,7 +420,7 @@ ENABLE_ALERTS=false     # Keep off
 **Timeline:** Day 4-7
 
 **Configuration:**
-```bash
+```powershell
 ENABLE_DEBUG_CMD=true
 ENABLE_ALERTS=true
 ALERT_CHANNEL_ID=<production-alerts-channel-id>

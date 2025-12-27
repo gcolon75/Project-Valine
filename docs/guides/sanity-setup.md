@@ -1,14 +1,14 @@
 ﻿# Sanity Setup Guide
 
 ## 1. Install Sanity CLI
-```bash
+```powershell
 npm install -g @sanity/cli
 # or
 npx @sanity/cli --version
 ```
 
 ## 2. Initialize Sanity Studio
-```bash
+```powershell
 cd sanity/project-valine
 # already initialized in this repo
 ```
@@ -18,7 +18,7 @@ cd sanity/project-valine
 - Config is `sanity/project-valine/sanity.config.ts`
 
 ## 4. Run & Deploy Studio
-```bash
+```powershell
 cd sanity/project-valine
 npm install
 npm run dev      # http://localhost:3333
@@ -26,7 +26,7 @@ npm run deploy   # deploy studio
 ```
 
 ## 5. Link Frontend to Sanity
-```bash
+```powershell
 cd ../../client
 npm install @sanity/client
 cp .env.sanity.example .env

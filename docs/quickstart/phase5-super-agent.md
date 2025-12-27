@@ -20,7 +20,7 @@ The Phase 5 Staging Super-Agent is a comprehensive validation tool that:
 
 ## Step 1: Generate Configuration (30 seconds)
 
-```bash
+```powershell
 cd orchestrator/scripts
 python phase5_super_agent.py generate-config
 ```
@@ -34,11 +34,11 @@ python phase5_super_agent.py generate-config
 
 ### Option A: Use Environment Variables (Recommended)
 
-```bash
-export DISCORD_BOT_TOKEN="your-bot-token"
-export DISCORD_APP_ID="your-app-id"
-export DISCORD_GUILD_ID_STAGING="your-guild-id"
-export GITHUB_TOKEN="your-github-token"
+```powershell
+$env:DISCORD_BOT_TOKEN = "your-bot-token"
+$env:DISCORD_APP_ID = "your-app-id"
+$env:DISCORD_GUILD_ID_STAGING = "your-guild-id"
+$env:GITHUB_TOKEN = "your-github-token"
 ```
 
 ### Option B: Edit Config File
@@ -61,13 +61,13 @@ Edit `super_agent_config.json`:
 
 ### Dry Run (Safe Test)
 
-```bash
+```powershell
 python phase5_super_agent.py run --config super_agent_config.json --dry-run
 ```
 
 ### Full Validation
 
-```bash
+```powershell
 python phase5_super_agent.py run --config super_agent_config.json
 ```
 
@@ -96,15 +96,15 @@ Check the output:
 
 ### Markdown Report
 
-```bash
+```powershell
 ls -lt validation_evidence/
-cat validation_evidence/super_agent_report_*.md
+Get-Content validation_evidence/super_agent_report_*.md
 ```
 
 ### JSON Report
 
-```bash
-cat validation_evidence/super_agent_report_*.json | python -m json.tool
+```powershell
+Get-Content validation_evidence/super_agent_report_*.json | python -m json.tool
 ```
 
 ## Common Issues and Quick Fixes
@@ -118,9 +118,9 @@ Missing tokens: discord_bot_token, discord_app_id
 ```
 
 **Fix:**
-```bash
-export DISCORD_BOT_TOKEN="your-token"
-export DISCORD_APP_ID="your-app-id"
+```powershell
+$env:DISCORD_BOT_TOKEN = "your-token"
+$env:DISCORD_APP_ID = "your-app-id"
 ```
 
 ### Issue: URL Not Reachable
@@ -150,10 +150,10 @@ Edit `super_agent_config.json`:
 ```
 
 **Fix:**
-```bash
+```powershell
 aws configure
 # or
-export AWS_PROFILE=staging
+$env:AWS_PROFILE = "staging"
 ```
 
 ## GitHub Actions (Automated)
@@ -217,7 +217,7 @@ For each validation:
 
 ### 1. Run Before Production Deploy
 
-```bash
+```powershell
 python phase5_super_agent.py run --config super_agent_config.json
 # Review report
 # Address any issues
@@ -289,7 +289,7 @@ Complete each step and re-run validation.
 
 ### Verbose Logging
 
-```bash
+```powershell
 python phase5_super_agent.py run --config super_agent_config.json --verbose
 ```
 
@@ -320,7 +320,7 @@ Edit config to skip certain checks:
 
 ### In Shell Scripts
 
-```bash
+```powershell
 #!/bin/bash
 set -e
 
@@ -346,13 +346,13 @@ fi
 ### Debug Mode
 
 Set verbose flag and check logs:
-```bash
+```powershell
 python phase5_super_agent.py run --config super_agent_config.json --verbose 2>&1 | tee validation.log
 ```
 
 ### Check Dependencies
 
-```bash
+```powershell
 python --version  # Should be 3.11+
 pip install requests boto3
 aws --version
@@ -360,23 +360,23 @@ aws --version
 
 ### Validate Configuration
 
-```bash
+```powershell
 python -c "import json; print(json.load(open('super_agent_config.json')))"
 ```
 
 ### Check AWS Credentials
 
-```bash
+```powershell
 aws sts get-caller-identity
 aws ssm describe-parameters --region us-west-2 --max-results 1
 ```
 
 ### Test Discord Token
 
-```bash
-curl -H "Authorization: Bot $DISCORD_BOT_TOKEN" \
-  https://discord.com/api/v10/users/@me
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $DISCORD_BOT_TOKEN"
+}```
 
 ## Support
 

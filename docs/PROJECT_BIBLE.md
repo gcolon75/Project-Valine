@@ -587,13 +587,13 @@ frame-ancestors 'none';
 ### Frontend Deployment
 
 **Build Process:**
-```bash
+```powershell
 # 1. Install dependencies
 npm install
 
 # 2. Set environment variables
-export VITE_API_BASE="https://your-api-gateway-url.amazonaws.com/prod"
-export VITE_ALLOWED_USER_EMAILS="email1@example.com,email2@example.com"
+$env:VITE_API_BASE = "https://your-api-gateway-url.amazonaws.com/prod"
+$env:VITE_ALLOWED_USER_EMAILS = "email1@example.com,email2@example.com"
 
 # 3. Build production bundle
 npm run build
@@ -607,7 +607,7 @@ npm run postbuild-validate
 ```
 
 **Deploy to S3 + CloudFront:**
-```bash
+```powershell
 # Option 1: Automated script
 ./scripts/deploy-frontend.sh --bucket valine-frontend-prod --distribution E16LPJDBIL5DEE
 
@@ -617,13 +617,13 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ```
 
 **Post-Deployment Verification:**
-```bash
+```powershell
 # Check CloudFront status
 node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE
 
 # Verify SPA routing
-curl -I https://your-domain.com/about
-curl -I https://your-domain.com/assets/index-abc123.js
+Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Run automated verification
 npm run verify:deployment
@@ -632,7 +632,7 @@ npm run verify:deployment
 ### Backend Deployment (Serverless API)
 
 **Pre-Deployment Checks:**
-```bash
+```powershell
 # 1. Verify environment contract
 node scripts/verify-env-contract.mjs
 
@@ -648,7 +648,7 @@ npm run prisma:generate
 ```
 
 **Deploy to AWS Lambda:**
-```bash
+```powershell
 cd serverless
 
 # Development/Staging
@@ -674,7 +674,7 @@ layers:
 ```
 
 **Database Migrations:**
-```bash
+```powershell
 # Run migrations in production (from canonical serverless/prisma)
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 DATABASE_URL="postgresql://user:pass@host:5432/db" npx prisma migrate deploy
@@ -687,9 +687,9 @@ npx prisma migrate status
 ```
 
 **Post-Deployment Verification:**
-```bash
+```powershell
 # Test health endpoint
-curl https://abc123.execute-api.us-west-2.amazonaws.com/prod/health
+Invoke-RestMethod -Uri "https://abc123.execute-api.us-west-2.amazonaws.com/prod/health" -Method Get
 
 # Run full API test suite
 API_BASE="https://abc123.execute-api.us-west-2.amazonaws.com/prod" ./scripts/deployment/test-endpoints.sh
@@ -701,7 +701,7 @@ aws logs tail /aws/lambda/pv-api-prod-api --follow
 ### Orchestrator Deployment (Discord Bot)
 
 **Build & Deploy:**
-```bash
+```powershell
 cd orchestrator
 
 # Build SAM application
@@ -715,7 +715,7 @@ sam deploy --config-file samconfig.toml
 ```
 
 **Register Discord Slash Commands:**
-```bash
+```powershell
 # For staging (instant visibility)
 ./scripts/register_staging_slash_commands.sh
 
@@ -725,9 +725,9 @@ sam deploy --config-file samconfig.toml
 ```
 
 **Test Discord Integration:**
-```bash
+```powershell
 # Health check
-curl https://your-discord-lambda-url.amazonaws.com/health
+Invoke-RestMethod -Uri "https://your-discord-lambda-url.amazonaws.com/health" -Method Get
 
 # Test signature verification
 ./scripts/test-discord-endpoint.sh
@@ -736,7 +736,7 @@ curl https://your-discord-lambda-url.amazonaws.com/health
 ### Rollback Procedures
 
 **Frontend Rollback:**
-```bash
+```powershell
 # List previous deployments
 aws s3api list-objects-v2 --bucket valine-frontend-prod-backups
 
@@ -746,7 +746,7 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ```
 
 **Backend Rollback:**
-```bash
+```powershell
 cd serverless
 
 # Rollback to previous deployment
@@ -754,11 +754,11 @@ npx serverless rollback --stage prod
 ```
 
 **Database Migration Rollback:**
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine/api
 
 # Check migration to rollback
-cat prisma/migrations/<migration-name>/ROLLBACK.md
+Get-Content prisma/migrations/<migration-name>/ROLLBACK.md
 
 # Execute rollback SQL manually via psql or database client
 psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
@@ -771,7 +771,7 @@ psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
 ### Required Environment Variables
 
 #### Frontend (.env or .env.production)
-```bash
+```powershell
 # API Configuration
 VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/prod
 
@@ -864,10 +864,10 @@ Environment:
 6. SMTP credentials
 
 **Secret Scanning:**
-```bash
+```powershell
 # Pre-commit hook
 cp scripts/hooks/pre-commit-secret-scan.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+# Note: chmod not needed in PowerShell
 
 # Manual audit
 node scripts/secret-audit.mjs
@@ -894,7 +894,7 @@ node scripts/secret-audit.mjs
 ### Frontend Tests (Vitest)
 
 **Run Tests:**
-```bash
+```powershell
 # Watch mode (during development)
 npm test
 
@@ -932,7 +932,7 @@ describe('Button', () => {
 ### Backend Tests (Jest/Vitest)
 
 **Run Tests:**
-```bash
+```powershell
 cd serverless
 
 # All tests
@@ -958,7 +958,7 @@ npm test -- --testPathPattern=integration
 ### E2E Tests (Playwright)
 
 **Run E2E Tests:**
-```bash
+```powershell
 # Install browsers (first time only)
 npx playwright install
 
@@ -1156,28 +1156,28 @@ Rin is a unified Discord bot with specialized agent personalities for different 
 - JavaScript bundle fails to load
 
 **Diagnosis:**
-```bash
+```powershell
 # Check CloudFront configuration
 node scripts/check-cloudfront.js --distribution E16LPJDBIL5DEE
 
 # Verify SPA routing
-curl -I https://your-domain.com/about
+Invoke-RestMethod -Uri "-I" -Method Get
 # Should return 200, NOT 404
 
 # Check bundle integrity
-curl -I https://your-domain.com/assets/index-abc123.js
+Invoke-RestMethod -Uri "-I" -Method Get
 # Should have Content-Type: application/javascript
 ```
 
 **Solutions:**
 1. **Missing CloudFront Function:**
-   ```bash
+   ```powershell
    # Associate SPA rewrite function
    ./scripts/cloudfront-associate-spa-function.ps1 -DistributionId E16LPJDBIL5DEE
    ```
 
 2. **SRI Hash Mismatch:**
-   ```bash
+   ```powershell
    # Regenerate SRI hashes
    node scripts/generate-sri.js
    npm run verify:sri
@@ -1188,7 +1188,7 @@ curl -I https://your-domain.com/assets/index-abc123.js
    ```
 
 3. **Incorrect MIME Types:**
-   ```bash
+   ```powershell
    # Check S3 bucket policy and object metadata
    aws s3api head-object --bucket valine-frontend-prod --key assets/index-abc123.js
    
@@ -1206,12 +1206,12 @@ curl -I https://your-domain.com/assets/index-abc123.js
 - Lambda cold start issues
 
 **Diagnosis:**
-```bash
+```powershell
 # Check Lambda logs
 aws logs tail /aws/lambda/pv-api-prod-api --follow
 
 # Test health endpoint
-curl https://your-api-gateway-url.amazonaws.com/prod/health
+Invoke-RestMethod -Uri "https://your-api-gateway-url.amazonaws.com/prod/health" -Method Get
 ```
 
 **Solutions:**
@@ -1221,16 +1221,16 @@ curl https://your-api-gateway-url.amazonaws.com/prod/health
    - Fallback to async loading if sync fails
 
 2. **Database Connection Issues:**
-   ```bash
+   ```powershell
    # Verify DATABASE_URL is set correctly
-   aws lambda get-function-configuration --function-name pv-api-prod-api | grep DATABASE_URL
+   aws lambda get-function-configuration --function-name pv-api-prod-api | Select-String DATABASE_URL
    
    # Test database connectivity
    psql $DATABASE_URL -c "SELECT 1;"
    ```
 
 3. **Lambda Timeout:**
-   ```bash
+   ```powershell
    # Increase timeout in serverless.yml
    # functions.api.timeout: 30  # seconds
    
@@ -1246,17 +1246,17 @@ curl https://your-api-gateway-url.amazonaws.com/prod/health
 - Registration always returns 403 Forbidden
 
 **Diagnosis:**
-```bash
+```powershell
 # Check health endpoint
-curl https://your-api-gateway-url.amazonaws.com/prod/health | jq .
+Invoke-RestMethod -Uri "https://your-api-gateway-url.amazonaws.com/prod/health" -Method Get
 
 # Verify environment variable
-aws lambda get-function-configuration --function-name pv-api-prod-api | grep ALLOWED_USER_EMAILS
+aws lambda get-function-configuration --function-name pv-api-prod-api | Select-String ALLOWED_USER_EMAILS
 ```
 
 **Solutions:**
 1. **Missing Environment Variable:**
-   ```bash
+   ```powershell
    # Add to serverless.yml and redeploy
    environment:
      ALLOWED_USER_EMAILS: "email1@example.com,email2@example.com"
@@ -1265,7 +1265,7 @@ aws lambda get-function-configuration --function-name pv-api-prod-api | grep ALL
    ```
 
 2. **Misconfigured Allowlist:**
-   ```bash
+   ```powershell
    # Audit allowlist configuration
    pwsh scripts/audit-allowlist.ps1
    
@@ -1283,12 +1283,12 @@ aws lambda get-function-configuration --function-name pv-api-prod-api | grep ALL
 - Automatic fallback to mock data
 
 **Diagnosis:**
-```bash
+```powershell
 # Check API_BASE configuration
 echo $VITE_API_BASE
 
 # Test API directly
-curl https://your-api-gateway-url.amazonaws.com/prod/health
+Invoke-RestMethod -Uri "https://your-api-gateway-url.amazonaws.com/prod/health" -Method Get
 
 # Check browser console
 # window.__diagnostics.summary()
@@ -1296,7 +1296,7 @@ curl https://your-api-gateway-url.amazonaws.com/prod/health
 
 **Solutions:**
 1. **Incorrect API_BASE:**
-   ```bash
+   ```powershell
    # Update .env or .env.production
    VITE_API_BASE=https://correct-api-url.amazonaws.com/prod
    
@@ -1332,7 +1332,7 @@ curl https://your-api-gateway-url.amazonaws.com/prod/health
 - Prisma client errors
 
 **Diagnosis:**
-```bash
+```powershell
 # Check migration status (use serverless directory for production)
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 npx prisma migrate status
@@ -1343,7 +1343,7 @@ npx prisma db pull
 
 **Solutions:**
 1. **Failed Migration:**
-   ```bash
+   ```powershell
    # Mark migration as applied (if manually fixed or columns already exist)
    npx prisma migrate resolve --applied <migration-name>
    
@@ -1357,7 +1357,7 @@ npx prisma db pull
    ```
 
 2. **Schema Drift:**
-   ```bash
+   ```powershell
    # Generate migration from current schema
    npx prisma migrate dev --name fix_schema_drift
    
@@ -1366,7 +1366,7 @@ npx prisma db pull
    ```
 
 3. **Connection Pool Exhaustion:**
-   ```bash
+   ```powershell
    # Increase connection limit in DATABASE_URL
    # postgresql://user:pass@host:5432/db?connection_limit=10
    ```
@@ -1444,7 +1444,7 @@ npx prisma db pull
 ## Quick Reference Cards
 
 ### Developer Quick Start
-```bash
+```powershell
 # Clone and install
 git clone https://github.com/gcolon75/Project-Valine.git
 cd Project-Valine
@@ -1473,7 +1473,7 @@ cd serverless && npm test
 - **Documentation:** `/docs/`
 
 ### Key Environment Variables
-```bash
+```powershell
 # Frontend
 VITE_API_BASE=https://api-url.amazonaws.com/prod
 VITE_ALLOWED_USER_EMAILS=email1@example.com
@@ -1486,7 +1486,7 @@ ALLOWED_USER_EMAILS=email1@example.com,email2@example.com
 ```
 
 ### Useful Commands
-```bash
+```powershell
 # Build
 npm run build                    # Frontend production build
 npm run build:sri                # Build with SRI hashes
@@ -1507,27 +1507,19 @@ node scripts/check-cloudfront.js         # Check CloudFront status
 ```
 
 ### API Testing
-```bash
+```powershell
 # Health check
-curl https://api-url.amazonaws.com/prod/health
+Invoke-RestMethod -Uri "https://api-url.amazonaws.com/prod/health" -Method Get
 
 # Register
-curl -X POST https://api-url.amazonaws.com/prod/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"SecurePass123!","username":"johndoe"}'
-
-# Login
-curl -X POST https://api-url.amazonaws.com/prod/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"SecurePass123!"}'
-
-# Get current user (with token)
-curl https://api-url.amazonaws.com/prod/api/users/me \
-  -H "Authorization: Bearer <access-token>"
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer <access-token>"
+} -Body '{"email":"user@example.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'```
 
 ### Troubleshooting Commands
-```bash
+```powershell
 # Frontend issues
 node scripts/diagnose-white-screen.js --domain your-domain.com
 node scripts/verify-spa-rewrite.js

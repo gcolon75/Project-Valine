@@ -2,7 +2,7 @@
 
 ## ⚡ Quick Start (5 minutes)
 
-```bash
+```powershell
 # 1. Install Playwright browsers (one-time, ~5 min)
 npx playwright install chromium webkit firefox --with-deps
 
@@ -74,7 +74,7 @@ After running tests, check for:
 ## 🔧 Troubleshooting
 
 ### Browsers Won't Install
-```bash
+```powershell
 # Try installing one at a time
 npx playwright install chromium
 npx playwright install webkit
@@ -82,7 +82,7 @@ npx playwright install firefox
 ```
 
 ### Tests Fail Due to Server Not Running
-```bash
+```powershell
 # Start dev server manually in separate terminal
 npm run dev
 
@@ -91,7 +91,7 @@ PW_BASE_URL=http://localhost:3000 npx playwright test
 ```
 
 ### Visual Diffs After Intentional Changes
-```bash
+```powershell
 # Update baseline snapshots
 npx playwright test --update-snapshots
 ```
@@ -100,12 +100,12 @@ npx playwright test --update-snapshots
 
 ### After Test Execution
 
-```bash
+```powershell
 # Generate consolidated markdown report
 node scripts/generate-regression-report.mjs
 
 # View the report
-cat REGRESSION_SWEEP_REPORT.md
+Get-Content REGRESSION_SWEEP_REPORT.md
 ```
 
 ## 🚀 CI/CD Integration
@@ -144,7 +144,7 @@ The A11y & Visual QA Sweep phase includes comprehensive accessibility testing:
 
 ### Run All Accessibility Tests
 
-```bash
+```powershell
 # Run WCAG AA compliance + keyboard navigation tests
 npm run a11y:test
 
@@ -160,7 +160,7 @@ npm run visual:update
 
 ### Run Individual Test Suites
 
-```bash
+```powershell
 # WCAG AA compliance only
 npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts
 
@@ -179,15 +179,15 @@ npx playwright test tests/e2e/a11y-wcag-aa-phase.spec.ts -g "Landing page"
 
 ### View Test Results
 
-```bash
+```powershell
 # View interactive HTML report
 npx playwright show-report
 
 # View generated accessibility report
-cat accessibility-report.md
+Get-Content accessibility-report.md
 
 # View JSON results
-cat accessibility-results.json
+Get-Content accessibility-results.json
 ```
 
 ### Test Coverage

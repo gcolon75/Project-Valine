@@ -1,5 +1,8 @@
 # Project Valine Documentation
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 ## 📖 START HERE: [PROJECT_BIBLE.md](PROJECT_BIBLE.md)
 
 **The Bible** is the complete master reference and single source of truth for Project Valine. Start here for comprehensive information about architecture, database, API, deployment, and troubleshooting.
@@ -244,12 +247,12 @@ Post-merge verification scripts, regression testing, and quality gates.
 - [Regression Sweep Deliverables](verification/regression-sweep-deliverables.md) - Test infrastructure (PR 187)
 
 ### Running Verification
-```bash
+```powershell
 # Run post-merge verification
 npm run verify:post-merge
 
 # View report
-cat logs/verification/verification-report.md
+Get-Content logs/verification/verification-report.md
 
 # Run regression tests
 npm run test:e2e

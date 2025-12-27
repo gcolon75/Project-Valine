@@ -10,21 +10,21 @@ This document provides a high-level summary of the account security and privacy 
 
 ### 1. Install Dependencies
 
-```bash
+```powershell
 cd serverless
 npm install
 ```
 
 ### 2. Generate Prisma Client
 
-```bash
+```powershell
 cd ../api
 npx prisma generate
 ```
 
 ### 3. Run Database Migration
 
-```bash
+```powershell
 cd ../api
 npx prisma migrate deploy
 ```
@@ -33,7 +33,7 @@ npx prisma migrate deploy
 
 Create a `.env` file in the project root:
 
-```bash
+```powershell
 # Required
 DATABASE_URL="postgresql://username:password@host:5432/valine_db"
 JWT_SECRET="$(openssl rand -base64 32)"
@@ -55,19 +55,19 @@ STAGE=dev
 - `STAGE` - Deployment stage (dev, staging, prod)
 
 **Generate strong JWT_SECRET:**
-```bash
+```powershell
 openssl rand -base64 32
 ```
 
 ### 5. Deploy to AWS
 
-```bash
+```powershell
 cd serverless
 npx serverless deploy --stage dev
 ```
 
 Or use the deployment script:
-```bash
+```powershell
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
@@ -426,7 +426,7 @@ User model additions:
 
 ### Run Tests
 
-```bash
+```powershell
 # All tests
 npm run test
 

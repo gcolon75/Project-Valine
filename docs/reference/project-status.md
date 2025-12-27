@@ -357,14 +357,14 @@
 ## 💻 Development
 
 ### Prerequisites
-```bash
+```powershell
 Node.js 18+ or 20+
 npm 9+
 Git
 ```
 
 ### Local Development
-```bash
+```powershell
 # Clone repository
 git clone https://github.com/gcolon75/Project-Valine.git
 cd Project-Valine
@@ -384,7 +384,7 @@ npm run build
 ```
 
 ### Testing
-```bash
+```powershell
 # Run all tests
 npm test
 
@@ -399,7 +399,7 @@ npm run test:ui
 ```
 
 ### Deployment
-```bash
+```powershell
 # Via GitHub Actions (automatic)
 git push origin develop
 

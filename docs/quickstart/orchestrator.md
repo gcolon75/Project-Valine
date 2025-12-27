@@ -23,7 +23,7 @@ This guide helps you quickly get started with Phase 5 staging validation.
 
 ### Step 1: Generate Configuration (1 minute)
 
-```bash
+```powershell
 cd orchestrator/scripts
 python phase5_staging_validator.py generate-config --output staging_config.json
 ```
@@ -41,7 +41,7 @@ Edit `staging_config.json` with your staging values:
 
 ### Step 2: Run Preflight Checks (1 minute)
 
-```bash
+```powershell
 python phase5_staging_validator.py preflight --config staging_config.json
 ```
 
@@ -52,7 +52,7 @@ This verifies:
 
 ### Step 3: Enable Debug Command (1 minute)
 
-```bash
+```powershell
 python phase5_staging_validator.py enable-debug --config staging_config.json
 ```
 
@@ -70,7 +70,7 @@ Verify the output shows:
 
 ### Step 4: Enable and Test Alerts (2 minutes)
 
-```bash
+```powershell
 # Enable alerts
 python phase5_staging_validator.py enable-alerts \
   --config staging_config.json \
@@ -90,12 +90,12 @@ Verify:
 
 ### Step 5: Review Evidence (30 seconds)
 
-```bash
+```powershell
 # View the validation report (with automatic redaction)
-cat validation_evidence/validation_report_*.md
+Get-Content validation_evidence/validation_report_*.md
 
 # View the executive summary
-cat validation_evidence/executive_summary_*.md
+Get-Content validation_evidence/executive_summary_*.md
 ```
 
 **All sensitive information is automatically redacted:**
@@ -107,7 +107,7 @@ cat validation_evidence/executive_summary_*.md
 
 To run all steps automatically:
 
-```bash
+```powershell
 python phase5_staging_validator.py full-validation --config staging_config.json
 ```
 
@@ -139,7 +139,7 @@ This runs:
 
 ### Option 2: Via GitHub CLI
 
-```bash
+```powershell
 # Run preflight checks
 gh workflow run phase5-staging-validation.yml \
   -f validation_type=preflight
@@ -162,7 +162,7 @@ gh workflow run phase5-staging-validation.yml \
 
 ### Check Current Lambda Configuration
 
-```bash
+```powershell
 aws lambda get-function-configuration \
   --function-name valine-orchestrator-discord-staging \
   --region us-west-2 \
@@ -172,7 +172,7 @@ aws lambda get-function-configuration \
 
 ### Collect Logs for Specific Trace ID
 
-```bash
+```powershell
 python phase5_staging_validator.py collect-logs \
   --config staging_config.json \
   --trace-id abc123de-456f-789g
@@ -180,7 +180,7 @@ python phase5_staging_validator.py collect-logs \
 
 ### Disable Features After Testing
 
-```bash
+```powershell
 # Disable alerts
 python phase5_staging_validator.py disable-alerts \
   --config staging_config.json
@@ -234,7 +234,7 @@ Use this checklist to track your validation:
 
 ### "AWS CLI not found"
 
-```bash
+```powershell
 # Install AWS CLI
 pip install awscli
 
@@ -245,8 +245,8 @@ aws configure
 ### "Lambda not found"
 
 Verify the Lambda function name:
-```bash
-aws lambda list-functions --region us-west-2 | grep valine-orchestrator
+```powershell
+aws lambda list-functions --region us-west-2 | Select-String valine-orchestrator
 ```
 
 Update `staging_lambda_discord` in your config file.
@@ -254,7 +254,7 @@ Update `staging_lambda_discord` in your config file.
 ### "Permission denied updating Lambda"
 
 Check your AWS permissions:
-```bash
+```powershell
 aws lambda get-function-configuration \
   --function-name valine-orchestrator-discord-staging \
   --region us-west-2
@@ -271,12 +271,12 @@ Use a staging/test channel ID instead.
 ### "Debug command not responding in Discord"
 
 1. Check Lambda logs:
-   ```bash
+   ```powershell
    aws logs tail /aws/lambda/valine-orchestrator-discord-staging --follow
    ```
 
 2. Verify Lambda environment variables:
-   ```bash
+   ```powershell
    aws lambda get-function-configuration \
      --function-name valine-orchestrator-discord-staging \
      --region us-west-2
@@ -289,7 +289,7 @@ Use a staging/test channel ID instead.
 ### "Alerts not posting to Discord"
 
 1. Verify `ENABLE_ALERTS=true`:
-   ```bash
+   ```powershell
    aws lambda get-function-configuration \
      --function-name valine-orchestrator-discord-staging \
      --region us-west-2 \
@@ -297,7 +297,7 @@ Use a staging/test channel ID instead.
    ```
 
 2. Verify `ALERT_CHANNEL_ID` is set:
-   ```bash
+   ```powershell
    aws lambda get-function-configuration \
      --function-name valine-orchestrator-discord-staging \
      --region us-west-2 \
@@ -305,7 +305,7 @@ Use a staging/test channel ID instead.
    ```
 
 3. Check Lambda logs for alert attempts:
-   ```bash
+   ```powershell
    aws logs filter-log-events \
      --log-group-name /aws/lambda/valine-orchestrator-discord-staging \
      --filter-pattern "alert" \
@@ -334,7 +334,7 @@ After successful validation:
 
 4. **Clean Up**
    - Disable features if no longer needed for testing:
-     ```bash
+     ```powershell
      python phase5_staging_validator.py disable-alerts --config staging_config.json
      ```
 

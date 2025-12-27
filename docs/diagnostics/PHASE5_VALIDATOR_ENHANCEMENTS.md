@@ -311,7 +311,7 @@ Duration: 5.07 seconds
 
 ### Demo Script
 
-```bash
+```powershell
 $ cd orchestrator/scripts
 $ python demo_redaction.py
 
@@ -328,7 +328,7 @@ $ python demo_redaction.py
 
 ### Basic Usage
 
-```bash
+```powershell
 # Generate configuration
 python phase5_staging_validator.py generate-config --output config.json
 
@@ -343,7 +343,7 @@ python phase5_staging_validator.py full-validation --config config.json
 
 ### With SSM Parameter Store
 
-```bash
+```powershell
 # Edit config.json:
 {
   "staging_deploy_method": "ssm_parameter_store",
@@ -356,7 +356,7 @@ python phase5_staging_validator.py enable-debug --config config.json
 
 ### With SAM Deploy
 
-```bash
+```powershell
 # Edit config.json:
 {
   "staging_deploy_method": "sam_deploy",
@@ -375,7 +375,7 @@ sam deploy --config-file samconfig.toml
 
 ### Generate Executive Summary
 
-```bash
+```powershell
 # Generate summary separately
 python phase5_staging_validator.py generate-summary --config config.json
 

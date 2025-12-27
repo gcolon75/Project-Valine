@@ -461,7 +461,7 @@ const exportPassword = crypto.randomBytes(16).toString('base64')
 ### Procedure
 
 #### 1. Create Manual Export Request
-```bash
+```powershell
 # Run on secure admin console
 node scripts/create-manual-export.js \
   --user-id usr_abc123 \
@@ -502,7 +502,7 @@ COPY (
 ```
 
 #### 3. Package Export
-```bash
+```powershell
 # Create archive
 zip -r -e export_usr_abc123.zip \
   account.json \
@@ -528,7 +528,7 @@ Send download link via support ticket response.
 ### Export Request Fails
 
 **Check Job Status**:
-```bash
+```powershell
 # Query job queue
 await queue.getJob('data-export', exportRequest.id)
 
@@ -552,7 +552,7 @@ aws logs filter-log-events \
 ```
 
 **Or Manual**:
-```bash
+```powershell
 aws s3 presign \
   s3://valine-exports/usr_abc123/export.zip \
   --expires-in 259200 # 72 hours
@@ -561,7 +561,7 @@ aws s3 presign \
 ### ZIP File Corrupted
 
 **Verify Integrity**:
-```bash
+```powershell
 # Check ZIP file
 unzip -t export.zip
 

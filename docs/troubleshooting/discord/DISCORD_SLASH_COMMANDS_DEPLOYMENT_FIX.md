@@ -53,7 +53,7 @@ We created a complete documentation suite to help users diagnose and fix deploym
 
 **Use when:** Want automated diagnosis of your deployment.
 
-```bash
+```powershell
 cd orchestrator
 python scripts/validate_deployment.py --stage dev
 ```
@@ -99,7 +99,7 @@ Added:
 ### If Commands Don't Respond:
 
 #### Option 1: Automated Diagnosis (Recommended)
-```bash
+```powershell
 cd orchestrator
 python scripts/validate_deployment.py --stage dev
 ```
@@ -109,7 +109,7 @@ Follow the specific fixes the script recommends.
 #### Option 2: Quick Manual Fix
 
 1. **Check Lambda is deployed:**
-   ```bash
+   ```powershell
    aws lambda list-functions --query 'Functions[?contains(FunctionName, `valine-orchestrator`)]'
    ```
    If missing: `cd orchestrator && sam build && sam deploy`
@@ -241,7 +241,7 @@ Root/
 ### For End Users
 
 1. **Having issues?** Start here:
-   ```bash
+   ```powershell
    cd orchestrator
    python scripts/validate_deployment.py --stage dev
    ```

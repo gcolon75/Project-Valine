@@ -25,7 +25,7 @@ This section provides step-by-step verification commands to ensure the CloudFron
 
 Check if the `spaRewrite` function exists:
 
-```bash
+```powershell
 aws cloudfront list-functions --stage LIVE
 ```
 
@@ -35,7 +35,7 @@ Look for `spaRewrite` in the output. If it doesn't exist, create it using the he
 
 Get details about the LIVE stage of the function:
 
-```bash
+```powershell
 aws cloudfront describe-function --name spaRewrite --stage LIVE
 ```
 
@@ -64,9 +64,9 @@ Example output:
 
 Instead of hard-coding bundle names, parse them dynamically from `dist/index.html`:
 
-```bash
+```powershell
 # After building the frontend
-grep -oP 'src="/assets/index-[^"]+\.js"' dist/index.html | sed 's/src="//;s/"//'
+Select-String -oP 'src="/assets/index-[^"]+\.js"' dist/index.html | sed 's/src="//;s/"//'
 ```
 
 Example output: `/assets/index-yrgN6q4Q.js`
@@ -85,7 +85,7 @@ Write-Host "Current bundle: $bundlePath"
 
 Check if the function is associated with the default cache behavior:
 
-```bash
+```powershell
 aws cloudfront get-distribution-config --id E16LPJDBIL5DEE | \
   jq '.DistributionConfig.DefaultCacheBehavior.FunctionAssociations'
 ```
@@ -112,27 +112,27 @@ Expected output:
 
 After the distribution is deployed (Status: Deployed), test SPA routing:
 
-```bash
+```powershell
 # Test extension-less route (should return index.html with 200)
-curl -I https://dkmxy676d3vgc.cloudfront.net/join
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Expected:
 # HTTP/2 200
 # content-type: text/html
 ```
 
-```bash
+```powershell
 # Test asset path (should return 404 if file doesn't exist)
-curl -I https://dkmxy676d3vgc.cloudfront.net/assets/nonexistent.js
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Expected:
 # HTTP/2 404
 # (Not 200 with HTML content!)
 ```
 
-```bash
+```powershell
 # Test API path (should pass through - may 404 if backend not configured)
-curl -I https://dkmxy676d3vgc.cloudfront.net/api/test
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Should NOT return index.html
 ```
@@ -141,9 +141,9 @@ curl -I https://dkmxy676d3vgc.cloudfront.net/api/test
 
 Use the header assertion script:
 
-```bash
+```powershell
 # Parse current bundle
-BUNDLE_PATH=$(grep -oP '/assets/index-[^"]+\.js' dist/index.html | head -1)
+BUNDLE_PATH=$(Select-String -oP '/assets/index-[^"]+\.js' dist/index.html | head -1)
 
 # Verify headers
 node scripts/assert-headers.js \
@@ -169,7 +169,7 @@ Expected output:
 - Future-ready for `/.well-known/*` exclusion
 
 **Test Locally:**
-```bash
+```powershell
 node scripts/verify-spa-rewrite.js
 ```
 
@@ -221,12 +221,12 @@ After deploying new builds, invalidate the cache for updated files.
 
 ### Parse Bundle and Create Invalidation
 
-```bash
+```powershell
 # Extract current bundle path from dist/index.html
-BUNDLE_PATH=$(grep -oP '/assets/index-[^"]+\.js' dist/index.html | head -1)
+BUNDLE_PATH=$(Select-String -oP '/assets/index-[^"]+\.js' dist/index.html | head -1)
 
 # Extract CSS path
-CSS_PATH=$(grep -oP '/assets/index-[^"]+\.css' dist/index.html | head -1)
+CSS_PATH=$(Select-String -oP '/assets/index-[^"]+\.css' dist/index.html | head -1)
 
 # Create invalidation
 aws cloudfront create-invalidation \
@@ -296,13 +296,13 @@ If you need immediate SPA routing while setting up the CloudFront Function:
 When deploying new builds, keep previous bundles for a grace period (7 days by default) to prevent 404s for users with cached `index.html`.
 
 **Current Bundle Extraction** (never delete this):
-```bash
-CURRENT_BUNDLE=$(grep -oP 'index-[^"]+\.js' dist/index.html | head -1)
+```powershell
+CURRENT_BUNDLE=$(Select-String -oP 'index-[^"]+\.js' dist/index.html | head -1)
 echo "Current bundle: $CURRENT_BUNDLE"
 ```
 
 **Prune Old Bundles** (older than 7 days, excluding current):
-```bash
+```powershell
 # List all bundles in S3
 aws s3api list-objects-v2 \
   --bucket valine-frontend-prod \
@@ -321,13 +321,13 @@ aws s3api list-objects-v2 \
 
 **Diagnosis:**
 1. Check if function is associated:
-   ```bash
+   ```powershell
    aws cloudfront get-distribution-config --id E16LPJDBIL5DEE | \
      jq '.DistributionConfig.DefaultCacheBehavior.FunctionAssociations'
    ```
 
 2. Check distribution status:
-   ```bash
+   ```powershell
    aws cloudfront get-distribution --id E16LPJDBIL5DEE | jq '.Distribution.Status'
    # Should be "Deployed", not "InProgress"
    ```
@@ -339,8 +339,8 @@ aws s3api list-objects-v2 \
 **Symptom:** Browser console shows "Unexpected token '<'" when loading JS
 
 **Diagnosis:**
-```bash
-curl -s https://dkmxy676d3vgc.cloudfront.net/assets/index-<hash>.js | head -c 100
+```powershell
+Invoke-RestMethod -Uri "-s" -Method Get
 # If starts with <!DOCTYPE or <html, wrong content is being served
 ```
 
@@ -356,13 +356,13 @@ curl -s https://dkmxy676d3vgc.cloudfront.net/assets/index-<hash>.js | head -c 10
    ```
 
 2. Test function locally:
-   ```bash
+   ```powershell
    node scripts/verify-spa-rewrite.js
    # All tests should pass
    ```
 
 3. Create invalidation:
-   ```bash
+   ```powershell
    aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
    ```
 
@@ -371,14 +371,14 @@ curl -s https://dkmxy676d3vgc.cloudfront.net/assets/index-<hash>.js | head -c 10
 **Symptom:** Assets have incorrect MIME types or cache headers
 
 **Diagnosis:**
-```bash
+```powershell
 node scripts/assert-headers.js \
   --domain dkmxy676d3vgc.cloudfront.net \
   --bundle /assets/index-<current-hash>.js
 ```
 
 **Solution:** Fix S3 object metadata:
-```bash
+```powershell
 # Copy object to itself with corrected metadata
 aws s3api copy-object \
   --bucket valine-frontend-prod \

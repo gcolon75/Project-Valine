@@ -37,16 +37,16 @@ Your IAM role/user needs:
 
 For experienced users, here's the TL;DR:
 
-```bash
+```powershell
 # 1. Setup database
-export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+$env:DATABASE_URL = "postgresql://user:password@host:5432/valine_db"
 ./scripts/deployment/setup-database.sh
 
 # 2. Deploy backend
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
 # 3. Test endpoints
-export API_BASE="https://your-api-gateway-url.amazonaws.com/dev"
+$env:API_BASE = "https://your-api-gateway-url.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 
 # 4. Configure frontend
@@ -61,23 +61,23 @@ npm run dev
 ### Step 1: Choose Your Database
 
 **For Production (Recommended):**
-```bash
+```powershell
 # PostgreSQL
-export DATABASE_URL="postgresql://username:password@host:5432/valine_db"
+$env:DATABASE_URL = "postgresql://username:password@host:5432/valine_db"
 
 # MySQL (also supported)
-export DATABASE_URL="mysql://username:password@host:3306/valine_db"
+$env:DATABASE_URL = "mysql://username:password@host:3306/valine_db"
 ```
 
 **For Local Development:**
-```bash
+```powershell
 # SQLite (simpler, but not recommended for production)
-export DATABASE_URL="file:./dev.db"
+$env:DATABASE_URL = "file:./dev.db"
 ```
 
 ### Step 2: Run Database Setup Script
 
-```bash
+```powershell
 ./scripts/deployment/setup-database.sh
 ```
 
@@ -89,7 +89,7 @@ This script will:
 
 ### Step 3: Verify Database Schema
 
-```bash
+```powershell
 cd api
 npx prisma studio
 ```
@@ -105,7 +105,7 @@ This opens a GUI at http://localhost:5555 where you can inspect:
 
 If you prefer to run migrations manually:
 
-```bash
+```powershell
 cd api
 npm install
 npx prisma generate
@@ -120,23 +120,23 @@ npx prisma migrate dev --name add_social_features  # For development
 
 Ensure your database URL is set:
 
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
-export AWS_REGION="us-west-2"  # Optional, defaults to us-west-2
-export STAGE="dev"  # Optional, defaults to dev
+```powershell
+$env:DATABASE_URL = "postgresql://user:password@host:5432/valine_db"
+$env:AWS_REGION = "us-west-2"  # Optional, defaults to us-west-2"
+$env:STAGE = "dev"  # Optional, defaults to dev"
 ```
 
 ### Step 2: Deploy to AWS
 
 **Using the deployment script (recommended):**
 
-```bash
+```powershell
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
 **Or manually:**
 
-```bash
+```powershell
 cd serverless
 npm install
 cd ../api && npx prisma generate && cd ../serverless
@@ -155,16 +155,16 @@ endpoints:
 ```
 
 **Save the base URL** (everything before `/users`):
-```bash
-export API_BASE="https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
+```powershell
+$env:API_BASE = "https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
 ```
 
 ## Phase 3: API Testing
 
 ### Automated Testing
 
-```bash
-export API_BASE="https://your-api-gateway-url.amazonaws.com/dev"
+```powershell
+$env:API_BASE = "https://your-api-gateway-url.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 ```
 
@@ -179,73 +179,56 @@ This tests:
 
 #### 1. Health Check
 
-```bash
-curl $API_BASE/health
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Expected: {"ok":true,"status":"healthy"}
 ```
 
 #### 2. Create a User
 
-```bash
-curl -X POST "$API_BASE/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "email": "test@valine.com",
-    "displayName": "Test User",
-    "bio": "This is a test account",
-    "avatar": "https://i.pravatar.cc/150?img=1"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "This is a test account", "avatar": "https://i.pravatar.cc/150?img=1" }' -ContentType 'application/json'```
 
 #### 3. Get User Profile
 
-```bash
-curl "$API_BASE/users/testuser"
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/users/testuser" -Method Get
 ```
 
 #### 4. Create a Post
 
-```bash
+```powershell
 # Replace USER_ID with the id from user creation response
-curl -X POST "$API_BASE/posts" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Hello from Project Valine!",
-    "media": ["https://picsum.photos/400/300"],
-    "authorId": "YOUR_USER_ID_HERE"
-  }'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "content": "Hello from Project Valine!", "media": ["https://picsum.photos/400/300"], "authorId": "YOUR_USER_ID_HERE" }' -ContentType 'application/json'```
 
 #### 5. List Posts
 
-```bash
-curl "$API_BASE/posts?limit=10"
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/posts?limit=10" -Method Get
 ```
 
 #### 6. Send Connection Request
 
-```bash
+```powershell
 # Create a second user first, then:
-curl -X POST "$API_BASE/connections/request" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "senderId": "USER1_ID",
-    "receiverId": "USER2_ID",
-    "message": "Let'\''s connect!"
-  }'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "senderId": "USER1_ID", "receiverId": "USER2_ID", "message": "Let' -ContentType 'application/json'```
 
 #### 7. List Connection Requests
 
-```bash
-curl "$API_BASE/connections/requests?userId=USER2_ID"
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/connections/requests?userId=USER2_ID" -Method Get
 ```
 
 #### 8. Approve Connection Request
 
-```bash
-curl -X POST "$API_BASE/connections/requests/REQUEST_ID/approve"
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post
 ```
 
 ## Phase 4: Frontend Configuration
@@ -254,21 +237,21 @@ curl -X POST "$API_BASE/connections/requests/REQUEST_ID/approve"
 
 **Using the configuration script:**
 
-```bash
+```powershell
 ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
 ```
 
 **Or manually create `.env`:**
 
-```bash
-cat > .env << EOF
+```powershell
+Get-Content > .env << EOF
 VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/dev
 EOF
 ```
 
 ### Step 2: Test Locally
 
-```bash
+```powershell
 npm install
 npm run dev
 ```
@@ -288,13 +271,13 @@ Visit http://localhost:5173 and test:
 
 ### Step 4: Build for Production
 
-```bash
+```powershell
 npm run build
 ```
 
 Test the production build:
 
-```bash
+```powershell
 npm run preview
 ```
 
@@ -302,9 +285,9 @@ npm run preview
 
 ### Backend Production Deployment
 
-```bash
+```powershell
 # Set production database URL
-export DATABASE_URL="postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
+$env:DATABASE_URL = "postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
 
 # Deploy to production stage
 ./scripts/deployment/deploy-backend.sh --stage prod --region us-west-2
@@ -316,7 +299,7 @@ The frontend deploys automatically via GitHub Actions when you push to `main`.
 
 **Option 1: Set GitHub Secret**
 
-```bash
+```powershell
 # Using GitHub CLI
 gh secret set VITE_API_BASE \
   --body "https://prod-api-url.amazonaws.com/prod" \
@@ -338,9 +321,9 @@ gh secret set VITE_API_BASE \
 
 ### Database Migration in Production
 
-```bash
+```powershell
 cd api
-export DATABASE_URL="postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
+$env:DATABASE_URL = "postgresql://prod-user:prod-pass@prod-host:5432/valine_prod"
 npx prisma migrate deploy
 ```
 
@@ -350,7 +333,7 @@ npx prisma migrate deploy
 
 **Check your DATABASE_URL format:**
 
-```bash
+```powershell
 # PostgreSQL
 postgresql://username:password@host:port/database
 
@@ -375,7 +358,7 @@ mysql://username:password@host:port/database
 
 **Solution 1: Regenerate Prisma Client**
 
-```bash
+```powershell
 cd api
 npx prisma generate
 cd ../serverless
@@ -384,7 +367,7 @@ npm install
 
 **Solution 2: Install in both locations**
 
-```bash
+```powershell
 cd api && npm install && npx prisma generate
 cd ../serverless && npm install
 ```
@@ -446,7 +429,7 @@ datasource db {
 4. **Check CORS** in Network tab
 5. **View Lambda logs:**
 
-```bash
+```powershell
 cd serverless
 npx serverless logs -f getUser --stage dev --tail
 ```
@@ -455,13 +438,13 @@ npx serverless logs -f getUser --stage dev --tail
 
 **Verify AWS credentials:**
 
-```bash
+```powershell
 aws sts get-caller-identity
 ```
 
 **Configure AWS CLI if needed:**
 
-```bash
+```powershell
 aws configure
 ```
 
@@ -474,7 +457,7 @@ aws configure
 
 ### Useful Commands
 
-```bash
+```powershell
 # Database
 npx prisma migrate dev          # Create and apply migration
 npx prisma migrate deploy       # Apply migrations (production)
@@ -495,7 +478,7 @@ npm run preview                 # Preview build locally
 
 # Testing
 ./scripts/deployment/test-endpoints.sh       # Test API
-curl -X POST $API_BASE/users -d '...'       # Manual testing
+Invoke-RestMethod -Uri "-X" -Method Post -Body '...' -ContentType 'application/json'
 ```
 
 ### Environment Variables

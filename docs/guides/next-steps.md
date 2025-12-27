@@ -162,7 +162,7 @@ Profile posts are now fully integrated with robust backend filtering and proper 
 **Steps:**
 
 1. **Create AWS Resources**
-   ```bash
+   ```powershell
    # 1. Create S3 bucket for static hosting
    aws s3 mb s3://project-valine-staging --region us-west-2
    
@@ -261,7 +261,7 @@ Profile posts are now fully integrated with robust backend filtering and proper 
 - Free tier available
 
 **Steps:**
-```bash
+```powershell
 npm install -g vercel
 vercel login
 vercel --prod
@@ -357,7 +357,7 @@ vercel --prod
 - **`logs/agent/phases-08-10-implementation-guide.md`** - CI/CD and production guide
 
 ### Test Commands
-```bash
+```powershell
 npm test              # Run tests in watch mode
 npm run test:ui       # Visual test interface
 npm run test:run      # CI mode (run once)
@@ -365,7 +365,7 @@ npm run test:coverage # Generate coverage report
 ```
 
 ### Development Commands
-```bash
+```powershell
 npm run dev           # Start dev server (port 3000)
 npm run build         # Create production build
 npm run preview       # Preview production build
@@ -389,7 +389,7 @@ npm run preview       # Preview production build
 ### Common Issues
 
 #### "Tests failing locally"
-```bash
+```powershell
 # Clear node_modules and reinstall
 rm -rf node_modules package-lock.json
 npm install
@@ -397,7 +397,7 @@ npm test
 ```
 
 #### "Build fails"
-```bash
+```powershell
 # Check for syntax errors
 npm run build
 
@@ -464,7 +464,7 @@ The autonomous agent has delivered a solid foundation. The rest is refinement an
 The CI/CD pipelines are complete but need AWS configuration:
 
 **Step 1: Setup AWS Resources**
-```bash
+```powershell
 # 1. Create S3 bucket for static hosting
 aws s3 mb s3://project-valine-staging --region us-west-2
 
@@ -496,7 +496,7 @@ STAGING_URL               = https://your-cloudfront-url.cloudfront.net
 ```
 
 **Step 3: Test Deployment**
-```bash
+```powershell
 # Push to develop branch to trigger automatic deployment
 git checkout develop
 git merge your-feature-branch
@@ -518,7 +518,7 @@ Currently, the app uses mock data with API fallback. To connect to a real backen
 
 If you have the serverless backend in `serverless/`:
 
-```bash
+```powershell
 cd serverless
 
 # Install dependencies
@@ -590,7 +590,7 @@ Follow the backend agent instructions in the repository to:
 ### OPTIONAL: Enhanced Quality (8-15 hours)
 
 #### Phase 07 Completion (E2E Tests) - 3-5 hours
-```bash
+```powershell
 # Install Playwright
 npm install -D @playwright/test
 
@@ -646,7 +646,7 @@ npm install -D @playwright/test
 
 ## 🔧 Development Commands
 
-```bash
+```powershell
 # Development
 npm run dev              # Start dev server (port 3000)
 
@@ -717,7 +717,7 @@ All comprehensive guides are in the repository:
 ## 🐛 Troubleshooting
 
 ### If builds fail:
-```bash
+```powershell
 # Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm install
@@ -725,7 +725,7 @@ npm run build
 ```
 
 ### If tests fail:
-```bash
+```powershell
 # Run tests with debugging
 npm run test:ui
 

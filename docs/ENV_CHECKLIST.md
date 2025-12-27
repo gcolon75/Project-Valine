@@ -100,7 +100,7 @@ Backend variables are used by Lambda functions and serverless framework.
 | `DATABASE_URL` | **Yes** | _(none)_ | PostgreSQL connection string | `postgresql://user:pass@host:5432/db?sslmode=require` |
 
 **Connection String Formats:**
-```bash
+```powershell
 # PostgreSQL (recommended)
 DATABASE_URL=postgresql://username:password@host:5432/valine_db
 
@@ -185,7 +185,7 @@ DATABASE_URL=file:./dev.db
 
 **File:** `.env` (root directory)
 
-```bash
+```powershell
 # Frontend
 VITE_API_BASE=http://localhost:3001
 VITE_ENABLE_AUTH=false
@@ -211,7 +211,7 @@ ENABLE_REGISTRATION=true
 
 **File:** `.env.staging` (deployed via CI/CD)
 
-```bash
+```powershell
 # Frontend
 VITE_API_BASE=https://<api-id>.execute-api.us-west-2.amazonaws.com/dev
 VITE_ENABLE_AUTH=true
@@ -231,7 +231,7 @@ STAGE=dev
 ```
 
 **Deployment:**
-```bash
+```powershell
 cd serverless
 npx serverless deploy --stage dev
 ```
@@ -242,7 +242,7 @@ npx serverless deploy --stage dev
 
 **File:** `.env.production` (deployed via CI/CD)
 
-```bash
+```powershell
 # Frontend
 VITE_API_BASE=https://<api-id>.execute-api.us-west-2.amazonaws.com/prod
 VITE_ENABLE_AUTH=true
@@ -277,7 +277,7 @@ S3_BUCKET=valine-uploads-prod
 
 ### Frontend Developer Setup
 
-```bash
+```powershell
 # 1. Copy example file
 cp .env.local.example .env
 
@@ -293,7 +293,7 @@ npm run dev
 
 ### Backend Developer Setup
 
-```bash
+```powershell
 # 1. Set up database
 createdb valine_dev
 
@@ -318,7 +318,7 @@ npx serverless offline
 ### Production Deployment
 
 **Backend:**
-```bash
+```powershell
 cd serverless
 
 # Ensure production secrets are in AWS Secrets Manager/Parameter Store
@@ -328,7 +328,7 @@ npx serverless deploy --stage prod
 ```
 
 **Frontend:**
-```bash
+```powershell
 # Build with production env vars
 npm run build
 
@@ -374,7 +374,7 @@ aws cloudfront create-invalidation \
 **Checklist:**
 1. Verify `VITE_API_BASE` is set correctly (API Gateway URL, not CloudFront)
 2. Check backend is running (local or deployed)
-3. Test health endpoint: `curl $VITE_API_BASE/health`
+3. Test health endpoint: `Invoke-RestMethod -Uri "$env:VITE_API_BASE/health"`
 4. Check for CORS configuration in backend
 5. Run: `window.__diagnostics.summary()` in browser console
 

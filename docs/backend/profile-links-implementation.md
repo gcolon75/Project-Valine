@@ -150,7 +150,7 @@ Common error codes:
 
 ### Unit Tests (63 tests, all passing)
 
-```bash
+```powershell
 npm run test:run -- server/src/utils
 ```
 
@@ -178,7 +178,7 @@ Located in `server/src/routes/__tests__/`:
 - Error responses
 
 **Note**: Integration tests require running API server:
-```bash
+```powershell
 cd server/src
 node index.js
 ```

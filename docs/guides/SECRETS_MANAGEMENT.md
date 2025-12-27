@@ -431,7 +431,7 @@ If a secret is compromised:
 
 Run pre-deployment validation:
 
-```bash
+```powershell
 node scripts/verify-env-contract.mjs
 ```
 

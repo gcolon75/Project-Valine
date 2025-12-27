@@ -5,7 +5,7 @@
 ### Reviewing New Reports
 
 #### 1. List Open Reports
-```bash
+```powershell
 GET /reports?status=open&limit=50
 ```
 
@@ -36,12 +36,12 @@ GET /reports?status=open&limit=50
 ```
 
 #### 2. Review Report Details
-```bash
+```powershell
 GET /reports/{id}
 ```
 
 #### 3. Take Action
-```bash
+```powershell
 POST /moderation/decision
 {
   "reportId": "report-789",
@@ -53,7 +53,7 @@ POST /moderation/decision
 ### Filtering Reports
 
 #### By Status
-```bash
+```powershell
 GET /reports?status=open        # New reports
 GET /reports?status=reviewed    # Pending action
 GET /reports?status=actioned    # Completed
@@ -61,21 +61,21 @@ GET /reports?status=dismissed   # False positives
 ```
 
 #### By Category
-```bash
+```powershell
 GET /reports?category=spam
 GET /reports?category=abuse
 GET /reports?category=unsafe_link
 ```
 
 #### By Target Type
-```bash
+```powershell
 GET /reports?targetType=profile
 GET /reports?targetType=post
 GET /reports?targetType=comment
 ```
 
 #### Combining Filters
-```bash
+```powershell
 GET /reports?status=open&category=abuse&limit=20
 ```
 
@@ -87,7 +87,7 @@ GET /reports?status=open&category=abuse&limit=20
 
 #### 1. Review the Content
 Check the moderation report:
-```bash
+```powershell
 GET /reports?targetType=profile&targetId={profileId}
 ```
 
@@ -102,7 +102,7 @@ Common causes:
 #### 3. Take Corrective Action
 
 **Option A: Allow This Instance**
-```bash
+```powershell
 POST /moderation/decision
 {
   "reportId": "report-789",
@@ -134,7 +134,7 @@ Inform user that:
    - Consider context-aware matching (future enhancement)
 
 3. **Use Warn Mode During Tuning**
-   ```bash
+   ```powershell
    PROFANITY_ACTION=warn  # Allow content but create reports
    ```
 
@@ -153,7 +153,7 @@ Inform user that:
 **Response:**
 1. Review all reports from/about the user
 2. Take immediate action:
-   ```bash
+   ```powershell
    POST /moderation/decision
    {
      "reportId": "report-X",
@@ -175,7 +175,7 @@ Inform user that:
 1. Investigate the target content
 2. Determine if reports are legitimate or coordinated false reports
 3. Take action on target if abuse confirmed:
-   ```bash
+   ```powershell
    POST /moderation/decision
    {
      "reportId": "report-X",
@@ -198,7 +198,7 @@ Inform user that:
 1. **URGENT**: Review immediately
 2. Verify if PII is publicly posted
 3. Take swift action:
-   ```bash
+   ```powershell
    POST /moderation/decision
    {
      "reportId": "report-X",
@@ -213,7 +213,7 @@ Inform user that:
 ## Exporting Reports and Actions
 
 ### Generate Report Summary
-```bash
+```powershell
 # Get all reports from last 7 days
 GET /reports?limit=100
 
@@ -257,25 +257,25 @@ Current reports include full action history:
 ### How to Relax
 
 #### Option 1: Switch to Warn Mode
-```bash
+```powershell
 # .env or deployment config
 PROFANITY_ACTION=warn
 ```
 **Effect:** Content is allowed but reports are still generated
 
 #### Option 2: Disable Strict Mode
-```bash
+```powershell
 MODERATION_STRICT_MODE=false
 ```
 **Effect:** Only blocklisted domains are rejected, not allowlist-only
 
 #### Option 3: Expand Allowlist
-```bash
+```powershell
 URL_ALLOWED_DOMAINS=imdb.com,youtube.com,...,newdomain.com
 ```
 
 #### Option 4: Temporarily Disable
-```bash
+```powershell
 MODERATION_ENABLED=false
 ```
 **Effect:** No scanning, all content allowed
@@ -285,7 +285,7 @@ MODERATION_ENABLED=false
 2. Update rules based on findings
 3. Test in staging
 4. Re-enable:
-   ```bash
+   ```powershell
    MODERATION_ENABLED=true
    PROFANITY_ACTION=block
    MODERATION_STRICT_MODE=true
@@ -307,14 +307,14 @@ MODERATION_ENABLED=false
 
 ### Configuring Alerts
 
-```bash
+```powershell
 # Enable alerts
 MODERATION_ALERTS_ENABLED=true
 MODERATION_ALERT_CHANNEL_ID=https://discord.com/api/webhooks/...
 ```
 
 ### Disabling Alerts
-```bash
+```powershell
 MODERATION_ALERTS_ENABLED=false
 ```
 
@@ -326,7 +326,7 @@ MODERATION_ALERTS_ENABLED=false
 ## Monitoring and Metrics
 
 ### Health Check
-```bash
+```powershell
 GET /moderation/health
 ```
 

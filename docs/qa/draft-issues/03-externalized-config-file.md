@@ -107,7 +107,7 @@ Create a `.orchestrator-config.json` or `.orchestrator-config.yaml` file:
 
 ## Example Usage
 
-```bash
+```powershell
 # Use custom config file
 node scripts/analyze-orchestration-run.mjs 123456 --config my-config.yaml
 

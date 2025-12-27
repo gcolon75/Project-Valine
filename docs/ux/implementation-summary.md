@@ -98,7 +98,7 @@ Practical learning document:
 ### 4. Integration
 
 #### NPM Script
-```bash
+```powershell
 npm run ux:audit
 ```
 
@@ -207,19 +207,19 @@ Configuration provided to exclude generated reports from version control (can be
 ## Usage Patterns
 
 ### Initial Audit
-```bash
+```powershell
 # Run first audit
 npm run ux:audit
 
 # Review findings
-cat UX_AUDIT_REPORT.md
+Get-Content UX_AUDIT_REPORT.md
 
 # Import to project tracker
 # Upload UX_AUDIT_FINDINGS.csv to Jira
 ```
 
 ### Implementing Fixes
-```bash
+```powershell
 # Create branch
 git checkout -b fix/responsive-improvements
 
@@ -237,7 +237,7 @@ git diff UX_AUDIT_FINDINGS.csv
 ```
 
 ### Progress Tracking
-```bash
+```powershell
 # Run audit weekly or per sprint
 npm run ux:audit
 
@@ -392,7 +392,7 @@ The UX Deep Audit Agent provides Project Valine with a **production-ready, autom
 ---
 
 **Run the audit anytime:**
-```bash
+```powershell
 npm run ux:audit
 ```
 

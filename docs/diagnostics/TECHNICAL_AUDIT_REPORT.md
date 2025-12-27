@@ -219,8 +219,8 @@ Coverage: Comprehensive (unit + integration)
 **Resolution:** User must configure AWS OIDC trust or provide credentials
 
 #### 🟢 **TODOs in Code** (NON-BLOCKING)
-```bash
-$ grep -r "TODO\|FIXME" orchestrator/app --include="*.py" | wc -l
+```powershell
+$ Select-String -r "TODO\|FIXME" orchestrator/app --include="*.py" | wc -l
 3
 ```
 
@@ -322,7 +322,7 @@ $ grep -r "TODO\|FIXME" orchestrator/app --include="*.py" | wc -l
 ### Quick Wins (Low Effort, High Impact)
 
 #### ⚡ **1. Add Pre-commit Hooks** (15 minutes)
-```bash
+```powershell
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/psf/black

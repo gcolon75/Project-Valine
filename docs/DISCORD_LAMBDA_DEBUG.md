@@ -89,7 +89,7 @@ sam deploy \
 ```
 
 ### Option 2: Delete S3 cache manually (needs permissions)
-```bash
+```powershell
 aws s3 rm s3://aws-sam-cli-managed-default-samclisourcebucket-xfvzppwwhcoy/valine-orchestrator-staging/ --recursive
 ```
 **Status:** Blocked by 403 Forbidden error - IAM permissions need updating

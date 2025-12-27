@@ -179,7 +179,7 @@ model AuditLog {
 **Status:** ✅ 100% pass rate, zero flaky tests
 
 **Run Tests:**
-```bash
+```powershell
 npm run test           # Interactive mode
 npm run test:run       # CI mode
 npm run test:coverage  # With coverage report
@@ -469,9 +469,9 @@ None identified.
 - Automated Verification Script: `scripts/post-merge-comprehensive-verification.js`
 
 **Run Verification:**
-```bash
+```powershell
 npm run verify:post-merge
-cat logs/verification/verification-report.md
+Get-Content logs/verification/verification-report.md
 ```
 
 ---

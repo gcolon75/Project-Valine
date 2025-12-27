@@ -96,25 +96,10 @@ Prepare the following test accounts:
 - ✅ No error message displayed
 
 **cURL Test:**
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"owner@example.com","password":"<valid-password>"}' \
-  -v \
-  | jq .
-
-# Expected output:
-# < HTTP/2 200
-# < set-cookie: access_token=...
-# < set-cookie: refresh_token=...
-# {
-#   "user": {
-#     "id": "...",
-#     "email": "owner@example.com",
-#     ...
-#   }
-# }
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"owner@example.com","password":"<valid-password>"}' -ContentType 'application/json'```
 
 ---
 
@@ -145,18 +130,10 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
 - ✅ Error message displayed: "Access denied" or similar
 
 **cURL Test:**
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"testuser@example.com","password":"<valid-password>"}' \
-  -v
-
-# Expected output:
-# < HTTP/2 403
-# {
-#   "error": "Account not authorized for access"
-# }
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"testuser@example.com","password":"<valid-password>"}' -ContentType 'application/json'```
 
 **Important:** This test verifies that password authentication SUCCEEDS first (user exists, password correct), but access is denied due to email allowlist. This is Layer 2 protection (application-level).
 
@@ -189,18 +166,10 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
 - ✅ Error message displayed: "Invalid credentials" or similar
 
 **cURL Test:**
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"owner@example.com","password":"wrongpassword123"}' \
-  -v
-
-# Expected output:
-# < HTTP/2 401
-# {
-#   "error": "Invalid email or password"
-# }
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"owner@example.com","password":"wrongpassword123"}' -ContentType 'application/json'```
 
 ---
 
@@ -374,27 +343,18 @@ document.cookie;
 - ✅ API does not return `Access-Control-Allow-Origin: *`
 
 **cURL Test (Allowed Origin):**
-```bash
-curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://dkmxy676d3vgc.cloudfront.net" \
-  -H "Access-Control-Request-Method: POST" \
-  -v
-
-# Expected headers:
-# < access-control-allow-origin: https://dkmxy676d3vgc.cloudfront.net
-# < access-control-allow-credentials: true
-# < access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
+    "Access-Control-Request-Method" = "POST"
+}```
 
 **cURL Test (Disallowed Origin):**
-```bash
-curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://evil-site.com" \
-  -H "Access-Control-Request-Method: POST" \
-  -v
-
-# Expected: No access-control-allow-origin header OR different origin
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://evil-site.com"
+    "Access-Control-Request-Method" = "POST"
+}```
 
 ---
 
@@ -405,14 +365,14 @@ curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/logi
 **Steps:**
 
 1. Access frontend from non-allowlisted IP:
-   ```bash
+   ```powershell
    # Use mobile hotspot, VPN, or different network
-   curl -I https://dkmxy676d3vgc.cloudfront.net
+Invoke-RestMethod -Uri "-I" -Method Get
    ```
 
 2. Check that static assets load:
-   ```bash
-   curl -I https://dkmxy676d3vgc.cloudfront.net/assets/index-*.js
+   ```powershell
+Invoke-RestMethod -Uri "-I" -Method Get
    ```
 
 3. Attempt to access login page
@@ -426,17 +386,11 @@ curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/logi
 - ✅ No WAF block message
 
 **From Different IP:**
-```bash
+```powershell
 # Test from mobile hotspot or VPN
-curl https://dkmxy676d3vgc.cloudfront.net \
-  -H "User-Agent: Mozilla/5.0" \
-  -v
-
-# Expected:
-# < HTTP/2 200
-# < content-type: text/html
-# <html>...</html>
-```
+Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net" -Method Get -Headers @{
+    "User-Agent" = "Mozilla/5.0"
+}```
 
 ---
 
@@ -447,17 +401,10 @@ curl https://dkmxy676d3vgc.cloudfront.net \
 **Steps:**
 
 1. Attempt to register new user:
-   ```bash
-   curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{
-       "email": "newuser@example.com",
-       "password": "password123",
-       "username": "newuser",
-       "displayName": "New User"
-     }' \
-     -v
-   ```
+   ```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "newuser@example.com", "password": "password123", "username": "newuser", "displayName": "New User" }' -ContentType 'application/json'```
 
 2. Check response
 
@@ -468,7 +415,7 @@ curl https://dkmxy676d3vgc.cloudfront.net \
 - ✅ No user created in database
 
 **Environment Variable Check:**
-```bash
+```powershell
 # In Lambda environment
 echo $ENABLE_REGISTRATION
 # Expected: "false" or empty
@@ -548,7 +495,7 @@ Use this checklist after each deployment or security update:
 3. Whitespace in allowlist configuration
 
 **Debugging:**
-```bash
+```powershell
 # Check Lambda environment variable
 aws lambda get-function-configuration \
   --function-name pv-api-prod-login \
@@ -563,7 +510,7 @@ aws logs tail /aws/lambda/pv-api-prod-login --follow
 ```
 
 **Solution:**
-```bash
+```powershell
 # Update environment variable
 aws lambda update-function-configuration \
   --function-name pv-api-prod-login \
@@ -579,7 +526,7 @@ aws lambda update-function-configuration \
 2. Email allowlist not enforced (code issue)
 
 **Debugging:**
-```bash
+```powershell
 # Verify environment variable is set
 aws lambda get-function-configuration \
   --function-name pv-api-prod-login \
@@ -601,15 +548,15 @@ Set `ALLOWED_USER_EMAILS` in `serverless/serverless.yml` and redeploy.
 3. Wrong build deployed
 
 **Debugging:**
-```bash
+```powershell
 # Check production build
-curl https://dkmxy676d3vgc.cloudfront.net/assets/index-*.js | grep "DEV_BYPASS"
+Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net/assets/index-*.js" -Method Get
 
 # If found, dev bypass was enabled during build
 ```
 
 **Solution:**
-```bash
+```powershell
 # Rebuild with correct environment
 VITE_ENABLE_DEV_BYPASS=false npm run build
 
@@ -628,16 +575,11 @@ aws cloudfront create-invalidation --distribution-id dkmxy676d3vgc --paths "/*"
 3. Browser blocking cookies (SameSite/Secure mismatch)
 
 **Debugging:**
-```bash
+```powershell
 # Check response headers
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"owner@example.com","password":"<password>"}' \
-  -v 2>&1 | grep -i set-cookie
-
-# Expected: set-cookie: access_token=...
-#          set-cookie: refresh_token=...
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"owner@example.com","password":"<password>"}' -ContentType 'application/json'```
 
 **Solution:**
 - Verify `multiValueHeaders` in Lambda response includes Set-Cookie
@@ -653,17 +595,12 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
 2. Missing `Access-Control-Allow-Credentials` header
 
 **Debugging:**
-```bash
+```powershell
 # Test OPTIONS preflight
-curl -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://dkmxy676d3vgc.cloudfront.net" \
-  -H "Access-Control-Request-Method: POST" \
-  -v
-
-# Check for:
-# < access-control-allow-origin: <frontend-url>
-# < access-control-allow-credentials: true
-```
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
+    "Access-Control-Request-Method" = "POST"
+}```
 
 **Solution:**
 Update `FRONTEND_URL` in `serverless/serverless.yml` to match actual origin.

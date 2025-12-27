@@ -1,5 +1,8 @@
 # Quality Assurance Documentation
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 Comprehensive guides for maintaining code quality, performance, accessibility, and security in Project Valine.
 
 ## 📋 Overview
@@ -38,7 +41,7 @@ This directory contains documentation for:
 
 ### Running Workflows
 
-```bash
+```powershell
 # Via GitHub CLI
 gh workflow run accessibility-audit.yml
 gh workflow run lighthouse-ci.yml
@@ -119,7 +122,7 @@ gh workflow run security-audit.yml
 - **Dynamic Imports**: Load on demand
 
 ### Monitoring
-```bash
+```powershell
 # Analyze current bundle
 npm run build:analyze
 
@@ -167,7 +170,7 @@ npm run perf:audit
 - **Tests**: 107+ passing tests
 
 ### Running Tests
-```bash
+```powershell
 # Run all tests
 npm test
 
@@ -207,7 +210,7 @@ src/
 ## 🛠️ Development Workflow
 
 ### Before Committing
-```bash
+```powershell
 # 1. Run tests
 npm run test:run
 

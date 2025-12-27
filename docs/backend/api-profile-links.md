@@ -780,13 +780,13 @@ A migration script is available to convert legacy `socialLinks` JSON data to the
 ### Running the Migration
 
 **Dry Run (recommended first):**
-```bash
+```powershell
 cd api
 npm run migrate:social-links:dry-run
 ```
 
 **Live Migration:**
-```bash
+```powershell
 cd api
 npm run migrate:social-links
 ```

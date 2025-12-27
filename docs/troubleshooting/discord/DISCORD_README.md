@@ -10,7 +10,7 @@ You're experiencing Discord endpoint verification failures. This package contain
    - 📄 **[DISCORD_QUICKREF.md](DISCORD_QUICKREF.md)** ← START HERE (1 page)
 
 2. **Run the Diagnostic:**
-   ```bash
+   ```powershell
    cd orchestrator/scripts
    ./verify_discord_config.sh
    ```
@@ -43,7 +43,7 @@ You're experiencing Discord endpoint verification failures. This package contain
 ## 🔧 Tools Provided
 
 ### Main Diagnostic Tool
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh
 ```
@@ -57,7 +57,7 @@ cd orchestrator/scripts
 - ✅ Includes `--fix` mode
 
 ### Validation Tool
-```bash
+```powershell
 cd orchestrator/scripts
 python3 test_discord_verification.py <PUBLIC_KEY>
 ```
@@ -94,7 +94,7 @@ python3 test_discord_verification.py <PUBLIC_KEY>
 ## ⚡ The 5-Minute Fix
 
 ### Step 1: Diagnose (1 minute)
-```bash
+```powershell
 cd orchestrator/scripts
 ./verify_discord_config.sh
 ```
@@ -102,7 +102,7 @@ cd orchestrator/scripts
 ### Step 2: Fix (2 minutes)
 
 **Quick Fix:**
-```bash
+```powershell
 ./verify_discord_config.sh --fix
 # Enter correct public key when prompted
 ```
@@ -165,7 +165,7 @@ Use this checklist to track your progress:
 
 ## 🛠️ Common Commands
 
-```bash
+```powershell
 # Diagnose
 cd orchestrator/scripts
 ./verify_discord_config.sh
@@ -187,11 +187,10 @@ aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
   --region us-west-2 --follow
 
 # Test endpoint
-curl -X POST https://3n6t1f7pw1.execute-api.us-west-2.amazonaws.com/dev/discord \
-  -H "x-signature-ed25519: test" \
-  -H "x-signature-timestamp: 1234567890" \
-  -d '{"type":1}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "x-signature-ed25519" = "test"
+    "x-signature-timestamp" = "1234567890"
+} -Body '{"type":1}' -ContentType 'application/json'```
 
 ---
 
@@ -276,7 +275,7 @@ You've successfully fixed the issue when:
 Once Discord endpoint is verified:
 
 1. **Test Slash Commands:**
-   ```bash
+   ```powershell
    cd orchestrator
    ./register_discord_commands_staging.sh
    ```
@@ -286,7 +285,7 @@ Once Discord endpoint is verified:
    - Bot should respond
 
 3. **Monitor Logs:**
-   ```bash
+   ```powershell
    aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
      --region us-west-2 --follow
    ```

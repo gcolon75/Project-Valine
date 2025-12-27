@@ -90,7 +90,7 @@ Implemented a complete solution to fix Discord slash commands not appearing in t
 
 ### Quick Start (Recommended)
 
-```bash
+```powershell
 cd orchestrator
 ./fix_staging_slash_commands.sh
 ```
@@ -105,7 +105,7 @@ cd orchestrator
 
 ### Manual Validation
 
-```bash
+```powershell
 cd orchestrator/scripts
 
 python validate_discord_slash_commands.py full \
@@ -117,7 +117,7 @@ python validate_discord_slash_commands.py full \
 
 ### Configure AWS
 
-```bash
+```powershell
 # Enable debug command
 aws ssm put-parameter \
   --name "/valine/staging/ENABLE_DEBUG_CMD" \
@@ -137,7 +137,7 @@ aws ssm put-parameter --name "/valine/staging/ALERT_CHANNEL_ID" --value "1428102
 
 ### Step 1: Run Fix Script
 
-```bash
+```powershell
 cd orchestrator
 ./fix_staging_slash_commands.sh
 ```
@@ -216,22 +216,16 @@ Steps:
 ```
 
 ### Command List (Before)
-```bash
-$ curl -H "Authorization: Bot $BOT_TOKEN" \
-  https://discord.com/api/v10/applications/$APP_ID/guilds/$GUILD_ID/commands
-[]
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $BOT_TOKEN"
+}```
 
 ### Command List (After)
-```bash
-$ curl -H "Authorization: Bot $BOT_TOKEN" \
-  https://discord.com/api/v10/applications/$APP_ID/guilds/$GUILD_ID/commands
-[
-  {"name": "debug-last", "description": "Show last run debug info..."},
-  {"name": "diagnose", "description": "Run a quick staging diagnostic"},
-  {"name": "status", "description": "Show last 1-3 runs..."}
-]
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $BOT_TOKEN"
+}```
 
 ---
 
@@ -295,7 +289,7 @@ STAGING_DISCORD_BOT_TOKEN=<from_developer_portal>
 **Error:** `Debug commands are disabled`
 
 **Fix:**
-```bash
+```powershell
 aws ssm put-parameter \
   --name "/valine/staging/ENABLE_DEBUG_CMD" \
   --value "true" \
@@ -362,7 +356,7 @@ Project-Valine/
 ### Immediate (You Do This)
 
 1. ⏳ **Run validation script with real credentials**
-   ```bash
+   ```powershell
    cd orchestrator
    ./fix_staging_slash_commands.sh
    ```

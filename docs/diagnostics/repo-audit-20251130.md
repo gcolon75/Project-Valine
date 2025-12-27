@@ -235,22 +235,13 @@ Correctly generates cookies without explicit Domain attribute for cross-origin c
 
 ### cURL Command to Test Cookie Auth
 
-```bash
+```powershell
 # Step 1: Login and capture cookies
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Content-Type: application/json" \
-  -H "Origin: https://dkmxy676d3vgc.cloudfront.net" \
-  -d '{"email":"your-email@example.com","password":"your-password"}' \
-  -c cookies.txt -v
-
-# Step 2: Test /me/profile with cookies
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/me/profile \
-  -H "Origin: https://dkmxy676d3vgc.cloudfront.net" \
-  -b cookies.txt -v
-
-# Expected: 200 OK with profile data
-# Before fix: 401 Unauthorized
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
+    "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
+} -Body '{"email":"your-email@example.com","password":"your-password"}' -ContentType 'application/json'```
 
 ### PowerShell Command (Windows)
 

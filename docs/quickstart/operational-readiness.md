@@ -4,7 +4,7 @@ Get your Discord AI triage system validated in 3 minutes! 🚀
 
 ## TL;DR
 
-```bash
+```powershell
 cd orchestrator/scripts
 python3 operational_readiness_agent.py run
 # Review the report, then follow the action plan
@@ -20,7 +20,7 @@ python3 operational_readiness_agent.py run
 
 ### Step 1: Run the Agent (2 min)
 
-```bash
+```powershell
 cd orchestrator/scripts
 python3 operational_readiness_agent.py run --repo gcolon75/Project-Valine
 ```
@@ -36,12 +36,12 @@ python3 operational_readiness_agent.py run --repo gcolon75/Project-Valine
 
 Check the console output or generated files:
 
-```bash
+```powershell
 # View latest markdown report
-cat readiness_evidence/operational_readiness_report_*.md | tail -100
+Get-Content readiness_evidence/operational_readiness_report_*.md | tail -100
 
 # Or open the JSON report
-cat readiness_evidence/operational_readiness_report_*.json | jq .
+Get-Content readiness_evidence/operational_readiness_report_*.json | jq .
 ```
 
 **Key sections:**
@@ -65,13 +65,13 @@ Verify these secrets exist:
 ```
 
 #### Priority 2: Register Commands (10 min)
-```bash
+```powershell
 cd ../..  # Back to orchestrator/
 ./register_discord_commands_staging.sh
 ```
 
 #### Priority 3: Run Smoke Tests (5 min)
-```bash
+```powershell
 gh workflow run bot-smoke.yml --ref main
 # Or use GitHub UI: Actions → Bot Smoke Tests → Run workflow
 ```
@@ -80,8 +80,8 @@ gh workflow run bot-smoke.yml --ref main
 
 ### With GitHub Token (for PR analysis)
 
-```bash
-export GITHUB_TOKEN="ghp_your_token_here"
+```powershell
+$env:GITHUB_TOKEN = "ghp_your_token_here"
 python3 operational_readiness_agent.py run
 ```
 
@@ -92,7 +92,7 @@ python3 operational_readiness_agent.py run
 
 ### With Test PR (for E2E validation)
 
-```bash
+```powershell
 python3 operational_readiness_agent.py run --test-pr 71
 ```
 
@@ -104,7 +104,7 @@ python3 operational_readiness_agent.py run --test-pr 71
 
 ### Using a Config File
 
-```bash
+```powershell
 # Generate example config
 python3 operational_readiness_agent.py generate-config
 
@@ -166,23 +166,23 @@ On it — running repo recon now.
 
 ### Daily Health Check
 
-```bash
+```powershell
 # Quick morning check
 python3 operational_readiness_agent.py run > daily_check.log
-grep "⚠️" daily_check.log  # Any warnings?
+Select-String "⚠️" daily_check.log  # Any warnings?
 ```
 
 ### Pre-Release Validation
 
-```bash
+```powershell
 # Full validation with test PR
-export GITHUB_TOKEN="..."
+$env:GITHUB_TOKEN = "..."
 python3 operational_readiness_agent.py run --test-pr 71 --verbose
 ```
 
 ### Security Audit
 
-```bash
+```powershell
 # Focus on secrets and guardrails
 python3 operational_readiness_agent.py run
 # Review "Secret Checks" and "Draft PR Policies" sections
@@ -190,7 +190,7 @@ python3 operational_readiness_agent.py run
 
 ### CI/CD Integration
 
-```bash
+```powershell
 # In GitHub Actions workflow:
 - name: Operational Readiness Check
   run: |
@@ -207,17 +207,17 @@ python3 operational_readiness_agent.py run
 ### "Missing required environment variables"
 
 Only needed if running registration:
-```bash
-export STAGING_DISCORD_BOT_TOKEN="your_token"
-export STAGING_DISCORD_APPLICATION_ID="your_app_id"
-export STAGING_DISCORD_GUILD_ID="your_guild_id"
+```powershell
+$env:STAGING_DISCORD_BOT_TOKEN = "your_token"
+$env:STAGING_DISCORD_APPLICATION_ID = "your_app_id"
+$env:STAGING_DISCORD_GUILD_ID = "your_guild_id"
 ```
 
 ### "Could not analyze PR"
 
 Need GitHub token for PR analysis:
-```bash
-export GITHUB_TOKEN="ghp_your_token"
+```powershell
+$env:GITHUB_TOKEN = "ghp_your_token"
 ```
 
 ### Report says "unmapped secrets"
@@ -246,7 +246,7 @@ After your first run:
 
 ### Example 1: Basic Run
 
-```bash
+```powershell
 $ python3 operational_readiness_agent.py run
 
 On it — running repo recon now.
@@ -259,7 +259,7 @@ On it — running repo recon now.
 
 ### Example 2: With Test PR
 
-```bash
+```powershell
 $ python3 operational_readiness_agent.py run --test-pr 71
 
 On it — running repo recon now.
@@ -270,7 +270,7 @@ On it — running repo recon now.
 
 ### Example 3: Generate Config
 
-```bash
+```powershell
 $ python3 operational_readiness_agent.py generate-config
 
 ✅ Example configuration saved to: operational_readiness_config.json

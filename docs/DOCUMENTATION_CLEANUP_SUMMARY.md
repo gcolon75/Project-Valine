@@ -177,7 +177,7 @@
 - Orchestrator docs may have stale references
 
 **Recommendation:** Run a link checker on all markdown files:
-```bash
+```powershell
 npm install -g markdown-link-check
 find docs -name "*.md" -exec markdown-link-check {} \;
 ```
@@ -240,7 +240,7 @@ find docs -name "*.md" -exec markdown-link-check {} \;
    - Confirm environment variables are complete
 
 2. **Run Link Checker**
-   ```bash
+   ```powershell
    npm install -g markdown-link-check
    find docs -name "*.md" -exec markdown-link-check {} \;
    ```

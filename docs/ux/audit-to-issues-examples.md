@@ -13,7 +13,7 @@ This document provides concrete examples of using the UX Audit to Issues convers
 
 ### Step 1: Run the UX Audit
 
-```bash
+```powershell
 cd /home/runner/work/Project-Valine/Project-Valine
 npm run ux:audit
 ```
@@ -29,7 +29,7 @@ npm run ux:audit
 
 ### Step 2: Preview High-Priority Findings
 
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high --limit 5
 ```
 
@@ -55,8 +55,8 @@ npm run ux:audit-to-issues -- --severity high --limit 5
 
 ### Step 3: Review Generated Issues
 
-```bash
-cat ux-audit-issues.json | jq '.issues[0] | {title, labels, metadata}'
+```powershell
+Get-Content ux-audit-issues.json | jq '.issues[0] | {title, labels, metadata}'
 ```
 
 **Output:**
@@ -81,7 +81,7 @@ cat ux-audit-issues.json | jq '.issues[0] | {title, labels, metadata}'
 
 ### Step 4: Dry Run (Preview Issue Creation)
 
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high --limit 5 --create --dry-run
 ```
 
@@ -113,7 +113,7 @@ npm run ux:audit-to-issues -- --severity high --limit 5 --create --dry-run
 
 ### Step 5: Create Issues (When Ready)
 
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high --create
 ```
 
@@ -125,16 +125,16 @@ npm run ux:audit-to-issues -- --severity high --create
 
 **Goal:** Create all high-severity issues for sprint planning
 
-```bash
+```powershell
 # Step 1: Generate and review
 npm run ux:audit-to-issues -- --severity high --output sprint-issues.json
 
 # Step 2: Review the count
-cat sprint-issues.json | jq '.metadata.issuesGenerated'
+Get-Content sprint-issues.json | jq '.metadata.issuesGenerated'
 # Output: 21
 
 # Step 3: Preview categories
-cat sprint-issues.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})'
+Get-Content sprint-issues.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})'
 # Output: [
 #   {"category": "Responsive", "count": 21}
 # ]
@@ -151,7 +151,7 @@ npm run ux:audit-to-issues -- --severity high --create --delay 1500
 
 **Goal:** Create issues for responsive design improvements only
 
-```bash
+```powershell
 # Step 1: Filter by category
 npm run ux:audit-to-issues -- \
   --category responsive \
@@ -159,7 +159,7 @@ npm run ux:audit-to-issues -- \
   --output responsive-issues.json
 
 # Step 2: Review affected pages
-cat responsive-issues.json | jq '.issues[].metadata.page' | sort | uniq
+Get-Content responsive-issues.json | jq '.issues[].metadata.page' | sort | uniq
 
 # Step 3: Create issues in batches
 npm run ux:audit-to-issues -- \
@@ -177,7 +177,7 @@ npm run ux:audit-to-issues -- \
 
 **Goal:** Create all medium-priority accessibility issues
 
-```bash
+```powershell
 # Step 1: Generate accessibility issues
 npm run ux:audit-to-issues -- \
   --category Accessibility \
@@ -185,7 +185,7 @@ npm run ux:audit-to-issues -- \
   --output a11y-medium.json
 
 # Step 2: Review issue types
-cat a11y-medium.json | jq '.issues[].title' | grep -E "focus|H1|ARIA"
+cat a11y-medium.json | jq '.issues[].title' | Select-String -E "focus|H1|ARIA"
 
 # Step 3: Create issues with specific prefix
 npm run ux:audit-to-issues -- \
@@ -203,7 +203,7 @@ npm run ux:audit-to-issues -- \
 
 **Goal:** Fix issues on specific critical pages (Dashboard, Profile, Feed)
 
-```bash
+```powershell
 # Step 1: Generate issues for specific pages
 npm run ux:audit-to-issues -- \
   --page "Dashboard,Profile,Feed" \
@@ -211,7 +211,7 @@ npm run ux:audit-to-issues -- \
   --output critical-pages.json
 
 # Step 2: Review what will be created
-cat critical-pages.json | jq '.issues | group_by(.metadata.page) | map({page: .[0].metadata.page, issues: length})'
+Get-Content critical-pages.json | jq '.issues | group_by(.metadata.page) | map({page: .[0].metadata.page, issues: length})'
 
 # Step 3: Create issues
 npm run ux:audit-to-issues -- \
@@ -228,7 +228,7 @@ npm run ux:audit-to-issues -- \
 
 **Goal:** Process issues in small batches to avoid overwhelming the team
 
-```bash
+```powershell
 # Week 1: Responsive - High Priority (10 issues)
 npm run ux:audit-to-issues -- \
   --category responsive \
@@ -491,35 +491,35 @@ Severity: Medium
 
 ### Use Case 1: Custom Filtering with jq
 
-```bash
+```powershell
 # Generate all issues
 npm run ux:audit-to-issues -- --severity high,medium --output all-issues.json
 
 # Filter to only pages with multiple issues
-cat all-issues.json | jq '.issues | group_by(.metadata.page) | map(select(length > 2)) | .[]'
+Get-Content all-issues.json | jq '.issues | group_by(.metadata.page) | map(select(length > 2)) | .[]'
 
 # Get total issues per category
-cat all-issues.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})'
+Get-Content all-issues.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})'
 
 # Find issues affecting specific file patterns
-cat all-issues.json | jq '.issues[] | select(.metadata.affectedFiles[] | contains("components"))'
+Get-Content all-issues.json | jq '.issues[] | select(.metadata.affectedFiles[] | contains("components"))'
 ```
 
 ### Use Case 2: Integration with GitHub Projects
 
-```bash
+```powershell
 # Create issues and capture URLs
 npm run ux:audit-to-issues -- --severity high --create > issue-urls.txt
 
 # Add issues to project (requires gh CLI project commands)
-cat issue-urls.txt | grep "https://github.com" | while read url; do
+cat issue-urls.txt | Select-String "https://github.com" | while read url; do
   gh project item-add <project-id> --url "$url"
 done
 ```
 
 ### Use Case 3: Batch Creation with Review Steps
 
-```bash
+```powershell
 #!/bin/bash
 # create-issues-reviewed.sh
 
@@ -538,12 +538,12 @@ echo "Issues created! Check GitHub for results."
 
 ### Use Case 4: Export to CSV for Review
 
-```bash
+```powershell
 # Generate JSON
 npm run ux:audit-to-issues -- --severity high,medium --output issues.json
 
 # Convert to CSV (requires jq and csvkit)
-cat issues.json | jq -r '.issues[] | [.title, .metadata.category, .metadata.severity, .metadata.page] | @csv' > issues.csv
+Get-Content issues.json | jq -r '.issues[] | [.title, .metadata.category, .metadata.severity, .metadata.page] | @csv' > issues.csv
 
 # Review in spreadsheet
 open issues.csv
@@ -553,24 +553,24 @@ open issues.csv
 
 ### Tip 1: Preview Titles Only
 
-```bash
+```powershell
 npm run ux:audit-to-issues -- --severity high --output temp.json && \
-cat temp.json | jq -r '.issues[].title' && \
+Get-Content temp.json | jq -r '.issues[].title' && \
 rm temp.json
 ```
 
 ### Tip 2: Count Issues Before Creating
 
-```bash
+```powershell
 # Count by category
 npm run ux:audit-to-issues -- --severity high --output temp.json && \
-cat temp.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})' && \
+Get-Content temp.json | jq '.issues | group_by(.metadata.category) | map({category: .[0].metadata.category, count: length})' && \
 rm temp.json
 ```
 
 ### Tip 3: Save Multiple Filtered Outputs
 
-```bash
+```powershell
 # High priority responsive
 npm run ux:audit-to-issues -- --category responsive --severity high --output high-responsive.json
 
@@ -583,12 +583,12 @@ npm run ux:audit-to-issues -- --category "Color,Spacing" --output design-tokens.
 
 ### Tip 4: Validate Before Creating
 
-```bash
+```powershell
 # Dry run with verbose output
 npm run ux:audit-to-issues -- --create --dry-run | tee dry-run.log
 
 # Review the log
-cat dry-run.log
+Get-Content dry-run.log
 
 # If satisfied, create for real
 npm run ux:audit-to-issues -- --create
@@ -598,11 +598,11 @@ npm run ux:audit-to-issues -- --create
 
 ### Pattern 1: Sprint Cycle
 
-```bash
+```powershell
 # Sprint planning (Week 0)
 npm run ux:audit
 npm run ux:audit-to-issues -- --severity high --output sprint-plan.json
-cat sprint-plan.json | jq '.metadata.issuesGenerated'
+Get-Content sprint-plan.json | jq '.metadata.issuesGenerated'
 
 # Sprint start (Week 1)
 npm run ux:audit-to-issues -- --severity high --create
@@ -616,7 +616,7 @@ git diff UX_AUDIT_SUMMARY.json  # Compare improvements
 
 ### Pattern 2: Continuous Improvement
 
-```bash
+```powershell
 # Monthly audit
 crontab -e
 # Add: 0 0 1 * * cd /path/to/repo && npm run ux:audit
@@ -629,7 +629,7 @@ npm run ux:audit-to-issues -- --severity high,medium --create
 
 ### Pattern 3: Feature Branch Workflow
 
-```bash
+```powershell
 # Create branch for responsive fixes
 git checkout -b fix/responsive-improvements
 
@@ -652,7 +652,7 @@ git diff UX_AUDIT_REPORT.md
 
 ### Problem: No Issues Generated
 
-```bash
+```powershell
 $ npm run ux:audit-to-issues -- --severity critical
 ...
 🔎 Filtering findings...
@@ -661,8 +661,8 @@ $ npm run ux:audit-to-issues -- --severity critical
 ```
 
 **Solution:** Check available severities
-```bash
-cat UX_AUDIT_SUMMARY.json | jq '.summary'
+```powershell
+Get-Content UX_AUDIT_SUMMARY.json | jq '.summary'
 # Output shows: high, medium, low (no "critical")
 
 # Use correct severity
@@ -671,7 +671,7 @@ npm run ux:audit-to-issues -- --severity high
 
 ### Problem: Rate Limit Hit
 
-```bash
+```powershell
 $ npm run ux:audit-to-issues -- --create
 ...
 ❌ Failed to create issue: [Responsive] ...
@@ -679,7 +679,7 @@ $ npm run ux:audit-to-issues -- --create
 ```
 
 **Solution:** Add delays
-```bash
+```powershell
 npm run ux:audit-to-issues -- --create --delay 3000 --limit 10
 ```
 

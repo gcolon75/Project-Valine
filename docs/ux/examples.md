@@ -512,14 +512,14 @@ Fixed pixel widths don't adapt to screen size, causing horizontal scroll or cut-
 ## Testing Your Fixes
 
 ### 1. Responsive Design
-```bash
+```powershell
 # Open browser dev tools
 # Toggle device toolbar (Ctrl/Cmd + Shift + M)
 # Test at: 375px, 768px, 1280px
 ```
 
 ### 2. Accessibility
-```bash
+```powershell
 # Keyboard navigation
 # Press Tab to move through interactive elements
 # Ensure visible focus indicators
@@ -530,7 +530,7 @@ Fixed pixel widths don't adapt to screen size, causing horizontal scroll or cut-
 ```
 
 ### 3. Color Contrast
-```bash
+```powershell
 # Browser dev tools
 # Inspect element
 # Check contrast ratio in Styles panel
@@ -538,7 +538,7 @@ Fixed pixel widths don't adapt to screen size, causing horizontal scroll or cut-
 ```
 
 ### 4. Re-run Audit
-```bash
+```powershell
 npm run ux:audit
 
 # Compare before/after

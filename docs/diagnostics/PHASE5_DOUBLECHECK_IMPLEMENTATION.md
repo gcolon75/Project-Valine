@@ -79,7 +79,7 @@ As the **Phase 5 Staging Validation Double-Check Agent**, the mission is to:
 - Comprehensive error handling
 
 **Usage:**
-```bash
+```powershell
 ./run_phase5_validation.sh [--skip-revert] [--dry-run]
 ```
 

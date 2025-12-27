@@ -61,7 +61,7 @@ Comprehensive checklist for production releases and canary deployments for Proje
 - [ ] Database backup completed before migration
 - [ ] Migration documentation updated
 
-```bash
+```powershell
 # Verify migration
 cd api
 npx prisma migrate status --preview-feature
@@ -135,7 +135,7 @@ Stage 4: 100% traffic (full rollout)
 ### Stage 1: 5% Canary (30 minutes)
 
 #### Deploy Canary
-```bash
+```powershell
 # Tag release
 git tag -a v1.2.3 -m "Release v1.2.3: Profile links feature"
 git push origin v1.2.3
@@ -176,7 +176,7 @@ CloudWatch Dashboard: Valine Canary
 ### Stage 2: 25% Canary (1 hour)
 
 #### Increase Traffic
-```bash
+```powershell
 # Backend
 cd serverless
 npm run deploy -- --stage prod --alias canary --traffic 25
@@ -213,7 +213,7 @@ aws cloudfront update-distribution \
 ### Stage 3: 50% Canary (1 hour)
 
 #### Increase Traffic
-```bash
+```powershell
 # Backend
 cd serverless
 npm run deploy -- --stage prod --alias canary --traffic 50
@@ -250,7 +250,7 @@ aws cloudfront update-distribution \
 ### Stage 4: 100% Deployment
 
 #### Deploy to All Users
-```bash
+```powershell
 # Backend - promote canary to stable
 cd serverless
 npm run deploy -- --stage prod --alias stable --traffic 100
@@ -288,7 +288,7 @@ npm run deploy:frontend -- --env production
 - [ ] API endpoints respond correctly
 
 **Automated Smoke Tests**:
-```bash
+```powershell
 # Run smoke test suite
 npm run test:smoke:prod
 
@@ -359,7 +359,7 @@ Run through manually:
 ### Rollback Process
 
 #### Quick Rollback (Frontend)
-```bash
+```powershell
 # Rollback frontend to previous version
 aws s3 sync s3://valine-frontend-backup/ s3://valine-frontend-prod/
 
@@ -370,7 +370,7 @@ aws cloudfront create-invalidation \
 ```
 
 #### Quick Rollback (Backend)
-```bash
+```powershell
 # Rollback Lambda to previous version
 aws lambda update-alias \
   --function-name valine-api-prod \
@@ -382,7 +382,7 @@ aws lambda update-alias \
 ```
 
 #### Database Rollback
-```bash
+```powershell
 # Rollback migration (if needed)
 cd api
 npx prisma migrate resolve --rolled-back <migration_name>

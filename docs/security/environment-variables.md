@@ -33,7 +33,7 @@ Comprehensive matrix of all environment variables used across Project Valine env
 
 ### Naming Conventions
 
-```bash
+```powershell
 # Format: {SCOPE}_{SERVICE}_{PURPOSE}
 VITE_API_BASE            # Frontend variable (VITE_ prefix for Vite access)
 API_JWT_SECRET           # Backend variable (no prefix)
@@ -66,7 +66,7 @@ All frontend variables must be prefixed with `VITE_` to be accessible in the bro
 | `VITE_APP_VERSION` | 🟢 | *(auto)* | Application version (from package.json) |
 
 **Example `.env.local`** (Development):
-```bash
+```powershell
 # API Configuration
 VITE_API_BASE=http://localhost:3001
 VITE_API_INTEGRATION=false
@@ -97,7 +97,7 @@ VITE_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
 | `ENABLE_REQUEST_LOGGING` | 🟢 | `true` | Log all HTTP requests |
 
 **Example `.env`** (Backend Development):
-```bash
+```powershell
 NODE_ENV=development
 PORT=3001
 API_BASE_URL=http://localhost:3001
@@ -120,7 +120,7 @@ LOG_LEVEL=debug
 | `REDIS_TTL` | 🟢 | `3600` | Default Redis TTL (seconds) |
 
 **Connection String Format**:
-```bash
+```powershell
 # PostgreSQL
 DATABASE_URL=postgresql://username:password@host:5432/database?schema=public
 
@@ -132,12 +132,12 @@ REDIS_URL=redis://username:password@host:6379/0
 ```
 
 **Development**:
-```bash
+```powershell
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/valine_dev
 ```
 
 **Production** (use AWS RDS):
-```bash
+```powershell
 # Store in AWS Secrets Manager
 aws secretsmanager create-secret \
   --name /valine/prod/database-url \
@@ -204,7 +204,7 @@ aws secretsmanager create-secret \
 | `SESSION_COOKIE_SAME_SITE` | 🟢 | `lax` | SameSite cookie attribute |
 
 **Generate Secrets**:
-```bash
+```powershell
 # Generate JWT secret
 openssl rand -base64 32
 
@@ -256,7 +256,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ### Development
 
 **Frontend** (`.env.local`):
-```bash
+```powershell
 # API
 VITE_API_BASE=http://localhost:3001
 VITE_API_INTEGRATION=false
@@ -272,7 +272,7 @@ VITE_ENABLE_CSP=false
 ```
 
 **Backend** (`.env`):
-```bash
+```powershell
 # Core
 NODE_ENV=development
 PORT=3001
@@ -293,7 +293,7 @@ LOG_FORMAT=pretty
 ### Staging
 
 **Frontend** (Amplify environment variables):
-```bash
+```powershell
 VITE_API_BASE=https://api-staging.valine.app
 VITE_API_INTEGRATION=true
 VITE_SANITY_PROJECT_ID=abc123xyz
@@ -304,7 +304,7 @@ VITE_SENTRY_DSN=https://...@sentry.io/...
 ```
 
 **Backend** (AWS Lambda environment variables):
-```bash
+```powershell
 NODE_ENV=staging
 API_BASE_URL=https://api-staging.valine.app
 CORS_ORIGIN=https://staging.valine.app
@@ -334,7 +334,7 @@ CSP_REPORT_ONLY=true
 ### Production
 
 **Frontend** (Amplify environment variables):
-```bash
+```powershell
 VITE_API_BASE=https://api.valine.app
 VITE_API_INTEGRATION=true
 VITE_SANITY_PROJECT_ID=abc123xyz
@@ -346,7 +346,7 @@ VITE_SENTRY_DSN=https://...@sentry.io/...
 ```
 
 **Backend** (AWS Lambda environment variables):
-```bash
+```powershell
 NODE_ENV=production
 API_BASE_URL=https://api.valine.app
 CORS_ORIGIN=https://valine.app,https://www.valine.app
@@ -395,7 +395,7 @@ SESSION_COOKIE_SAME_SITE=strict
 ### AWS Secrets Manager
 
 **Store Secret**:
-```bash
+```powershell
 # Create secret
 aws secretsmanager create-secret \
   --name /valine/prod/jwt-secret \
@@ -436,7 +436,7 @@ export async function getJwtSecret() {
 ### AWS Systems Manager Parameter Store
 
 **Alternative to Secrets Manager** (cheaper for non-rotating secrets):
-```bash
+```powershell
 # Store parameter
 aws ssm put-parameter \
   --name /valine/prod/api-url \
@@ -479,7 +479,7 @@ aws ssm put-parameter \
 
 ### Check Required Variables
 
-```bash
+```powershell
 #!/bin/bash
 # scripts/check-env.sh
 

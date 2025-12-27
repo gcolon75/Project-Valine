@@ -50,7 +50,7 @@
 - ✅ Coverage reporting
 
 **Test Commands:**
-```bash
+```powershell
 npm test              # Watch mode
 npm run test:ui       # UI interface
 npm run test:run      # CI mode
@@ -84,7 +84,7 @@ npm run test:coverage # Coverage report
 #### 1. Configure AWS Infrastructure (~30 minutes)
 
 **Create S3 Bucket:**
-```bash
+```powershell
 # Using AWS CLI
 aws s3 mb s3://project-valine-staging --region us-west-2
 aws s3 website s3://project-valine-staging \
@@ -359,7 +359,7 @@ A **fully functional, production-ready social platform** for voice actors with:
 
 ### Next Command To Run
 
-```bash
+```powershell
 # 1. Add AWS secrets to GitHub (see above)
 
 # 2. Test staging deployment

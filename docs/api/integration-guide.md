@@ -5,7 +5,7 @@ Quick reference for integrating with the Project Valine API.
 ## Quick Start
 
 ### 1. Configure Environment
-```bash
+```powershell
 # Copy example file
 cp .env.local.example .env.local
 
@@ -15,7 +15,7 @@ VITE_ENABLE_AUTH=false
 ```
 
 ### 2. Start Development
-```bash
+```powershell
 # Install dependencies
 npm ci
 

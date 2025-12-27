@@ -31,12 +31,12 @@ The migration has been updated to be **idempotent** using PostgreSQL's condition
 
 If the columns and tables already exist in production (either from a partial migration or manual changes):
 
-```bash
+```powershell
 # 1. Connect to production database
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # 2. Set DATABASE_URL (use your production database URL)
-export DATABASE_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:5432/YOUR_DB_NAME?sslmode=require"
+$env:DATABASE_URL = "postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:5432/YOUR_DB_NAME?sslmode=require"
 
 # 3. Check current migration status
 ./node_modules/.bin/prisma migrate status
@@ -52,12 +52,12 @@ export DATABASE_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:543
 
 If the migration failed partway through and you want to complete it:
 
-```bash
+```powershell
 # 1. Connect to production database
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 # 2. Set DATABASE_URL (use your production database URL)
-export DATABASE_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:5432/YOUR_DB_NAME?sslmode=require"
+$env:DATABASE_URL = "postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:5432/YOUR_DB_NAME?sslmode=require"
 
 # 3. Mark the failed migration as rolled back
 ./node_modules/.bin/prisma migrate resolve --rolled-back "20251224033820_add_post_access_system"
@@ -73,7 +73,7 @@ export DATABASE_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_DB_HOST:543
 
 If you need to manually verify the database state:
 
-```bash
+```powershell
 # 1. Connect to database
 psql "$DATABASE_URL"
 
@@ -99,10 +99,10 @@ cd /home/runner/work/Project-Valine/Project-Valine/serverless
 
 After recovery, verify the schema is correct:
 
-```bash
+```powershell
 # 1. Check migration status
 cd /home/runner/work/Project-Valine/Project-Valine/serverless
-export DATABASE_URL="..."
+$env:DATABASE_URL = "..."
 ./node_modules/.bin/prisma migrate status
 
 # Expected output: All migrations have been applied
@@ -139,7 +139,7 @@ To prevent similar issues in the future:
    - Conditional checks for constraint addition
 
 2. **Test migrations** against a production-like database before deploying:
-   ```bash
+   ```powershell
    # Create a copy of production schema
    pg_dump $PROD_DATABASE_URL --schema-only > prod_schema.sql
    

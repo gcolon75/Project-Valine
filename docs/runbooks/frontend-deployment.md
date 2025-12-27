@@ -33,7 +33,7 @@ Production deployment checklist and procedures for Project Valine frontend appli
 - [x] Repository access with latest code
 
 ### Required Tools
-```bash
+```powershell
 # Verify Node.js (v18+)
 node --version
 # Expected: v18.x.x or v20.x.x
@@ -56,7 +56,7 @@ aws sts get-caller-identity
 
 Create `.env.production` file:
 
-```bash
+```powershell
 # .env.production
 # ============================================
 # Production Frontend Configuration
@@ -120,7 +120,7 @@ Endpoint: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 
 ### 1. Code Quality Checks
 
-```bash
+```powershell
 # Run linter (if configured)
 npm run lint || echo "No lint script configured"
 
@@ -134,30 +134,30 @@ npm run test:run
 
 ### 2. Verify Environment Configuration
 
-```bash
+```powershell
 # Check .env.production exists
 if [ -f .env.production ]; then
   echo "✅ .env.production found"
-  cat .env.production
+  Get-Content .env.production
 else
   echo "❌ .env.production missing!"
   exit 1
 fi
 
 # Verify VITE_API_BASE is API Gateway URL (NOT CloudFront)
-grep "VITE_API_BASE" .env.production | grep -q "execute-api" && \
+Select-String "VITE_API_BASE" .env.production | Select-String -q "execute-api" && \
   echo "✅ VITE_API_BASE correctly set to API Gateway" || \
   echo "❌ WARNING: VITE_API_BASE should be API Gateway URL!"
 
 # Verify registration is disabled
-grep "VITE_ENABLE_REGISTRATION=false" .env.production && \
+Select-String "VITE_ENABLE_REGISTRATION=false" .env.production && \
   echo "✅ Registration disabled" || \
   echo "⚠️ WARNING: Registration may be enabled!"
 ```
 
 ### 3. Review Recent Changes
 
-```bash
+```powershell
 # Check what changed since last deployment
 git log --oneline -10
 
@@ -175,7 +175,7 @@ fi
 
 ### 4. Backup Current Production
 
-```bash
+```powershell
 # Create backup of current production build
 BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
 
@@ -192,7 +192,7 @@ echo "✅ Backup created: s3://valine-frontend-backups/backup-${BACKUP_DATE}/"
 
 ### Step 1: Clean Previous Build
 
-```bash
+```powershell
 # Remove previous build artifacts
 rm -rf dist/
 rm -rf node_modules/.vite/
@@ -202,7 +202,7 @@ echo "✅ Previous build artifacts removed"
 
 ### Step 2: Install Dependencies
 
-```bash
+```powershell
 # Ensure all dependencies are installed
 npm ci
 
@@ -221,7 +221,7 @@ valine-client@0.0.1
 
 ### Step 3: Build for Production
 
-```bash
+```powershell
 # Build with production environment
 NODE_ENV=production npm run build
 
@@ -243,7 +243,7 @@ dist/assets/index-XXXXXXXX.js   XXX.XX kB │ gzip: XX.XX kB
 
 ### Step 4: Verify Build Output
 
-```bash
+```powershell
 # Check dist/ directory structure
 ls -lh dist/
 
@@ -270,21 +270,21 @@ done
 
 > 🔍 **Critical Check**: Ensure build contains correct API Gateway URL.
 
-```bash
+```powershell
 # Search for API Gateway URL in compiled JavaScript
-grep -r "execute-api" dist/assets/*.js && \
+Select-String -r "execute-api" dist/assets/*.js && \
   echo "✅ API Gateway URL found in build" || \
   echo "❌ ERROR: API Gateway URL NOT in build! Check .env.production"
 
 # Verify CloudFront URL is NOT in API calls
-grep -r "https://valine.app/auth" dist/assets/*.js && \
+Select-String -r "https://valine.app/auth" dist/assets/*.js && \
   echo "❌ ERROR: Using CloudFront URL for API!" || \
   echo "✅ Not using CloudFront URL for API"
 ```
 
 ### Step 6: Deploy to S3
 
-```bash
+```powershell
 # Sync build to S3 bucket
 aws s3 sync dist/ s3://valine-frontend-prod/ \
   --region us-west-2 \
@@ -322,7 +322,7 @@ upload: dist/assets/index-def456.css to s3://valine-frontend-prod/assets/index-d
 
 > ⚠️ **Important**: CloudFront cache MUST be invalidated for users to see new version.
 
-```bash
+```powershell
 # Create CloudFront invalidation
 INVALIDATION_ID=$(aws cloudfront create-invalidation \
   --distribution-id dkmxy676d3vgc \
@@ -344,7 +344,7 @@ aws cloudfront get-invalidation \
 - `InProgress` → Wait 1-5 minutes
 - `Completed` → Deployment complete
 
-```bash
+```powershell
 # Wait for invalidation to complete
 while true; do
   STATUS=$(aws cloudfront get-invalidation \
@@ -370,9 +370,9 @@ done
 
 ### Test 1: Homepage Loads
 
-```bash
+```powershell
 # Test homepage
-curl -I https://valine.app
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Expected Response:**
@@ -385,12 +385,12 @@ x-amz-cf-id: ...
 
 ### Test 2: Static Assets Load
 
-```bash
+```powershell
 # Get main JS bundle from homepage
-MAIN_JS=$(curl -s https://valine.app | grep -o 'assets/index-[^"]*\.js' | head -1)
+Invoke-RestMethod -Uri "-s" -Method Get
 
 # Test asset loads
-curl -I "https://valine.app/$MAIN_JS"
+Invoke-RestMethod -Uri "-I" -Method Get
 ```
 
 **Expected Response:**
@@ -402,7 +402,7 @@ cache-control: public, max-age=31536000, immutable
 
 ### Test 3: API Calls Work
 
-```bash
+```powershell
 # Open browser DevTools and check Network tab
 # Visit: https://valine.app
 # Expected API calls should go to:
@@ -410,10 +410,9 @@ cache-control: public, max-age=31536000, immutable
 # ❌ NOT https://valine.app/auth/...
 
 # Test login endpoint directly
-curl -X POST https://valine.app/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"test123"}'
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
 
 **Expected Behavior:**
 - Request goes to API Gateway (visible in Network tab)
@@ -422,9 +421,9 @@ curl -X POST https://valine.app/auth/login \
 
 ### Test 4: Registration is Disabled
 
-```bash
+```powershell
 # Visit signup page (should show message or hide form)
-curl -s https://valine.app/signup | grep -i "registration.*disabled"
+Invoke-RestMethod -Uri "-s" -Method Get
 ```
 
 **Expected:**
@@ -477,15 +476,15 @@ GET https://valine.app/auth/me → 404 Not Found
 - `VITE_API_BASE` set to CloudFront URL instead of API Gateway URL
 
 **Diagnosis:**
-```bash
+```powershell
 # Check what API base was baked into build
-grep -o "VITE_API_BASE[^\"]*" dist/assets/*.js | head -1
+Select-String -o "VITE_API_BASE[^\"]*" dist/assets/*.js | head -1
 ```
 
 **Solution:**
-```bash
+```powershell
 # Update .env.production
-cat > .env.production << 'EOF'
+Get-Content > .env.production << 'EOF'
 VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 VITE_ENABLE_REGISTRATION=false
 EOF
@@ -510,17 +509,12 @@ has been blocked by CORS policy
 - Wrong origin in CORS headers
 
 **Solution:**
-```bash
+```powershell
 # Verify CORS headers from API
-curl -I -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
-  -H "Origin: https://valine.app" \
-  -H "Access-Control-Request-Method: POST"
-
-# Expected headers:
-# access-control-allow-origin: https://valine.app
-# access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
-# access-control-allow-credentials: true
-```
+Invoke-RestMethod -Uri "-I" -Method Get -Headers @{
+    "Origin" = "https://valine.app"
+    "Access-Control-Request-Method" = "POST"
+}```
 
 **If CORS headers missing**, update backend Lambda CORS configuration.
 
@@ -535,7 +529,7 @@ curl -I -X OPTIONS https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/l
 - Browser cache
 
 **Solution:**
-```bash
+```powershell
 # 1. Verify CloudFront invalidation completed
 aws cloudfront get-invalidation \
   --distribution-id dkmxy676d3vgc \
@@ -563,13 +557,13 @@ aws s3 ls s3://valine-frontend-prod/assets/ --recursive | tail -5
 - `VITE_ENABLE_REGISTRATION` not set to false
 
 **Diagnosis:**
-```bash
+```powershell
 # Check build environment
-grep "VITE_ENABLE_REGISTRATION" dist/assets/*.js
+Select-String "VITE_ENABLE_REGISTRATION" dist/assets/*.js
 ```
 
 **Solution:**
-```bash
+```powershell
 # Ensure .env.production has correct setting
 echo "VITE_ENABLE_REGISTRATION=false" >> .env.production
 
@@ -593,7 +587,7 @@ aws cloudfront create-invalidation --distribution-id dkmxy676d3vgc --paths "/*"
 - CloudFront not configured to serve index.html for all routes
 
 **Solution:**
-```bash
+```powershell
 # Verify S3 website hosting configuration
 aws s3api get-bucket-website \
   --bucket valine-frontend-prod \
@@ -627,7 +621,7 @@ ERROR: Top-level await is not available in the configured target environment
 - Missing dependencies
 
 **Solution:**
-```bash
+```powershell
 # 1. Verify Node.js version
 node --version
 # Must be v18+ or v20+
@@ -649,7 +643,7 @@ npm run build
 
 ### Quick Rollback to Previous Version
 
-```bash
+```powershell
 # List available backups
 aws s3 ls s3://valine-frontend-backups/ --region us-west-2
 
@@ -671,7 +665,7 @@ echo "✅ Rolled back to backup: $BACKUP_DATE"
 
 ### Rollback via Git
 
-```bash
+```powershell
 # Find previous working commit
 git log --oneline -10
 
@@ -695,21 +689,21 @@ git checkout main
 
 ### Debug Build Output
 
-```bash
+```powershell
 # Inspect built index.html
-cat dist/index.html
+Get-Content dist/index.html
 
 # Check bundle sizes
 du -sh dist/assets/*
 
 # Verify environment variables were embedded
-strings dist/assets/index-*.js | grep "execute-api"
-strings dist/assets/index-*.js | grep "VITE_ENABLE_REGISTRATION"
+strings dist/assets/index-*.js | Select-String "execute-api"
+strings dist/assets/index-*.js | Select-String "VITE_ENABLE_REGISTRATION"
 ```
 
 ### Verify S3 Bucket Permissions
 
-```bash
+```powershell
 # Check bucket policy
 aws s3api get-bucket-policy \
   --bucket valine-frontend-prod \
@@ -724,7 +718,7 @@ aws s3api get-public-access-block \
 
 ### Monitor CloudFront Access Logs
 
-```bash
+```powershell
 # Enable CloudFront logging (one-time setup)
 aws cloudfront update-distribution \
   --id dkmxy676d3vgc \
@@ -739,9 +733,9 @@ aws s3 ls s3://valine-cloudfront-logs/ --recursive --human-readable \
 
 ## Deployment Checklist (Quick Reference)
 
-```bash
+```powershell
 # Complete deployment checklist
-cat > /tmp/deployment-checklist.md << 'EOF'
+Get-Content > /tmp/deployment-checklist.md << 'EOF'
 ## Frontend Deployment Checklist
 
 - [ ] Code reviewed and merged to main
@@ -762,7 +756,7 @@ cat > /tmp/deployment-checklist.md << 'EOF'
 - [ ] Mobile layout verified
 - [ ] Deployment documented
 EOF
-cat /tmp/deployment-checklist.md
+Get-Content /tmp/deployment-checklist.md
 ```
 
 ---
@@ -771,7 +765,7 @@ cat /tmp/deployment-checklist.md
 
 Save as `deploy-frontend.sh`:
 
-```bash
+```powershell
 #!/bin/bash
 set -e
 
@@ -785,7 +779,7 @@ if [ ! -f .env.production ]; then
 fi
 
 # Verify API base URL
-if ! grep -q "execute-api" .env.production; then
+if ! Select-String -q "execute-api" .env.production; then
   echo "❌ VITE_API_BASE must use API Gateway URL!"
   exit 1
 fi
@@ -838,8 +832,8 @@ echo "💾 Backup: s3://valine-frontend-backups/backup-${BACKUP_DATE}/"
 ```
 
 **Usage:**
-```bash
-chmod +x deploy-frontend.sh
+```powershell
+# Note: chmod not needed in PowerShell
 ./deploy-frontend.sh
 ```
 
@@ -861,7 +855,7 @@ The **Dev Bypass** feature enables rapid UX iteration during local development b
 
 Create or update `.env.local`:
 
-```bash
+```powershell
 # Enable dev bypass (localhost only)
 VITE_ENABLE_DEV_BYPASS=true
 
@@ -871,7 +865,7 @@ VITE_FRONTEND_URL=http://localhost:5173
 
 **Step 2: Start Development Server**
 
-```bash
+```powershell
 npm run dev
 # or
 npm start

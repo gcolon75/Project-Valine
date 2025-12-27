@@ -919,12 +919,12 @@ Blocks are enforced throughout the system to prevent unwanted interactions:
 
 The Prisma schema changes require a database migration:
 
-```bash
+```powershell
 # In the serverless directory
 cd serverless
 
 # Ensure DATABASE_URL is set
-export DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+$env:DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
 
 # Run migration
 npx prisma migrate dev --name social_interactions
@@ -1194,7 +1194,7 @@ Recommended Playwright test scenarios:
 ### Debug Tips
 
 1. **Backend Logs**:
-   ```bash
+   ```powershell
    # Check Lambda logs
    aws logs tail /aws/lambda/pv-api-prod-followProfile --follow
    ```
@@ -1785,12 +1785,12 @@ Phase 2 requires a database migration to add new fields and indexes.
 
 #### Running the Migration
 
-```bash
+```powershell
 # Navigate to serverless directory
 cd serverless
 
 # Ensure DATABASE_URL is set
-export DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+$env:DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
 
 # Run migration in development
 npx prisma migrate dev --name social_phase2_privacy_settings

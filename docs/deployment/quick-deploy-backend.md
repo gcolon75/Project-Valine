@@ -8,14 +8,14 @@
 - ✅ Node.js 20.x installed
 
 ### Step 1: Set Environment (30 seconds)
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/database"
-export AWS_REGION="us-west-2"
-export STAGE="dev"
+```powershell
+$env:DATABASE_URL = "postgresql://user:password@host:5432/database"
+$env:AWS_REGION = "us-west-2"
+$env:STAGE = "dev"
 ```
 
 ### Step 2: Install & Setup (2 minutes)
-```bash
+```powershell
 # Install dependencies
 cd serverless && npm install && cd ../api && npm install && cd ..
 
@@ -27,7 +27,7 @@ cd api && npx prisma migrate deploy && cd ..
 ```
 
 ### Step 3: Deploy (2 minutes)
-```bash
+```powershell
 cd serverless
 npx serverless deploy --stage dev --region us-west-2
 ```
@@ -39,13 +39,13 @@ https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev
 ```
 
 ### Step 5: Test (30 seconds)
-```bash
-export API_BASE="your-api-url-here"
-curl "$API_BASE/health"
+```powershell
+$env:API_BASE = "your-api-url-here"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 ```
 
 ### Step 6: Configure Frontend (30 seconds)
-```bash
+```powershell
 echo "VITE_API_BASE=$API_BASE" > client/.env
 ```
 
@@ -53,15 +53,15 @@ echo "VITE_API_BASE=$API_BASE" > client/.env
 
 ## 📝 Quick Commands
 
-```bash
+```powershell
 # Full deployment from project root
-export DATABASE_URL="postgresql://..."
+$env:DATABASE_URL = "postgresql://..."
 cd api && npx prisma generate && npx prisma migrate deploy && cd ../serverless
 npm install && npx serverless deploy --stage dev
 
 # Test endpoints
-export API_BASE="https://..."
-curl "$API_BASE/health"
+$env:API_BASE = "https://..."
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 cd serverless && ./test-endpoints.sh "$API_BASE"
 
 # View logs

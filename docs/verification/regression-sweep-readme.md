@@ -14,7 +14,7 @@ This comprehensive test suite validates PRs 155-185 for:
 
 ### Prerequisites
 
-```bash
+```powershell
 # Install dependencies
 npm install
 
@@ -24,14 +24,14 @@ npx playwright install chromium webkit firefox
 
 ### Run Full Test Suite
 
-```bash
+```powershell
 # Run the complete regression sweep
 ./tests/e2e/run-regression-sweep.sh
 ```
 
 ### Run Individual Test Suites
 
-```bash
+```powershell
 # Accessibility tests only
 npx playwright test tests/e2e/accessibility-sweep.spec.ts
 
@@ -53,7 +53,7 @@ npx playwright test tests/e2e/onboarding-flow.spec.ts
 
 ### Run Tests for Specific Browser
 
-```bash
+```powershell
 # Run on Chromium only
 npx playwright test --project=chromium
 
@@ -231,7 +231,7 @@ Multi-step onboarding wizard testing:
 
 ### Environment Variables
 
-```bash
+```powershell
 # Base URL for tests
 PW_BASE_URL=http://localhost:3000
 
@@ -267,7 +267,7 @@ playwright-report/
 
 ### HTML Report (Recommended)
 
-```bash
+```powershell
 # Open interactive report
 npx playwright show-report playwright-report
 ```
@@ -281,7 +281,7 @@ The HTML report includes:
 
 ### Generate Markdown Report
 
-```bash
+```powershell
 # Generate consolidated markdown report
 node scripts/generate-regression-report.mjs
 ```
@@ -352,7 +352,7 @@ jobs:
 
 ### Browsers Not Installed
 
-```bash
+```powershell
 npx playwright install chromium webkit firefox --with-deps
 ```
 
@@ -371,13 +371,13 @@ test('my test', async ({ page }) => {
 
 Start manually in a separate terminal:
 
-```bash
+```powershell
 npm run dev
 ```
 
 Then run tests with existing server:
 
-```bash
+```powershell
 PW_BASE_URL=http://localhost:3000 npx playwright test
 ```
 
@@ -385,7 +385,7 @@ PW_BASE_URL=http://localhost:3000 npx playwright test
 
 Update snapshots after intentional changes:
 
-```bash
+```powershell
 npx playwright test --update-snapshots
 ```
 
@@ -393,7 +393,7 @@ npx playwright test --update-snapshots
 
 Set workers to 1 to avoid parallel requests:
 
-```bash
+```powershell
 npx playwright test --workers=1
 ```
 

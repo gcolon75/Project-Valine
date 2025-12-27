@@ -393,27 +393,27 @@ const { data } = useQuery({
 
 ### Deployment Steps
 1. **Apply Migrations**:
-   ```bash
+   ```powershell
    cd api
    npx prisma migrate deploy
    ```
 
 2. **Update Environment**:
-   ```bash
+   ```powershell
    DATABASE_URL=postgresql://...
    PORT=5000
    CORS_ORIGIN=https://app.valine.com
    ```
 
 3. **Start Server**:
-   ```bash
+   ```powershell
    cd server
    npm start
    ```
 
 4. **Verify Endpoints**:
-   ```bash
-   curl https://api.valine.com/health
+   ```powershell
+Invoke-RestMethod -Uri "https://api.valine.com/health" -Method Get
    ```
 
 ### Post-Deployment
@@ -522,7 +522,7 @@ The backend is fully implemented and ready for frontend integration.
 
 ### Applying Migrations
 
-```bash
+```powershell
 # Development
 cd api
 npx prisma migrate dev

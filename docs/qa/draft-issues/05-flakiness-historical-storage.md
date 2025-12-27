@@ -151,7 +151,7 @@ await s3.putObject({
 
 ## Example Usage
 
-```bash
+```powershell
 # Store snapshot (automatic after analysis)
 node scripts/analyze-orchestration-run.mjs 123456 --store-snapshot
 

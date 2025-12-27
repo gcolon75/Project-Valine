@@ -154,7 +154,7 @@ Step-by-step operational procedures for password reset flows in Project Valine.
 ### Procedure
 
 #### 1. Verify Admin Authorization
-```bash
+```powershell
 # Check admin permissions
 SELECT role FROM users WHERE id = ?
 # Must have role = 'admin' or 'support_tier2'
@@ -193,26 +193,26 @@ SELECT role FROM users WHERE id = ?
 
 #### Immediate Actions (0-5 minutes)
 1. **Lock Account**:
-   ```bash
+   ```powershell
    # Set account status to suspended
    psql $DATABASE_URL -c "UPDATE users SET status = 'suspended', suspended_reason = 'security_incident' WHERE id = '${USER_ID}'"
    ```
 
 2. **Invalidate All Sessions**:
-   ```bash
+   ```powershell
    # Clear all active sessions
    psql $DATABASE_URL -c "DELETE FROM user_sessions WHERE user_id = '${USER_ID}'"
    ```
 
 3. **Invalidate API Tokens**:
-   ```bash
+   ```powershell
    # Revoke all API tokens
    psql $DATABASE_URL -c "UPDATE api_tokens SET revoked = true WHERE user_id = '${USER_ID}'"
    ```
 
 #### Investigation (5-30 minutes)
 1. **Review Audit Logs**:
-   ```bash
+   ```powershell
    # Check recent account activity
    psql $DATABASE_URL -c "SELECT * FROM audit_logs WHERE user_id = '${USER_ID}' AND created_at > NOW() - INTERVAL '24 hours' ORDER BY created_at DESC"
    ```
@@ -270,11 +270,9 @@ If you did not initiate these actions, please contact us immediately.
 **Check**:
 1. **Email in spam folder**
 2. **Email service operational**:
-   ```bash
+   ```powershell
    # Check email service health
-   curl -s https://api.sendgrid.com/v3/health || \
-   curl -s https://api.mailgun.net/v3/health
-   ```
+Invoke-RestMethod -Uri "-s" -Method Get```
 3. **Email bounced**:
    ```sql
    SELECT * FROM email_logs 
@@ -313,7 +311,7 @@ If you did not initiate these actions, please contact us immediately.
 - 10 requests per IP per hour
 
 **Override** (admin only):
-```bash
+```powershell
 # Clear rate limit for user
 redis-cli DEL "rate_limit:password_reset:user@example.com"
 ```
@@ -371,7 +369,7 @@ custom:
 ### Logs to Monitor
 
 **Useful Log Queries**:
-```bash
+```powershell
 # Recent password resets
 aws logs filter-log-events \
   --log-group-name /aws/lambda/valine-api-prod \

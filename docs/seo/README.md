@@ -215,26 +215,26 @@ import StructuredData from './seo/StructuredData';
 ### Build Scripts
 
 1. **Pre-build**: Generate assets
-   ```bash
+   ```powershell
    npm run seo:generate
    ```
    - Creates OG image from hero image
    - Generates favicon set from logo
 
 2. **Build**: Standard Vite build
-   ```bash
+   ```powershell
    vite build
    ```
 
 3. **Post-build**: Generate SEO files
-   ```bash
+   ```powershell
    npm run seo:build
    ```
    - Creates `dist/sitemap.xml`
    - Creates `dist/robots.txt`
 
 ### Full Build Command
-```bash
+```powershell
 npm run build
 ```
 This runs: `seo:generate` → `vite build` → `seo:build`
@@ -251,7 +251,7 @@ This runs: `seo:generate` → `vite build` → `seo:build`
 ### Unit Tests
 
 Run all SEO tests:
-```bash
+```powershell
 npm test -- src/seo scripts/seo --run
 ```
 
@@ -267,7 +267,7 @@ npm test -- src/seo scripts/seo --run
 ### SEO Audit
 
 Run automated SEO audit:
-```bash
+```powershell
 # Start dev server first
 npm run dev
 
@@ -341,7 +341,7 @@ npm run seo:audit
 ### Staging Environment
 
 For staging deployments, set:
-```bash
+```powershell
 VITE_IS_STAGING=true
 ```
 
@@ -357,12 +357,12 @@ This will:
 Disable SEO components without code changes:
 
 1. Set environment variable:
-   ```bash
+   ```powershell
    VITE_SEO_ENABLED=false
    ```
 
 2. Rebuild and redeploy
-   ```bash
+   ```powershell
    npm run build
    ```
 
@@ -371,7 +371,7 @@ Disable SEO components without code changes:
 ### Option 2: Remove Sitemap/Robots
 
 1. Delete from build output:
-   ```bash
+   ```powershell
    rm dist/sitemap.xml dist/robots.txt
    ```
 
@@ -379,7 +379,7 @@ Disable SEO components without code changes:
 
 ### Option 3: Full Revert
 
-```bash
+```powershell
 git revert <commit-hash>
 ```
 
@@ -460,7 +460,7 @@ If SEO performance requires:
 **Symptom:** All pages disallowed in production
 
 **Solution:** Verify environment variables
-```bash
+```powershell
 # Should NOT be set in production
 VITE_IS_STAGING=false
 NODE_ENV=production

@@ -99,9 +99,9 @@ formData.banner  → bannerUrl    → profiles.bannerUrl ✅
 ### Before Adding New Fields
 
 1. **Check Prisma schema**:
-   ```bash
+   ```powershell
    cd serverless/prisma
-   grep -i "fieldname" schema.prisma
+   Select-String -i "fieldname" schema.prisma
    ```
 
 2. **Check if field exists in database**:
@@ -113,18 +113,18 @@ formData.banner  → bannerUrl    → profiles.bannerUrl ✅
    ```
 
 3. **Create migration if needed**:
-   ```bash
+   ```powershell
    cd serverless
    npx prisma migrate dev --name add_field_name
    ```
 
 4. **Generate Prisma client**:
-   ```bash
+   ```powershell
    npm run prisma:generate
    ```
 
 5. **Deploy migration**:
-   ```bash
+   ```powershell
    # Staging
    npm run prisma:migrate:deploy -- --preview-feature
    
@@ -211,14 +211,14 @@ formData.banner  → bannerUrl    → profiles.bannerUrl ✅
 ```
 
 **Step 3: Verify Prisma client**
-```bash
+```powershell
 cd serverless
 npm run prisma:generate
 # Should complete without errors
 ```
 
 **Step 4: Test in dev environment**
-```bash
+```powershell
 # 1. Upload avatar
 # 2. Check: users.avatar updated
 # 3. Upload banner
@@ -249,7 +249,7 @@ npm run prisma:generate
 **Cause**: Field not in schema or Prisma client not regenerated
 
 **Fix**:
-```bash
+```powershell
 cd serverless
 npm run prisma:generate
 npm run deploy
@@ -279,7 +279,7 @@ SELECT id, bannerUrl FROM profiles WHERE userId = 'user-id';
 4. Type mismatch (number sent for string field)
 
 **Debug**:
-```bash
+```powershell
 # Check Lambda logs
 aws logs tail /aws/lambda/pv-api-dev-me --follow
 

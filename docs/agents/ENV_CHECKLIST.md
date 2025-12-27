@@ -86,7 +86,7 @@ This document lists all environment variables required for Project Valine across
 ### Local Development
 
 1. Copy the example file:
-   ```bash
+   ```powershell
    cp .env.local.example .env
    ```
 
@@ -99,7 +99,7 @@ This document lists all environment variables required for Project Valine across
 Environment variables are set via:
 
 1. **AWS Systems Manager (SSM) Parameter Store** (recommended for secrets):
-   ```bash
+   ```powershell
    aws ssm put-parameter \
      --name "/valine/dev/JWT_SECRET" \
      --type "SecureString" \
@@ -115,7 +115,7 @@ Environment variables are set via:
    ```
 
 3. **Serverless Framework CLI** (for deployment):
-   ```bash
+   ```powershell
    npx serverless deploy --stage dev
    ```
 
@@ -138,7 +138,7 @@ Environment variables are set via:
 
 To verify environment variables are set correctly:
 
-```bash
+```powershell
 # Backend (Serverless)
 cd serverless
 npx serverless invoke local -f getUser --data '{"pathParameters":{"userId":"test"}}'

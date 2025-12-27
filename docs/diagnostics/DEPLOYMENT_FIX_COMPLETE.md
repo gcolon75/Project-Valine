@@ -29,7 +29,7 @@ Successfully diagnosed and fixed 4 critical issues preventing the Discord bot fr
 ## Technical Details
 
 ### What Was Wrong
-```bash
+```powershell
 # Before: SAM deploy used placeholder values
 parameter_overrides = [
   "DiscordPublicKey=\"REPLACE_WITH_DISCORD_PUBLIC_KEY\""
@@ -37,7 +37,7 @@ parameter_overrides = [
 ```
 
 ### What's Fixed
-```bash
+```powershell
 # After: Workflow explicitly passes secrets
 sam deploy --parameter-overrides \
   "DiscordPublicKey=${STAGING_DISCORD_PUBLIC_KEY}"
@@ -64,17 +64,17 @@ sam deploy --parameter-overrides \
 To verify the fix works:
 
 1. **Trigger Deployment:**
-   ```bash
+   ```powershell
    # Go to GitHub Actions → Deploy Orchestrator → Run workflow
    ```
 
 2. **Check CloudWatch Logs:**
-   ```bash
+   ```powershell
    aws logs tail /aws/lambda/valine-orchestrator-discord-dev --follow
    ```
 
 3. **Test Discord Endpoint:**
-   ```bash
+   ```powershell
    # Discord will send PING request to verify endpoint
    # Should receive PONG response
    ```

@@ -53,7 +53,7 @@ mediaService guards: typeof onProgress === 'function'   // defensive check
 - **See**: docs/schema-validation-profile-media.md
 
 **Debug Steps**:
-```bash
+```powershell
 # 1. Check Lambda logs
 aws logs tail /aws/lambda/pv-api-dev-me --follow
 

@@ -70,12 +70,10 @@ Client                    API                     Database
 ```
 
 **Request:**
-```bash
-curl -X POST https://api.valine.com/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"secret"}' \
-  -c cookies.txt
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"user@example.com","password":"secret"}' -ContentType 'application/json'```
 
 **Response Headers:**
 ```
@@ -110,10 +108,8 @@ Client                    API
 ```
 
 **Request:**
-```bash
-curl https://api.valine.com/auth/me \
-  -b cookies.txt
-```
+```powershell
+Invoke-RestMethod -Uri "https://api.valine.com/auth/me" -Method Get```
 
 The API automatically extracts the access token from the cookie header.
 
@@ -133,11 +129,8 @@ Client                    API
 ```
 
 **Request:**
-```bash
-curl -X POST https://api.valine.com/auth/refresh \
-  -b cookies.txt \
-  -c cookies.txt
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 **Response Headers:**
 ```
@@ -159,10 +152,8 @@ Client                    API
 ```
 
 **Request:**
-```bash
-curl -X POST https://api.valine.com/auth/logout \
-  -b cookies.txt
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 **Response Headers:**
 ```
@@ -219,7 +210,7 @@ This allows developers to test with tools like curl or Postman while production 
 
 ### Backend (serverless/.env)
 
-```bash
+```powershell
 # JWT signing secret (REQUIRED - use strong random value in production)
 JWT_SECRET=your-secret-key-change-in-production
 
@@ -237,7 +228,7 @@ FRONTEND_URL=https://app.yourdomain.com
 
 ### Frontend (client/.env)
 
-```bash
+```powershell
 # Enable cookie-based authentication
 VITE_ENABLE_AUTH=true
 
@@ -326,41 +317,28 @@ axios.defaults.withCredentials = true; // Send cookies
 ### Manual Testing with cURL
 
 **Login:**
-```bash
-curl -X POST http://localhost:3001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password"}' \
-  -c cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"password"}' -ContentType 'application/json'```
 
 **Authenticated Request:**
-```bash
-curl http://localhost:3001/auth/me \
-  -b cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get```
 
 **Refresh Token:**
-```bash
-curl -X POST http://localhost:3001/auth/refresh \
-  -b cookies.txt \
-  -c cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 **Logout:**
-```bash
-curl -X POST http://localhost:3001/auth/logout \
-  -b cookies.txt \
-  -v
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post```
 
 ### Automated Tests
 
 Run the test suite:
 
-```bash
+```powershell
 cd serverless
 npm test tests/auth-cookies.test.js
 npm test tests/auth-endpoints.test.js

@@ -149,7 +149,7 @@ If you have local scripts or documentation that reference old paths:
 - Historical/archived files → `docs/archive/[filename]`
 
 ### Example Updates
-```bash
+```powershell
 # Old path
 git add PHASE5_VALIDATION.md
 

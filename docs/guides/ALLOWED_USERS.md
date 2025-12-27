@@ -49,7 +49,7 @@ ALLOWED_USER_EMAILS=ghawk075@gmail.com,[FRIEND_EMAIL]
    - Add new email, comma-separated
 
 2. **Lambda Environment** (for immediate effect):
-   ```bash
+   ```powershell
    aws lambda update-function-configuration \
      --function-name project-valine-prod-api \
      --environment "Variables={ALLOWED_USER_EMAILS=ghawk075@gmail.com,new@email.com,...}"
@@ -63,7 +63,7 @@ ALLOWED_USER_EMAILS=ghawk075@gmail.com,[FRIEND_EMAIL]
    ```
 
 2. Rebuild and deploy frontend:
-   ```bash
+   ```powershell
    npm run build
    ./scripts/deploy-ux-only.sh
    ```
@@ -72,8 +72,8 @@ ALLOWED_USER_EMAILS=ghawk075@gmail.com,[FRIEND_EMAIL]
 
 Use the admin script to create the account:
 
-```bash
-export DATABASE_URL="postgresql://..."
+```powershell
+$env:DATABASE_URL = "postgresql://..."
 
 node scripts/admin-upsert-user.mjs \
   --email new@email.com \
@@ -179,7 +179,7 @@ When ready to open registration:
 1. Update `VITE_ALLOWED_USER_EMAILS` 
 2. Rebuild and redeploy frontend
 3. Clear CloudFront cache:
-   ```bash
+   ```powershell
    aws cloudfront create-invalidation \
      --distribution-id $CLOUDFRONT_ID \
      --paths "/*"

@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-```bash
+```powershell
 # Verify prerequisites
 node --version          # Should be 20.x or later
 aws sts get-caller-identity  # Should show your AWS account
@@ -27,8 +27,8 @@ aws sts get-caller-identity  # Should show your AWS account
    - Use **Transaction pooler** (port 6543, NOT 5432)
    - Copy URI tab
 4. **Save and Test:**
-   ```bash
-   export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+   ```powershell
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
    echo $DATABASE_URL  # Verify it's set
    psql "$DATABASE_URL" -c "SELECT version();"  # Test connection
    ```
@@ -37,16 +37,16 @@ aws sts get-caller-identity  # Should show your AWS account
 
 ## Step 2: Setup Database (5 min)
 
-```bash
+```powershell
 cd ~/Project-Valine  # Or wherever your repo is
-export DATABASE_URL="..."  # From Step 1
+$env:DATABASE_URL = "..."  # From Step 1"
 ./scripts/deployment/setup-database.sh
 ```
 
 **Expected:** ✅ Database is ready! (5 tables created)
 
 **Verify (optional):**
-```bash
+```powershell
 cd api
 npx prisma studio  # Opens http://localhost:5555
 ```
@@ -55,17 +55,17 @@ npx prisma studio  # Opens http://localhost:5555
 
 ## Step 3: Deploy Backend (10 min)
 
-```bash
+```powershell
 cd ~/Project-Valine
-export DATABASE_URL="..."  # Make sure it's still set
+$env:DATABASE_URL = "..."  # Make sure it's still set"
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 ```
 
 **Expected:** ✅ Backend deployed successfully! + API Gateway URL
 
 **Save API URL:**
-```bash
-export API_BASE="https://[API-ID].execute-api.us-west-2.amazonaws.com/dev"
+```powershell
+$env:API_BASE = "https://[API-ID].execute-api.us-west-2.amazonaws.com/dev"
 echo $API_BASE  # Verify
 ```
 
@@ -73,16 +73,16 @@ echo $API_BASE  # Verify
 
 ## Step 4: Test Endpoints (5 min)
 
-```bash
-export API_BASE="..."  # From Step 3
+```powershell
+$env:API_BASE = "..."  # From Step 3"
 ./scripts/deployment/test-endpoints.sh
 ```
 
 **Expected:** ✅ All tests passing
 
 **Quick manual test:**
-```bash
-curl "$API_BASE/health"
+```powershell
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Should return: {"ok":true,"status":"healthy"}
 ```
 
@@ -91,16 +91,16 @@ curl "$API_BASE/health"
 ## Troubleshooting
 
 ### Database Issues
-```bash
+```powershell
 # Wrong port? Check for :6543 not :5432
-echo $DATABASE_URL | grep ":6543"
+echo $DATABASE_URL | Select-String ":6543"
 
 # Test connection
 psql "$DATABASE_URL" -c "SELECT 1;"
 ```
 
 ### AWS Issues
-```bash
+```powershell
 # Check credentials
 aws sts get-caller-identity
 
@@ -110,12 +110,12 @@ npx serverless logs -f createUser --stage dev --tail
 ```
 
 ### API Issues
-```bash
+```powershell
 # Test health endpoint
-curl "$API_BASE/health"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Check specific endpoint
-curl -v "$API_BASE/users/testuser"
+Invoke-RestMethod -Uri "-v" -Method Get
 ```
 
 ---
@@ -142,7 +142,7 @@ For detailed step-by-step instructions with screenshots and explanations:
 
 ## Common Commands
 
-```bash
+```powershell
 # View Lambda logs
 cd serverless
 npx serverless logs -f FUNCTION_NAME --stage dev --tail
@@ -151,13 +151,9 @@ npx serverless logs -f FUNCTION_NAME --stage dev --tail
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
 
 # Test specific endpoint
-curl -X POST "$API_BASE/users" -H "Content-Type: application/json" \
-  -d '{"username":"test","email":"test@example.com","displayName":"Test User"}'
-
-# View database in browser
-cd api
-npx prisma studio
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'```
 
 ---
 

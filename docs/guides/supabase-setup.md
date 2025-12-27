@@ -79,21 +79,21 @@ Before starting, ensure you have:
 ### Step 1.4: Save and Test Connection
 
 1. **Save Connection String as Environment Variable:**
-   ```bash
-   export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+   ```powershell
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
    ```
    
    **Replace with your actual connection string!**
 
 2. **Verify it's set:**
-   ```bash
+   ```powershell
    echo $DATABASE_URL
    ```
    
    **Expected:** Should display your full connection string
 
 3. **Test Connection:**
-   ```bash
+   ```powershell
    psql "$DATABASE_URL" -c "SELECT version();"
    ```
    
@@ -103,7 +103,7 @@ Before starting, ensure you have:
    ```
 
 4. **If you don't have `psql` installed:**
-   ```bash
+   ```powershell
    # macOS
    brew install postgresql
    
@@ -128,15 +128,15 @@ Now that the database is working, let's set up the schema.
 
 ### Step 2.1: Navigate to Project Directory
 
-```bash
+```powershell
 cd ~/Project-Valine  # Or wherever you cloned the repo
 ```
 
 ### Step 2.2: Ensure DATABASE_URL is Set
 
-```bash
+```powershell
 # If you closed your terminal, set it again
-export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
 # Verify
 echo $DATABASE_URL
@@ -144,7 +144,7 @@ echo $DATABASE_URL
 
 ### Step 2.3: Run Database Setup Script
 
-```bash
+```powershell
 ./scripts/deployment/setup-database.sh
 ```
 
@@ -185,7 +185,7 @@ Next steps:
 ### Step 2.4: Verify Tables Exist
 
 **Option 1: Using Prisma Studio (Visual)**
-```bash
+```powershell
 cd api
 npx prisma studio
 ```
@@ -194,7 +194,7 @@ npx prisma studio
 - Press Ctrl+C to stop when done
 
 **Option 2: Using psql (Command Line)**
-```bash
+```powershell
 psql "$DATABASE_URL" -c "\dt"
 ```
 
@@ -225,7 +225,7 @@ Now let's deploy the Lambda functions and API Gateway.
 
 ### Step 3.1: Verify AWS Credentials
 
-```bash
+```powershell
 aws sts get-caller-identity
 ```
 
@@ -246,12 +246,12 @@ aws sts get-caller-identity
 
 ### Step 3.2: Deploy to AWS
 
-```bash
+```powershell
 # Make sure DATABASE_URL is still set
 echo $DATABASE_URL
 
 # If not set, set it again
-export DATABASE_URL="postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+$env:DATABASE_URL = "postgresql://postgres.[REF]:[PASS]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
 # Deploy
 ./scripts/deployment/deploy-backend.sh --stage dev --region us-west-2
@@ -319,9 +319,9 @@ Next steps:
 
 ### Step 3.3: Save API URL
 
-```bash
+```powershell
 # Copy the base URL from the deployment output (everything before /health)
-export API_BASE="https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://abc123xyz.execute-api.us-west-2.amazonaws.com/dev"
 
 # Verify
 echo $API_BASE
@@ -343,7 +343,7 @@ echo $API_BASE
 
 ### Step 4.1: Quick Automated Test
 
-```bash
+```powershell
 # Ensure API_BASE is set
 echo $API_BASE
 
@@ -395,46 +395,19 @@ Next steps:
 
 If you want to test manually or the automated script had issues:
 
-```bash
+```powershell
 # Set your API_BASE
-export API_BASE="https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
+$env:API_BASE = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com/dev"
 
 # Test 1: Health check
-curl "$API_BASE/health"
+Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Expected: {"ok":true,"status":"healthy"}
 
 # Test 2: Create user
-curl -X POST "$API_BASE/users" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "email": "test@valine.com",
-    "displayName": "Test User",
-    "bio": "Voice actor",
-    "role": "artist"
-  }'
-# Expected: 201 Created with user object
-# Save the user ID from response
-
-# Test 3: Get user
-curl "$API_BASE/users/testuser"
-# Expected: User object with posts array
-
-# Test 4: Create post
-export USER_ID="paste-user-id-here"
-curl -X POST "$API_BASE/posts" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"content\": \"Hello from Project Valine!\",
-    \"media\": [\"https://picsum.photos/400/300\"],
-    \"authorId\": \"$USER_ID\"
-  }"
-# Expected: 201 Created with post object
-
-# Test 5: List posts
-curl "$API_BASE/posts?limit=10"
-# Expected: Array with the post we just created
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "Voice actor", "role": "artist" }' -ContentType 'application/json'```
 
 ✅ **Checkpoint:** All tests passing, all endpoints returning 200/201
 
@@ -451,37 +424,37 @@ curl "$API_BASE/posts?limit=10"
 ### Database Connection Issues
 
 **Verify DATABASE_URL format:**
-```bash
+```powershell
 echo $DATABASE_URL
 ```
 
 Must be: `postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:6543/postgres`
 
 **Check port is 6543 (pooler), not 5432:**
-```bash
-echo $DATABASE_URL | grep -o ":[0-9]*/" 
+```powershell
+echo $DATABASE_URL | Select-String -o ":[0-9]*/" 
 # Should show: :6543/
 ```
 
 **Test connection:**
-```bash
+```powershell
 psql "$DATABASE_URL" -c "SELECT 1;"
 ```
 
 ### AWS Deployment Issues
 
 **Check AWS credentials:**
-```bash
+```powershell
 aws sts get-caller-identity
 ```
 
 **View CloudFormation stack:**
-```bash
+```powershell
 aws cloudformation describe-stacks --stack-name pv-api-dev --region us-west-2
 ```
 
 **View Lambda logs:**
-```bash
+```powershell
 cd serverless
 npx serverless logs -f createUser --stage dev --region us-west-2 --tail
 ```
@@ -489,7 +462,7 @@ npx serverless logs -f createUser --stage dev --region us-west-2 --tail
 ### API Errors
 
 **Check if Lambda has DATABASE_URL:**
-```bash
+```powershell
 aws lambda get-function-configuration \
   --function-name pv-api-dev-createUser \
   --query 'Environment.Variables.DATABASE_URL' \
@@ -497,21 +470,23 @@ aws lambda get-function-configuration \
 ```
 
 **Test Lambda directly:**
-```bash
+```powershell
 cd serverless
 npx serverless invoke -f createUser --stage dev --data '{"body":"{\"username\":\"test2\",\"email\":\"test2@example.com\",\"displayName\":\"Test 2\"}"}'
 ```
 
 **View all logs:**
-```bash
+```powershell
 aws logs tail /aws/lambda/pv-api-dev-createUser --follow
 ```
 
 ### CORS Issues
 
 **Test OPTIONS request:**
-```bash
-curl -X OPTIONS "$API_BASE/users" -H "Origin: http://localhost:5173" -i
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+    "Origin" = "http://localhost:5173"
+}
 ```
 
 **Should see headers:**
@@ -543,12 +518,12 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 Once all tests pass, you're ready to:
 
 1. **Configure Frontend:**
-   ```bash
+   ```powershell
    ./scripts/deployment/configure-frontend.sh --api-url "$API_BASE"
    ```
 
 2. **Run Frontend Locally:**
-   ```bash
+   ```powershell
    npm run dev
    ```
 

@@ -509,31 +509,20 @@ Common HTTP status codes:
 
 ### Using cURL
 
-```bash
+```powershell
 # Health check
-curl https://api-url/health
+Invoke-RestMethod -Uri "https://api-url/health" -Method Get
 
 # Create user
-curl -X POST https://api-url/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test","email":"test@example.com","displayName":"Test User"}'
-
-# Get user
-curl https://api-url/users/test
-
-# Create post
-curl -X POST https://api-url/posts \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Hello world!","authorId":"user-id"}'
-
-# List posts
-curl https://api-url/posts?limit=10
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+    "Content-Type" = "application/json"
+} -Body '{"username":"test","email":"test@example.com","displayName":"Test User"}' -ContentType 'application/json'```
 
 ### Using the Test Script
 
-```bash
-export API_BASE="https://your-api-url.amazonaws.com/dev"
+```powershell
+$env:API_BASE = "https://your-api-url.amazonaws.com/dev"
 ./scripts/deployment/test-endpoints.sh
 ```
 
@@ -591,7 +580,7 @@ Prisma creates a connection pool. For serverless environments:
 
 View Lambda logs:
 
-```bash
+```powershell
 cd serverless
 npx serverless logs -f getUser --stage dev --tail
 ```

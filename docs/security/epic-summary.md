@@ -194,7 +194,7 @@ ALTER TABLE users ADD COLUMN twoFactorSecret TEXT;
 
 All features use feature flags and are **disabled by default**:
 
-```bash
+```powershell
 # Authentication
 JWT_SECRET=<required>
 JWT_EXPIRES_IN=7d

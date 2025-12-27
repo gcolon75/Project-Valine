@@ -1,10 +1,13 @@
 # Post-Merge Verification Guide
 
+> **Note**: This documentation uses PowerShell commands. Archived documentation may contain bash examples for historical reference.
+
+
 ## Quick Reference
 
 ### Run Verification
 
-```bash
+```powershell
 # Quick run
 npm run verify:post-merge
 
@@ -14,15 +17,15 @@ node scripts/post-merge-comprehensive-verification.js
 
 ### View Results
 
-```bash
+```powershell
 # Main report
-cat logs/verification/verification-report.md
+Get-Content logs/verification/verification-report.md
 
 # Draft PRs
-cat logs/verification/artifacts/draft-prs.json
+Get-Content logs/verification/artifacts/draft-prs.json
 
 # Vulnerability details
-cat logs/verification/artifacts/npm-audit.json
+Get-Content logs/verification/artifacts/npm-audit.json
 ```
 
 ## What Gets Verified
@@ -123,7 +126,7 @@ cat logs/verification/artifacts/npm-audit.json
 
 ### Scenario 1: After Merging PRs
 
-```bash
+```powershell
 # Run verification
 npm run verify:post-merge
 
@@ -131,12 +134,12 @@ npm run verify:post-merge
 less logs/verification/verification-report.md
 
 # If recommendations exist
-cat logs/verification/artifacts/draft-prs.json
+Get-Content logs/verification/artifacts/draft-prs.json
 ```
 
 ### Scenario 2: Before Production Deploy
 
-```bash
+```powershell
 # Clean previous results
 rm -rf logs/verification
 
@@ -144,20 +147,20 @@ rm -rf logs/verification
 npm run verify:post-merge
 
 # Check for critical issues
-grep -i "critical" logs/verification/verification-report.md
+Select-String -i "critical" logs/verification/verification-report.md
 ```
 
 ### Scenario 3: Security Audit
 
-```bash
+```powershell
 # Run verification
 npm run verify:post-merge
 
 # Check secret scan results
-grep -A 20 "Secret Scan" logs/verification/verification-report.md
+Select-String -A 20 "Secret Scan" logs/verification/verification-report.md
 
 # Review vulnerabilities
-cat logs/verification/artifacts/npm-audit.json
+Get-Content logs/verification/artifacts/npm-audit.json
 ```
 
 ### Scenario 4: CI/CD Integration
@@ -180,7 +183,7 @@ on:
 
 **Solution**: Update package-lock.json
 
-```bash
+```powershell
 npm install
 npm audit fix
 npm run verify:post-merge
@@ -191,8 +194,8 @@ npm run verify:post-merge
 **Cause**: PRs must mention #155-185 in commit message
 
 **Check**:
-```bash
-git log --all --grep="#155" --oneline
+```powershell
+git log --all --Select-String="#155" --oneline
 ```
 
 ### Issue: "Tests timeout"
@@ -257,7 +260,7 @@ report += `- Custom check: ${customValue}\n`
 
 ### Pre-commit Hook
 
-```bash
+```powershell
 # .git/hooks/pre-push
 #!/bin/bash
 npm run verify:post-merge
@@ -296,7 +299,7 @@ verification:
 
 ### 1. Run After Major Merges
 
-```bash
+```powershell
 # After merging feature branch
 git checkout main
 git pull origin main
@@ -305,15 +308,15 @@ npm run verify:post-merge
 
 ### 2. Review Security Findings Privately
 
-```bash
+```powershell
 # Check for secrets (private review)
-cat logs/verification/artifacts/draft-prs.json | \
+Get-Content logs/verification/artifacts/draft-prs.json | \
   jq '.[] | select(.priority=="critical")'
 ```
 
 ### 3. Track Verification History
 
-```bash
+```powershell
 # Save report with timestamp
 cp logs/verification/verification-report.md \
    docs/verification-reports/report-$(date +%Y%m%d).md
@@ -321,9 +324,9 @@ cp logs/verification/verification-report.md \
 
 ### 4. Automate Fix PRs
 
-```bash
+```powershell
 # Use draft PRs as templates
-cat logs/verification/artifacts/draft-prs.json | \
+Get-Content logs/verification/artifacts/draft-prs.json | \
   jq -r '.[0] | "git checkout -b \(.branch)"'
 ```
 

@@ -156,47 +156,43 @@ if (storedTheme && ['light', 'dark'].includes(storedTheme)) {
 ### Manual Testing with curl
 
 **1. GET without authentication (should return 401):**
-```bash
-curl -X GET http://localhost:5000/api/me/preferences
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get
 ```
 
 **2. GET with authentication:**
-```bash
-curl -X GET http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token"
-```
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get -Headers @{
+    "Authorization" = "Bearer dev-token"
+}```
 
 **3. PATCH theme to "light":**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "light"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "light"}' -ContentType 'application/json'```
 
 **4. PATCH theme to "dark":**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "dark"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "dark"}' -ContentType 'application/json'```
 
 **5. PATCH with invalid theme (should return 400):**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": "invalid"}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": "invalid"}' -ContentType 'application/json'```
 
 **6. PATCH to clear theme (set to null):**
-```bash
-curl -X PATCH http://localhost:5000/api/me/preferences \
-  -H "Authorization: Bearer dev-token" \
-  -H "Content-Type: application/json" \
-  -d '{"theme": null}'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+    "Authorization" = "Bearer dev-token"
+    "Content-Type" = "application/json"
+} -Body '{"theme": null}' -ContentType 'application/json'```
 
 ### Contract Tests
 

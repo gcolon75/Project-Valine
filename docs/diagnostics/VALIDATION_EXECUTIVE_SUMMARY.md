@@ -74,7 +74,7 @@ This validation confirms that **all Phases 1-5 of the Project Valine orchestrato
 
 ## Test Execution Results
 
-```bash
+```powershell
 $ python3 -m pytest tests/ -v
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-8.4.2, pluggy-1.6.0

@@ -36,11 +36,11 @@ Operational runbook for the **Orchestrate Verification and Sweep** workflow, whi
 
 ### Local Testing (Optional)
 Before running the workflow, you can test locally:
-```bash
+```powershell
 # Set environment variables
-export STAGING_URL="https://staging.valine.app"
-export TEST_USER_EMAIL="test@example.com"
-export TEST_USER_PASSWORD="SecureTestPass123!"
+$env:STAGING_URL = "https://staging.valine.app"
+$env:TEST_USER_EMAIL = "test@example.com"
+$env:TEST_USER_PASSWORD = "SecureTestPass123!"
 
 # Run verification
 npm run verify:post-merge
@@ -151,7 +151,7 @@ You should see:
 
 ### Via GitHub CLI (gh)
 
-```bash
+```powershell
 # Run on main branch with description
 gh workflow run "Orchestrate Verification and Sweep" \
   --ref main \
@@ -171,18 +171,13 @@ gh run watch
 
 ### Via GitHub API
 
-```bash
+```powershell
 # Get workflow ID
-curl -H "Authorization: token YOUR_TOKEN" \
-  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows
-
-# Trigger workflow
-curl -X POST \
-  -H "Authorization: token YOUR_TOKEN" \
-  -H "Accept: application/vnd.github.v3+json" \
-  https://api.github.com/repos/gcolon75/Project-Valine/actions/workflows/orchestrate-verification-and-sweep.yml/dispatches \
-  -d '{"ref":"main","inputs":{"description":"API triggered run"}}'
-```
+Invoke-RestMethod -Uri "-H" -Method Post -Headers @{
+    "Authorization" = "token YOUR_TOKEN"
+    "Authorization" = "token YOUR_TOKEN"
+    "Accept" = "application/vnd.github.v3+json"
+} -Body '{"ref":"main","inputs":{"description":"API triggered run"}}' -ContentType 'application/json'```
 
 ---
 
@@ -239,7 +234,7 @@ playwright-report/
    - Trace viewer (timeline, network, console)
 
 **Accessing Traces**:
-```bash
+```powershell
 # Install Playwright if not already installed
 npm install -D @playwright/test
 
@@ -281,9 +276,9 @@ REGRESSION_SWEEP_REPORT.md  # Consolidated report
 Before running the workflow, verify staging health:
 
 #### 1. Staging Availability
-```bash
+```powershell
 # Check if staging is accessible
-curl -I https://staging.valine.app
+Invoke-RestMethod -Uri "-I" -Method Get
 
 # Expected response:
 # HTTP/2 200
@@ -292,67 +287,40 @@ curl -I https://staging.valine.app
 ```
 
 #### 2. API Health Check
-```bash
+```powershell
 # Check API endpoint
-curl https://staging.valine.app/api/health
+Invoke-RestMethod -Uri "https://staging.valine.app/api/health" -Method Get
 
 # Expected response:
 # {"status":"healthy","version":"x.x.x","timestamp":"2025-11-06T..."}
 ```
 
 #### 3. Authentication Service
-```bash
+```powershell
 # Test login endpoint availability
-curl -X POST https://staging.valine.app/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"dummy"}'
-
-# Expected response (even with wrong creds):
-# {"success":false,"error":"Invalid credentials"}
-# (Should NOT get connection refused or 502)
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{"email":"test@example.com","password":"dummy"}' -ContentType 'application/json'```
 
 ### Login Verification Commands
 
 Test authentication with configured test user:
 
 #### Valid Login Test
-```bash
+```powershell
 # Replace with your actual test credentials
-curl -X POST https://staging.valine.app/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "'"$TEST_USER_EMAIL"'",
-    "password": "'"$TEST_USER_PASSWORD"'"
-  }'
-
-# Expected successful response:
-# {
-#   "success": true,
-#   "token": "eyJhbGciOiJIUzI1NiIs...",
-#   "user": {
-#     "id": "usr_abc123",
-#     "email": "qa-tester@valine.app",
-#     "username": "qa-tester"
-#   }
-# }
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "' -ContentType 'application/json'```
 
 #### Session Validation
-```bash
+```powershell
 # Use token from login response
 TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
-curl https://staging.valine.app/api/auth/me \
-  -H "Authorization: Bearer $TOKEN"
-
-# Expected response:
-# {
-#   "id": "usr_abc123",
-#   "email": "qa-tester@valine.app",
-#   "emailVerified": true
-# }
-```
+Invoke-RestMethod -Uri "https://staging.valine.app/api/auth/me" -Method Get -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+}```
 
 ---
 
@@ -442,9 +410,9 @@ For each failure:
 1. **Review test output** in artifacts
 2. **View screenshots/traces** in Playwright report
 3. **Reproduce locally** if needed:
-   ```bash
-   export STAGING_URL="https://staging.valine.app"
-   npm run test:e2e -- --grep "test-name"
+   ```powershell
+$env:STAGING_URL = "https://staging.valine.app"
+   npm run test:e2e -- --Select-String "test-name"
    ```
 4. **Determine root cause**:
    - Is it a real bug? → Create issue
@@ -608,11 +576,11 @@ Status: 401 Unauthorized
 **Problem**: Tests fail inconsistently
 
 **Investigation**:
-```bash
+```powershell
 # Run test multiple times locally
 for i in {1..5}; do
   echo "Run $i"
-  npm run test:e2e -- --grep "flaky-test"
+  npm run test:e2e -- --Select-String "flaky-test"
 done
 ```
 
@@ -654,7 +622,7 @@ done
 
 ### Common Commands
 
-```bash
+```powershell
 # Verify secrets locally (requires GitHub CLI)
 gh secret list
 

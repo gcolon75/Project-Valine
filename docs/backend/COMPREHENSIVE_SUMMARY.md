@@ -268,7 +268,7 @@ Project-Valine/
 
 ### Build & Development
 
-```bash
+```powershell
 npm run dev           # Start dev server (Vite, localhost:5173)
 npm run build         # Production build
 npm run preview       # Preview production build
@@ -279,7 +279,7 @@ npm run test:coverage # Generate coverage report
 
 ### Pre-Deployment & Validation
 
-```bash
+```powershell
 node scripts/verify-predeploy.mjs      # Pre-deployment checks
 node scripts/verify-env-contract.mjs   # Validate env vars
 node scripts/secret-audit.mjs          # Scan for secrets
@@ -288,7 +288,7 @@ node scripts/prisma-optimize.mjs       # Optimize Prisma binaries
 
 ### API & Auth Diagnostics
 
-```bash
+```powershell
 node scripts/validate-api-base.js      # Validate API config
 node scripts/scan-api-base.js          # Scan for stale hosts
 node scripts/check-auth-backend.js     # Auth connectivity check
@@ -296,7 +296,7 @@ node scripts/check-auth-backend.js     # Auth connectivity check
 
 ### Deployment
 
-```bash
+```powershell
 ./scripts/deployment/deploy-backend.sh    # Deploy serverless backend
 ./scripts/deployment/deploy-frontend.sh   # Deploy frontend to S3
 ./scripts/verify-deployment.sh            # Verify deployment
@@ -304,7 +304,7 @@ node scripts/check-auth-backend.js     # Auth connectivity check
 
 ### Admin & Maintenance
 
-```bash
+```powershell
 node scripts/admin-set-password.mjs    # Set user password
 node scripts/admin-upsert-user.mjs     # Create/update user
 node scripts/setup-test-users.mjs      # Create test accounts
@@ -312,7 +312,7 @@ node scripts/setup-test-users.mjs      # Create test accounts
 
 ### Testing & Analysis
 
-```bash
+```powershell
 node scripts/analyze-test-failures.mjs # Analyze test results
 node scripts/generate-sri.js           # Generate SRI hashes
 npm run verify:sri                     # Verify SRI integrity
@@ -397,7 +397,7 @@ npm run verify:sri                     # Verify SRI integrity
 
 ### For Development
 
-```bash
+```powershell
 # 1. Clone and install
 git clone https://github.com/gcolon75/Project-Valine.git
 cd Project-Valine
@@ -413,13 +413,13 @@ npm run dev
 
 ### For Backend Development
 
-```bash
+```powershell
 # 1. Install serverless dependencies
 cd serverless
 npm install
 
 # 2. Configure database
-export DATABASE_URL="postgresql://user:pass@host:5432/db"
+$env:DATABASE_URL = "postgresql://user:pass@host:5432/db"
 
 # 3. Generate Prisma client
 npm run prisma:generate
@@ -430,7 +430,7 @@ npx serverless invoke local -f api
 
 ### For Deployment
 
-```bash
+```powershell
 # Pre-deployment checks
 node scripts/verify-predeploy.mjs
 
@@ -508,7 +508,7 @@ When working on this repository:
 
 ### Testing Changes
 
-```bash
+```powershell
 # Frontend tests
 npm run test
 

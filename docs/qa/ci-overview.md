@@ -177,7 +177,7 @@ This document provides an overview of the Continuous Integration and Continuous 
 
 All workflows support `workflow_dispatch` for manual execution:
 
-```bash
+```powershell
 # Via GitHub UI: Actions tab → Select workflow → Run workflow
 
 # Via GitHub CLI
@@ -194,7 +194,7 @@ gh workflow run security-audit.yml
 
 ### Running Tests Locally
 
-```bash
+```powershell
 # Run all tests
 npm run test:run
 
@@ -210,7 +210,7 @@ npm run test:ui
 
 ### Running Build Checks
 
-```bash
+```powershell
 # Build the application
 npm run build
 
@@ -226,7 +226,7 @@ npm run build:analyze
 
 ### Running Accessibility Checks
 
-```bash
+```powershell
 # Install dependencies
 npm ci
 
@@ -242,7 +242,7 @@ node scripts/run-axe-audit.js  # If script exists
 
 ### Running Lighthouse Locally
 
-```bash
+```powershell
 # Install Lighthouse CI
 npm install --no-save @lhci/cli
 

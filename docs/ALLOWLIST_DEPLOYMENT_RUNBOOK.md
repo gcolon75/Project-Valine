@@ -20,17 +20,17 @@ This runbook provides step-by-step procedures for deploying and verifying the em
 ### Required Tools
 
 - **AWS CLI** (version 2.0+)
-  ```bash
+  ```powershell
   aws --version
   ```
 
 - **Node.js** (version 18+)
-  ```bash
+  ```powershell
   node --version
   ```
 
 - **PowerShell** (for Windows scripts) or **Bash** (for Unix scripts)
-  ```bash
+  ```powershell
   pwsh --version  # PowerShell
   bash --version  # Bash
   ```
@@ -46,12 +46,12 @@ This runbook provides step-by-step procedures for deploying and verifying the em
 Ensure these are set before deployment:
 
 **Backend** (in serverless deployment context):
-```bash
+```powershell
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
 **Frontend** (in build context):
-```bash
+```powershell
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
@@ -80,15 +80,15 @@ $env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 
 #### Option 2: Unix/Linux/macOS (Bash)
 
-```bash
+```powershell
 # Navigate to project root
 cd /path/to/Project-Valine
 
 # Set environment variable (if not in .env)
-export ALLOWED_USER_EMAILS="ghawk075@gmail.com,valinejustin@gmail.com"
+$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 
 # Make script executable (first time only)
-chmod +x scripts/deploy-backend.sh
+# Note: chmod not needed in PowerShell
 
 # Run deployment script
 ./scripts/deploy-backend.sh
@@ -104,7 +104,7 @@ chmod +x scripts/deploy-backend.sh
 
 If deployment scripts fail, use serverless CLI directly:
 
-```bash
+```powershell
 cd serverless
 npm ci
 npx serverless deploy --verbose
@@ -120,9 +120,9 @@ npx serverless deploy --verbose
 
 #### Build with Allowlist Validation
 
-```bash
+```powershell
 # Set environment variable
-export VITE_ALLOWED_USER_EMAILS="ghawk075@gmail.com,valinejustin@gmail.com"
+$env:VITE_ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 
 # Build (includes prebuild validation)
 npm run build
@@ -132,7 +132,7 @@ npm run build
 
 #### Deploy to CloudFront
 
-```bash
+```powershell
 # Deploy built assets (example)
 aws s3 sync dist/ s3://your-bucket/ --delete
 
@@ -158,8 +158,8 @@ Write-Host "Misconfigured: $($json.allowlistMisconfigured)"
 ```
 
 **Bash**:
-```bash
-curl -s https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health | jq '{allowlistActive, allowlistCount, allowlistMisconfigured}'
+```powershell
+Invoke-RestMethod -Uri "-s" -Method Get
 ```
 
 **Expected Response**:
@@ -246,16 +246,10 @@ Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/a
 ```
 
 **Bash**:
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "ghawk075@gmail.com",
-    "password": "TestPassword123!",
-    "username": "testuser",
-    "displayName": "Test User"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "ghawk075@gmail.com", "password": "TestPassword123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
 
 **Expected**: 201 Created or 409 Conflict (if already exists)
 
@@ -278,16 +272,10 @@ Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/a
 ```
 
 **Bash**:
-```bash
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "unauthorized@example.com",
-    "password": "TestPassword123!",
-    "username": "unauthorized",
-    "displayName": "Unauthorized User"
-  }'
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "email": "unauthorized@example.com", "password": "TestPassword123!", "username": "unauthorized", "displayName": "Unauthorized User" }' -ContentType 'application/json'```
 
 **Expected**: 403 Forbidden with response:
 ```json
@@ -301,7 +289,7 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/registe
 
 Check for structured logging of denial events:
 
-```bash
+```powershell
 # Query CloudWatch Logs Insights
 aws logs start-query \
   --log-group-name /aws/lambda/pv-api-prod-register \
@@ -358,7 +346,7 @@ If `/health` returns `{"status":"ok"}` without allowlist fields:
 **Solution**:
 1. Verify you're on the correct branch with the updated health handler
 2. Rebuild and redeploy backend:
-   ```bash
+   ```powershell
    cd serverless
    npm ci
    npx serverless deploy --force
@@ -403,7 +391,9 @@ If you see `503 Service temporarily unavailable: configuration error`:
 **Solution**: Use PowerShell-native commands:
 ```powershell
 # ✗ Don't use this in PowerShell
-curl -H "Content-Type: application/json" -d '...' https://api/endpoint
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Content-Type" = "application/json"
+} -Body '...' -ContentType 'application/json'
 
 # ✓ Use this instead
 Invoke-WebRequest -Uri "https://api/endpoint" `
@@ -419,9 +409,9 @@ Invoke-WebRequest -Uri "https://api/endpoint" `
 **Cause**: `VITE_ALLOWED_USER_EMAILS` not set during build.
 
 **Solution**:
-```bash
+```powershell
 # Set before build
-export VITE_ALLOWED_USER_EMAILS="ghawk075@gmail.com,valinejustin@gmail.com"
+$env:VITE_ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 npm run build
 ```
 
@@ -455,7 +445,7 @@ VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 To disable allowlist enforcement without reverting code:
 
 1. **Set ENABLE_REGISTRATION to true**:
-   ```bash
+   ```powershell
    aws lambda update-function-configuration \
      --function-name pv-api-prod-register \
      --environment "Variables={ENABLE_REGISTRATION=true,...}"
@@ -473,19 +463,19 @@ To disable allowlist enforcement without reverting code:
 If allowlist deployment causes critical issues:
 
 1. **Revert Git commit**:
-   ```bash
+   ```powershell
    git revert <commit-hash>
    git push origin main
    ```
 
 2. **Redeploy backend**:
-   ```bash
+   ```powershell
    cd serverless
    npx serverless deploy --force
    ```
 
 3. **Rebuild and redeploy frontend**:
-   ```bash
+   ```powershell
    npm run build
    # Deploy to S3/CloudFront
    ```

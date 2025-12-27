@@ -17,7 +17,7 @@ Want to run the Phase 5 Triage Agent on PR #58 right now? Here's how:
 
 ### Option 2: GitHub CLI (Terminal)
 
-```bash
+```powershell
 gh workflow run phase5-triage-agent.yml \
   --ref main \
   --field pr_number=58 \
@@ -27,8 +27,8 @@ gh workflow run phase5-triage-agent.yml \
 
 ### Option 3: Python Script
 
-```bash
-export GITHUB_TOKEN="your_personal_access_token"
+```powershell
+$env:GITHUB_TOKEN = "your_personal_access_token"
 cd orchestrator/scripts
 python phase5_triage_agent.py run \
   --repo gcolon75/Project-Valine \
@@ -74,12 +74,12 @@ You'll get:
 
 Want more control? See full options:
 
-```bash
+```powershell
 python phase5_triage_agent.py run --help
 ```
 
 **Dry run** (safe preview):
-```bash
+```powershell
 python phase5_triage_agent.py run \
   --repo gcolon75/Project-Valine \
   --failure-ref 58 \
@@ -88,7 +88,7 @@ python phase5_triage_agent.py run \
 ```
 
 **Triage only** (no changes):
-```bash
+```powershell
 python phase5_triage_agent.py run \
   --repo gcolon75/Project-Valine \
   --failure-ref 58

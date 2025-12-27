@@ -342,7 +342,7 @@ PATCH /access-requests/{id}
 
 ### Environment Variables
 
-```bash
+```powershell
 # S3 Configuration
 S3_BUCKET_NAME=valine-media-production
 S3_REGION=us-east-1

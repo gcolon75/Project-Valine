@@ -339,7 +339,7 @@ const handleReelUpload = async (file, onProgress) => {
 ### Unit Tests
 
 Run tests with:
-```bash
+```powershell
 npm test src/services/__tests__/mediaService.test.js
 npm test src/pages/__tests__/ProfileEdit.upload.test.jsx
 ```
@@ -347,34 +347,27 @@ npm test src/pages/__tests__/ProfileEdit.upload.test.jsx
 ### Manual Testing
 
 1. **Get presigned URL:**
-```bash
+```powershell
 PROFILE_ID="your-profile-id"
 TOKEN="your-auth-token"
 
-RESPONSE=$(curl -X POST https://api-url/profiles/$PROFILE_ID/media/upload-url \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type": "video", "title": "Demo Reel"}')
-
-UPLOAD_URL=$(echo $RESPONSE | jq -r '.uploadUrl')
-MEDIA_ID=$(echo $RESPONSE | jq -r '.mediaId')
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{"type": "video", "title": "Demo Reel"}' -ContentType 'application/json'```
 
 2. **Upload to S3:**
-```bash
-curl -X PUT "$UPLOAD_URL" \
-  -H "Content-Type: video/mp4" \
-  --upload-file my-video.mp4 \
-  --progress-bar
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+    "Content-Type" = "video/mp4"
+}```
 
 3. **Mark complete:**
-```bash
-curl -X POST https://api-url/profiles/$PROFILE_ID/media/complete \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"mediaId\": \"$MEDIA_ID\", \"fileSize\": 10485760}"
-```
+```powershell
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{\' -ContentType 'application/json'```
 
 ## Security Considerations
 

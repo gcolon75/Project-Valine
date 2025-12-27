@@ -144,7 +144,7 @@ fields @timestamp, ip
 ### Phase 1: Detection & Assessment (0-5 minutes)
 
 #### 1.1 Confirm Incident
-```bash
+```powershell
 # Check recent failed logins
 aws logs filter-log-events \
   --log-group-name /aws/lambda/valine-api-prod \
@@ -188,36 +188,18 @@ EOF
 - Contained to single IP/account
 
 #### 1.3 Alert Team
-```bash
+```powershell
 # Post to incident channel
-curl -X POST $SLACK_WEBHOOK_URL \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "text": "🚨 P1 Security Incident: Authentication Abuse Detected",
-    "attachments": [{
-      "color": "danger",
-      "fields": [
-        {"title": "Type", "value": "Brute Force / Credential Stuffing", "short": true},
-        {"title": "Severity", "value": "P1", "short": true},
-        {"title": "Failed Attempts", "value": "1,247 in last 10 min", "short": true},
-        {"title": "Affected IPs", "value": "3 primary IPs", "short": true}
-      ]
-    }]
-  }'
-
-# Page on-call engineer
-aws sns publish \
-  --topic-arn arn:aws:sns:us-east-1:123456789:security-incidents \
-  --subject "P1 Security: Auth Abuse Detected" \
-  --message "Authentication abuse detected. Failed logins: 1,247 in 10min. Respond immediately."
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Content-Type" = "application/json"
+} -Body '{ "text": "🚨 P1 Security Incident: Authentication Abuse Detected", "attachments": [{ "color": "danger", "fields": [ {"title": "Type", "value": "Brute Force / Credential Stuffing", "short": true}, {"title": "Severity", "value": "P1", "short": true}, {"title": "Failed Attempts", "value": "1,247 in last 10 min", "short": true}, {"title": "Affected IPs", "value": "3 primary IPs", "short": true} ] }] }' -ContentType 'application/json'```
 
 ### Phase 2: Containment (5-15 minutes)
 
 #### 2.1 Block Attack Sources
 
 **Block by IP** (immediate):
-```bash
+```powershell
 # Add to WAF block list
 aws wafv2 update-ip-set \
   --name valine-blocked-ips \
@@ -252,7 +234,7 @@ if (blockedUserAgents.some(ua => ua.test(req.headers['user-agent']))) {
 ```
 
 **Block by Geographic Location** (if attack from specific region):
-```bash
+```powershell
 # Block country in CloudFront
 aws cloudfront update-distribution \
   --id $DISTRIBUTION_ID \

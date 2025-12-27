@@ -40,9 +40,9 @@ This specification defines a comprehensive 8-phase improvement plan for the Join
 - `package.json` - Project name field
 
 **Implementation:**
-```bash
+```powershell
 # Search pattern (case-insensitive)
-grep -ri "project valine" src/ docs/ public/
+Select-String -ri "project valine" src/ docs/ public/
 
 # Replace with "Joint" maintaining sentence structure
 # Example transformations:
@@ -52,9 +52,9 @@ grep -ri "project valine" src/ docs/ public/
 ```
 
 **Verification:**
-```bash
+```powershell
 # Post-implementation check
-grep -ri "project valine" src/ docs/ public/ | wc -l
+Select-String -ri "project valine" src/ docs/ public/ | wc -l
 # Expected: 0 (except in archive/ or CHANGELOG.md historical entries)
 ```
 
@@ -141,7 +141,7 @@ if (results.length > 0) {
 - [ ] Visual regression tests updated (Percy/Chromatic snapshots)
 
 ### Testing Strategy
-```bash
+```powershell
 # Unit: Brand name replacements
 npm test -- brand-name
 
@@ -262,7 +262,7 @@ npm run test:visual
 
 #### 2.3 Feature Flag Implementation
 **File:** `.env.example`
-```bash
+```powershell
 # Subscription Features
 VITE_ENABLE_SUBSCRIPTIONS=true
 ```
@@ -1596,7 +1596,7 @@ main();
 ```
 
 **Usage examples:**
-```bash
+```powershell
 # Dry run (test mode)
 node scripts/admin-upsert-user.mjs \
   --email friend@example.com \

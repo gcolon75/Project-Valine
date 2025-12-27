@@ -22,7 +22,7 @@ Visit these files and verify the links work:
 
 Verify a few moved files are in the right place:
 
-```bash
+```powershell
 # API documentation moved here
 ls docs/api/
 # Should show: contract.md, reference.md, integration-guide.md, development.md
@@ -40,15 +40,15 @@ ls docs/quickstart/
 
 All archived files are preserved with headers:
 
-```bash
+```powershell
 # View an archived file
-cat docs/archive/historical/AGENT_WRAPUP-20251104.md | head -10
+Get-Content docs/archive/historical/AGENT_WRAPUP-20251104.md | head -10
 # Should show header with original path and reason
 ```
 
 ### 4. Verify Tests Still Pass
 
-```bash
+```powershell
 npm ci
 npm run test:run
 # Should see: 137 tests passed
@@ -210,7 +210,7 @@ These can be fixed in follow-up PRs if needed.
 
 Yes! All changes are reversible:
 
-```bash
+```powershell
 # Option 1: Revert the commits
 git revert <commit-hash>
 

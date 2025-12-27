@@ -89,12 +89,12 @@ const postPayload = {
    ```
 
 2. **Verify Schema and Code Alignment**:
-   ```bash
+   ```powershell
    # Review Post model schema
-   cat serverless/prisma/schema.prisma | grep -A 30 "model Post"
+   cat serverless/prisma/schema.prisma | Select-String -A 30 "model Post"
    
    # Check handler code
-   grep -A 20 "prisma.post.create" serverless/src/handlers/posts.js
+   Select-String -A 20 "prisma.post.create" serverless/src/handlers/posts.js
    ```
 
 3. **If Field Should Be Added**:
@@ -106,7 +106,7 @@ const postPayload = {
      }
      ```
    - Generate and deploy migration:
-     ```bash
+     ```powershell
      cd serverless
      npm run prisma:generate
      npx prisma migrate dev --name add-audiourl-to-post
@@ -121,24 +121,15 @@ const postPayload = {
 ## Verification Steps
 
 ### 1. Test POST /posts Endpoint
-```bash
+```powershell
 # Set your JWT token
-export TOKEN="your-jwt-token"
+$env:TOKEN = "your-jwt-token"
 
 # Create a test post
-curl -X POST https://api.yourdomain.com/posts \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Test post",
-    "authorId": "your-user-id",
-    "tags": ["test"],
-    "visibility": "PUBLIC"
-  }'
-
-# Expected: 201 Created with post object
-# Not: 500 with audioUrl error
-```
+Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+    "Authorization" = "Bearer $TOKEN"
+    "Content-Type" = "application/json"
+} -Body '{ "content": "Test post", "authorId": "your-user-id", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
 
 ### 2. Check CloudWatch Logs
 - Look for `create_post_success` events

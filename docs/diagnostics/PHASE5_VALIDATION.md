@@ -342,7 +342,7 @@ jobs:
 
 **Evidence:**
 
-```bash
+```powershell
 $ cd orchestrator && python -m pytest tests/ -v --tb=no | tail -20
 ...
 tests/test_trace_store.py::TestGetTraceStore::test_get_trace_store_singleton PASSED [ 98%]
@@ -477,7 +477,7 @@ fields @timestamp, level, msg, error
 
 **Evidence:**
 
-```bash
+```powershell
 # Import test
 $ cd orchestrator && python -c "
 from app.utils.logger import StructuredLogger, redact_secrets
@@ -536,7 +536,7 @@ Coverage: Stable (includes all Phase 5 components)
 
 ### Configuration
 
-```bash
+```powershell
 # Feature Flags (Safe Defaults)
 ENABLE_ALERTS=false          # Alerts disabled by default
 ENABLE_DEBUG_CMD=false       # Debug command disabled by default
@@ -560,7 +560,7 @@ ADMIN_ROLE_IDS=              # Optional: admin allowlist
 ### Staging Deployment
 
 1. **Enable Debug Command Temporarily**
-   ```bash
+   ```powershell
    aws lambda update-function-configuration \
      --function-name valine-orchestrator-discord-staging \
      --environment "Variables={ENABLE_DEBUG_CMD=true,...}"
@@ -573,7 +573,7 @@ ADMIN_ROLE_IDS=              # Optional: admin allowlist
    - Verify ephemeral message
 
 3. **Enable Alerts in Staging Channel**
-   ```bash
+   ```powershell
    aws lambda update-function-configuration \
      --function-name valine-orchestrator-discord-staging \
      --environment "Variables={ENABLE_ALERTS=true,ALERT_CHANNEL_ID=STAGING_CHANNEL_ID,...}"
@@ -743,7 +743,7 @@ A comprehensive Phase 5 Staging Validator agent has been created to safely valid
 - ✅ 33 unit tests covering all functionality
 
 **Quick Start:**
-```bash
+```powershell
 cd orchestrator/scripts
 
 # Generate configuration
@@ -809,7 +809,7 @@ Example:
 ### Running Staging Validation
 
 **Option 1: Local Execution**
-```bash
+```powershell
 cd orchestrator/scripts
 python phase5_staging_validator.py full-validation --config staging_config.json
 ```
@@ -1086,7 +1086,7 @@ Discord slash commands (specifically `/debug-last`) were implemented in the hand
 - Generates validation evidence (JSON + Markdown reports)
 
 **Usage:**
-```bash
+```powershell
 # Check current status
 python validate_discord_slash_commands.py check \
   --app-id $STAGING_DISCORD_APPLICATION_ID \
@@ -1124,7 +1124,7 @@ python validate_discord_slash_commands.py full \
 
 #### Step 1: Verify Bot Configuration
 
-```bash
+```powershell
 # Required GitHub repository variables
 STAGING_DISCORD_PUBLIC_KEY=<value>
 STAGING_DISCORD_APPLICATION_ID=<value>
@@ -1138,7 +1138,7 @@ STAGING_GUILD_ID=<value>
 
 #### Step 2: Run Validation Script
 
-```bash
+```powershell
 cd orchestrator/scripts
 
 python validate_discord_slash_commands.py full \
@@ -1166,7 +1166,7 @@ python validate_discord_slash_commands.py full \
 
 #### Step 3: Configure AWS SSM Parameters
 
-```bash
+```powershell
 # Enable debug command
 aws ssm put-parameter \
   --name "/valine/staging/ENABLE_DEBUG_CMD" \
@@ -1269,42 +1269,20 @@ Generated files in `validation_evidence/`:
 #### 2. Command List Before/After
 
 **Before Fix:**
-```bash
-$ curl -H "Authorization: Bot $BOT_TOKEN" \
-  https://discord.com/api/v10/applications/$APP_ID/guilds/$GUILD_ID/commands
-[]
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $BOT_TOKEN"
+}```
 
 **After Fix:**
-```bash
-$ curl -H "Authorization: Bot $BOT_TOKEN" \
-  https://discord.com/api/v10/applications/$APP_ID/guilds/$GUILD_ID/commands
-[
-  {
-    "id": "1234567890",
-    "name": "debug-last",
-    "description": "Show last run debug info (redacted, ephemeral)",
-    "type": 1
-  },
-  {
-    "id": "2345678901",
-    "name": "diagnose",
-    "description": "Run a quick staging diagnostic",
-    "type": 1
-  },
-  {
-    "id": "3456789012",
-    "name": "status",
-    "description": "Show last 1-3 runs for workflows",
-    "type": 1,
-    "options": [...]
-  }
-]
-```
+```powershell
+Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+    "Authorization" = "Bot $BOT_TOKEN"
+}```
 
 #### 3. SSM Parameters Confirmed
 
-```bash
+```powershell
 $ aws ssm get-parameters-by-path --path "/valine/staging/" --region us-west-2
 {
   "Parameters": [
