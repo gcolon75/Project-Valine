@@ -668,6 +668,35 @@ aws lambda list-layer-versions --layer-name pv-api-prod-prisma-v2
 aws cloudformation describe-stack-events --stack-name pv-api-prod --max-items 10
 ```
 
+### PowerShell Testing Pattern Reference
+
+**Canonical Pattern for Cookie-Session Testing (Browser-like behavior)**
+
+All Project Valine documentation uses PowerShell for API testing. The recommended pattern for authenticated requests uses session variables to maintain cookies:
+
+```powershell
+# Step 1: Login and capture session
+$response = Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body '{"email":"user@example.com","password":"password123"}' `
+    -SessionVariable session
+
+# Step 2: Use session for authenticated requests
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/me/profile" `
+    -Method Get `
+    -WebSession $session
+```
+
+**Key Points:**
+- Use `Invoke-WebRequest` with `-SessionVariable` for initial login to capture cookies
+- Use `-WebSession $session` for all subsequent authenticated requests
+- Works in Windows PowerShell 5.1 (PSEdition Desktop)
+- Mimics browser behavior (cookies automatically sent with each request)
+- For viewing response headers or status codes, use `Invoke-WebRequest` instead of `Invoke-RestMethod`
+
+**See Also:** "Post-Deploy Verification" section (line 312) for complete smoke test examples
+
 ### Related Documentation
 
 - Route Mapping: `docs/debug/route-to-function.md`
