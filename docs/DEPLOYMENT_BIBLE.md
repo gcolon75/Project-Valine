@@ -93,6 +93,37 @@ postgresql://username:password@hostname:5432/database?sslmode=require
 $env:DATABASE_URL = "postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5432/valine?sslmode=require"
 ```
 
+### ⚠️ Copy/Paste Safety: Database URL Format
+
+**CRITICAL**: URLs must NEVER contain spaces. Spaces in URLs cause connection failures and authentication errors.
+
+**Common Mistakes:**
+- ❌ `postgres? sslmode=require` (space after `?`)
+- ❌ `rds. amazonaws.com` (space in hostname)
+- ❌ Extra whitespace from copy/paste errors
+
+**Canonical Database URL** (Production - Dev instance):
+```
+postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+```
+
+**Validation Checklist:**
+- [ ] No spaces anywhere in the URL
+- [ ] `?sslmode=require` has NO space between `?` and `sslmode`
+- [ ] Hostname has NO spaces (e.g., `rds.amazonaws.com` not `rds. amazonaws.com`)
+- [ ] If copying from documentation, use triple-click to select entire line
+- [ ] After pasting, visually verify no extra spaces were introduced
+
+**Quick Test:**
+```powershell
+# Check for spaces in your DATABASE_URL
+if ($env:DATABASE_URL -match '\s') {
+    Write-Error "DATABASE_URL contains spaces! This will cause connection failures."
+} else {
+    Write-Host "DATABASE_URL format looks good (no spaces detected)" -ForegroundColor Green
+}
+```
+
 ---
 
 ## Environment Configuration
