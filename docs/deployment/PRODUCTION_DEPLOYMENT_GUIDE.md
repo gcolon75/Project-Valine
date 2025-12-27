@@ -600,7 +600,7 @@ Deployment completed successfully!
 
 ```powershell
 # Visit frontend URL
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # Should return HTTP 200 OK
 
@@ -719,9 +719,10 @@ node scripts/admin-upsert-user.mjs \
 
 ```powershell
 # Test login via API
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'
+```
 
 ---
 
@@ -789,18 +790,20 @@ Expected:
 #### 2. Test Registration (Allowlisted Email)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "admin@example.com", "username": "admin", "password": "TestPassword123!", "displayName": "Admin User" }' -ContentType 'application/json'```
+} -Body '{ "email": "admin@example.com", "username": "admin", "password": "TestPassword123!", "displayName": "Admin User" }' -ContentType 'application/json'
+```
 
 Expected: HTTP 201 Created (if email not already registered)
 
 #### 3. Test Registration (Non-Allowlisted Email)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "hacker@evil.com", "username": "hacker", "password": "Test123!", "displayName": "Hacker" }' -ContentType 'application/json'```
+} -Body '{ "email": "hacker@evil.com", "username": "hacker", "password": "Test123!", "displayName": "Hacker" }' -ContentType 'application/json'
+```
 
 Expected: HTTP 403 Forbidden
 ```json
@@ -812,9 +815,10 @@ Expected: HTTP 403 Forbidden
 #### 4. Test Login
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "admin@example.com", "password": "YourProductionPassword123!" }' -ContentType 'application/json'
+```
 
 Expected: HTTP 200 OK with Set-Cookie headers
 

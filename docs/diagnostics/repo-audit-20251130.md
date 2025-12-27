@@ -237,11 +237,12 @@ Correctly generates cookies without explicit Domain attribute for cross-origin c
 
 ```powershell
 # Step 1: Login and capture cookies
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
     "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
-} -Body '{"email":"your-email@example.com","password":"your-password"}' -ContentType 'application/json'```
+} -Body '{"email":"your-email@example.com","password":"your-password"}' -ContentType 'application/json'
+```
 
 ### PowerShell Command (Windows)
 

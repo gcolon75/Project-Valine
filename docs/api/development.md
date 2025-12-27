@@ -179,9 +179,10 @@ Register a new user account.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 ---
 
@@ -221,9 +222,10 @@ Login with email and password.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "testpass123" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "testpass123" }' -ContentType 'application/json'
+```
 
 ---
 
@@ -257,7 +259,8 @@ Get current authenticated user profile.
 ```powershell
 Invoke-RestMethod -Uri "https://API_BASE/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
-}```
+}
+```
 
 ---
 
@@ -305,7 +308,8 @@ Invoke-RestMethod -Uri "https://API_BASE/reels?limit=20" -Method Get
 # With authentication
 Invoke-RestMethod -Uri "https://API_BASE/reels?limit=20" -Method Get -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
-}```
+}
+```
 
 ---
 
@@ -334,10 +338,11 @@ Create a new reel.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "content": "Check out this amazing moment!", "media": ["https://example.com/video.mp4"] }' -ContentType 'application/json'```
+} -Body '{ "content": "Check out this amazing moment!", "media": ["https://example.com/video.mp4"] }' -ContentType 'application/json'
+```
 
 ---
 
@@ -358,9 +363,10 @@ Toggle like on a reel.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
-}```
+}
+```
 
 ---
 
@@ -380,9 +386,10 @@ Toggle bookmark on a reel.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
-}```
+}
+```
 
 ---
 
@@ -449,10 +456,11 @@ Add a comment to a reel.
 
 **PowerShell Example:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"content": "Amazing work!"}' -ContentType 'application/json'```
+} -Body '{"content": "Amazing work!"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -944,9 +952,10 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 3. **Register a Test User:**
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 4. **Save Token:**
    ```powershell
@@ -957,7 +966,8 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
    ```powershell
 Invoke-RestMethod -Uri "$API_BASE/auth/me" -Method Get -Headers @{
     "Authorization" = "Bearer $TOKEN"
-}```
+}
+```
 
 ---
 

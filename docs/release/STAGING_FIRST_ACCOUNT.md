@@ -166,9 +166,10 @@ $env:API_BASE = "http://localhost:3000"
 ### Test 1: Register New Account (Expect 201)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 **Expected Response:**
 - Status: `201 Created`
@@ -188,7 +189,7 @@ First 5 requests should succeed. 6th and beyond should get rate limited.
 # Requests 1-5: Should succeed (200 OK)
 for i in {1..5}; do
   echo "Request $i:"
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 **Expected Response for 6th Request:**
 - Status: `429 Too Many Requests`
@@ -203,9 +204,10 @@ Invoke-RestMethod -Uri "-X" -Method Post```
 # Use token from email/logs
 TOKEN="your-verification-token-from-email"
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{\' -ContentType 'application/json'```
+} -Body '{\' -ContentType 'application/json'
+```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -214,9 +216,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 ### Test 4: Login (Expect Set-Cookie Headers)
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "testuser@example.com", "password": "SecurePass123!" }' -ContentType 'application/json'
+```
 
 **Expected Response:**
 - Status: `200 OK`
@@ -241,9 +244,10 @@ Example: Update user profile/bio (if endpoint exists)
 
 ```powershell
 # Note: This may vary based on your API structure
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"bio": "Updated bio from staging test"}' -ContentType 'application/json'```
+} -Body '{"bio": "Updated bio from staging test"}' -ContentType 'application/json'
+```
 
 **Expected Response:**
 - Status: `200 OK` (or `204 No Content`)
@@ -339,9 +343,10 @@ If `CSRF_ENABLED=true`, frontend must send X-CSRF-Token header:
 CSRF_TOKEN=$(Select-String csrfToken cookies.txt | awk '{print $7}')
 
 # Include in request
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "X-CSRF-Token" = "$CSRF_TOKEN"
-} -Body '...' -ContentType 'application/json'```
+} -Body '...' -ContentType 'application/json'
+```
 
 ## 7. Next Steps
 

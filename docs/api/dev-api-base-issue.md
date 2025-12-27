@@ -182,11 +182,12 @@ $env:API_BASE = "https://your-api.execute-api.us-west-2.amazonaws.com/prod"
 Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 
 # Register test user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
     "Authorization" = "Bearer YOUR_TOKEN"
-} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "test@example.com", "password": "testpass123", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 ## Related Files
 

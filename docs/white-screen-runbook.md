@@ -82,7 +82,7 @@ aws cloudfront get-distribution-config --id E1234567890ABC \
 # 2. If empty, need to attach function (use PowerShell script or manual AWS console)
 
 # 3. Test
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 # Should return: HTTP/2 200, content-type: text/html
 ```
 
@@ -206,7 +206,7 @@ aws cloudfront get-invalidation \
 ### Verification
 ```powershell
 # Test with cache-busting
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 
 # Should return:
 # HTTP/2 200
@@ -277,7 +277,7 @@ aws cloudfront create-invalidation \
 
 # 4. Verify
 sleep 60
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 ```
 
 ---

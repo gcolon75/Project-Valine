@@ -134,10 +134,11 @@ Invalid social link key (400):
 
 **Example Request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com", "imdb": "https://imdb.com/name/nm1234567" } }' -ContentType 'application/json'```
+} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com", "imdb": "https://imdb.com/name/nm1234567" } }' -ContentType 'application/json'
+```
 
 ---
 
@@ -319,21 +320,24 @@ Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Get
 
 **Test PATCH with valid data:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com" } }' -ContentType 'application/json'```
+} -Body '{ "title": "Voice Actor", "socialLinks": { "website": "https://example.com" } }' -ContentType 'application/json'
+```
 
 **Test PATCH with invalid URL (should return 400):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "socialLinks": { "website": "ftp://example.com" } }' -ContentType 'application/json'```
+} -Body '{ "socialLinks": { "website": "ftp://example.com" } }' -ContentType 'application/json'
+```
 
 **Test PATCH with invalid key (should return 400):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "socialLinks": { "twitter": "https://twitter.com/user" } }' -ContentType 'application/json'```
+} -Body '{ "socialLinks": { "twitter": "https://twitter.com/user" } }' -ContentType 'application/json'
+```
 
 ### Contract Tests
 

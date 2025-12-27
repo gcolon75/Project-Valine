@@ -93,10 +93,11 @@ Update the authenticated user's preferences.
 
 **Example Request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer YOUR_TOKEN"
     "Content-Type" = "application/json"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 ---
 
@@ -214,30 +215,34 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Get -H
 
 **Test PATCH with valid theme:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": "dark"}' -ContentType 'application/json'```
+} -Body '{"theme": "dark"}' -ContentType 'application/json'
+```
 
 **Test PATCH with invalid theme (should return 400):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": "invalid"}' -ContentType 'application/json'```
+} -Body '{"theme": "invalid"}' -ContentType 'application/json'
+```
 
 **Test PATCH without authentication (should return 401):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"theme": "light"}' -ContentType 'application/json'```
+} -Body '{"theme": "light"}' -ContentType 'application/json'
+```
 
 **Test PATCH to clear theme (set to null):**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/api/me/preferences" -Method Patch -Headers @{
     "Authorization" = "Bearer dev-token"
     "Content-Type" = "application/json"
-} -Body '{"theme": null}' -ContentType 'application/json'```
+} -Body '{"theme": null}' -ContentType 'application/json'
+```
 
 ### Contract Tests
 

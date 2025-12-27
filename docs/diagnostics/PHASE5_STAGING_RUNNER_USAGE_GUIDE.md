@@ -380,9 +380,10 @@ Option A: Invalid workflow dispatch
 
 Option B: Test endpoint (if available)
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer YOUR_TEST_TOKEN"
-} -Body '{"severity": "critical", "message": "Test alert"}' -ContentType 'application/json'```
+} -Body '{"severity": "critical", "message": "Test alert"}' -ContentType 'application/json'
+```
 
 Option C: Manual trigger via AWS CLI
 ```powershell

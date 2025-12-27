@@ -88,7 +88,7 @@ iwr -UseBasicParsing -Headers @{Authorization="Bot $env:STAGING_DISCORD_BOT_TOKE
 $env:STAGING_DISCORD_APPLICATION_ID = "1428568840958251109"
 $env:STAGING_DISCORD_BOT_TOKEN = "your_raw_token_here"
 
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bot $STAGING_DISCORD_BOT_TOKEN"
 }```
 

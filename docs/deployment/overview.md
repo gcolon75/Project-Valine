@@ -187,9 +187,10 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 #### 2. Create a User
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "This is a test account", "avatar": "https://i.pravatar.cc/150?img=1" }' -ContentType 'application/json'```
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "This is a test account", "avatar": "https://i.pravatar.cc/150?img=1" }' -ContentType 'application/json'
+```
 
 #### 3. Get User Profile
 
@@ -201,9 +202,10 @@ Invoke-RestMethod -Uri "$API_BASE/users/testuser" -Method Get
 
 ```powershell
 # Replace USER_ID with the id from user creation response
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "content": "Hello from Project Valine!", "media": ["https://picsum.photos/400/300"], "authorId": "YOUR_USER_ID_HERE" }' -ContentType 'application/json'```
+} -Body '{ "content": "Hello from Project Valine!", "media": ["https://picsum.photos/400/300"], "authorId": "YOUR_USER_ID_HERE" }' -ContentType 'application/json'
+```
 
 #### 5. List Posts
 
@@ -215,9 +217,10 @@ Invoke-RestMethod -Uri "$API_BASE/posts?limit=10" -Method Get
 
 ```powershell
 # Create a second user first, then:
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "senderId": "USER1_ID", "receiverId": "USER2_ID", "message": "Let' -ContentType 'application/json'```
+} -Body '{ "senderId": "USER1_ID", "receiverId": "USER2_ID", "message": "Let' -ContentType 'application/json'
+```
 
 #### 7. List Connection Requests
 
@@ -228,7 +231,7 @@ Invoke-RestMethod -Uri "$API_BASE/connections/requests?userId=USER2_ID" -Method 
 #### 8. Approve Connection Request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post
 ```
 
 ## Phase 4: Frontend Configuration
@@ -478,7 +481,7 @@ npm run preview                 # Preview build locally
 
 # Testing
 ./scripts/deployment/test-endpoints.sh       # Test API
-Invoke-RestMethod -Uri "-X" -Method Post -Body '...' -ContentType 'application/json'
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Body '...' -ContentType 'application/json'
 ```
 
 ### Environment Variables

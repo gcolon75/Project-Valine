@@ -161,9 +161,10 @@ Invoke-RestMethod -Uri "https://YOUR_API_URL/health" -Method Get
 ### Login Test
 ```powershell
 # Test login endpoint
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"ghawk075@gmail.com","password":"YourPassword123!"}' -ContentType 'application/json'```
+} -Body '{"email":"ghawk075@gmail.com","password":"YourPassword123!"}' -ContentType 'application/json'
+```
 
 ### Full Verification
 ```powershell

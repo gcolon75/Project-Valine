@@ -372,7 +372,7 @@ done
 
 ```powershell
 # Test homepage
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts/{id}" -Method Get
 ```
 
 **Expected Response:**
@@ -387,10 +387,10 @@ x-amz-cf-id: ...
 
 ```powershell
 # Get main JS bundle from homepage
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # Test asset loads
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 ```
 
 **Expected Response:**
@@ -410,9 +410,10 @@ cache-control: public, max-age=31536000, immutable
 # ❌ NOT https://valine.app/auth/...
 
 # Test login endpoint directly
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"test123"}' -ContentType 'application/json'
+```
 
 **Expected Behavior:**
 - Request goes to API Gateway (visible in Network tab)
@@ -423,7 +424,7 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 ```powershell
 # Visit signup page (should show message or hide form)
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Get
 ```
 
 **Expected:**
@@ -511,10 +512,11 @@ has been blocked by CORS policy
 **Solution:**
 ```powershell
 # Verify CORS headers from API
-Invoke-RestMethod -Uri "-I" -Method Get -Headers @{
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get -Headers @{
     "Origin" = "https://valine.app"
     "Access-Control-Request-Method" = "POST"
-}```
+}
+```
 
 **If CORS headers missing**, update backend Lambda CORS configuration.
 

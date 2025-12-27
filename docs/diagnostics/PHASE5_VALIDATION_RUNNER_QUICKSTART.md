@@ -243,7 +243,7 @@ gh repo view gcolon75/Project-Valine
 **Solution**: Test URLs manually:
 
 ```powershell
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 ```
 
 Ensure staging environment is running and accessible.

@@ -281,12 +281,14 @@ REPORTS_IP_MAX_PER_HOUR=10  # Per IP address
 ### Testing Profanity Detection
 ```powershell
 # Should be blocked
-Invoke-RestMethod -Uri "-X" -Method Put -Body '{"headline": "Damn good actor"}' -ContentType 'application/json'```
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Body '{"headline": "Damn good actor"}' -ContentType 'application/json'
+```
 
 ### Testing URL Validation
 ```powershell
 # Should be blocked
-Invoke-RestMethod -Uri "-X" -Method Put -Body '{"socialLinks": {"website": "javascript:alert()"}}' -ContentType 'application/json'```
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Body '{"socialLinks": {"website": "javascript:alert()"}}' -ContentType 'application/json'
+```
 
 ### Checking Current Configuration
 ```powershell

@@ -108,7 +108,8 @@ SQL
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:** Profile JSON with all fields populated.
 
@@ -152,9 +153,10 @@ psql $DATABASE_URL -c "SELECT id, email, username, status, \"emailVerified\" FRO
 #### 2. Test login endpoint directly
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "user@example.com", "password": "password123" }' -ContentType 'application/json'```
+} -Body '{ "email": "user@example.com", "password": "password123" }' -ContentType 'application/json'
+```
 
 **Expected Response:**
 ```json
@@ -214,10 +216,11 @@ echo "<your-jwt-token>" | cut -d. -f2 | base64 -d | jq '.'
 #### 1. Check update endpoint response
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Patch -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "title": "Senior Voice Actor", "bio": "Updated bio content" }' -ContentType 'application/json'```
+} -Body '{ "title": "Senior Voice Actor", "bio": "Updated bio content" }' -ContentType 'application/json'
+```
 
 **Expected:** Returns updated profile with new `title` and `bio`.
 
@@ -246,10 +249,11 @@ aws logs tail /aws/lambda/pv-api-prod-updateProfile --since 5m
 
 ```powershell
 # Send only one field at a time to isolate issue
-Invoke-RestMethod -Uri "-X" -Method Patch -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Patch -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "title": "Test Title" }' -ContentType 'application/json'```
+} -Body '{ "title": "Test Title" }' -ContentType 'application/json'
+```
 
 ---
 
@@ -293,15 +297,17 @@ SQL
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/links" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 #### 4. Test POST endpoint
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/username" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "label": "LinkedIn", "url": "https://www.linkedin.com/in/username/", "type": "social" }' -ContentType 'application/json'```
+} -Body '{ "label": "LinkedIn", "url": "https://www.linkedin.com/in/username/", "type": "social" }' -ContentType 'application/json'
+```
 
 ---
 
@@ -336,10 +342,11 @@ psql $DATABASE_URL -c "SELECT id FROM profiles WHERE id = '<profile-id>';"
 #### 3. Test adding education via API
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "institution": "Juilliard School", "program": "BFA in Drama", "startYear": 2018, "endYear": 2022, "achievements": "Dean' -ContentType 'application/json'```
+} -Body '{ "institution": "Juilliard School", "program": "BFA in Drama", "startYear": 2018, "endYear": 2022, "achievements": "Dean' -ContentType 'application/json'
+```
 
 **Common Errors:**
 - `400`: Missing required fields (`institution` or `program`)
@@ -375,7 +382,8 @@ SQL
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<profile-id>/education" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 ---
 
@@ -403,10 +411,11 @@ psql $DATABASE_URL -c "SELECT id, content, visibility, \"authorId\", \"createdAt
 #### 2. Test creating a post
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "content": "Test post for debugging", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
+} -Body '{ "content": "Test post for debugging", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'
+```
 
 **Expected Response:**
 ```json
@@ -432,7 +441,8 @@ Invoke-RestMethod -Uri "https://api.projectvaline.com/posts" -Method Get
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/feed" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:**
 - Shows posts from followed users
@@ -473,7 +483,8 @@ psql $DATABASE_URL -c "SELECT id, content, visibility, \"createdAt\" FROM posts 
 ```powershell
 Invoke-RestMethod -Uri "https://api.projectvaline.com/profiles/<user-id>/posts" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Note:** Endpoint may not exist - check backend handler routing.
 
@@ -506,10 +517,11 @@ psql $DATABASE_URL -c "SELECT id, \"senderId\", \"receiverId\", status, \"create
 #### 2. Test sending a follow request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
-} -Body '{ "receiverId": "<target-user-id>", "message": "Test connection request" }' -ContentType 'application/json'```
+} -Body '{ "receiverId": "<target-user-id>", "message": "Test connection request" }' -ContentType 'application/json'
+```
 
 **Common Errors:**
 - `400`: Cannot send request to yourself
@@ -518,9 +530,10 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 #### 3. Test accepting a request
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
-}```
+}
+```
 
 **Expected:** Request status changes to `'accepted'`.
 

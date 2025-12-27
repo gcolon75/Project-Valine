@@ -114,7 +114,7 @@ After the distribution is deployed (Status: Deployed), test SPA routing:
 
 ```powershell
 # Test extension-less route (should return index.html with 200)
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # Expected:
 # HTTP/2 200
@@ -123,7 +123,7 @@ Invoke-RestMethod -Uri "-I" -Method Get
 
 ```powershell
 # Test asset path (should return 404 if file doesn't exist)
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # Expected:
 # HTTP/2 404
@@ -132,7 +132,7 @@ Invoke-RestMethod -Uri "-I" -Method Get
 
 ```powershell
 # Test API path (should pass through - may 404 if backend not configured)
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 
 # Should NOT return index.html
 ```
@@ -340,7 +340,7 @@ aws s3api list-objects-v2 \
 
 **Diagnosis:**
 ```powershell
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
 # If starts with <!DOCTYPE or <html, wrong content is being served
 ```
 

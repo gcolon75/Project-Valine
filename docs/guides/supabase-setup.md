@@ -404,10 +404,11 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Expected: {"ok":true,"status":"healthy"}
 
 # Test 2: Create user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "Voice actor", "role": "artist" }' -ContentType 'application/json'```
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "bio": "Voice actor", "role": "artist" }' -ContentType 'application/json'
+```
 
 ✅ **Checkpoint:** All tests passing, all endpoints returning 200/201
 
@@ -484,7 +485,7 @@ aws logs tail /aws/lambda/pv-api-dev-createUser --follow
 
 **Test OPTIONS request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get -Headers @{
     "Origin" = "http://localhost:5173"
 }
 ```

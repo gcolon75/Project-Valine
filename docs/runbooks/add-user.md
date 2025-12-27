@@ -228,9 +228,10 @@ WHERE email = 'friend@example.com';
 
 ```powershell
 # Test login endpoint
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "friend@example.com", "password": "TheirSecurePassword123!" }' -ContentType 'application/json'```
+} -Body '{ "email": "friend@example.com", "password": "TheirSecurePassword123!" }' -ContentType 'application/json'
+```
 
 **Expected Response (Success):**
 ```json
@@ -264,7 +265,8 @@ ACCESS_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 Invoke-RestMethod -Uri "https://api.valine.app/profile/me" -Method Get -Headers @{
     "Authorization" = "Bearer $ACCESS_TOKEN"
     "Content-Type" = "application/json"
-}```
+}
+```
 
 **Expected Response:**
 ```json

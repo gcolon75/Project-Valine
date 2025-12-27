@@ -272,7 +272,7 @@ If you did not initiate these actions, please contact us immediately.
 2. **Email service operational**:
    ```powershell
    # Check email service health
-Invoke-RestMethod -Uri "-s" -Method Get```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/health" -Method Get```
 3. **Email bounced**:
    ```sql
    SELECT * FROM email_logs 

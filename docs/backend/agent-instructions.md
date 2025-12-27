@@ -251,9 +251,10 @@ When asked to create a new endpoint:
 
 5. **Provide test command**:
    ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"field": "value"}' -ContentType 'application/json'```
+} -Body '{"field": "value"}' -ContentType 'application/json'
+```
 
 ## PERFORMANCE CONSIDERATIONS
 
@@ -338,9 +339,10 @@ Always provide curl commands for testing new endpoints:
 # Example test command
 $env:API_BASE = "https://your-api-gateway-url.amazonaws.com/dev"
 
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"field": "value"}' -ContentType 'application/json'```
+} -Body '{"field": "value"}' -ContentType 'application/json'
+```
 
 ## RESPONSE FORMATS
 

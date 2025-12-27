@@ -159,7 +159,7 @@ Write-Host "Misconfigured: $($json.allowlistMisconfigured)"
 
 **Bash**:
 ```powershell
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/health" -Method Get
 ```
 
 **Expected Response**:
@@ -247,9 +247,10 @@ Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/a
 
 **Bash**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "ghawk075@gmail.com", "password": "TestPassword123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'```
+} -Body '{ "email": "ghawk075@gmail.com", "password": "TestPassword123!", "username": "testuser", "displayName": "Test User" }' -ContentType 'application/json'
+```
 
 **Expected**: 201 Created or 409 Conflict (if already exists)
 
@@ -273,9 +274,10 @@ Invoke-WebRequest -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/a
 
 **Bash**:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "email": "unauthorized@example.com", "password": "TestPassword123!", "username": "unauthorized", "displayName": "Unauthorized User" }' -ContentType 'application/json'```
+} -Body '{ "email": "unauthorized@example.com", "password": "TestPassword123!", "username": "unauthorized", "displayName": "Unauthorized User" }' -ContentType 'application/json'
+```
 
 **Expected**: 403 Forbidden with response:
 ```json
@@ -391,7 +393,7 @@ If you see `503 Service temporarily unavailable: configuration error`:
 **Solution**: Use PowerShell-native commands:
 ```powershell
 # ✗ Don't use this in PowerShell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get -Headers @{
     "Content-Type" = "application/json"
 } -Body '...' -ContentType 'application/json'
 

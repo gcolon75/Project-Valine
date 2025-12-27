@@ -147,7 +147,7 @@ node server/scripts/perf/compare-results.mjs \
 ```powershell
 # Make some requests to warm cache
 for i in {1..10}; do
-Invoke-RestMethod -Uri "-s" -Method Get
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 done
 
 # Check hit ratio
@@ -160,11 +160,11 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 
 ```powershell
 # First request (cold)
-Invoke-RestMethod -Uri "-i" -Method Get
+Invoke-WebRequest -Uri "http://localhost:5000/api/endpoint" -Method Get
 # Expected: X-Cache-Hit: false
 
 # Second request (warm)
-Invoke-RestMethod -Uri "-i" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 # Expected: X-Cache-Hit: true
 ```
 

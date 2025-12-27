@@ -233,11 +233,11 @@ Invoke-RestMethod -Uri "http://localhost:5000/api/cache/metrics" -Method Get
 3. **Test cache directly**:
    ```powershell
    # First request (should be cache miss)
-Invoke-RestMethod -Uri "-i" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
    # Check header: X-Cache-Hit: false
 
    # Second request immediately after (should be cache hit)
-Invoke-RestMethod -Uri "-i" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
    # Check header: X-Cache-Hit: true
    ```
 

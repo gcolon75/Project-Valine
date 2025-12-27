@@ -222,8 +222,8 @@ CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution \
   --output text)
 
 # Test requests
-Invoke-RestMethod -Uri "-I" -Method Get
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
+Invoke-WebRequest -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Get
 ```
 
 **Check CloudFront Function (if SPA routing is needed):**
@@ -301,7 +301,7 @@ aws wafv2 get-web-acl \
 **Test CORS with OPTIONS request:**
 ```powershell
 # Test OPTIONS request
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Origin" = "https://your-frontend-domain.com"
     "Access-Control-Request-Method" = "POST"
     "Access-Control-Request-Headers" = "Content-Type"
@@ -511,7 +511,7 @@ fetch('https://fb9pxd6m09.execute-api.us-west-2.amazonaws.com/auth/me', {
 ### Test CORS
 
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Origin" = "https://your-frontend-domain.com"
     "Access-Control-Request-Method" = "POST"
     "Access-Control-Request-Headers" = "Content-Type"

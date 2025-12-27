@@ -447,10 +447,11 @@ For each function:
 **Step 3: Verify Changes**
 ```powershell
 # Test login with allowed email
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"email":"owner@example.com","password":"test"}' -ContentType 'application/json'```
+} -Body '{"email":"owner@example.com","password":"test"}' -ContentType 'application/json'
+```
 
 **Alternative: Update via serverless.yml**
 
@@ -1138,7 +1139,7 @@ See detailed manual verification guide: [`docs/runbooks/verify-auth-hardening.md
 **Test:**
 ```powershell
 # From any IP (not owner IP)
-Invoke-RestMethod -Uri "-I" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get
 
 # Expected: HTTP/2 200
 ```
@@ -1152,10 +1153,11 @@ Invoke-RestMethod -Uri "-I" -Method Get
 **Test Script:**
 ```powershell
 # Allowlisted user (should succeed)
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
     "Content-Type" = "application/json"
-} -Body '{"email":"owner@example.com","password":"validpassword"}' -ContentType 'application/json'```
+} -Body '{"email":"owner@example.com","password":"validpassword"}' -ContentType 'application/json'
+```
 
 #### Dev Bypass Absence in Production
 
@@ -1185,10 +1187,11 @@ Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
 
 **Test:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get -Headers @{
     "Origin" = "https://dkmxy676d3vgc.cloudfront.net"
     "Access-Control-Request-Method" = "POST"
-}```
+}
+```
 
 #### Performance & Availability
 

@@ -2224,7 +2224,7 @@ The UX Agent follows a **direct execution pattern** (not workflow-based like Tri
 1. Add `/ux-update` command to `orchestrator/register_discord_commands.sh`
    ```powershell
    echo "📝 Registering /ux-update command..."
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Authorization" = "Bot ${BOT_TOKEN}"
     "Content-Type" = "application/json"
 }```powershell

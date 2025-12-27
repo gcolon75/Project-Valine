@@ -130,9 +130,10 @@ ADMIN_ROLE_IDS=your-admin-user-id
 ### 2. Test Content Scanning
 Try updating a profile with profanity:
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Put -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Put -Headers @{
     "Authorization" = "Bearer $TOKEN"
-} -Body '{"headline": "Shitty actor looking for work"}' -ContentType 'application/json'```
+} -Body '{"headline": "Shitty actor looking for work"}' -ContentType 'application/json'
+```
 
 Expected response (422):
 ```json
@@ -150,21 +151,24 @@ Expected response (422):
 
 ### 3. Create a Report
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
-} -Body '{ "targetType": "profile", "targetId": "profile-456", "category": "spam", "description": "User is posting spam links" }' -ContentType 'application/json'```
+} -Body '{ "targetType": "profile", "targetId": "profile-456", "category": "spam", "description": "User is posting spam links" }' -ContentType 'application/json'
+```
 
 ### 4. Review Reports (Admin)
 ```powershell
 Invoke-RestMethod -Uri "/reports?status=open" -Method Get -Headers @{
     "Authorization" = "Bearer $ADMIN_TOKEN"
-}```
+}
+```
 
 ### 5. Take Action (Admin)
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/username" -Method Post -Headers @{
     "Authorization" = "Bearer $ADMIN_TOKEN"
-} -Body '{ "reportId": "report-789", "action": "remove", "reason": "Confirmed spam" }' -ContentType 'application/json'```
+} -Body '{ "reportId": "report-789", "action": "remove", "reason": "Confirmed spam" }' -ContentType 'application/json'
+```
 
 ## Architecture
 

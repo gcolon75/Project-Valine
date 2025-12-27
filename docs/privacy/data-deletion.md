@@ -620,7 +620,7 @@ aws cloudfront create-invalidation \
   --paths "/users/usr_abc123/*"
 
 # Reindex search
-Invoke-RestMethod -Uri "-X" -Method Delete
+Invoke-RestMethod -Uri "https://d2vj0jjqgov8e1.cloudfront.net/" -Method Delete
 ```
 
 ### Retained Data Concerns

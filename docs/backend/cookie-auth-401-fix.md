@@ -228,7 +228,7 @@ Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/m
 **Test Media Upload URL**:
 ```powershell
 # Should return 200 with presigned URL
-Invoke-RestMethod -Uri "-X" -Method Post
+Invoke-RestMethod -Uri "http://localhost:5000/profiles/user_123" -Method Post
   -H "Cookie: access_token=YOUR_TOKEN" `
   -H "Content-Type: application/json" `
   -d '{"type":"image","title":"Test","privacy":"public"}' `

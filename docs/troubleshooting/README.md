@@ -694,7 +694,7 @@ npx serverless invoke local -f functionName
 cd api && npx prisma studio
 
 # Test API endpoint
-Invoke-RestMethod -Uri "-v" -Method Get
+Invoke-WebRequest -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/api/endpoint" -Method Get
 
 # Check AWS credentials
 aws sts get-caller-identity

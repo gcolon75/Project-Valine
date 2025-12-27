@@ -182,9 +182,10 @@ Invoke-RestMethod -Uri "$API_BASE/health" -Method Get
 # Should return: {"ok":true,"status":"healthy"}
 
 # Create a test user
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "role": "artist" }' -ContentType 'application/json'```
+} -Body '{ "username": "testuser", "email": "test@valine.com", "displayName": "Test User", "role": "artist" }' -ContentType 'application/json'
+```
 
 ---
 

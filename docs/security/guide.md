@@ -637,7 +637,7 @@ CSP_REPORT_URI=https://csp-reports.example.com
 
 **Example**:
 ```powershell
-Invoke-RestMethod -Uri "-H" -Method Get -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Get -Headers @{
     "Authorization" = "Bearer <token>"
 }```
 

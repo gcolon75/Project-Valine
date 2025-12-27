@@ -71,9 +71,10 @@ Client                    API                     Database
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"user@example.com","password":"secret"}' -ContentType 'application/json'```
+} -Body '{"email":"user@example.com","password":"secret"}' -ContentType 'application/json'
+```
 
 **Response Headers:**
 ```
@@ -130,7 +131,7 @@ Client                    API
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 **Response Headers:**
 ```
@@ -153,7 +154,7 @@ Client                    API
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 **Response Headers:**
 ```
@@ -318,9 +319,10 @@ axios.defaults.withCredentials = true; // Send cookies
 
 **Login:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
-} -Body '{"email":"test@example.com","password":"password"}' -ContentType 'application/json'```
+} -Body '{"email":"test@example.com","password":"password"}' -ContentType 'application/json'
+```
 
 **Authenticated Request:**
 ```powershell
@@ -328,11 +330,11 @@ Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get```
 
 **Refresh Token:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 **Logout:**
 ```powershell
-Invoke-RestMethod -Uri "-X" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
 
 ### Automated Tests
 

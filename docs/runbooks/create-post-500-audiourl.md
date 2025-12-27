@@ -126,10 +126,11 @@ const postPayload = {
 $env:TOKEN = "your-jwt-token"
 
 # Create a test post
-Invoke-RestMethod -Uri "-X" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
     "Authorization" = "Bearer $TOKEN"
     "Content-Type" = "application/json"
-} -Body '{ "content": "Test post", "authorId": "your-user-id", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'```
+} -Body '{ "content": "Test post", "authorId": "your-user-id", "tags": ["test"], "visibility": "PUBLIC" }' -ContentType 'application/json'
+```
 
 ### 2. Check CloudWatch Logs
 - Look for `create_post_success` events
