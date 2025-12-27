@@ -187,7 +187,7 @@ aws logs tail /aws/lambda/valine-orchestrator-discord-dev \
   --region us-west-2 --follow
 
 # Test endpoint
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/discord" -Method Post -Headers @{
     "x-signature-ed25519" = "test"
     "x-signature-timestamp" = "1234567890"
 } -Body '{"type":1}' -ContentType 'application/json'

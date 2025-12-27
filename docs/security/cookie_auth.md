@@ -71,7 +71,7 @@ Client                    API                     Database
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/login" -Method Post -Headers @{
     "Content-Type" = "application/json"
 } -Body '{"email":"user@example.com","password":"secret"}' -ContentType 'application/json'
 ```
@@ -131,7 +131,7 @@ Client                    API
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/refresh" -Method Post```
 
 **Response Headers:**
 ```

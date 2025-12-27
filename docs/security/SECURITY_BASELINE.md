@@ -135,14 +135,14 @@ Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/aut
 **Negative Test - Expired Token:**
 ```powershell
 # Use a token older than 24 hours
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/verify-email" -Method Post -Headers @{
     "Content-Type" = "application/json"
 } -Body '{"token": "expired-token-123"}' -ContentType 'application/json'
 ```
 
 **Negative Test - Invalid Token:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/verify-email" -Method Post -Headers @{
     "Content-Type" = "application/json"
 } -Body '{"token": "invalid-token"}' -ContentType 'application/json'
 ```
