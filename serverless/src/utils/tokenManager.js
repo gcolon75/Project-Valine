@@ -5,6 +5,7 @@
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { validateEnvVar } from './envValidation.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 
@@ -16,7 +17,10 @@ const REFRESH_TOKEN_EXPIRES_IN = '7d'; // 7 days
  * Validate JWT secret on startup - fail-fast for default secrets in production
  */
 function validateJwtSecret() {
-  if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-key-change-in-production') {
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const validation = validateEnvVar('JWT_SECRET', JWT_SECRET, nodeEnv);
+  
+  if (!validation.valid) {
     const errorLog = {
       timestamp: new Date().toISOString(),
       correlationId: crypto.randomUUID(),
@@ -24,12 +28,12 @@ function validateJwtSecret() {
       level: 'error',
       details: {
         type: 'jwt_secret_invalid',
-        environment: process.env.NODE_ENV,
-        message: 'Default JWT secret detected in production environment'
+        environment: nodeEnv,
+        message: validation.error
       }
     };
     console.error(JSON.stringify(errorLog));
-    throw new Error('SECURITY ERROR: Default JWT_SECRET must not be used in production. Set a secure JWT_SECRET environment variable.');
+    throw new Error(`SECURITY ERROR: ${validation.error}`);
   }
 }
 
@@ -266,13 +270,14 @@ export const getCookieHeader = (event) => {
 export const generateAccessTokenCookie = (token) => {
   const maxAge = 30 * 60; // 30 minutes in seconds
   
-  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
-  // SameSite=None requires Secure flag
+  // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
+  // Without SameSite=None, browsers block cookies on cross-site XHR/fetch requests
+  // SameSite=None requires Secure flag (which we add below in production)
   const sameSite = isProduction() ? 'None' : 'Lax';
   
   let cookie = `access_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
-  // Secure flag is required for SameSite=None, always include in production
+  // Secure flag is REQUIRED for SameSite=None in production
   if (isProduction()) {
     cookie += '; Secure';
   }
@@ -290,13 +295,14 @@ export const generateAccessTokenCookie = (token) => {
 export const generateRefreshTokenCookie = (token) => {
   const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
   
-  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
-  // SameSite=None requires Secure flag
+  // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
+  // Without SameSite=None, browsers block cookies on cross-site XHR/fetch requests
+  // SameSite=None requires Secure flag (which we add below in production)
   const sameSite = isProduction() ? 'None' : 'Lax';
   
   let cookie = `refresh_token=${token}; HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${maxAge}`;
   
-  // Secure flag is required for SameSite=None, always include in production
+  // Secure flag is REQUIRED for SameSite=None in production
   if (isProduction()) {
     cookie += '; Secure';
   }
@@ -311,10 +317,10 @@ export const generateRefreshTokenCookie = (token) => {
  * @returns {string[]} Array of Set-Cookie headers to clear cookies
  */
 export const generateClearCookieHeaders = () => {
-  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
+  // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
   const sameSite = isProduction() ? 'None' : 'Lax';
   const baseCookie = `Path=/; SameSite=${sameSite}; Max-Age=0`;
-  // Secure flag is required for SameSite=None, always include in production
+  // Secure flag is REQUIRED for SameSite=None in production
   const secureSuffix = isProduction() ? '; Secure' : '';
   // Don't set Domain - let browser set it to the API domain for cross-site cookies
   

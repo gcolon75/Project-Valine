@@ -34,14 +34,15 @@ export const generateCsrfCookie = (token) => {
   const NODE_ENV = process.env.NODE_ENV || 'development';
   const IS_PRODUCTION = NODE_ENV === 'production';
   
-  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
-  // SameSite=None requires Secure flag
+  // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
+  // Without SameSite=None, browsers block cookies on cross-site XHR/fetch requests
+  // SameSite=None requires Secure flag (which we add below in production)
   const sameSite = IS_PRODUCTION ? 'None' : 'Lax';
   
   // Non-HttpOnly cookie so frontend can read it
   let cookie = `XSRF-TOKEN=${token}; Path=/; SameSite=${sameSite}; Max-Age=${15 * 60}`; // 15 minutes
   
-  // Secure flag is required for SameSite=None, always include in production
+  // Secure flag is REQUIRED for SameSite=None in production
   if (IS_PRODUCTION) {
     cookie += '; Secure';
   }
@@ -175,13 +176,13 @@ export const clearCsrfCookie = () => {
   const NODE_ENV = process.env.NODE_ENV || 'development';
   const IS_PRODUCTION = NODE_ENV === 'production';
   
-  // Use SameSite=None for cross-site requests (CloudFront frontend + API Gateway backend)
-  // SameSite=None requires Secure flag
+  // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
+  // SameSite=None requires Secure flag (which we add below in production)
   const sameSite = IS_PRODUCTION ? 'None' : 'Lax';
   
   let cookie = `XSRF-TOKEN=; Path=/; SameSite=${sameSite}; Max-Age=0`;
   
-  // Secure flag is required for SameSite=None, always include in production
+  // Secure flag is REQUIRED for SameSite=None in production
   if (IS_PRODUCTION) {
     cookie += '; Secure';
   }
