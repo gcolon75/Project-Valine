@@ -430,24 +430,29 @@ For complete details on configuration, testing, rollback procedures, and trouble
 
 > **📌 Deployment Note:** Deploy the **Serverless backend** (`/serverless` directory) to staging and production. The Express server in `/server` is for local development only.
 
-📚 **AWS Deployment Guides:**
-- **[AWS Deployment Quick Start](docs/AWS_DEPLOYMENT_QUICKSTART.md)** - 30-minute fast-track deployment guide
-- **[Complete AWS Deployment Guide](docs/deployment/aws-guide.md)** - Comprehensive guide with all curl tests
-- **[Database Provider Comparison](docs/DATABASE_PROVIDER_COMPARISON.md)** - Choose between Supabase and AWS RDS
-- **[Deployment Overview](docs/deployment/overview.md)** - Complete deployment documentation
-- **[Quick Deploy](docs/deployment/quick-deploy.md)** - 5-minute deployment overview
+📖 **Canonical Deployment Guide:**
+- **[DEPLOYMENT_BIBLE.md](docs/DEPLOYMENT_BIBLE.md)** - **SINGLE SOURCE OF TRUTH** for all deployments
+  - Prerequisites & required tooling
+  - Environment configuration
+  - One-button deploy scripts (`serverless/scripts/deploy.{ps1,sh}`)
+  - Post-deploy verification & smoke tests
+  - Rollback procedures
+  - Common issues & fixes (including 401 auth regression)
+  - Security checklist
 
-**Automated Deployment (Recommended):**
-```bash
-# 1. Pre-deployment validation
-node scripts/verify-predeploy.mjs
+**Quick Deploy:**
+```powershell
+# Windows (PowerShell)
+cd serverless
+.\scripts\deploy.ps1 -Stage prod -Region us-west-2
 
-# 2. Optimize Prisma for production
-node scripts/prisma-optimize.mjs --prod
-cd serverless && npm run prisma:generate && cd ..
+# Linux/Mac (Bash)
+cd serverless
+./scripts/deploy.sh prod us-west-2
+```
 
-# 3. Setup database (Supabase free tier recommended for dev)
-export DATABASE_URL="postgresql://user:password@host:5432/valine_db"
+**Legacy Guides (Archived):**
+- See [docs/archive/deployment-old/](docs/archive/deployment-old/) for historical guides (reference only)
 ./scripts/deployment/setup-database.sh
 
 # 4. One-time: Migrate legacy passwords (if upgrading)

@@ -17,6 +17,9 @@ deploy-report.json
 serverless/.serverless/
 serverless/login.zip
 serverless/login_unpack/
+serverless/unzipped/
+serverless/zip_inspect/
+serverless/_logdump/
 .esbuild/
 serverless/.esbuild/
 serverless/.layer-build/

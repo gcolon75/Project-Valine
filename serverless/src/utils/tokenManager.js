@@ -132,11 +132,18 @@ const parseCookies = (cookieHeader) => {
  * Log diagnostic information about token extraction (non-test environments only)
  * @param {string} message - Log message
  * @param {object} data - Additional data to log (optional)
+ * @param {string} correlationId - Optional correlation ID for request tracking
  */
-const logTokenDiagnostic = (message, data = null) => {
+const logTokenDiagnostic = (message, data = null, correlationId = null) => {
   if (process.env.NODE_ENV !== 'test') {
-    if (data && Object.keys(data).length > 0) {
-      console.log(`[extractToken] ${message}`, data);
+    const logData = {
+      ...(correlationId && { correlationId }),
+      timestamp: new Date().toISOString(),
+      ...(data && Object.keys(data).length > 0 ? data : {})
+    };
+    
+    if (Object.keys(logData).length > 0) {
+      console.log(`[extractToken] ${message}`, logData);
     } else {
       console.log(`[extractToken] ${message}`);
     }
@@ -150,9 +157,10 @@ const logTokenDiagnostic = (message, data = null) => {
  * - REST API (event.headers.cookie and event.multiValueHeaders.cookie)
  * @param {object} event - Lambda event object
  * @param {string} tokenType - 'access' or 'refresh'
+ * @param {string} correlationId - Optional correlation ID for request tracking
  * @returns {string|null} Token string or null
  */
-export const extractToken = (event, tokenType = 'access') => {
+export const extractToken = (event, tokenType = 'access', correlationId = null) => {
   const cookieName = tokenType === 'access' ? 'access_token' : 'refresh_token';
   
   // Diagnostic: Log what we're looking for (safe, no secrets)
@@ -166,17 +174,19 @@ export const extractToken = (event, tokenType = 'access') => {
     hasHeadersCookie,
     hasMultiValueHeaders,
     cookiesArrayLength: hasCookiesArray ? event.cookies.length : 0
-  });
+  }, correlationId);
   
   // HTTP API v2: Try event.cookies array first (AWS parses cookies into array)
   // Format: ["access_token=abc123", "refresh_token=xyz789"]
   if (hasCookiesArray) {
     const prefix = `${cookieName}=`;
     for (const cookie of event.cookies) {
-      if (cookie.startsWith(prefix)) {
+      // Trim cookie to handle leading/trailing whitespace (AWS Gateway edge case)
+      const trimmedCookie = cookie.trim();
+      if (trimmedCookie.startsWith(prefix)) {
         // Handle cookie values that may contain '=' (e.g., base64 tokens)
-        const token = cookie.substring(prefix.length);
-        logTokenDiagnostic('Found in event.cookies[]');
+        const token = trimmedCookie.substring(prefix.length);
+        logTokenDiagnostic('Found in event.cookies[]', {}, correlationId);
         return token;
       }
     }
@@ -190,7 +200,7 @@ export const extractToken = (event, tokenType = 'access') => {
     const combinedCookies = multiValueCookie.join('; ');
     const cookies = parseCookies(combinedCookies);
     if (cookies[cookieName]) {
-      logTokenDiagnostic('Found in event.multiValueHeaders.cookie');
+      logTokenDiagnostic('Found in event.multiValueHeaders.cookie', {}, correlationId);
       return cookies[cookieName];
     }
   }
@@ -200,7 +210,7 @@ export const extractToken = (event, tokenType = 'access') => {
   if (headerCookie) {
     const cookies = parseCookies(headerCookie);
     if (cookies[cookieName]) {
-      logTokenDiagnostic('Found in event.headers.cookie');
+      logTokenDiagnostic('Found in event.headers.cookie', {}, correlationId);
       return cookies[cookieName];
     }
   }
@@ -209,12 +219,15 @@ export const extractToken = (event, tokenType = 'access') => {
   if (tokenType === 'access') {
     const authHeader = event.headers?.authorization || event.headers?.Authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      logTokenDiagnostic('Found in Authorization header');
+      logTokenDiagnostic('Found in Authorization header', {}, correlationId);
       return authHeader.substring(7);
     }
   }
   
-  logTokenDiagnostic('Token not found');
+  logTokenDiagnostic('Token not found', { 
+    tokenType,
+    searchedLocations: ['event.cookies[]', 'event.multiValueHeaders.cookie', 'event.headers.cookie', 'Authorization header']
+  }, correlationId);
   return null;
 };
 

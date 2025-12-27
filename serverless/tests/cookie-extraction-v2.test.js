@@ -507,6 +507,52 @@ describe('Cookie Extraction - HTTP API v2 Support', () => {
       expect(userId).toBe(testUserId);
     });
 
+    it('should handle cookies with leading whitespace (AWS Gateway edge case)', () => {
+      // Sometimes AWS Gateway adds leading space to cookie values
+      const event = {
+        cookies: [
+          ` access_token=${accessToken}`, // Leading space
+          `refresh_token=${refreshToken}`
+        ]
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const userId = getUserIdFromEvent(event);
+      expect(userId).toBe(testUserId);
+    });
+
+    it('should handle cookies with trailing whitespace', () => {
+      const event = {
+        cookies: [
+          `access_token=${accessToken} `, // Trailing space
+          `refresh_token=${refreshToken}`
+        ]
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const userId = getUserIdFromEvent(event);
+      expect(userId).toBe(testUserId);
+    });
+
+    it('should handle cookies with leading and trailing whitespace', () => {
+      const event = {
+        cookies: [
+          ` access_token=${accessToken} `, // Both leading and trailing space
+          `refresh_token=${refreshToken}`
+        ]
+      };
+      
+      const token = extractToken(event, 'access');
+      expect(token).toBe(accessToken);
+      
+      const userId = getUserIdFromEvent(event);
+      expect(userId).toBe(testUserId);
+    });
+
     it('should handle REST API (ALB/API Gateway v1) request', () => {
       // Traditional REST API passes cookies as single header string
       const event = {
