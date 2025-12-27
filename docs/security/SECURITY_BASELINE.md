@@ -151,7 +151,7 @@ Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/aut
 ```powershell
 # Resend verification multiple times rapidly
 for i in {1..15}; do
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/resend-verification" -Method Post -Headers @{
     "Authorization" = "Bearer <token>"
     "Content-Type" = "application/json"
 }

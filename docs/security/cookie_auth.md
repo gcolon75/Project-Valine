@@ -154,7 +154,7 @@ Client                    API
 
 **Request:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/logout" -Method Post```
 
 **Response Headers:**
 ```
@@ -330,11 +330,11 @@ Invoke-RestMethod -Uri "http://localhost:3001/auth/me" -Method Get```
 
 **Refresh Token:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/refresh" -Method Post```
 
 **Logout:**
 ```powershell
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/posts" -Method Post```
+Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/logout" -Method Post```
 
 ### Automated Tests
 
