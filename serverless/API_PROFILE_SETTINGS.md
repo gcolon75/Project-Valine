@@ -173,7 +173,8 @@ Generate a signed S3 upload URL and create placeholder media record.
   "type": "video",
   "title": "Demo Reel 2024",
   "description": "My latest work",
-  "privacy": "public"
+  "privacy": "public",
+  "contentType": "video/mp4"
 }
 ```
 
@@ -182,6 +183,7 @@ Generate a signed S3 upload URL and create placeholder media record.
 - `title` (string, optional)
 - `description` (string, optional)
 - `privacy` (string, optional) - One of: "public", "on-request", "private" (default: "public")
+- `contentType` (string, optional) - MIME type of the file. If not provided, defaults are: "image/jpeg" for images, "video/mp4" for videos, "application/pdf" for PDFs. When provided, must be one of: "image/jpeg", "image/png", "image/webp", "video/mp4", "application/pdf"
 
 **Response:**
 ```json
@@ -195,8 +197,10 @@ Generate a signed S3 upload URL and create placeholder media record.
 
 **Usage:**
 1. Call this endpoint to get upload URL
-2. Upload file directly to S3 using the provided URL (PUT request)
+2. Upload file directly to S3 using the provided URL (PUT request with matching Content-Type header)
 3. Call the complete endpoint with the mediaId
+
+**Important:** The `Content-Type` header used when uploading to S3 must match the `contentType` specified in the request (or the default if not specified). Mismatches will result in a 403 Forbidden error from S3.
 
 ### Complete Upload
 

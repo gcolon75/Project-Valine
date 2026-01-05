@@ -75,6 +75,53 @@ describe('mediaService', () => {
       expect(result).toEqual(mockResponse.data);
     });
 
+    it('should include contentType when provided', async () => {
+      const mockResponse = {
+        data: {
+          mediaId: 'media-123',
+          uploadUrl: 'https://s3.amazonaws.com/presigned-url',
+          s3Key: 'profiles/user-123/media/12345-media-123',
+        },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await getUploadUrl('user-123', 'image', 'Test Image', null, 'public', 'image/png');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/profiles/user-123/media/upload-url', {
+        type: 'image',
+        title: 'Test Image',
+        description: null,
+        privacy: 'public',
+        contentType: 'image/png',
+      });
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should not include contentType when not provided', async () => {
+      const mockResponse = {
+        data: {
+          mediaId: 'media-123',
+          uploadUrl: 'https://s3.amazonaws.com/presigned-url',
+          s3Key: 'profiles/user-123/media/12345-media-123',
+        },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await getUploadUrl('user-123', 'image', 'Test Image', null, 'public', null);
+
+      expect(apiClient.post).toHaveBeenCalledWith('/profiles/user-123/media/upload-url', {
+        type: 'image',
+        title: 'Test Image',
+        description: null,
+        privacy: 'public',
+      });
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
     it('should throw error if profileId is missing', async () => {
       await expect(getUploadUrl(null, 'image')).rejects.toThrow('Profile ID is required');
     });
