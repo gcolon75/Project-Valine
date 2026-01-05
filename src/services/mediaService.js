@@ -30,9 +30,10 @@ export const getContentType = (file, mediaType) => {
  * @param {string} title - Media title (optional)
  * @param {string} description - Media description (optional)
  * @param {string} privacy - Privacy setting (public, on-request, private)
+ * @param {string} contentType - MIME type of the file (optional)
  * @returns {Promise<Object>} Upload URL data with mediaId, uploadUrl, s3Key
  */
-export const getUploadUrl = async (profileId, type, title = null, description = null, privacy = 'public') => {
+export const getUploadUrl = async (profileId, type, title = null, description = null, privacy = 'public', contentType = null) => {
   if (!profileId) {
     throw new Error('Profile ID is required');
   }
@@ -42,12 +43,19 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
   }
 
   try {
-    const { data } = await apiClient.post(`/profiles/${profileId}/media/upload-url`, {
+    const requestBody = {
       type,
       title,
       description,
       privacy,
-    });
+    };
+
+    // Include contentType if provided
+    if (contentType) {
+      requestBody.contentType = contentType;
+    }
+
+    const { data } = await apiClient.post(`/profiles/${profileId}/media/upload-url`, requestBody);
 
     return data;
   } catch (error) {
@@ -257,7 +265,11 @@ export const uploadMedia = async (profileId, file, type, options = {}) => {
     if (typeof onProgress === 'function') {
       onProgress(0);
     }
-    const { mediaId, uploadUrl } = await getUploadUrl(profileId, type, title, description, privacy);
+    
+    // Get content type from file
+    const contentType = getContentType(file, type);
+    
+    const { mediaId, uploadUrl } = await getUploadUrl(profileId, type, title, description, privacy, contentType);
 
     // Step 2: Upload to S3 with progress tracking
     await uploadToS3(uploadUrl, file, type, (progress) => {

@@ -187,6 +187,12 @@ export default function Post() {
         // Standard media upload flow
         const mediaType = getMediaType(formData.contentType, selectedFile);
         
+        // Get content type from file
+        const contentType = selectedFile.type || 
+          (mediaType === 'video' ? 'video/mp4' : 
+           mediaType === 'image' ? 'image/jpeg' : 
+           'application/pdf');
+        
         // Step 1: Get presigned upload URL
         setUploadProgress(5);
         const { mediaId, uploadUrl } = await getUploadUrl(
@@ -194,7 +200,8 @@ export default function Post() {
           mediaType,
           formData.title || selectedFile.name,
           formData.description,
-          formData.visibility
+          formData.visibility,
+          contentType
         );
 
         // Step 2: Upload to S3

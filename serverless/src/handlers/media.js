@@ -38,10 +38,31 @@ export const getUploadUrl = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { type, title, description, privacy } = body;
+    const { type, title, description, privacy, contentType } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
       return error(400, 'Valid type is required (image, video, or pdf)');
+    }
+
+    // Validate and normalize contentType
+    const allowedContentTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'video/mp4',
+      'application/pdf'
+    ];
+
+    let validatedContentType;
+    if (contentType) {
+      // If contentType is provided, validate it against allowlist
+      if (!allowedContentTypes.includes(contentType)) {
+        return error(400, `Invalid contentType. Allowed types: ${allowedContentTypes.join(', ')}`);
+      }
+      validatedContentType = contentType;
+    } else {
+      // Fall back to type-based defaults for backward compatibility
+      validatedContentType = type === 'video' ? 'video/mp4' : type === 'image' ? 'image/jpeg' : 'application/pdf';
     }
 
     const prisma = getPrisma();
@@ -105,7 +126,7 @@ export const getUploadUrl = async (event) => {
     const command = new PutObjectCommand({
       Bucket: MEDIA_BUCKET,
       Key: s3Key,
-      ContentType: type === 'video' ? 'video/mp4' : type === 'image' ? 'image/jpeg' : 'application/pdf',
+      ContentType: validatedContentType,
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
