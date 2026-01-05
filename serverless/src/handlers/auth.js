@@ -249,7 +249,7 @@ async function login(event) {
       
       try {
         user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() }
+          where: { normalizedEmail: email.toLowerCase().trim() }
         });
       } catch (dbError) {
         logStructured(correlationId, 'login_db_error', {
@@ -522,7 +522,7 @@ async function register(event) {
     let existing;
     try {
       existing = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() }
+        where: { normalizedEmail: email.toLowerCase().trim() }
       });
     } catch (dbError) {
       logStructured(correlationId, 'register_db_lookup_error', {
@@ -543,9 +543,11 @@ async function register(event) {
     let user;
     try {
       const passwordHash = await bcrypt.hash(password, 12);
+      const normalizedEmail = email.toLowerCase().trim();
       user = await prisma.user.create({
         data: {
-          email: email.toLowerCase(),
+          email: normalizedEmail,
+          normalizedEmail: normalizedEmail,
           username: finalUsername,
           passwordHash: passwordHash,
           displayName: finalDisplayName,
@@ -1039,7 +1041,7 @@ async function seedRestricted(event) {
       try {
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() }
+          where: { normalizedEmail: email.toLowerCase().trim() }
         });
         
         if (existingUser) {
@@ -1064,11 +1066,13 @@ async function seedRestricted(event) {
         // Generate username from email
         const username = email.split('@')[0];
         const displayName = username;
+        const normalizedEmail = email.toLowerCase().trim();
         
         // Create user with all flags set
         const user = await prisma.user.create({
           data: {
-            email: email.toLowerCase(),
+            email: normalizedEmail,
+            normalizedEmail: normalizedEmail,
             username: username,
             passwordHash: passwordHash,
             displayName: displayName,

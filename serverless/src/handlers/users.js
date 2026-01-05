@@ -9,9 +9,18 @@ export const createUser = async (event) => {
       return error('username, email, and displayName are required', 400);
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
     const prisma = getPrisma();
     const user = await prisma.user.create({
-      data: { username, email, displayName, bio, avatar, role },
+      data: { 
+        username, 
+        email: normalizedEmail, 
+        normalizedEmail: normalizedEmail,
+        displayName, 
+        bio, 
+        avatar, 
+        role 
+      },
     });
     
     return json(user, 201);
