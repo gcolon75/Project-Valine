@@ -1,9 +1,26 @@
 # Project Valine - The Bible
 ## Complete Master Reference & Single Source of Truth
 
-**Version:** 2.0  
-**Last Updated:** 2025-12-12  
+**Version:** 2.1  
+**Last Updated:** 2026-01-05  
 **Purpose:** This document serves as the complete, authoritative reference for Project Valine (Joint), consolidating all architectural decisions, database schemas, API endpoints, deployment procedures, and operational knowledge into a single source of truth.
+
+## 🌐 Production Endpoints (Confirmed)
+
+- **Frontend (CloudFront):** https://dkmxy676d3vgc.cloudfront.net
+- **Frontend S3 Bucket:** `valine-frontend-prod`
+- **CloudFront Distribution ID:** `E16LPJDBIL5DEE`
+- **Production API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- **Media Uploads Bucket:** `valine-media-uploads`
+
+## 🔐 Database Connection
+
+**Canonical DATABASE_URL (no spaces):**
+```
+postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+```
+
+**⚠️ CRITICAL:** Database URLs must NEVER contain spaces. Spaces cause authentication and connection failures.
 
 ---
 
@@ -225,6 +242,28 @@ Key Root Files:
 - **Connection:** Connection pooling via Prisma
 - **Schema Location:** `serverless/prisma/schema.prisma` (CANONICAL) and `api/prisma/schema.prisma` (must be kept in sync)
 - **⚠️ IMPORTANT:** Production migrations run from `serverless/prisma`. Keep both schemas synchronized to prevent drift.
+
+##### Schema Drift Prevention
+
+**Why It Matters:**  
+The project maintains two Prisma schema files that MUST remain identical:
+- `api/prisma/schema.prisma` - Used for development and migrations
+- `serverless/prisma/schema.prisma` - Used for Lambda Prisma client generation in production
+
+If these schemas diverge, production will generate a Prisma client with different fields than development expects, causing runtime errors like "Unknown argument" or missing field errors.
+
+**Prevention Tools:**
+```bash
+# Check for schema drift (exit code 1 if different)
+node scripts/check-schema-drift.mjs
+```
+
+**Best Practices:**
+1. Always update BOTH schemas when making changes
+2. Run `node scripts/check-schema-drift.mjs` before committing
+3. Create migrations in both `api/prisma/migrations/` and `serverless/prisma/migrations/`
+4. Use idempotent SQL (`ADD COLUMN IF NOT EXISTS`) for safety
+5. Test migrations locally before deploying to production
 
 #### File Storage (S3)
 - **Buckets:** 
