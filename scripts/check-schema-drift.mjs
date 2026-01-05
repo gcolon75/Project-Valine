@@ -40,9 +40,12 @@ try {
     console.error('  2. Manually sync the schemas or copy one to the other');
     console.error('  3. Ensure both are identical');
     console.error('');
-    console.error('IMPORTANT: Production deploys use serverless/prisma/schema.prisma as canonical.');
-    console.error('Development typically uses api/prisma/schema.prisma for migrations.');
-    console.error('Both must stay in sync!');
+    console.error('WORKFLOW:');
+    console.error('  - Development: Make changes to api/prisma/schema.prisma first');
+    console.error('  - Create migration: cd api && npx prisma migrate dev --name your_migration');
+    console.error('  - Sync to serverless: Copy updated schema and migration to serverless/prisma/');
+    console.error('  - Deploy: Production uses serverless/prisma/ for Prisma client generation');
+    console.error('  - Both schemas MUST stay in sync to prevent runtime errors!');
     process.exit(1);
   }
 } catch (error) {
