@@ -1,6 +1,18 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 
+/**
+ * Normalizes an email address for consistent storage and lookups.
+ * @param {string} email - Raw email address
+ * @returns {string} Normalized email (lowercase, trimmed)
+ */
+function normalizeEmail(email) {
+  if (!email || typeof email !== 'string') {
+    return '';
+  }
+  return email.toLowerCase().trim();
+}
+
 export const createUser = async (event) => {
   try {
     const { username, email, displayName, bio, avatar, role } = JSON.parse(event.body || '{}');
@@ -9,13 +21,13 @@ export const createUser = async (event) => {
       return error('username, email, and displayName are required', 400);
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmailValue = normalizeEmail(email);
     const prisma = getPrisma();
     const user = await prisma.user.create({
       data: { 
         username, 
-        email: normalizedEmail, 
-        normalizedEmail: normalizedEmail,
+        email: normalizedEmailValue, 
+        normalizedEmail: normalizedEmailValue,
         displayName, 
         bio, 
         avatar, 
