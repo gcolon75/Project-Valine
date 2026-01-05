@@ -76,7 +76,6 @@ describe('Media Handler - Content Type Validation', () => {
     it('should accept valid image/jpeg contentType', async () => {
       const event = {
         mockUserId: 'test-user-id',
-        mockUserId: 'test-user-id',
         pathParameters: { id: 'test-profile-id' },
         body: JSON.stringify({
           type: 'image',
