@@ -1,0 +1,13 @@
+﻿{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "https://dkmxy676d3vgc.cloudfront.net"
+      ],
+      "AllowedMethods": ["PUT", "POST", "GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

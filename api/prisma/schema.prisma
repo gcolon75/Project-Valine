@@ -29,7 +29,8 @@ model User {
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   profileComplete         Boolean                   @default(false)
-
+  accessGrants            AccessGrant[]             @relation("AccessGrants")
+  accessRequests          AccessRequest[]           @relation("AccessRequests")
   auditLogs               AuditLog[]
   auditions               Audition[]
   bookmarks               Bookmark[]
@@ -54,8 +55,6 @@ model User {
   sessions                Session[]
   twoFactorRecoveryCodes  TwoFactorRecoveryCode[]
   settings                UserSettings?
-  accessRequests          AccessRequest[]           @relation("AccessRequests")
-  accessGrants            AccessGrant[]             @relation("AccessGrants")
 
   @@index([email])
   @@index([normalizedEmail])
@@ -74,7 +73,6 @@ model Script {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
@@ -89,7 +87,6 @@ model Audition {
   hostId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
@@ -98,33 +95,26 @@ model Audition {
 }
 
 model Post {
-  id            String   @id @default(uuid())
-  content       String
-  media         String[] @map("media")
-  tags          String[]
-  authorId      String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Optional attachment to a Media row
-  mediaId       String?
-  
-  // 4-Tier Content System fields
-  visibility     Visibility @default(PUBLIC)
-  isFree         Boolean @default(true)
-  price          Float?
+  id             String          @id @default(uuid())
+  content        String
+  media          String[]        @map("media")
+  tags           String[]
+  authorId       String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  mediaId        String?
+  visibility     Visibility      @default(PUBLIC)
+  audioUrl       String?
+  body           String?
+  price          Decimal         @default(0) @db.Decimal(10, 2)
+  isFree         Boolean         @default(true)
   thumbnailUrl   String?
-  requiresAccess Boolean @default(false)
-  allowDownload  Boolean @default(false)
-  
-  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  // ✅ FIX: match relation name used on Media.posts
-  mediaAttached Media?   @relation("PostMedia", fields: [mediaId], references: [id])
-  
-  // Access control relations
+  requiresAccess Boolean         @default(false)
+  allowDownload  Boolean         @default(false)
   grants         AccessGrant[]
   requests       AccessRequest[]
+  author         User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mediaAttached  Media?          @relation("PostMedia", fields: [mediaId], references: [id])
 
   @@index([authorId])
   @@index([createdAt])
@@ -143,7 +133,6 @@ model Reel {
   authorId  String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-
   bookmarks Bookmark[]
   comments  Comment[]
   likes     Like[]
@@ -162,7 +151,6 @@ model Comment {
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
@@ -177,7 +165,6 @@ model Like {
   reelId    String
   userId    String
   createdAt DateTime @default(now())
-
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -192,7 +179,6 @@ model Bookmark {
   reelId    String
   userId    String
   createdAt DateTime @default(now())
-
   reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -209,7 +195,6 @@ model Conversation {
   lastMessageAt DateTime?
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
-
   participants  ConversationParticipant[]
   messages      Message[]
 
@@ -222,7 +207,6 @@ model ConversationParticipant {
   conversationId String
   userId         String
   joinedAt       DateTime     @default(now())
-
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -238,7 +222,6 @@ model Message {
   conversationId String
   senderId       String
   createdAt      DateTime     @default(now())
-
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
@@ -257,7 +240,6 @@ model Notification {
   isRead      Boolean  @default(false)
   metadata    Json?
   createdAt   DateTime @default(now())
-
   recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
   triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])
 
@@ -275,7 +257,6 @@ model ConnectionRequest {
   message    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
   receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
   sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
@@ -287,36 +268,34 @@ model ConnectionRequest {
 }
 
 model Profile {
-  id          String        @id @default(uuid())
-  userId      String        @unique
-  vanityUrl   String        @unique
-  headline    String?
-  bio         String?
-  title       String?
-  bannerUrl   String?
-
-  // arrays stored as Postgres text[]
-  roles       String[]
-  tags        String[]
-
-  // ✅ FIX: Prisma expects this field; DB needs column too.
-  availabilityStatus String? @map("availabilityStatus")
-
-  location    Json?
-  privacy     Json          @default("{}")
-  socialLinks Json?
-  budgetMin   Int?
-  budgetMax   Int?
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  credits     Credit[]
-  education   Education[]
-  media       Media[]
-  links       ProfileLink[]
-
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String        @id @default(uuid())
+  userId             String        @unique
+  vanityUrl          String        @unique
+  headline           String?
+  bio                String?
+  roles              String[]
+  tags               String[]
+  location           Json?
+  privacy            Json          @default("{}")
+  socialLinks        Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  title              String?
+  bannerUrl          String?
+  budgetMin          Int?
+  budgetMax          Int?
+  pronouns           String?
+  availabilityStatus String?       @map("availabilityStatus")
+  showPronouns       Boolean       @default(true)
+  showLocation       Boolean       @default(true)
+  showAvailability   Boolean       @default(true)
+  followingCount     Int           @default(0)
+  followersCount     Int           @default(0)
+  credits            Credit[]
+  education          Education[]
+  media              Media[]
+  links              ProfileLink[]
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
   @@index([userId])
@@ -335,7 +314,6 @@ model ProfileLink {
   position  Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -355,7 +333,6 @@ model Education {
   achievements String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
@@ -379,12 +356,9 @@ model Media {
   metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-
+  mediaType       String?
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  // ✅ FIX: relation name must match Post.mediaAttached
   posts           Post[]        @relation("PostMedia")
-
   reelRequests    ReelRequest[]
 
   @@index([profileId])
@@ -407,7 +381,6 @@ model Credit {
   metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
@@ -425,7 +398,6 @@ model UserSettings {
   billing         Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
@@ -441,7 +413,6 @@ model ReelRequest {
   response    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
   requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
@@ -459,7 +430,6 @@ model EmailVerificationToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -475,7 +445,6 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -491,7 +460,6 @@ model TwoFactorRecoveryCode {
   used      Boolean   @default(false)
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -508,7 +476,6 @@ model Session {
   expiresAt    DateTime
   lastActivity DateTime @default(now())
   createdAt    DateTime @default(now())
-
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -529,7 +496,6 @@ model AuditLog {
   userAgent  String?
   metadata   Json?
   createdAt  DateTime @default(now())
-
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -560,7 +526,6 @@ model moderation_actions {
   reason             String?
   actorId            String
   createdAt          DateTime           @default(now())
-
   moderation_reports moderation_reports @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([actorId])
@@ -580,7 +545,6 @@ model moderation_reports {
   severity           Int                  @default(0)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime
-
   moderation_actions moderation_actions[]
 
   @@index([category])
@@ -612,7 +576,6 @@ model refresh_tokens {
   invalidatedAt DateTime?
   createdAt     DateTime  @default(now())
   lastUsedAt    DateTime  @default(now())
-
   users         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([jti])
@@ -634,21 +597,6 @@ model test_runs {
   @@index([suite, testName])
 }
 
-// ========================================
-// Post Access Control System
-// ========================================
-
-enum Visibility {
-  PUBLIC
-  FOLLOWERS_ONLY
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  DENIED
-}
-
 model AccessRequest {
   id          String        @id @default(cuid())
   postId      String
@@ -657,7 +605,6 @@ model AccessRequest {
   message     String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  
   post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   requester   User          @relation("AccessRequests", fields: [requesterId], references: [id], onDelete: Cascade)
 
@@ -669,18 +616,28 @@ model AccessRequest {
 }
 
 model AccessGrant {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   postId    String
   userId    String
-  grantedAt DateTime @default(now())
+  grantedAt DateTime  @default(now())
   expiresAt DateTime?
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@index([postId])
   @@index([userId])
   @@index([expiresAt])
   @@map("access_grants")
+}
+
+enum Visibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DENIED
 }
