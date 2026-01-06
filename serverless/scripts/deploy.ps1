@@ -107,47 +107,65 @@ try {
 # ===== STEP 2: Validate Environment Variables =====
 Write-Step "Step 2: Validate Environment Variables"
 
-$requiredEnvVars = @(
-    "DATABASE_URL",
-    "JWT_SECRET",
-    "ALLOWED_USER_EMAILS"
-)
+# Run comprehensive env validation script
+$validateScriptPath = Join-Path $PSScriptRoot "validate-required-env.ps1"
+if (Test-Path $validateScriptPath) {
+    Write-Info "Running environment validation script..."
+    try {
+        & $validateScriptPath -Strict
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Environment validation failed. Please fix the issues above before deploying."
+            exit 1
+        }
+    } catch {
+        Write-Error "Environment validation script failed: $_"
+        exit 1
+    }
+} else {
+    Write-Warning "validate-required-env.ps1 not found, using basic validation"
+    
+    $requiredEnvVars = @(
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "ALLOWED_USER_EMAILS"
+    )
 
-$missingVars = @()
+    $missingVars = @()
 
-# Load .env.prod if exists
-if (Test-Path ".env.prod") {
-    Write-Info "Loading .env.prod..."
-    Get-Content ".env.prod" | ForEach-Object {
-        if ($_ -match '^([^=]+)=(.*)$') {
-            $name = $matches[1].Trim()
-            $value = $matches[2].Trim()
-            if (-not [string]::IsNullOrEmpty($value)) {
-                [Environment]::SetEnvironmentVariable($name, $value, "Process")
+    # Load .env.prod if exists
+    if (Test-Path ".env.prod") {
+        Write-Info "Loading .env.prod..."
+        Get-Content ".env.prod" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+                $name = $matches[1].Trim()
+                $value = $matches[2].Trim()
+                if (-not [string]::IsNullOrEmpty($value)) {
+                    [Environment]::SetEnvironmentVariable($name, $value, "Process")
+                }
             }
         }
     }
-}
 
-foreach ($var in $requiredEnvVars) {
-    $value = [Environment]::GetEnvironmentVariable($var)
-    if ([string]::IsNullOrEmpty($value)) {
-        $missingVars += $var
-    } else {
-        # Redact sensitive values
-        if ($var -match "SECRET|PASSWORD|KEY") {
-            Write-Success "$var = [REDACTED]"
+    foreach ($var in $requiredEnvVars) {
+        $value = [Environment]::GetEnvironmentVariable($var)
+        if ([string]::IsNullOrEmpty($value)) {
+            $missingVars += $var
         } else {
-            $displayValue = $value.Substring(0, [Math]::Min(50, $value.Length))
-            Write-Success "$var = $displayValue..."
+            # Redact sensitive values
+            if ($var -match "SECRET|PASSWORD|KEY") {
+                Write-Success "$var = [REDACTED]"
+            } else {
+                $displayValue = $value.Substring(0, [Math]::Min(50, $value.Length))
+                Write-Success "$var = $displayValue..."
+            }
         }
     }
-}
 
-if ($missingVars.Count -gt 0) {
-    Write-Error "Missing required environment variables: $($missingVars -join ', ')"
-    Write-Warning "Set them in .env.prod or as environment variables"
-    exit 1
+    if ($missingVars.Count -gt 0) {
+        Write-Error "Missing required environment variables: $($missingVars -join ', ')"
+        Write-Warning "Set them in .env.prod or as environment variables"
+        exit 1
+    }
 }
 
 # ===== STEP 3: Validate Prisma Layer =====

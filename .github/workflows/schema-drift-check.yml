@@ -1,0 +1,74 @@
+name: Prisma Schema Drift Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'api/prisma/schema.prisma'
+      - 'serverless/prisma/schema.prisma'
+      - 'scripts/check-schema-drift.mjs'
+      - '.github/workflows/schema-drift-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/prisma/schema.prisma'
+      - 'serverless/prisma/schema.prisma'
+
+jobs:
+  check-drift:
+    name: Check Schema Drift
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run schema drift check
+        run: |
+          node scripts/check-schema-drift.mjs
+        
+      - name: Post failure comment
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `## ❌ Prisma Schema Drift Detected
+            
+            The Prisma schemas in \`api/prisma/schema.prisma\` and \`serverless/prisma/schema.prisma\` are out of sync.
+            
+            ### Why this matters
+            Having different schemas causes runtime errors when Prisma client generation differs between environments.
+            
+            ### How to fix
+            1. Review the differences:
+               \`\`\`bash
+               diff -u api/prisma/schema.prisma serverless/prisma/schema.prisma
+               \`\`\`
+            
+            2. Sync the schemas (copy one to the other or manually merge)
+            
+            3. Verify sync:
+               \`\`\`bash
+               node scripts/check-schema-drift.mjs
+               \`\`\`
+            
+            ### Workflow
+            - Make changes to \`api/prisma/schema.prisma\` first
+            - Create migration: \`cd api && npx prisma migrate dev --name your_migration\`
+            - Copy schema to serverless: \`cp api/prisma/schema.prisma serverless/prisma/schema.prisma\`
+            - Both schemas MUST stay identical!
+            `;
+            
+            if (context.eventName === 'pull_request') {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }

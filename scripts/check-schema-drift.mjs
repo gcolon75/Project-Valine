@@ -5,6 +5,11 @@
  * Compares api/prisma/schema.prisma and serverless/prisma/schema.prisma
  * to ensure they remain synchronized. Exits with error code 1 if differences found.
  * 
+ * Features:
+ * - Normalizes line endings (CRLF → LF) to avoid false positives
+ * - Normalizes trailing whitespace
+ * - Cross-platform compatible
+ * 
  * Usage: node scripts/check-schema-drift.mjs
  */
 
@@ -19,11 +24,30 @@ const projectRoot = resolve(__dirname, '..');
 const apiSchemaPath = resolve(projectRoot, 'api/prisma/schema.prisma');
 const serverlessSchemaPath = resolve(projectRoot, 'serverless/prisma/schema.prisma');
 
+/**
+ * Normalize schema content for comparison
+ * - Convert all line endings to LF
+ * - Remove trailing whitespace from each line
+ * - Ensure file ends with exactly one newline
+ */
+function normalizeSchema(content) {
+  return content
+    .replace(/\r\n/g, '\n')           // CRLF → LF
+    .replace(/\r/g, '\n')             // CR → LF (old Mac)
+    .split('\n')
+    .map(line => line.trimEnd())      // Remove trailing whitespace
+    .join('\n')
+    .replace(/\n+$/, '\n');           // Single trailing newline
+}
+
 try {
   const apiSchema = readFileSync(apiSchemaPath, 'utf8');
   const serverlessSchema = readFileSync(serverlessSchemaPath, 'utf8');
 
-  if (apiSchema === serverlessSchema) {
+  const apiNormalized = normalizeSchema(apiSchema);
+  const serverlessNormalized = normalizeSchema(serverlessSchema);
+
+  if (apiNormalized === serverlessNormalized) {
     console.log('✅ Schema files are in sync');
     process.exit(0);
   } else {
