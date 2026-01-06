@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     One-button deployment script for Project Valine API (PowerShell)
@@ -41,17 +41,17 @@ $ScriptVersion = "1.0.0"
 $ScriptName = "deploy.ps1"
 
 # Colors for output
-function Write-Success { Write-Host "âœ“ $args" -ForegroundColor Green }
-function Write-Info { Write-Host "â„¹ $args" -ForegroundColor Cyan }
-function Write-Warning { Write-Host "âš  $args" -ForegroundColor Yellow }
-function Write-Error { Write-Host "âœ— $args" -ForegroundColor Red }
-function Write-Step { Write-Host "`nâ–¶ $args" -ForegroundColor Blue }
+function Write-Success { Write-Host "✓ $args" -ForegroundColor Green }
+function Write-Info { Write-Host "ℹ $args" -ForegroundColor Cyan }
+function Write-Warning { Write-Host "⚠ $args" -ForegroundColor Yellow }
+function Write-Error { Write-Host "✗ $args" -ForegroundColor Red }
+function Write-Step { Write-Host "`n▶ $args" -ForegroundColor Blue }
 
 # Banner
 Write-Host @"
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+═══════════════════════════════════════════════════════════
    Project Valine - One-Button Deploy Script v$ScriptVersion
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+═══════════════════════════════════════════════════════════
 "@ -ForegroundColor Cyan
 
 Write-Info "Stage: $Stage | Region: $Region"
@@ -413,18 +413,22 @@ if (-not $SkipTests) {
 
 # ===== STEP 10: Summary =====
 Write-Step "Deployment Summary"
-Write-Success "Environment validated"
-Write-Success "Prisma layer validated"
-Write-Success "Functions packaged"
-Write-Success "Deployed to $Stage in $Region"
-Write-Success "Lambda env vars verified"
+
+Write-Success "✓ Environment validated"
+Write-Success "✓ Prisma layer validated"
+Write-Success "✓ Functions packaged"
+Write-Success "✓ Deployed to $Stage in $Region"
+Write-Success "✓ Lambda env vars verified"
+
 if (-not $SkipTests) {
-    Write-Success "Smoke tests completed"
+    Write-Success "✓ Smoke tests completed"
 }
+
 Write-Host @"
-=========================================
+
+═══════════════════════════════════════════════════════════
    Deployment Complete! 🚀
-=========================================
+═══════════════════════════════════════════════════════════
 
 Next Steps:
 1. Test auth flow in browser: https://dkmxy676d3vgc.cloudfront.net
@@ -432,7 +436,7 @@ Next Steps:
 3. Review deployment: serverless info --stage $Stage --region $Region
 
 Documentation: docs/DEPLOYMENT_BIBLE.md
-=========================================
+═══════════════════════════════════════════════════════════
 "@ -ForegroundColor Green
 
 exit 0
