@@ -110,6 +110,8 @@ cd serverless
 ```
 
 This script automatically:
+- Checks and installs serverless dependencies (npm ci) if missing
+- Validates serverless plugins are loaded correctly
 - Validates environment variables
 - Checks/builds Prisma layer
 - Packages Lambda functions
