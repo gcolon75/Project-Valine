@@ -20,6 +20,8 @@ jobs:
   preflight:
     name: Serverless Preflight Checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
