@@ -182,7 +182,7 @@ $env:STRICT_ALLOWLIST = "0"
 # Application
 $env:NODE_ENV = "production"
 $env:STAGE = "prod"
-$env:API_BASE_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 
 # Cookies
@@ -370,10 +370,10 @@ Successful deployment shows:
 Service deployed to stack pv-api-prod
 
 endpoints:
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me
-  POST - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/me/profile
-  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/feed
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/me
+  POST - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/login
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile
+  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/feed
   ...
 
 functions:
@@ -503,7 +503,7 @@ aws lambda get-function-configuration `
 Test critical auth flow:
 
 ```powershell
-$API_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$API_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $FRONTEND_ORIGIN = "https://dkmxy676d3vgc.cloudfront.net"
 
 # 1. Test login
