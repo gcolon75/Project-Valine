@@ -192,6 +192,24 @@ try {
 # ===== STEP 2: Validate Environment Variables =====
 Write-Step "Step 2: Validate Environment Variables"
 
+# First, run environment drift detection
+$driftCheckPath = Join-Path $PSScriptRoot "check-env-drift.ps1"
+if (Test-Path $driftCheckPath) {
+    Write-Info "Running environment drift detection..."
+    try {
+        & $driftCheckPath -Stage $Stage
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Environment drift detected. Please fix the issues above before deploying."
+            exit 1
+        }
+    } catch {
+        Write-Error "Environment drift check failed: $_"
+        exit 1
+    }
+} else {
+    Write-Warning "check-env-drift.ps1 not found, skipping drift detection"
+}
+
 # Run comprehensive env validation script
 $validateScriptPath = Join-Path $PSScriptRoot "validate-required-env.ps1"
 if (Test-Path $validateScriptPath) {
@@ -262,12 +280,17 @@ if (Test-Path $layerPath) {
     $layerSize = (Get-Item $layerPath).Length / 1MB
     Write-Success "Prisma layer found: $([math]::Round($layerSize, 2)) MB"
     
-    # Validate layer structure
+    # Validate layer structure with detailed checks
     Write-Info "Validating layer structure..."
     try {
+        # Load System.IO.Compression.FileSystem for ZipFile operations
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        
         $zipContents = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $layerPath))
         $hasNodeModules = $zipContents.Entries | Where-Object { $_.FullName -like "nodejs/node_modules/*" }
         $hasPrismaClient = $zipContents.Entries | Where-Object { $_.FullName -like "nodejs/node_modules/@prisma/client/*" }
+        $hasDotPrisma = $zipContents.Entries | Where-Object { $_.FullName -like "nodejs/node_modules/.prisma/client/*" }
+        $hasLambdaBinary = $zipContents.Entries | Where-Object { $_.FullName -like "*/libquery_engine-rhel-openssl-3.0.x.so.node" }
         $zipContents.Dispose()
         
         if (-not $hasNodeModules) {
@@ -276,7 +299,13 @@ if (Test-Path $layerPath) {
         if (-not $hasPrismaClient) {
             throw "Layer missing @prisma/client"
         }
-        Write-Success "Layer structure validated"
+        if (-not $hasDotPrisma) {
+            throw "Layer missing .prisma/client"
+        }
+        if (-not $hasLambdaBinary) {
+            throw "Layer missing Lambda binary (libquery_engine-rhel-openssl-3.0.x.so.node)"
+        }
+        Write-Success "Layer structure validated (includes Lambda binary)"
     } catch {
         Write-Warning "Layer validation failed: $($_.Exception.Message)"
         Write-Info "Rebuilding Prisma layer..."
