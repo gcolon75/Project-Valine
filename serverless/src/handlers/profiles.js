@@ -868,6 +868,20 @@ export const updateMyProfile = async (event) => {
     // Validation
     const errors = [];
 
+    // Avatar URL validation - reject blob: URLs
+    if (avatarUrl !== undefined && avatarUrl !== null && typeof avatarUrl === 'string') {
+      if (avatarUrl.startsWith('blob:')) {
+        errors.push('avatarUrl cannot be a blob: URL. Blob URLs are temporary browser-local URLs that cannot be persisted. Please use the S3 URL returned from the upload completion.');
+      }
+    }
+
+    // Banner URL validation - reject blob: URLs
+    if (bannerUrl !== undefined && bannerUrl !== null && typeof bannerUrl === 'string') {
+      if (bannerUrl.startsWith('blob:')) {
+        errors.push('bannerUrl cannot be a blob: URL. Blob URLs are temporary browser-local URLs that cannot be persisted. Please use the S3 URL returned from the upload completion.');
+      }
+    }
+
     // Username validation
     if (username !== undefined) {
       // Check alphanumeric + underscore/hyphen

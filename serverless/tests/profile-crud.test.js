@@ -206,6 +206,76 @@ describe('Profile CRUD Tests', () => {
       expect(response.statusCode).not.toBe(500);
       expect(response.statusCode).toBe(200);
     });
+
+    it('should reject blob: URLs for avatarUrl', async () => {
+      const event = {
+        mockUserId: testUserId,
+        body: JSON.stringify({
+          displayName: 'Test User',
+          avatarUrl: 'blob:https://example.com/abc-123-def'
+        })
+      };
+
+      const response = await updateMyProfile(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.message).toContain('Validation failed');
+      expect(body.errors).toBeDefined();
+      expect(body.errors.some(e => e.includes('blob:'))).toBe(true);
+      expect(body.errors.some(e => e.includes('avatarUrl'))).toBe(true);
+    });
+
+    it('should reject blob: URLs for bannerUrl', async () => {
+      const event = {
+        mockUserId: testUserId,
+        body: JSON.stringify({
+          displayName: 'Test User',
+          bannerUrl: 'blob:https://cloudfront.net/xyz-789'
+        })
+      };
+
+      const response = await updateMyProfile(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.message).toContain('Validation failed');
+      expect(body.errors).toBeDefined();
+      expect(body.errors.some(e => e.includes('blob:'))).toBe(true);
+      expect(body.errors.some(e => e.includes('bannerUrl'))).toBe(true);
+    });
+
+    it('should accept valid S3 URLs for avatarUrl', async () => {
+      const event = {
+        mockUserId: testUserId,
+        body: JSON.stringify({
+          displayName: 'Test User',
+          avatarUrl: 'https://valine-media-uploads.s3.us-west-2.amazonaws.com/profiles/123/media/avatar.jpg'
+        })
+      };
+
+      const response = await updateMyProfile(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.avatar).toBe('https://valine-media-uploads.s3.us-west-2.amazonaws.com/profiles/123/media/avatar.jpg');
+    });
+
+    it('should accept valid S3 URLs for bannerUrl', async () => {
+      const event = {
+        mockUserId: testUserId,
+        body: JSON.stringify({
+          displayName: 'Test User',
+          bannerUrl: 'https://valine-media-uploads.s3.us-west-2.amazonaws.com/profiles/123/media/banner.jpg'
+        })
+      };
+
+      const response = await updateMyProfile(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.bannerUrl).toBe('https://valine-media-uploads.s3.us-west-2.amazonaws.com/profiles/123/media/banner.jpg');
+    });
   });
 
   describe('POST /profiles/:id/media/upload-url', () => {
