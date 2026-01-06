@@ -126,9 +126,9 @@ try {
     # These are only used for configuration validation, not for actual deployment
     # Using obviously fake values to prevent accidental usage in deployment
     $minimalEnvVars = @{
-        DATABASE_URL = "postgresql://VALIDATION_ONLY:VALIDATION_ONLY@localhost:5432/VALIDATION_PLACEHOLDER"
+        DATABASE_URL = "postgresql://VALIDATION_ONLY:VALIDATION_ONLY@validation-only.invalid:5432/VALIDATION_PLACEHOLDER"
         JWT_SECRET = "VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION"
-        ALLOWED_USER_EMAILS = "validation-placeholder@example.invalid"
+        ALLOWED_USER_EMAILS = "validation-placeholder1@example.invalid,validation-placeholder2@example.invalid"
         MEDIA_BUCKET = "validation-placeholder-bucket"
     }
     
@@ -173,8 +173,9 @@ try {
     }
 } catch {
     Write-Error "Plugin validation failed: $($_.Exception.Message)"
-    Write-Warning "Ensure serverless.yml has 'serverless-esbuild' in plugins section"
-    Write-Warning "Run 'npx serverless@3 plugin list' to verify available plugins"
+    Write-Warning "Ensure serverless.yml has 'serverless-esbuild' in the plugins section"
+    Write-Warning "Verify dependencies are installed by running: npm ci"
+    Write-Warning "Debug with: npx serverless@3 plugin list"
     exit 1
 }
 
