@@ -12,6 +12,21 @@ provider:
   versionFunctions: false
   # Prisma layer is attached per-function only to DB-using handlers (see individual functions)
   # health and meta endpoints do NOT need Prisma layer
+  
+  # IAM permissions for Lambda execution role
+  iam:
+    role:
+      statements:
+        # S3 permissions for media uploads
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:AbortMultipartUpload
+            - s3:ListMultipartUploadParts
+            - s3:GetObject
+          Resource:
+            - arn:aws:s3:::${env:MEDIA_BUCKET, "valine-media-uploads"}/*
+  
   httpApi:
     cors:
       allowedOrigins:
@@ -75,7 +90,7 @@ provider:
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "true"}
-    ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, "ghawk075@gmail.com,valinejustin@gmail.com"}
+    ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS, "user1@example.com,user2@example.com"}
     PR_INTEL_ENABLED: ${env:PR_INTEL_ENABLED, "false"}
     PR_INTEL_WEBHOOK_SECRET: ${env:PR_INTEL_WEBHOOK_SECRET, ""}
     FLAKY_DETECTOR_ENABLED: ${env:FLAKY_DETECTOR_ENABLED, "false"}

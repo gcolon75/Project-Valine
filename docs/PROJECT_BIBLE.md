@@ -15,9 +15,9 @@
 
 ## 🔐 Database Connection
 
-**Canonical DATABASE_URL (no spaces):**
+**Canonical DATABASE_URL Format (example with placeholder credentials):**
 ```
-postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=require
 ```
 
 **⚠️ CRITICAL:** Database URLs must NEVER contain spaces. Spaces cause authentication and connection failures.

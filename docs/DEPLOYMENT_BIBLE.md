@@ -102,15 +102,15 @@ $env:DATABASE_URL = "postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5
 - ❌ `rds.amazonaws.com` (space in hostname)
 - ❌ Extra whitespace from copy/paste errors
 
-**Canonical Database URL** (Production - Dev instance):
+**Example Database URL Format:**
 ```
-postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=require
 ```
 
 **Validation Checklist:**
 - [ ] No spaces anywhere in the URL
 - [ ] `?sslmode=require` has NO space between `?` and `sslmode`
-- [ ] Hostname has NO spaces (e.g., `rds.amazonaws.com` not `rds.amazonaws.com`)
+- [ ] Hostname has NO spaces
 - [ ] If copying from documentation, use triple-click to select entire line
 - [ ] After pasting, visually verify no extra spaces were introduced
 
@@ -138,11 +138,11 @@ All variables must be set in **BOTH** locations:
 
 ```powershell
 # Database
-$env:DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require"
+$env:DATABASE_URL = "postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
 
 # Authentication
 $env:JWT_SECRET = "<generate-with-openssl-rand-base64-32>"
-$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
+$env:ALLOWED_USER_EMAILS = "user1@example.com,user2@example.com"
 $env:ENABLE_REGISTRATION = "false"
 $env:STRICT_ALLOWLIST = "0"
 
@@ -431,7 +431,7 @@ $FRONTEND_ORIGIN = "https://dkmxy676d3vgc.cloudfront.net"
 Invoke-WebRequest -Uri "$API_URL/auth/login" `
   -Method POST `
   -Headers @{"Content-Type"="application/json"; "Origin"=$FRONTEND_ORIGIN} `
-  -Body '{"email":"ghawk075@gmail.com","password":"YOUR_PASSWORD"}' `
+  -Body '{"email":"your-email@example.com","password":"YOUR_PASSWORD"}' `
   -SessionVariable session
 
 # Expected: 200 OK, Set-Cookie headers for access_token and refresh_token
@@ -554,7 +554,52 @@ Run post-deploy verification tests again to ensure system is stable.
 
 ## Common Issues & Fixes
 
-### Issue 1: 401 Errors on /me/profile, /feed, /me/preferences
+### Issue 1: Intermittent 503 Service Unavailable
+
+**Symptoms**: 
+- Lambda returns 503 errors
+- Errors about missing DATABASE_URL or JWT_SECRET
+- Works locally but fails in production
+- Occurs after redeployment or environment reset
+
+**Root Cause**: Missing or empty environment variables in deployed Lambda functions
+
+**Diagnosis**:
+```powershell
+# Check if Lambda functions have required environment variables
+cd serverless
+.\scripts\audit-lambda-env.ps1 -Stage prod -Region us-west-2
+```
+
+**Fix**:
+1. Verify your local environment has all required variables:
+   ```powershell
+   cd serverless
+   .\scripts\validate-required-env.ps1 -Strict
+   ```
+
+2. Ensure variables are loaded before deployment:
+   ```powershell
+   # Load from .env.prod if exists
+   if (Test-Path ".env.prod") {
+       Get-Content ".env.prod" | ForEach-Object {
+           if ($_ -match '^([^=]+)=(.*)$') {
+               $name = $matches[1].Trim()
+               $value = $matches[2].Trim()
+               [Environment]::SetEnvironmentVariable($name, $value, "Process")
+           }
+       }
+   }
+   ```
+
+3. Redeploy with verified environment:
+   ```powershell
+   .\scripts\deploy.ps1 -Stage prod -Region us-west-2
+   ```
+
+**Prevention**: The deploy script now validates environment variables before deployment to prevent this issue.
+
+### Issue 2: 401 Errors on /me/profile, /feed, /me/preferences
 
 **Symptoms**: `/auth/me` returns 200, but other endpoints return 401
 
@@ -577,7 +622,7 @@ if ($codeUrl) {
 }
 ```
 
-### Issue 2: Missing Prisma Layer
+### Issue 3: Missing Prisma Layer
 
 **Symptoms**:
 ```
@@ -593,7 +638,7 @@ Remove-Item -Recurse -Force layers/ -ErrorAction SilentlyContinue
 serverless deploy --stage prod --region us-west-2 --force
 ```
 
-### Issue 3: Environment Variable Mismatch
+### Issue 4: Environment Variable Mismatch
 
 **Symptoms**: Some Lambdas work, others don't; inconsistent auth behavior
 
@@ -612,7 +657,7 @@ foreach ($func in $functions) {
 
 If different, redeploy with `--force` flag.
 
-### Issue 4: Serverless Config Parse Error
+### Issue 5: Serverless Config Parse Error
 
 **Symptoms**:
 ```

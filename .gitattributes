@@ -1,0 +1,59 @@
+# Git Line Ending Configuration
+# Ensures consistent line endings across platforms to prevent schema drift false positives
+
+# Default behavior: let Git handle line endings automatically
+* text=auto
+
+# Force LF for Prisma schema files to prevent drift detection false positives
+*.prisma text eol=lf
+
+# Force LF for shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Force LF for JavaScript/TypeScript/JSON files
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+
+# Force LF for YAML files
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Force LF for Markdown and documentation
+*.md text eol=lf
+
+# Force LF for configuration files
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.env.example text eol=lf
+.env.*.example text eol=lf
+
+# Allow CRLF for Windows-specific scripts
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.mp4 binary
+*.mp3 binary
+*.mov binary
+*.avi binary

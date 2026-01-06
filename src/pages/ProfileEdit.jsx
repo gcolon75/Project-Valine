@@ -389,15 +389,15 @@ export default function ProfileEdit() {
         },
       });
 
-      // Update form data with the actual media URL from backend
-      // Backend returns s3Url from completeUpload
-      if (result?.s3Url || result?.url || result?.viewUrl) {
-        const avatarUrl = result.s3Url || result.url || result.viewUrl;
-        handleChange('avatar', avatarUrl);
-      } else {
-        // Fallback to temporary URL if backend doesn't return URL yet
-        const tempUrl = URL.createObjectURL(croppedFile);
-        handleChange('avatar', tempUrl);
+      // Use local blob URL for immediate preview
+      // This ensures preview works correctly regardless of S3 bucket privacy settings
+      const tempUrl = URL.createObjectURL(croppedFile);
+      handleChange('avatar', tempUrl);
+      
+      // Store media ID if returned for later reference
+      if (result?.media?.id) {
+        // Could store mediaId for later use (e.g., to fetch signed URL after save)
+        console.log('Avatar media ID:', result.media.id);
       }
 
       // Track media upload
@@ -442,16 +442,16 @@ export default function ProfileEdit() {
         },
       });
 
-      // Update form data with the actual media URL from backend
-      // Backend returns s3Url from completeUpload
-      if (result?.s3Url || result?.url || result?.viewUrl) {
-        const bannerUrl = result.s3Url || result.url || result.viewUrl;
-        handleChange('banner', bannerUrl);
-        handleChange('bannerUrl', bannerUrl);
-      } else {
-        // Fallback to temporary URL if backend doesn't return URL yet
-        const tempUrl = URL.createObjectURL(croppedFile);
-        handleChange('banner', tempUrl);
+      // Use local blob URL for immediate preview
+      // This ensures preview works correctly regardless of S3 bucket privacy settings
+      const tempUrl = URL.createObjectURL(croppedFile);
+      handleChange('banner', tempUrl);
+      handleChange('bannerUrl', tempUrl);
+      
+      // Store media ID if returned for later reference
+      if (result?.media?.id) {
+        // Could store mediaId for later use (e.g., to fetch signed URL after save)
+        console.log('Banner media ID:', result.media.id);
       }
 
       // Track media upload
