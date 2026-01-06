@@ -124,11 +124,12 @@ Write-Info "Verifying serverless plugins..."
 try {
     # Minimal required env vars for serverless.yml validation (from serverless.yml provider.environment)
     # These are only used for configuration validation, not for actual deployment
+    # Using obviously fake values to prevent accidental usage in deployment
     $minimalEnvVars = @{
-        DATABASE_URL = "postgresql://validation:validation@localhost:5432/validation"
-        JWT_SECRET = "validation-placeholder-secret"
-        ALLOWED_USER_EMAILS = "validation@example.com"
-        MEDIA_BUCKET = "validation-bucket"
+        DATABASE_URL = "postgresql://VALIDATION_ONLY:VALIDATION_ONLY@localhost:5432/VALIDATION_PLACEHOLDER"
+        JWT_SECRET = "VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION"
+        ALLOWED_USER_EMAILS = "validation-placeholder@example.invalid"
+        MEDIA_BUCKET = "validation-placeholder-bucket"
     }
     
     # Store original values to restore later (for isolation)
@@ -145,11 +146,12 @@ try {
             throw "Serverless configuration validation failed"
         }
         
-        # Verify plugins section exists in output (more reliable than string matching specific plugin)
-        if ($printOutput -match "plugins:\s*-\s*serverless-esbuild") {
+        # Verify plugins section exists in output
+        # Support multiple YAML formatting styles for plugins
+        if ($printOutput -match "serverless-esbuild") {
             Write-Success "serverless-esbuild plugin is loaded"
         } elseif ($printOutput -match "plugins:") {
-            Write-Warning "Plugins section found but could not confirm serverless-esbuild"
+            Write-Warning "Plugins section found but could not confirm serverless-esbuild in output"
             Write-Info "Checking plugin list directly..."
             $pluginListOutput = npx serverless@3 plugin list 2>&1 | Out-String
             if ($pluginListOutput -notmatch "serverless-esbuild") {
