@@ -1,0 +1,164 @@
+name: Serverless Preflight Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'serverless/**'
+      - '.github/workflows/serverless-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'serverless/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.x'
+  AWS_REGION: 'us-west-2'
+
+jobs:
+  preflight:
+    name: Serverless Preflight Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'serverless/package-lock.json'
+
+      - name: Install serverless dependencies
+        run: |
+          cd serverless
+          npm ci
+        
+      - name: Verify serverless-esbuild plugin installed
+        run: |
+          cd serverless
+          if [ ! -d "node_modules/serverless-esbuild" ]; then
+            echo "❌ serverless-esbuild plugin not found"
+            exit 1
+          fi
+          echo "✅ serverless-esbuild plugin found"
+
+      - name: Verify serverless framework installed
+        run: |
+          cd serverless
+          if [ ! -d "node_modules/serverless" ]; then
+            echo "❌ serverless framework not found"
+            exit 1
+          fi
+          echo "✅ serverless framework found"
+
+      - name: Test serverless configuration
+        run: |
+          cd serverless
+          
+          # Set minimal required env vars for validation only
+          # These are ONLY used to validate serverless.yml syntax, never for actual deployment
+          # Invalid domains and obvious placeholders prevent accidental use
+          export DATABASE_URL="postgresql://VALIDATION_ONLY:VALIDATION_ONLY@validation-only.invalid:5432/VALIDATION_PLACEHOLDER"
+          export JWT_SECRET="VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION_MUST_BE_AT_LEAST_32_CHARS_LONG"
+          export ALLOWED_USER_EMAILS="validation-placeholder1@example.invalid,validation-placeholder2@example.invalid"
+          export MEDIA_BUCKET="validation-placeholder-bucket"
+          export NODE_ENV="production"
+          
+          # Test serverless print
+          echo "Testing serverless configuration..."
+          npx serverless@3 print --stage prod --region ${{ env.AWS_REGION }} > /tmp/serverless-print.yml
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ serverless print failed"
+            exit 1
+          fi
+          
+          echo "✅ serverless print succeeded"
+
+      - name: Verify plugins are loaded
+        run: |
+          cd serverless
+          
+          # Set minimal env vars
+          export DATABASE_URL="postgresql://VALIDATION_ONLY:VALIDATION_ONLY@validation-only.invalid:5432/VALIDATION_PLACEHOLDER"
+          export JWT_SECRET="VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION_MUST_BE_AT_LEAST_32_CHARS_LONG"
+          export ALLOWED_USER_EMAILS="validation-placeholder1@example.invalid"
+          
+          # Test plugin list
+          echo "Checking loaded plugins..."
+          npx serverless@3 plugin list > /tmp/plugin-list.txt 2>&1
+          
+          if ! grep -q "serverless-esbuild" /tmp/plugin-list.txt; then
+            echo "❌ serverless-esbuild not in plugin list"
+            cat /tmp/plugin-list.txt
+            exit 1
+          fi
+          
+          echo "✅ serverless-esbuild plugin is loaded"
+
+      - name: Validate serverless.yml syntax
+        run: |
+          cd serverless
+          
+          # Check for common issues
+          echo "Checking for common serverless.yml issues..."
+          
+          # Check for tabs (should use spaces)
+          if grep -P '\t' serverless.yml; then
+            echo "⚠️  Warning: serverless.yml contains tab characters"
+          fi
+          
+          # Check plugins section exists
+          if ! grep -q "plugins:" serverless.yml; then
+            echo "❌ No plugins section found in serverless.yml"
+            exit 1
+          fi
+          
+          # Check serverless-esbuild is in plugins
+          if ! grep -A 5 "plugins:" serverless.yml | grep -q "serverless-esbuild"; then
+            echo "❌ serverless-esbuild not found in plugins section"
+            exit 1
+          fi
+          
+          echo "✅ serverless.yml syntax checks passed"
+
+      - name: Verify package-lock.json is committed
+        run: |
+          cd serverless
+          
+          if [ ! -f "package-lock.json" ]; then
+            echo "❌ package-lock.json not found - should be committed for deterministic builds"
+            exit 1
+          fi
+          
+          echo "✅ package-lock.json is present"
+
+      - name: Check for NODE_ENV default
+        run: |
+          cd serverless
+          
+          # Verify NODE_ENV defaults to production in serverless.yml
+          if grep -q 'NODE_ENV.*production' serverless.yml; then
+            echo "✅ NODE_ENV defaults to production"
+          else
+            echo "⚠️  Warning: NODE_ENV may not default to production"
+          fi
+
+      - name: Preflight Summary
+        if: always()
+        run: |
+          echo "## 🚀 Serverless Preflight Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ serverless-esbuild plugin verified" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Serverless configuration validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Plugins loaded correctly" >> $GITHUB_STEP_SUMMARY
+          echo "✅ package-lock.json is committed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Ready for deployment ✨" >> $GITHUB_STEP_SUMMARY

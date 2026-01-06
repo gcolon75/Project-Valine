@@ -81,7 +81,7 @@ provider:
     
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
     FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
-    API_BASE_URL: ${env:API_BASE_URL, "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"}
+    API_BASE_URL: ${env:API_BASE_URL, "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"}
     
     # ========== OPTIONAL ENVIRONMENT VARIABLES ==========
     # These have defaults and are not validated at startup

@@ -6,6 +6,20 @@ For detailed information, see [DEPLOYMENT_BIBLE.md](../docs/DEPLOYMENT_BIBLE.md)
 
 ---
 
+## Canonical Production Values
+
+**Confirmed by owner - use these exact values for production:**
+
+- **Frontend Bucket:** `s3://valine-frontend-prod`
+- **Frontend URL:** `https://dkmxy676d3vgc.cloudfront.net`
+- **API Base URL:** `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com`
+- **Database URL:** `postgresql://[USERNAME]:[PASSWORD]@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require` (no spaces! Get credentials from .env.prod or password manager)
+- **Production Allowlist:** `ghawk075@gmail.com` (confirmed production email)
+- **AWS Region:** `us-west-2`
+- **Stage:** `prod`
+
+---
+
 ## Prerequisites (One-Time Setup)
 
 ```powershell
@@ -33,6 +47,8 @@ The `serverless-esbuild` plugin is used for bundling and is automatically instal
 
 ### 1. Set Environment Variables
 
+**IMPORTANT:** For production, use the canonical values listed at the top of this document.
+
 ```powershell
 # Option A: Load from .env.prod file
 cd serverless
@@ -44,24 +60,51 @@ Get-Content .env.prod | ForEach-Object {
     }
 }
 
-# Option B: Set manually (replace with your values)
-$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
-$env:JWT_SECRET = "REPLACE_WITH_SECURE_SECRET"
+# Option B: Set manually with canonical production values
+$env:DATABASE_URL = "postgresql://[USERNAME]:[PASSWORD]@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+$env:JWT_SECRET = "REPLACE_WITH_SECURE_SECRET_AT_LEAST_32_CHARS"
 $env:NODE_ENV = "production"
-$env:ALLOWED_USER_EMAILS = "user1@example.com,user2@example.com"
+$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
-$env:API_BASE_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 $env:MEDIA_BUCKET = "valine-media-uploads"
+$env:COOKIE_DOMAIN = ".cloudfront.net"
 ```
 
-### 2. Validate Environment
+### 2. Run Environment Drift Detection
+
+**NEW:** Detect environment drift before deploying to prevent 401 errors.
+
+```powershell
+cd serverless
+.\scripts\check-env-drift.ps1 -Stage prod
+```
+
+This script validates:
+- `NODE_ENV` is set to `production` for prod stage
+- `JWT_SECRET` is not using default/placeholder values
+- `ALLOWED_USER_EMAILS` contains valid production emails (not placeholders)
+- `DATABASE_URL` is properly formatted with no spaces
+
+### 3. Install Dependencies (if needed)
+
+**NEW:** Use the setup script to install serverless dependencies deterministically.
+
+```powershell
+# From repository root
+.\scripts\setup.ps1
+```
+
+This ensures `serverless-esbuild` and other plugins are installed correctly.
+
+### 4. Validate Environment
 
 ```powershell
 cd serverless
 .\scripts\validate-required-env.ps1 -Strict
 ```
 
-### 3. Build Prisma Layer (if needed)
+### 5. Build Prisma Layer (if needed)
 
 ```powershell
 cd serverless
@@ -73,7 +116,7 @@ if (-not (Test-Path "layers/prisma-layer.zip")) {
 }
 ```
 
-### 4. Run Database Migrations (if schema changed)
+### 6. Run Database Migrations (if schema changed)
 
 ```powershell
 # From repository root (important!)

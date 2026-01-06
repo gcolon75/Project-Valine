@@ -1,6 +1,104 @@
 # Serverless Scripts
 
-This directory contains utility scripts for building, validating, and recovering Lambda deployments.
+This directory contains utility scripts for building, validating, deploying, and recovering Lambda deployments.
+
+## Deployment Scripts
+
+### `deploy.ps1` (Windows PowerShell)
+**The canonical one-button deployment script for production.**
+
+Runs all preflight checks, validates environment, builds Prisma layer, deploys to AWS Lambda, and runs post-deployment verification.
+
+**Usage:**
+```powershell
+cd serverless
+.\scripts\deploy.ps1 -Stage prod -Region us-west-2
+```
+
+**Parameters:**
+- `-Stage`: Deployment stage (prod, staging, dev). Default: prod
+- `-Region`: AWS region. Default: us-west-2
+- `-SkipTests`: Skip smoke tests after deployment
+- `-Force`: Force redeployment even if no changes detected
+
+**Features:**
+- Validates npm, node, and aws CLI are installed
+- Checks serverless-esbuild plugin is present
+- Runs environment drift detection
+- Validates Prisma layer structure (including Lambda binary)
+- Packages and deploys functions
+- Runs smoke tests and verifies Lambda environment variables
+
+### `deploy.sh` (Linux/Mac)
+**Bash equivalent of deploy.ps1 for Unix-like systems.**
+
+---
+
+## Setup & Validation Scripts
+
+### `setup.ps1` (Windows PowerShell) - NEW
+**Installs serverless/ project dependencies deterministically.**
+
+**Usage:**
+```powershell
+# From repository root
+.\scripts\setup.ps1
+```
+
+**What it does:**
+- Runs `npm ci` if `package-lock.json` exists (deterministic install)
+- Falls back to `npm install` if no lockfile
+- Verifies critical plugins (`serverless-esbuild`, `serverless`) are installed
+
+**When to use:**
+- After cloning the repository
+- Before first deployment
+- When dependency installation fails
+- To ensure serverless-esbuild is properly installed
+
+---
+
+### `check-env-drift.ps1` (Windows PowerShell) - NEW
+**Detects environment drift before deployment to prevent 401 errors.**
+
+**Usage:**
+```powershell
+cd serverless
+.\scripts\check-env-drift.ps1 -Stage prod
+```
+
+**Parameters:**
+- `-Stage`: Deployment stage (prod, staging, dev). Default: prod
+- `-FailFast`: Exit immediately on first validation error
+
+**Validates:**
+- `NODE_ENV` is set to `production` for prod stage
+- `JWT_SECRET` is not using default/placeholder values (and is at least 32 chars)
+- `ALLOWED_USER_EMAILS` contains valid production emails (not placeholders)
+- `DATABASE_URL` is properly formatted with no spaces
+- `FRONTEND_URL` and `API_BASE_URL` are set correctly for prod
+
+**Exit Codes:**
+- `0`: All checks passed, safe to deploy
+- `1`: One or more checks failed, fix issues before deploying
+
+**Why this matters:**
+Incorrect `NODE_ENV` causes `SameSite=Lax` cookies that aren't sent cross-site, resulting in 401 errors on authenticated endpoints. This script prevents that by validating environment before deployment.
+
+---
+
+### `validate-required-env.ps1` (Windows PowerShell)
+**Validates that all required environment variables are set.**
+
+Checks for critical environment variables like `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_USER_EMAILS`.
+
+**Usage:**
+```powershell
+cd serverless
+.\scripts\validate-required-env.ps1 -Strict
+```
+
+---
 
 ## Layer Build Scripts
 
@@ -127,7 +225,58 @@ This is used internally by deployment scripts to automatically choose between ba
 
 ## Common Workflows
 
-### Fresh Deployment
+### First-Time Setup
+```powershell
+# Windows PowerShell
+# 1. Install dependencies
+.\scripts\setup.ps1
+
+# 2. Build Prisma layer
+cd serverless
+.\scripts\build-prisma-layer.ps1
+```
+
+```bash
+# Linux/Mac
+# 1. Install dependencies
+cd serverless
+npm ci
+
+# 2. Build the layer
+./scripts/build-prisma-layer.sh
+
+# 3. Validate it
+./scripts/validate-layer.sh
+```
+
+### Before Deployment
+```powershell
+# Windows PowerShell
+cd serverless
+
+# 1. Set environment variables (load from .env.prod or set manually)
+Get-Content .env.prod | ForEach-Object {
+    if ($_ -match '^([^=]+)=(.*)$') {
+        $name = $matches[1].Trim()
+        $value = $matches[2].Trim()
+        [Environment]::SetEnvironmentVariable($name, $value, "Process")
+    }
+}
+
+# 2. Check for environment drift (NEW!)
+.\scripts\check-env-drift.ps1 -Stage prod
+
+# 3. Validate environment
+.\scripts\validate-required-env.ps1 -Strict
+```
+
+### Full Deployment (Windows)
+```powershell
+cd serverless
+.\scripts\deploy.ps1 -Stage prod -Region us-west-2
+```
+
+### Fresh Deployment (Linux/Mac)
 ```bash
 # 1. Build the layer
 ./scripts/build-prisma-layer.sh
