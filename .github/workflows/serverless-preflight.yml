@@ -5,11 +5,13 @@ on:
     branches: [main, develop]
     paths:
       - 'serverless/**'
+      - 'scripts/**'
       - '.github/workflows/serverless-preflight.yml'
   push:
     branches: [main]
     paths:
       - 'serverless/**'
+      - 'scripts/**'
   workflow_dispatch:
 
 env:
