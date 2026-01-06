@@ -24,7 +24,7 @@
     "eslint": "^8.57.0",
     "prisma": "6.19.0",
     "serverless": "^3.40.0",
-    "serverless-esbuild": "^1.55.2",
+    "serverless-esbuild": "^1.57.0",
     "vitest": "^1.0.0"
   },
   "dependencies": {
