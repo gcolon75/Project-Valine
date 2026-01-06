@@ -25,6 +25,8 @@ aws --version    # Should be 2.x+
 
 **Note:** No global Serverless installation required. We use `npx serverless@3` for deployment.
 
+The `serverless-esbuild` plugin is used for bundling and is automatically installed via `npm ci`.
+
 ---
 
 ## Pre-Deployment

@@ -77,6 +77,8 @@ This runs: validation → build → package → deploy → verify → smoke test
 
 **Note:** Serverless Framework is installed locally via npm. No global installation required. Use `npx serverless@3` for deployment.
 
+The `serverless.yml` configuration uses the `serverless-esbuild` plugin for bundling. This is automatically installed when you run `npm ci` in the serverless directory.
+
 ### AWS Credentials
 
 Configure AWS credentials with permissions for:
