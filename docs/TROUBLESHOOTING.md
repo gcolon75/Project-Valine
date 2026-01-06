@@ -239,6 +239,73 @@ iwr -Method PUT -Headers @{Authorization="Bot $env:STAGING_DISCORD_BOT_TOKEN"; "
 
 ---
 
+## Avatar/Banner Upload Issues
+
+### 🔴 Error: net::ERR_FILE_NOT_FOUND for blob: URLs
+
+**Symptoms:**
+```
+Failed to load resource: net::ERR_FILE_NOT_FOUND
+blob:https://dkmxy676d3vgc.cloudfront.net/0509d8e4-b6d2-4fb2-8155-7bc604675394
+```
+- Avatar/banner disappears after page refresh
+- Console shows repeated GET attempts for blob: URLs
+- Network tab shows no proper S3/CloudFront URL requests
+
+**Causes:**
+Frontend was persisting a temporary browser-local `blob:` URL (created via `URL.createObjectURL`) into the profile payload instead of using the canonical S3 URL returned from the backend upload completion.
+
+**Understanding blob: URLs:**
+- `blob:` URLs are **temporary** and **browser-local** preview URLs
+- They exist only in the current browser session
+- They cannot be fetched by the backend, CloudFront, or other browsers
+- They are meant for UI preview only, never for persistence
+
+**Fixes:**
+1. **Ensure frontend uses S3 URL from upload result:**
+   - Upload handlers (`handleAvatarUpload`, `handleBannerUpload`) must use `result.s3Url`
+   - Never persist `URL.createObjectURL()` results to the database
+   - See PR #[current] for correct implementation
+
+2. **Backend validation (added in PR #[current]):**
+   ```javascript
+   // Backend now rejects blob: URLs with 400 Bad Request
+   if (avatarUrl?.startsWith('blob:')) {
+     return error(400, 'avatarUrl cannot be a blob: URL. Use S3 URL from upload completion.');
+   }
+   ```
+
+3. **Clear browser cache if stuck with blob: URL:**
+   ```javascript
+   // In browser console, clear form data:
+   localStorage.clear();
+   sessionStorage.clear();
+   // Then hard refresh: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
+   ```
+
+**Verify Fix:**
+```powershell
+# After uploading avatar, check PATCH payload:
+# Should show https:// URL, NOT blob:
+# Example correct URL:
+# "avatarUrl": "https://valine-media-uploads.s3.us-west-2.amazonaws.com/profiles/abc123/media/1234567890-uuid"
+
+# Example WRONG URL (bug):
+# "avatarUrl": "blob:https://dkmxy676d3vgc.cloudfront.net/0509d8e4-b6d2-4fb2-8155-7bc604675394"
+```
+
+**Flow diagram:**
+```
+User uploads file → Frontend sends to S3 via presigned URL 
+→ Backend completeUpload returns {s3Url: "https://..."}
+→ Frontend uses s3Url for form state (NOT blob: URL)
+→ Save profile with s3Url in payload
+→ Backend persists s3Url
+→ Image accessible from CloudFront after refresh ✅
+```
+
+---
+
 ## Escalation Path
 
 If issues persist after trying fixes above:

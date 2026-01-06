@@ -91,15 +91,26 @@ const mapFormToProfileUpdate = (formData) => {
     links: formData.profileLinks  // Map to 'links' as expected by backend
   };
   
-  // Only include avatar if it exists and is not null (prevents overwriting with null)
+  // Only include avatar if it exists, is not null, and is not a blob: URL
+  // Blob URLs are temporary browser-local URLs that cannot be persisted or fetched by the backend
   if (formData.avatar) {
-    payload.avatarUrl = formData.avatar;  // Map frontend 'avatar' to backend 'avatarUrl'
+    if (formData.avatar.startsWith('blob:')) {
+      console.warn('[mapFormToProfileUpdate] Skipping blob: URL for avatar - should never happen if upload handlers are correct');
+      // Don't include avatarUrl in payload to avoid overwriting with invalid URL
+    } else {
+      payload.avatarUrl = formData.avatar;  // Map frontend 'avatar' to backend 'avatarUrl'
+    }
   }
   
-  // Only include banner if it exists and is not null (prevents overwriting with null)
+  // Only include banner if it exists, is not null, and is not a blob: URL
   const bannerValue = formData.banner || formData.bannerUrl;
   if (bannerValue) {
-    payload.bannerUrl = bannerValue;
+    if (bannerValue.startsWith('blob:')) {
+      console.warn('[mapFormToProfileUpdate] Skipping blob: URL for banner - should never happen if upload handlers are correct');
+      // Don't include bannerUrl in payload to avoid overwriting with invalid URL
+    } else {
+      payload.bannerUrl = bannerValue;
+    }
   }
   
   return payload;
@@ -389,14 +400,19 @@ export default function ProfileEdit() {
         },
       });
 
-      // Use local blob URL for immediate preview
-      // This ensures preview works correctly regardless of S3 bucket privacy settings
-      const tempUrl = URL.createObjectURL(croppedFile);
-      handleChange('avatar', tempUrl);
+      // CRITICAL: Use the S3 URL returned from backend, NOT a blob URL
+      // Blob URLs only exist in the browser and cannot be fetched by CloudFront/API
+      if (result?.s3Url) {
+        // Use the persisted S3 URL for the avatar
+        handleChange('avatar', result.s3Url);
+        console.log('Avatar uploaded to S3:', result.s3Url);
+      } else {
+        // If s3Url is missing, this is an error - do not use blob URL as fallback
+        throw new Error('Upload completed but server did not return S3 URL');
+      }
       
       // Store media ID if returned for later reference
       if (result?.media?.id) {
-        // Could store mediaId for later use (e.g., to fetch signed URL after save)
         console.log('Avatar media ID:', result.media.id);
       }
 
@@ -442,15 +458,20 @@ export default function ProfileEdit() {
         },
       });
 
-      // Use local blob URL for immediate preview
-      // This ensures preview works correctly regardless of S3 bucket privacy settings
-      const tempUrl = URL.createObjectURL(croppedFile);
-      handleChange('banner', tempUrl);
-      handleChange('bannerUrl', tempUrl);
+      // CRITICAL: Use the S3 URL returned from backend, NOT a blob URL
+      // Blob URLs only exist in the browser and cannot be fetched by CloudFront/API
+      if (result?.s3Url) {
+        // Use the persisted S3 URL for both banner and bannerUrl
+        handleChange('banner', result.s3Url);
+        handleChange('bannerUrl', result.s3Url);
+        console.log('Banner uploaded to S3:', result.s3Url);
+      } else {
+        // If s3Url is missing, this is an error - do not use blob URL as fallback
+        throw new Error('Upload completed but server did not return S3 URL');
+      }
       
       // Store media ID if returned for later reference
       if (result?.media?.id) {
-        // Could store mediaId for later use (e.g., to fetch signed URL after save)
         console.log('Banner media ID:', result.media.id);
       }
 
