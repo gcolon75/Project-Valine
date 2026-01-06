@@ -76,8 +76,7 @@ Write-Info "Checking required tools..."
 $tools = @(
     @{Name="node"; Version="20"; Command="node --version"},
     @{Name="npm"; Version="10"; Command="npm --version"},
-    @{Name="aws"; Version="2"; Command="aws --version"},
-    @{Name="serverless"; Version="3"; Command="serverless --version"}
+    @{Name="aws"; Version="2"; Command="aws --version"}
 )
 
 foreach ($tool in $tools) {
@@ -93,6 +92,9 @@ foreach ($tool in $tools) {
         exit 1
     }
 }
+
+# Note: We use npx serverless@3 for deployment, no global install required
+Write-Info "Will use npx serverless@3 for deployment"
 
 # Check AWS credentials
 Write-Info "Checking AWS credentials..."
@@ -220,7 +222,7 @@ Write-Step "Step 4: Validate Serverless Config"
 
 Write-Info "Validating serverless.yml syntax..."
 try {
-    $config = serverless print --stage $Stage --region $Region 2>&1
+    $config = npx serverless@3 print --stage $Stage --region $Region 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "serverless print failed: $config"
     }
@@ -268,7 +270,7 @@ if (Test-Path "../node_modules/.bin/eslint" -or (Get-Command eslint -ErrorAction
 Write-Step "Step 6: Package Functions"
 
 Write-Info "Packaging Lambda functions..."
-$packageCmd = "serverless package --stage $Stage --region $Region"
+$packageCmd = "npx serverless@3 package --stage $Stage --region $Region"
 
 try {
     Invoke-Expression $packageCmd 2>&1 | Out-Host
@@ -285,7 +287,7 @@ try {
 Write-Step "Step 7: Deploy to AWS"
 
 Write-Info "Deploying to AWS Lambda..."
-$deployCmd = "serverless deploy --stage $Stage --region $Region --verbose"
+$deployCmd = "npx serverless@3 deploy --stage $Stage --region $Region --verbose"
 if ($Force) { $deployCmd += " --force" }
 
 $deployStart = Get-Date
@@ -346,7 +348,7 @@ if (-not $SkipTests) {
     Write-Info "Running smoke tests..."
     
     # Get API endpoint
-    $infoOutput = serverless info --stage $Stage --region $Region 2>&1 | Out-String
+    $infoOutput = npx serverless@3 info --stage $Stage --region $Region 2>&1 | Out-String
     $apiUrl = if ($infoOutput -match 'https://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com') {
         $matches[0]
     } else {
@@ -421,18 +423,18 @@ Write-Success "Lambda env vars verified"
 if (-not $SkipTests) {
     Write-Success "Smoke tests completed"
 }
-Write-Host @"
-=========================================
-   Deployment Complete! 🚀
-=========================================
-
-Next Steps:
-1. Test auth flow in browser: https://dkmxy676d3vgc.cloudfront.net
-2. Check CloudWatch logs if issues: /aws/lambda/pv-api-$Stage-*
-3. Review deployment: serverless info --stage $Stage --region $Region
-
-Documentation: docs/DEPLOYMENT_BIBLE.md
-=========================================
-"@ -ForegroundColor Green
+Write-Host ""
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "   Deployment Complete!" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Next Steps:"
+Write-Host "1. Test auth flow: https://dkmxy676d3vgc.cloudfront.net"
+Write-Host "2. Check CloudWatch logs: /aws/lambda/pv-api-$Stage-*"
+Write-Host "3. Review: npx serverless@3 info --stage $Stage --region $Region"
+Write-Host ""
+Write-Host "Documentation: docs/DEPLOYMENT_BIBLE.md"
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host ""
 
 exit 0

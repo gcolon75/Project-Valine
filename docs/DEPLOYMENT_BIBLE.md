@@ -46,9 +46,19 @@ See the [Security Checklist](#security-checklist) section for detailed secret ro
 
 **For experienced deployers:**
 
+**Backend:**
 ```powershell
 cd serverless
-.\scripts\deploy.ps1 -Stage prod -Region us-west-2
+npm ci
+npx serverless@3 deploy --stage prod --region us-west-2
+```
+
+**Frontend:**
+```powershell
+cd ..\
+npm ci
+npm run build
+aws s3 sync dist/ s3://valine-frontend-prod --delete
 ```
 
 This runs: validation → build → package → deploy → verify → smoke tests.
@@ -64,7 +74,10 @@ This runs: validation → build → package → deploy → verify → smoke test
 | Node.js | 20.x | `node --version` | [nodejs.org](https://nodejs.org) |
 | npm | 10.x+ | `npm --version` | (included with Node.js) |
 | AWS CLI | 2.x+ | `aws --version` | [AWS CLI Install](https://aws.amazon.com/cli/) |
-| Serverless Framework | 3.x+ | `serverless --version` | `npm install -g serverless` |
+
+**Note:** Serverless Framework is installed locally via npm. No global installation required. Use `npx serverless@3` for deployment.
+
+The `serverless.yml` configuration uses the `serverless-esbuild` plugin for bundling. This is automatically installed when you run `npm ci` in the serverless directory.
 
 ### AWS Credentials
 
@@ -124,7 +137,7 @@ $env:DATABASE_URL = "postgresql://user:P%40ss%23word%21@host.rds.amazonaws.com:5
 
 **Example Database URL Format:**
 ```
-postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=require
+postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
 ```
 
 **Validation Checklist:**
@@ -169,7 +182,7 @@ $env:STRICT_ALLOWLIST = "0"
 # Application
 $env:NODE_ENV = "production"
 $env:STAGE = "prod"
-$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$env:API_BASE_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
 
 # Cookies
@@ -203,7 +216,7 @@ $bytes = New-Object byte[] 32
 
 ### S3 Bucket Name
 
-**IMPORTANT**: Use `valine-frontend-prod`, NOT `valine-frontend-prod`
+**IMPORTANT**: Use `valine-frontend-prod`, NOT `project-valine-frontend-prod`
 
 The correct frontend bucket is:
 - **Production**: `valine-frontend-prod`
@@ -225,7 +238,6 @@ cd /path/to/Project-Valine
 npm ci
 
 # This installs dependencies for both root and serverless workspaces
-# and ensures Prisma client generation has access to all required packages
 ```
 
 ### 2. Build Prisma Layer (Windows PowerShell)
@@ -242,22 +254,20 @@ cd serverless
 **Output**: `serverless/layers/prisma-layer.zip` (~93MB)
 
 **What it does**:
-1. Runs `npm ci` from repository root (if needed)
-2. Generates Prisma client with `npx prisma generate --schema=serverless/prisma/schema.prisma` from repo root
-3. Detects generated client in either:
+1. Generates Prisma client with `npx prisma generate --schema=serverless/prisma/schema.prisma` from repo root
+2. Detects generated client in either:
    - `serverless/node_modules/.prisma` (standalone layout)
    - `<repo-root>/node_modules/.prisma` (hoisted/monorepo layout)
-4. Copies minimal runtime files (excludes docs, tests, source maps)
-5. Copies **only** the Linux binary: `libquery_engine-rhel-openssl-3.0.x.so.node`
-6. Creates ZIP archive with correct Lambda layer structure: `nodejs/node_modules/`
-7. Validates size (must be < 150MB uncompressed)
+3. Copies the entire `.prisma/client` and `@prisma/client` directories
+4. Creates ZIP archive with correct Lambda layer structure: `nodejs/node_modules/`
+5. Verifies the Linux binary `libquery_engine-rhel-openssl-3.0.x.so.node` is present in the zip
 
 **Key Features**:
-- ✅ Supports monorepo/hoisted node_modules layouts
-- ✅ Runs Prisma generate from repo root to ensure Linux binaries are downloaded
-- ✅ Clear error messages if Prisma client not found
-- ✅ Windows path separator safe
-- ✅ PowerShell 5.1 compatible
+- Supports monorepo/hoisted node_modules layouts
+- Runs Prisma generate from repo root to ensure Linux binaries are downloaded
+- Clear error messages if Prisma client not found
+- Windows path separator safe
+- PowerShell 5.1 compatible
 
 **Troubleshooting**:
 - If layer build fails, delete `layers/` folder and retry
@@ -297,22 +307,25 @@ npx prisma migrate deploy --schema serverless/prisma/schema.prisma
 
 **IMPORTANT**: Always backup database before migrations!
 
-```powershell
-# Backup users table (requires pg_dump installed)
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-pg_dump -h <rds-hostname> -U <username> -d <database> -t users -f "backup_$timestamp.sql"
-```
-
-**Why run from repo root?**
-- Ensures the correct `@prisma/client` version is used
-- Avoids "Prisma client not found" errors in monorepo layouts
-- Matches the pattern used by the build-prisma-layer.ps1 script
-
 ---
 
 ## One-Button Deploy
 
-### Using Deploy Script (Recommended)
+### Using npx serverless@3 (Recommended)
+
+```powershell
+cd serverless
+npm ci
+npx serverless@3 deploy --stage prod --region us-west-2
+```
+
+**What this does**:
+1. Packages functions with serverless-esbuild
+2. Deploys to AWS with CloudFormation
+3. Attaches Prisma layer to all functions
+4. Injects environment variables from serverless.yml
+
+### Using Deploy Script (Alternative)
 
 ```powershell
 cd serverless
@@ -320,15 +333,14 @@ cd serverless
 ```
 
 **What the script does**:
-1. ✅ Validates required environment variables
-2. ✅ Checks for Prisma layer ZIP (builds if missing)
-3. ✅ Runs linter (optional, exits on critical errors)
-4. ✅ Validates serverless.yml syntax
-5. ✅ Packages functions with `serverless package`
-6. ✅ Deploys to AWS with `serverless deploy`
-7. ✅ Verifies deployed Lambda environment variables
-8. ✅ Runs smoke tests against deployed endpoints
-9. ✅ Prints deployment summary (NO SECRETS)
+1. Validates required environment variables
+2. Checks for Prisma layer ZIP (builds if missing)
+3. Validates serverless.yml syntax
+4. Packages functions with `npx serverless@3 package`
+5. Deploys to AWS with `npx serverless@3 deploy`
+6. Verifies deployed Lambda environment variables
+7. Runs smoke tests against deployed endpoints
+8. Prints deployment summary (NO SECRETS)
 
 ### Manual Deploy (Fallback)
 
@@ -337,17 +349,17 @@ If the script fails, deploy manually:
 ```powershell
 cd serverless
 
-# 1. Validate configuration
-serverless print | Select-Object -First 20
+# 1. Ensure dependencies are installed
+npm ci
 
-# 2. Package functions
-serverless package --stage prod --region us-west-2
+# 2. Build Prisma layer if missing
+.\scripts\build-prisma-layer.ps1
 
 # 3. Deploy
-serverless deploy --stage prod --region us-west-2 --verbose
+npx serverless@3 deploy --stage prod --region us-west-2 --verbose
 
 # 4. Get deployment info
-serverless info --stage prod --region us-west-2
+npx serverless@3 info --stage prod --region us-west-2
 ```
 
 ### Deploy Output
@@ -358,10 +370,10 @@ Successful deployment shows:
 Service deployed to stack pv-api-prod
 
 endpoints:
-  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/me
-  POST - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/login
-  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/me/profile
-  GET - https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/feed
+  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me
+  POST - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login
+  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/me/profile
+  GET - https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/feed
   ...
 
 functions:
@@ -491,7 +503,7 @@ aws lambda get-function-configuration `
 Test critical auth flow:
 
 ```powershell
-$API_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$API_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 $FRONTEND_ORIGIN = "https://dkmxy676d3vgc.cloudfront.net"
 
 # 1. Test login
@@ -597,10 +609,10 @@ aws cloudformation describe-stack-events `
 # Option A: Redeploy previous git commit
 git checkout <previous-commit-sha>
 cd serverless
-serverless deploy --stage prod --region us-west-2 --force
+npx serverless@3 deploy --stage prod --region us-west-2 --force
 
 # Option B: Use Serverless Framework rollback (if within same day)
-serverless deploy --stage prod --region us-west-2 --force
+npx serverless@3 deploy --stage prod --region us-west-2 --force
 ```
 
 ### 3. Rollback Database (if migrations were applied)
@@ -702,7 +714,7 @@ Runtime.ImportModuleError
 cd serverless
 Remove-Item -Recurse -Force layers/ -ErrorAction SilentlyContinue
 .\scripts\build-prisma-layer.ps1
-serverless deploy --stage prod --region us-west-2 --force
+npx serverless@3 deploy --stage prod --region us-west-2 --force
 ```
 
 ### Issue 4: Environment Variable Mismatch
@@ -733,9 +745,6 @@ Invalid serverless.yml syntax
 
 **Fix**:
 ```powershell
-# Validate YAML syntax
-serverless print
-
 # Check for tab characters (use spaces only)
 Select-String -Pattern "`t" -Path serverless/serverless.yml
 
@@ -771,9 +780,7 @@ Error: connect ETIMEDOUT
 # Check bucket exists
 aws s3 ls s3://valine-frontend-prod
 
-# If using wrong name, update deployment scripts
-Select-String -Pattern "valine-frontend-prod" -Path . -Recurse -Exclude node_modules
-# Replace with: valine-frontend-prod
+# If using wrong name, update deployment scripts and docs to use valine-frontend-prod
 ```
 
 ---

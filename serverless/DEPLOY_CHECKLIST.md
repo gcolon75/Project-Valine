@@ -12,7 +12,6 @@ For detailed information, see [DEPLOYMENT_BIBLE.md](../docs/DEPLOYMENT_BIBLE.md)
 # 1. Install required tools
 # - Node.js 20.x: https://nodejs.org
 # - AWS CLI 2.x: https://aws.amazon.com/cli/
-# - Serverless Framework: npm install -g serverless
 
 # 2. Configure AWS credentials
 aws configure
@@ -22,8 +21,11 @@ aws configure
 node --version   # Should be v20.x
 npm --version    # Should be 10.x+
 aws --version    # Should be 2.x+
-serverless --version  # Should be 3.x+
 ```
+
+**Note:** No global Serverless installation required. We use `npx serverless@3` for deployment.
+
+The `serverless-esbuild` plugin is used for bundling and is automatically installed via `npm ci`.
 
 ---
 
@@ -43,12 +45,12 @@ Get-Content .env.prod | ForEach-Object {
 }
 
 # Option B: Set manually (replace with your values)
-$env:DATABASE_URL = "postgresql://USER:PASS@HOST:5432/DB?sslmode=require"
+$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 $env:JWT_SECRET = "REPLACE_WITH_SECURE_SECRET"
 $env:NODE_ENV = "production"
 $env:ALLOWED_USER_EMAILS = "user1@example.com,user2@example.com"
 $env:FRONTEND_URL = "https://dkmxy676d3vgc.cloudfront.net"
-$env:API_BASE_URL = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+$env:API_BASE_URL = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
 $env:MEDIA_BUCKET = "valine-media-uploads"
 ```
 
@@ -88,7 +90,19 @@ npx prisma migrate deploy --schema serverless/prisma/schema.prisma
 
 ## Deployment
 
-### One-Button Deploy (Recommended)
+### Method 1: Using npx serverless@3 (Recommended)
+
+```powershell
+cd serverless
+
+# Ensure dependencies are installed
+npm ci
+
+# Deploy to AWS
+npx serverless@3 deploy --stage prod --region us-west-2
+```
+
+### Method 2: Using Deploy Script (Alternative)
 
 ```powershell
 cd serverless
@@ -96,12 +110,12 @@ cd serverless
 ```
 
 This script automatically:
-- ✅ Validates environment variables
-- ✅ Checks/builds Prisma layer
-- ✅ Packages Lambda functions
-- ✅ Deploys to AWS
-- ✅ Verifies Lambda environment variables
-- ✅ Runs smoke tests
+- Validates environment variables
+- Checks/builds Prisma layer
+- Packages Lambda functions
+- Deploys to AWS
+- Verifies Lambda environment variables
+- Runs smoke tests
 
 ### Manual Deploy (Fallback)
 
@@ -111,11 +125,11 @@ cd serverless
 # 1. Generate Prisma client
 npx prisma generate --schema=prisma/schema.prisma
 
-# 2. Package functions
-serverless package --stage prod --region us-west-2
+# 2. Build Prisma layer if missing
+.\scripts\build-prisma-layer.ps1
 
 # 3. Deploy
-serverless deploy --stage prod --region us-west-2 --verbose
+npx serverless@3 deploy --stage prod --region us-west-2 --verbose
 ```
 
 ---
@@ -128,7 +142,7 @@ serverless deploy --stage prod --region us-west-2 --verbose
 cd serverless
 
 # Get API URL from deployment
-$apiUrl = (serverless info --stage prod --region us-west-2 | Select-String "https://.*execute-api.*amazonaws.com").Matches.Value
+$apiUrl = (npx serverless@3 info --stage prod --region us-west-2 | Select-String "https://.*execute-api.*amazonaws.com").Matches.Value
 
 # Run smoke tests
 .\scripts\post-deploy-smoke-test.ps1 -ApiUrl $apiUrl -Stage prod
@@ -197,7 +211,7 @@ cd serverless
 .\scripts\validate-required-env.ps1 -Strict
 
 # Redeploy (force update)
-.\scripts\deploy.ps1 -Stage prod -Region us-west-2 -Force
+npx serverless@3 deploy --stage prod --region us-west-2 --force
 ```
 
 ### Issue: "401 errors on authenticated endpoints"
@@ -231,7 +245,7 @@ git checkout <commit-sha>
 
 # 3. Redeploy
 cd serverless
-.\scripts\deploy.ps1 -Stage prod -Region us-west-2 -Force
+npx serverless@3 deploy --stage prod --region us-west-2 --force
 
 # 4. Return to latest commit (once verified)
 git checkout main
