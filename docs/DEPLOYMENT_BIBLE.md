@@ -1,10 +1,30 @@
 # Project Valine Deployment Bible 📖
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-27  
+**Version**: 1.1  
+**Last Updated**: 2026-01-06  
 **Status**: Canonical Deployment Guide
 
 This is the **SINGLE SOURCE OF TRUTH** for deploying Project Valine to production. All other deployment docs are archived in `docs/archive/`.
+
+---
+
+## ⚠️ CRITICAL SECURITY NOTICE
+
+**SECRETS WERE PREVIOUSLY COMMITTED TO GIT AND HAVE BEEN REMOVED**
+
+The following files containing production secrets were previously committed to this repository's git history:
+- `serverless/.env.prod` (DATABASE_URL, JWT_SECRET)
+- `serverless/env-prod.json` and `serverless/env-pv-api-*.json` files
+
+**REQUIRED ACTIONS:**
+1. ✅ **These files have been removed from git tracking** (as of 2026-01-06)
+2. ⚠️ **You MUST rotate these secrets immediately**:
+   - Generate new JWT_SECRET: `openssl rand -base64 32` or see [Rotate Secrets](#rotate-secrets-after-leak)
+   - Change DATABASE_URL password in AWS RDS Console
+   - Update Lambda functions with new secrets using the deploy script
+3. ⚠️ **Never commit these files again** - they are now in `.gitignore`
+
+See the [Security Checklist](#security-checklist) section for detailed secret rotation procedures.
 
 ---
 
