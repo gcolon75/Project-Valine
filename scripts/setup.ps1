@@ -29,7 +29,7 @@ function Write-Err { Write-Host "❌ $args" -ForegroundColor Red }
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║   Project Valine - Setup Script               ║" -ForegroundColor Cyan
-Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
 # Resolve paths

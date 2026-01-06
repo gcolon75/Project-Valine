@@ -60,6 +60,8 @@ jobs:
           cd serverless
           
           # Set minimal required env vars for validation only
+          # These are ONLY used to validate serverless.yml syntax, never for actual deployment
+          # Invalid domains and obvious placeholders prevent accidental use
           export DATABASE_URL="postgresql://VALIDATION_ONLY:VALIDATION_ONLY@validation-only.invalid:5432/VALIDATION_PLACEHOLDER"
           export JWT_SECRET="VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION_MUST_BE_AT_LEAST_32_CHARS_LONG"
           export ALLOWED_USER_EMAILS="validation-placeholder1@example.invalid,validation-placeholder2@example.invalid"
