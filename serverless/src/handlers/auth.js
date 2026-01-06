@@ -41,6 +41,20 @@ import {
 } from '../utils/tokenManager.js';
 import { generateCorrelationId, logStructured } from '../utils/correlationId.js';
 
+/* ---------------------- Email Normalization Utility ---------------------- */
+
+/**
+ * Normalizes an email address for consistent storage and lookups.
+ * @param {string} email - Raw email address
+ * @returns {string} Normalized email (lowercase, trimmed)
+ */
+function normalizeEmail(email) {
+  if (!email || typeof email !== 'string') {
+    return '';
+  }
+  return email.toLowerCase().trim();
+}
+
 /* ---------------------- Allowlist Cache (cold-start optimization) ---------------------- */
 
 let cachedAllowlist = null;
@@ -249,7 +263,7 @@ async function login(event) {
       
       try {
         user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() }
+          where: { normalizedEmail: normalizeEmail(email) }
         });
       } catch (dbError) {
         logStructured(correlationId, 'login_db_error', {
@@ -522,7 +536,7 @@ async function register(event) {
     let existing;
     try {
       existing = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() }
+        where: { normalizedEmail: normalizeEmail(email) }
       });
     } catch (dbError) {
       logStructured(correlationId, 'register_db_lookup_error', {
@@ -543,9 +557,11 @@ async function register(event) {
     let user;
     try {
       const passwordHash = await bcrypt.hash(password, 12);
+      const normalizedEmailValue = normalizeEmail(email);
       user = await prisma.user.create({
         data: {
-          email: email.toLowerCase(),
+          email: normalizedEmailValue,
+          normalizedEmail: normalizedEmailValue,
           username: finalUsername,
           passwordHash: passwordHash,
           displayName: finalDisplayName,
@@ -1039,7 +1055,7 @@ async function seedRestricted(event) {
       try {
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() }
+          where: { normalizedEmail: normalizeEmail(email) }
         });
         
         if (existingUser) {
@@ -1064,11 +1080,13 @@ async function seedRestricted(event) {
         // Generate username from email
         const username = email.split('@')[0];
         const displayName = username;
+        const normalizedEmailValue = normalizeEmail(email);
         
         // Create user with all flags set
         const user = await prisma.user.create({
           data: {
-            email: email.toLowerCase(),
+            email: normalizedEmailValue,
+            normalizedEmail: normalizedEmailValue,
             username: username,
             passwordHash: passwordHash,
             displayName: displayName,
