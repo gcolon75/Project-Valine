@@ -102,9 +102,10 @@ foreach ($var in $RequiredVars) {
     
     # Check for default/insecure values in production
     if ($env:NODE_ENV -eq "production") {
-        if ($var.Name -eq "JWT_SECRET" -and ($value -eq "your-secret-key" -or $value -eq "default-secret")) {
+        $insecureValues = @("your-secret-key", "default-secret", "secret", "password", "password123", "changeme")
+        if ($var.Name -eq "JWT_SECRET" -and $value -in $insecureValues) {
             Write-Host "❌ INSECURE: $($var.Name) uses default value in production" -ForegroundColor Red
-            Write-Host "   Generate a secure secret: node -e ""console.log(require('crypto').randomBytes(64).toString('hex'))""" -ForegroundColor Gray
+            Write-Host "   Generate a secure secret: openssl rand -base64 64" -ForegroundColor Gray
             Write-Host ""
             $HasErrors = $true
             continue
