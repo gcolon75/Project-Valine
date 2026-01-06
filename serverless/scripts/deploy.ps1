@@ -96,6 +96,89 @@ foreach ($tool in $tools) {
 # Note: We use npx serverless@3 for deployment, no global install required
 Write-Info "Will use npx serverless@3 for deployment"
 
+# Check for serverless-esbuild plugin
+Write-Info "Checking serverless plugin dependencies..."
+$pluginPath = "node_modules/serverless-esbuild"
+if (-not (Test-Path $pluginPath)) {
+    Write-Warning "serverless-esbuild plugin not found in node_modules"
+    Write-Info "Installing serverless dependencies..."
+    try {
+        # Capture output for error diagnostics
+        $npmOutput = npm ci 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host $npmOutput -ForegroundColor Gray
+            throw "npm ci failed with exit code $LASTEXITCODE"
+        }
+        Write-Success "Dependencies installed successfully"
+    } catch {
+        Write-Error "Failed to install dependencies: $($_.Exception.Message)"
+        Write-Warning "Run 'npm ci' manually from the serverless/ directory"
+        exit 1
+    }
+} else {
+    Write-Success "serverless-esbuild plugin found"
+}
+
+# Verify required plugins are loaded by serverless
+Write-Info "Verifying serverless plugins..."
+try {
+    # Minimal required env vars for serverless.yml validation (from serverless.yml provider.environment)
+    # These are only used for configuration validation, not for actual deployment
+    # Using obviously fake values to prevent accidental usage in deployment
+    $minimalEnvVars = @{
+        DATABASE_URL = "postgresql://VALIDATION_ONLY:VALIDATION_ONLY@validation-only.invalid:5432/VALIDATION_PLACEHOLDER"
+        JWT_SECRET = "VALIDATION_PLACEHOLDER_DO_NOT_USE_IN_PRODUCTION"
+        ALLOWED_USER_EMAILS = "validation-placeholder1@example.invalid,validation-placeholder2@example.invalid"
+        MEDIA_BUCKET = "validation-placeholder-bucket"
+    }
+    
+    # Store original values to restore later (for isolation)
+    $originalEnvVars = @{}
+    foreach ($key in $minimalEnvVars.Keys) {
+        $originalEnvVars[$key] = [Environment]::GetEnvironmentVariable($key, "Process")
+        [Environment]::SetEnvironmentVariable($key, $minimalEnvVars[$key], "Process")
+    }
+    
+    try {
+        # Test serverless configuration can be loaded
+        $printOutput = npx serverless@3 print --stage $Stage --region $Region 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            throw "Serverless configuration validation failed"
+        }
+        
+        # Verify plugins section exists in output
+        # Support multiple YAML formatting styles for plugins
+        if ($printOutput -match "serverless-esbuild") {
+            Write-Success "serverless-esbuild plugin is loaded"
+        } elseif ($printOutput -match "plugins:") {
+            Write-Warning "Plugins section found but could not confirm serverless-esbuild in output"
+            Write-Info "Checking plugin list directly..."
+            $pluginListOutput = npx serverless@3 plugin list 2>&1 | Out-String
+            if ($pluginListOutput -notmatch "serverless-esbuild") {
+                throw "serverless-esbuild plugin not found in plugin list"
+            }
+            Write-Success "serverless-esbuild confirmed via plugin list"
+        } else {
+            throw "Could not validate plugins section in serverless.yml"
+        }
+    } finally {
+        # Restore original environment variables
+        foreach ($key in $originalEnvVars.Keys) {
+            if ($null -eq $originalEnvVars[$key]) {
+                [Environment]::SetEnvironmentVariable($key, $null, "Process")
+            } else {
+                [Environment]::SetEnvironmentVariable($key, $originalEnvVars[$key], "Process")
+            }
+        }
+    }
+} catch {
+    Write-Error "Plugin validation failed: $($_.Exception.Message)"
+    Write-Warning "Ensure serverless.yml has 'serverless-esbuild' in the plugins section"
+    Write-Warning "Verify dependencies are installed by running: npm ci"
+    Write-Warning "Debug with: npx serverless@3 plugin list"
+    exit 1
+}
+
 # Check AWS credentials
 Write-Info "Checking AWS credentials..."
 try {
