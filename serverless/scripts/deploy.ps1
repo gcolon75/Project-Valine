@@ -103,9 +103,11 @@ if (-not (Test-Path $pluginPath)) {
     Write-Warning "serverless-esbuild plugin not found in node_modules"
     Write-Info "Installing serverless dependencies..."
     try {
-        npm ci 2>&1 | Out-Host
+        # Capture output for error diagnostics
+        $npmOutput = npm ci 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) {
-            throw "npm ci failed"
+            Write-Host $npmOutput -ForegroundColor Gray
+            throw "npm ci failed with exit code $LASTEXITCODE"
         }
         Write-Success "Dependencies installed successfully"
     } catch {
@@ -120,30 +122,52 @@ if (-not (Test-Path $pluginPath)) {
 # Verify required plugins are loaded by serverless
 Write-Info "Verifying serverless plugins..."
 try {
-    # Create a minimal env context for plugin validation
-    $testEnv = @{
-        DATABASE_URL = "postgresql://test:test@localhost:5432/test"
-        JWT_SECRET = "validation-test-secret"
-        ALLOWED_USER_EMAILS = "test@example.com"
-        MEDIA_BUCKET = "test-bucket"
+    # Minimal required env vars for serverless.yml validation (from serverless.yml provider.environment)
+    # These are only used for configuration validation, not for actual deployment
+    $minimalEnvVars = @{
+        DATABASE_URL = "postgresql://validation:validation@localhost:5432/validation"
+        JWT_SECRET = "validation-placeholder-secret"
+        ALLOWED_USER_EMAILS = "validation@example.com"
+        MEDIA_BUCKET = "validation-bucket"
     }
     
-    # Set env vars temporarily for validation
-    foreach ($key in $testEnv.Keys) {
-        [Environment]::SetEnvironmentVariable($key, $testEnv[$key], "Process")
+    # Store original values to restore later (for isolation)
+    $originalEnvVars = @{}
+    foreach ($key in $minimalEnvVars.Keys) {
+        $originalEnvVars[$key] = [Environment]::GetEnvironmentVariable($key, "Process")
+        [Environment]::SetEnvironmentVariable($key, $minimalEnvVars[$key], "Process")
     }
     
-    # Test serverless configuration can be loaded
-    $pluginTest = npx serverless@3 print --stage $Stage --region $Region 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 0) {
-        throw "Serverless configuration validation failed: $pluginTest"
-    }
-    
-    # Check if serverless-esbuild is in the output (confirms it's loaded)
-    if ($pluginTest -match "serverless-esbuild") {
-        Write-Success "serverless-esbuild plugin is loaded"
-    } else {
-        Write-Warning "Could not confirm serverless-esbuild plugin is loaded"
+    try {
+        # Test serverless configuration can be loaded
+        $printOutput = npx serverless@3 print --stage $Stage --region $Region 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            throw "Serverless configuration validation failed"
+        }
+        
+        # Verify plugins section exists in output (more reliable than string matching specific plugin)
+        if ($printOutput -match "plugins:\s*-\s*serverless-esbuild") {
+            Write-Success "serverless-esbuild plugin is loaded"
+        } elseif ($printOutput -match "plugins:") {
+            Write-Warning "Plugins section found but could not confirm serverless-esbuild"
+            Write-Info "Checking plugin list directly..."
+            $pluginListOutput = npx serverless@3 plugin list 2>&1 | Out-String
+            if ($pluginListOutput -notmatch "serverless-esbuild") {
+                throw "serverless-esbuild plugin not found in plugin list"
+            }
+            Write-Success "serverless-esbuild confirmed via plugin list"
+        } else {
+            throw "Could not validate plugins section in serverless.yml"
+        }
+    } finally {
+        # Restore original environment variables
+        foreach ($key in $originalEnvVars.Keys) {
+            if ($null -eq $originalEnvVars[$key]) {
+                [Environment]::SetEnvironmentVariable($key, $null, "Process")
+            } else {
+                [Environment]::SetEnvironmentVariable($key, $originalEnvVars[$key], "Process")
+            }
+        }
     }
 } catch {
     Write-Error "Plugin validation failed: $($_.Exception.Message)"
