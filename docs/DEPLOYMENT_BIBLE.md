@@ -1,10 +1,30 @@
 # Project Valine Deployment Bible 📖
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-27  
+**Version**: 1.1  
+**Last Updated**: 2026-01-06  
 **Status**: Canonical Deployment Guide
 
 This is the **SINGLE SOURCE OF TRUTH** for deploying Project Valine to production. All other deployment docs are archived in `docs/archive/`.
+
+---
+
+## ⚠️ CRITICAL SECURITY NOTICE
+
+**SECRETS WERE PREVIOUSLY COMMITTED TO GIT AND HAVE BEEN REMOVED**
+
+The following files containing production secrets were previously committed to this repository's git history:
+- `serverless/.env.prod` (DATABASE_URL, JWT_SECRET)
+- `serverless/env-prod.json` and `serverless/env-pv-api-*.json` files
+
+**REQUIRED ACTIONS:**
+1. ✅ **These files have been removed from git tracking** (as of 2026-01-06)
+2. ⚠️ **You MUST rotate these secrets immediately**:
+   - Generate new JWT_SECRET: `openssl rand -base64 32` or see [Rotate Secrets](#rotate-secrets-after-leak)
+   - Change DATABASE_URL password in AWS RDS Console
+   - Update Lambda functions with new secrets using the deploy script
+3. ⚠️ **Never commit these files again** - they are now in `.gitignore`
+
+See the [Security Checklist](#security-checklist) section for detailed secret rotation procedures.
 
 ---
 
@@ -195,14 +215,24 @@ The correct frontend bucket is:
 
 ### 1. Install Dependencies
 
+**From Repository Root** (important for monorepo/hoisted layouts):
+
 ```powershell
-cd serverless
-npm ci --production
+# Change to repository root
+cd /path/to/Project-Valine
+
+# Install dependencies
+npm ci
+
+# This installs dependencies for both root and serverless workspaces
+# and ensures Prisma client generation has access to all required packages
 ```
 
-### 2. Build Prisma Layer
+### 2. Build Prisma Layer (Windows PowerShell)
 
 The Prisma layer contains the Prisma client and native binaries (~93MB compressed). It's shared across all Lambda functions to avoid exceeding the 250MB limit.
+
+**Build from Windows PowerShell**:
 
 ```powershell
 cd serverless
@@ -212,25 +242,57 @@ cd serverless
 **Output**: `serverless/layers/prisma-layer.zip` (~93MB)
 
 **What it does**:
-1. Creates temporary directory structure: `layers/nodejs/node_modules/`
-2. Installs `@prisma/client` for Linux Lambda runtime
-3. Generates Prisma client with native binaries
-4. Creates ZIP archive with correct Lambda layer structure
-5. Validates ZIP contents
+1. Runs `npm ci` from repository root (if needed)
+2. Generates Prisma client with `npx prisma generate --schema=serverless/prisma/schema.prisma` from repo root
+3. Detects generated client in either:
+   - `serverless/node_modules/.prisma` (standalone layout)
+   - `<repo-root>/node_modules/.prisma` (hoisted/monorepo layout)
+4. Copies minimal runtime files (excludes docs, tests, source maps)
+5. Copies **only** the Linux binary: `libquery_engine-rhel-openssl-3.0.x.so.node`
+6. Creates ZIP archive with correct Lambda layer structure: `nodejs/node_modules/`
+7. Validates size (must be < 150MB uncompressed)
+
+**Key Features**:
+- ✅ Supports monorepo/hoisted node_modules layouts
+- ✅ Runs Prisma generate from repo root to ensure Linux binaries are downloaded
+- ✅ Clear error messages if Prisma client not found
+- ✅ Windows path separator safe
+- ✅ PowerShell 5.1 compatible
 
 **Troubleshooting**:
 - If layer build fails, delete `layers/` folder and retry
-- Ensure Prisma schema is valid: `npx prisma validate`
+- Ensure Prisma schema is valid: `npx prisma validate --schema=serverless/prisma/schema.prisma`
 - Check Node version matches Lambda runtime (20.x)
+- Verify `binaryTargets = ["native", "rhel-openssl-3.0.x"]` in `serverless/prisma/schema.prisma`
+
+**Docker Fallback (if Windows cannot download Linux binary)**:
+
+If running on Windows and the `rhel-openssl-3.0.x` binary isn't downloaded automatically, use Docker to generate it:
+
+```powershell
+# From repository root
+docker run --rm -v ${PWD}:/app -w /app node:20-bullseye bash -c "npm ci && npx prisma generate --schema=serverless/prisma/schema.prisma"
+
+# Then build the layer
+cd serverless
+.\scripts\build-prisma-layer.ps1
+```
+
+This generates the Prisma client inside a Linux container, ensuring the correct binary is downloaded.
 
 ### 3. Run Database Migrations (if needed)
 
-```powershell
-# Review pending migrations
-npx prisma migrate status
+**Always run migrations from repository root with full schema path**:
 
-# Apply migrations
-npx prisma migrate deploy
+```powershell
+# Change to repository root
+cd /path/to/Project-Valine
+
+# Review pending migrations
+npx prisma migrate status --schema serverless/prisma/schema.prisma
+
+# Apply migrations to production database
+npx prisma migrate deploy --schema serverless/prisma/schema.prisma
 ```
 
 **IMPORTANT**: Always backup database before migrations!
@@ -240,6 +302,11 @@ npx prisma migrate deploy
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 pg_dump -h <rds-hostname> -U <username> -d <database> -t users -f "backup_$timestamp.sql"
 ```
+
+**Why run from repo root?**
+- Ensures the correct `@prisma/client` version is used
+- Avoids "Prisma client not found" errors in monorepo layouts
+- Matches the pattern used by the build-prisma-layer.ps1 script
 
 ---
 
@@ -729,24 +796,71 @@ Before deploying to production:
 
 ### Rotate Secrets After Leak
 
-If secrets are committed to git:
+**⚠️ CRITICAL: If any secrets were committed to git or exposed publicly, rotate them immediately.**
+
+If secrets (JWT_SECRET, DATABASE_URL password, etc.) are committed to git or leaked:
 
 ```powershell
 # 1. Generate new JWT secret (cryptographically secure)
-$NEW_JWT_SECRET = openssl rand -base64 32
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+$NEW_JWT_SECRET = [Convert]::ToBase64String($bytes)
 
-# 2. Update Lambda env vars
-aws lambda update-function-configuration `
-  --function-name pv-api-prod-authRouter `
-  --environment "Variables={JWT_SECRET=$NEW_JWT_SECRET,...}"
+Write-Host "New JWT_SECRET: $NEW_JWT_SECRET"
 
-# 3. Update .env.prod (do NOT commit)
-Add-Content -Path serverless/.env.prod -Value "JWT_SECRET=$NEW_JWT_SECRET"
+# 2. Update .env.prod file (do NOT commit to git)
+# Edit serverless/.env.prod manually and set:
+# JWT_SECRET=<new-secret-here>
 
-# 4. Redeploy all functions
-serverless deploy --stage prod --region us-west-2 --force
+# 3. Load new environment variables
+cd serverless
+Get-Content .env.prod | ForEach-Object {
+    if ($_ -match '^([^=]+)=(.*)$') {
+        $name = $matches[1].Trim()
+        $value = $matches[2].Trim()
+        [Environment]::SetEnvironmentVariable($name, $value, "Process")
+    }
+}
 
-# 5. Notify users to re-login (old tokens invalid)
+# 4. Redeploy all functions with new secret
+.\scripts\deploy.ps1 -Stage prod -Region us-west-2 -Force
+
+# 5. Verify all functions have the new secret
+.\scripts\audit-lambda-env.ps1 -Stage prod -Region us-west-2
+
+# 6. Notify all users to re-login (old tokens are now invalid)
+# Post announcement on the platform or send email notifications
+```
+
+**For DATABASE_URL password rotation:**
+```powershell
+# 1. Change password in AWS RDS Console or using AWS CLI
+# 2. Update DATABASE_URL in .env.prod with URL-encoded new password
+# 3. Redeploy:
+cd serverless
+.\scripts\deploy.ps1 -Stage prod -Region us-west-2 -Force
+```
+
+**Verify secrets are NOT in git history:**
+```powershell
+# Search for potential secrets in git history
+git log --all --full-history --source -- "*env*" "*.json"
+
+# If found, use git-filter-repo or BFG Repo-Cleaner to remove them
+# Then force push (coordinate with team first!)
+```
+
+**Add secrets to .gitignore:**
+```gitignore
+# Add to .gitignore if not already present
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.production
+*.secret
+*secret.json
+env-*.json
 ```
 
 ---

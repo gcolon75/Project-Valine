@@ -356,30 +356,51 @@ if (-not $SkipTests) {
     if ($apiUrl) {
         Write-Info "API URL: $apiUrl"
         
-        # Test health endpoint
-        Write-Info "Testing /health endpoint..."
-        try {
-            $healthResponse = Invoke-WebRequest -Uri "$apiUrl/health" -Method GET -UseBasicParsing
-            if ($healthResponse.StatusCode -eq 200) {
-                Write-Success "Health check passed"
-            } else {
-                Write-Warning "Health check returned status: $($healthResponse.StatusCode)"
+        # Run automated smoke tests
+        $smokeTestScript = Join-Path $PSScriptRoot "post-deploy-smoke-test.ps1"
+        if (Test-Path $smokeTestScript) {
+            Write-Info "Running automated smoke tests..."
+            try {
+                & $smokeTestScript -ApiUrl $apiUrl -Stage $Stage
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Success "Automated smoke tests passed"
+                } else {
+                    Write-Warning "Automated smoke tests failed (non-critical)"
+                }
+            } catch {
+                Write-Warning "Smoke test script failed: $($_.Exception.Message)"
             }
-        } catch {
-            Write-Warning "Health check failed: $($_.Exception.Message)"
-        }
-        
-        # Test meta endpoint
-        Write-Info "Testing /meta endpoint..."
-        try {
-            $metaResponse = Invoke-WebRequest -Uri "$apiUrl/meta" -Method GET -UseBasicParsing
-            if ($metaResponse.StatusCode -eq 200) {
-                Write-Success "Meta endpoint passed"
-            } else {
-                Write-Warning "Meta endpoint returned status: $($metaResponse.StatusCode)"
+        } else {
+            Write-Warning "Smoke test script not found: $smokeTestScript"
+            
+            # Fallback to manual tests
+            Write-Info "Running manual smoke tests..."
+            
+            # Test health endpoint
+            Write-Info "Testing /health endpoint..."
+            try {
+                $healthResponse = Invoke-WebRequest -Uri "$apiUrl/health" -Method GET -UseBasicParsing
+                if ($healthResponse.StatusCode -eq 200) {
+                    Write-Success "Health check passed"
+                } else {
+                    Write-Warning "Health check returned status: $($healthResponse.StatusCode)"
+                }
+            } catch {
+                Write-Warning "Health check failed: $($_.Exception.Message)"
             }
-        } catch {
-            Write-Warning "Meta endpoint failed: $($_.Exception.Message)"
+            
+            # Test meta endpoint
+            Write-Info "Testing /meta endpoint..."
+            try {
+                $metaResponse = Invoke-WebRequest -Uri "$apiUrl/meta" -Method GET -UseBasicParsing
+                if ($metaResponse.StatusCode -eq 200) {
+                    Write-Success "Meta endpoint passed"
+                } else {
+                    Write-Warning "Meta endpoint returned status: $($metaResponse.StatusCode)"
+                }
+            } catch {
+                Write-Warning "Meta endpoint failed: $($_.Exception.Message)"
+            }
         }
         
         Write-Info "Note: Authenticated endpoint tests require login. Test manually."

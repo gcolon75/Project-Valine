@@ -5,6 +5,12 @@ dist
 .env.prod
 .env.*.local
 
+# Environment files with secrets (DO NOT COMMIT)
+serverless/.env.prod
+serverless/env-prod.json
+serverless/env-pv-api-*.json
+**/env-*.json
+
 # Deployment artifacts
 deploy-report.json
 
