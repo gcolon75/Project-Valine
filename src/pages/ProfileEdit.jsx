@@ -35,6 +35,13 @@ const convertLegacyLinks = (externalLinks) => {
   return links;
 };
 
+// Error messages
+const UPLOAD_ERROR_MESSAGES = {
+  MISSING_S3_URL: 'Upload completed but server did not return S3 URL',
+  NOT_LOGGED_IN: 'You must be logged in to upload media',
+  UPLOAD_FAILED: 'Failed to upload',
+};
+
 // Helper function to map profile data to form data
 const mapProfileToForm = (profileData) => {
   return {
@@ -95,7 +102,8 @@ const mapFormToProfileUpdate = (formData) => {
   // Blob URLs are temporary browser-local URLs that cannot be persisted or fetched by the backend
   if (formData.avatar) {
     if (formData.avatar.startsWith('blob:')) {
-      console.warn('[mapFormToProfileUpdate] Skipping blob: URL for avatar - should never happen if upload handlers are correct');
+      console.error('[mapFormToProfileUpdate] ERROR: Detected blob: URL for avatar - this should never happen if upload handlers are correct');
+      toast.error('Avatar upload error: Please re-upload your avatar image');
       // Don't include avatarUrl in payload to avoid overwriting with invalid URL
     } else {
       payload.avatarUrl = formData.avatar;  // Map frontend 'avatar' to backend 'avatarUrl'
@@ -106,7 +114,8 @@ const mapFormToProfileUpdate = (formData) => {
   const bannerValue = formData.banner || formData.bannerUrl;
   if (bannerValue) {
     if (bannerValue.startsWith('blob:')) {
-      console.warn('[mapFormToProfileUpdate] Skipping blob: URL for banner - should never happen if upload handlers are correct');
+      console.error('[mapFormToProfileUpdate] ERROR: Detected blob: URL for banner - this should never happen if upload handlers are correct');
+      toast.error('Banner upload error: Please re-upload your banner image');
       // Don't include bannerUrl in payload to avoid overwriting with invalid URL
     } else {
       payload.bannerUrl = bannerValue;
@@ -408,7 +417,7 @@ export default function ProfileEdit() {
         console.log('Avatar uploaded to S3:', result.s3Url);
       } else {
         // If s3Url is missing, this is an error - do not use blob URL as fallback
-        throw new Error('Upload completed but server did not return S3 URL');
+        throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
       
       // Store media ID if returned for later reference
@@ -428,9 +437,9 @@ export default function ProfileEdit() {
       // Only show "not logged in" error if we actually got a 401/403 from the server
       const status = error?.response?.status;
       if (status === 401 || status === 403) {
-        toast.error('You must be logged in to upload media', { id: toastId });
+        toast.error(UPLOAD_ERROR_MESSAGES.NOT_LOGGED_IN, { id: toastId });
       } else {
-        toast.error(error.message || 'Failed to upload avatar', { id: toastId });
+        toast.error(error.message || `${UPLOAD_ERROR_MESSAGES.UPLOAD_FAILED} avatar`, { id: toastId });
       }
       // Don't rethrow - just show error and let user retry
     } finally {
@@ -467,7 +476,7 @@ export default function ProfileEdit() {
         console.log('Banner uploaded to S3:', result.s3Url);
       } else {
         // If s3Url is missing, this is an error - do not use blob URL as fallback
-        throw new Error('Upload completed but server did not return S3 URL');
+        throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
       
       // Store media ID if returned for later reference
@@ -487,9 +496,9 @@ export default function ProfileEdit() {
       // Only show "not logged in" error if we actually got a 401/403 from the server
       const status = error?.response?.status;
       if (status === 401 || status === 403) {
-        toast.error('You must be logged in to upload media', { id: toastId });
+        toast.error(UPLOAD_ERROR_MESSAGES.NOT_LOGGED_IN, { id: toastId });
       } else {
-        toast.error(error.message || 'Failed to upload banner', { id: toastId });
+        toast.error(error.message || `${UPLOAD_ERROR_MESSAGES.UPLOAD_FAILED} banner`, { id: toastId });
       }
       // Don't rethrow - just show error and let user retry
     } finally {
