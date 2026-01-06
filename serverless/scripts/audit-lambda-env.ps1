@@ -1,10 +1,30 @@
 # Audit Lambda Environment Variables
 # Lists Lambda functions and checks for missing required environment variables
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/audit-lambda-env.ps1 [-Region us-west-2] [-Stage prod]
+#
+# NOTES:
+# - This script is compatible with PowerShell 5.1 (Windows PowerShell) and PowerShell Core 6+
+# - Common AWS CLI pitfalls when updating Lambda env vars:
+#   * Commas in env values: Wrap the entire JSON in single quotes and escape internal quotes
+#   * BOM in JSON files: Use UTF-8 without BOM encoding (not UTF-8 with BOM)
+#   * Safe pattern for updating env vars:
+#     aws lambda update-function-configuration \
+#       --function-name pv-api-prod-authRouter \
+#       --environment file://env.json
+#     where env.json is:
+#     {
+#       "Variables": {
+#         "DATABASE_URL": "postgresql://...",
+#         "JWT_SECRET": "your-secret",
+#         "NODE_ENV": "production"
+#       }
+#     }
+#   * Save env.json as UTF-8 without BOM to avoid parsing errors
+#   * Test JSON with: cat env.json | jq . (validates syntax)
 
 param(
-  [string]$Stage  = $(if ($env:STAGE) { $env:STAGE } else { "prod" }),
-  [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-west-2" })
+    [string]$Stage = $(if ($env:STAGE) { $env:STAGE } else { "prod" }),
+    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-west-2" })
 )
 
 $ErrorActionPreference = "Stop"
