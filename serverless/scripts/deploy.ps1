@@ -96,6 +96,62 @@ foreach ($tool in $tools) {
 # Note: We use npx serverless@3 for deployment, no global install required
 Write-Info "Will use npx serverless@3 for deployment"
 
+# Check for serverless-esbuild plugin
+Write-Info "Checking serverless plugin dependencies..."
+$pluginPath = "node_modules/serverless-esbuild"
+if (-not (Test-Path $pluginPath)) {
+    Write-Warning "serverless-esbuild plugin not found in node_modules"
+    Write-Info "Installing serverless dependencies..."
+    try {
+        npm ci 2>&1 | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm ci failed"
+        }
+        Write-Success "Dependencies installed successfully"
+    } catch {
+        Write-Error "Failed to install dependencies: $($_.Exception.Message)"
+        Write-Warning "Run 'npm ci' manually from the serverless/ directory"
+        exit 1
+    }
+} else {
+    Write-Success "serverless-esbuild plugin found"
+}
+
+# Verify required plugins are loaded by serverless
+Write-Info "Verifying serverless plugins..."
+try {
+    # Create a minimal env context for plugin validation
+    $testEnv = @{
+        DATABASE_URL = "postgresql://test:test@localhost:5432/test"
+        JWT_SECRET = "validation-test-secret"
+        ALLOWED_USER_EMAILS = "test@example.com"
+        MEDIA_BUCKET = "test-bucket"
+    }
+    
+    # Set env vars temporarily for validation
+    foreach ($key in $testEnv.Keys) {
+        [Environment]::SetEnvironmentVariable($key, $testEnv[$key], "Process")
+    }
+    
+    # Test serverless configuration can be loaded
+    $pluginTest = npx serverless@3 print --stage $Stage --region $Region 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        throw "Serverless configuration validation failed: $pluginTest"
+    }
+    
+    # Check if serverless-esbuild is in the output (confirms it's loaded)
+    if ($pluginTest -match "serverless-esbuild") {
+        Write-Success "serverless-esbuild plugin is loaded"
+    } else {
+        Write-Warning "Could not confirm serverless-esbuild plugin is loaded"
+    }
+} catch {
+    Write-Error "Plugin validation failed: $($_.Exception.Message)"
+    Write-Warning "Ensure serverless.yml has 'serverless-esbuild' in plugins section"
+    Write-Warning "Run 'npx serverless@3 plugin list' to verify available plugins"
+    exit 1
+}
+
 # Check AWS credentials
 Write-Info "Checking AWS credentials..."
 try {
