@@ -13,7 +13,7 @@ For detailed information, see [DEPLOYMENT_BIBLE.md](../docs/DEPLOYMENT_BIBLE.md)
 - **Frontend Bucket:** `s3://valine-frontend-prod`
 - **Frontend URL:** `https://dkmxy676d3vgc.cloudfront.net`
 - **API Base URL:** `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com`
-- **Database URL:** `postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require` (no spaces!)
+- **Database URL:** `postgresql://[USERNAME]:[PASSWORD]@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require` (no spaces! Get credentials from .env.prod or password manager)
 - **Production Allowlist:** `ghawk075@gmail.com` (confirmed production email)
 - **AWS Region:** `us-west-2`
 - **Stage:** `prod`
@@ -61,7 +61,7 @@ Get-Content .env.prod | ForEach-Object {
 }
 
 # Option B: Set manually with canonical production values
-$env:DATABASE_URL = "postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
+$env:DATABASE_URL = "postgresql://[USERNAME]:[PASSWORD]@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require"
 $env:JWT_SECRET = "REPLACE_WITH_SECURE_SECRET_AT_LEAST_32_CHARS"
 $env:NODE_ENV = "production"
 $env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com"

@@ -179,7 +179,7 @@ $frontendUrl = [Environment]::GetEnvironmentVariable("FRONTEND_URL")
 
 if ([string]::IsNullOrWhiteSpace($frontendUrl)) {
     Write-Warn "FRONTEND_URL is not set (will use default from serverless.yml)"
-} elseif ($Stage -eq "prod" -and $frontendUrl -notlike "*cloudfront.net*" -and $frontendUrl -notlike "*https://*") {
+} elseif ($Stage -eq "prod" -and ($frontendUrl -notlike "*cloudfront.net*" -or $frontendUrl -notlike "https://*")) {
     Write-Warn "FRONTEND_URL may not be the production URL: $frontendUrl"
     Write-Info "Expected: https://dkmxy676d3vgc.cloudfront.net"
 } else {
