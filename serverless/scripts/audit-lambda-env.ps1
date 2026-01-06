@@ -3,8 +3,8 @@
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/audit-lambda-env.ps1 [-Region us-west-2] [-Stage prod]
 
 param(
-    [string]$Region = $env:AWS_REGION ?? "us-west-2",
-    [string]$Stage = $env:STAGE ?? "prod"
+  [string]$Stage  = $(if ($env:STAGE) { $env:STAGE } else { "prod" }),
+  [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-west-2" })
 )
 
 $ErrorActionPreference = "Stop"
