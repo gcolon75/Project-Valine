@@ -131,7 +131,7 @@ Project-Valine/
 │   │   └── App.jsx              # Main router config
 │   ├── services/                 # API service layer
 │   │   └── api.js               # Axios API client
-│   ├── contexts/                 # React Context providers
+│   ├── context/                  # React Context providers
 │   │   └── AuthContext.jsx      # Auth state management
 │   └── hooks/                    # Custom React hooks
 │
