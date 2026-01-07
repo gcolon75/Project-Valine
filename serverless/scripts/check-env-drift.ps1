@@ -32,16 +32,38 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-# Colors for output
-function Write-Info { Write-Host "ℹ️ $args" -ForegroundColor Cyan }
-function Write-Ok { Write-Host "✅ $args" -ForegroundColor Green }
-function Write-Warn { Write-Host "⚠️  $args" -ForegroundColor Yellow }
-function Write-Err { Write-Host "❌ $args" -ForegroundColor Red }
+# PowerShell version check
+try {
+    $psVersion = $PSVersionTable.PSVersion.Major
+    if ($psVersion -ge 5) {
+        Write-Host "[INFO] PowerShell version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
+    }
+} catch {
+    Write-Host "[INFO] PowerShell version check unavailable" -ForegroundColor Cyan
+}
+
+# Colors for output (ASCII-compatible for PS 5.1)
+function Write-Info {
+    param([string]$Message)
+    Write-Host "[INFO] $Message" -ForegroundColor Cyan
+}
+function Write-Ok {
+    param([string]$Message)
+    Write-Host "[OK] $Message" -ForegroundColor Green
+}
+function Write-Warn {
+    param([string]$Message)
+    Write-Host "[WARN] $Message" -ForegroundColor Yellow
+}
+function Write-Err {
+    param([string]$Message)
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
+}
 
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║   Environment Drift Detection                  ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host "   Environment Drift Detection" -ForegroundColor Cyan
+Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Info "Stage: $Stage"
 Write-Host ""
@@ -60,7 +82,7 @@ if ([string]::IsNullOrWhiteSpace($nodeEnv)) {
 } elseif ($Stage -eq "prod" -and $nodeEnv -ne "production") {
     Write-Err "NODE_ENV is '$nodeEnv' but should be 'production' for prod stage"
     Write-Warn "Incorrect NODE_ENV causes SameSite=Lax cookies that break cross-site auth"
-    Write-Warn "Set with: `$env:NODE_ENV = 'production'"
+    Write-Warn "Set with: Set environment variable NODE_ENV to 'production'"
     $errorCount++
     if ($FailFast) { exit 1 }
 } else {
@@ -82,7 +104,7 @@ $defaultSecrets = @(
 
 if ([string]::IsNullOrWhiteSpace($jwtSecret)) {
     Write-Err "JWT_SECRET is not set"
-    Write-Warn "Generate with: node -e `"console.log(require('crypto').randomBytes(64).toString('hex'))`""
+    Write-Warn "Generate with: node -e ""console.log(require('crypto').randomBytes(64).toString('hex'))"""
     $errorCount++
     if ($FailFast) { exit 1 }
 } elseif ($jwtSecret.Length -lt 32) {
@@ -113,7 +135,7 @@ $placeholderPatterns = @(
 if ([string]::IsNullOrWhiteSpace($allowedEmails)) {
     Write-Err "ALLOWED_USER_EMAILS is not set"
     Write-Warn "Set to a comma-separated list of production user emails"
-    Write-Warn "Example: `$env:ALLOWED_USER_EMAILS = 'ghawk075@gmail.com,user@example.com'"
+    Write-Warn "Example: Set ALLOWED_USER_EMAILS to 'ghawk075@gmail.com,user@example.com'"
     $errorCount++
     if ($FailFast) { exit 1 }
 } else {
@@ -179,7 +201,7 @@ $frontendUrl = [Environment]::GetEnvironmentVariable("FRONTEND_URL")
 
 if ([string]::IsNullOrWhiteSpace($frontendUrl)) {
     Write-Warn "FRONTEND_URL is not set (will use default from serverless.yml)"
-} elseif ($Stage -eq "prod" -and ($frontendUrl -notlike "*cloudfront.net*" -or $frontendUrl -notlike "https://*")) {
+} elseif ($Stage -eq "prod" -and (-not ($frontendUrl -like "*cloudfront.net*") -or -not ($frontendUrl -like "https://*"))) {
     Write-Warn "FRONTEND_URL may not be the production URL: $frontendUrl"
     Write-Info "Expected: https://dkmxy676d3vgc.cloudfront.net"
 } else {
@@ -192,7 +214,7 @@ $apiBaseUrl = [Environment]::GetEnvironmentVariable("API_BASE_URL")
 
 if ([string]::IsNullOrWhiteSpace($apiBaseUrl)) {
     Write-Warn "API_BASE_URL is not set (will use default from serverless.yml)"
-} elseif ($Stage -eq "prod" -and $apiBaseUrl -notlike "*execute-api*amazonaws.com*") {
+} elseif ($Stage -eq "prod" -and -not ($apiBaseUrl -like "*execute-api*amazonaws.com*")) {
     Write-Warn "API_BASE_URL may not be the production API Gateway: $apiBaseUrl"
 } else {
     Write-Ok "API_BASE_URL = $apiBaseUrl"
@@ -200,9 +222,10 @@ if ([string]::IsNullOrWhiteSpace($apiBaseUrl)) {
 
 # ===== Summary =====
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════╗" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Red" })
-Write-Host "║   Environment Drift Check Results             ║" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Red" })
-Write-Host "╚════════════════════════════════════════════════╝" -ForegroundColor $(if ($errorCount -eq 0) { "Green" } else { "Red" })
+$summaryColor = if ($errorCount -eq 0) { "Green" } else { "Red" }
+Write-Host "================================================" -ForegroundColor $summaryColor
+Write-Host "   Environment Drift Check Results" -ForegroundColor $summaryColor
+Write-Host "================================================" -ForegroundColor $summaryColor
 Write-Host ""
 
 if ($errorCount -eq 0) {
@@ -216,7 +239,7 @@ if ($errorCount -eq 0) {
     Write-Host ""
     Write-Info "To set environment variables:"
     Write-Info "  Option 1: Load from .env.prod file in serverless/"
-    Write-Info "  Option 2: Set manually with `$env:VARIABLE_NAME = 'value'"
+    Write-Info "  Option 2: Set manually as environment variables"
     Write-Host ""
     exit 1
 }

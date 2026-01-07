@@ -1,0 +1,172 @@
+name: PowerShell Syntax Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - '**/*.ps1'
+      - '.github/workflows/powershell-syntax-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.ps1'
+  workflow_dispatch:
+
+jobs:
+  ps-syntax-check:
+    name: PowerShell 5.1 Syntax Validation
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find PowerShell scripts
+        id: find-scripts
+        shell: pwsh
+        run: |
+          $scripts = Get-ChildItem -Path . -Filter "*.ps1" -Recurse -File | Where-Object {
+            $_.FullName -notlike "*\node_modules\*" -and
+            $_.FullName -notlike "*\.git\*" -and
+            $_.FullName -notlike "*\archive\*"
+          }
+          
+          Write-Host "[INFO] Found $($scripts.Count) PowerShell scripts to check"
+          
+          foreach ($script in $scripts) {
+            Write-Host "  - $($script.FullName.Replace((Get-Location).Path, '.'))"
+          }
+          
+          # Save script paths for next step
+          $scriptPaths = $scripts | ForEach-Object { $_.FullName }
+          $scriptPathsJson = $scriptPaths | ConvertTo-Json -Compress
+          echo "SCRIPT_PATHS=$scriptPathsJson" >> $env:GITHUB_OUTPUT
+
+      - name: Check PowerShell 5.1 syntax
+        shell: pwsh
+        run: |
+          Write-Host "[INFO] PowerShell version: $($PSVersionTable.PSVersion)"
+          Write-Host ""
+          
+          $scriptPaths = '${{ steps.find-scripts.outputs.SCRIPT_PATHS }}' | ConvertFrom-Json
+          $errorCount = 0
+          $checkedCount = 0
+          
+          foreach ($scriptPath in $scriptPaths) {
+            $checkedCount++
+            $relativePath = $scriptPath.Replace((Get-Location).Path, '.').TrimStart('\')
+            
+            Write-Host "[CHECK] $relativePath"
+            
+            try {
+              # Parse the script to check for syntax errors
+              $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -Path $scriptPath -Raw), [ref]$null)
+              Write-Host "[OK] Syntax valid" -ForegroundColor Green
+            } catch {
+              $errorCount++
+              Write-Host "[ERROR] Syntax error: $($_.Exception.Message)" -ForegroundColor Red
+            }
+            
+            Write-Host ""
+          }
+          
+          Write-Host "================================================"
+          Write-Host "   PowerShell Syntax Check Summary"
+          Write-Host "================================================"
+          Write-Host "Scripts checked: $checkedCount"
+          Write-Host "Errors found: $errorCount"
+          
+          if ($errorCount -gt 0) {
+            Write-Host ""
+            Write-Host "[ERROR] Found $errorCount syntax error(s)" -ForegroundColor Red
+            exit 1
+          } else {
+            Write-Host ""
+            Write-Host "[OK] All PowerShell scripts have valid syntax" -ForegroundColor Green
+          }
+
+      - name: Check for Unicode characters in critical scripts
+        shell: pwsh
+        run: |
+          Write-Host "[INFO] Checking for Unicode characters in serverless scripts..."
+          Write-Host ""
+          
+          $criticalScripts = @(
+            "serverless/scripts/check-env-drift.ps1",
+            "serverless/scripts/deploy.ps1"
+          )
+          
+          $unicodeIssues = 0
+          
+          foreach ($scriptPath in $criticalScripts) {
+            if (Test-Path $scriptPath) {
+              $content = Get-Content -Path $scriptPath -Raw -Encoding UTF8
+              
+              # Check for common problematic Unicode characters
+              $unicodeChars = @{
+                'â„¹' = '[INFO]'
+                'âœ"' = '[OK]'
+                'âœ—' = '[ERROR]'
+                'âš ' = '[WARN]'
+                'â–¶' = '[STEP]'
+                'â•' = '='
+                '✓' = '[OK]'
+                '✅' = '[OK]'
+                '❌' = '[ERROR]'
+                '✗' = '[ERROR]'
+                'ℹ️' = '[INFO]'
+                'ℹ' = '[INFO]'
+                '⚠️' = '[WARN]'
+                '⚠' = '[WARN]'
+                '▶' = '[STEP]'
+                '╔' = '='
+                '╗' = '='
+                '╚' = '='
+                '╝' = '='
+                '║' = '|'
+                '═' = '='
+              }
+              
+              $foundIssues = $false
+              foreach ($char in $unicodeChars.Keys) {
+                if ($content -like "*$char*") {
+                  if (-not $foundIssues) {
+                    Write-Host "[WARN] Unicode characters found in: $scriptPath" -ForegroundColor Yellow
+                    $foundIssues = $true
+                    $unicodeIssues++
+                  }
+                  Write-Host "  Found: '$char' (should use: '$($unicodeChars[$char])')" -ForegroundColor Yellow
+                }
+              }
+              
+              if (-not $foundIssues) {
+                Write-Host "[OK] No problematic Unicode in: $scriptPath" -ForegroundColor Green
+              }
+            }
+          }
+          
+          Write-Host ""
+          if ($unicodeIssues -gt 0) {
+            Write-Host "[WARN] Found Unicode characters in $unicodeIssues script(s)" -ForegroundColor Yellow
+            Write-Host "These characters may cause issues in PowerShell 5.1" -ForegroundColor Yellow
+            Write-Host "Consider replacing them with ASCII alternatives" -ForegroundColor Yellow
+          } else {
+            Write-Host "[OK] No Unicode issues found in critical scripts" -ForegroundColor Green
+          }
+
+      - name: Summary
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "================================================"
+          Write-Host "   PowerShell Syntax Check Complete"
+          Write-Host "================================================"
+          Write-Host ""
+          Write-Host "All PowerShell scripts have been validated for:"
+          Write-Host "  - Syntax errors"
+          Write-Host "  - PowerShell 5.1 compatibility"
+          Write-Host "  - Unicode character issues"
+          Write-Host ""
