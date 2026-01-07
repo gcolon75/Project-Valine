@@ -174,6 +174,24 @@ postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-wes
 
 ---
 
+## 👥 New Contributors / Contractors
+
+**Are you a contractor or temporary engineer joining the project?**
+
+Start here: **[CONTRACTOR_ONBOARDING.md](./CONTRACTOR_ONBOARDING.md)**
+
+This guide provides:
+- 10-minute project orientation with architecture diagram
+- Step-by-step local setup (PowerShell)
+- Access checklist (GitHub, AWS, environment variables)
+- Feature implementation guide with file paths and status
+- Testing and debugging workflows
+- Links to all canonical documentation
+
+**Note:** The contractor onboarding guide is a navigation aid that links to canonical documentation. It is not part of the 8 canonical docs listed above.
+
+---
+
 ## 🚦 Quick Start Guide
 
 ### For New Developers
