@@ -1032,7 +1032,7 @@ git commit -m "docs(api): update password reset endpoint documentation"
 **Use placeholders instead:**
 ```powershell
 # ❌ WRONG
-DATABASE_URL=postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev...
+DATABASE_URL=postgresql://username:password@host.rds.amazonaws.com:5432/db
 
 # ✅ CORRECT
 DATABASE_URL=<PROVIDED_BY_OWNER>
