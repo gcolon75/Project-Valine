@@ -81,6 +81,11 @@ provider:
     
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
     FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
+    
+    # API_BASE_URL - Default value shown below may be outdated after new deployments
+    # After deployment, the actual API Gateway endpoint is saved to .deploy/last-api-base.txt
+    # To get the current endpoint, run: npx serverless info --stage prod --region us-west-2
+    # Or check .deploy/last-api-base.txt after a successful deployment
     API_BASE_URL: ${env:API_BASE_URL, "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"}
     
     # ========== OPTIONAL ENVIRONMENT VARIABLES ==========

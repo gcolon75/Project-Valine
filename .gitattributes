@@ -38,6 +38,10 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
+# Exception: Force LF for specific PowerShell scripts that need cross-platform compatibility
+serverless/scripts/check-env-drift.ps1 text eol=lf
+serverless/scripts/deploy.ps1 text eol=lf
+
 # Binary files
 *.png binary
 *.jpg binary

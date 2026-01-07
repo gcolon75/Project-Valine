@@ -41,17 +41,32 @@ $ScriptVersion = "1.0.0"
 $ScriptName = "deploy.ps1"
 
 # Colors for output
-function Write-Success { Write-Host "âœ“ $args" -ForegroundColor Green }
-function Write-Info { Write-Host "â„¹ $args" -ForegroundColor Cyan }
-function Write-Warning { Write-Host "âš  $args" -ForegroundColor Yellow }
-function Write-Error { Write-Host "âœ— $args" -ForegroundColor Red }
-function Write-Step { Write-Host "`nâ–¶ $args" -ForegroundColor Blue }
+function Write-Success {
+    param([string]$Message)
+    Write-Host "[OK] $Message" -ForegroundColor Green
+}
+function Write-Info {
+    param([string]$Message)
+    Write-Host "[INFO] $Message" -ForegroundColor Cyan
+}
+function Write-Warning {
+    param([string]$Message)
+    Write-Host "[WARN] $Message" -ForegroundColor Yellow
+}
+function Write-Error {
+    param([string]$Message)
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
+}
+function Write-Step {
+    param([string]$Message)
+    Write-Host "`n[STEP] $Message" -ForegroundColor Blue
+}
 
 # Banner
 Write-Host @"
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+===========================================================
    Project Valine - One-Button Deploy Script v$ScriptVersion
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+===========================================================
 "@ -ForegroundColor Cyan
 
 Write-Info "Stage: $Stage | Region: $Region"
@@ -414,6 +429,36 @@ try {
     Write-Error "Deployment failed: $($_.Exception.Message)"
     Write-Warning "Check CloudFormation console for details"
     exit 1
+}
+
+# ===== Capture API Base URL =====
+Write-Info "Capturing API endpoint information..."
+try {
+    $infoOutput = npx serverless@3 info --stage $Stage --region $Region 2>&1 | Out-String
+    $apiBase = if ($infoOutput -match '(https://[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com)') {
+        $matches[1]
+    } else {
+        $null
+    }
+    
+    if ($apiBase) {
+        Write-Info "API Base discovered: $apiBase"
+        
+        # Create .deploy directory if it doesn't exist
+        $deployDir = Join-Path $PSScriptRoot "..\..\..\.deploy"
+        if (-not (Test-Path $deployDir)) {
+            New-Item -ItemType Directory -Path $deployDir -Force | Out-Null
+        }
+        
+        # Write API base to artifact file
+        $artifactPath = Join-Path $deployDir "last-api-base.txt"
+        Set-Content -Path $artifactPath -Value $apiBase -NoNewline
+        Write-Success "API base saved to .deploy/last-api-base.txt"
+    } else {
+        Write-Warning "Could not extract API base from deployment info"
+    }
+} catch {
+    Write-Warning "Failed to capture API base: $($_.Exception.Message)"
 }
 
 # ===== STEP 8: Post-Deploy Verification =====

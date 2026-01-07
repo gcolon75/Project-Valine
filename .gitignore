@@ -104,3 +104,7 @@ seo-landing-page.png
 # API base validation reports (can be regenerated)
 reports/api-base-history.md
 reports/bundle-host-diff.md
+
+# Deployment artifacts directory (except .gitkeep)
+.deploy/
+!.deploy/.gitkeep

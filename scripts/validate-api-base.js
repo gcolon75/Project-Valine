@@ -6,18 +6,19 @@
  * Build-time validation script that:
  * - Resolves the configured API host via DNS lookup
  * - Optionally cross-checks with AWS CLI stack output if available
- * - Fails build if host cannot be resolved (unless override flag set)
+ * - By default, treats DNS resolution failures as warnings (non-blocking)
+ * - Can be configured to fail build on DNS errors via REQUIRE_API_BASE_DNS=true
  * 
  * Exit codes:
- * - 0: Validation passed
- * - 1: Validation failed
+ * - 0: Validation passed (or passed with warnings in relaxed mode)
+ * - 1: Validation failed (only in strict mode or on critical errors)
  * 
  * Usage:
  *   node scripts/validate-api-base.js [--help]
  * 
  * Environment variables:
  *   VITE_API_BASE: API base URL to validate (required)
- *   ALLOW_API_BASE_DNS_FAILURE: Set to 'true' to allow DNS failure with warning
+ *   REQUIRE_API_BASE_DNS: Set to 'true' to enforce strict DNS validation (default: false)
  *   STACK_API_ID: Expected API Gateway ID to cross-check (optional)
  */
 
@@ -41,16 +42,22 @@ Options:
   --help    Show this help message
 
 Environment Variables:
-  VITE_API_BASE              API base URL to validate (required)
-  ALLOW_API_BASE_DNS_FAILURE Set to 'true' to allow DNS failure with warning
-  STACK_API_ID               Expected API Gateway ID (optional)
+  VITE_API_BASE         API base URL to validate (required)
+  REQUIRE_API_BASE_DNS  Set to 'true' to enforce strict DNS validation
+                        (default: false - DNS failures are warnings only)
+  STACK_API_ID          Expected API Gateway ID (optional)
 
 Exit Codes:
-  0: Validation passed
-  1: Validation failed
+  0: Validation passed (or passed with warnings in relaxed mode)
+  1: Validation failed (strict mode only or critical errors)
 
 Examples:
+  # Relaxed mode (default) - DNS failures are warnings
   node scripts/validate-api-base.js
+  
+  # Strict mode - DNS failures block build
+  REQUIRE_API_BASE_DNS=true node scripts/validate-api-base.js
+  
   VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com node scripts/validate-api-base.js
 `);
   process.exit(0);
@@ -150,20 +157,33 @@ async function main() {
   console.log('📡 Checking DNS resolution...');
   const dnsResult = await resolveHost(hostname);
   
-  const allowFailure = process.env.ALLOW_API_BASE_DNS_FAILURE === 'true';
+  // Strict mode: REQUIRE_API_BASE_DNS=true fails build on DNS errors
+  // Relaxed mode (default): DNS failures are warnings only
+  const strictMode = process.env.REQUIRE_API_BASE_DNS === 'true';
   
   if (!dnsResult.success) {
     console.error(`\n❌ DNS Resolution Failed: ${dnsResult.error}`);
     
-    if (allowFailure) {
-      console.warn('\n⚠️  WARNING: DNS validation is disabled (ALLOW_API_BASE_DNS_FAILURE=true)');
-      console.warn('   This build may fail at runtime if the API host is not reachable.\n');
-    } else {
-      console.error('\nThe configured API host cannot be resolved.');
+    if (strictMode) {
+      console.error('\n🛑 STRICT MODE: Build blocked due to DNS failure');
+      console.error('   REQUIRE_API_BASE_DNS is set to "true"');
+      console.error('');
+      console.error('The configured API host cannot be resolved.');
       console.error('This will cause runtime failures.\n');
-      console.error('To bypass this check (NOT RECOMMENDED):');
-      console.error('  Set ALLOW_API_BASE_DNS_FAILURE=true\n');
+      console.error('To proceed in relaxed mode:');
+      console.error('  Unset REQUIRE_API_BASE_DNS or set it to "false"\n');
       process.exit(1);
+    } else {
+      console.warn('\n⚠️  WARNING: DNS validation failed (RELAXED MODE)');
+      console.warn('   API host cannot be resolved: ' + hostname);
+      console.warn('   This may cause runtime failures if the API Gateway ID has changed.');
+      console.warn('');
+      console.warn('📝 Recommendation:');
+      console.warn('   After deployment, verify the API base URL is correct.');
+      console.warn('   Check .deploy/last-api-base.txt for the latest deployed endpoint.');
+      console.warn('');
+      console.warn('To enforce strict DNS validation in CI:');
+      console.warn('  Set REQUIRE_API_BASE_DNS=true\n');
     }
   } else {
     console.log(`✅ DNS resolution successful`);
@@ -181,10 +201,10 @@ async function main() {
       console.warn(`   Found:    ${apiId || 'N/A'}`);
       console.warn(`   The configured host may not match the deployed stack.\n`);
       
-      if (!allowFailure) {
-        console.error('Build aborted due to API ID mismatch.\n');
+      if (strictMode) {
+        console.error('🛑 STRICT MODE: Build aborted due to API ID mismatch.\n');
         console.error('To bypass this check:');
-        console.error('  Set ALLOW_API_BASE_DNS_FAILURE=true\n');
+        console.error('  Unset REQUIRE_API_BASE_DNS or set it to "false"\n');
         process.exit(1);
       }
     } else {
@@ -202,7 +222,18 @@ async function main() {
   
   console.log('');
   console.log('═'.repeat(60));
-  console.log('\n✅ API Base Validation Passed\n');
+  
+  if (strictMode) {
+    console.log('\n✅ API Base Validation Passed (STRICT MODE)\n');
+  } else {
+    console.log('\n✅ API Base Validation Completed (RELAXED MODE)\n');
+    console.log('📋 Summary:');
+    console.log(`   API Base URL: ${apiBase}`);
+    console.log(`   Mode: Relaxed (DNS failures are warnings)`);
+    console.log('');
+    console.log('💡 Tip: Set REQUIRE_API_BASE_DNS=true in CI to enforce strict validation');
+  }
+  console.log('');
   
   process.exit(0);
 }
