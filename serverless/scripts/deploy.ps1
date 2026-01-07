@@ -444,13 +444,17 @@ try {
     if ($apiBase) {
         Write-Info "API Base discovered: $apiBase"
         
-        # Create .deploy directory if it doesn't exist
-        $deployDir = Join-Path $PSScriptRoot "..\..\..\.deploy"
+        # Create .deploy directory at repository root
+        # Navigate up from serverless/scripts/ to repository root
+        $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..") | Select-Object -ExpandProperty Path
+        $deployDir = Join-Path $repoRoot ".deploy"
+        
         if (-not (Test-Path $deployDir)) {
             New-Item -ItemType Directory -Path $deployDir -Force | Out-Null
         }
         
-        # Write API base to artifact file
+        # Write API base to artifact file (single line, no metadata)
+        # Format: https://{api-id}.execute-api.{region}.amazonaws.com
         $artifactPath = Join-Path $deployDir "last-api-base.txt"
         Set-Content -Path $artifactPath -Value $apiBase -NoNewline
         Write-Success "API base saved to .deploy/last-api-base.txt"

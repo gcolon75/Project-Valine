@@ -16,6 +16,8 @@ jobs:
   ps-syntax-check:
     name: PowerShell 5.1 Syntax Validation
     runs-on: windows-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code

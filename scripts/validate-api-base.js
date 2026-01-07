@@ -181,6 +181,7 @@ async function main() {
       console.warn('📝 Recommendation:');
       console.warn('   After deployment, verify the API base URL is correct.');
       console.warn('   Check .deploy/last-api-base.txt for the latest deployed endpoint.');
+      console.warn('   (File contains a single line with the API Gateway base URL)');
       console.warn('');
       console.warn('To enforce strict DNS validation in CI:');
       console.warn('  Set REQUIRE_API_BASE_DNS=true\n');
