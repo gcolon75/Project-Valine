@@ -1,5 +1,5 @@
 // src/pages/Onboarding/steps/Welcome.jsx
-import { Sparkles, Users, Film, Award, Globe, Lock } from 'lucide-react';
+import { Sparkles, Users, Film, Award, Lock } from 'lucide-react';
 
 /**
  * Welcome Step - Introduction to the platform with improved design

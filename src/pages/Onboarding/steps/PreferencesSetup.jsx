@@ -7,6 +7,7 @@ import { Bell, Mail, Shield, Check } from 'lucide-react';
  */
 export default function PreferencesSetup({ userData, onUpdate }) {
   const [preferences, setPreferences] = useState({
+    ...userData,
     emailNotifications: userData?.emailNotifications ?? true,
     projectNotifications: userData?.projectNotifications ?? true,
     messageNotifications: userData?.messageNotifications ?? true,
@@ -16,7 +17,6 @@ export default function PreferencesSetup({ userData, onUpdate }) {
       phone: userData?.contactPreferences?.phone ?? false,
       platform: userData?.contactPreferences?.platform ?? true,
     },
-    ...userData,
   });
 
   // Update parent component when preferences change

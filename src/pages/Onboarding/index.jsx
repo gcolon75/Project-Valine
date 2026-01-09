@@ -124,10 +124,19 @@ export default function Onboarding() {
       const updates = {
         displayName: onboardingData.displayName || '',
         title: onboardingData.title || '',
+        location: onboardingData.location || '',
         bio: onboardingData.bio || '',
         roles: onboardingData.roles || [],
         tags: onboardingData.tags || [],
         avatarUrl: onboardingData.avatar || null,
+        links: onboardingData.profileLinks || [],
+        // Notification preferences
+        notifyOnFollow: onboardingData.emailNotifications ?? true,
+        notifyOnMessage: onboardingData.messageNotifications ?? true,
+        // Note: projectNotifications maps to future audition notifications feature
+        // Privacy settings - map frontend values to backend enum
+        visibility: onboardingData.profileVisibility === 'private' ? 'FOLLOWERS_ONLY' : 'PUBLIC',
+        // Note: contactPreferences is stored in frontend state only for now
         profileComplete: true,
         onboardingComplete: true,
       };
