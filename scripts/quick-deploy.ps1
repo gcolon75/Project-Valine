@@ -239,10 +239,18 @@ Write-Info "Frontend URL: https://dkmxy676d3vgc.cloudfront.net"
 Write-Host ""
 
 # Try to get API URL from source of truth
-$ApiBaseFile = Join-Path $RepoRoot ".deploy\last-api-base.txt"
-if (Test-Path $ApiBaseFile) {
-    $ApiUrl = (Get-Content $ApiBaseFile -Raw).Trim()
-    Write-Info "API URL: $ApiUrl (from .deploy/last-api-base.txt)"
+$GetApiBaseScript = Join-Path $ScriptDir "get-api-base.ps1"
+if (Test-Path $GetApiBaseScript) {
+    try {
+        $ApiUrl = & $GetApiBaseScript -Source file
+        if ($LASTEXITCODE -eq 0 -and $ApiUrl) {
+            Write-Info "API URL: $ApiUrl (from source of truth)"
+        } else {
+            Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+        }
+    } catch {
+        Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+    }
 } else {
     Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
 }
