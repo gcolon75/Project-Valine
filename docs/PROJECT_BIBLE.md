@@ -12,6 +12,7 @@
 - **CloudFront Distribution ID:** `E16LPJDBIL5DEE`
 - **Production API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 - **Media Uploads Bucket:** `valine-media-uploads`
+- **Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 
 ## 🔐 Database Connection
 
@@ -557,11 +558,13 @@ node scripts/check-schema-drift.mjs
 - **Reset Flow:** Token-based with 1-hour expiration
 
 #### Email Allowlist (Owner-Only Mode)
-- **Purpose:** Restrict registration to approved emails
+- **Purpose:** Restrict registration to approved emails during development/beta
 - **Configuration:** `ALLOWED_USER_EMAILS` environment variable (comma-separated)
+- **Current Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 - **Enforcement:** Backend validation before account creation
 - **Frontend UX:** Friendly restriction notice on /join page
 - **Build Validation:** Pre-build checks ensure required emails present
+- **Onboarding:** Complete 6-step onboarding flow exists but is gated by allowlist. Allowlist prevents unauthorized signups while allowing testing of the onboarding process for approved users.
 
 #### 2FA Support
 - **Method:** TOTP (Time-Based One-Time Password)
@@ -812,10 +815,10 @@ psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
 #### Frontend (.env or .env.production)
 ```powershell
 # API Configuration
-VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/prod
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 # Feature Flags
-VITE_ALLOWED_USER_EMAILS=email1@example.com,email2@example.com
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true
 
@@ -836,10 +839,10 @@ environment:
   
   # Application Config
   NODE_ENV: production
-  FRONTEND_URL: ${env:FRONTEND_URL}
+  FRONTEND_URL: https://dkmxy676d3vgc.cloudfront.net
   
   # Email Allowlist
-  ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS}
+  ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
   STRICT_ALLOWLIST: "1"
   
   # Email Service (optional)
@@ -1514,14 +1517,14 @@ cd serverless && npm test
 ### Key Environment Variables
 ```powershell
 # Frontend
-VITE_API_BASE=https://api-url.amazonaws.com/prod
-VITE_ALLOWED_USER_EMAILS=email1@example.com
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 
 # Backend
 DATABASE_URL=postgresql://user:pass@host:5432/db
 JWT_SECRET=your-32-char-secret-here
-FRONTEND_URL=https://your-domain.com
-ALLOWED_USER_EMAILS=email1@example.com,email2@example.com
+FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
+ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
 ### Useful Commands
@@ -1548,14 +1551,12 @@ node scripts/check-cloudfront.js         # Check CloudFront status
 ### API Testing
 ```powershell
 # Health check
-Invoke-RestMethod -Uri "https://api-url.amazonaws.com/prod/health" -Method Get
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
 
 # Register
-Invoke-RestMethod -Uri "https://your-api.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
+Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
-    "Content-Type" = "application/json"
-    "Authorization" = "Bearer <access-token>"
-} -Body '{"email":"user@example.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'
+} -Body '{"email":"ghawk075@gmail.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'
 ```
 
 ### Troubleshooting Commands
