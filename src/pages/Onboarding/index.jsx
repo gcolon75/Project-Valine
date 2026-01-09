@@ -134,14 +134,9 @@ export default function Onboarding() {
         notifyOnFollow: onboardingData.emailNotifications ?? true,
         notifyOnMessage: onboardingData.messageNotifications ?? true,
         // Note: projectNotifications maps to future audition notifications feature
-        // Privacy settings
-        visibility: onboardingData.profileVisibility || 'public',
-        // Contact preferences stored as metadata
-        contactPreferences: onboardingData.contactPreferences || {
-          email: true,
-          phone: false,
-          platform: true,
-        },
+        // Privacy settings - map frontend values to backend enum
+        visibility: onboardingData.profileVisibility === 'private' ? 'FOLLOWERS_ONLY' : 'PUBLIC',
+        // Note: contactPreferences is stored in frontend state only for now
         profileComplete: true,
         onboardingComplete: true,
       };
