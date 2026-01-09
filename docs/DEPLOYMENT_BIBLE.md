@@ -35,10 +35,11 @@ See the [Security Checklist](#security-checklist) section for detailed secret ro
 3. [Environment Configuration](#environment-configuration)
 4. [Build Process](#build-process)
 5. [One-Button Deploy](#one-button-deploy)
-6. [Post-Deploy Verification](#post-deploy-verification)
-7. [Rollback Procedure](#rollback-procedure)
-8. [Common Issues & Fixes](#common-issues--fixes)
-9. [Security Checklist](#security-checklist)
+6. [API Base Management](#api-base-management)
+7. [Post-Deploy Verification](#post-deploy-verification)
+8. [Rollback Procedure](#rollback-procedure)
+9. [Common Issues & Fixes](#common-issues--fixes)
+10. [Security Checklist](#security-checklist)
 
 ---
 
@@ -385,6 +386,110 @@ functions:
 layers:
   prismaV2: arn:aws:lambda:us-west-2:123456789012:layer:pv-api-prod-prisma-v2:5
 ```
+
+---
+
+## API Base Management
+
+**⚠️ IMPORTANT:** The API Gateway endpoint URL can change if the API Gateway resource is recreated. To prevent documentation drift and build failures, we use a single source-of-truth file for the API base URL.
+
+### Source of Truth: `.deploy/last-api-base.txt`
+
+This file contains the current production API base URL and is automatically updated during backend deployment.
+
+**Location:** `/home/runner/work/Project-Valine/Project-Valine/.deploy/last-api-base.txt`  
+**Format:** Single line with the API Gateway base URL  
+**Example:** `https://ce73w43mga.execute-api.us-west-2.amazonaws.com`
+
+### Scripts
+
+#### Get Current API Base
+
+```powershell
+# Get API base from any available source (AWS, file, or .env.production)
+.\scripts\get-api-base.ps1
+
+# Get from specific source
+.\scripts\get-api-base.ps1 -Source file    # From .deploy/last-api-base.txt
+.\scripts\get-api-base.ps1 -Source env     # From .env.production
+.\scripts\get-api-base.ps1 -Source aws     # From AWS serverless info
+```
+
+#### Update Source of Truth
+
+```powershell
+# Discover and write current API base to .deploy/last-api-base.txt
+.\scripts\write-api-base.ps1
+
+# Or specify explicitly
+.\scripts\write-api-base.ps1 -ApiBase "https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
+```
+
+**Note:** `scripts/quick-deploy.ps1` and `serverless/scripts/deploy.ps1` automatically capture the API base after backend deployment.
+
+#### Check for Stale References
+
+Before releasing or committing changes, run the regression check:
+
+```powershell
+# Check for stale API base references in docs and scripts
+.\scripts\check-no-stale-api-base.ps1
+```
+
+This script fails if it finds:
+- Old API base URLs (e.g., `wkndtj22ab.execute-api...`)
+- Hardcoded API bases in `/docs` that don't match `.deploy/last-api-base.txt`
+- Incorrect environment variable names (`VITE_API_BASE_URL` instead of `VITE_API_BASE`)
+
+**Recommended:** Run this check in CI/CD pipelines before deployment.
+
+### Deployment Workflow
+
+The correct workflow ensures frontend always uses the right API base:
+
+1. **Deploy Backend:**
+   ```powershell
+   cd serverless
+   npx serverless@3 deploy --stage prod --region us-west-2
+   ```
+
+2. **Capture API Base (automatic in quick-deploy.ps1):**
+   ```powershell
+   .\scripts\write-api-base.ps1
+   ```
+
+3. **Build Frontend (reads from .deploy/last-api-base.txt):**
+   ```powershell
+   npm run build
+   # Prebuild script validates VITE_API_BASE matches .deploy/last-api-base.txt
+   ```
+
+4. **Deploy Frontend:**
+   ```powershell
+   aws s3 sync dist/ s3://valine-frontend-prod --delete
+   aws cloudfront create-invalidation --distribution-id <id> --paths '/*'
+   ```
+
+### Environment Variable: VITE_API_BASE
+
+The frontend uses `VITE_API_BASE` (NOT `VITE_API_BASE_URL`) for the API endpoint.
+
+**Set in `.env.production`:**
+```bash
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
+```
+
+**Verify before build:**
+```powershell
+# Check API base matches source of truth
+$expectedBase = Get-Content .deploy\last-api-base.txt
+$actualBase = Select-String -Path .env.production -Pattern "VITE_API_BASE=(.+)" | % { $_.Matches.Groups[1].Value }
+if ($expectedBase -ne $actualBase) {
+    Write-Warning "API base mismatch! Update .env.production"
+}
+```
+
+**The prebuild script (`scripts/prebuild.js`) automatically validates this during `npm run build`.**
 
 ---
 

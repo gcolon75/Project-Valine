@@ -147,6 +147,19 @@ if (-not $SkipBackend) {
         Write-Ok "Backend deployed successfully"
         Write-Host ""
         
+        # Capture API base URL to source of truth file
+        Write-Info "Capturing API base URL..."
+        $WriteApiBaseScript = Join-Path $ScriptDir "write-api-base.ps1"
+        if (Test-Path $WriteApiBaseScript) {
+            & $WriteApiBaseScript
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "Failed to capture API base URL (non-critical)"
+            }
+        } else {
+            Write-Warn "write-api-base.ps1 not found - API base not captured"
+        }
+        Write-Host ""
+        
     } finally {
         Pop-Location
     }
