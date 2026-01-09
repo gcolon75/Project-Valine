@@ -124,10 +124,24 @@ export default function Onboarding() {
       const updates = {
         displayName: onboardingData.displayName || '',
         title: onboardingData.title || '',
+        location: onboardingData.location || '',
         bio: onboardingData.bio || '',
         roles: onboardingData.roles || [],
         tags: onboardingData.tags || [],
         avatarUrl: onboardingData.avatar || null,
+        links: onboardingData.profileLinks || [],
+        // Notification preferences
+        notifyOnFollow: onboardingData.emailNotifications ?? true,
+        notifyOnMessage: onboardingData.messageNotifications ?? true,
+        // Note: projectNotifications maps to future audition notifications feature
+        // Privacy settings
+        visibility: onboardingData.profileVisibility || 'public',
+        // Contact preferences stored as metadata
+        contactPreferences: onboardingData.contactPreferences || {
+          email: true,
+          phone: false,
+          platform: true,
+        },
         profileComplete: true,
         onboardingComplete: true,
       };
