@@ -175,7 +175,7 @@ $env:DATABASE_URL = "postgresql://USERNAME:PASSWORD@HOST:PORT/DATABASE?sslmode=r
 
 # Authentication
 $env:JWT_SECRET = "<generate-with-openssl-rand-base64-32>"
-$env:ALLOWED_USER_EMAILS = "user1@example.com,user2@example.com"
+$env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 $env:ENABLE_REGISTRATION = "false"
 $env:STRICT_ALLOWLIST = "0"
 
