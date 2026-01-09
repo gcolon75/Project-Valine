@@ -33,13 +33,67 @@ This document is a **navigation aid** that links to canonical sources of truth. 
 
 Welcome, contractor! Project Valine (code name "Joint") is a LinkedIn-style professional networking platform for creative professionals in the entertainment industry. The platform is **83% complete** (Phases 00-08 of 13 done), and your role is to complete remaining features and fix outstanding bugs.
 
-**Your Mission:**
-- Fix profile edit issues (media uploads, form validation, etc.)
-- Implement/complete profile connections and social features (follow/unfollow)
-- Build/complete notifications system
-- Implement password reset workflow
-- Complete sharing, liking, and commenting features
-- Fix any related bugs discovered during implementation
+**Your Mission - Remaining Tasks:**
+
+1. **Post Access Gating:**
+   - Finish owner approve/deny UI
+   - Implement "My Requests" list for users to track access requests
+   - Hide "Pay" button for now (future feature)
+
+2. **Notifications:**
+   - Wire bell badge + notification list to backend API
+   - Implement polling (30-60 second intervals)
+   - Add mark read/delete functionality
+   - Add triggers on follows and access requests
+
+3. **Password Reset:**
+   - Wire Forgot/Reset pages to backend endpoints
+   - Implement token email via AWS SES
+   - Handle expired/invalid tokens gracefully
+
+4. **Post Sharing:**
+   - Add backend endpoints for share/unshare
+   - Implement share/unshare UI components
+   - Show share counts on posts
+
+5. **Comments:**
+   - Switch from local context to API integration
+   - Add edit/delete functionality
+   - Implement input sanitization (XSS prevention)
+
+6. **Likes:**
+   - Ensure like/unlike works on PostDetail and post cards
+   - Unify like counts across all components
+
+7. **Connections:**
+   - Finalize follow/unfollow UI
+   - Implement approve/reject connection request flow
+   - Add follow-back prompt
+   - Verify profile status edges (blocked/visibility handling)
+
+8. **Download/Watermark:**
+   - Keep disabled for now
+   - Stub endpoints for later implementation
+
+9. **Profile Media:**
+   - Sanity test avatar/banner/audio uploads across S3
+   - Fix any lingering edge cases
+   - Ensure media bucket is `valine-media-uploads`
+
+10. **QA/Tests:**
+    - Smoke tests for critical flows
+    - E2E tests: post create, access request, password reset
+    - Fix critical UX bugs
+
+11. **Onboarding & Documentation:**
+    - Tighten contractor onboarding doc
+    - Remove outdated notes
+    - Quick checks and verification
+
+**Known Critical Bugs to Fix:**
+- Login occasionally crashes (unknown reason - needs investigation)
+- Frequent "no network connection" errors
+- 403/no profile found errors appearing intermittently
 
 **Current Status:**
 - ✅ Authentication (JWT, login, register) - COMPLETE
@@ -240,8 +294,8 @@ aws configure
 
 **Frontend (.env or .env.production):**
 ```powershell
-VITE_API_BASE=<PROVIDED_BY_OWNER>
-VITE_ALLOWED_USER_EMAILS=<PROVIDED_BY_OWNER>
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true
 ```
@@ -251,9 +305,10 @@ VITE_ENABLE_2FA=true
 DATABASE_URL=<PROVIDED_BY_OWNER>
 JWT_SECRET=<PROVIDED_BY_OWNER>
 JWT_REFRESH_SECRET=<PROVIDED_BY_OWNER>
-FRONTEND_URL=<PROVIDED_BY_OWNER>
-ALLOWED_USER_EMAILS=<PROVIDED_BY_OWNER>
+FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
+ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 MEDIA_BUCKET_NAME=valine-media-uploads
+API_BASE_URL=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 ```
 
 ⚠️ **CRITICAL:** Values for these variables are **NEVER in docs or code**. Obtain them securely from the project owner via encrypted channel (1Password, AWS Secrets Manager, etc.).
@@ -265,6 +320,33 @@ MEDIA_BUCKET_NAME=valine-media-uploads
 - [ ] Test account credentials: <PROVIDED_BY_OWNER>
 - [ ] Email allowlist: Confirm your test email is added to `ALLOWED_USER_EMAILS`
 - [ ] Database access (if needed): Connection string provided securely
+
+#### ☐ Onboarding Pages & Access Gating
+
+**Important:** The platform has a complete onboarding flow with multi-step profile creation pages. However, public registration is currently disabled via email allowlist to prevent unauthorized account creation.
+
+**Current Configuration:**
+- **Onboarding Pages:** Fully implemented and functional
+- **Access Restriction:** Email allowlist enabled with `ghawk075@gmail.com` and `valinejustin@gmail.com`
+- **Registration Status:** `ENABLE_REGISTRATION=false` in production
+
+**Why This Matters:**
+- The onboarding flow needs to be tested to ensure it works correctly for new users
+- The allowlist is a temporary measure to control access during development
+- Contractors need to ensure the onboarding process is bug-free before public launch
+
+**Testing the Onboarding Flow:**
+1. Ensure your email is added to the allowlist in backend environment variables
+2. Navigate to `/join` or `/register` page
+3. Complete the multi-step onboarding process
+4. Verify all profile fields save correctly
+5. Test media uploads (avatar, banner, audio samples)
+6. Confirm onboarding completion redirects appropriately
+
+**Access Gating Feature (In Development):**
+- Post access gating allows owners to require approval before users can view certain content
+- This is one of the features that needs completion (see "Your Mission" section above)
+- Related tables: `accessRequests`, `posts.requireApproval`, `posts.accessType`
 
 ---
 

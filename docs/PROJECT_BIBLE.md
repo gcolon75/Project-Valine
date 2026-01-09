@@ -12,6 +12,7 @@
 - **CloudFront Distribution ID:** `E16LPJDBIL5DEE`
 - **Production API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 - **Media Uploads Bucket:** `valine-media-uploads`
+- **Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 
 ## 🔐 Database Connection
 
@@ -812,10 +813,10 @@ psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
 #### Frontend (.env or .env.production)
 ```powershell
 # API Configuration
-VITE_API_BASE=https://your-api-gateway-url.amazonaws.com/prod
+VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
 
 # Feature Flags
-VITE_ALLOWED_USER_EMAILS=email1@example.com,email2@example.com
+VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true
 
@@ -836,10 +837,10 @@ environment:
   
   # Application Config
   NODE_ENV: production
-  FRONTEND_URL: ${env:FRONTEND_URL}
+  FRONTEND_URL: https://dkmxy676d3vgc.cloudfront.net
   
   # Email Allowlist
-  ALLOWED_USER_EMAILS: ${env:ALLOWED_USER_EMAILS}
+  ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
   STRICT_ALLOWLIST: "1"
   
   # Email Service (optional)
