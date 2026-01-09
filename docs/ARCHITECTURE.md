@@ -58,7 +58,8 @@
 │                      API GATEWAY LAYER                           │
 │                                                                   │
 │  API Gateway (REST)                                              │
-│  ├── Base: wkndtj22ab.execute-api.us-west-2.amazonaws.com      │
+│  ├── Base: ce73w43mga.execute-api.us-west-2.amazonaws.com      │
+│       ⚠️ Verify: .deploy/last-api-base.txt                      │
 │  ├── Rate Limiting (10k req/sec per account)                   │
 │  ├── Request Validation & Transformation                        │
 │  ├── CORS Configuration                                         │

@@ -4,7 +4,21 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$ApiBase = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+# Get API base from source of truth file
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Split-Path -Parent $ScriptDir
+$ApiBaseFile = Join-Path $RepoRoot ".deploy\last-api-base.txt"
+
+if (Test-Path $ApiBaseFile) {
+    $ApiBase = (Get-Content $ApiBaseFile -Raw).Trim()
+    Write-Host "Using API base from .deploy/last-api-base.txt: $ApiBase" -ForegroundColor Cyan
+} else {
+    # Fallback to current known API base
+    $ApiBase = "https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
+    Write-Host "Warning: .deploy/last-api-base.txt not found. Using fallback: $ApiBase" -ForegroundColor Yellow
+    Write-Host "Run scripts/write-api-base.ps1 to create the source of truth file." -ForegroundColor Yellow
+}
+
 $TestUser = $env:TEST_USER_ID  # Set this to a test user ID
 $TestToken = $env:TEST_AUTH_TOKEN  # Set this to a valid JWT token
 

@@ -223,12 +223,24 @@ Write-Ok "Backend: Deployed to AWS Lambda ($Stage, $Region)"
 Write-Ok "Frontend: Synced to s3://$FrontendBucket"
 Write-Host ""
 Write-Info "Frontend URL: https://dkmxy676d3vgc.cloudfront.net"
-Write-Info "API URL: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 Write-Host ""
-Write-Info "Next steps (if migrations required):"
-Write-Info "  cd api"
-Write-Info "  npx prisma migrate deploy"
-Write-Info "  npx prisma generate"
+
+# Try to get API URL from source of truth
+$ApiBaseFile = Join-Path $RepoRoot ".deploy\last-api-base.txt"
+if (Test-Path $ApiBaseFile) {
+    $ApiUrl = (Get-Content $ApiBaseFile -Raw).Trim()
+    Write-Info "API URL: $ApiUrl (from .deploy/last-api-base.txt)"
+} else {
+    Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+}
+
+Write-Host ""
+Write-Info "Next steps:"
+Write-Info "  1. Capture API base: .\scripts\write-api-base.ps1"
+Write-Info "  2. If migrations required:"
+Write-Info "     cd api"
+Write-Info "     npx prisma migrate deploy"
+Write-Info "     npx prisma generate"
 Write-Host ""
 Write-Ok "Deploy successful!"
 Write-Host ""

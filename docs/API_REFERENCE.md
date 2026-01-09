@@ -1,8 +1,9 @@
 # Project Valine - API Reference
 
 **Version:** 1.0  
-**Last Updated:** 2026-01-05  
-**Base URL (Production):** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+**Last Updated:** 2026-01-09  
+**Base URL (Production):** https://ce73w43mga.execute-api.us-west-2.amazonaws.com  
+⚠️ **Verify current base:** `Get-Content .deploy/last-api-base.txt`
 
 ---
 
@@ -33,7 +34,8 @@ All API requests (except login/signup) require a valid JWT token passed via Http
 ```powershell
 # Cookie is automatically sent by browser
 # For manual testing with curl/Invoke-WebRequest:
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/users/me" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/users/me" `
   -Headers @{Cookie="jwt_token=<token>"} `
   -Method GET
 ```
@@ -86,7 +88,8 @@ $body = @{
   displayName = "John Doe"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/signup" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/auth/signup" `
   -Method POST `
   -ContentType "application/json" `
   -Body $body
@@ -137,7 +140,8 @@ $body = @{
   password = "SecurePass123!"
 } | ConvertTo-Json
 
-$response = Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/login" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+$response = Invoke-WebRequest -Uri "$apiBase/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body $body `
@@ -163,7 +167,8 @@ $response = Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.ama
 
 **PowerShell Example:**
 ```powershell
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/logout" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/auth/logout" `
   -Method POST `
   -WebSession $session
 ```
@@ -271,7 +276,8 @@ Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/a
 
 **PowerShell Example:**
 ```powershell
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/users/me" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/users/me" `
   -Method GET `
   -WebSession $session | Select -ExpandProperty Content | ConvertFrom-Json
 ```
@@ -321,7 +327,8 @@ $body = @{
   theme = "light"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/users/me" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/users/me" `
   -Method PATCH `
   -ContentType "application/json" `
   -Body $body `
@@ -361,7 +368,8 @@ Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/u
 
 **PowerShell Example:**
 ```powershell
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/users/johndoe" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/users/johndoe" `
   -Method GET | Select -ExpandProperty Content | ConvertFrom-Json
 ```
 
@@ -398,7 +406,8 @@ Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/u
 
 **PowerShell Example:**
 ```powershell
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/users/johndoe/posts?limit=10" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/users/johndoe/posts?limit=10" `
   -Method GET | Select -ExpandProperty Content | ConvertFrom-Json
 ```
 
@@ -554,7 +563,8 @@ $body = @{
   fileSize = 5242880
 } | ConvertTo-Json
 
-$uploadResponse = Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/media/upload" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+$uploadResponse = Invoke-WebRequest -Uri "$apiBase/media/upload" `
   -Method POST `
   -ContentType "application/json" `
   -Body $body `
@@ -571,7 +581,8 @@ $confirmBody = @{
   mediaId = $uploadResponse.mediaId
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/media/confirm" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/media/confirm" `
   -Method POST `
   -ContentType "application/json" `
   -Body $confirmBody `
@@ -674,8 +685,9 @@ Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/m
 
 **PowerShell Example:**
 ```powershell
+$apiBase = Get-Content .deploy/last-api-base.txt
 $query = [System.Web.HttpUtility]::UrlEncode("john")
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/search/users?q=$query" `
+Invoke-WebRequest -Uri "$apiBase/search/users?q=$query" `
   -Method GET | Select -ExpandProperty Content | ConvertFrom-Json
 ```
 

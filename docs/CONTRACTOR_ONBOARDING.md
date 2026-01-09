@@ -294,7 +294,7 @@ aws configure
 
 **Frontend (.env or .env.production):**
 ```powershell
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true
@@ -308,7 +308,7 @@ JWT_REFRESH_SECRET=<PROVIDED_BY_OWNER>
 FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 MEDIA_BUCKET_NAME=valine-media-uploads
-API_BASE_URL=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+API_BASE_URL=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 ```
 
 ⚠️ **CRITICAL:** Values for these variables are **NEVER in docs or code**. Obtain them securely from the project owner via encrypted channel (1Password, AWS Secrets Manager, etc.).
@@ -525,7 +525,8 @@ cd ..
 **Post-deployment verification:**
 ```powershell
 # Check API health
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/health" -Method Get
 
 # Check frontend
 Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net/" -Method Get
@@ -694,28 +695,29 @@ aws s3 sync dist/ s3://valine-frontend-staging --delete
 **API Endpoints:**
 ```powershell
 # Send connection request
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/connections/request" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/connections/request" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"} `
   -Body '{"receiverId":"user-uuid"}' `
   -ContentType 'application/json'
 
 # Accept connection request
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/connections/accept" `
+Invoke-RestMethod -Uri "$apiBase/connections/accept" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"} `
   -Body '{"requestId":"request-uuid"}' `
   -ContentType 'application/json'
 
 # Reject connection request
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/connections/reject" `
+Invoke-RestMethod -Uri "$apiBase/connections/reject" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"} `
   -Body '{"requestId":"request-uuid"}' `
   -ContentType 'application/json'
 
 # Get my connections
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/connections" `
+Invoke-RestMethod -Uri "$apiBase/connections" `
   -Method GET `
   -Headers @{Authorization="Bearer $token"}
 ```
@@ -774,17 +776,18 @@ Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/c
 **API Endpoints:**
 ```powershell
 # Get my notifications
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/notifications" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/notifications" `
   -Method GET `
   -Headers @{Authorization="Bearer $token"}
 
 # Mark notification as read
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/notifications/{id}/read" `
+Invoke-RestMethod -Uri "$apiBase/notifications/{id}/read" `
   -Method PATCH `
   -Headers @{Authorization="Bearer $token"}
 
 # Delete notification
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/notifications/{id}" `
+Invoke-RestMethod -Uri "$apiBase/notifications/{id}" `
   -Method DELETE `
   -Headers @{Authorization="Bearer $token"}
 ```
@@ -838,13 +841,14 @@ Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/n
 **API Endpoints:**
 ```powershell
 # Request password reset
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/forgot-password" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/auth/forgot-password" `
   -Method POST `
   -Body '{"email":"user@example.com"}' `
   -ContentType 'application/json'
 
 # Reset password with token
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/reset-password" `
+Invoke-RestMethod -Uri "$apiBase/auth/reset-password" `
   -Method POST `
   -Body '{"token":"reset-token-from-email","newPassword":"NewPass123!"}' `
   -ContentType 'application/json'
@@ -901,12 +905,13 @@ Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/a
 **API Endpoint (to implement):**
 ```powershell
 # Share a post
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/share" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/share" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"}
 
 # Unshare a post
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/share" `
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/share" `
   -Method DELETE `
   -Headers @{Authorization="Bearer $token"}
 ```
@@ -961,28 +966,29 @@ Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/p
 **API Endpoints:**
 ```powershell
 # Like a post
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/like" `
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/like" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"}
 
 # Unlike a post
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/like" `
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/like" `
   -Method DELETE `
   -Headers @{Authorization="Bearer $token"}
 
 # Get comments
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/comments" `
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/comments" `
   -Method GET
 
 # Add comment
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/posts/{postId}/comments" `
+Invoke-RestMethod -Uri "$apiBase/posts/{postId}/comments" `
   -Method POST `
   -Headers @{Authorization="Bearer $token"} `
   -Body '{"content":"Great post!"}' `
   -ContentType 'application/json'
 
 # Delete comment
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/comments/{commentId}" `
+Invoke-RestMethod -Uri "$apiBase/comments/{commentId}" `
   -Method DELETE `
   -Headers @{Authorization="Bearer $token"}
 ```
@@ -1301,7 +1307,8 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 aws logs tail /aws/lambda/pv-api-prod-api --follow
 
 # Check health
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/health" -Method Get
 ```
 
 **Key File Locations:**

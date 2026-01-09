@@ -127,7 +127,7 @@ npx prisma generate
 | Resource | Value |
 |----------|-------|
 | **Frontend URL** | `https://dkmxy676d3vgc.cloudfront.net` |
-| **API Base URL** | `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com` |
+| **API Base URL** | `https://ce73w43mga.execute-api.us-west-2.amazonaws.com` ⚠️ Verify: `.deploy/last-api-base.txt` |
 | **Frontend S3 Bucket** | `s3://valine-frontend-prod` |
 | **AWS Region** | `us-west-2` |
 | **CloudFront Distribution** | `E16LPJDBIL5DEE` |

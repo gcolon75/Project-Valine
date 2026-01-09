@@ -100,7 +100,7 @@ Replaced generic task list with specific, actionable items:
 #### Updated Environment Variables
 **Frontend:**
 ```powershell
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```
 
@@ -108,7 +108,7 @@ VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 ```yaml
 FRONTEND_URL=https://dkmxy676d3vgc.cloudfront.net
 ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
-API_BASE_URL=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+API_BASE_URL=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 ```
 
 #### Added Onboarding Pages & Access Gating Section
@@ -159,7 +159,7 @@ $env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 ```
 
 #### Verified
-- ✅ API_BASE_URL correct: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- ✅ API_BASE_URL correct: https://ce73w43mga.execute-api.us-west-2.amazonaws.com (⚠️ Verify with `.deploy/last-api-base.txt`)
 - ✅ S3 bucket correct: valine-frontend-prod
 - ✅ Frontend URL correct: https://dkmxy676d3vgc.cloudfront.net
 
@@ -173,7 +173,7 @@ $env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 - ✅ Only reference to old name is in DEPLOYMENT_BIBLE explaining what NOT to use
 
 ### API Endpoint
-- ✅ 56+ references to correct API: `https://wkndtj22ab.execute-api.us-west-2.amazonaws.com`
+- ✅ 56+ references to correct API: `https://ce73w43mga.execute-api.us-west-2.amazonaws.com` (⚠️ API Gateway IDs change if API is recreated. Always verify with `.deploy/last-api-base.txt`)
 - ✅ No old/incorrect API endpoints in documentation
 - ✅ Consistent across all canonical documents
 
@@ -188,7 +188,7 @@ $env:ALLOWED_USER_EMAILS = "ghawk075@gmail.com,valinejustin@gmail.com"
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
 - **Frontend S3 Bucket:** valine-frontend-prod
 - **CloudFront Distribution:** E16LPJDBIL5DEE
-- **API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- **API Base:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com (⚠️ Verify: `.deploy/last-api-base.txt`)
 - **Media Bucket:** valine-media-uploads
 - **Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 

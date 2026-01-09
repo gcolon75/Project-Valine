@@ -169,7 +169,7 @@ All canonical docs now reference confirmed production values:
 |---------|-------|
 | **Frontend URL** | https://dkmxy676d3vgc.cloudfront.net |
 | **CloudFront Distribution** | E16LPJDBIL5DEE |
-| **API Base** | https://wkndtj22ab.execute-api.us-west-2.amazonaws.com |
+| **API Base** | https://ce73w43mga.execute-api.us-west-2.amazonaws.com ⚠️ Verify: `.deploy/last-api-base.txt` |
 | **Frontend Bucket** | valine-frontend-prod |
 | **Media Bucket** | valine-media-uploads |
 | **Database URL** | postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require |
