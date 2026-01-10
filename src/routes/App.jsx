@@ -31,6 +31,7 @@ const CookieDisclosurePage = lazy(() => import("../pages/legal/CookieDisclosure"
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 const DiscoverPage = lazy(() => import("../pages/Discover"));
 const PostPage = lazy(() => import("../pages/Post"));
+const PostDetailPage = lazy(() => import("../pages/PostDetail"));
 const InboxPage = lazy(() => import("../pages/Inbox"));
 const ConversationPage = lazy(() => import("../pages/Conversation"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
@@ -174,6 +175,14 @@ export default function App() {
             element={
               <Protected>
                 <PostPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="posts/:id"
+            element={
+              <Protected>
+                <PostDetailPage />
               </Protected>
             }
           />
