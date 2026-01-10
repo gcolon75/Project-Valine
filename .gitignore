@@ -105,6 +105,8 @@ seo-landing-page.png
 reports/api-base-history.md
 reports/bundle-host-diff.md
 
-# Deployment artifacts directory (except .gitkeep)
+# Deployment artifacts directory
+# Keep .gitkeep and last-api-base.txt (source of truth for API base URL)
 .deploy/
 !.deploy/.gitkeep
+!.deploy/last-api-base.txt

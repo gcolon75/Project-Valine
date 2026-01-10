@@ -147,6 +147,19 @@ if (-not $SkipBackend) {
         Write-Ok "Backend deployed successfully"
         Write-Host ""
         
+        # Capture API base URL to source of truth file
+        Write-Info "Capturing API base URL..."
+        $WriteApiBaseScript = Join-Path $ScriptDir "write-api-base.ps1"
+        if (Test-Path $WriteApiBaseScript) {
+            & $WriteApiBaseScript
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warn "Failed to capture API base URL (non-critical)"
+            }
+        } else {
+            Write-Warn "write-api-base.ps1 not found - API base not captured"
+        }
+        Write-Host ""
+        
     } finally {
         Pop-Location
     }
@@ -223,12 +236,32 @@ Write-Ok "Backend: Deployed to AWS Lambda ($Stage, $Region)"
 Write-Ok "Frontend: Synced to s3://$FrontendBucket"
 Write-Host ""
 Write-Info "Frontend URL: https://dkmxy676d3vgc.cloudfront.net"
-Write-Info "API URL: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
 Write-Host ""
-Write-Info "Next steps (if migrations required):"
-Write-Info "  cd api"
-Write-Info "  npx prisma migrate deploy"
-Write-Info "  npx prisma generate"
+
+# Try to get API URL from source of truth
+$GetApiBaseScript = Join-Path $ScriptDir "get-api-base.ps1"
+if (Test-Path $GetApiBaseScript) {
+    try {
+        $ApiUrl = & $GetApiBaseScript -Source file
+        if ($LASTEXITCODE -eq 0 -and $ApiUrl) {
+            Write-Info "API URL: $ApiUrl (from source of truth)"
+        } else {
+            Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+        }
+    } catch {
+        Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+    }
+} else {
+    Write-Info "API URL: Check .deploy/last-api-base.txt or run: scripts/write-api-base.ps1"
+}
+
+Write-Host ""
+Write-Info "Next steps:"
+Write-Info "  1. Capture API base: .\scripts\write-api-base.ps1"
+Write-Info "  2. If migrations required:"
+Write-Info "     cd api"
+Write-Info "     npx prisma migrate deploy"
+Write-Info "     npx prisma generate"
 Write-Host ""
 Write-Ok "Deploy successful!"
 Write-Host ""

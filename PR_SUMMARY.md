@@ -61,7 +61,7 @@ Before handing this to the contractor, complete the following:
 
 **Frontend (.env):**
 ```powershell
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=<comma-separated-list-of-allowed-emails>
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true

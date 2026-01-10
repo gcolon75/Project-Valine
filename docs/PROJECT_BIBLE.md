@@ -10,7 +10,8 @@
 - **Frontend (CloudFront):** https://dkmxy676d3vgc.cloudfront.net
 - **Frontend S3 Bucket:** `valine-frontend-prod`
 - **CloudFront Distribution ID:** `E16LPJDBIL5DEE`
-- **Production API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- **Production API Base:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com  
+  ⚠️ **Verify:** `Get-Content .deploy/last-api-base.txt`
 - **Media Uploads Bucket:** `valine-media-uploads`
 - **Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 
@@ -815,7 +816,7 @@ psql $DATABASE_URL < prisma/migrations/<migration-name>/rollback.sql
 #### Frontend (.env or .env.production)
 ```powershell
 # API Configuration
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 
 # Feature Flags
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
@@ -1517,7 +1518,7 @@ cd serverless && npm test
 ### Key Environment Variables
 ```powershell
 # Frontend
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 
 # Backend
@@ -1551,10 +1552,11 @@ node scripts/check-cloudfront.js         # Check CloudFront status
 ### API Testing
 ```powershell
 # Health check
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/health" -Method Get
 
 # Register
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register" -Method Post -Headers @{
+Invoke-RestMethod -Uri "$apiBase/auth/register" -Method Post -Headers @{
     "Content-Type" = "application/json"
 } -Body '{"email":"ghawk075@gmail.com","password":"SecurePass123!","username":"johndoe"}' -ContentType 'application/json'
 ```

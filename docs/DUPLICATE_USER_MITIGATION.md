@@ -248,11 +248,12 @@ SELECT COUNT(*) FROM users WHERE "normalizedEmail" IS NULL;
 cd serverless
 
 # Test registration with same email (should fail)
-curl -X POST https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register `
+$apiBase = Get-Content .deploy/last-api-base.txt
+curl -X POST $apiBase/auth/register `
   -H "Content-Type: application/json" `
   -d '{"email":"test@example.com","password":"Test123!","username":"testuser1"}'
 
-curl -X POST https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/auth/register `
+curl -X POST $apiBase/auth/register `
   -H "Content-Type: application/json" `
   -d '{"email":"test@example.com","password":"Test123!","username":"testuser2"}'
 # Should return 409 Conflict

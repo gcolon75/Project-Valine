@@ -4,7 +4,31 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$ApiBase = "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com"
+# Get API base from source of truth using centralized script
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Split-Path -Parent $ScriptDir
+$GetApiBaseScript = Join-Path $ScriptDir "get-api-base.ps1"
+
+if (Test-Path $GetApiBaseScript) {
+    try {
+        $ApiBase = & $GetApiBaseScript -Source file
+        if ($LASTEXITCODE -eq 0 -and $ApiBase) {
+            Write-Host "Using API base from source of truth: $ApiBase" -ForegroundColor Cyan
+        } else {
+            throw "Failed to get API base from get-api-base.ps1"
+        }
+    } catch {
+        # Fallback to current known API base
+        $ApiBase = "https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
+        Write-Host "Warning: Could not get API base from script. Using fallback: $ApiBase" -ForegroundColor Yellow
+    }
+} else {
+    # Fallback if script doesn't exist
+    $ApiBase = "https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
+    Write-Host "Warning: get-api-base.ps1 not found. Using fallback: $ApiBase" -ForegroundColor Yellow
+    Write-Host "Run scripts/write-api-base.ps1 to create the source of truth file." -ForegroundColor Yellow
+}
+
 $TestUser = $env:TEST_USER_ID  # Set this to a test user ID
 $TestToken = $env:TEST_AUTH_TOKEN  # Set this to a valid JWT token
 

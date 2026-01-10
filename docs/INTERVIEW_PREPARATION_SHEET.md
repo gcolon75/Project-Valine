@@ -165,7 +165,8 @@
 - **Frontend (CloudFront):** https://dkmxy676d3vgc.cloudfront.net
 - **Frontend S3 Bucket:** `valine-frontend-prod`
 - **CloudFront Distribution ID:** `E16LPJDBIL5DEE`
-- **Production API Base:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- **Production API Base:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com  
+  ⚠️ **Verify:** `Get-Content .deploy/last-api-base.txt`
 - **Media Uploads Bucket:** `valine-media-uploads`
 - **Allowed Emails:** ghawk075@gmail.com, valinejustin@gmail.com
 
@@ -303,8 +304,9 @@ npx prisma migrate dev --name description_of_change
 
 ### Production API Base
 ```
-https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 ```
+⚠️ **API Gateway IDs can change if the API is recreated. Always verify the current base by running:** `Get-Content .deploy/last-api-base.txt` **or** `scripts/get-api-base.ps1`
 
 ### Authentication Endpoints
 
@@ -506,7 +508,7 @@ npx prisma migrate status
 
 **Frontend (.env.production):**
 ```
-VITE_API_BASE=https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ALLOWED_USER_EMAILS=ghawk075@gmail.com,valinejustin@gmail.com
 VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_2FA=true
@@ -522,7 +524,7 @@ environment:
   FRONTEND_URL: https://dkmxy676d3vgc.cloudfront.net
   ALLOWED_USER_EMAILS: ghawk075@gmail.com,valinejustin@gmail.com
   MEDIA_BUCKET_NAME: valine-media-uploads
-  API_BASE_URL: https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+  API_BASE_URL: https://ce73w43mga.execute-api.us-west-2.amazonaws.com
   ENABLE_REGISTRATION: false
   ENABLE_RATE_LIMITING: true
 ```
@@ -541,7 +543,8 @@ aws logs filter-log-events --log-group-name /aws/lambda/pv-api-prod-api --filter
 **Health Checks:**
 ```powershell
 # API health
-Invoke-RestMethod -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method Get
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-RestMethod -Uri "$apiBase/health" -Method Get
 
 # Frontend health
 Invoke-RestMethod -Uri "https://dkmxy676d3vgc.cloudfront.net/" -Method Get
@@ -819,7 +822,7 @@ npm test
 
 ### Production URLs
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
-- **API:** https://wkndtj22ab.execute-api.us-west-2.amazonaws.com
+- **API:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com (⚠️ Verify: `.deploy/last-api-base.txt`)
 - **S3 Bucket:** valine-frontend-prod
 - **Media Bucket:** valine-media-uploads
 

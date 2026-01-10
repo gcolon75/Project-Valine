@@ -33,7 +33,8 @@
 aws cloudfront get-distribution --id E16LPJDBIL5DEE | ConvertFrom-Json | Select -ExpandProperty Distribution | Select -ExpandProperty Status
 
 # 2. Check API Gateway health
-Invoke-WebRequest -Uri "https://wkndtj22ab.execute-api.us-west-2.amazonaws.com/health" -Method GET
+$apiBase = Get-Content .deploy/last-api-base.txt
+Invoke-WebRequest -Uri "$apiBase/health" -Method GET
 
 # 3. Check RDS instance status
 aws rds describe-db-instances --db-instance-identifier project-valine-dev --query 'DBInstances[0].DBInstanceStatus'
