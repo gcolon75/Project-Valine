@@ -105,14 +105,6 @@
 | **Discord.py** | Latest | Discord bot framework |
 | **GitHub Actions** | Latest | CI/CD workflows |
 
-**Discord Bot ("Rin"):**
-- Deployment automation (`/deploy-client`, `/deploy-backend`)
-- Infrastructure diagnostics (`/diagnose`, `/verify-latest`)
-- CI/CD triage (`/triage`)
-- Status reporting (`/status`, `/status-digest`)
-
----
-
 ## Architecture & Infrastructure
 
 ### High-Level Architecture
