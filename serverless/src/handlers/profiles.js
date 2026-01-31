@@ -701,50 +701,68 @@ export const updateProfile = async (event) => {
   }
 };
 
-// Allowed roles for profile updates (from spec Phase 6)
+// Allowed roles for profile updates (synced with frontend ProfileEdit.jsx)
 const ALLOWED_ROLES = [
+  'Actor',
   'Voice Actor',
-  'Writer',
+  'Playwright',
   'Director',
   'Producer',
+  'Composer',
+  'Designer',
+  'Technician',
+  'Writer',
   'Editor',
   'Sound Designer',
   'Casting Director',
 ];
 
-// Allowed tags (copied from src/constants/tags.js for reliability in serverless environment)
+// Allowed tags (synced with frontend ProfileEdit.jsx skillSuggestions)
 const ALLOWED_TAGS = [
-  // Performance Types
+  // From frontend skillSuggestions
+  'Voice Acting',
+  'Stage Acting',
+  'Classical Theater',
+  'Contemporary',
+  'Musical Theater',
+  'Improvisation',
+  'Dialects',
+  'Voice Over',
+  'Character Voices',
+  'Narration',
+  'Audiobook',
+  'Commercial VO',
+  'Animation',
+  'Video Games',
+  'Singing',
+  'Dance',
+  'Combat/Stunts',
+  'Motion Capture',
+  'On-Camera',
+  'Directing',
+  'Playwriting',
+  // Legacy tags for backwards compatibility
   'Monologue',
   'Drama',
   'Comedy',
   'Improv',
   'Character',
   'Stage',
-  // Genres
   'SciFi',
   'Fantasy',
   'Horror',
   'Romance',
   'Thriller',
   'Action',
-  // Formats
-  'Narration',
-  'Animation',
   'Commercial',
-  'Audiobook',
   'Podcast',
   'VoiceOver',
-  // Content Types
   'Reel',
   'ShortFilm',
   'Feature',
   'Pilot',
   'ColdRead',
-  // Skills
   'Dialect',
-  'Playwriting',
-  'Directing',
   'Producing',
   'Editing',
   'Casting',
@@ -912,12 +930,12 @@ export const updateMyProfile = async (event) => {
       errors.push('Bio must be 500 characters or less');
     }
 
-    // Roles validation
+    // Roles validation (allows custom "Other: xxx" roles)
     if (roles !== undefined) {
       if (!Array.isArray(roles)) {
         errors.push('Roles must be an array');
       } else {
-        const invalidRoles = roles.filter(r => !ALLOWED_ROLES.includes(r));
+        const invalidRoles = roles.filter(r => !ALLOWED_ROLES.includes(r) && !r.startsWith('Other:'));
         if (invalidRoles.length > 0) {
           errors.push(`Invalid roles: ${invalidRoles.join(', ')}`);
         }
