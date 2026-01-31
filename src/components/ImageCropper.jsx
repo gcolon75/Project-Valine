@@ -7,22 +7,23 @@ import { X, ZoomIn, ZoomOut, RotateCw, Loader2 } from 'lucide-react';
  * Provides image upload and cropping functionality with aspect ratio lock
  * Implements canvas-based cropping with drag-to-position and zoom
  */
-export default function ImageCropper({ 
-  onSave, 
-  onCancel, 
-  aspectRatio = 1, 
+export default function ImageCropper({
+  onSave,
+  onCancel,
+  aspectRatio = 1,
   title = "Crop Image",
   targetSize = 800 // Target output size (width for landscape, height for portrait)
 }) {
   const [imageFile, setImageFile] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
+  const [baseScale, setBaseScale] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const fileInputRef = useRef(null);
   const imageRef = useRef(null);
   const containerRef = useRef(null);
@@ -33,17 +34,17 @@ export default function ImageCropper({
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
-        // Start at 100% or scaled down to fit (whichever is smaller)
         const img = new Image();
         img.onload = () => {
           const containerSize = 600;
           const containerWidth = aspectRatio >= 1 ? containerSize : containerSize * aspectRatio;
           const containerHeight = aspectRatio >= 1 ? containerSize / aspectRatio : containerSize;
-          const scaleToFit = Math.min(containerWidth / img.width, containerHeight / img.height);
-          const initialZoom = Math.min(1, scaleToFit);
+          // Calculate scale to cover the crop box
+          const scaleToCover = Math.max(containerWidth / img.width, containerHeight / img.height);
 
           setImageSrc(event.target.result);
-          setZoom(initialZoom);
+          setBaseScale(scaleToCover);
+          setZoom(1);
           setRotation(0);
           setPosition({ x: 0, y: 0 });
         };
@@ -243,7 +244,7 @@ export default function ImageCropper({
                     alt="Preview"
                     className="pointer-events-none"
                     style={{
-                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${baseScale * zoom}) rotate(${rotation}deg)`,
                       transition: isDragging ? 'none' : 'transform 0.2s',
                       maxWidth: 'none',
                       maxHeight: 'none'
@@ -292,6 +293,7 @@ export default function ImageCropper({
                   onClick={() => {
                     setImageSrc(null);
                     setImageFile(null);
+                    setBaseScale(1);
                     setZoom(1);
                     setRotation(0);
                     setPosition({ x: 0, y: 0 });
