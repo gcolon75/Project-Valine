@@ -33,18 +33,17 @@ export default function ImageCropper({
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
-        // Fixes zoom - auto-fit image to crop box
+        // Start at 100% or scaled down to fit (whichever is smaller)
         const img = new Image();
         img.onload = () => {
           const containerSize = 600;
           const containerWidth = aspectRatio >= 1 ? containerSize : containerSize * aspectRatio;
           const containerHeight = aspectRatio >= 1 ? containerSize / aspectRatio : containerSize;
-          const scaleX = containerWidth / img.width;
-          const scaleY = containerHeight / img.height;
-          const fitZoom = Math.max(scaleX, scaleY);
+          const scaleToFit = Math.min(containerWidth / img.width, containerHeight / img.height);
+          const initialZoom = Math.min(1, scaleToFit);
 
           setImageSrc(event.target.result);
-          setZoom(fitZoom);
+          setZoom(initialZoom);
           setRotation(0);
           setPosition({ x: 0, y: 0 });
         };
