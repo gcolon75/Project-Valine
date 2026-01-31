@@ -1301,10 +1301,10 @@ export const getMyProfile = async (event) => {
       return error(404, 'User not found');
     }
 
-    // Fetch profile data with education and gallery media
-    // Note: Profile model does not have a links relation in the current schema
+    // Fetch profile data with education, credits (experience), and gallery media
     let profile = null;
     let education = [];
+    let credits = [];
     let gallery = [];
     try {
       profile = await prisma.profile.findUnique({
@@ -1314,6 +1314,12 @@ export const getMyProfile = async (event) => {
             orderBy: [
               { endYear: 'desc' },
               { startYear: 'desc' },
+            ],
+          },
+          credits: {
+            orderBy: [
+              { year: 'desc' },
+              { orderIndex: 'asc' },
             ],
           },
           media: {
@@ -1340,6 +1346,7 @@ export const getMyProfile = async (event) => {
       }
       
       education = profile.education || [];
+      credits = profile.credits || [];
       gallery = profile.media || [];
     } catch (profileErr) {
       // Handle schema-related errors gracefully when Profile model may not exist
@@ -1387,7 +1394,14 @@ export const getMyProfile = async (event) => {
       bannerUrl: profile?.bannerUrl || null,
       budgetMin: profile?.budgetMin || null,
       budgetMax: profile?.budgetMax || null,
+      pronouns: profile?.pronouns || null,
+      location: profile?.location || null,
+      availabilityStatus: profile?.availabilityStatus || null,
+      showPronouns: profile?.showPronouns !== undefined ? profile.showPronouns : true,
+      showLocation: profile?.showLocation !== undefined ? profile.showLocation : true,
+      showAvailability: profile?.showAvailability !== undefined ? profile.showAvailability : true,
       education: education,
+      credits: credits,
       gallery: gallery,
       // Stats
       stats: {
