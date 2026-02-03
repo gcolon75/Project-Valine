@@ -177,6 +177,13 @@ export default function ProfileEdit() {
   // Track initial form data for analytics
   const [initialFormData, setInitialFormData] = useState(null);
 
+  // Reset profile state when user changes (e.g., logout/login as different user)
+  useEffect(() => {
+    setProfile(null);
+    setProfileId(null);
+    setInitialFormData(null);
+  }, [user?.id]);
+
   // Load profile from backend on mount (only once)
   useEffect(() => {
     const loadProfile = async () => {
