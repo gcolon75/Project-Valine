@@ -49,7 +49,8 @@ export function AuthProvider({ children }) {
         try {
           const userData = await authService.getCurrentUser();
           // Store user data including emailVerified status
-          setUser(userData);
+          // Note: /auth/me returns { user: {...} }, so extract the user object
+          setUser(userData.user);
         } catch (err) {
           console.error('Failed to fetch current user:', err);
           // Clear invalid token
