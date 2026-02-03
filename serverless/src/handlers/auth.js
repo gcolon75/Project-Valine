@@ -588,14 +588,34 @@ async function register(event) {
       userId: user.id,
       email: redactEmail(user.email)
     }, 'info');
-    
+
+    // Auto-login after registration: generate tokens and set cookies
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+    const csrfToken = generateCsrfToken();
+
+    const cookies = [
+      generateAccessTokenCookie(accessToken),
+      generateRefreshTokenCookie(refreshToken),
+      generateCsrfCookie(csrfToken)
+    ];
+
+    logStructured(correlationId, 'register_auto_login', {
+      userId: user.id
+    }, 'info');
+
     return response(201, {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        onboardingComplete: user.onboardingComplete || false,
+        profileComplete: user.profileComplete || false,
         createdAt: user.createdAt
-      }
-    }, [], event);
+      },
+      csrfToken
+    }, cookies, event);
   } catch (e) {
     logStructured(correlationId, 'register_unhandled_error', {
       error: e.message,
