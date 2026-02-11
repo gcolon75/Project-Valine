@@ -34,7 +34,7 @@ export default function Welcome({ userData, onUpdate }) {
           Welcome to Joint! 🎭
         </h2>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto">
-          Your network for entertainment. Let's set up your profile real quick—takes about 2 minutes.
+          Your network for entertainment. Let's set up your profile quickly—takes about 2 minutes.
         </p>
       </div>
 

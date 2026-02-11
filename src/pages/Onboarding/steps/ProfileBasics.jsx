@@ -171,7 +171,7 @@ export default function ProfileBasics({ userData, onUpdate }) {
           />
         </div>
         <p id="location-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-          Where you're based (City, State or Country)
+          Where you're based (City, State, or Country)
         </p>
       </div>
 
