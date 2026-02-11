@@ -14,7 +14,7 @@ export default function Welcome({ userData, onUpdate }) {
     {
       icon: Film,
       title: 'Showcase Your Work',
-      description: 'Show off your work—demos, samples, scripts, whatever you've made'
+      description: 'Show off your work—demos, samples, scripts, whatever you\'ve made'
     },
     {
       icon: Award,
