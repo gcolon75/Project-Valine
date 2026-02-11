@@ -5,23 +5,23 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "What is Joint?",
-      answer: "Joint is a professional networking platform designed for the entertainment industry—actors, voice talent, writers, producers, directors, editors, composers, and more. It provides tools for collaboration, portfolio showcasing, monetizing your work, and discovering opportunities."
+      answer: "Joint is where people in entertainment connect. Actors, producers, writers, directors, agents, editors—anyone creating or working in film, TV, theater, music, or gaming. Share your work, find collabs, and get paid."
     },
     {
       question: "Is Joint free to use?",
-      answer: "Yes! Joint offers a free tier that includes core features like creating a profile, connecting with other artists, sharing your work, and discovering opportunities."
+      answer: "Yep! You can create a profile, connect with people, share your work, and browse opportunities—all for free."
     },
     {
       question: "How do I get started?",
-      answer: "Simply click 'Get Started' to create your free account. You'll set up your profile, add your portfolio, and can immediately start connecting with other artists in the community."
+      answer: "Hit 'Get Started,' set up your profile, add some work, and you're good to go. Takes like 2 minutes."
     },
     {
       question: "Can I showcase my work?",
-      answer: "Absolutely! You can upload audio samples, share video reels, post scripts, pitches, storyboards, and build a comprehensive portfolio that showcases your talents and experience across any entertainment discipline."
+      answer: "Absolutely. Upload demos, samples, scripts, art, music—whatever shows what you do. It all lives in your profile."
     },
     {
       question: "How do I find collaboration opportunities?",
-      answer: "Browse the feed to discover posts from other artists, use the search feature to find specific talent or opportunities, and check out the auditions section for casting calls."
+      answer: "Scroll the feed, use search to find specific people or projects, and check out auditions and casting calls when they're posted."
     },
     {
       question: "Is my content private?",

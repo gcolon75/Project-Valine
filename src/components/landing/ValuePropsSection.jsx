@@ -6,10 +6,10 @@ const ValuePropsSection = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="about-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            Empowering entertainment professionals and creative teams
+            Built for everyone in entertainment
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Joint is a professional networking platform designed for the entire entertainment industry—from actors and voice talent to producers, directors, writers, editors, and everyone in between.
+            Whether you're acting, producing, writing, or directing—this is your space to connect and grow.
           </p>
         </div>
         
@@ -17,17 +17,17 @@ const ValuePropsSection = () => {
           <ValueCard
             icon={Target}
             title="Our Mission"
-            description="To create the premier platform where entertainment professionals can connect, collaborate, and discover opportunities across the entire industry."
+            description="Connect you with the right people and help you land your next opportunity—no matter where you are in your career."
           />
           <ValueCard
             icon={Users}
             title="Our Community"
-            description="A diverse network of talented creators and industry professionals, from emerging artists to established veterans, all supporting each other's growth."
+            description="Real people building real careers—from your first project to your biggest break, we're all here figuring it out together."
           />
           <ValueCard
             icon={Zap}
             title="Our Promise"
-            description="To provide the tools and connections you need to showcase your work, monetize your talent, and take your entertainment career to the next level."
+            description="Give you the tools to share your work, control who sees it, and actually make money from what you create."
           />
         </div>
       </div>

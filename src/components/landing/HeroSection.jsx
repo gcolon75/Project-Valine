@@ -17,16 +17,16 @@ const HeroSection = () => {
           <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6 animate-slide-up">
             <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
             <span className="text-sm font-medium text-[#0CCE6B]">
-              The Professional Network for the Entertainment Industry
+              Where entertainment talent connects
             </span>
           </div>
           
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
-            Your Work Deserves a Stage. This Is It.
+            Show your work. Build your network. Land opportunities.
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>
-            Showcase your craft, connect with collaborators, and access opportunities across the entertainment industry.
+            Share your work, connect with people who get it, and find your next opportunity—all in one place.
             </p>
           
           {/* CTA Buttons */}
@@ -70,7 +70,7 @@ const HeroSection = () => {
 
         {/* Stats Cards Below - Centered in a Row */}
         <div className="flex flex-wrap justify-center gap-6 mt-16 animate-slide-up" style={{ animationDelay: '0.5s' }}>
-          <StatCard number="10K+" label="Artists" delay="0s" />
+          <StatCard number="10K+" label="Creators" delay="0s" />
           <StatCard number="50K+" label="Posts" delay="0.1s" />
           <StatCard number="5K+" label="Projects" delay="0.2s" />
         </div>

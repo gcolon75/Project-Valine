@@ -10,7 +10,7 @@ describe('FinalCTASection', () => {
 
   it('renders heading', () => {
     renderWithRouter(<FinalCTASection />);
-    expect(screen.getByRole('heading', { level: 2, name: /Ready to join the community\?/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Ready to get started\?/i })).toBeInTheDocument();
   });
 
   it('renders CTA button', () => {

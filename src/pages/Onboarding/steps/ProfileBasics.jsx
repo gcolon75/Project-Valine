@@ -139,7 +139,7 @@ export default function ProfileBasics({ userData, onUpdate }) {
             onChange={handleChange}
             maxLength={100}
             className="w-full pl-11 pr-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
-            placeholder="e.g., Voice Actor, Casting Director"
+            placeholder="e.g., Actor, Producer, Director, Writer, Agent"
             aria-describedby="title-hint"
           />
         </div>
@@ -171,7 +171,7 @@ export default function ProfileBasics({ userData, onUpdate }) {
           />
         </div>
         <p id="location-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-          City and state/country where you're based
+          Where you're based (City, State, or Country)
         </p>
       </div>
 
