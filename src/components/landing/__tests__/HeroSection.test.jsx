@@ -11,12 +11,12 @@ describe('HeroSection', () => {
   it('renders main heading', () => {
     renderWithRouter(<HeroSection />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Showcase. Connect. Get Hired./i)).toBeInTheDocument();
+    expect(screen.getByText(/Show your work. Build your network. Land opportunities./i)).toBeInTheDocument();
   });
 
   it('renders tagline', () => {
     renderWithRouter(<HeroSection />);
-    expect(screen.getByText(/The Professional Network for the Entertainment Industry/i)).toBeInTheDocument();
+    expect(screen.getByText(/Where entertainment talent connects/i)).toBeInTheDocument();
   });
 
   it('renders CTA buttons', () => {
@@ -42,7 +42,7 @@ describe('HeroSection', () => {
   it('renders centered layout with stats after main content', () => {
     renderWithRouter(<HeroSection />);
     const heading = screen.getByRole('heading', { level: 1 });
-    const statsRegion = screen.getByLabelText(/Artists statistic/i);
+    const statsRegion = screen.getByLabelText(/Creators statistic/i);
     
     // Verify heading exists
     expect(heading).toBeInTheDocument();
