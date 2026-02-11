@@ -16,11 +16,11 @@ const About = () => {
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-neutral-900">
-            Empowering voice actors and creative artists
+            Built for everyone making things in entertainment
           </h1>
           
           <p className="text-xl text-neutral-600 mb-8">
-            Joint is a professional networking platform designed specifically for the voice acting community. We bring together artists, writers, and creators to collaborate, share, and grow together.
+            Joint is where entertainment creators connect—actors, producers, directors, writers, agents, and everyone in between. Share your work, find collaborators, and grow your career.
           </p>
         </div>
       </section>
@@ -31,17 +31,17 @@ const About = () => {
           <ValueCard
             icon={Target}
             title="Our Mission"
-            description="To create the premier platform where voice actors can connect, collaborate, and find opportunities."
+            description="Connect everyone in entertainment and help them find their next opportunity—no matter what they do or where they're starting from."
           />
           <ValueCard
             icon={Users}
             title="Our Community"
-            description="A diverse network of talented artists, from beginners to industry veterans, all supporting each other."
+            description="Real people at every stage—just starting out, mid-career, veterans—all here to support and learn from each other."
           />
           <ValueCard
             icon={Zap}
             title="Our Promise"
-            description="To provide the tools and connections you need to take your voice acting career to the next level."
+            description="Give you the tools and connections to take your entertainment career to the next level—whatever that looks like for you."
           />
         </div>
       </section>
@@ -53,7 +53,7 @@ const About = () => {
             Ready to get started?
           </h2>
           <p className="text-xl text-white/80 mb-8">
-            Join thousands of voice actors already on Joint
+            Join the community and start building
           </p>
           <Link
             to="/join"

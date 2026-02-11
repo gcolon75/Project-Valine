@@ -6,38 +6,38 @@ const FeatureGridSection = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 id="features-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            Everything you need to succeed
+            What you can do here
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Powerful tools to showcase your work, connect with industry professionals, and grow your entertainment career.
+            Share your work, meet the right people, and find opportunities that actually fit what you do.
           </p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
           <FeatureCard
             icon={Users}
-            title="Connect with Industry Pros"
-            description="Build your professional network and discover talented actors, writers, producers, directors, and other entertainment professionals."
+            title="Meet the right people"
+            description="Connect with actors, producers, directors, writers, agents, and everyone making things happen in entertainment."
           />
           <FeatureCard
             icon={FileText}
             title="Share Your Work"
-            description="Showcase scripts, reels, scenes, audio, storyboards, and pitches. Control who sees each piece—make it free, paid, or request-access only—and turn every view into a chance to get actionable feedback."
+            description="Post your scripts, music, demos, samples—whatever you're working on. Decide who gets to see it: everyone, select people, or make them pay for access."
           />
           <FeatureCard
             icon={Mic}
             title="Find Opportunities"
-            description="Discover auditions, casting calls, and collaborative opportunities tailored to your skills across film, TV, theater, gaming, and more."
+            description="Find auditions, collaborations, and gigs across film, TV, theater, music, gaming—all the stuff that matches what you do."
           />
           <FeatureCard
             icon={MessageSquare}
             title="Feedback & Revisions"
-            description="Share works-in-progress with trusted peers. Let collaborators request access, approve who can see your work, and collect detailed notes, edits, and revision ideas in one place."
+            description="Share drafts with people you trust, get feedback, and keep all the notes in one place instead of scattered across a million emails."
           />
           <FeatureCard
             icon={DollarSign}
             title="Monetize Your Craft"
-            description="Charge for access to premium content or offer free previews. Control pricing and access to your work, and earn money directly from your talent."
+            description="Charge for your premium stuff or give free previews. You set the price, you control access, you get paid."
           />
           <FeatureCard
             icon={Shield}
@@ -53,34 +53,29 @@ const FeatureGridSection = () => {
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <FeatureItem
-              icon={Video}
-              title="Reels & Stories"
-              description="Share short-form clips, auditions, scene cuts, behind-the-scenes moments, and showcase your creative process."
-            />
-            <FeatureItem
               icon={MessageCircle}
               title="Direct Messaging"
-              description="Connect directly with producers, directors, collaborators, and potential clients through our built-in messaging system."
+              description="Message people directly—no need to leave the platform to have a conversation."
             />
             <FeatureItem
               icon={Award}
               title="Portfolio Showcase"
-              description="Build your multi-media portfolio with scripts, reels, concept art, and more to showcase your best work to the industry."
+              description="Build your portfolio with everything you've made—scripts, art, music, samples—all in one place."
             />
             <FeatureItem
               icon={BarChart}
               title="Premium Visibility & Analytics"
-              description="Upgrade to a premium plan to boost your profile in search and discovery, and unlock analytics. See who's finding your work, what's resonating, and where to focus your next move."
+              description="Go premium to show up higher in search and see who's viewing your stuff. Know what's working so you can do more of it."
             />
             <FeatureItem
               icon={Mic}
               title="Audio Samples"
-              description="Upload and share audio samples of your voice work, music, sound design, and more directly in posts."
+              description="Share audio samples—voice demos, music tracks, sound design—right in your posts."
             />
             <FeatureItem
               icon={Search}
               title="Discover Talent"
-              description="Find and connect with talented creators, discover new opportunities, and expand your professional network across all entertainment sectors."
+              description="Search for talent, discover new collaborators, and grow your network without the LinkedIn vibes."
             />
           </div>
         </div>

@@ -9,17 +9,17 @@ export default function Welcome({ userData, onUpdate }) {
     {
       icon: Users,
       title: 'Connect with Industry Professionals',
-      description: 'Build your network with casting directors, producers, and fellow artists'
+      description: 'Connect with producers, directors, agents, and people who get what you do'
     },
     {
       icon: Film,
       title: 'Showcase Your Work',
-      description: 'Display your portfolio, reels, and professional experience'
+      description: 'Show off your work—demos, samples, scripts, whatever you've made'
     },
     {
       icon: Award,
       title: 'Discover Opportunities',
-      description: 'Get notified about auditions and projects that match your profile'
+      description: 'Find auditions, gigs, and collabs that actually fit what you do'
     }
   ];
 
@@ -34,8 +34,7 @@ export default function Welcome({ userData, onUpdate }) {
           Welcome to Joint! 🎭
         </h2>
         <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto">
-          The professional network for voice actors, theater artists, and creatives.
-          Let's set up your profile in just a few quick steps.
+          Your network for entertainment. Let's set up your profile real quick—takes about 2 minutes.
         </p>
       </div>
 
