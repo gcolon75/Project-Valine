@@ -30,6 +30,7 @@ provider:
   httpApi:
     cors:
       allowedOrigins:
+        - https://joint-networking.com
         - https://dkmxy676d3vgc.cloudfront.net
         - http://localhost:5173
         - http://localhost:3000
@@ -362,6 +363,25 @@ functions:
       - httpApi:
           path: /posts/{id}/request
           method: post
+      # Comments
+      - httpApi:
+          path: /posts/{id}/comments
+          method: get
+      - httpApi:
+          path: /posts/{id}/comments
+          method: post
+      - httpApi:
+          path: /posts/{id}/comments/count
+          method: get
+      - httpApi:
+          path: /comments/{id}
+          method: put
+      - httpApi:
+          path: /comments/{id}
+          method: delete
+      - httpApi:
+          path: /comments/{id}/replies
+          method: get
 
   # ========== SCRIPTS ==========
   listScripts:

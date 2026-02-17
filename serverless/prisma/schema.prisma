@@ -121,10 +121,13 @@ model Post {
 
   // ✅ FIX: match relation name used on Media.posts
   mediaAttached Media?   @relation("PostMedia", fields: [mediaId], references: [id])
-  
+
   // Access control relations
   grants         AccessGrant[]
   requests       AccessRequest[]
+
+  // Comments
+  comments       Comment[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -158,16 +161,23 @@ model Reel {
 model Comment {
   id        String   @id @default(uuid())
   text      String
-  reelId    String
+  reelId    String?
+  postId    String?
   authorId  String
+  parentId  String?  // For threaded replies
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reel      Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
 
   @@index([reelId])
+  @@index([postId])
   @@index([authorId])
+  @@index([parentId])
   @@index([createdAt])
   @@map("comments")
 }
