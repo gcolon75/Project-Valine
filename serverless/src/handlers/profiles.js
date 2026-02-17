@@ -4,6 +4,56 @@ import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
 import { logAuthDiagnostics } from '../utils/correlationId.js';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
+const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
+
+/**
+ * Extract S3 key from a full S3 URL
+ * Handles both path-style and virtual-hosted-style URLs
+ */
+function extractS3KeyFromUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+
+  try {
+    const parsed = new URL(url);
+    // Virtual-hosted style: bucket.s3.region.amazonaws.com/key
+    // Path style: s3.region.amazonaws.com/bucket/key
+    if (parsed.hostname.includes('s3') && parsed.hostname.includes('amazonaws.com')) {
+      // Remove leading slash
+      let key = parsed.pathname.slice(1);
+      // For path-style URLs, remove bucket name prefix
+      if (parsed.hostname.startsWith('s3.')) {
+        const parts = key.split('/');
+        parts.shift(); // Remove bucket name
+        key = parts.join('/');
+      }
+      return key || null;
+    }
+  } catch {
+    // Not a valid URL
+  }
+  return null;
+}
+
+/**
+ * Delete an S3 object by key (fire-and-forget, logs errors)
+ */
+async function deleteS3Object(key) {
+  if (!key) return;
+
+  try {
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: MEDIA_BUCKET,
+      Key: key,
+    }));
+    console.log('[S3 Cleanup] Deleted old object:', key);
+  } catch (err) {
+    // Log but don't fail - cleanup is best-effort
+    console.error('[S3 Cleanup] Failed to delete:', key, err.message);
+  }
+}
 import {
   isModerationEnabled,
   scanProfilePayload,
@@ -1021,6 +1071,12 @@ export const updateMyProfile = async (event) => {
 
     // Update user and profile
     try {
+      // Capture old avatar/banner URLs for S3 cleanup
+      const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+      const currentProfile = await prisma.profile.findUnique({ where: { userId } });
+      const oldAvatarUrl = currentUser?.avatar;
+      const oldBannerUrl = currentProfile?.bannerUrl;
+
       // Prepare user update data
       const userUpdateData = {};
       if (username !== undefined) {userUpdateData.username = username;}
@@ -1228,6 +1284,24 @@ export const updateMyProfile = async (event) => {
         headline: response.headline,
         onboardingComplete: response.onboardingComplete
       });
+
+      // S3 cleanup: Delete old avatar/banner if replaced with new URL
+      // Fire-and-forget - don't block the response
+      if (avatarUrl && oldAvatarUrl && avatarUrl !== oldAvatarUrl) {
+        const oldAvatarKey = extractS3KeyFromUrl(oldAvatarUrl);
+        if (oldAvatarKey) {
+          deleteS3Object(oldAvatarKey).catch(() => {}); // Ignore errors
+          console.log('[updateMyProfile] Queued old avatar for deletion:', oldAvatarKey);
+        }
+      }
+      if (bannerUrl && oldBannerUrl && bannerUrl !== oldBannerUrl) {
+        const oldBannerKey = extractS3KeyFromUrl(oldBannerUrl);
+        if (oldBannerKey) {
+          deleteS3Object(oldBannerKey).catch(() => {}); // Ignore errors
+          console.log('[updateMyProfile] Queued old banner for deletion:', oldBannerKey);
+        }
+      }
+
       return jsonNoCache(response);
 
     } catch (dbError) {
