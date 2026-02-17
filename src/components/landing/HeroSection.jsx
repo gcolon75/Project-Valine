@@ -22,11 +22,11 @@ const HeroSection = () => {
           </div>
           
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl" style={{ animationDelay: '0.1s' }}>
-            Show your work. Build your network. Land opportunities.
+            Showcase your work. Connect with artists. Collaborate and grow.
           </h1>
           
           <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl" style={{ animationDelay: '0.2s' }}>
-            Share your work, connect with people who get it, and find your next opportunity—all in one place.
+            Joint was created by Justin Valine, a seasoned voice actor, and Gabriel Colon, a talented software engineer. Together, they recognized the challenges artists face in finding meaningful connections and opportunities in the entertainment industry. Joint is their solution—a platform built by artists, for artists.
             </p>
           
           {/* CTA Buttons */}

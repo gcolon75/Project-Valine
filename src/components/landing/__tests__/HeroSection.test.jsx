@@ -11,12 +11,13 @@ describe('HeroSection', () => {
   it('renders main heading', () => {
     renderWithRouter(<HeroSection />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Show your work. Build your network. Land opportunities./i)).toBeInTheDocument();
+    expect(screen.getByText(/Showcase your work. Connect with artists. Collaborate and grow./i)).toBeInTheDocument();
   });
 
-  it('renders tagline', () => {
+  it('renders founder story', () => {
     renderWithRouter(<HeroSection />);
-    expect(screen.getByText(/Where entertainment talent connects/i)).toBeInTheDocument();
+    expect(screen.getByText(/Joint was created by Justin Valine/i)).toBeInTheDocument();
+    expect(screen.getByText(/platform built by artists, for artists/i)).toBeInTheDocument();
   });
 
   it('renders CTA buttons', () => {
