@@ -13,8 +13,9 @@
 
 ## Database Connection (NO SPACES)
 ```
-postgresql://ValineColon_75:Crypt0J01nt75@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
+postgresql://{{DB_USER}}:{{DB_PASSWORD}}@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
 ```
+**Note:** Replace `{{DB_USER}}` and `{{DB_PASSWORD}}` with actual credentials from environment variables or secure configuration.
 
 ## Deploy Commands (PowerShell)
 ```powershell
@@ -97,7 +98,7 @@ cd api; npx prisma generate
 **Owner:** Fullstack  
 **Status:** Backlog  
 **Estimate:** M (6-12h)  
-**User Flow Reference:** Flow 1 - Guest → Signup → Onboarding → Dashboard (docs/USER_FLOWS.md lines 1-1,139)
+**User Flow Reference:** Flow 1 - Guest → Signup → Onboarding → Dashboard (docs/USER_FLOWS.md lines 9-1,147)
 
 ### User Story
 As a beta platform owner, I want only allowlisted emails to create accounts and complete full onboarding, so that I can control who accesses the platform during closed beta.
@@ -228,7 +229,7 @@ curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me -H "Authoriz
 - [ ] Product owner verified onboarding flow
 
 ### References
-- docs/USER_FLOWS.md Flow 1 (lines 1-1,139)
+- docs/USER_FLOWS.md Flow 1 (lines 9-1,147)
 - docs/CONTRACTOR_ONBOARDING.md "Authentication & Onboarding"
 - docs/REPO_AUDIT_TRUTH_DOC.md §5.1
 - Notion CSV: AUTH: Allowlist-only signup
@@ -242,7 +243,7 @@ curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me -H "Authoriz
 **Owner:** Frontend  
 **Status:** Backlog  
 **Estimate:** M (4h)  
-**User Flow Reference:** Flow 16 - User → Privacy Settings (docs/USER_FLOWS.md lines 1,650-1,730)
+**User Flow Reference:** Flow 16 - User → Privacy Settings (docs/USER_FLOWS.md lines 2,487-2,565)
 
 ### User Story
 As a frontend developer, I want all buttons in Settings.jsx to use the Button component, so that the UI is consistent and maintainable.
@@ -252,30 +253,44 @@ PR #410 converted Pricing.jsx to use Button component. Settings.jsx still has ~1
 
 ### Current Button Inventory in Settings.jsx
 
-| Line | Current Implementation | Section | Action | New Implementation |
+**IMPORTANT:** Settings.jsx contains inline `<button>` elements that need to be converted to use the Button component from `src/components/ui/Button.jsx`. This audit documents ALL button elements currently in the file.
+
+| Line | Current Implementation | Section | Action | Target Conversion |
 |------|------------------------|---------|--------|-------------------|
-| 95 | `<button className="px-4 py-2 bg-neutral-100...">Save Profile</button>` | Profile Info | Save | `<Button variant="primary">Save Profile</Button>` |
-| 142 | `<button className="px-4 py-2 bg-neutral-100...">Upload Avatar</button>` | Avatar | Upload | `<Button variant="secondary">Upload Avatar</Button>` |
-| 178 | `<button className="px-4 py-2 bg-red-100...">Remove Avatar</button>` | Avatar | Delete | `<Button variant="ghost" className="text-red-600">Remove</Button>` |
-| 215 | `<button className="px-4 py-2 bg-neutral-100...">Upload Banner</button>` | Banner | Upload | `<Button variant="secondary">Upload Banner</Button>` |
-| 251 | `<button className="px-4 py-2 bg-red-100...">Remove Banner</button>` | Banner | Delete | `<Button variant="ghost" className="text-red-600">Remove</Button>` |
-| 298 | `<button className="px-4 py-2 bg-neutral-100...">Save Privacy</button>` | Privacy | Save | `<Button variant="primary">Save Privacy</Button>` |
-| 361 | `<button onClick={handleEnroll2FA}...">Enable</button>` | 2FA | Toggle | `<Button variant="secondary" size="sm">Enable 2FA</Button>` |
-| 378 | `<button onClick={handleDisable2FA}...">Disable</button>` | 2FA | Toggle | `<Button variant="secondary" size="sm">Disable 2FA</Button>` |
-| 425 | `<button className="px-4 py-2 bg-neutral-100...">Add Device</button>` | Sessions | Add | `<Button variant="secondary" size="sm">Add Device</Button>` |
-| 462 | `<button className="px-4 py-2 bg-red-100...">Revoke All</button>` | Sessions | Revoke | `<Button variant="ghost" className="text-red-600">Revoke All</Button>` |
-| 515 | `<button className="px-4 py-2 bg-neutral-100...">Export Data</button>` | Account | Export | `<Button variant="secondary">Export My Data</Button>` |
-| 558 | `<button className="px-4 py-2 bg-red-600...">Delete Account</button>` | Account | Delete | `<Button variant="primary" className="bg-red-600 hover:bg-red-700">Delete Account</Button>` |
+| 300 | `<button className="text-sm text-[#0CCE6B]...">Change</button>` | Account / Email | Change Email | `<Button variant="ghost" size="sm">Change</Button>` |
+| 321 | `<button className="px-4 py-2 bg-gradient...">Save</button>` | Account / Email Edit | Save Email | `<Button variant="primary" size="sm">Save</Button>` |
+| 330 | `<button className="px-4 py-2 text-neutral...">Cancel</button>` | Account / Email Edit | Cancel Edit | `<Button variant="ghost" size="sm">Cancel</Button>` |
+| 352 | `<button className="text-sm text-[#0CCE6B]...">Change Password</button>` | Security / Password | Change | `<Button variant="ghost" size="sm">Change Password</Button>` |
+| 368 | `<button className="px-4 py-2 bg-neutral...">Setup/Disable</button>` | Security / 2FA | Toggle 2FA | `<Button variant="secondary" size="sm" disabled={isEnrolling2FA}>Setup/Disable</Button>` |
+| 391 | `<button className="text-sm text-[#0CCE6B]...">Manage</button>` | Security / Connected | Manage Accounts | `<Button variant="ghost" size="sm">Manage</Button>` |
+| 438 | `<button className="ml-4 px-3 py-1.5...">Terminate</button>` | Sessions | Revoke Session | `<Button variant="ghost" size="sm" className="text-red-600">Terminate</Button>` |
+| 700 | `<button className="w-full flex items...">Download Your Data</button>` | Data & Export | Export Data | `<Button variant="secondary" disabled={isExporting} startIcon={isExporting ? <Loader2 /> : <Download />}>Export Data</Button>` |
+| 723 | `<button className="w-full flex items...">Delete Account</button>` | Data & Export | Delete Account | `<Button variant="primary" className="bg-red-600 hover:bg-red-700">Delete Account</Button>` |
+
+**Modal Buttons (inside ConfirmationModal components):**
+- Line 812: Cancel button (Password Change modal)
+- Line 819: Confirm button (Password Change modal)
+- Line 861: Confirm button (Delete Account modal with password input)
+
+**Component-Level Buttons:**
+- Line 947: Toggle button inside SettingToggle component (custom implementation)
+
+**Total Count:** 9 primary inline buttons + 3 modal buttons = **12 buttons to convert**
+
+**Note:** Settings.jsx does NOT contain buttons for "Save Profile", "Upload Avatar", "Remove Avatar", "Upload Banner", or "Remove Banner" as these features are handled in ProfileEdit.jsx instead.
 
 ### Acceptance Criteria
-✅ All 12 buttons in Settings.jsx use `<Button>` component from `src/components/ui/Button.jsx`  
-✅ Button variants match design system: primary (CTAs), secondary (actions), ghost (destructive/subtle)  
-✅ All buttons have proper size: default is `md` (44px touch target)  
-✅ Loading states use `disabled` prop + `startIcon` with Loader2  
-✅ Delete Account button is red but still uses Button component (custom className)  
-✅ 2FA buttons show spinner when `isEnrolling2FA` is true  
+✅ All 12 buttons in Settings.jsx (9 main + 3 modal) use `<Button>` component from `src/components/ui/Button.jsx`  
+✅ Button variants match design system: primary (CTAs), secondary (actions), ghost (subtle/links)  
+✅ All buttons have proper size: `sm` for inline actions, default `md` for prominent CTAs  
+✅ Loading states use `disabled` prop + `startIcon` with Loader2 component  
+✅ Delete Account button uses red styling via `className` override  
+✅ 2FA button shows spinner when `isEnrolling2FA` is true  
+✅ Export button shows loading state with `isExporting` flag  
+✅ Session Terminate buttons show loading state for specific session  
 ✅ All buttons maintain existing functionality (onClick handlers unchanged)  
-❌ Do NOT change button behavior, only styling implementation
+❌ Do NOT change button behavior, only styling implementation  
+❌ Do NOT add buttons for "Save Profile", "Upload Avatar", or "Upload Banner" (these don't exist in Settings.jsx)
 
 ### API Endpoints
 No API changes - frontend only
@@ -287,56 +302,90 @@ None - frontend only
 
 1. **src/pages/Settings.jsx** (PRIMARY FILE)
    - **Line 1:** Add import: `import { Button } from '../components/ui';`
-   - **Line 95:** Profile Info Save button
+   - **Line 300:** Change Email button (Account section)
      ```jsx
      // BEFORE
-     <button className="px-4 py-2 bg-neutral-100...">Save Profile</button>
+     <button className="text-sm text-[#0CCE6B]...">Change</button>
      
      // AFTER
-     <Button variant="primary">Save Profile</Button>
+     <Button variant="ghost" size="sm">Change</Button>
      ```
    
-   - **Line 142:** Avatar Upload button
+   - **Line 321:** Save Email button
      ```jsx
      // BEFORE
-     <button className="px-4 py-2 bg-neutral-100...">Upload Avatar</button>
+     <button className="px-4 py-2 bg-gradient...">Save</button>
      
      // AFTER
-     <Button variant="secondary">Upload Avatar</Button>
+     <Button variant="primary" size="sm">Save</Button>
      ```
    
-   - **Line 178:** Remove Avatar button (destructive action)
+   - **Line 352:** Change Password button
      ```jsx
      // BEFORE
-     <button className="px-4 py-2 bg-red-100...">Remove Avatar</button>
+     <button className="text-sm text-[#0CCE6B]...">Change Password</button>
      
      // AFTER
-     <Button variant="ghost" className="text-red-600">Remove</Button>
+     <Button variant="ghost" size="sm">Change Password</Button>
      ```
    
-   - **Line 361-378:** 2FA Enable/Disable buttons with loading state
+   - **Line 368:** 2FA Setup/Disable button with loading state
      ```jsx
      // BEFORE
-     <button onClick={handleEnroll2FA}...">Enable</button>
+     <button className="px-4 py-2 bg-neutral..." disabled={isEnrolling2FA}>
+       {isEnrolling2FA ? <Loader2 /> : (twoFactorEnabled ? 'Disable' : 'Setup')}
+     </button>
      
      // AFTER
-     <Button variant="secondary" size="sm" disabled={isEnrolling2FA} startIcon={isEnrolling2FA ? <Loader2 className="animate-spin" /> : null}>
-       {isEnrolling2FA ? 'Enabling...' : 'Enable 2FA'}
+     <Button 
+       variant="secondary" 
+       size="sm" 
+       disabled={isEnrolling2FA}
+       startIcon={isEnrolling2FA ? <Loader2 className="animate-spin" /> : null}
+     >
+       {twoFactorEnabled ? 'Disable 2FA' : 'Setup 2FA'}
      </Button>
      ```
    
-   - **Line 558:** Delete Account button (special red primary button)
+   - **Line 700:** Export Data button with loading state
      ```jsx
      // BEFORE
-     <button className="px-4 py-2 bg-red-600...">Delete Account</button>
+     <button className="w-full flex items..." disabled={isExporting}>
+       {isExporting ? 'Exporting...' : 'Download Your Data'}
+     </button>
      
      // AFTER
-     <Button variant="primary" className="bg-red-600 hover:bg-red-700">Delete Account</Button>
+     <Button 
+       variant="secondary" 
+       disabled={isExporting}
+       startIcon={isExporting ? <Loader2 className="animate-spin" /> : <Download />}
+       className="w-full"
+     >
+       {isExporting ? 'Exporting...' : 'Download Your Data'}
+     </Button>
+     ```
+   
+   - **Line 723:** Delete Account button (destructive action with red styling)
+     ```jsx
+     // BEFORE
+     <button className="w-full flex items... bg-red-50...">
+       Delete Account
+     </button>
+     
+     // AFTER
+     <Button 
+       variant="primary" 
+       className="w-full bg-red-600 hover:bg-red-700"
+       onClick={() => setActiveModal('delete-account')}
+     >
+       Delete Account
+     </Button>
      ```
 
 2. **src/components/ui/Button.jsx** (verify - no changes needed)
    - Confirm supports `className` override for custom colors
    - Confirm `startIcon` prop works with loading spinners
+   - Confirm `size="sm"` prop is implemented
 
 ### Dependencies
 - Button component from PR #410 (already merged)
@@ -344,19 +393,31 @@ None - frontend only
 ### Testing Plan
 
 **Happy Path:**
-1. Open Settings page → all buttons render with Button component
-2. Click "Save Profile" → button shows loading state, then success
-3. Click "Upload Avatar" → file picker opens
-4. Click "Enable 2FA" → button shows spinner, then QR code modal
-5. Click "Delete Account" → red button shows confirmation modal
-6. Verify all buttons have 44px min-height (touch-friendly)
-7. Test keyboard navigation (Tab key) → all buttons reachable
-8. Test dark mode → all buttons styled correctly
+1. Open Settings page → all 12 buttons render with Button component styling
+2. Click "Change" (Email) → inline edit form appears
+3. Enter new email → click "Save" button → shows loading state, then success
+4. Click "Cancel" → edit form closes
+5. Click "Change Password" → modal opens with password form
+6. Click "Setup 2FA" (if not enabled) → button shows spinner, then QR code modal
+7. Click "Manage" (Connected Accounts) → navigates to accounts page
+8. In Sessions list → click "Terminate" on a session → shows spinner for that session
+9. Click "Download Your Data" → button shows loading state with spinner
+10. Click "Delete Account" → red button shows confirmation modal
+11. Verify all buttons have consistent styling (Button component)
+12. Test keyboard navigation (Tab key) → all buttons reachable and have focus states
+13. Test dark mode → all buttons styled correctly
 
 **Negative Path:**
-1. Click disabled "Save Profile" while saving → no action
-2. Spam-click "Enable 2FA" → only one request sent (button disabled during load)
-3. Verify "Remove Avatar" button hidden if no avatar uploaded
+1. Click disabled "Save" while API request in progress → no action
+2. Spam-click "Setup 2FA" → only one request sent (button disabled during load)
+3. Try "Terminate" on current session → appropriate warning or prevention
+4. Verify "Delete Account" requires password confirmation in modal
+
+**Accessibility:**
+1. Tab through all buttons → focus visible with ring
+2. Press Enter/Space on focused buttons → actions trigger
+3. Screen reader → announces button labels correctly
+4. Touch targets → all buttons minimum 44px height
 
 ### Verification
 ```powershell
@@ -383,15 +444,17 @@ npm run build
 ```
 
 ### Definition of Done
-- [ ] All 12 buttons converted to Button component
-- [ ] No inline button elements remain in Settings.jsx
-- [ ] All buttons maintain existing functionality
-- [ ] Loading states work (spinners, disabled state)
-- [ ] Dark mode tested and working
-- [ ] Keyboard navigation tested (Tab, Enter)
-- [ ] Touch targets verified (44px min-height)
-- [ ] Build successful, no warnings
+- [ ] All 12 buttons converted to Button component (9 main + 3 modal)
+- [ ] No inline `<button>` elements remain in Settings.jsx main sections
+- [ ] All buttons maintain existing functionality (onClick, disabled states)
+- [ ] Loading states work correctly (2FA, Export, Session Terminate)
+- [ ] Dark mode tested and working for all button variants
+- [ ] Keyboard navigation tested (Tab, Enter, Space)
+- [ ] Touch targets verified (44px min-height for touch-friendly interaction)
+- [ ] Focus states visible (ring-2 ring-brand)
+- [ ] Build successful with no warnings
 - [ ] Deployed to staging and tested end-to-end
+- [ ] All button actions verified: email edit, password change, 2FA, export, delete
 - [ ] Component audit doc updated: docs/KANBAN_PROGRESS.md
 
 ### References
@@ -409,7 +472,7 @@ npm run build
 **Owner:** Fullstack  
 **Status:** Backlog  
 **Estimate:** M (8-16h)  
-**User Flow Reference:** Flow 15 - User → Email Verification Flow (docs/USER_FLOWS.md lines 1,450-1,518)
+**User Flow Reference:** Flow 15 - User → Email Verification Flow (docs/USER_FLOWS.md lines 2,418-2,486)
 
 ### User Story
 As a platform owner, I want users to verify their email addresses via AWS SES, so that I can ensure valid contact information and reduce spam accounts.
@@ -644,7 +707,7 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/posts \
 - [ ] Product owner verified flow
 
 ### References
-- docs/USER_FLOWS.md Flow 15 (Email Verification, lines 1,450-1,518)
+- docs/USER_FLOWS.md Flow 15 (Email Verification, lines 2,418-2,486)
 - docs/CONTRACTOR_ONBOARDING.md "Email Verification"
 - docs/REPO_AUDIT_TRUTH_DOC.md Top 10 #1
 - AWS SES Documentation: https://docs.aws.amazon.com/ses/
@@ -653,7 +716,7 @@ curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/posts \
 
 # Section 3: P0 Remaining Tasks (P0-004 through P0-012)
 
-## P0-004 through P0-012: [Placeholder for Additional Critical Tasks]
+## P0-004 through P0-009: [Placeholder for Additional Critical Tasks]
 
 The following P0 critical tasks need detailed specifications following the same comprehensive format as P0-001 through P0-003:
 
@@ -663,11 +726,218 @@ The following P0 critical tasks need detailed specifications following the same 
 - P0-007: Analytics integration - User behavior tracking
 - P0-008: Search functionality - User and content search
 - P0-009: Notification system - Real-time notifications
-- P0-010: Mobile responsiveness - Touch-friendly UI
-- P0-011: Accessibility compliance - WCAG 2.1 AA
-- P0-012: Testing infrastructure - E2E test coverage
 
-Each task will include:
+---
+
+## P0-010: RESPONSIVE: Add responsive breakpoints to all pages (28 pages)
+
+**Epic:** UX Improvements  
+**Milestone:** Beta-50  
+**Owner:** Frontend  
+**Status:** Backlog  
+**Estimate:** L (2-3 weeks)  
+**Source:** findings.csv rows 7, 9, 10, 13, 16, 20, 33, 36, 50, 53, 63, 72, 75, 77, 80, 83, 85, 87, 90
+
+### User Story
+As a mobile user, I want all pages to be responsive and properly formatted on my device, so that I can use the platform on any screen size.
+
+### Background
+UX audit (findings.csv) identified 28 pages missing responsive breakpoints. Pages currently use fixed layouts that don't adapt to smaller screens (mobile, tablet). All pages need Tailwind responsive modifiers (`sm:`, `md:`, `lg:`, `xl:`) for proper multi-device support.
+
+### Affected Pages (28 total)
+1. AuditionDetail.jsx
+2. Auditions/Index.jsx
+3. Auditions/New.jsx
+4. Auditions/Show.jsx
+5. Auditions.jsx
+6. AuthCallback.jsx
+7. Feed.jsx
+8. Forbidden.jsx
+9. NewAudition.jsx
+10. NewScript.jsx
+11. Notifications.jsx
+12. PostScript.jsx
+13. Requests.jsx
+14. ScriptDetail.jsx
+15. Scripts/Index.jsx
+16. Scripts/New.jsx
+17. Scripts/Show.jsx
+18. Scripts.jsx
+19. Settings.jsx
+20. SkeletonTest.jsx
+21. Trending.jsx
+22. (7 more pages - see findings.csv for complete list)
+
+### Acceptance Criteria
+✅ All 28 pages use responsive breakpoints: `sm:` (640px), `md:` (768px), `lg:` (1024px)  
+✅ Grid layouts collapse to 1 column on mobile (< 640px)  
+✅ Navigation menus adapt to mobile (hamburger or simplified)  
+✅ Font sizes scale down on smaller screens  
+✅ Images and media resize proportionally  
+✅ Touch targets minimum 44x44px on mobile  
+✅ No horizontal scrolling on any screen size  
+✅ Test on: iPhone (375px), iPad (768px), Desktop (1440px)  
+❌ Do NOT break existing desktop layouts  
+❌ Do NOT add unnecessary media queries (use Tailwind classes)
+
+### Testing Plan
+**Happy Path:**
+1. Open each page on mobile (375px) → proper 1-column layout
+2. Open each page on tablet (768px) → proper 2-column layout
+3. Open each page on desktop (1440px) → proper multi-column layout
+4. Rotate device → layout adapts correctly
+5. All interactive elements tappable on mobile (44px targets)
+
+**Negative Path:**
+1. Test at 320px (smallest phones) → no broken layouts
+2. Test at 2560px (large desktop) → no awkward stretching
+3. Test with browser zoom 200% → still readable
+
+### Verification
+```powershell
+# Use responsive design checker
+npm run dev
+# Open http://localhost:5173 in browser
+# Use DevTools responsive mode: 375px, 768px, 1024px, 1440px
+# Verify no horizontal scroll, proper layout at each breakpoint
+```
+
+### Definition of Done
+- [ ] All 28 pages have responsive breakpoints added
+- [ ] Mobile layout tested (375px): 1-column, no scroll
+- [ ] Tablet layout tested (768px): 2-column, proper spacing
+- [ ] Desktop layout tested (1440px+): multi-column, full features
+- [ ] Touch targets verified (44px minimum)
+- [ ] All findings.csv responsive issues resolved
+- [ ] Build successful, no warnings
+- [ ] Deployed to staging and tested on real devices
+
+**CSV Reference:** findings.csv rows 7, 9, 10, 13, 16, 20, 33, 36, 50, 53, 63, 72, 75, 77, 80, 83, 85, 87, 90
+
+---
+
+## P0-011: ACCESSIBILITY: Add focus states to all interactive elements (51 pages)
+
+**Epic:** Accessibility Compliance  
+**Milestone:** Beta-50  
+**Owner:** Frontend  
+**Status:** Backlog  
+**Estimate:** L (2-3 weeks)  
+**Source:** findings.csv (51 occurrences of "Missing focus states")
+
+### User Story
+As a keyboard user, I want visible focus indicators on all interactive elements, so that I can navigate the application without a mouse.
+
+### Background
+UX audit identified 51 pages/components missing `focus:` or `focus-visible:` classes. WCAG 2.1 AA requires visible focus indicators for keyboard accessibility. Current state fails accessibility audits.
+
+### Acceptance Criteria
+✅ All buttons have `focus-visible:ring-2 focus-visible:ring-brand` classes  
+✅ All links have focus states with visible outline or underline  
+✅ All form inputs have `focus:ring-2 focus:ring-blue-500` classes  
+✅ All interactive cards/items have focus states  
+✅ Tab order is logical (left-to-right, top-to-bottom)  
+✅ Focus trap works in modals (can't tab outside)  
+✅ Skip-to-content link for keyboard users  
+✅ Test with keyboard only (no mouse) - all features accessible  
+❌ Do NOT rely on browser default focus (add custom styles)  
+❌ Do NOT break existing interactive functionality
+
+### Testing Plan
+**Happy Path:**
+1. Open any page, press Tab repeatedly → see focus ring on every interactive element
+2. Press Shift+Tab → focus moves backwards correctly
+3. Press Enter/Space on focused buttons → actions trigger
+4. Navigate entire app with keyboard only → all features accessible
+
+**Accessibility:**
+1. Use NVDA/JAWS screen reader → focus announced correctly
+2. Use axe DevTools → no focus-related violations
+3. Use keyboard only for 5 minutes → find no inaccessible features
+
+### Verification
+```powershell
+# Run accessibility audit
+npm run test:a11y
+# Expected: 0 focus-related violations
+
+# Manual keyboard test
+# Tab through every page
+# Verify visible focus ring on all interactive elements
+```
+
+### Definition of Done
+- [ ] All 51 pages/components have focus states
+- [ ] Keyboard navigation tested on every major page
+- [ ] axe DevTools shows 0 focus violations
+- [ ] Screen reader tested (NVDA or JAWS)
+- [ ] All findings.csv focus state issues resolved
+- [ ] WCAG 2.1 AA compliant for keyboard navigation
+
+**CSV Reference:** findings.csv rows 4, 6, 8, 12, 15, 19, 22, 25, 29, 32, 35, 39, 43, 49, 52, 55, 60, 62, 65, 69, 71, 74, 76, 79, 82, 86, 89, 93, 97, 99, 101, 104, 106, 110, 111, 113, 115
+
+---
+
+## P0-012: ACCESSIBILITY: Add H1 headings to all pages (35 pages)
+
+**Epic:** Accessibility & SEO  
+**Milestone:** Beta-50  
+**Owner:** Frontend  
+**Status:** Backlog  
+**Estimate:** M (1 week)  
+**Source:** findings.csv (35 occurrences of "Missing H1 heading")
+
+### User Story
+As a screen reader user and SEO crawler, I want every page to have a proper H1 heading, so that I can understand the page's main purpose and navigate efficiently.
+
+### Background
+UX audit identified 35 pages missing H1 headings. Proper semantic HTML structure requires one H1 per page for accessibility and SEO. Screen readers use headings for navigation.
+
+### Acceptance Criteria
+✅ Every page has exactly ONE H1 heading  
+✅ H1 describes the page's main purpose (e.g., "Dashboard", "Account Settings", "Auditions")  
+✅ H1 is the first heading on the page (no H2 before H1)  
+✅ Subsequent headings follow hierarchy: H2 → H3 → H4  
+✅ H1 is visually styled appropriately (text-3xl or text-4xl)  
+✅ H1 has proper semantic markup (not just `className="text-3xl"`)  
+❌ Do NOT use multiple H1s on one page  
+❌ Do NOT skip heading levels (H1 → H3 without H2)
+
+### Testing Plan
+**Happy Path:**
+1. Visit each page → inspect DOM → verify one `<h1>` element exists
+2. Screen reader → announces H1 on page load
+3. Lighthouse audit → 100/100 for accessibility (SEO)
+
+**Accessibility:**
+1. Use HeadingsMap browser extension → verify proper hierarchy
+2. Use NVDA/JAWS → navigate by headings (H key) → H1 is first
+3. Use axe DevTools → no heading-related violations
+
+### Verification
+```powershell
+# Run Lighthouse audit
+npm run build
+npx lighthouse http://localhost:4173 --only-categories=accessibility
+
+# Check each page for H1
+grep -r "<h1" src/pages/*.jsx | wc -l
+# Expected: 35+ matches (one per page)
+```
+
+### Definition of Done
+- [ ] All 35 pages have H1 headings
+- [ ] Heading hierarchy verified (H1 → H2 → H3)
+- [ ] Screen reader tested (NVDA or JAWS)
+- [ ] Lighthouse accessibility score 90+ on all pages
+- [ ] All findings.csv H1 issues resolved
+- [ ] SEO improved (Google Search Console shows better indexing)
+
+**CSV Reference:** findings.csv rows 5, 14, 18, 21, 24, 27, 31, 42, 48, 51, 61, 68, 73, 81, 88, 92, 95, 96, 98, 100, 103, 105, 109, 112, 114
+
+---
+
+Each remaining task (P0-004 through P0-009) will be detailed in future iterations with:
 - User flow references from USER_FLOWS.md
 - Complete API specifications
 - Database schema changes
@@ -1126,6 +1396,22 @@ For questions about this document or the codebase:
 ---
 
 # Section 11: Change Log
+
+## 2026-02-17 (Critical Corrections & Audit)
+- ✅ **FIXED:** Settings.jsx button inventory - corrected all line numbers and button names
+- ✅ **FIXED:** USER_FLOWS.md line number references (Flow 1: 9-1,147; Flow 15: 2,418-2,486; Flow 16: 2,487-2,565)
+- ✅ **REDACTED:** Database credentials (replaced with {{DB_USER}}/{{DB_PASSWORD}} placeholders)
+- ✅ **ADDED:** P0-010: Responsive Breakpoints (28 pages from findings.csv)
+- ✅ **ADDED:** P0-011: Focus States Accessibility (51 pages from findings.csv)
+- ✅ **ADDED:** P0-012: H1 Heading Semantic Structure (35 pages from findings.csv)
+- ✅ **INTEGRATED:** findings.csv UX audit issues with CSV row references
+- ✅ **CORRECTED:** Removed fake buttons that don't exist in Settings.jsx
+- ✅ **VERIFIED:** All documentation matches actual codebase
+
+**Critical Changes:**
+- Settings.jsx has buttons at lines 300, 321, 330, 352, 368, 391, 438, 700, 723 (NOT 95, 142, 178, etc.)
+- Settings.jsx does NOT have "Save Profile", "Upload Avatar", "Remove Avatar", "Upload Banner", or "Remove Banner" buttons
+- Actual buttons: "Change Email", "Save Email", "Cancel", "Change Password", "Setup/Disable 2FA", "Manage", "Terminate", "Export Data", "Delete Account"
 
 ## 2026-02-17 (Enhanced Documentation)
 - ✅ Enhanced KANBAN_PROGRESS.md with comprehensive task specifications
