@@ -10,7 +10,12 @@ import crypto from 'crypto';
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 
-// Valid media types removed - mediaType column does not exist in database
+// Upload size limits (in bytes)
+const MAX_FILE_SIZES = {
+  image: 10 * 1024 * 1024,   // 10 MB
+  video: 100 * 1024 * 1024,  // 100 MB
+  pdf: 25 * 1024 * 1024,     // 25 MB
+};
 
 /**
  * POST /api/profiles/:id/media/upload-url
@@ -38,10 +43,21 @@ export const getUploadUrl = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { type, title, description, privacy, contentType } = body;
+    const { type, title, description, privacy, contentType, fileSize } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
       return error(400, 'Valid type is required (image, video, or pdf)');
+    }
+
+    // Validate file size before presigning
+    if (!fileSize || typeof fileSize !== 'number' || fileSize <= 0) {
+      return error(400, 'fileSize (in bytes) is required');
+    }
+
+    const maxSize = MAX_FILE_SIZES[type];
+    if (fileSize > maxSize) {
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+      return error(413, `File too large. Maximum size for ${type}: ${maxSizeMB} MB`);
     }
 
     // Validate and normalize contentType
@@ -119,14 +135,17 @@ export const getUploadUrl = async (event) => {
         description: description || null,
         privacy: privacy || 'public',
         processedStatus: 'pending',
+        fileSize,
       },
     });
 
     // Generate signed upload URL (valid for 15 minutes)
+    // ContentLength enforces the declared size at S3 level
     const command = new PutObjectCommand({
       Bucket: MEDIA_BUCKET,
       Key: s3Key,
       ContentType: validatedContentType,
+      ContentLength: fileSize,
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
@@ -136,6 +155,7 @@ export const getUploadUrl = async (event) => {
       uploadUrl,
       s3Key,
       profileId: profile.id,
+      maxFileSize: maxSize,
       message: 'Upload your file to the provided URL, then call /complete endpoint',
     }, 201);
   } catch (e) {
