@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
+import { Button } from '../components/ui';
 
 export default function Pricing() {
   const plans = [
@@ -92,16 +93,13 @@ export default function Pricing() {
                   Payment integration coming soon
                 </div>
               ) : (
-                <button
+                <Button
+                  variant={plan.featured ? "primary" : "secondary"}
                   disabled={plan.disabled}
-                  className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                    plan.featured
-                      ? 'bg-white text-emerald-600 hover:bg-emerald-50'
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className="w-full"
                 >
                   {plan.cta}
-                </button>
+                </Button>
               )}
             </div>
           ))}

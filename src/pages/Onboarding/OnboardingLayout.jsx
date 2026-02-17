@@ -52,9 +52,9 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
 
           {/* Progress bar */}
           <div className="relative">
-            <div className="h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+            <div className="h-3 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] transition-all duration-500 ease-out"
+                className="h-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] transition-all duration-500 ease-out shadow-[0_0_10px_rgba(12,206,107,0.5)]"
                 style={{ width: `${progress}%` }}
                 role="progressbar"
                 aria-valuenow={progress}
@@ -76,12 +76,14 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
                     key={stepNumber}
                     className="flex flex-col items-center flex-1"
                   >
-                    <div className="flex items-center justify-center mb-1">
+                    <div className={`flex items-center justify-center mb-1 rounded-full transition-all ${
+                      isCurrent ? 'bg-[#0CCE6B]/10 p-1.5 animate-pulse' : ''
+                    }`}>
                       {isComplete ? (
-                        <CheckCircle className="w-5 h-5 text-[#0CCE6B]" aria-label="Completed" />
+                        <CheckCircle className="w-6 h-6 text-[#0CCE6B]" aria-label="Completed" />
                       ) : (
                         <Circle
-                          className={`w-5 h-5 ${
+                          className={`w-6 h-6 ${
                             isCurrent
                               ? 'text-[#0CCE6B] fill-[#0CCE6B]'
                               : 'text-neutral-400 dark:text-neutral-600'
@@ -91,7 +93,7 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
                       )}
                     </div>
                     <span
-                      className={`text-xs font-medium ${
+                      className={`text-sm font-medium ${
                         isComplete || isCurrent
                           ? 'text-neutral-900 dark:text-white'
                           : 'text-neutral-500 dark:text-neutral-600'

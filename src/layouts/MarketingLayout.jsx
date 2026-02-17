@@ -84,16 +84,6 @@ export default function MarketingLayout() {
             {/* Navigation - Anchor links for landing page */}
             <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
               <a 
-                href="/#features" 
-                className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
-                  isActive('#features') 
-                    ? 'text-[#0CCE6B] font-medium' 
-                    : 'text-neutral-600 hover:text-[#0CCE6B]'
-                }`}
-              >
-                Features
-              </a>
-              <a 
                 href="/#about" 
                 className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
                   isActive('#about') 
@@ -102,6 +92,16 @@ export default function MarketingLayout() {
                 }`}
               >
                 About
+              </a>
+              <a 
+                href="/#features" 
+                className={`transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded ${
+                  isActive('#features') 
+                    ? 'text-[#0CCE6B] font-medium' 
+                    : 'text-neutral-600 hover:text-[#0CCE6B]'
+                }`}
+              >
+                Features
               </a>
               <a 
                 href="/#faq" 

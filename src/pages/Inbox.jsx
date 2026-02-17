@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Search, Loader2, User } from 'lucide-react';
+import { MessageSquare, Search, User } from 'lucide-react';
 import { getThreads } from '../services/messagesService';
 import { useUnread } from '../context/UnreadContext';
 import toast from 'react-hot-toast';
+import EmptyState from '../components/EmptyState';
+import SkeletonCard from '../components/skeletons/SkeletonCard';
 
 // Demo threads for when API is unavailable
 const DEMO_THREADS = [
@@ -145,19 +147,17 @@ export default function Inbox() {
       {/* Threads List */}
       <div className="space-y-2">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+          <div className="space-y-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : filteredThreads.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageSquare className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-              No conversations yet
-            </h3>
-            <p className="text-neutral-500">
-              Share a post or message a collaborator to start.
-            </p>
-          </div>
+          <EmptyState
+            icon={MessageSquare}
+            title="No conversations yet"
+            description="Share a post or message a collaborator to start."
+          />
         ) : (
           filteredThreads.map((thread) => {
             const otherUser = thread.otherUser;
