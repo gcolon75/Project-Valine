@@ -11,6 +11,7 @@ import Button from '../../../components/ui/Button';
  */
 export default function ProfileBasics({ userData, onUpdate }) {
   const [showCropper, setShowCropper] = useState(false);
+  const [showBannerCropper, setShowBannerCropper] = useState(false);
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function ProfileBasics({ userData, onUpdate }) {
     title: userData?.title || '',
     location: userData?.location || '',
     avatar: userData?.avatar || null,
+    banner: userData?.banner || null,
   });
 
   // Validate form data
@@ -55,8 +57,54 @@ export default function ProfileBasics({ userData, onUpdate }) {
     setShowCropper(false);
   };
 
+  const handleBannerSave = (imageData) => {
+    setFormData(prev => ({ ...prev, banner: imageData }));
+    setShowBannerCropper(false);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Banner Upload */}
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
+          Cover Banner (Optional)
+        </label>
+        <div className="relative">
+          {formData.banner ? (
+            <div className="relative aspect-[3/1] rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-800 border-4 border-white dark:border-neutral-900 shadow-lg">
+              <img
+                src={formData.banner}
+                alt="Profile banner"
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={() => setShowBannerCropper(true)}
+                className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold"
+                aria-label="Change banner"
+              >
+                Change Banner
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowBannerCropper(true)}
+              className="w-full aspect-[3/1] border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-[#0CCE6B] hover:bg-[#0CCE6B]/5 transition-colors flex items-center justify-center"
+              aria-label="Upload banner"
+            >
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-2 bg-neutral-200 dark:bg-neutral-700 rounded-full flex items-center justify-center">
+                  <span className="text-2xl text-neutral-400">+</span>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Add Banner (Optional)</p>
+              </div>
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2">
+          Recommended: 1200x400px or 3:1 aspect ratio
+        </p>
+      </div>
+
       {/* Avatar Upload */}
       <div className="flex flex-col items-center mb-8">
         <div className="relative">
@@ -175,13 +223,23 @@ export default function ProfileBasics({ userData, onUpdate }) {
         </p>
       </div>
 
-      {/* Image Cropper Modal */}
+      {/* Image Cropper Modal for Avatar */}
       {showCropper && (
         <ImageCropper
           onSave={handleAvatarSave}
           onCancel={() => setShowCropper(false)}
           aspectRatio={1}
           title="Upload Profile Photo"
+        />
+      )}
+      
+      {/* Image Cropper Modal for Banner */}
+      {showBannerCropper && (
+        <ImageCropper
+          onSave={handleBannerSave}
+          onCancel={() => setShowBannerCropper(false)}
+          aspectRatio={3}
+          title="Upload Banner Image"
         />
       )}
     </div>
