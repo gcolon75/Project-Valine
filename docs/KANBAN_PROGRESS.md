@@ -1,23 +1,34 @@
-# Project Valine - Kanban Task Bible
+# Project Valine - Complete Kanban Task Tracker
 
-**Last Updated:** 2026-02-17  
+**Last Updated:** 2024-02-17  
 **Purpose:** Comprehensive task tracking with user flow backing for contractor execution  
 **Status:** Active Development - Beta-50 Milestone
 
-## Quick Stats
-- **Completed:** 31 tasks (UX polish, landing page, component library)
-- **Backlog P0 (Critical):** 12 tasks (beta blockers)
-- **Backlog P1 (High):** 19 tasks (beta essential)
-- **Backlog P2 (Medium):** 16 tasks (post-beta)
-- **Total Remaining:** 47 tasks
+---
 
-## Database Connection (NO SPACES)
+## Quick Stats
+
+- **Total Tasks:** 43
+- **P0 Critical:** 12 tasks (beta blockers)
+- **P1 High:** 15 tasks (beta essential)
+- **P2 Medium:** 15 tasks (post-beta enhancements)
+- **Blocked:** 1 task (awaiting product decision)
+- **Done:** 1 task (Post View 404 fix, PR #406)
+
+---
+
+## Key Infrastructure
+
+### Database URL Template (NO SPACES)
+
 ```
 postgresql://{{DB_USER}}:{{DB_PASSWORD}}@project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com:5432/postgres?sslmode=require
 ```
+
 **Note:** Replace `{{DB_USER}}` and `{{DB_PASSWORD}}` with actual credentials from environment variables or secure configuration.
 
-## Deploy Commands (PowerShell)
+### PowerShell Deploy Commands
+
 ```powershell
 cd C:\Users\ghawk\Documents\GitHub\Project-Valine
 git checkout main; git pull origin main
@@ -32,1412 +43,1779 @@ cd ..\; npm ci; npm run build; aws s3 sync dist/ s3://project-valine-frontend-pr
 aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 
 # Migrations
-cd api; npx prisma migrate deploy
-cd api; npx prisma generate
+cd api; npx prisma migrate deploy; npx prisma generate
 ```
 
-## Key Endpoints
+### Key Endpoints
+
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
 - **API Base:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 
 ---
 
-# Section 1: Completed Tasks (31)
+## User Flow Coverage Matrix
 
-## Landing Page & Marketing (7)
-- [x] Hero section centered layout with stats cards
-- [x] Value propositions section with icons
-- [x] Feature grid section with 6 key features
-- [x] Product visual section placeholder
-- [x] Social proof section with testimonials
-- [x] FAQ section with accordion functionality
-- [x] Final CTA section with conversion focus
+This matrix maps the 43 Kanban tasks to the 17 user flows documented in `docs/USER_FLOWS.md`.
 
-## Core UI Components (8)
-- [x] EmptyState component created and documented
-- [x] SkeletonCard component for post loading states
-- [x] SkeletonProfile component for profile loading
-- [x] SkeletonText component for text loading
-- [x] Button component with 3 variants (primary, secondary, ghost)
-- [x] Card component for consistent layouts
-- [x] ThemeToggle component with dark mode support
-- [x] ConfirmationModal component for destructive actions
-
-## Dashboard & Feed (4)
-- [x] Dashboard uses EmptyState for no posts
-- [x] Dashboard uses SkeletonCard for loading
-- [x] Tag filtering functionality
-- [x] Post composer integration
-
-## Profile System (5)
-- [x] Profile page with tabs (Posts, Reels, Scripts, About)
-- [x] EmptyState for no posts on profile
-- [x] Follow/unfollow functionality
-- [x] Profile edit page with form validation
-- [x] Avatar upload and preview
-
-## Onboarding Flow (4)
-- [x] Multi-step onboarding layout
-- [x] Progress tracking with visual indicators
-- [x] Step navigation (back/skip/continue)
-- [x] Auto-save to localStorage
-
-## Authentication (3)
-- [x] Login page with email/password
-- [x] Join page with account creation
-- [x] Auth callback handling
+| Flow # | Flow Name | Related Tasks |
+|--------|-----------|---------------|
+| **Flow 1** | Guest → Signup → Onboarding → Dashboard | P0-003, P0-002, P1-001, P1-002, BLOCKED-001 |
+| **Flow 2** | User → Edit Profile → Save → View Profile | P0-011, P0-002, BLOCKED-001 |
+| **Flow 3** | User → Create Post → Feed Appears | P1-011, P2-014 |
+| **Flow 4** | User → Request Access → Owner Approves | P1-007, P1-009, P1-015, P2-006 |
+| **Flow 5** | User Login → Dashboard (Returning User) | P0-005, P0-011, P0-012, P0-002 |
+| **Flow 6** | User → View Post Detail | P0-001, P1-014, DONE-001 |
+| **Flow 7** | User → Upload Media (Avatar/Banner with S3) | P0-007, P0-008, P0-009, P2-004, P2-012 |
+| **Flow 8** | User → View Feed → Like/Comment on Post | P1-010, P1-012 |
+| **Flow 9** | User → Connect with Another User | P2-002 |
+| **Flow 10** | User → Search/Discover Users | P2-008 |
+| **Flow 11** | User → View Notifications → Mark as Read | P1-007, P2-014 |
+| **Flow 12** | User → Send Direct Message | P1-006 |
+| **Flow 13** | Owner → Manage Access Requests | P1-007, P1-008 |
+| **Flow 14** | User → Password Reset Flow | P1-002, P1-004 |
+| **Flow 15** | User → Email Verification Flow | P1-003 |
+| **Flow 16** | User → Privacy Settings | P1-013, P2-001 |
+| **Flow 17** | Admin → Moderation Flow | P2-005 |
+| **All Flows** | Cross-cutting concerns | P0-002, P0-004, P0-010, P0-006 |
 
 ---
 
-# Section 2: P0 Critical Tasks (Beta Blockers)
+## Complete Task List (43 Tasks)
 
-## P0-001: AUTH: Allowlist-only signup + full onboarding (no bypass)
+### P0 CRITICAL (12 tasks)
 
-**Epic:** Auth & Onboarding  
-**Milestone:** Beta-50  
-**Owner:** Fullstack  
-**Status:** Backlog  
+#### P0-001: CloudFront SPA deep-link fix
+
+**User Flow:** Flow 6 (User → View Post Detail)  
+**Owner:** DevOps  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Direct URLs to posts (e.g., `https://dkmxy676d3vgc.cloudfront.net/post/123`) return 404 errors because CloudFront doesn't know how to route SPA paths.
+
+**Files:**
+- CloudFront distribution error responses configuration
+- S3 bucket routing rules
+
+**Definition of Done:**
+- All application routes (`/profile/user`, `/post/123`, `/settings`, etc.) return `index.html`
+- React Router handles client-side routing
+- No 404 errors on direct URL access or page refresh
+- CloudFormation/Terraform config updated if applicable
+
+**Testing Checklist:**
+- [ ] Direct navigate to `/profile/testuser` → page loads
+- [ ] Direct navigate to `/post/123` → post detail loads
+- [ ] Direct navigate to `/settings` → settings page loads
+- [ ] Refresh any page → page reloads correctly
+- [ ] 404 only shown for truly non-existent content
+
+---
+
+#### P0-002: Smoke test checklist
+
+**User Flow:** All flows  
+**Owner:** QA/Fullstack  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+No documented smoke test checklist exists for verifying all 17 user flows after deployment.
+
+**Definition of Done:**
+- Runnable checklist document created in `docs/QA_SMOKE_TEST.md`
+- Covers all 17 user flows from `docs/USER_FLOWS.md`
+- Each flow has 3-5 key verification steps
+- Includes expected outcomes and failure indicators
+- Can be executed in under 30 minutes
+
+**Testing Checklist:**
+- [ ] Execute checklist on staging environment
+- [ ] All 17 flows pass
+- [ ] Document passes peer review
+- [ ] Added to deployment runbook
+
+---
+
+#### P0-003: Allowlist signup enforcement
+
+**User Flow:** Flow 1 (Guest → Signup → Onboarding → Dashboard)  
+**Owner:** Backend  
 **Estimate:** M (6-12h)  
-**User Flow Reference:** Flow 1 - Guest → Signup → Onboarding → Dashboard (docs/USER_FLOWS.md lines 9-1,147)
-
-### User Story
-As a beta platform owner, I want only allowlisted emails to create accounts and complete full onboarding, so that I can control who accesses the platform during closed beta.
-
-### Acceptance Criteria
-✅ Only emails in OWNER_EMAILS env var can create accounts  
-✅ Signup form checks allowlist BEFORE showing password field  
-✅ Non-allowlisted emails see: "Joint is currently in closed beta. Request access at [email]"  
-✅ Allowlisted users MUST complete all 4 onboarding steps before dashboard access  
-✅ Attempting to access /dashboard before onboardingComplete=true redirects to /onboarding  
-✅ No "testing bypass" or "skip onboarding" paths exist in production builds  
-✅ User.onboardingComplete must be true in database for app access  
-❌ Do NOT allow direct /dashboard access via URL manipulation
-
-### API Endpoints
-
-**POST /api/auth/register**
-- **Request:**
-  ```json
-  {
-    "email": "user@example.com",
-    "password": "SecurePass123!",
-    "username": "newuser"
-  }
-  ```
-- **Response (Success):**
-  ```json
-  {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "username": "newuser",
-      "onboardingComplete": false
-    },
-    "token": "jwt..."
-  }
-  ```
-- **Response (Not Allowlisted):**
-  ```json
-  {
-    "error": "Email not on allowlist",
-    "message": "Joint is currently in closed beta. Request access at hello@joint.app",
-    "code": "EMAIL_NOT_ALLOWLISTED"
-  }
-  ```
-- **Errors:** 400 (validation), 403 (not allowlisted), 409 (duplicate email/username)
-
-**GET /api/auth/me**
-- Checks: `User.onboardingComplete === true`
-- If false: Returns 403 with message "Complete onboarding first"
-
-### Database Changes
-- **User.onboardingComplete:** boolean (default: false)
-- **Ensure index on User.onboardingComplete** for fast queries
-
-### Files to Edit
-
-1. **serverless/src/handlers/auth.js**
-   - Line ~45: Add allowlist check in register handler
-   - Line ~120: Add onboardingComplete check in auth middleware
-
-2. **src/pages/Signup.jsx**
-   - Line ~80: Add allowlist error message display
-   - Show clear "Closed Beta" message if 403 error
-
-3. **src/context/AuthContext.jsx**
-   - Line ~50: Add onboardingComplete to user object
-   - Line ~120: Check onboardingComplete before allowing dashboard
-
-4. **src/pages/Onboarding/index.jsx**
-   - Line ~180: Ensure completeOnboarding() updates User.onboardingComplete = true
-
-5. **src/App.jsx**
-   - Add route guard: Redirect to /onboarding if !user.onboardingComplete
-
-6. **serverless/serverless.yml**
-   - Verify OWNER_EMAILS environment variable is set
-
-### Dependencies
-- None (standalone task)
-
-### Testing Plan
-
-**Happy Path:**
-1. Add test@example.com to OWNER_EMAILS
-2. Navigate to /signup
-3. Enter email test@example.com → allowlist passes
-4. Complete signup form → account created
-5. Redirected to /onboarding
-6. Complete all 4 onboarding steps → onboardingComplete = true
-7. Redirected to /dashboard → access granted
-
-**Negative Path:**
-1. Enter email notallowed@example.com → see "Closed Beta" message
-2. Attempt to POST /api/auth/register with non-allowlisted email → 403 error
-3. After signup but before onboarding, try accessing /dashboard URL directly → redirected to /onboarding
-4. Try accessing /posts, /profile while onboardingComplete=false → redirected to /onboarding
-
-### Verification
-```powershell
-# 1. Check allowlist env var
-cd serverless
-npx serverless invoke --function auth --data '{"path":"/register","httpMethod":"POST","body":"{\"email\":\"notallowed@test.com\",\"password\":\"Test123!\"}"}'
-# Expected: 403 error
-
-# 2. Test allowlisted email
-npx serverless invoke --function auth --data '{"path":"/register","httpMethod":"POST","body":"{\"email\":\"gcolon75@example.com\",\"password\":\"Test123!\",\"username\":\"testuser\"}"}'
-# Expected: 200 with onboardingComplete: false
-
-# 3. Check database
-cd ..\api
-npx prisma studio
-# Find user → verify onboardingComplete = false
-
-# 4. Test protected route
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me -H "Authorization: Bearer <token>"
-# Expected: 403 if onboardingComplete = false
-```
-
-### Definition of Done
-- [ ] Code complete: allowlist check in auth.js
-- [ ] Frontend shows clear "Closed Beta" message
-- [ ] Onboarding redirect enforced on all app routes
-- [ ] Database has onboardingComplete index
-- [ ] Tests passing: signup (allowlist pass/fail), onboarding redirect
-- [ ] Staging deployed and verified with test accounts
-- [ ] Documentation updated: CONTRACTOR_ONBOARDING.md
-- [ ] Product owner verified onboarding flow
-
-### References
-- docs/USER_FLOWS.md Flow 1 (lines 9-1,147)
-- docs/CONTRACTOR_ONBOARDING.md "Authentication & Onboarding"
-- docs/REPO_AUDIT_TRUTH_DOC.md §5.1
-- Notion CSV: AUTH: Allowlist-only signup
-
----
-
-## P0-002: SETTINGS: Complete Settings.jsx button component migration
-
-**Epic:** Component Standardization  
-**Milestone:** Beta-50  
-**Owner:** Frontend  
-**Status:** Backlog  
-**Estimate:** M (4h)  
-**User Flow Reference:** Flow 16 - User → Privacy Settings (docs/USER_FLOWS.md lines 2,487-2,565)
-
-### User Story
-As a frontend developer, I want all buttons in Settings.jsx to use the Button component, so that the UI is consistent and maintainable.
-
-### Background
-PR #410 converted Pricing.jsx to use Button component. Settings.jsx still has ~12 inline `<button>` elements with inconsistent styling. This task documents every button location and converts them all.
-
-### Current Button Inventory in Settings.jsx
-
-**IMPORTANT:** Settings.jsx contains inline `<button>` elements that need to be converted to use the Button component from `src/components/ui/Button.jsx`. This audit documents ALL button elements currently in the file.
-
-| Line | Current Implementation | Section | Action | Target Conversion |
-|------|------------------------|---------|--------|-------------------|
-| 300 | `<button className="text-sm text-[#0CCE6B]...">Change</button>` | Account / Email | Change Email | `<Button variant="ghost" size="sm">Change</Button>` |
-| 321 | `<button className="px-4 py-2 bg-gradient...">Save</button>` | Account / Email Edit | Save Email | `<Button variant="primary" size="sm">Save</Button>` |
-| 330 | `<button className="px-4 py-2 text-neutral...">Cancel</button>` | Account / Email Edit | Cancel Edit | `<Button variant="ghost" size="sm">Cancel</Button>` |
-| 352 | `<button className="text-sm text-[#0CCE6B]...">Change Password</button>` | Security / Password | Change | `<Button variant="ghost" size="sm">Change Password</Button>` |
-| 368 | `<button className="px-4 py-2 bg-neutral...">Setup/Disable</button>` | Security / 2FA | Toggle 2FA | `<Button variant="secondary" size="sm" disabled={isEnrolling2FA}>Setup/Disable</Button>` |
-| 391 | `<button className="text-sm text-[#0CCE6B]...">Manage</button>` | Security / Connected | Manage Accounts | `<Button variant="ghost" size="sm">Manage</Button>` |
-| 438 | `<button className="ml-4 px-3 py-1.5...">Terminate</button>` | Sessions | Revoke Session | `<Button variant="ghost" size="sm" className="text-red-600">Terminate</Button>` |
-| 700 | `<button className="w-full flex items...">Download Your Data</button>` | Data & Export | Export Data | `<Button variant="secondary" disabled={isExporting} startIcon={isExporting ? <Loader2 /> : <Download />}>Export Data</Button>` |
-| 723 | `<button className="w-full flex items...">Delete Account</button>` | Data & Export | Delete Account | `<Button variant="primary" className="bg-red-600 hover:bg-red-700">Delete Account</Button>` |
-
-**Modal Buttons (inside ConfirmationModal components):**
-- Line 812: Cancel button (Password Change modal)
-- Line 819: Confirm button (Password Change modal)
-- Line 861: Confirm button (Delete Account modal with password input)
-
-**Component-Level Buttons:**
-- Line 947: Toggle button inside SettingToggle component (custom implementation)
-
-**Total Count:** 9 primary inline buttons + 3 modal buttons = **12 buttons to convert**
-
-**Note:** Settings.jsx does NOT contain buttons for "Save Profile", "Upload Avatar", "Remove Avatar", "Upload Banner", or "Remove Banner" as these features are handled in ProfileEdit.jsx instead.
-
-### Acceptance Criteria
-✅ All 12 buttons in Settings.jsx (9 main + 3 modal) use `<Button>` component from `src/components/ui/Button.jsx`  
-✅ Button variants match design system: primary (CTAs), secondary (actions), ghost (subtle/links)  
-✅ All buttons have proper size: `sm` for inline actions, default `md` for prominent CTAs  
-✅ Loading states use `disabled` prop + `startIcon` with Loader2 component  
-✅ Delete Account button uses red styling via `className` override  
-✅ 2FA button shows spinner when `isEnrolling2FA` is true  
-✅ Export button shows loading state with `isExporting` flag  
-✅ Session Terminate buttons show loading state for specific session  
-✅ All buttons maintain existing functionality (onClick handlers unchanged)  
-❌ Do NOT change button behavior, only styling implementation  
-❌ Do NOT add buttons for "Save Profile", "Upload Avatar", or "Upload Banner" (these don't exist in Settings.jsx)
-
-### API Endpoints
-No API changes - frontend only
-
-### Database Changes
-None - frontend only
-
-### Files to Edit
-
-1. **src/pages/Settings.jsx** (PRIMARY FILE)
-   - **Line 1:** Add import: `import { Button } from '../components/ui';`
-   - **Line 300:** Change Email button (Account section)
-     ```jsx
-     // BEFORE
-     <button className="text-sm text-[#0CCE6B]...">Change</button>
-     
-     // AFTER
-     <Button variant="ghost" size="sm">Change</Button>
-     ```
-   
-   - **Line 321:** Save Email button
-     ```jsx
-     // BEFORE
-     <button className="px-4 py-2 bg-gradient...">Save</button>
-     
-     // AFTER
-     <Button variant="primary" size="sm">Save</Button>
-     ```
-   
-   - **Line 352:** Change Password button
-     ```jsx
-     // BEFORE
-     <button className="text-sm text-[#0CCE6B]...">Change Password</button>
-     
-     // AFTER
-     <Button variant="ghost" size="sm">Change Password</Button>
-     ```
-   
-   - **Line 368:** 2FA Setup/Disable button with loading state
-     ```jsx
-     // BEFORE
-     <button className="px-4 py-2 bg-neutral..." disabled={isEnrolling2FA}>
-       {isEnrolling2FA ? <Loader2 /> : (twoFactorEnabled ? 'Disable' : 'Setup')}
-     </button>
-     
-     // AFTER
-     <Button 
-       variant="secondary" 
-       size="sm" 
-       disabled={isEnrolling2FA}
-       startIcon={isEnrolling2FA ? <Loader2 className="animate-spin" /> : null}
-     >
-       {twoFactorEnabled ? 'Disable 2FA' : 'Setup 2FA'}
-     </Button>
-     ```
-   
-   - **Line 700:** Export Data button with loading state
-     ```jsx
-     // BEFORE
-     <button className="w-full flex items..." disabled={isExporting}>
-       {isExporting ? 'Exporting...' : 'Download Your Data'}
-     </button>
-     
-     // AFTER
-     <Button 
-       variant="secondary" 
-       disabled={isExporting}
-       startIcon={isExporting ? <Loader2 className="animate-spin" /> : <Download />}
-       className="w-full"
-     >
-       {isExporting ? 'Exporting...' : 'Download Your Data'}
-     </Button>
-     ```
-   
-   - **Line 723:** Delete Account button (destructive action with red styling)
-     ```jsx
-     // BEFORE
-     <button className="w-full flex items... bg-red-50...">
-       Delete Account
-     </button>
-     
-     // AFTER
-     <Button 
-       variant="primary" 
-       className="w-full bg-red-600 hover:bg-red-700"
-       onClick={() => setActiveModal('delete-account')}
-     >
-       Delete Account
-     </Button>
-     ```
-
-2. **src/components/ui/Button.jsx** (verify - no changes needed)
-   - Confirm supports `className` override for custom colors
-   - Confirm `startIcon` prop works with loading spinners
-   - Confirm `size="sm"` prop is implemented
-
-### Dependencies
-- Button component from PR #410 (already merged)
-
-### Testing Plan
-
-**Happy Path:**
-1. Open Settings page → all 12 buttons render with Button component styling
-2. Click "Change" (Email) → inline edit form appears
-3. Enter new email → click "Save" button → shows loading state, then success
-4. Click "Cancel" → edit form closes
-5. Click "Change Password" → modal opens with password form
-6. Click "Setup 2FA" (if not enabled) → button shows spinner, then QR code modal
-7. Click "Manage" (Connected Accounts) → navigates to accounts page
-8. In Sessions list → click "Terminate" on a session → shows spinner for that session
-9. Click "Download Your Data" → button shows loading state with spinner
-10. Click "Delete Account" → red button shows confirmation modal
-11. Verify all buttons have consistent styling (Button component)
-12. Test keyboard navigation (Tab key) → all buttons reachable and have focus states
-13. Test dark mode → all buttons styled correctly
-
-**Negative Path:**
-1. Click disabled "Save" while API request in progress → no action
-2. Spam-click "Setup 2FA" → only one request sent (button disabled during load)
-3. Try "Terminate" on current session → appropriate warning or prevention
-4. Verify "Delete Account" requires password confirmation in modal
-
-**Accessibility:**
-1. Tab through all buttons → focus visible with ring
-2. Press Enter/Space on focused buttons → actions trigger
-3. Screen reader → announces button labels correctly
-4. Touch targets → all buttons minimum 44px height
-
-### Verification
-```powershell
-# 1. Check file changes
-cd C:\Users\ghawk\Documents\GitHub\Project-Valine
-git diff src/pages/Settings.jsx | Select-String "Button"
-# Expected: 12 instances of <Button
-
-# 2. Build and verify
-npm run build
-# Expected: No warnings about Button component
-
-# 3. Visual inspection
-# Open https://dkmxy676d3vgc.cloudfront.net/settings
-# Check: All buttons match Button component styles
-# Check: Hover states work (primary: scale, secondary: bg change)
-# Check: Focus states visible (ring-2 ring-brand)
-
-# 4. Test each button action
-# Profile Save → works
-# Avatar Upload → works
-# 2FA Enable → works
-# Delete Account → works
-```
-
-### Definition of Done
-- [ ] All 12 buttons converted to Button component (9 main + 3 modal)
-- [ ] No inline `<button>` elements remain in Settings.jsx main sections
-- [ ] All buttons maintain existing functionality (onClick, disabled states)
-- [ ] Loading states work correctly (2FA, Export, Session Terminate)
-- [ ] Dark mode tested and working for all button variants
-- [ ] Keyboard navigation tested (Tab, Enter, Space)
-- [ ] Touch targets verified (44px min-height for touch-friendly interaction)
-- [ ] Focus states visible (ring-2 ring-brand)
-- [ ] Build successful with no warnings
-- [ ] Deployed to staging and tested end-to-end
-- [ ] All button actions verified: email edit, password change, 2FA, export, delete
-- [ ] Component audit doc updated: docs/KANBAN_PROGRESS.md
-
-### References
-- docs/KANBAN_PROGRESS.md "Button Consistency Audit" (lines 200-250)
-- src/components/ui/Button.jsx (Button component implementation)
-- src/components/ui/README.md (Button usage guide)
-- PR #410 (Pricing.jsx conversion example)
-
----
-
-## P0-003: AUTH: Email verification (real emails via SES) + enforce verification gates
-
-**Epic:** Auth & Trust  
-**Milestone:** Beta-50  
-**Owner:** Fullstack  
-**Status:** Backlog  
-**Estimate:** M (8-16h)  
-**User Flow Reference:** Flow 15 - User → Email Verification Flow (docs/USER_FLOWS.md lines 2,418-2,486)
-
-### User Story
-As a platform owner, I want users to verify their email addresses via AWS SES, so that I can ensure valid contact information and reduce spam accounts.
-
-### Acceptance Criteria
-✅ After signup, user receives verification email via AWS SES  
-✅ Email contains verification link: `https://dkmxy676d3vgc.cloudfront.net/verify-email?token=xxx`  
-✅ Clicking link calls `GET /api/auth/verify-email?token=xxx`  
-✅ Valid token sets `User.emailVerified = true` in database  
-✅ Unverified users see banner: "Verify your email to unlock features" on every page  
-✅ Unverified users CANNOT create posts (POST /api/posts returns 403)  
-✅ Unverified users CANNOT send messages (POST /api/messages returns 403)  
-✅ "Resend Verification" button works (POST /api/auth/resend-verification)  
-✅ Expired tokens (>24h old) show error + resend option  
-✅ Already-verified users see success message if they click link again  
-❌ Do NOT block dashboard access (only feature gates)
-
-### API Endpoints
-
-**POST /api/auth/register** (MODIFIED)
-- After creating user, generate verification token
-- Send email via AWS SES
-- Response includes `emailVerified: false`
-
-**GET /api/auth/verify-email?token=xxx**
-- **Request:** Query param `token`
-- **Response (Success):**
-  ```json
-  {
-    "success": true,
-    "message": "Email verified successfully!",
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "emailVerified": true
-    }
-  }
-  ```
-- **Response (Invalid Token):**
-  ```json
-  {
-    "error": "Invalid or expired token",
-    "code": "TOKEN_INVALID"
-  }
-  ```
-- **Errors:** 400 (invalid token), 404 (token not found), 410 (expired)
-
-**POST /api/auth/resend-verification**
-- **Request:**
-  ```json
-  {
-    "email": "user@example.com"
-  }
-  ```
-- **Response:**
-  ```json
-  {
-    "success": true,
-    "message": "Verification email sent. Check your inbox."
-  }
-  ```
-- **Errors:** 400 (already verified), 404 (user not found), 429 (rate limit)
-
-**POST /api/posts** (MODIFIED)
-- Add check: `if (!user.emailVerified) return 403`
-- Error message: "Verify your email before creating posts"
-
-**POST /api/messages** (MODIFIED)
-- Add check: `if (!user.emailVerified) return 403`
-- Error message: "Verify your email before sending messages"
-
-### Database Changes
-
-**User table:**
-- **User.emailVerified:** boolean (default: false)
-- Add index on `emailVerified` for fast queries
-
-**EmailVerificationToken table (NEW):**
-```prisma
-model EmailVerificationToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  @@index([userId])
-  @@index([token])
+**Status:** Backlog
+
+**Issue:**  
+Signup endpoint doesn't enforce allowlist checking, allowing unauthorized signups during beta.
+
+**Files:**
+- `serverless/src/handlers/auth.js`
+- `.env` files (add `OWNER_EMAILS` or `ALLOWLIST_EMAILS`)
+
+**Definition of Done:**
+- `POST /api/auth/signup` checks email against allowlist before creating account
+- Non-allowlisted emails receive clear 403 error with message: "Beta access is currently restricted. Request an invite at [email]"
+- Allowlist configurable via environment variable (comma-separated emails)
+- `User.onboardingComplete` flag enforced (defaults to `false`)
+- Server-side validation prevents onboarding bypass
+
+**API Contract:**
+```json
+// Request
+POST /api/auth/signup
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!",
+  "username": "cooluser"
+}
+
+// Response (403 - Not Allowlisted)
+{
+  "error": "BETA_RESTRICTED",
+  "message": "Beta access is currently restricted. Request an invite at beta@joint.app"
+}
+
+// Response (201 - Success)
+{
+  "user": { "id": "uuid", "email": "...", "onboardingComplete": false },
+  "token": "jwt..."
 }
 ```
 
-**Migration:**
+**Testing Checklist:**
+- [ ] Non-allowlist email → 403 error
+- [ ] Allowlist email → 201 success
+- [ ] Empty allowlist → all signups blocked
+- [ ] Allowlist with multiple emails → all work
+- [ ] Case-insensitive email matching
+
+---
+
+#### P0-004: Load test Prisma connections
+
+**User Flow:** All flows  
+**Owner:** Backend/DevOps  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+Prisma connection pool exhaustion under concurrent load causes 500 errors and timeouts.
+
+**Definition of Done:**
+- Load test performed with Artillery or k6 simulating 100+ concurrent users
+- Prisma connection pool configured appropriately (`connection_limit` in database URL)
+- CloudWatch dashboards created for connection metrics
+- Alerts configured for connection pool exhaustion
+- System sustains 100+ concurrent users without errors
+- Documentation added to `docs/DEPLOYMENT.md` with connection pool settings
+
+**Testing Checklist:**
+- [ ] Baseline test: 10 concurrent users → 0 errors
+- [ ] Stress test: 50 concurrent users → < 1% error rate
+- [ ] Peak test: 100 concurrent users → < 5% error rate
+- [ ] Connection pool metrics visible in CloudWatch
+- [ ] Alert triggers when 80% pool capacity reached
+
+---
+
+#### P0-005: Fix deploy bot API base URL
+
+**User Flow:** Flow 5 (User Login → Dashboard)  
+**Owner:** DevOps  
+**Estimate:** XS (1-2h)  
+**Status:** Backlog
+
+**Issue:**  
+Production builds have hardcoded `localhost:3000` API base URL instead of production API Gateway URL.
+
+**Files:**
+- `vite.config.js`
+- `.env.production`
+- Build scripts
+
+**Definition of Done:**
+- `VITE_API_BASE_URL` environment variable properly injected at build time
+- Production builds use `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com`
+- Development builds use `http://localhost:3000`
+- Build logs show correct API URL being used
+- No hardcoded URLs in source code
+
+**Testing Checklist:**
+- [ ] `npm run build` → check `dist/assets/*.js` for correct API URL
+- [ ] Deploy to staging → frontend calls staging API
+- [ ] Deploy to production → frontend calls production API
+- [ ] Login on production → no CORS errors, successful auth
+
+---
+
+#### P0-006: Fix vite build error
+
+**User Flow:** Deploy process  
+**Owner:** Frontend/DevOps  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+`npm run build` fails with module resolution errors or dependency issues.
+
+**Definition of Done:**
+- `npm run build` completes with 0 errors
+- All ES modules resolve correctly
+- No TypeScript errors (if applicable)
+- Build output is under 2MB gzipped
+- Build succeeds on CI/CD pipeline
+
+**Testing Checklist:**
+- [ ] Clean install: `rm -rf node_modules package-lock.json && npm install`
+- [ ] `npm run build` → exit code 0
+- [ ] `dist/` directory contains all assets
+- [ ] No console errors when loading production build locally
+- [ ] CI/CD pipeline runs build successfully
+
+---
+
+#### P0-007: Backend upload validation
+
+**User Flow:** Flow 7 (User → Upload Media)  
+**Owner:** Backend  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+Upload endpoint doesn't validate file types, sizes, or dimensions server-side, allowing malicious uploads.
+
+**Files:**
+- `serverless/src/handlers/upload.js`
+- `serverless/src/validators/upload.js` (create)
+
+**Definition of Done:**
+- Server-side validation for:
+  - File type: Only allow `image/jpeg`, `image/png`, `image/webp`, `image/gif`
+  - File size: Max 10MB for images
+  - Dimensions: Max 4096x4096 pixels
+  - MIME type matches file extension
+- Reject invalid uploads with clear error messages
+- Malware scanning integration (optional for MVP, document for future)
+
+**API Contract:**
+```json
+// Response (400 - Invalid File)
+{
+  "error": "INVALID_FILE",
+  "message": "File must be an image (JPEG, PNG, WebP, or GIF)",
+  "details": {
+    "receivedType": "application/pdf",
+    "maxSize": "10MB",
+    "receivedSize": "15MB"
+  }
+}
+```
+
+**Testing Checklist:**
+- [ ] Upload 100MB file → 400 error
+- [ ] Upload .exe file → 400 error
+- [ ] Upload .pdf file → 400 error
+- [ ] Upload valid 5MB JPEG → 200 success
+- [ ] Upload valid PNG → 200 success
+- [ ] File with spoofed extension (.jpg actually .exe) → rejected
+
+---
+
+#### P0-008: S3 orphan cleanup job
+
+**User Flow:** Flow 7 (User → Upload Media)  
+**Owner:** Backend/DevOps  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+Deleted user profiles leave orphaned files in S3, wasting storage and incurring costs.
+
+**Definition of Done:**
+- Lambda function created to find and delete orphaned S3 files
+- Runs daily via EventBridge schedule
+- Compares S3 keys with `User.avatarUrl`, `User.bannerUrl`, `Post.mediaUrls`
+- Deletes files not referenced in database
+- Logs deleted files for audit trail
+- CloudWatch alerts on failures
+
+**Files:**
+- `serverless/src/handlers/s3Cleanup.js` (create)
+- `serverless/serverless.yml` (add scheduled function)
+
+**Testing Checklist:**
+- [ ] Upload avatar → delete user → file cleaned within 24h
+- [ ] Upload banner → change banner → old file cleaned
+- [ ] Active files not deleted
+- [ ] Cleanup logs visible in CloudWatch
+- [ ] Dry-run mode works (logs without deleting)
+
+---
+
+#### P0-009: Avatar+banner race condition fix
+
+**User Flow:** Flow 7 (User → Upload Media)  
+**Owner:** Backend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Simultaneous uploads of avatar and banner cause database write conflicts, resulting in data corruption or lost uploads.
+
+**Files:**
+- `serverless/src/handlers/upload.js`
+- `serverless/src/services/uploadService.js`
+
+**Definition of Done:**
+- Implement pessimistic locking or transaction isolation for profile updates
+- Add `User.version` field for optimistic locking (alternative approach)
+- Queued upload processing to prevent race conditions
+- Retry logic for conflicting updates
+- No data corruption under concurrent upload scenarios
+
+**DB Migration:**
 ```sql
--- Add emailVerified to User
-ALTER TABLE "User" ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT false;
-CREATE INDEX "User_emailVerified_idx" ON "User"("emailVerified");
+ALTER TABLE "User" ADD COLUMN "version" INTEGER DEFAULT 0;
+```
 
--- Create EmailVerificationToken
-CREATE TABLE "EmailVerificationToken" (
-  "id" TEXT NOT NULL PRIMARY KEY,
-  "token" TEXT NOT NULL UNIQUE,
-  "userId" TEXT NOT NULL,
-  "expiresAt" TIMESTAMP(3) NOT NULL,
-  "used" BOOLEAN NOT NULL DEFAULT false,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+**Testing Checklist:**
+- [ ] Upload avatar and banner simultaneously → both succeed
+- [ ] Rapid-fire 5 avatar uploads → last upload wins, no corruption
+- [ ] Concurrent profile edits → no data loss
+- [ ] Load test with 10 concurrent uploads per user → all succeed
+
+---
+
+#### P0-010: Network connection error handling
+
+**User Flow:** All flows  
+**Owner:** Frontend  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+Poor network conditions cause silent failures or confusing error states. Users don't know if request failed due to network or server issues.
+
+**Files:**
+- `src/services/api.js`
+- `src/components/ErrorBoundary.jsx`
+- `src/hooks/useNetworkStatus.js` (create)
+
+**Definition of Done:**
+- Detect offline/online status with `navigator.onLine`
+- Show clear "You're offline" message when network unavailable
+- Retry failed requests automatically (exponential backoff)
+- Distinguish between network errors and server errors in UI
+- Toast notifications for network state changes
+- Graceful degradation (show cached data if available)
+
+**Error Messages:**
+- Network error: "Connection lost. Retrying..."
+- Timeout: "Request timed out. Please check your connection."
+- Server error: "Something went wrong. Please try again."
+
+**Testing Checklist:**
+- [ ] Disable network → see offline indicator
+- [ ] Make request while offline → clear error message
+- [ ] Re-enable network → auto-retry and succeed
+- [ ] Slow 3G simulation → appropriate timeout handling
+- [ ] Intermittent connection → exponential backoff works
+
+---
+
+#### P0-011: 403 errors investigation
+
+**User Flow:** Flow 5 (User Login → Dashboard), Flow 2 (Edit Profile)  
+**Owner:** Backend  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+Users report random 403 Forbidden errors on valid authenticated requests, causing logout or access denial.
+
+**Definition of Done:**
+- Root cause identified and documented
+- Fix implemented (e.g., JWT refresh logic, cookie issues, CORS misconfiguration)
+- Comprehensive logging added for 403 responses
+- CloudWatch dashboard for 403 error rate
+- Error rate reduced to < 0.1%
+
+**Investigation Steps:**
+1. Review API Gateway authorizer logs
+2. Check JWT expiration handling
+3. Verify cookie domain/path settings
+4. Test CORS preflight requests
+5. Check rate limiting configuration
+
+**Testing Checklist:**
+- [ ] Reproduce 403 error reliably
+- [ ] Implement fix
+- [ ] 100 consecutive authenticated requests → 0 errors
+- [ ] Token expiration handled gracefully
+- [ ] Cross-domain requests work correctly
+
+---
+
+#### P0-012: Login failures investigation
+
+**User Flow:** Flow 5 (User Login → Dashboard)  
+**Owner:** Backend  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+Intermittent login failures with valid credentials, causing user frustration and support tickets.
+
+**Definition of Done:**
+- Root cause identified and documented
+- Fix implemented
+- Login success rate > 99.9%
+- Logging added for failed login attempts
+- Monitoring dashboard for login metrics
+
+**Potential Causes:**
+- Database connection timeouts
+- Password hash comparison issues
+- Session store problems
+- Race conditions in token generation
+
+**Testing Checklist:**
+- [ ] 100 consecutive logins with valid credentials → 100 successes
+- [ ] Concurrent logins from same account → all succeed
+- [ ] Login after password change → succeeds
+- [ ] Login with special characters in password → succeeds
+- [ ] CloudWatch logs show clear error messages for failures
+
+---
+
+### P1 HIGH (15 tasks)
+
+#### P1-001: Server-side onboarding enforcement
+
+**User Flow:** Flow 1 (Guest → Signup → Onboarding → Dashboard)  
+**Owner:** Backend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Users can skip onboarding by manipulating client-side state or directly navigating to protected routes.
+
+**Files:**
+- `serverless/src/middleware/auth.js`
+- API endpoints that should be gated
+
+**Definition of Done:**
+- All API endpoints (except auth) check `User.onboardingComplete === true`
+- Endpoints return 403 with `ONBOARDING_REQUIRED` error if incomplete
+- Frontend redirects to `/onboarding` on 403 responses
+- Onboarding completion sets flag via `PATCH /api/users/me/onboarding`
+
+**API Contract:**
+```json
+// Response (403 - Onboarding Incomplete)
+{
+  "error": "ONBOARDING_REQUIRED",
+  "message": "Please complete onboarding to access this feature",
+  "redirectTo": "/onboarding"
+}
+```
+
+**Testing Checklist:**
+- [ ] Skip onboarding → API returns 403 on post creation
+- [ ] Complete onboarding → API allows access
+- [ ] Direct API call with incomplete onboarding → 403
+- [ ] Frontend redirects to onboarding on 403
+
+---
+
+#### P1-002: Password strength validation
+
+**User Flow:** Flow 1 (Signup), Flow 14 (Password Reset)  
+**Owner:** Backend/Frontend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Weak passwords allowed, creating security vulnerability.
+
+**Files:**
+- `serverless/src/validators/auth.js`
+- `src/components/PasswordInput.jsx`
+- `src/utils/validation.js`
+
+**Definition of Done:**
+- Password requirements enforced:
+  - Minimum 8 characters
+  - At least 1 uppercase letter
+  - At least 1 lowercase letter
+  - At least 1 number
+  - At least 1 special character (!@#$%^&*)
+- Real-time client-side validation with visual feedback
+- Server-side validation on signup and password reset
+- Clear error messages for each requirement
+
+**Visual Feedback:**
+- ✅ Green checkmark for met requirements
+- ❌ Red X for unmet requirements
+- Progress bar showing password strength
+
+**Testing Checklist:**
+- [ ] "password" → rejected (no uppercase, number, special char)
+- [ ] "Password1!" → accepted (meets all requirements)
+- [ ] "Pass1!" → rejected (too short)
+- [ ] Client shows requirements in real-time
+- [ ] Server rejects weak passwords
+
+---
+
+#### P1-003: Email verification with SES
+
+**User Flow:** Flow 15 (Email Verification)  
+**Owner:** Backend  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+Email verification currently uses mock implementation. Real email sending needed for production.
+
+**Files:**
+- `serverless/src/services/emailService.js`
+- `serverless/src/handlers/auth.js`
+
+**Definition of Done:**
+- AWS SES configured and verified for sending domain
+- Verification emails sent on signup
+- Email template designed (branded, mobile-responsive)
+- Verification link format: `https://joint.app/verify-email?token={token}`
+- `GET /api/auth/verify-email` endpoint verifies token and sets `User.emailVerified = true`
+- Unverified users see banner: "Please verify your email"
+- Resend verification email functionality
+
+**Database:**
+```sql
+ALTER TABLE "User" ADD COLUMN "emailVerified" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "User" ADD COLUMN "verificationToken" TEXT;
+ALTER TABLE "User" ADD COLUMN "verificationTokenExpiry" TIMESTAMP;
+```
+
+**Testing Checklist:**
+- [ ] Signup → receive verification email within 1 minute
+- [ ] Click link → email verified, redirect to dashboard
+- [ ] Expired token → clear error message, option to resend
+- [ ] Invalid token → 400 error
+- [ ] Resend email → new token sent
+
+---
+
+#### P1-004: Password reset pages
+
+**User Flow:** Flow 14 (Password Reset)  
+**Owner:** Frontend/Backend  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+No UI exists for password reset flow.
+
+**Files:**
+- `src/pages/ForgotPassword.jsx` (create)
+- `src/pages/ResetPassword.jsx` (create)
+- `serverless/src/handlers/auth.js`
+
+**Definition of Done:**
+- Forgot Password page at `/forgot-password`
+  - Email input
+  - "Send Reset Link" button
+  - Success message: "Check your email for reset instructions"
+- Reset Password page at `/reset-password?token={token}`
+  - New password input (with strength validation)
+  - Confirm password input
+  - "Reset Password" button
+  - Redirect to login on success
+- Email sent with reset link (expires in 1 hour)
+- `POST /api/auth/forgot-password` endpoint
+- `POST /api/auth/reset-password` endpoint
+
+**API Contract:**
+```json
+// Request: Forgot Password
+POST /api/auth/forgot-password
+{ "email": "user@example.com" }
+
+// Response: 200
+{ "message": "If an account exists, you'll receive a reset email" }
+
+// Request: Reset Password
+POST /api/auth/reset-password
+{ "token": "abc123", "newPassword": "NewSecure1!" }
+
+// Response: 200
+{ "message": "Password reset successful. Please log in." }
+```
+
+**Testing Checklist:**
+- [ ] Enter email → receive reset email
+- [ ] Click link → reset password page loads
+- [ ] Set new password → redirect to login
+- [ ] Login with new password → success
+- [ ] Expired token → error message with resend option
+- [ ] Invalid token → 400 error
+
+---
+
+#### P1-005: Staging environment setup
+
+**User Flow:** All flows  
+**Owner:** DevOps  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+No staging environment exists, forcing testing directly in production.
+
+**Definition of Done:**
+- Separate AWS account or organization unit for staging
+- Staging infrastructure deployed:
+  - CloudFront distribution
+  - S3 bucket for frontend
+  - API Gateway for backend
+  - RDS database (smaller instance)
+  - Lambda functions
+- Staging domain: `staging.joint.app` or similar
+- Separate environment variables for staging
+- CI/CD pipeline deploys to staging automatically on `develop` branch
+- Staging data seeded with test users and content
+
+**Testing Checklist:**
+- [ ] Deploy to staging via CI/CD
+- [ ] Staging URL loads frontend
+- [ ] Staging API responds correctly
+- [ ] Database isolated from production
+- [ ] Can test destructive operations safely
+
+---
+
+#### P1-006: DM scope decision
+
+**User Flow:** Flow 12 (Direct Messages)  
+**Owner:** Product/Backend  
+**Estimate:** XS (1-2h)  
+**Status:** Backlog
+
+**Issue:**  
+Unclear whether to build custom DM system or integrate third-party solution (Sendbird, Stream, etc.).
+
+**Definition of Done:**
+- Decision document created: `docs/DECISIONS/DM_ARCHITECTURE.md`
+- Document includes:
+  - Requirements (real-time, read receipts, media sharing, etc.)
+  - Build vs. buy analysis
+  - Cost comparison (development time vs. subscription)
+  - Technical complexity assessment
+  - Recommendation with rationale
+- Stakeholder approval received
+
+**Testing Checklist:**
+- [ ] Document reviewed by engineering lead
+- [ ] Document reviewed by product manager
+- [ ] Cost projections validated
+- [ ] Decision recorded in architecture decision records (ADR)
+
+---
+
+#### P1-007: Access request notifications
+
+**User Flow:** Flow 4 (Request Access), Flow 11 (Notifications), Flow 13 (Manage Requests)  
+**Owner:** Backend  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+Content owners don't receive notifications when someone requests access to their private content.
+
+**Files:**
+- `serverless/src/handlers/accessRequests.js`
+- `serverless/src/services/notificationService.js` (create)
+
+**Definition of Done:**
+- `POST /api/access-requests` creates notification for content owner
+- Notification model in database
+- `GET /api/notifications` endpoint returns unread notifications
+- Notification types: `ACCESS_REQUEST`, `ACCESS_APPROVED`, `ACCESS_DENIED`
+- Real-time updates via polling or WebSocket (polling for MVP)
+
+**Database:**
+```sql
+CREATE TABLE "Notification" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id"),
+  "type" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
+  "message" TEXT NOT NULL,
+  "read" BOOLEAN DEFAULT FALSE,
+  "metadata" JSONB,
+  "createdAt" TIMESTAMP DEFAULT NOW()
 );
-CREATE INDEX "EmailVerificationToken_userId_idx" ON "EmailVerificationToken"("userId");
-CREATE INDEX "EmailVerificationToken_token_idx" ON "EmailVerificationToken"("token");
 ```
 
-### Files to Edit
-
-1. **api/prisma/schema.prisma**
-   - Add `emailVerified Boolean @default(false)` to User model
-   - Add EmailVerificationToken model
-
-2. **serverless/src/handlers/auth.js**
-   - Line ~80 (register handler): Generate verification token after user creation
-   - Line ~100: Send verification email via AWS SES
-   - Add `verifyEmail` handler for GET /auth/verify-email
-   - Add `resendVerification` handler for POST /auth/resend-verification
-
-3. **serverless/src/utils/email.js** (CREATE NEW)
-   - Function: `sendVerificationEmail(email, token)`
-   - Uses AWS SDK v3: `@aws-sdk/client-ses`
-   - HTML email template with verification link
-
-4. **serverless/src/handlers/posts.js**
-   - Line ~40 (create post): Add `if (!user.emailVerified) throw 403`
-
-5. **serverless/src/handlers/messages.js**
-   - Line ~30 (send message): Add `if (!user.emailVerified) throw 403`
-
-6. **src/pages/VerifyEmail.jsx** (exists, needs update)
-   - Handle query param `?token=xxx`
-   - Call `GET /api/auth/verify-email?token=xxx`
-   - Show success/error states
-   - "Resend Email" button if expired
-
-7. **src/components/EmailVerificationBanner.jsx** (CREATE NEW)
-   - Shows at top of AppLayout if `!user.emailVerified`
-   - Message: "Verify your email to unlock features"
-   - "Resend Email" button
-   - Dismissible (hides until page refresh)
-
-8. **src/layouts/AppLayout.jsx**
-   - Import EmailVerificationBanner
-   - Render banner if `!user?.emailVerified`
-
-9. **serverless/serverless.yml**
-   - Add environment variables:
-     - `SES_FROM_EMAIL=noreply@joint.app`
-     - `SES_REGION=us-west-2`
-   - Add IAM permission for SES:SendEmail
-
-### Dependencies
-
-1. **AWS SES Setup:**
-   - Verify sending domain: joint.app (or use sandbox for testing)
-   - Move out of SES sandbox (if production)
-   - Configure DKIM and SPF records
-
-2. **NPM Packages:**
-   ```powershell
-   cd serverless
-   npm install @aws-sdk/client-ses
-   ```
-
-### Testing Plan
-
-**Happy Path:**
-1. Signup with new email
-2. Check inbox → verification email arrives (subject: "Verify your email for Joint")
-3. Click link → redirected to /verify-email?token=xxx
-4. See success message: "Email verified!"
-5. Banner disappears from dashboard
-6. Create post → succeeds (no 403 error)
-7. Send message → succeeds
-
-**Negative Path:**
-1. Signup but don't verify → try creating post → see 403 + "Verify email" message
-2. Click verification link twice → second time shows "Already verified"
-3. Use invalid token → see error + "Resend Email" button
-4. Click "Resend Email" → new email arrives
-5. Wait 25 hours → token expires → see "Token expired" + resend works
-6. Spam "Resend Email" 5 times → rate limited (429 error)
-
-### Verification
-```powershell
-# 1. Apply migration
-cd C:\Users\ghawk\Documents\GitHub\Project-Valine\api
-npx prisma migrate dev --name add-email-verification
-
-# 2. Deploy backend
-cd ..\serverless
-npx serverless deploy --stage prod --region us-west-2
-
-# 3. Test SES in AWS Console
-aws ses verify-email-identity --email-address noreply@joint.app --region us-west-2
-aws ses send-email --from noreply@joint.app --destination ToAddresses=gcolon75@example.com --message Subject={Data="Test"},Body={Text={Data="Test email"}} --region us-west-2
-
-# 4. Test verification flow
-# Signup → Check CloudWatch Logs for SES send
-# Click link → Check database for emailVerified=true
-cd ..\api
-npx prisma studio
-# Find user → verify emailVerified = true
-
-# 5. Test feature gates
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/posts \
-  -H "Authorization: Bearer <unverified-user-token>" \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Test post"}'
-# Expected: 403 error
+**API Contract:**
+```json
+// GET /api/notifications
+{
+  "notifications": [
+    {
+      "id": "notif-123",
+      "type": "ACCESS_REQUEST",
+      "title": "Access Request",
+      "message": "John Doe requested access to your content",
+      "read": false,
+      "metadata": { "requestId": "req-456", "userId": "user-789" },
+      "createdAt": "2024-02-17T10:30:00Z"
+    }
+  ]
+}
 ```
 
-### Definition of Done
-- [ ] Prisma migration applied (EmailVerificationToken table created)
-- [ ] AWS SES configured and verified
-- [ ] Verification emails send successfully
-- [ ] Verification link works (token validation)
-- [ ] EmailVerificationBanner component shows for unverified users
-- [ ] Feature gates enforced (posts, messages)
-- [ ] Resend email button works
-- [ ] Expired token handling works
-- [ ] Tests passing: email send, token validation, feature gates
-- [ ] Staging deployed and verified end-to-end
-- [ ] Documentation updated: USER_FLOWS.md Flow 15
-- [ ] Product owner verified flow
-
-### References
-- docs/USER_FLOWS.md Flow 15 (Email Verification, lines 2,418-2,486)
-- docs/CONTRACTOR_ONBOARDING.md "Email Verification"
-- docs/REPO_AUDIT_TRUTH_DOC.md Top 10 #1
-- AWS SES Documentation: https://docs.aws.amazon.com/ses/
+**Testing Checklist:**
+- [ ] Request access → owner receives notification
+- [ ] Approve request → requester receives notification
+- [ ] Deny request → requester receives notification
+- [ ] GET /api/notifications returns unread notifications
+- [ ] Mark as read → notification marked read
 
 ---
 
-# Section 3: P0 Remaining Tasks (P0-004 through P0-012)
+#### P1-008: Owner UI for access requests
 
-## P0-004 through P0-009: [Placeholder for Additional Critical Tasks]
-
-The following P0 critical tasks need detailed specifications following the same comprehensive format as P0-001 through P0-003:
-
-- P0-004: Performance optimization - Core web vitals
-- P0-005: Security audit - API endpoint protection
-- P0-006: Error handling - Global error boundary
-- P0-007: Analytics integration - User behavior tracking
-- P0-008: Search functionality - User and content search
-- P0-009: Notification system - Real-time notifications
-
----
-
-## P0-010: RESPONSIVE: Add responsive breakpoints to all pages (28 pages)
-
-**Epic:** UX Improvements  
-**Milestone:** Beta-50  
+**User Flow:** Flow 13 (Owner → Manage Access Requests)  
 **Owner:** Frontend  
-**Status:** Backlog  
-**Estimate:** L (2-3 weeks)  
-**Source:** findings.csv rows 7, 9, 10, 13, 16, 20, 33, 36, 50, 53, 63, 72, 75, 77, 80, 83, 85, 87, 90
+**Estimate:** M (6-12h)  
+**Status:** Backlog
 
-### User Story
-As a mobile user, I want all pages to be responsive and properly formatted on my device, so that I can use the platform on any screen size.
+**Issue:**  
+Content owners have no UI to view and manage access requests.
 
-### Background
-UX audit (findings.csv) identified 28 pages missing responsive breakpoints. Pages currently use fixed layouts that don't adapt to smaller screens (mobile, tablet). All pages need Tailwind responsive modifiers (`sm:`, `md:`, `lg:`, `xl:`) for proper multi-device support.
+**Files:**
+- `src/pages/Requests.jsx` (create)
+- `src/components/AccessRequestCard.jsx` (create)
 
-### Affected Pages (28 total)
-1. AuditionDetail.jsx
-2. Auditions/Index.jsx
-3. Auditions/New.jsx
-4. Auditions/Show.jsx
-5. Auditions.jsx
-6. AuthCallback.jsx
-7. Feed.jsx
-8. Forbidden.jsx
-9. NewAudition.jsx
-10. NewScript.jsx
-11. Notifications.jsx
-12. PostScript.jsx
-13. Requests.jsx
-14. ScriptDetail.jsx
-15. Scripts/Index.jsx
-16. Scripts/New.jsx
-17. Scripts/Show.jsx
-18. Scripts.jsx
-19. Settings.jsx
-20. SkeletonTest.jsx
-21. Trending.jsx
-22. (7 more pages - see findings.csv for complete list)
+**Definition of Done:**
+- Requests page at `/requests`
+- List all pending access requests
+- Filter by status: All, Pending, Approved, Denied
+- Each request shows:
+  - Requester profile picture and name
+  - Request date
+  - Optional message from requester
+  - Approve and Deny buttons
+- Approve action → grants access, sends notification
+- Deny action → sends notification with optional reason
+- Empty state when no requests
 
-### Acceptance Criteria
-✅ All 28 pages use responsive breakpoints: `sm:` (640px), `md:` (768px), `lg:` (1024px)  
-✅ Grid layouts collapse to 1 column on mobile (< 640px)  
-✅ Navigation menus adapt to mobile (hamburger or simplified)  
-✅ Font sizes scale down on smaller screens  
-✅ Images and media resize proportionally  
-✅ Touch targets minimum 44x44px on mobile  
-✅ No horizontal scrolling on any screen size  
-✅ Test on: iPhone (375px), iPad (768px), Desktop (1440px)  
-❌ Do NOT break existing desktop layouts  
-❌ Do NOT add unnecessary media queries (use Tailwind classes)
+**Testing Checklist:**
+- [ ] Navigate to `/requests` → see pending requests
+- [ ] Approve request → requester gains access
+- [ ] Deny request → requester receives notification
+- [ ] Filter by status → correct requests shown
+- [ ] No requests → see empty state
 
-### Testing Plan
-**Happy Path:**
-1. Open each page on mobile (375px) → proper 1-column layout
-2. Open each page on tablet (768px) → proper 2-column layout
-3. Open each page on desktop (1440px) → proper multi-column layout
-4. Rotate device → layout adapts correctly
-5. All interactive elements tappable on mobile (44px targets)
+---
 
-**Negative Path:**
-1. Test at 320px (smallest phones) → no broken layouts
-2. Test at 2560px (large desktop) → no awkward stretching
-3. Test with browser zoom 200% → still readable
+#### P1-009: Requester UI for access requests
 
-### Verification
-```powershell
-# Use responsive design checker
+**User Flow:** Flow 4 (User → Request Access)  
+**Owner:** Frontend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Users viewing private profiles have no way to request access.
+
+**Files:**
+- `src/pages/Profile.jsx`
+- `src/components/PrivateProfileView.jsx` (create)
+
+**Definition of Done:**
+- When viewing private profile (not following):
+  - Show lock icon
+  - Show "Request Access" button
+  - Hide posts and private information
+- "Request Access" button → modal with optional message
+- Submit request → button changes to "Pending"
+- User receives notification when request is approved/denied
+- Can cancel pending request
+
+**Testing Checklist:**
+- [ ] View private profile → see "Request Access" button
+- [ ] Click "Request Access" → modal appears
+- [ ] Submit request → button shows "Pending"
+- [ ] Request approved → gain access to profile
+- [ ] Request denied → button returns to "Request Access"
+
+---
+
+#### P1-010: Likes data model fix
+
+**User Flow:** Flow 8 (Like/Comment on Post)  
+**Owner:** Backend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Like table missing unique constraint on `(userId, postId)`, allowing duplicate likes.
+
+**Database Migration:**
+```sql
+-- Remove duplicate likes first
+DELETE FROM "Like" a USING "Like" b
+WHERE a.id < b.id 
+AND a."userId" = b."userId" 
+AND a."postId" = b."postId";
+
+-- Add unique constraint
+ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_postId_unique" UNIQUE ("userId", "postId");
+```
+
+**Files:**
+- `api/prisma/schema.prisma`
+- `api/prisma/migrations/` (new migration)
+
+**Definition of Done:**
+- Unique constraint added to `Like` table
+- Duplicate likes cleaned up in database
+- Like endpoint is idempotent (multiple like requests don't create duplicates)
+- Unlike functionality works correctly
+
+**Testing Checklist:**
+- [ ] Like post twice → only one like recorded
+- [ ] Unlike post → like removed
+- [ ] Like count accurate
+- [ ] Database constraint enforced
+
+---
+
+#### P1-011: Post editing UI
+
+**User Flow:** Flow 3 (Create Post)  
+**Owner:** Frontend  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+Users cannot edit posts after publishing.
+
+**Files:**
+- `src/pages/PostEdit.jsx` (create)
+- `src/components/PostDropdown.jsx`
+- `serverless/src/handlers/posts.js`
+
+**Definition of Done:**
+- Edit button on owned posts (in dropdown menu)
+- Edit page at `/post/:id/edit`
+- Pre-populated form with existing content
+- Save updates via `PATCH /api/posts/:id`
+- "Edited" indicator on edited posts
+- Redirect to post detail on save
+
+**API Contract:**
+```json
+// PATCH /api/posts/:id
+{
+  "content": "Updated post content",
+  "visibility": "PUBLIC"
+}
+
+// Response: 200
+{
+  "post": {
+    "id": "post-123",
+    "content": "Updated post content",
+    "edited": true,
+    "updatedAt": "2024-02-17T10:30:00Z"
+  }
+}
+```
+
+**Testing Checklist:**
+- [ ] Click edit on owned post → navigate to edit page
+- [ ] Form shows existing content
+- [ ] Update content → save → changes appear
+- [ ] Post shows "Edited" indicator
+- [ ] Cannot edit other users' posts
+
+---
+
+#### P1-012: Comments system
+
+**User Flow:** Flow 8 (View Feed → Like/Comment on Post)  
+**Owner:** Fullstack  
+**Estimate:** XL (16-24h)  
+**Status:** Backlog
+
+**Issue:**  
+No comments functionality exists.
+
+**Database:**
+```sql
+CREATE TABLE "Comment" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id"),
+  "postId" TEXT NOT NULL REFERENCES "Post"("id"),
+  "text" TEXT NOT NULL,
+  "createdAt" TIMESTAMP DEFAULT NOW(),
+  "updatedAt" TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX "Comment_postId_idx" ON "Comment"("postId");
+CREATE INDEX "Comment_userId_idx" ON "Comment"("userId");
+```
+
+**Files:**
+- `src/components/CommentList.jsx` (create)
+- `src/components/CommentForm.jsx` (create)
+- `serverless/src/handlers/comments.js` (create)
+
+**Definition of Done:**
+- Add comment via form at bottom of post
+- View comments sorted by newest first
+- Delete own comments
+- Comment count shown on post card
+- `POST /api/posts/:id/comments` endpoint
+- `GET /api/posts/:id/comments` endpoint (paginated)
+- `DELETE /api/comments/:id` endpoint
+
+**API Contract:**
+```json
+// POST /api/posts/:id/comments
+{ "text": "Great post!" }
+
+// Response: 201
+{
+  "comment": {
+    "id": "comment-123",
+    "userId": "user-456",
+    "postId": "post-789",
+    "text": "Great post!",
+    "user": { "username": "johndoe", "avatarUrl": "..." },
+    "createdAt": "2024-02-17T10:30:00Z"
+  }
+}
+```
+
+**Testing Checklist:**
+- [ ] Add comment → appears in list
+- [ ] View post with comments → comments load
+- [ ] Delete own comment → removed
+- [ ] Cannot delete others' comments
+- [ ] Comment count updates correctly
+- [ ] Pagination works for 100+ comments
+
+---
+
+#### P1-013: Private profile access audit
+
+**User Flow:** Flow 16 (Privacy Settings)  
+**Owner:** Backend  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+Unclear if private profiles leak data through API endpoints when accessed by non-followers.
+
+**Definition of Done:**
+- Audit all API endpoints that return user data
+- Private profiles return minimal data to non-followers:
+  - Username
+  - Display name
+  - Avatar
+  - Bio (configurable)
+  - NO posts, followers, following counts, email, etc.
+- Document privacy levels in `docs/PRIVACY_LEVELS.md`
+- Add integration tests for private profile access
+
+**Endpoints to Audit:**
+- `GET /api/users/:username`
+- `GET /api/users/:id/posts`
+- `GET /api/users/:id/followers`
+- `GET /api/users/:id/following`
+
+**Testing Checklist:**
+- [ ] View private profile as non-follower → minimal data
+- [ ] View private profile as follower → full data
+- [ ] API returns 403 for private posts
+- [ ] Search results respect privacy settings
+- [ ] Direct API calls respect privacy
+
+---
+
+#### P1-014: Playwright E2E tests
+
+**User Flow:** Flow 6 (View Post Detail) + others  
+**Owner:** QA/Frontend  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+No automated end-to-end tests exist for critical user flows.
+
+**Files:**
+- `tests/e2e/` (create directory)
+- `tests/e2e/auth.spec.js`
+- `tests/e2e/posts.spec.js`
+- `tests/e2e/profile.spec.js`
+- `playwright.config.js`
+
+**Definition of Done:**
+- Playwright installed and configured
+- 10+ E2E tests covering critical paths:
+  1. Signup flow
+  2. Login flow
+  3. Create post
+  4. View post detail
+  5. Edit profile
+  6. Upload avatar
+  7. Follow user
+  8. Like post
+  9. Search users
+  10. Logout
+- Tests run in CI/CD pipeline
+- Screenshots captured on failure
+
+**Testing Checklist:**
+- [ ] All tests pass locally
+- [ ] All tests pass in CI/CD
+- [ ] Tests run in under 5 minutes
+- [ ] Failure screenshots saved
+- [ ] Tests documented in README
+
+---
+
+#### P1-015: Hide paid-post UI elements
+
+**User Flow:** Flow 4 (Request Access)  
+**Owner:** Frontend  
+**Estimate:** XS (1-2h)  
+**Status:** Backlog
+
+**Issue:**  
+UI shows "Premium" and "Paid Post" features that are not part of MVP.
+
+**Files:**
+- `src/components/PostCard.jsx`
+- `src/pages/PostDetail.jsx`
+- `src/components/PostComposer.jsx`
+
+**Definition of Done:**
+- Remove or hide all references to:
+  - "Premium" badges
+  - "Pay to view" buttons
+  - "Set price" fields in post composer
+  - Premium tier UI elements
+- Keep code but feature-flag for future use
+
+**Testing Checklist:**
+- [ ] No "Premium" badges visible on posts
+- [ ] No "Pay to view" buttons
+- [ ] Post composer doesn't show pricing options
+- [ ] Profile doesn't show premium tier
+
+---
+
+### P2 MEDIUM (15 tasks)
+
+#### P2-001: 2FA UI implementation
+
+**User Flow:** Flow 16 (Privacy Settings)  
+**Owner:** Frontend/Backend  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+Two-factor authentication UI doesn't exist.
+
+**Files:**
+- `src/pages/Settings.jsx`
+- `src/components/TwoFactorSetup.jsx` (create)
+- `serverless/src/handlers/2fa.js` (create)
+
+**Definition of Done:**
+- Settings page has "Two-Factor Authentication" section
+- Setup flow:
+  1. Click "Enable 2FA"
+  2. Scan QR code with authenticator app
+  3. Enter verification code
+  4. Show backup codes (download/print)
+  5. 2FA enabled
+- Login requires TOTP code when enabled
+- Backup codes can be used once
+- Disable 2FA with password confirmation
+
+**Database:**
+```sql
+ALTER TABLE "User" ADD COLUMN "twoFactorEnabled" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "User" ADD COLUMN "twoFactorSecret" TEXT;
+ALTER TABLE "User" ADD COLUMN "backupCodes" TEXT[];
+```
+
+**Testing Checklist:**
+- [ ] Enable 2FA → scan QR code → verify
+- [ ] Login with 2FA → requires code
+- [ ] Use backup code → works once
+- [ ] Disable 2FA → no longer required
+- [ ] Invalid code → error message
+
+---
+
+#### P2-002: Disconnect follower feature
+
+**User Flow:** Flow 9 (Connect with Another User)  
+**Owner:** Fullstack  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+Users cannot remove followers from their followers list.
+
+**Files:**
+- `src/pages/FollowersList.jsx`
+- `serverless/src/handlers/users.js`
+
+**Definition of Done:**
+- Followers list page shows "Remove" button for each follower
+- `DELETE /api/users/:id/followers/:followerId` endpoint
+- Removed follower loses access to FOLLOWERS_ONLY content
+- Removed follower can re-follow if desired
+- Notification sent to removed follower (optional)
+
+**API Contract:**
+```json
+// DELETE /api/users/me/followers/:followerId
+// Response: 204 No Content
+```
+
+**Testing Checklist:**
+- [ ] Remove follower → they lose access
+- [ ] Removed follower can re-follow
+- [ ] FOLLOWERS_ONLY posts no longer visible to removed follower
+- [ ] Follower count decrements
+
+---
+
+#### P2-003: Docs drift fix
+
+**User Flow:** Documentation  
+**Owner:** Documentation  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+Documentation out of sync with current codebase.
+
+**Files:**
+- `docs/*.md` (all documentation files)
+
+**Definition of Done:**
+- All documentation reviewed and updated
+- Remove outdated information
+- Add missing features to docs
+- Verify code examples work
+- Update screenshots if applicable
+- Add last updated dates to docs
+
+**Documentation to Review:**
+- `docs/API_REFERENCE.md`
+- `docs/DEPLOYMENT.md`
+- `docs/CONTRACTOR_ONBOARDING.md`
+- `docs/USER_FLOWS.md`
+- `README.md`
+
+**Testing Checklist:**
+- [ ] Follow onboarding doc → no broken steps
+- [ ] Run API examples → all work
+- [ ] Verify deployment steps → successful deploy
+- [ ] Check links → no 404s
+
+---
+
+#### P2-004: Media processing pipeline
+
+**User Flow:** Flow 7 (Upload Media)  
+**Owner:** Backend/DevOps  
+**Estimate:** XL (16-24h)  
+**Status:** Backlog
+
+**Issue:**  
+Large uploaded images not optimized, causing slow load times.
+
+**Definition of Done:**
+- Lambda function triggered on S3 upload
+- Image processing:
+  - Resize to multiple sizes (thumbnail, medium, large)
+  - Convert to WebP format
+  - Generate blurhash for lazy loading
+  - Compress to target file size
+- Processed images stored back in S3
+- Database updated with image URLs and metadata
+
+**AWS Services:**
+- Lambda with Sharp library for image processing
+- S3 event triggers
+- S3 output bucket or folders
+
+**Testing Checklist:**
+- [ ] Upload 10MB image → auto-resized to <1MB
+- [ ] Thumbnail generated
+- [ ] WebP format created
+- [ ] Original preserved (optional)
+- [ ] Processing completes in <10 seconds
+
+---
+
+#### P2-005: Moderation MVP
+
+**User Flow:** Flow 17 (Admin → Moderation)  
+**Owner:** Fullstack  
+**Estimate:** XL (16-24h)  
+**Status:** Backlog
+
+**Issue:**  
+No moderation tools exist for handling abuse.
+
+**Database:**
+```sql
+CREATE TABLE "Report" (
+  "id" TEXT PRIMARY KEY,
+  "reporterId" TEXT NOT NULL REFERENCES "User"("id"),
+  "targetType" TEXT NOT NULL, -- 'POST' | 'USER' | 'COMMENT'
+  "targetId" TEXT NOT NULL,
+  "reason" TEXT NOT NULL,
+  "description" TEXT,
+  "status" TEXT DEFAULT 'PENDING', -- 'PENDING' | 'REVIEWED' | 'ACTIONED'
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE "User" ADD COLUMN "banned" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "User" ADD COLUMN "bannedReason" TEXT;
+ALTER TABLE "User" ADD COLUMN "bannedAt" TIMESTAMP;
+```
+
+**Files:**
+- `src/pages/admin/Reports.jsx` (create)
+- `src/components/ReportModal.jsx` (create)
+- `serverless/src/handlers/reports.js` (create)
+
+**Definition of Done:**
+- Report button on posts, profiles, comments
+- Admin dashboard at `/admin/reports`
+- Actions: Dismiss, Warn, Ban User, Delete Content
+- Banned users cannot login
+- Email notification sent to banned users
+
+**Testing Checklist:**
+- [ ] Report post → appears in admin dashboard
+- [ ] Ban user → user cannot login
+- [ ] Delete content → content removed
+- [ ] Dismiss report → marked as reviewed
+
+---
+
+#### P2-006: Stripe payments integration
+
+**User Flow:** Flow 4 (Request Access - Premium Content)  
+**Owner:** Backend  
+**Estimate:** XL (24-32h)  
+**Status:** Backlog
+
+**Issue:**  
+No payment processing for premium content access.
+
+**Files:**
+- `serverless/src/handlers/stripe.js` (create)
+- `serverless/src/services/stripeService.js` (create)
+- `src/pages/Checkout.jsx` (create)
+
+**Definition of Done:**
+- Stripe account configured
+- Create subscription endpoint
+- Checkout page with Stripe Elements
+- Webhook handling for payment events
+- Grant access on successful payment
+- Subscription management (cancel, upgrade)
+
+**Database:**
+```sql
+CREATE TABLE "Subscription" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id"),
+  "stripeSubscriptionId" TEXT UNIQUE,
+  "status" TEXT NOT NULL, -- 'ACTIVE' | 'CANCELED' | 'PAST_DUE'
+  "currentPeriodEnd" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+```
+
+**API Endpoints:**
+- `POST /api/stripe/create-checkout-session`
+- `POST /api/stripe/webhook`
+- `GET /api/subscriptions/me`
+- `POST /api/subscriptions/cancel`
+
+**Testing Checklist:**
+- [ ] Create subscription → redirect to Stripe Checkout
+- [ ] Complete payment → access granted
+- [ ] Webhook received → database updated
+- [ ] Cancel subscription → access revoked at period end
+- [ ] Handle failed payments
+
+---
+
+#### P2-007: Remove /server directory cleanup
+
+**User Flow:** Cleanup  
+**Owner:** DevOps  
+**Estimate:** XS (1h)  
+**Status:** Backlog
+
+**Issue:**  
+Obsolete `/server` directory exists in repository, causing confusion.
+
+**Definition of Done:**
+- Delete `/server` directory
+- Update documentation to remove references
+- Verify build still succeeds
+- Update CI/CD if needed
+
+**Testing Checklist:**
+- [ ] Delete `/server` directory
+- [ ] `npm run build` succeeds
+- [ ] `npm run dev` succeeds
+- [ ] CI/CD pipeline succeeds
+- [ ] No broken imports
+
+---
+
+#### P2-008: Hashtags and search
+
+**User Flow:** Flow 10 (Search/Discover Users)  
+**Owner:** Fullstack  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+No hashtag or content search functionality.
+
+**Database:**
+```sql
+CREATE TABLE "Hashtag" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT UNIQUE NOT NULL,
+  "count" INTEGER DEFAULT 0,
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE "PostHashtag" (
+  "postId" TEXT NOT NULL REFERENCES "Post"("id") ON DELETE CASCADE,
+  "hashtagId" TEXT NOT NULL REFERENCES "Hashtag"("id") ON DELETE CASCADE,
+  PRIMARY KEY ("postId", "hashtagId")
+);
+
+CREATE INDEX "PostHashtag_hashtagId_idx" ON "PostHashtag"("hashtagId");
+```
+
+**Files:**
+- `src/pages/Search.jsx`
+- `src/pages/HashtagFeed.jsx` (create)
+- `serverless/src/handlers/search.js` (create)
+
+**Definition of Done:**
+- Detect hashtags in post content (#example)
+- Create hashtag records on post creation
+- Search page at `/search`
+- Hashtag feed at `/hashtag/:name`
+- `GET /api/search/hashtags/:tag` endpoint
+- `GET /api/search?q=query` endpoint (posts and users)
+
+**Testing Checklist:**
+- [ ] Post with #test → hashtag created
+- [ ] Search #test → post appears
+- [ ] Click hashtag → hashtag feed page
+- [ ] Search for user → user appears
+- [ ] Trending hashtags displayed
+
+---
+
+#### P2-009: CSRF protection strategy
+
+**User Flow:** Security  
+**Owner:** Backend  
+**Estimate:** M (6-12h)  
+**Status:** Backlog
+
+**Issue:**  
+No CSRF protection on state-changing requests.
+
+**Files:**
+- `serverless/src/middleware/csrf.js` (create)
+- `src/services/api.js`
+
+**Definition of Done:**
+- Generate CSRF tokens on login
+- Include CSRF token in all POST/PUT/PATCH/DELETE requests
+- Validate CSRF tokens on backend
+- Return 403 on invalid tokens
+- Double-submit cookie pattern or synchronizer tokens
+
+**Implementation:**
+- Store CSRF token in httpOnly cookie
+- Include token in request headers: `X-CSRF-Token`
+- Validate token on backend before processing
+
+**Testing Checklist:**
+- [ ] Login → CSRF token set
+- [ ] POST request without token → 403
+- [ ] POST request with valid token → success
+- [ ] Cross-site form submission → blocked
+
+---
+
+#### P2-010: CSP enforcement
+
+**User Flow:** Security  
+**Owner:** DevOps  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+No Content-Security-Policy headers configured.
+
+**Definition of Done:**
+- CSP header configured on CloudFront/API Gateway
+- Allow scripts from same origin and CDNs
+- Block inline scripts (use nonces if needed)
+- Allow images from S3 and trusted sources
+- Report CSP violations to logging endpoint
+
+**Example CSP:**
+```
+Content-Security-Policy: 
+  default-src 'self'; 
+  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
+  style-src 'self' 'unsafe-inline'; 
+  img-src 'self' https://project-valine-assets.s3.amazonaws.com data:; 
+  font-src 'self' data:; 
+  connect-src 'self' https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com;
+  report-uri /api/csp-report
+```
+
+**Testing Checklist:**
+- [ ] CSP header present in responses
+- [ ] No CSP violations in browser console
+- [ ] External resources load correctly
+- [ ] Inline scripts blocked (if configured)
+
+---
+
+#### P2-011: WAF re-attach to CloudFront
+
+**User Flow:** Security  
+**Owner:** DevOps  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+AWS WAF not attached to CloudFront distribution.
+
+**Definition of Done:**
+- WAF Web ACL created or existing one identified
+- WAF rules configured:
+  - Rate limiting (1000 req/5min per IP)
+  - SQL injection protection
+  - XSS protection
+  - Geo-blocking (optional)
+- WAF attached to CloudFront distribution
+- CloudWatch dashboard for WAF metrics
+
+**Testing Checklist:**
+- [ ] WAF attached to CloudFront
+- [ ] Rate limit triggered after 1000 requests
+- [ ] SQL injection attempt blocked
+- [ ] XSS attempt blocked
+- [ ] WAF logs visible in CloudWatch
+
+---
+
+#### P2-012: Presigned URL expiry handling
+
+**User Flow:** Flow 7 (Upload Media)  
+**Owner:** Backend/Frontend  
+**Estimate:** S (2-4h)  
+**Status:** Backlog
+
+**Issue:**  
+Presigned upload URLs expire after 1 hour, causing failed uploads if user waits too long.
+
+**Files:**
+- `serverless/src/handlers/upload.js`
+- `src/services/uploadService.js`
+
+**Definition of Done:**
+- Detect expired presigned URLs on upload failure
+- Automatically request new presigned URL
+- Retry upload with new URL
+- User sees "Refreshing upload link..." message
+- No data loss on URL expiry
+
+**Testing Checklist:**
+- [ ] Get presigned URL → wait 1 hour → upload fails → auto-renew → succeeds
+- [ ] User sees progress indicator during renewal
+- [ ] Expired URL error handled gracefully
+- [ ] Multiple retries eventually fail with clear message
+
+---
+
+#### P2-013: Rate-limiting monitoring
+
+**User Flow:** Security  
+**Owner:** Backend/DevOps  
+**Estimate:** M (4-8h)  
+**Status:** Backlog
+
+**Issue:**  
+No monitoring or alerting for rate limit violations.
+
+**Definition of Done:**
+- CloudWatch dashboard for rate limiting metrics
+- Metrics tracked:
+  - Rate limit hits per endpoint
+  - Top IP addresses hitting limits
+  - 429 response rate
+- Alerts configured for:
+  - Spike in 429 responses (>100/min)
+  - Single IP hitting multiple endpoints
+- Logs include rate limit metadata
+
+**Testing Checklist:**
+- [ ] Trigger rate limit → metric appears in dashboard
+- [ ] Alert fired when threshold exceeded
+- [ ] Dashboard shows top limited IPs
+- [ ] Logs contain rate limit context
+
+---
+
+#### P2-014: @Mentions system
+
+**User Flow:** Flow 3 (Create Post), Flow 11 (Notifications)  
+**Owner:** Fullstack  
+**Estimate:** L (8-16h)  
+**Status:** Backlog
+
+**Issue:**  
+No @mention functionality for notifying users.
+
+**Database:**
+```sql
+CREATE TABLE "Mention" (
+  "id" TEXT PRIMARY KEY,
+  "postId" TEXT REFERENCES "Post"("id") ON DELETE CASCADE,
+  "commentId" TEXT REFERENCES "Comment"("id") ON DELETE CASCADE,
+  "mentionedUserId" TEXT NOT NULL REFERENCES "User"("id"),
+  "mentionedByUserId" TEXT NOT NULL REFERENCES "User"("id"),
+  "createdAt" TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX "Mention_mentionedUserId_idx" ON "Mention"("mentionedUserId");
+```
+
+**Files:**
+- `src/components/MentionInput.jsx` (create)
+- `serverless/src/handlers/mentions.js` (create)
+
+**Definition of Done:**
+- Autocomplete when typing @username in post/comment
+- Search users as you type (minimum 2 characters)
+- Highlight mentions in post/comment display
+- Create notification for mentioned user
+- Click mention → navigate to mentioned user's profile
+
+**Testing Checklist:**
+- [ ] Type @joh → see autocomplete suggestions
+- [ ] Select user → mention added
+- [ ] Post with mention → mentioned user receives notification
+- [ ] Click mention → navigate to profile
+- [ ] Mentions highlighted in display
+
+---
+
+#### P2-015: (Reserved for future priority item)
+
+**Owner:** TBD  
+**Estimate:** TBD  
+**Status:** Backlog
+
+**Definition of Done:**  
+TBD - Reserved for emerging high-priority tasks during development.
+
+---
+
+### BLOCKED (1 task)
+
+#### BLOCKED-001: Beta roles taxonomy
+
+**User Flow:** Flow 1 (Signup/Onboarding), Flow 2 (Edit Profile)  
+**Owner:** Product  
+**Estimate:** M (4-8h)  
+**Status:** Blocked - Awaiting Product Decision
+
+**Issue:**  
+User roles and tiers not defined (Creator, Fan, Producer, Studio, etc.).
+
+**Blocker:**  
+Product team needs to finalize user role taxonomy before implementation.
+
+**Definition of Done:**
+- Document created: `docs/DECISIONS/USER_ROLES.md`
+- Document defines:
+  - Role names and descriptions
+  - Permissions for each role
+  - Feature access matrix
+  - Default role for new users
+  - Role change workflow
+- Stakeholder approval received
+
+**Testing Checklist:**
+- [ ] Document reviewed by product team
+- [ ] Document reviewed by engineering team
+- [ ] Roles align with business model
+- [ ] Implementation plan created
+
+---
+
+### DONE (1 task)
+
+#### DONE-001: Fix post View 404 error
+
+**User Flow:** Flow 6 (User → View Post Detail)  
+**Completed:** 2024-02-15  
+**Owner:** Backend  
+**PR:** #406
+
+**Issue:**  
+`GET /api/posts/:id` endpoint returned 404 for valid post IDs.
+
+**Root Cause:**  
+Incorrect route handler configuration in `serverless.yml`. Handler path was pointing to non-existent file.
+
+**Fix:**  
+Corrected handler path in `serverless.yml`:
+```yaml
+# Before
+functions:
+  getPost:
+    handler: src/handlers/post.getPost  # Wrong path
+
+# After
+functions:
+  getPost:
+    handler: src/handlers/posts.getPost  # Correct path
+```
+
+**Verification:**
+- All post detail pages load successfully
+- Direct API calls to `/api/posts/:id` return 200
+- No 404 errors in CloudWatch logs for valid post IDs
+
+---
+
+## Contractor Quick Reference
+
+### Most Critical Tasks (Start Here)
+
+These are the highest-impact tasks for beta launch:
+
+1. **P0-003: Allowlist signup enforcement** - Blocks beta launch, must be completed first
+2. **P0-001: CloudFront SPA deep-link fix** - Breaks user experience, high visibility issue
+3. **P0-010: Network connection error handling** - User trust issue, affects all flows
+4. **P0-004: Load test Prisma connections** - Scalability risk, could cause downtime
+
+### Setup Steps
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/Project-Valine.git
+cd Project-Valine
+
+# 2. Copy environment file
+cp .env.example .env
+# Get credentials from team lead or secure vault
+
+# 3. Install dependencies
+npm install              # Root dependencies
+cd serverless && npm install && cd ..
+cd api && npm install && cd ..
+
+# 4. Generate Prisma client
+cd api
+npx prisma generate
+
+# 5. Start development server
+cd ..
 npm run dev
-# Open http://localhost:5173 in browser
-# Use DevTools responsive mode: 375px, 768px, 1024px, 1440px
-# Verify no horizontal scroll, proper layout at each breakpoint
+# Frontend: http://localhost:5173
+# Backend: http://localhost:3000 (if running locally)
 ```
 
-### Definition of Done
-- [ ] All 28 pages have responsive breakpoints added
-- [ ] Mobile layout tested (375px): 1-column, no scroll
-- [ ] Tablet layout tested (768px): 2-column, proper spacing
-- [ ] Desktop layout tested (1440px+): multi-column, full features
-- [ ] Touch targets verified (44px minimum)
-- [ ] All findings.csv responsive issues resolved
-- [ ] Build successful, no warnings
-- [ ] Deployed to staging and tested on real devices
-
-**CSV Reference:** findings.csv rows 7, 9, 10, 13, 16, 20, 33, 36, 50, 53, 63, 72, 75, 77, 80, 83, 85, 87, 90
-
----
-
-## P0-011: ACCESSIBILITY: Add focus states to all interactive elements (51 pages)
-
-**Epic:** Accessibility Compliance  
-**Milestone:** Beta-50  
-**Owner:** Frontend  
-**Status:** Backlog  
-**Estimate:** L (2-3 weeks)  
-**Source:** findings.csv (51 occurrences of "Missing focus states")
-
-### User Story
-As a keyboard user, I want visible focus indicators on all interactive elements, so that I can navigate the application without a mouse.
-
-### Background
-UX audit identified 51 pages/components missing `focus:` or `focus-visible:` classes. WCAG 2.1 AA requires visible focus indicators for keyboard accessibility. Current state fails accessibility audits.
-
-### Acceptance Criteria
-✅ All buttons have `focus-visible:ring-2 focus-visible:ring-brand` classes  
-✅ All links have focus states with visible outline or underline  
-✅ All form inputs have `focus:ring-2 focus:ring-blue-500` classes  
-✅ All interactive cards/items have focus states  
-✅ Tab order is logical (left-to-right, top-to-bottom)  
-✅ Focus trap works in modals (can't tab outside)  
-✅ Skip-to-content link for keyboard users  
-✅ Test with keyboard only (no mouse) - all features accessible  
-❌ Do NOT rely on browser default focus (add custom styles)  
-❌ Do NOT break existing interactive functionality
-
-### Testing Plan
-**Happy Path:**
-1. Open any page, press Tab repeatedly → see focus ring on every interactive element
-2. Press Shift+Tab → focus moves backwards correctly
-3. Press Enter/Space on focused buttons → actions trigger
-4. Navigate entire app with keyboard only → all features accessible
-
-**Accessibility:**
-1. Use NVDA/JAWS screen reader → focus announced correctly
-2. Use axe DevTools → no focus-related violations
-3. Use keyboard only for 5 minutes → find no inaccessible features
-
-### Verification
-```powershell
-# Run accessibility audit
-npm run test:a11y
-# Expected: 0 focus-related violations
-
-# Manual keyboard test
-# Tab through every page
-# Verify visible focus ring on all interactive elements
-```
-
-### Definition of Done
-- [ ] All 51 pages/components have focus states
-- [ ] Keyboard navigation tested on every major page
-- [ ] axe DevTools shows 0 focus violations
-- [ ] Screen reader tested (NVDA or JAWS)
-- [ ] All findings.csv focus state issues resolved
-- [ ] WCAG 2.1 AA compliant for keyboard navigation
-
-**CSV Reference:** findings.csv rows 4, 6, 8, 12, 15, 19, 22, 25, 29, 32, 35, 39, 43, 49, 52, 55, 60, 62, 65, 69, 71, 74, 76, 79, 82, 86, 89, 93, 97, 99, 101, 104, 106, 110, 111, 113, 115
-
----
-
-## P0-012: ACCESSIBILITY: Add H1 headings to all pages (35 pages)
-
-**Epic:** Accessibility & SEO  
-**Milestone:** Beta-50  
-**Owner:** Frontend  
-**Status:** Backlog  
-**Estimate:** M (1 week)  
-**Source:** findings.csv (35 occurrences of "Missing H1 heading")
-
-### User Story
-As a screen reader user and SEO crawler, I want every page to have a proper H1 heading, so that I can understand the page's main purpose and navigate efficiently.
-
-### Background
-UX audit identified 35 pages missing H1 headings. Proper semantic HTML structure requires one H1 per page for accessibility and SEO. Screen readers use headings for navigation.
-
-### Acceptance Criteria
-✅ Every page has exactly ONE H1 heading  
-✅ H1 describes the page's main purpose (e.g., "Dashboard", "Account Settings", "Auditions")  
-✅ H1 is the first heading on the page (no H2 before H1)  
-✅ Subsequent headings follow hierarchy: H2 → H3 → H4  
-✅ H1 is visually styled appropriately (text-3xl or text-4xl)  
-✅ H1 has proper semantic markup (not just `className="text-3xl"`)  
-❌ Do NOT use multiple H1s on one page  
-❌ Do NOT skip heading levels (H1 → H3 without H2)
-
-### Testing Plan
-**Happy Path:**
-1. Visit each page → inspect DOM → verify one `<h1>` element exists
-2. Screen reader → announces H1 on page load
-3. Lighthouse audit → 100/100 for accessibility (SEO)
-
-**Accessibility:**
-1. Use HeadingsMap browser extension → verify proper hierarchy
-2. Use NVDA/JAWS → navigate by headings (H key) → H1 is first
-3. Use axe DevTools → no heading-related violations
-
-### Verification
-```powershell
-# Run Lighthouse audit
-npm run build
-npx lighthouse http://localhost:4173 --only-categories=accessibility
-
-# Check each page for H1
-grep -r "<h1" src/pages/*.jsx | wc -l
-# Expected: 35+ matches (one per page)
-```
-
-### Definition of Done
-- [ ] All 35 pages have H1 headings
-- [ ] Heading hierarchy verified (H1 → H2 → H3)
-- [ ] Screen reader tested (NVDA or JAWS)
-- [ ] Lighthouse accessibility score 90+ on all pages
-- [ ] All findings.csv H1 issues resolved
-- [ ] SEO improved (Google Search Console shows better indexing)
-
-**CSV Reference:** findings.csv rows 5, 14, 18, 21, 24, 27, 31, 42, 48, 51, 61, 68, 73, 81, 88, 92, 95, 96, 98, 100, 103, 105, 109, 112, 114
-
----
-
-Each remaining task (P0-004 through P0-009) will be detailed in future iterations with:
-- User flow references from USER_FLOWS.md
-- Complete API specifications
-- Database schema changes
-- File-by-file edit instructions
-- Verification commands
-- Clear acceptance criteria
-
----
-
-# Section 4: P1 High Priority Tasks (P1-001 through P1-019)
-
-## P1-001 through P1-019: [Placeholder for High Priority Tasks]
-
-High priority tasks essential for beta launch, following the same detailed format:
-
-- P1-001: Direct messaging - Thread view and composing
-- P1-002: Post engagement - Like, comment, share
-- P1-003: User discovery - Search and recommendations
-- P1-004: Profile customization - Themes and layouts
-- P1-005: Content moderation - Flagging and reporting
-- P1-006: Media upload - Image and video support
-- P1-007: Follow system - Follow/unfollow functionality
-- P1-008: Bookmarks - Save posts for later
-- P1-009: Trending content - Algorithm and display
-- P1-010: User blocks - Block/unblock users
-- P1-011: Privacy controls - Profile and post visibility
-- P1-012: Session management - Device tracking
-- P1-013: 2FA enrollment - Two-factor authentication
-- P1-014: Data export - GDPR compliance
-- P1-015: Account deletion - Complete data removal
-- P1-016: Password reset - Email-based recovery
-- P1-017: Email preferences - Notification settings
-- P1-018: Mobile navigation - Hamburger menu
-- P1-019: Dark mode polish - Theme consistency
-
----
-
-# Section 5: P2 Medium Priority Tasks (P2-001 through P2-016)
-
-## P2-001 through P2-016: [Placeholder for Medium Priority Tasks]
-
-Medium priority tasks for post-beta improvements:
-
-- P2-001: Advanced search - Filters and sorting
-- P2-002: Post scheduling - Publish later feature
-- P2-003: Draft posts - Save and edit drafts
-- P2-004: Post analytics - Views and engagement stats
-- P2-005: Collaboration tools - Project workspace
-- P2-006: Video chat - In-app video calls
-- P2-007: Calendar integration - Schedule management
-- P2-008: File sharing - Document collaboration
-- P2-009: Portfolio showcase - Featured work
-- P2-010: Skills verification - Skill endorsements
-- P2-011: Achievement system - Badges and milestones
-- P2-012: Referral program - Invite friends
-- P2-013: Premium features - Subscription tier
-- P2-014: API documentation - Public API
-- P2-015: Webhook integrations - External services
-- P2-016: Admin dashboard - Platform management
-
----
-
-# Section 6: Implementation Strategy
-
-## Task Prioritization
-
-All remaining tasks (P0-004 through P2-016) will follow the same detailed format with:
-
-### Required Sections for Each Task
-1. **User Story** - Clear business value
-2. **User Flow Reference** - Exact line numbers from USER_FLOWS.md
-3. **Acceptance Criteria** - ✅ Must-haves and ❌ Anti-patterns
-4. **API Endpoints** - Full request/response examples with all status codes
-5. **Database Changes** - Prisma schema and migration SQL
-6. **Files to Edit** - File paths with line numbers and specific changes
-7. **Dependencies** - Prerequisites and package requirements
-8. **Testing Plan** - Happy path and negative path scenarios
-9. **Verification Commands** - PowerShell commands to verify implementation
-10. **Definition of Done** - Checklist of completion criteria
-11. **References** - Links to related documentation
-
-### Quality Standards
-
-- **No Ambiguity:** Every criterion must be testable and verifiable
-- **Complete API Specs:** Include all request/response examples with error codes
-- **Precise File Locations:** Line numbers for every code change
-- **Cross-References:** Link to USER_FLOWS.md flows with exact line numbers
-- **Command-Ready:** PowerShell commands ready to copy-paste
-- **Acceptance Tests:** Clear happy/negative path scenarios
-
-### Development Workflow
-
-1. **Task Selection:** Choose from P0 → P1 → P2 priority order
-2. **Specification Review:** Read entire task specification
-3. **User Flow Study:** Review referenced USER_FLOWS.md sections
-4. **Implementation:** Follow file-by-file edit instructions
-5. **Verification:** Run PowerShell commands from task spec
-6. **Testing:** Execute happy path and negative path tests
-7. **Code Review:** Verify Definition of Done checklist
-8. **Deployment:** Deploy to staging and verify
-9. **Documentation Update:** Update this KANBAN_PROGRESS.md
-
----
-
-# Section 7: Component Audits
-
-## Empty States Audit (Completed)
-
-| Component | Uses EmptyState | Icon | Status |
-|-----------|----------------|------|--------|
-| Dashboard | ✅ Yes | FileText | Complete |
-| Inbox | ✅ Yes | MessageSquare | Complete |
-| Profile (Posts) | ✅ Yes | FileText | Complete |
-| Profile (Scripts) | ✅ Yes | FileText | Complete |
-| Requests | ❌ No | Users | Needs Implementation |
-| Scripts | ❌ No | FileText | Needs Implementation |
-| Auditions | ❌ No | Mic | Needs Implementation |
-| Bookmarks | ❌ No | Bookmark | Needs Implementation |
-
-**Recommendation:** Roll out EmptyState component to remaining pages in next sprint.
-
-## Button Component Audit (In Progress)
-
-| File | Button Usage | Needs Migration | Notes |
-|------|--------------|----------------|-------|
-| Pricing.jsx | ✅ Button component | No | Updated Feb 17, 2026 |
-| Settings.jsx | ⚠️ Mixed (inline + Button) | Yes | ~12 inline buttons to migrate (P0-002) |
-| OnboardingLayout.jsx | ✅ Button component | No | Clean implementation |
-| Dashboard.jsx | ✅ Button component | No | Uses ui/Button |
-| Profile.jsx | ⚠️ Mixed | Partial | Some sections need update |
-| Inbox.jsx | ⚠️ Inline buttons | Yes | Thread list items |
-
-**Recommendation:** 
-- Priority 1: Complete Settings.jsx migration (P0-002) - high user traffic
-- Priority 2: Update Profile.jsx follow/message buttons
-- Priority 3: Audit all page CTAs for consistency
-
-## Loading States Audit (Completed)
-
-| Component | Loading Pattern | Skeleton Used | Status |
-|-----------|----------------|---------------|--------|
-| Dashboard | ✅ SkeletonCard | Yes (3x) | Complete |
-| Inbox | ✅ SkeletonCard | Yes (3x) | Updated Feb 17, 2026 |
-| Profile | ✅ SkeletonProfile | Yes | Complete |
-| Feed | ❌ Spinner | No | Needs SkeletonCard |
-| Notifications | ❌ Spinner | No | Needs SkeletonCard |
-| Discover | ⚠️ Text only | No | Needs SkeletonCard |
-
-**Skeleton Improvements (Completed):**
-- Increased contrast: bg-neutral-200 → bg-neutral-300
-- Larger avatars: w-10 → w-12
-- Added fade-in animation class to global.css
-
----
-
-# Section 8: Contractor Notes
-
-## Development Environment
-- **Framework:** React 18 with Vite
-- **Styling:** Tailwind CSS 3.x
-- **Component Library:** Custom ui/ components (Button, Card)
-- **Icons:** lucide-react
-- **Theme:** Light/Dark mode support via ThemeContext
-- **Backend:** AWS Lambda (Serverless Framework)
-- **Database:** PostgreSQL (AWS RDS) + Prisma ORM
-- **Storage:** AWS S3 for media uploads
-- **Email:** AWS SES for transactional emails
-
-## Code Standards
-
-### Components
-- Use functional components with hooks
-- Import ui components from `../components/ui`
-- Use EmptyState for no-data scenarios
-- Use SkeletonCard for loading states
-- Follow component structure from existing examples
-
-### Styling
-- Use Tailwind utilities, avoid inline styles
-- Use design tokens: `[#474747]` (dark gray), `[#0CCE6B]` (brand green)
-- Support dark mode with `dark:` classes
-- Follow responsive-first approach (mobile → tablet → desktop)
-- Maintain consistent spacing scale (4, 8, 12, 16, 24, 32, 48px)
-
-### Accessibility
-- Add focus-visible states to all interactive elements
-- Use semantic HTML (proper heading hierarchy)
-- Include aria-labels for icon buttons
-- Ensure keyboard navigation works (Tab, Enter, Escape)
-- Maintain 4.5:1 color contrast ratio (WCAG AA)
-
-### API Development
-- Follow RESTful conventions
-- Include proper error handling (400, 401, 403, 404, 500)
-- Validate all inputs (client and server-side)
-- Use rate limiting for authentication endpoints
-- Return consistent error response format
-
-### Database
-- Use Prisma migrations for schema changes
-- Add indexes for frequently queried fields
-- Use cascading deletes appropriately
-- Follow naming conventions (camelCase for fields)
-- Document complex queries with comments
-
-## File Organization
-
-```
-Project-Valine/
-├── src/                      # Frontend React app
-│   ├── components/
-│   │   ├── ui/              # Reusable Button, Card, Alert
-│   │   ├── skeletons/       # Loading states
-│   │   └── EmptyState.jsx   # Empty data states
-│   ├── pages/               # Route components
-│   ├── layouts/             # App layout wrappers
-│   ├── context/             # Global state (Auth, Theme)
-│   ├── services/            # API service functions
-│   └── styles/
-│       └── global.css       # Animations, utilities
-├── serverless/              # Backend Lambda functions
-│   ├── src/
-│   │   ├── handlers/       # API endpoint handlers
-│   │   ├── utils/          # Shared utilities
-│   │   └── middleware/     # Auth, validation
-│   └── serverless.yml      # AWS infrastructure config
-├── api/                     # Database layer
-│   ├── prisma/
-│   │   ├── schema.prisma   # Database schema
-│   │   └── migrations/     # SQL migrations
-│   └── src/                # Prisma client utilities
-└── docs/                    # Documentation
-    ├── USER_FLOWS.md       # Complete user flow documentation
-    ├── KANBAN_PROGRESS.md  # This file
-    ├── API_REFERENCE.md    # API endpoint reference
-    └── CONTRACTOR_ONBOARDING.md
-```
-
-## Testing Checklist
-
-Before submitting PRs, verify:
-
-### Visual Testing
-- [ ] Component renders correctly in light mode
-- [ ] Component renders correctly in dark mode
-- [ ] Mobile responsive (< 640px)
-- [ ] Tablet responsive (640px - 1024px)
-- [ ] Desktop responsive (> 1024px)
-- [ ] No console errors or warnings
-
-### Accessibility Testing
-- [ ] Keyboard navigation works (Tab, Enter, Escape)
-- [ ] Focus states are visible
-- [ ] Screen reader friendly (proper labels, roles)
-- [ ] Color contrast meets WCAG AA (4.5:1 for text)
-
-### Functional Testing
-- [ ] Empty states show when no data
-- [ ] Loading states show during fetch
-- [ ] Error states handled gracefully
-- [ ] Buttons use Button component
-- [ ] Forms validate correctly
-- [ ] API endpoints return expected responses
-- [ ] Database updates persist correctly
-
-### Browser Testing
-- [ ] Chrome (latest)
-- [ ] Firefox (latest)
-- [ ] Safari (latest)
-- [ ] Edge (latest)
-
-### Backend Testing
-- [ ] Unit tests pass (if applicable)
-- [ ] API endpoints return correct status codes
-- [ ] Authentication middleware works
-- [ ] Rate limiting functions correctly
-- [ ] Database migrations apply cleanly
-- [ ] Error logging captures exceptions
-
-## Common Patterns
-
-### Empty State Pattern
-```jsx
-import EmptyState from '../components/EmptyState';
-import { FileText } from 'lucide-react';
-
-{items.length === 0 && (
-  <EmptyState
-    icon={FileText}
-    title="No items yet"
-    description="Your items will appear here once you create them."
-    actionText="Create Item"
-    onAction={handleCreate}
-  />
-)}
-```
-
-### Loading State Pattern
-```jsx
-import SkeletonCard from '../components/skeletons/SkeletonCard';
-
-{loading ? (
-  <div className="space-y-4">
-    <SkeletonCard />
-    <SkeletonCard />
-    <SkeletonCard />
-  </div>
-) : (
-  <div className="space-y-4">
-    {items.map(item => <ItemCard key={item.id} {...item} />)}
-  </div>
-)}
-```
-
-### Button Pattern
-```jsx
-import { Button } from '../components/ui';
-
-<Button variant="primary" onClick={handleSubmit}>
-  Save Changes
-</Button>
-
-<Button variant="secondary" onClick={handleCancel}>
-  Cancel
-</Button>
-
-<Button variant="ghost" onClick={handleDelete}>
-  Delete
-</Button>
-```
-
-### API Service Pattern
-```javascript
-// src/services/exampleService.js
-import api from './api';
-
-export const getItems = async () => {
-  try {
-    const response = await api.get('/items');
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch items:', error);
-    throw error;
-  }
-};
-
-export const createItem = async (itemData) => {
-  try {
-    const response = await api.post('/items', itemData);
-    return response.data;
-  } catch (error) {
-    console.error('Failed to create item:', error);
-    throw error;
-  }
-};
-```
-
-### Lambda Handler Pattern
-```javascript
-// serverless/src/handlers/items.js
-export const getItems = async (event) => {
-  try {
-    // Extract user from event.requestContext
-    const user = event.requestContext.authorizer;
-    
-    // Query database
-    const items = await prisma.item.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    return {
-      statusCode: 200,
-      body: JSON.stringify(items)
-    };
-  } catch (error) {
-    console.error('Error fetching items:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' })
-    };
-  }
-};
+### Deploy Checklist
+
+1. **Test locally** - Verify changes work on `localhost:5173`
+2. **Git commit + push** - `git add . && git commit -m "..." && git push`
+3. **Run deploy commands** - Use PowerShell commands from Infrastructure section
+4. **Verify staging** - Test on staging environment (when available)
+5. **Run smoke test** - Execute checklist from P0-002
+6. **Deploy to production** - Repeat deploy commands for prod stage
+
+### Getting Help
+
+- **Slack:** #project-valine-dev
+- **Documentation:**
+  - Contractor Onboarding: `docs/CONTRACTOR_ONBOARDING.md`
+  - API Reference: `docs/API_REFERENCE.md`
+  - User Flows: `docs/USER_FLOWS.md`
+  - This Document: `docs/KANBAN_PROGRESS.md`
+- **Code Questions:** Tag `@tech-lead` in Slack
+- **Product Questions:** Tag `@product-manager` in Slack
+- **Emergency:** Contact team lead directly
+
+### Common Commands
+
+```bash
+# Development
+npm run dev                    # Start dev server
+npm run build                  # Build for production
+npm run test                   # Run tests
+npm run lint                   # Lint code
+
+# Backend (serverless)
+cd serverless
+npx serverless deploy --stage dev        # Deploy to dev
+npx serverless deploy --stage prod       # Deploy to prod
+npx serverless logs -f functionName      # View logs
+
+# Database (api)
+cd api
+npx prisma migrate dev                   # Create migration
+npx prisma migrate deploy                # Apply migrations
+npx prisma studio                        # GUI for database
+npx prisma generate                      # Regenerate client
 ```
 
 ---
 
-# Section 9: Sprint Goals
+## Change Log
 
-## Current Sprint (UX Polish & Documentation)
-
-**Goal:** Improve visual consistency and user feedback across the application
-
-**Success Metrics:**
-- ✅ All landing page improvements completed
-- ✅ All loading states use skeleton screens
-- ✅ All empty states use EmptyState component
-- ⏳ 80% of buttons use Button component (currently ~60%)
-- ✅ Documentation up to date (KANBAN_PROGRESS.md enhanced)
-
-**Completion Date:** February 17, 2026
-
-## Next Sprint (Critical P0 Tasks)
-
-**Goal:** Complete all P0 critical tasks for beta-50 launch
-
-**Planned Tasks:**
-1. P0-001: Allowlist-only signup + full onboarding
-2. P0-002: Complete Settings.jsx button migration
-3. P0-003: Email verification with AWS SES
-4. P0-004: Performance optimization
-5. P0-005: Security audit
-6. P0-006: Error handling
-7. P0-007: Analytics integration
-8. P0-008: Search functionality
-9. P0-009: Notification system
-10. P0-010: Mobile responsiveness
-11. P0-011: Accessibility compliance
-12. P0-012: Testing infrastructure
-
-**Estimated Duration:** 4 weeks
-
-## Future Sprint (P1 High Priority)
-
-**Goal:** Complete essential beta features for user engagement
-
-**Focus Areas:**
-- Direct messaging and user engagement
-- Content discovery and recommendations
-- User privacy and security controls
-- Profile customization and personalization
-
-**Estimated Duration:** 6 weeks
+- **2024-02-17:** Complete rewrite with all 43 tasks detailed, user flow matrix added, contractor quick reference enhanced
+- **2024-02-17:** Added comprehensive task specifications with DoD, testing checklists, file paths, and API contracts
+- **2024-02-15:** Initial Kanban created with basic task structure
 
 ---
 
-# Section 10: Support & Questions
-
-For questions about this document or the codebase:
-
-- **Technical Lead:** Gabriel Colon
-- **Product Owner:** Justin Valine
-- **Repository:** https://github.com/gcolon75/Project-Valine
-- **Frontend:** https://dkmxy676d3vgc.cloudfront.net
-- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
-
-## Documentation Links
-
-- **PROJECT_BIBLE.md:** Complete project overview and architecture
-- **USER_FLOWS.md:** All 17 user flows with detailed specifications
-- **API_REFERENCE.md:** Complete API endpoint documentation
-- **CONTRACTOR_ONBOARDING.md:** Developer onboarding guide
-- **DEPLOYMENT_BIBLE.md:** Deployment procedures and troubleshooting
-- **REPO_AUDIT_TRUTH_DOC.md:** Security and compliance guidelines
-
----
-
-# Section 11: Change Log
-
-## 2026-02-17 (Critical Corrections & Audit)
-- ✅ **FIXED:** Settings.jsx button inventory - corrected all line numbers and button names
-- ✅ **FIXED:** USER_FLOWS.md line number references (Flow 1: 9-1,147; Flow 15: 2,418-2,486; Flow 16: 2,487-2,565)
-- ✅ **REDACTED:** Database credentials (replaced with {{DB_USER}}/{{DB_PASSWORD}} placeholders)
-- ✅ **ADDED:** P0-010: Responsive Breakpoints (28 pages from findings.csv)
-- ✅ **ADDED:** P0-011: Focus States Accessibility (51 pages from findings.csv)
-- ✅ **ADDED:** P0-012: H1 Heading Semantic Structure (35 pages from findings.csv)
-- ✅ **INTEGRATED:** findings.csv UX audit issues with CSV row references
-- ✅ **CORRECTED:** Removed fake buttons that don't exist in Settings.jsx
-- ✅ **VERIFIED:** All documentation matches actual codebase
-
-**Critical Changes:**
-- Settings.jsx has buttons at lines 300, 321, 330, 352, 368, 391, 438, 700, 723 (NOT 95, 142, 178, etc.)
-- Settings.jsx does NOT have "Save Profile", "Upload Avatar", "Remove Avatar", "Upload Banner", or "Remove Banner" buttons
-- Actual buttons: "Change Email", "Save Email", "Cancel", "Change Password", "Setup/Disable 2FA", "Manage", "Terminate", "Export Data", "Delete Account"
-
-## 2026-02-17 (Enhanced Documentation)
-- ✅ Enhanced KANBAN_PROGRESS.md with comprehensive task specifications
-- ✅ Added Executive Summary with database connections and deploy commands
-- ✅ Created P0-001: Allowlist-only signup with full specifications
-- ✅ Created P0-002: Settings.jsx button migration with complete button inventory
-- ✅ Created P0-003: Email verification with AWS SES integration
-- ✅ Added detailed API endpoint specifications for all P0 tasks
-- ✅ Included database schema changes and migration SQL
-- ✅ Cross-referenced USER_FLOWS.md for each task
-- ✅ Added PowerShell verification commands
-- ✅ Enhanced contractor notes with patterns and standards
-
-## 2026-02-17 (Previous Updates)
-- ✅ Created initial KANBAN_PROGRESS.md documentation
-- ✅ Updated hero section with new headline and founder story
-- ✅ Fixed marketing navigation order (About → Features → FAQ)
-- ✅ Enhanced onboarding progress bar (height, glow, circles, labels)
-- ✅ Fixed Inbox to use EmptyState and SkeletonCard
-- ✅ Fixed Pricing.jsx to use Button component
-- ✅ Improved skeleton contrast and avatar size
-- ✅ Added fade-in animation to global.css
-- ✅ Completed component audits (empty states, buttons, loading)
-
----
-
-**End of Document**
-
-*This document is a living reference that will be updated as tasks are completed and new requirements emerge. All contractors should refer to this document before starting any task to ensure alignment with project goals and implementation standards.*
+**END OF DOCUMENT**
