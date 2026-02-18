@@ -467,12 +467,12 @@ export default function PostDetail() {
             }`}
             aria-label={isLiked ? 'Unlike post' : 'Like post'}
           >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} />
             <span>{likesCount > 0 ? likesCount : 'Like'}</span>
           </button>
           <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
             <MessageCircle className="w-5 h-5" />
-            <span>{commentsCount > 0 ? `${commentsCount} Comments` : 'Comments'}</span>
+            <span>{commentsCount}</span>
           </div>
           <button
             className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-emerald-500 transition"

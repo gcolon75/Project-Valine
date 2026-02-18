@@ -34,17 +34,18 @@ const getAllowedOrigins = () => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const isProduction = process.env.NODE_ENV === 'production';
   const origins = [frontendUrl];
-  
-  // Add CloudFront distribution in production
+
+  // Add production domains
   if (isProduction) {
+    origins.push('https://joint-networking.com');
     origins.push('https://dkmxy676d3vgc.cloudfront.net');
   }
-  
+
   // Allow localhost in development
   if (!isProduction) {
     origins.push('http://localhost:3000', 'http://localhost:5173');
   }
-  
+
   return origins;
 };
 
