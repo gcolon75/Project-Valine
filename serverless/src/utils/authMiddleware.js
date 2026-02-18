@@ -30,7 +30,7 @@ export async function requireEmailVerified(userId) {
   }
 
   if (!user.emailVerified) {
-    return error(403, 'Email verification required. Please verify your email address to access this resource.');
+    return error(403, 'Please verify your email first.');
   }
 
   return null; // User is verified, no error

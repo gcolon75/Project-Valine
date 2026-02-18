@@ -62,12 +62,13 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
     console.error('Failed to get upload URL:', error);
     
     // Provide helpful error messages
-    if (error.response?.status === 403) {
+    // Check for specific backend message first (e.g., email verification required)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 403) {
       throw new Error('You do not have permission to upload to this profile');
     } else if (error.response?.status === 404) {
       throw new Error('Profile not found');
-    } else if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
     }
     
     throw new Error('Failed to get upload URL. Please try again.');
@@ -160,14 +161,15 @@ export const completeUpload = async (profileId, mediaId, metadata = {}) => {
   } catch (error) {
     console.error('Failed to complete upload:', error);
     
-    if (error.response?.status === 403) {
+    // Check for specific backend message first (e.g., email verification required)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 403) {
       throw new Error('You do not have permission to complete this upload');
     } else if (error.response?.status === 404) {
       throw new Error('Media record not found');
-    } else if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
     }
-    
+
     throw new Error('Failed to complete upload. Please try again.');
   }
 };
