@@ -235,7 +235,7 @@ export const listPosts = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { comments: true, likes: true }
+          select: { comments: true }
         }
       },
     });
@@ -257,18 +257,39 @@ export const listPosts = async (event) => {
       }, {});
     }
 
-    // Get user's likes for these posts
+    // Get user's likes for these posts (gracefully handle if PostLike table doesn't exist yet)
     const postIds = posts.map(p => p.id);
     let likedPostIds = new Set();
     if (authUserId && postIds.length > 0) {
-      const userLikes = await prisma.postLike.findMany({
-        where: {
-          userId: authUserId,
-          postId: { in: postIds }
-        },
-        select: { postId: true }
+      try {
+        const userLikes = await prisma.postLike.findMany({
+          where: {
+            userId: authUserId,
+            postId: { in: postIds }
+          },
+          select: { postId: true }
+        });
+        likedPostIds = new Set(userLikes.map(l => l.postId));
+      } catch (e) {
+        // PostLike table may not exist yet - continue without like data
+        console.warn('PostLike query failed (table may not exist):', e.message);
+      }
+    }
+
+    // Get like counts for posts (gracefully handle if PostLike table doesn't exist)
+    let likeCounts = {};
+    try {
+      const counts = await prisma.postLike.groupBy({
+        by: ['postId'],
+        where: { postId: { in: postIds } },
+        _count: { postId: true }
       });
-      likedPostIds = new Set(userLikes.map(l => l.postId));
+      likeCounts = counts.reduce((acc, c) => {
+        acc[c.postId] = c._count.postId;
+        return acc;
+      }, {});
+    } catch (e) {
+      console.warn('PostLike count failed (table may not exist):', e.message);
     }
 
     // Attach media, like status, and counts to posts
@@ -276,7 +297,7 @@ export const listPosts = async (event) => {
       const enrichedPost = {
         ...post,
         isLiked: likedPostIds.has(post.id),
-        likes: post._count?.likes || 0,
+        likes: likeCounts[post.id] || 0,
         comments: post._count?.comments || 0
       };
       if (post.mediaId && mediaMap[post.mediaId]) {
@@ -319,11 +340,11 @@ export const getPost = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { comments: true, likes: true }
+          select: { comments: true }
         }
       },
     });
-    
+
     if (!post) {
       return error(404, 'Post not found');
     }
@@ -396,18 +417,33 @@ export const getPost = async (event) => {
       }
     }
     
-    // Check if current user has liked the post
+    // Check if current user has liked the post (gracefully handle if PostLike table doesn't exist)
     let isLiked = false;
     if (authUserId) {
-      const existingLike = await prisma.postLike.findUnique({
-        where: {
-          postId_userId: {
-            postId: id,
-            userId: authUserId
+      try {
+        const existingLike = await prisma.postLike.findUnique({
+          where: {
+            postId_userId: {
+              postId: id,
+              userId: authUserId
+            }
           }
-        }
+        });
+        isLiked = !!existingLike;
+      } catch (e) {
+        // PostLike table may not exist yet
+        console.warn('PostLike query failed (table may not exist):', e.message);
+      }
+    }
+
+    // Get like count (gracefully handle if PostLike table doesn't exist)
+    let likesCount = 0;
+    try {
+      likesCount = await prisma.postLike.count({
+        where: { postId: id }
       });
-      isLiked = !!existingLike;
+    } catch (e) {
+      console.warn('PostLike count failed (table may not exist):', e.message);
     }
 
     // Add access information and counts to response
@@ -417,7 +453,7 @@ export const getPost = async (event) => {
       accessStatus,
       pendingRequest,
       isLiked,
-      likesCount: post._count?.likes || 0,
+      likesCount,
       commentsCount: post._count?.comments || 0
     };
 
