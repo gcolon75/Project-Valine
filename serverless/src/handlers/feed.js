@@ -88,10 +88,45 @@ export const getFeed = async (event) => {
       }, {});
     }
     
-    // Attach media and comment count to posts
+    // Get user's likes for these posts (gracefully handle if PostLike table doesn't exist yet)
+    const postIds = posts.map(p => p.id);
+    let likedPostIds = new Set();
+    try {
+      const userLikes = await prisma.postLike.findMany({
+        where: {
+          userId,
+          postId: { in: postIds }
+        },
+        select: { postId: true }
+      });
+      likedPostIds = new Set(userLikes.map(l => l.postId));
+    } catch (e) {
+      // PostLike table may not exist yet - continue without like data
+      console.warn('PostLike query failed (table may not exist):', e.message);
+    }
+
+    // Get like counts for posts (gracefully handle if PostLike table doesn't exist)
+    let likeCounts = {};
+    try {
+      const counts = await prisma.postLike.groupBy({
+        by: ['postId'],
+        where: { postId: { in: postIds } },
+        _count: { postId: true }
+      });
+      likeCounts = counts.reduce((acc, c) => {
+        acc[c.postId] = c._count.postId;
+        return acc;
+      }, {});
+    } catch (e) {
+      console.warn('PostLike count failed (table may not exist):', e.message);
+    }
+
+    // Attach media, like status, and counts to posts
     const postsWithMedia = posts.map(post => {
       const enrichedPost = {
         ...post,
+        isLiked: likedPostIds.has(post.id),
+        likes: likeCounts[post.id] || 0,
         comments: post._count?.comments || 0
       };
       if (post.mediaId && mediaMap[post.mediaId]) {

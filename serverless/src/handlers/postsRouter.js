@@ -72,6 +72,20 @@ export const handler = async (event, context) => {
       return posts.payForAccess(event, context);
     }
 
+    // POST /posts/{id}/like
+    if (method === 'POST' && /^\/posts\/[^/]+\/like$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
+      return posts.likePost(event, context);
+    }
+
+    // DELETE /posts/{id}/like
+    if (method === 'DELETE' && /^\/posts\/[^/]+\/like$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
+      return posts.unlikePost(event, context);
+    }
+
     // GET /posts/{id}
     if (method === 'GET' && /^\/posts\/[^/]+$/.test(path)) {
       return posts.getPost(event, context);
