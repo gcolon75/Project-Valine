@@ -5,7 +5,7 @@ import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
 import { followProfile, unfollowProfile, blockProfile, unblockProfile, getProfileStatus } from '../services/connectionService';
 import { createThread } from '../services/messagesService';
-import { listPosts } from '../services/postService';
+import { listPosts, likePost as likePostApi, unlikePost as unlikePostApi } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
@@ -111,7 +111,43 @@ export default function Profile() {
   const handlePostDelete = (postId) => {
     setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
   };
-  
+
+  // Handler for liking/unliking posts on profile page
+  const handleLikePost = async (postId) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const isCurrentlyLiked = post.isLiked;
+
+    // Optimistic update
+    setPosts(prevPosts => prevPosts.map(p =>
+      p.id === postId ? {
+        ...p,
+        likes: isCurrentlyLiked ? Math.max(0, (p.likes || 0) - 1) : (p.likes || 0) + 1,
+        isLiked: !isCurrentlyLiked
+      } : p
+    ));
+
+    try {
+      if (isCurrentlyLiked) {
+        await unlikePostApi(postId);
+      } else {
+        await likePostApi(postId);
+      }
+    } catch (error) {
+      // Rollback on error
+      setPosts(prevPosts => prevPosts.map(p =>
+        p.id === postId ? {
+          ...p,
+          likes: isCurrentlyLiked ? (p.likes || 0) + 1 : Math.max(0, (p.likes || 0) - 1),
+          isLiked: isCurrentlyLiked
+        } : p
+      ));
+      console.error('Failed to toggle like:', error);
+      toast.error('Failed to update like');
+    }
+  };
+
   // Connection/Follow/Block states
   const [connectionStatus, setConnectionStatus] = useState({
     isFollowing: false,
@@ -731,12 +767,13 @@ export default function Profile() {
                     visibility: post.visibility || 'public',
                     hasAccess: post.hasAccess,
                     accessRequestStatus: post.accessRequestStatus,
-                    likes: post.likesCount || 0,
+                    likes: post.likes || 0,
+                    isLiked: post.isLiked || false,
                     saved: post.isSaved || false,
-                    comments: post.commentsCount || 0,
+                    comments: post.comments || post._count?.comments || 0,
                     price: post.price
                   };
-                  return <PostCard key={post.id} post={transformedPost} onDelete={handlePostDelete} />;
+                  return <PostCard key={post.id} post={transformedPost} onDelete={handlePostDelete} onLike={handleLikePost} />;
                 })}
               </div>
             ) : (

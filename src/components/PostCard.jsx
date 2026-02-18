@@ -11,8 +11,10 @@ import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService"
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
-export default function PostCard({ post, onDelete }) {
-  const { likePost, toggleSave } = useFeed();
+export default function PostCard({ post, onDelete, onLike }) {
+  const { likePost: contextLikePost, toggleSave } = useFeed();
+  // Use provided onLike handler or fall back to context
+  const likePost = onLike || contextLikePost;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
