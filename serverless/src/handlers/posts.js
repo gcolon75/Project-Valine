@@ -222,6 +222,9 @@ export const listPosts = async (event) => {
       where.authorId = authorId;
     }
 
+    // Get authenticated user ID for like status
+    const authUserId = getUserIdFromEvent(event);
+
     const posts = await prisma.post.findMany({
       where,
       take: parseInt(limit),
@@ -232,7 +235,7 @@ export const listPosts = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { comments: true }
+          select: { comments: true, likes: true }
         }
       },
     });
@@ -254,10 +257,26 @@ export const listPosts = async (event) => {
       }, {});
     }
 
-    // Attach media and comment count to posts
+    // Get user's likes for these posts
+    const postIds = posts.map(p => p.id);
+    let likedPostIds = new Set();
+    if (authUserId && postIds.length > 0) {
+      const userLikes = await prisma.postLike.findMany({
+        where: {
+          userId: authUserId,
+          postId: { in: postIds }
+        },
+        select: { postId: true }
+      });
+      likedPostIds = new Set(userLikes.map(l => l.postId));
+    }
+
+    // Attach media, like status, and counts to posts
     const postsWithMedia = posts.map(post => {
       const enrichedPost = {
         ...post,
+        isLiked: likedPostIds.has(post.id),
+        likes: post._count?.likes || 0,
         comments: post._count?.comments || 0
       };
       if (post.mediaId && mediaMap[post.mediaId]) {
@@ -300,7 +319,7 @@ export const getPost = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { comments: true }
+          select: { comments: true, likes: true }
         }
       },
     });
@@ -377,12 +396,28 @@ export const getPost = async (event) => {
       }
     }
     
+    // Check if current user has liked the post
+    let isLiked = false;
+    if (authUserId) {
+      const existingLike = await prisma.postLike.findUnique({
+        where: {
+          postId_userId: {
+            postId: id,
+            userId: authUserId
+          }
+        }
+      });
+      isLiked = !!existingLike;
+    }
+
     // Add access information and counts to response
     responsePost = {
       ...responsePost,
       hasAccess,
       accessStatus,
       pendingRequest,
+      isLiked,
+      likesCount: post._count?.likes || 0,
       commentsCount: post._count?.comments || 0
     };
 
@@ -973,6 +1008,138 @@ export const payForAccess = async (event) => {
     });
   } catch (e) {
     log('pay_for_access_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /posts/:id/like
+ * Like a post
+ */
+export const likePost = async (event) => {
+  const route = 'POST /posts/{id}/like';
+
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const postId = event.pathParameters?.id;
+    if (!postId) {
+      return error(400, 'Post ID is required');
+    }
+
+    const prisma = getPrisma();
+
+    if (!prisma) {
+      return error(503, 'Database unavailable');
+    }
+
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true }
+    });
+
+    if (!post) {
+      return error(404, 'Post not found');
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.postLike.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId
+        }
+      }
+    });
+
+    if (existingLike) {
+      return error(400, 'Post already liked');
+    }
+
+    // Create like
+    await prisma.postLike.create({
+      data: {
+        postId,
+        userId
+      }
+    });
+
+    // Get updated like count
+    const likeCount = await prisma.postLike.count({
+      where: { postId }
+    });
+
+    log('like_post_success', { route, postId, userId });
+    return json({ success: true, likesCount: likeCount });
+  } catch (e) {
+    log('like_post_error', { route, error: e.message, stack: e.stack });
+    console.error(e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * DELETE /posts/:id/like
+ * Unlike a post
+ */
+export const unlikePost = async (event) => {
+  const route = 'DELETE /posts/{id}/like';
+
+  try {
+    const userId = getUserIdFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const postId = event.pathParameters?.id;
+    if (!postId) {
+      return error(400, 'Post ID is required');
+    }
+
+    const prisma = getPrisma();
+
+    if (!prisma) {
+      return error(503, 'Database unavailable');
+    }
+
+    // Check if like exists
+    const existingLike = await prisma.postLike.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId
+        }
+      }
+    });
+
+    if (!existingLike) {
+      return error(404, 'Like not found');
+    }
+
+    // Delete like
+    await prisma.postLike.delete({
+      where: {
+        postId_userId: {
+          postId,
+          userId
+        }
+      }
+    });
+
+    // Get updated like count
+    const likeCount = await prisma.postLike.count({
+      where: { postId }
+    });
+
+    log('unlike_post_success', { route, postId, userId });
+    return json({ success: true, likesCount: likeCount });
+  } catch (e) {
+    log('unlike_post_error', { route, error: e.message, stack: e.stack });
     console.error(e);
     return error(500, 'Server error: ' + e.message);
   }

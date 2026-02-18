@@ -66,7 +66,7 @@ export const getFeed = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { comments: true }
+          select: { comments: true, likes: true }
         }
       }
     });
@@ -88,10 +88,23 @@ export const getFeed = async (event) => {
       }, {});
     }
     
-    // Attach media and comment count to posts
+    // Get user's likes for these posts
+    const postIds = posts.map(p => p.id);
+    const userLikes = await prisma.postLike.findMany({
+      where: {
+        userId,
+        postId: { in: postIds }
+      },
+      select: { postId: true }
+    });
+    const likedPostIds = new Set(userLikes.map(l => l.postId));
+
+    // Attach media, like status, and counts to posts
     const postsWithMedia = posts.map(post => {
       const enrichedPost = {
         ...post,
+        isLiked: likedPostIds.has(post.id),
+        likes: post._count?.likes || 0,
         comments: post._count?.comments || 0
       };
       if (post.mediaId && mediaMap[post.mediaId]) {

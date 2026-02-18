@@ -39,6 +39,7 @@ model User {
   conversations           ConversationParticipant[]
   emailVerificationTokens EmailVerificationToken[]
   likes                   Like[]
+  postLikes               PostLike[]
   sentMessages            Message[]                 @relation("sender")
   notifications           Notification[]            @relation("recipient")
   triggeredNotifs         Notification[]            @relation("triggerer")
@@ -129,6 +130,9 @@ model Post {
   // Comments
   comments       Comment[]
 
+  // Likes
+  likes          PostLike[]
+
   @@index([authorId])
   @@index([createdAt])
   @@index([tags])
@@ -195,6 +199,21 @@ model Like {
   @@index([reelId])
   @@index([userId])
   @@map("likes")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
 }
 
 model Bookmark {

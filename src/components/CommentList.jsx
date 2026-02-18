@@ -4,6 +4,35 @@ import { Link } from "react-router-dom";
 import { getPostComments, addPostComment } from "../services/postService";
 import { useAuth } from "../context/AuthContext";
 
+// Format relative time (1s, 1m, 1h, 1d, 1w, 1mo, 1yr)
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return "";
+
+  const now = new Date();
+  const date = new Date(dateString);
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return `${seconds}s`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks}w`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo`;
+
+  const years = Math.floor(days / 365);
+  return `${years}yr`;
+};
+
 export default function CommentList({ postId, onCommentAdded }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
@@ -93,12 +122,17 @@ export default function CommentList({ postId, onCommentAdded }) {
               )}
             </Link>
             <div className="flex-1 min-w-0">
-              <Link
-                to={getProfileLink(c.author)}
-                className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-brand dark:hover:text-brand transition-colors"
-              >
-                {getAuthorName(c.author)}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={getProfileLink(c.author)}
+                  className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-brand dark:hover:text-brand transition-colors"
+                >
+                  {getAuthorName(c.author)}
+                </Link>
+                <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                  {formatRelativeTime(c.createdAt)}
+                </span>
+              </div>
               <div className="text-sm text-neutral-900 dark:text-white break-words">{c.text || c.content}</div>
             </div>
           </div>

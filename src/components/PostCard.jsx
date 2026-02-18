@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
@@ -12,7 +12,7 @@ import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
 export default function PostCard({ post, onDelete }) {
-  const { toggleSave } = useFeed();
+  const { likePost, toggleSave } = useFeed();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -313,6 +313,18 @@ export default function PostCard({ post, onDelete }) {
 
         {/* Actions */}
         <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => likePost(post.id)}
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+              post.isLiked
+                ? "border-red-500 dark:border-red-600 bg-red-50 dark:bg-red-600/20 text-red-700 dark:text-red-300"
+                : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            }`}
+            aria-label={post.isLiked ? `Unlike post, currently ${post.likes || 0} likes` : `Like post, currently ${post.likes || 0} likes`}
+          >
+            <Heart className="w-4 h-4" fill={post.isLiked ? "currentColor" : "none"} aria-hidden="true" />
+            <span>{post.likes || 0}</span>
+          </button>
           <button
             onClick={() => setOpen((v) => !v)}
             className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
