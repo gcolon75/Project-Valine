@@ -65,7 +65,7 @@ const HeroSection = () => {
           
           {/* Subtitle Text - Below Image */}
           <p className="text-lg md:text-xl text-neutral-600 mt-8 animate-slide-up max-w-3xl text-center" style={{ animationDelay: '0.4s' }}>
-            Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists. Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.
+            Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists. Co-created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.
           </p>
         </div>
 

@@ -17,7 +17,7 @@ describe('HeroSection', () => {
   it('renders founder story', () => {
     renderWithRouter(<HeroSection />);
     expect(screen.getByText(/Actors, Writers, Influencers, Musicians, and Producers/i)).toBeInTheDocument();
-    expect(screen.getByText(/Co created by Justin Valine and Gabriel Colon/i)).toBeInTheDocument();
+    expect(screen.getByText(/Co-created by Justin Valine and Gabriel Colon/i)).toBeInTheDocument();
   });
 
   it('renders CTA buttons', () => {
