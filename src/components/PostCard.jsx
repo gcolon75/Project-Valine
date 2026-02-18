@@ -27,7 +27,13 @@ export default function PostCard({ post, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [sharingViaDM, setSharingViaDM] = useState(false);
-  
+  const [commentCount, setCommentCount] = useState(post.comments || 0);
+
+  // Handle comment added
+  const handleCommentAdded = () => {
+    setCommentCount((prev) => prev + 1);
+  };
+
   // Check if current user is the post author
   // Include fallback checks for different property name variations
   const isAuthor = user && (
@@ -309,19 +315,23 @@ export default function PostCard({ post, onDelete }) {
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <button
             onClick={() => likePost(post.id)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
-            aria-label={`Like post, currently ${post.likes} likes`}
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+              post.isLiked
+                ? "border-red-500 dark:border-red-600 bg-red-50 dark:bg-red-600/20 text-red-700 dark:text-red-300"
+                : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+            }`}
+            aria-label={post.isLiked ? `Unlike post, currently ${post.likes} likes` : `Like post, currently ${post.likes} likes`}
           >
-            <Heart className="w-4 h-4" aria-hidden="true" />
+            <Heart className="w-4 h-4" fill={post.isLiked ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.likes}</span>
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
             className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
-            aria-label={`View comments, ${post.comments} comments`}
+            aria-label={`View comments, ${commentCount} comments`}
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />
-            <span>{post.comments}</span>
+            <span>{commentCount}</span>
           </button>
           <button
             onClick={() => toggleSave(post.id)}
@@ -390,7 +400,7 @@ export default function PostCard({ post, onDelete }) {
       </div>
 
       {/* Comments */}
-      {open && <CommentList postId={post.id} />}
+      {open && <CommentList postId={post.id} onCommentAdded={handleCommentAdded} />}
     </article>
 
     {/* Delete Confirmation Modal */}

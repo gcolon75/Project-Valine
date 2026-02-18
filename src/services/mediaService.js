@@ -63,8 +63,9 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
     
     // Provide helpful error messages
     // Check for specific backend message first (e.g., email verification required)
-    if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
+    // Backend uses { error: message } format, not { message: message }
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
     } else if (error.response?.status === 403) {
       throw new Error('You do not have permission to upload to this profile');
     } else if (error.response?.status === 404) {
@@ -162,8 +163,9 @@ export const completeUpload = async (profileId, mediaId, metadata = {}) => {
     console.error('Failed to complete upload:', error);
     
     // Check for specific backend message first (e.g., email verification required)
-    if (error.response?.data?.message) {
-      throw new Error(error.response.data.message);
+    // Backend uses { error: message } format
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
     } else if (error.response?.status === 403) {
       throw new Error('You do not have permission to complete this upload');
     } else if (error.response?.status === 404) {

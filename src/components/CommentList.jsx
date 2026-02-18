@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { getPostComments, addPostComment } from "../services/postService";
 import { useAuth } from "../context/AuthContext";
 
-export default function CommentList({ postId }) {
+export default function CommentList({ postId, onCommentAdded }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
@@ -41,6 +41,10 @@ export default function CommentList({ postId }) {
       // Add the new comment to the list (it comes with author info from backend)
       setComments((prev) => [newComment, ...prev]);
       setText("");
+      // Notify parent component that a comment was added
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
     } catch (err) {
       console.error("Failed to add comment:", err);
       setError("Failed to post comment");

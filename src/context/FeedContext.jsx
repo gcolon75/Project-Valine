@@ -38,16 +38,28 @@ export function FeedProvider({ children }) {
     const post = posts.find(p => p.id === id);
     if (!post) return;
 
+    const isCurrentlyLiked = post.isLiked;
+
     await optimisticUpdate(
-      // Optimistic: increment likes
-      () => setPosts((prev) => prev.map((p) => 
-        p.id === id ? { ...p, likes: p.likes + 1, isLiked: true } : p
+      // Optimistic: toggle like
+      () => setPosts((prev) => prev.map((p) =>
+        p.id === id ? {
+          ...p,
+          likes: isCurrentlyLiked ? Math.max(0, p.likes - 1) : p.likes + 1,
+          isLiked: !isCurrentlyLiked
+        } : p
       )),
-      // API call
-      () => apiClient.post(`/posts/${id}/like`),
-      // Rollback: decrement likes
-      () => setPosts((prev) => prev.map((p) => 
-        p.id === id ? { ...p, likes: p.likes - 1, isLiked: false } : p
+      // API call - use DELETE for unlike, POST for like
+      () => isCurrentlyLiked
+        ? apiClient.delete(`/posts/${id}/like`)
+        : apiClient.post(`/posts/${id}/like`),
+      // Rollback: toggle back
+      () => setPosts((prev) => prev.map((p) =>
+        p.id === id ? {
+          ...p,
+          likes: isCurrentlyLiked ? p.likes + 1 : Math.max(0, p.likes - 1),
+          isLiked: isCurrentlyLiked
+        } : p
       )),
       'FeedContext.likePost'
     ).catch(() => {

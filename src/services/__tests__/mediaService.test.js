@@ -152,7 +152,7 @@ describe('mediaService', () => {
 
     it('should handle custom error message from response', async () => {
       apiClient.post.mockRejectedValue({
-        response: { data: { message: 'Custom error message' } },
+        response: { data: { error: 'Custom error message' } },
       });
 
       await expect(getUploadUrl('user-123', 'image')).rejects.toThrow('Custom error message');

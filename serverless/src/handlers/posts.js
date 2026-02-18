@@ -222,23 +222,29 @@ export const listPosts = async (event) => {
       where.authorId = authorId;
     }
 
+    // Get authenticated user ID for like status
+    const authUserId = getUserIdFromEvent(event);
+
     const posts = await prisma.post.findMany({
       where,
       take: parseInt(limit),
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: 'desc' },
-      include: { 
-        author: { 
-          select: { id: true, username: true, displayName: true, avatar: true } 
-        } 
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        },
+        _count: {
+          select: { likes: true, comments: true }
+        }
       },
     });
-    
+
     // Collect all mediaIds that need to be fetched
     const mediaIds = posts
       .filter(post => post.mediaId)
       .map(post => post.mediaId);
-    
+
     // Fetch all media records in a single query
     let mediaMap = {};
     if (mediaIds.length > 0) {
@@ -250,15 +256,35 @@ export const listPosts = async (event) => {
         return acc;
       }, {});
     }
-    
-    // Attach media to posts
+
+    // Get user's likes for these posts
+    const postIds = posts.map(p => p.id);
+    let likedPostIds = new Set();
+    if (authUserId && postIds.length > 0) {
+      const userLikes = await prisma.like.findMany({
+        where: {
+          userId: authUserId,
+          postId: { in: postIds }
+        },
+        select: { postId: true }
+      });
+      likedPostIds = new Set(userLikes.map(l => l.postId));
+    }
+
+    // Attach media and like status to posts
     const postsWithMedia = posts.map(post => {
+      const enrichedPost = {
+        ...post,
+        isLiked: likedPostIds.has(post.id),
+        likes: post._count?.likes || 0,
+        comments: post._count?.comments || 0
+      };
       if (post.mediaId && mediaMap[post.mediaId]) {
-        return { ...post, mediaAttachment: mediaMap[post.mediaId] };
+        enrichedPost.mediaAttachment = mediaMap[post.mediaId];
       }
-      return post;
+      return enrichedPost;
     });
-    
+
     return json(postsWithMedia);
   } catch (e) {
     console.error(e);
@@ -288,10 +314,13 @@ export const getPost = async (event) => {
 
     const post = await prisma.post.findUnique({
       where: { id },
-      include: { 
-        author: { 
-          select: { id: true, username: true, displayName: true, avatar: true } 
-        } 
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        },
+        _count: {
+          select: { likes: true, comments: true }
+        }
       },
     });
     
@@ -367,14 +396,31 @@ export const getPost = async (event) => {
       }
     }
     
-    // Add access information to response
+    // Check if current user has liked the post
+    let isLiked = false;
+    if (authUserId) {
+      const existingLike = await prisma.like.findUnique({
+        where: {
+          postId_userId: {
+            postId: id,
+            userId: authUserId
+          }
+        }
+      });
+      isLiked = !!existingLike;
+    }
+
+    // Add access information and counts to response
     responsePost = {
       ...responsePost,
       hasAccess,
       accessStatus,
-      pendingRequest
+      pendingRequest,
+      isLiked,
+      likesCount: post._count?.likes || 0,
+      commentsCount: post._count?.comments || 0
     };
-    
+
     log('get_post_success', { route, postId: id, userId: authUserId, hasAccess, accessStatus });
     return json(responsePost);
   } catch (e) {
