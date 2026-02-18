@@ -2,6 +2,7 @@
 // Central router for post HTTP endpoints
 
 import * as posts from './posts.js';
+import * as comments from './comments.js';
 
 /**
  * Normalize path to remove stage prefix if present (e.g. "/prod/posts/..." -> "/posts/...")
@@ -79,6 +80,50 @@ export const handler = async (event, context) => {
     // DELETE /posts/{id}
     if (method === 'DELETE' && /^\/posts\/[^/]+$/.test(path)) {
       return posts.deletePost(event, context);
+    }
+
+    // ===== COMMENT ENDPOINTS =====
+
+    // GET /posts/{id}/comments
+    if (method === 'GET' && /^\/posts\/[^/]+\/comments$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, postId };
+      return comments.getPostComments(event, context);
+    }
+
+    // POST /posts/{id}/comments
+    if (method === 'POST' && /^\/posts\/[^/]+\/comments$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, postId };
+      return comments.createComment(event, context);
+    }
+
+    // GET /posts/{id}/comments/count
+    if (method === 'GET' && /^\/posts\/[^/]+\/comments\/count$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, postId };
+      return comments.getCommentCount(event, context);
+    }
+
+    // GET /comments/{id}/replies
+    if (method === 'GET' && /^\/comments\/[^/]+\/replies$/.test(path)) {
+      const commentId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, commentId };
+      return comments.getCommentReplies(event, context);
+    }
+
+    // PUT /comments/{id}
+    if (method === 'PUT' && /^\/comments\/[^/]+$/.test(path)) {
+      const commentId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, commentId };
+      return comments.updateComment(event, context);
+    }
+
+    // DELETE /comments/{id}
+    if (method === 'DELETE' && /^\/comments\/[^/]+$/.test(path)) {
+      const commentId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, commentId };
+      return comments.deleteComment(event, context);
     }
 
     // Fallback
