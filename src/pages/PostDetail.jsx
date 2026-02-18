@@ -1,14 +1,13 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Heart, 
-  MessageCircle, 
-  Bookmark, 
-  Share2, 
-  Clock, 
-  DollarSign, 
+import {
+  ArrowLeft,
+  MessageCircle,
+  Bookmark,
+  Share2,
+  Clock,
+  DollarSign,
   Loader2,
   Lock,
   CheckCircle,
@@ -17,7 +16,7 @@ import {
   EyeOff,
   Download
 } from 'lucide-react';
-import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
+import { getPost, requestPostAccess, payForPostAccess } from '../services/postService';
 import CommentList from '../components/CommentList';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -30,10 +29,7 @@ export default function PostDetail() {
   const [error, setError] = useState(null);
   const [requestingAccess, setRequestingAccess] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
-  const [likingInProgress, setLikingInProgress] = useState(false);
 
   // Helper function to safely format price
   const formatPrice = (price) => {
@@ -48,8 +44,6 @@ export default function PostDetail() {
         setError(null);
         const data = await getPost(id);
         setPost(data);
-        setIsLiked(data.isLiked || false);
-        setLikesCount(data.likesCount || 0);
         setCommentsCount(data.commentsCount || 0);
       } catch (err) {
         console.error('Error fetching post:', err);
@@ -103,33 +97,6 @@ export default function PostDetail() {
       toast.error(err.response?.data?.message || 'Failed to process payment');
     } finally {
       setProcessingPayment(false);
-    }
-  };
-
-  const handleLike = async () => {
-    if (!user) {
-      toast.error('Please log in to like posts');
-      return;
-    }
-
-    if (likingInProgress) return;
-
-    try {
-      setLikingInProgress(true);
-      if (isLiked) {
-        await unlikePost(id);
-        setIsLiked(false);
-        setLikesCount((prev) => Math.max(0, prev - 1));
-      } else {
-        await likePost(id);
-        setIsLiked(true);
-        setLikesCount((prev) => prev + 1);
-      }
-    } catch (err) {
-      console.error('Error toggling like:', err);
-      toast.error('Failed to update like');
-    } finally {
-      setLikingInProgress(false);
     }
   };
 
@@ -457,22 +424,9 @@ export default function PostDetail() {
 
         {/* Actions Footer */}
         <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center gap-6">
-          <button
-            onClick={handleLike}
-            disabled={likingInProgress}
-            className={`flex items-center gap-2 transition disabled:opacity-50 ${
-              isLiked
-                ? 'text-red-500'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-red-500'
-            }`}
-            aria-label={isLiked ? 'Unlike post' : 'Like post'}
-          >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            <span>{likesCount > 0 ? likesCount : 'Like'}</span>
-          </button>
           <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
             <MessageCircle className="w-5 h-5" />
-            <span>{commentsCount > 0 ? commentsCount : 'Comments'}</span>
+            <span>{commentsCount > 0 ? `${commentsCount} Comments` : 'Comments'}</span>
           </div>
           <button
             className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-emerald-500 transition"

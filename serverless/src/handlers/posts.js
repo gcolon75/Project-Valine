@@ -222,9 +222,6 @@ export const listPosts = async (event) => {
       where.authorId = authorId;
     }
 
-    // Get authenticated user ID for like status
-    const authUserId = getUserIdFromEvent(event);
-
     const posts = await prisma.post.findMany({
       where,
       take: parseInt(limit),
@@ -235,7 +232,7 @@ export const listPosts = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { likes: true, comments: true }
+          select: { comments: true }
         }
       },
     });
@@ -257,26 +254,10 @@ export const listPosts = async (event) => {
       }, {});
     }
 
-    // Get user's likes for these posts
-    const postIds = posts.map(p => p.id);
-    let likedPostIds = new Set();
-    if (authUserId && postIds.length > 0) {
-      const userLikes = await prisma.like.findMany({
-        where: {
-          userId: authUserId,
-          postId: { in: postIds }
-        },
-        select: { postId: true }
-      });
-      likedPostIds = new Set(userLikes.map(l => l.postId));
-    }
-
-    // Attach media and like status to posts
+    // Attach media and comment count to posts
     const postsWithMedia = posts.map(post => {
       const enrichedPost = {
         ...post,
-        isLiked: likedPostIds.has(post.id),
-        likes: post._count?.likes || 0,
         comments: post._count?.comments || 0
       };
       if (post.mediaId && mediaMap[post.mediaId]) {
@@ -319,7 +300,7 @@ export const getPost = async (event) => {
           select: { id: true, username: true, displayName: true, avatar: true }
         },
         _count: {
-          select: { likes: true, comments: true }
+          select: { comments: true }
         }
       },
     });
@@ -396,28 +377,12 @@ export const getPost = async (event) => {
       }
     }
     
-    // Check if current user has liked the post
-    let isLiked = false;
-    if (authUserId) {
-      const existingLike = await prisma.like.findUnique({
-        where: {
-          postId_userId: {
-            postId: id,
-            userId: authUserId
-          }
-        }
-      });
-      isLiked = !!existingLike;
-    }
-
     // Add access information and counts to response
     responsePost = {
       ...responsePost,
       hasAccess,
       accessStatus,
       pendingRequest,
-      isLiked,
-      likesCount: post._count?.likes || 0,
       commentsCount: post._count?.comments || 0
     };
 
