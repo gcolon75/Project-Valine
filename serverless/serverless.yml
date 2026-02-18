@@ -363,6 +363,19 @@ functions:
       - httpApi:
           path: /posts/{id}/request
           method: post
+      - httpApi:
+          path: /posts/{id}/grant
+          method: post
+      - httpApi:
+          path: /posts/{id}/pay
+          method: post
+      # Likes
+      - httpApi:
+          path: /posts/{id}/like
+          method: post
+      - httpApi:
+          path: /posts/{id}/like
+          method: delete
       # Comments
       - httpApi:
           path: /posts/{id}/comments
