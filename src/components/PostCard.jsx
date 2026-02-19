@@ -329,10 +329,15 @@ export default function PostCard({ post, onDelete, onLike }) {
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+              open
+                ? "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300"
+                : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:hover:border-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-300"
+            }`}
             aria-label={`View comments, ${commentCount} comments`}
+            aria-expanded={open}
           >
-            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            <MessageCircle className="w-4 h-4" fill={open ? "currentColor" : "none"} aria-hidden="true" />
             <span>{commentCount}</span>
           </button>
           <button
