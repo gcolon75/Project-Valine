@@ -7,7 +7,8 @@ import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
 import { Card, Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
-import { getFeedPosts } from "../services/postService";
+import { getFeedPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
+import toast from "react-hot-toast";
 import { getMyProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
 import { ALLOWED_TAGS } from "../constants/tags";
@@ -40,6 +41,42 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  // Handler for liking/unliking posts on dashboard
+  const handleLikePost = async (postId) => {
+    const post = apiPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const isCurrentlyLiked = post.isLiked;
+
+    // Optimistic update
+    setApiPosts(prevPosts => prevPosts.map(p =>
+      p.id === postId ? {
+        ...p,
+        likes: isCurrentlyLiked ? Math.max(0, (p.likes || 0) - 1) : (p.likes || 0) + 1,
+        isLiked: !isCurrentlyLiked
+      } : p
+    ));
+
+    try {
+      if (isCurrentlyLiked) {
+        await unlikePostApi(postId);
+      } else {
+        await likePostApi(postId);
+      }
+    } catch (error) {
+      // Rollback on error
+      setApiPosts(prevPosts => prevPosts.map(p =>
+        p.id === postId ? {
+          ...p,
+          likes: isCurrentlyLiked ? (p.likes || 0) + 1 : Math.max(0, (p.likes || 0) - 1),
+          isLiked: isCurrentlyLiked
+        } : p
+      ));
+      console.error('Failed to toggle like:', error);
+      toast.error('Failed to update like');
+    }
+  };
+
   // Try to fetch posts from API, fallback to context posts
   useEffect(() => {
     setLoadingApi(true);
@@ -49,19 +86,25 @@ export default function Dashboard() {
           // Transform API posts to match the expected format
           const transformed = data.map(post => ({
             id: post.id,
+            authorId: post.authorId,
             author: {
-              name: post.author.displayName,
-              role: post.author.username,
-              avatar: post.author.avatar || ''
+              id: post.author?.id,
+              name: post.author?.displayName,
+              role: post.author?.username,
+              avatar: post.author?.avatar || ''
             },
             title: '',
             body: post.content,
-            tags: [],
+            tags: post.tags || [],
             createdAt: new Date(post.createdAt).getTime(),
             mediaUrl: post.media?.[0] || '',
-            likes: 0,
-            saved: false,
-            comments: 0
+            mediaId: post.mediaId,
+            mediaAttachment: post.mediaAttachment,
+            visibility: post.visibility || 'public',
+            likes: post.likes || 0,
+            isLiked: post.isLiked || false,
+            saved: post.isSaved || false,
+            comments: post.comments || 0
           }));
           setApiPosts(transformed);
         }
@@ -238,9 +281,10 @@ export default function Dashboard() {
                 />
               ) : (
                 results.map((p, i) => (
-                  <PostCard 
-                    key={p.id} 
+                  <PostCard
+                    key={p.id}
                     post={p}
+                    onLike={handleLikePost}
                     style={{ animationDelay: `${i * 0.05}s` }}
                   />
                 ))

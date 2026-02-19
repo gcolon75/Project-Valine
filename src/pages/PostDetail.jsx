@@ -470,10 +470,14 @@ export default function PostDetail() {
             <Heart className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} />
             <span>{likesCount > 0 ? likesCount : 'Like'}</span>
           </button>
-          <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+          <button
+            className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-blue-500 transition"
+            aria-label="View comments"
+            onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             <MessageCircle className="w-5 h-5" />
             <span>{commentsCount}</span>
-          </div>
+          </button>
           <button
             className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-emerald-500 transition"
             aria-label="Bookmark post"
@@ -491,7 +495,9 @@ export default function PostDetail() {
         </div>
 
         {/* Comments Section */}
-        <CommentList postId={id} onCommentAdded={handleCommentAdded} />
+        <div id="comments-section">
+          <CommentList postId={id} onCommentAdded={handleCommentAdded} />
+        </div>
       </article>
     </div>
   );
