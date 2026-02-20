@@ -40,7 +40,7 @@ const Home = () => {
                     </span>
                   </div>
                   
-                  <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                  <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up pb-2 leading-tight" style={{ animationDelay: '0.1s' }}>
                     Connect. Create. Collaborate.
                   </h1>
                   
@@ -53,9 +53,9 @@ const Home = () => {
                     <Link
                       to="/join"
                       className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
-                      aria-label="Get started with a free account"
+                      aria-label="Sign up for a free account"
                     >
-                      <span>Get Started Free</span>
+                      <span>Sign up</span>
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                     </Link>
                     <Link

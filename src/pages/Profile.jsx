@@ -429,7 +429,9 @@ export default function Profile() {
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 object-cover"
                 />
               ) : (
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 bg-neutral-200 dark:bg-neutral-700" aria-hidden="true" />
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-surface-2 bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center" aria-hidden="true">
+                  <User className="w-12 h-12 sm:w-16 sm:h-16 text-neutral-400" />
+                </div>
               )}
             </div>
 
@@ -807,55 +809,63 @@ export default function Profile() {
         
         {activeTab === 'about' && (
           <div className="space-y-6">
-            {/* Overview Card */}
-            <Card title="Overview" padding="default">
-              <div className="space-y-3">
-                {displayData.title && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                      {displayData.title}
-                    </h3>
-                  </div>
-                )}
-                
-                {/* Professional details */}
-                <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
-                  {displayData.pronouns && displayData.showPronouns !== false && (
-                    <span>{displayData.pronouns}</span>
+            {/* Overview Card - Only show if there's content */}
+            {(displayData.title || displayData.bio || 
+              (displayData.pronouns && displayData.showPronouns !== false) ||
+              (displayData.location && displayData.showLocation !== false) ||
+              (displayData.availabilityStatus && displayData.showAvailability !== false)) && (
+              <Card title="Overview" padding="default">
+                <div className="space-y-4">
+                  {displayData.title && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                        <Briefcase className="w-5 h-5 text-[#0CCE6B]" />
+                        {displayData.title}
+                      </h3>
+                    </div>
                   )}
-                  {displayData.location && displayData.showLocation !== false && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {displayData.location}
-                    </span>
+                  
+                  {/* Professional details */}
+                  {((displayData.pronouns && displayData.showPronouns !== false) ||
+                    (displayData.location && displayData.showLocation !== false) ||
+                    (displayData.availabilityStatus && displayData.showAvailability !== false)) && (
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                      {displayData.pronouns && displayData.showPronouns !== false && (
+                        <span className="flex items-center gap-1">
+                          <User className="w-4 h-4" />
+                          {displayData.pronouns}
+                        </span>
+                      )}
+                      {displayData.location && displayData.showLocation !== false && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {displayData.location}
+                        </span>
+                      )}
+                      {displayData.availabilityStatus && displayData.showAvailability !== false && (
+                        <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          displayData.availabilityStatus === 'available' 
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                            : displayData.availabilityStatus === 'booking'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                        }`}>
+                          <Clock className="w-3 h-3" />
+                          {displayData.availabilityStatus === 'available' ? 'Available' : 
+                           displayData.availabilityStatus === 'booking' ? 'Accepting Bookings' : 'Not Available'}
+                        </span>
+                      )}
+                    </div>
                   )}
-                  {displayData.availabilityStatus && displayData.showAvailability !== false && (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      displayData.availabilityStatus === 'available' 
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                        : displayData.availabilityStatus === 'booking'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                    }`}>
-                      {displayData.availabilityStatus === 'available' ? 'Available' : 
-                       displayData.availabilityStatus === 'booking' ? 'Accepting Bookings' : 'Not Available'}
-                    </span>
+                  
+                  {displayData.bio && (
+                    <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                      {displayData.bio}
+                    </p>
                   )}
                 </div>
-                
-                {displayData.bio && (
-                  <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                    {displayData.bio}
-                  </p>
-                )}
-                
-                {!displayData.title && !displayData.bio && (
-                  <p className="text-neutral-500 dark:text-neutral-400 italic">
-                    No overview information available
-                  </p>
-                )}
-              </div>
-            </Card>
+              </Card>
+            )}
 
             {/* Experience & Credits */}
             {displayData.credits?.length > 0 && (

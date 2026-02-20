@@ -16,13 +16,13 @@ describe('HeroSection', () => {
 
   it('renders founder story', () => {
     renderWithRouter(<HeroSection />);
-    expect(screen.getByText(/Joint was created by Justin Valine/i)).toBeInTheDocument();
-    expect(screen.getByText(/platform built by artists, for artists/i)).toBeInTheDocument();
+    expect(screen.getByText(/Actors, Writers, Influencers, Musicians, and Producers/i)).toBeInTheDocument();
+    expect(screen.getByText(/Co-created by Justin Valine and Gabriel Colon/i)).toBeInTheDocument();
   });
 
   it('renders CTA buttons', () => {
     renderWithRouter(<HeroSection />);
-    expect(screen.getByRole('link', { name: /Get started with a free account/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Sign up for a free account/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Learn more about Joint/i })).toBeInTheDocument();
   });
 
