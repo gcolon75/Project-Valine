@@ -31,7 +31,7 @@ describe('MarketingLayout - Allowlist Enforcement', () => {
     vi.clearAllMocks();
   });
 
-  it('should show "Get Started" button when allowlist is not active', () => {
+  it('should show "Sign up" button when allowlist is not active', () => {
     const { isAllowlistActive } = vi.mocked(await import('../../utils/allowlistConfig'));
     isAllowlistActive.mockReturnValue(false);
 
@@ -43,13 +43,13 @@ describe('MarketingLayout - Allowlist Enforcement', () => {
       </BrowserRouter>
     );
 
-    // Should show "Get Started" button
-    const getStartedButton = screen.getByText(/Get Started/i);
-    expect(getStartedButton).toBeInTheDocument();
-    expect(getStartedButton.closest('a')).toHaveAttribute('href', '/join');
+    // Should show "Sign up" button
+    const signUpButton = screen.getByText(/Sign up/i);
+    expect(signUpButton).toBeInTheDocument();
+    expect(signUpButton.closest('a')).toHaveAttribute('href', '/join');
   });
 
-  it('should hide "Get Started" button when allowlist is active', () => {
+  it('should hide "Sign up" button when allowlist is active', () => {
     const { isAllowlistActive } = vi.mocked(await import('../../utils/allowlistConfig'));
     isAllowlistActive.mockReturnValue(true);
 
@@ -61,8 +61,8 @@ describe('MarketingLayout - Allowlist Enforcement', () => {
       </BrowserRouter>
     );
 
-    // Should NOT show "Get Started" button
-    expect(screen.queryByText(/Get Started/i)).not.toBeInTheDocument();
+    // Should NOT show "Sign up" button
+    expect(screen.queryByText(/Sign up/i)).not.toBeInTheDocument();
   });
 
   it('should always show "Sign In" link regardless of allowlist', () => {
