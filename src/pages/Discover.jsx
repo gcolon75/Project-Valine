@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useFeed } from "../context/FeedContext";
 import PostCard from "../components/PostCard";
 import { Search, TrendingUp, User, UserPlus, Loader2 } from "lucide-react";
-import { followProfile, sendConnectionRequest } from "../services/connectionService";
+import { followProfile, unfollowProfile, sendConnectionRequest, getMyFollowing } from "../services/connectionService";
 import { searchUsers as searchUsersApi } from "../services/search";
 import toast from "react-hot-toast";
 
@@ -18,6 +18,24 @@ export default function Discover() {
   const [followingIds, setFollowingIds] = useState(new Set());
   
   const postResults = useMemo(() => search(q), [q, search]);
+
+  // Fetch current user's following list on mount to know who is already followed
+  useEffect(() => {
+    const fetchFollowingList = async () => {
+      try {
+        const response = await getMyFollowing();
+        if (response?.items) {
+          // Extract user IDs from the following list
+          const ids = new Set(response.items.map(item => item.userId || item.id));
+          setFollowingIds(ids);
+        }
+      } catch (error) {
+        console.error('Failed to fetch following list:', error);
+      }
+    };
+
+    fetchFollowingList();
+  }, []);
 
   // Search users via API (real users only)
   const searchUsers = async (query) => {
@@ -63,7 +81,7 @@ export default function Discover() {
     return () => clearTimeout(timer);
   }, [q, searchType]);
 
-  // Handle follow action
+  // Handle follow/unfollow action
   const handleFollow = async (user, e) => {
     e.stopPropagation(); // Prevent navigation to profile
 
@@ -72,8 +90,19 @@ export default function Discover() {
       return;
     }
 
+    const isCurrentlyFollowing = followingIds.has(user.id);
+
     try {
-      if (user.profileVisibility === 'private') {
+      if (isCurrentlyFollowing) {
+        // Unfollow
+        await unfollowProfile(user.profileId);
+        setFollowingIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(user.id);
+          return newSet;
+        });
+        toast.success(`Unfollowed ${user.displayName}`);
+      } else if (user.profileVisibility === 'private') {
         await sendConnectionRequest(user.id);
         toast.success('Follow request sent!');
       } else {
@@ -82,8 +111,8 @@ export default function Discover() {
         toast.success(`Now following ${user.displayName}!`);
       }
     } catch (error) {
-      console.error('Failed to follow:', error);
-      toast.error('Failed to follow. Please try again.');
+      console.error('Failed to follow/unfollow:', error);
+      toast.error('Failed to update follow status. Please try again.');
     }
   };
 
@@ -193,12 +222,11 @@ export default function Discover() {
                     </p>
                   )}
 
-                  <button 
+                  <button
                     onClick={(e) => handleFollow(user, e)}
-                    disabled={followingIds.has(user.id)}
                     className={`w-full py-2 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 ${
                       followingIds.has(user.id)
-                        ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 cursor-default'
+                        ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-300 dark:hover:bg-neutral-600'
                         : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white'
                     }`}
                   >

@@ -207,6 +207,19 @@ export default function Profile() {
     try {
       await followProfile(profileId);
       setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
+      // Update follower count optimistically
+      setProfile(prev => ({
+        ...prev,
+        followersCount: (prev.followersCount || 0) + 1,
+        profile: prev.profile ? {
+          ...prev.profile,
+          followersCount: (prev.profile.followersCount || 0) + 1
+        } : prev.profile,
+        _count: prev._count ? {
+          ...prev._count,
+          followers: (prev._count.followers || 0) + 1
+        } : prev._count
+      }));
       toast.success(`Now following ${profile.displayName || profile.username}!`);
     } catch (err) {
       console.error('Failed to follow:', err);
@@ -225,6 +238,19 @@ export default function Profile() {
     try {
       await unfollowProfile(profileId);
       setConnectionStatus(prev => ({ ...prev, isFollowing: false }));
+      // Update follower count optimistically
+      setProfile(prev => ({
+        ...prev,
+        followersCount: Math.max(0, (prev.followersCount || 0) - 1),
+        profile: prev.profile ? {
+          ...prev.profile,
+          followersCount: Math.max(0, (prev.profile.followersCount || 0) - 1)
+        } : prev.profile,
+        _count: prev._count ? {
+          ...prev._count,
+          followers: Math.max(0, (prev._count.followers || 0) - 1)
+        } : prev._count
+      }));
       toast.success('Unfollowed successfully');
     } catch (err) {
       console.error('Failed to unfollow:', err);
