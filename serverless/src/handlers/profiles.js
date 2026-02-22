@@ -1455,15 +1455,10 @@ export const getMyProfile = async (event) => {
       }
     }
 
-    // Get follower/following counts
-    const [followersCount, followingCount] = await Promise.all([
-      prisma.connectionRequest.count({
-        where: { receiverId: userId, status: 'accepted' }
-      }),
-      prisma.connectionRequest.count({
-        where: { senderId: userId, status: 'accepted' }
-      })
-    ]);
+    // Get follower/following counts from the Profile model (updated by Follow system)
+    // Fallback to 0 if profile doesn't exist yet
+    const followersCount = profile?.followersCount || 0;
+    const followingCount = profile?.followingCount || 0;
 
     // Construct response with graceful fallbacks
     // Use socialLinks from profile for links (maps frontend 'links' field)
@@ -1495,7 +1490,10 @@ export const getMyProfile = async (event) => {
       education: education,
       credits: credits,
       gallery: gallery,
-      // Stats
+      // Follower/following counts (top-level for easy access)
+      followersCount: followersCount,
+      followingCount: followingCount,
+      // Stats (legacy format, kept for backward compatibility)
       stats: {
         followers: followersCount,
         following: followingCount,

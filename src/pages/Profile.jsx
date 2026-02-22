@@ -703,7 +703,7 @@ export default function Profile() {
               aria-label="View followers"
             >
               <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
-                {displayData._count?.followers || displayData.followersCount || 0}
+                {displayData._count?.followers || displayData.followersCount || displayData.profile?.followersCount || 0}
               </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Followers</span>
             </button>
@@ -713,7 +713,7 @@ export default function Profile() {
               aria-label="View following"
             >
               <span className="text-xl sm:text-2xl font-bold text-[#0CCE6B]">
-                {displayData._count?.following || displayData.followingCount || 0}
+                {displayData._count?.following || displayData.followingCount || displayData.profile?.followingCount || 0}
               </span>
               <span className="text-neutral-600 dark:text-neutral-400 text-sm ml-2">Following</span>
             </button>
@@ -1099,8 +1099,8 @@ export default function Profile() {
         type={followersModalType}
         count={
           followersModalType === 'followers'
-            ? displayData._count?.followers || displayData.followersCount || 0
-            : displayData._count?.following || displayData.followingCount || 0
+            ? displayData._count?.followers || displayData.followersCount || displayData.profile?.followersCount || 0
+            : displayData._count?.following || displayData.followingCount || displayData.profile?.followingCount || 0
         }
       />
     </div>
