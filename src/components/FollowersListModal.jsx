@@ -36,10 +36,12 @@ export default function FollowersListModal({
         const items = response.items || response || [];
         setUsers(items);
 
-        // Initialize following states
+        // Initialize following states using profileId
         const states = {};
         items.forEach(item => {
-          states[item.id] = item.isFollowing || false;
+          if (item.profileId) {
+            states[item.profileId] = item.isFollowing || false;
+          }
         });
         setFollowingStates(states);
       } catch (err) {
@@ -55,7 +57,7 @@ export default function FollowersListModal({
   }, [isOpen, profileId, type]);
 
   const handleFollow = async (targetProfileId) => {
-    if (followLoading[targetProfileId]) return;
+    if (!targetProfileId || followLoading[targetProfileId]) return;
 
     setFollowLoading(prev => ({ ...prev, [targetProfileId]: true }));
     try {
@@ -71,7 +73,7 @@ export default function FollowersListModal({
   };
 
   const handleUnfollow = async (targetProfileId) => {
-    if (followLoading[targetProfileId]) return;
+    if (!targetProfileId || followLoading[targetProfileId]) return;
 
     setFollowLoading(prev => ({ ...prev, [targetProfileId]: true }));
     try {
@@ -150,13 +152,15 @@ export default function FollowersListModal({
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-3">
               {filteredUsers.map(item => {
-                const isOwnProfile = user && (item.userId === user.id || item.id === user.id);
-                const isFollowing = followingStates[item.id];
-                const isLoading = followLoading[item.id];
+                const itemId = item.userId || item.id;
+                const itemProfileId = item.profileId;
+                const isOwnProfile = user && (itemId === user.id);
+                const isFollowing = followingStates[itemProfileId];
+                const isLoading = followLoading[itemProfileId];
 
                 return (
                   <div
-                    key={item.id}
+                    key={itemId}
                     className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                   >
                     {/* Avatar */}
@@ -184,8 +188,8 @@ export default function FollowersListModal({
                     {/* Follow Button */}
                     {!isOwnProfile && (
                       <button
-                        onClick={() => isFollowing ? handleUnfollow(item.id) : handleFollow(item.id)}
-                        disabled={isLoading}
+                        onClick={() => isFollowing ? handleUnfollow(itemProfileId) : handleFollow(itemProfileId)}
+                        disabled={isLoading || !itemProfileId}
                         className={`px-4 py-2 rounded-lg font-semibold transition-all min-w-[100px] ${
                           isFollowing
                             ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white hover:bg-neutral-300 dark:hover:bg-neutral-600'
