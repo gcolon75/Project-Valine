@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useFeed } from "../context/FeedContext";
 import PostCard from "../components/PostCard";
 import { Search, TrendingUp, User, UserPlus, Loader2 } from "lucide-react";
-import { followUser, sendConnectionRequest } from "../services/connectionService";
+import { followProfile, sendConnectionRequest } from "../services/connectionService";
 import { searchUsers as searchUsersApi } from "../services/search";
 import toast from "react-hot-toast";
 
@@ -33,11 +33,12 @@ export default function Discover() {
         // Map API response to expected format
         const mappedUsers = response.items.map(user => ({
           id: user.id,
+          profileId: user.profile?.id,
           displayName: user.displayName || user.username,
           username: user.username,
           avatar: user.avatar,
           title: user.title || user.bio || user.role || '',
-          profileVisibility: 'public',
+          profileVisibility: user.profile?.visibility === 'FOLLOWERS_ONLY' ? 'private' : 'public',
         }));
         setUserResults(mappedUsers);
       } else {
@@ -65,13 +66,18 @@ export default function Discover() {
   // Handle follow action
   const handleFollow = async (user, e) => {
     e.stopPropagation(); // Prevent navigation to profile
-    
+
+    if (!user.profileId) {
+      toast.error('Unable to follow - profile not found');
+      return;
+    }
+
     try {
       if (user.profileVisibility === 'private') {
         await sendConnectionRequest(user.id);
         toast.success('Follow request sent!');
       } else {
-        await followUser(user.id);
+        await followProfile(user.profileId);
         setFollowingIds(prev => new Set([...prev, user.id]));
         toast.success(`Now following ${user.displayName}!`);
       }

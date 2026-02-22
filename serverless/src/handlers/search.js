@@ -142,6 +142,12 @@ export const searchUsers = async (event) => {
         bio: true,
         role: true,
         createdAt: true,
+        profile: {
+          select: {
+            id: true,
+            visibility: true,
+          },
+        },
       },
       distinct: ['id'],  // Dedupe by id (username is already unique per DB constraint)
       orderBy: { createdAt: 'desc' },
