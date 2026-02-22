@@ -1,6 +1,6 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Search, PlusCircle, Bell, User, Video, Settings, LogOut, AlertTriangle } from "lucide-react";
+import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, AlertTriangle } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
@@ -53,7 +53,6 @@ export default function AppLayout() {
             {/* Main Navigation - Desktop */}
             <nav className="flex items-center space-x-2" aria-label="Main navigation">
               <NavItem to="/dashboard" icon={Home} label="Home" />
-              <NavItem to="/reels" icon={Video} label="Reels" />
               <NavItem to="/discover" icon={Search} label="Discover" />
               <NavItem to="/post" icon={PlusCircle} label="Create" />
               <NavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
@@ -96,7 +95,7 @@ export default function AppLayout() {
       >
         <div className="flex items-center justify-around px-2 py-2 pb-safe">
           <MobileNavItem to="/dashboard" icon={Home} label="Home" />
-          <MobileNavItem to="/reels" icon={Video} label="Reels" />
+          <MobileNavItem to="/discover" icon={Search} label="Discover" />
           <MobileNavItem to="/post" icon={PlusCircle} label="Create" />
           <MobileNavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
           <MobileNavItem to="/profile" icon={User} label="Profile" />
