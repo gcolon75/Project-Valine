@@ -176,10 +176,11 @@ export default function Profile() {
   // Fetch connection status for other users' profiles
   useEffect(() => {
     const fetchConnectionStatus = async () => {
-      if (isOwnProfile || !profile?.id || !user) return;
-      
+      const profileId = profile?.profile?.id || profile?.profileId;
+      if (isOwnProfile || !profileId || !user) return;
+
       try {
-        const status = await getProfileStatus(profile.id);
+        const status = await getProfileStatus(profileId);
         setConnectionStatus({
           isFollowing: status.isFollowing || false,
           isFollowedBy: status.isFollowedBy || false,
@@ -195,15 +196,16 @@ export default function Profile() {
     };
 
     fetchConnectionStatus();
-  }, [isOwnProfile, profile?.id, user]);
+  }, [isOwnProfile, profile?.profile?.id, profile?.profileId, user]);
 
   // Handle follow action
   const handleFollow = async () => {
-    if (!profile?.id) return;
-    
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+
     setFollowLoading(true);
     try {
-      await followProfile(profile.id);
+      await followProfile(profileId);
       setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
       toast.success(`Now following ${profile.displayName || profile.username}!`);
     } catch (err) {
@@ -216,11 +218,12 @@ export default function Profile() {
 
   // Handle unfollow action
   const handleUnfollow = async () => {
-    if (!profile?.id) return;
-    
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+
     setFollowLoading(true);
     try {
-      await unfollowProfile(profile.id);
+      await unfollowProfile(profileId);
       setConnectionStatus(prev => ({ ...prev, isFollowing: false }));
       toast.success('Unfollowed successfully');
     } catch (err) {
@@ -257,8 +260,11 @@ export default function Profile() {
     setShowBlockConfirm(false);
     setShowBlockMenu(false);
     
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+
     try {
-      await blockProfile(profile.id);
+      await blockProfile(profileId);
       setConnectionStatus(prev => ({ 
         ...prev, 
         isBlocked: true,
@@ -273,12 +279,13 @@ export default function Profile() {
 
   // Handle unblock action
   const handleUnblock = async () => {
-    if (!profile?.id) return;
-    
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+
     setShowBlockMenu(false);
-    
+
     try {
-      await unblockProfile(profile.id);
+      await unblockProfile(profileId);
       setConnectionStatus(prev => ({ ...prev, isBlocked: false }));
       toast.success('User unblocked');
     } catch (err) {
@@ -1062,7 +1069,7 @@ export default function Profile() {
       <FollowersListModal
         isOpen={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
-        profileId={profile?.id}
+        profileId={profile?.profile?.id || profile?.profileId}
         type={followersModalType}
         count={
           followersModalType === 'followers'

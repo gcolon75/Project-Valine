@@ -53,8 +53,9 @@ export const getUser = async (event) => {
     const prisma = getPrisma();
     const user = await prisma.user.findUnique({
       where: { username },
-      include: { 
+      include: {
         posts: { orderBy: { createdAt: 'desc' }, take: 20 },
+        profile: { select: { id: true, followersCount: true, followingCount: true } },
         _count: { select: { posts: true } }
       },
     });
