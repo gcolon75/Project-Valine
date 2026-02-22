@@ -1095,7 +1095,7 @@ export default function Profile() {
       <FollowersListModal
         isOpen={showFollowersModal}
         onClose={() => setShowFollowersModal(false)}
-        profileId={profile?.profile?.id || profile?.profileId}
+        profileId={profile?.profile?.id || profile?.profileId || profile?.id}
         type={followersModalType}
         count={
           followersModalType === 'followers'
