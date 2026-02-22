@@ -9,26 +9,26 @@ datasource db {
 }
 
 model User {
-  id                      String                    @id @default(uuid())
-  username                String                    @unique
-  email                   String                    @unique
-  normalizedEmail         String                    @unique
-  emailVerified           Boolean                   @default(false)
-  emailVerifiedAt         DateTime?
-  passwordHash            String
-  displayName             String?
-  bio                     String?
-  avatar                  String?
-  name                    String?
-  role                    String                    @default("artist")
-  status                  String                    @default("active")
-  theme                   String?                   @default("light")
-  onboardingComplete      Boolean                   @default(false)
-  twoFactorEnabled        Boolean                   @default(false)
-  twoFactorSecret         String?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
-  profileComplete         Boolean                   @default(false)
+  id                 String    @id @default(uuid())
+  username           String    @unique
+  email              String    @unique
+  normalizedEmail    String    @unique
+  emailVerified      Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  passwordHash       String
+  displayName        String?
+  bio                String?
+  avatar             String?
+  name               String?
+  role               String    @default("artist")
+  status             String    @default("active")
+  theme              String?   @default("light")
+  onboardingComplete Boolean   @default(false)
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecret    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  profileComplete    Boolean   @default(false)
 
   auditLogs               AuditLog[]
   auditions               Audition[]
@@ -57,6 +57,10 @@ model User {
   settings                UserSettings?
   accessRequests          AccessRequest[]           @relation("AccessRequests")
   accessGrants            AccessGrant[]             @relation("AccessGrants")
+  followers               Follow[]                  @relation("Following")
+  following               Follow[]                  @relation("Follower")
+  blocking                Block[]                   @relation("Blocker")
+  blockedBy               Block[]                   @relation("Blocked")
 
   @@index([email])
   @@index([normalizedEmail])
@@ -76,7 +80,7 @@ model Script {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
   @@index([createdAt])
@@ -91,7 +95,7 @@ model Audition {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  host      User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  host User @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
   @@index([createdAt])
@@ -99,39 +103,39 @@ model Audition {
 }
 
 model Post {
-  id            String   @id @default(uuid())
-  content       String
-  media         String[] @map("media")
-  tags          String[]
-  authorId      String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(uuid())
+  content   String
+  media     String[] @map("media")
+  tags      String[]
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Optional attachment to a Media row
-  mediaId       String?
-  
+  mediaId String?
+
   // 4-Tier Content System fields
   visibility     Visibility @default(PUBLIC)
-  isFree         Boolean @default(true)
+  isFree         Boolean    @default(true)
   price          Float?
   thumbnailUrl   String?
-  requiresAccess Boolean @default(false)
-  allowDownload  Boolean @default(false)
-  
-  author        User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  requiresAccess Boolean    @default(false)
+  allowDownload  Boolean    @default(false)
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   // ✅ FIX: match relation name used on Media.posts
-  mediaAttached Media?   @relation("PostMedia", fields: [mediaId], references: [id])
+  mediaAttached Media? @relation("PostMedia", fields: [mediaId], references: [id])
 
   // Access control relations
-  grants         AccessGrant[]
-  requests       AccessRequest[]
+  grants   AccessGrant[]
+  requests AccessRequest[]
 
   // Comments
-  comments       Comment[]
+  comments Comment[]
 
   // Likes
-  likes          PostLike[]
+  likes PostLike[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -142,14 +146,14 @@ model Post {
 }
 
 model Reel {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   videoUrl  String
   thumbnail String?
   caption   String?
   tags      String[]
   authorId  String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   bookmarks Bookmark[]
   comments  Comment[]
@@ -168,15 +172,15 @@ model Comment {
   reelId    String?
   postId    String?
   authorId  String
-  parentId  String?  // For threaded replies
+  parentId  String? // For threaded replies
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  reel      Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reel    Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([reelId])
   @@index([postId])
@@ -192,8 +196,8 @@ model Like {
   userId    String
   createdAt DateTime @default(now())
 
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([reelId, userId])
   @@index([reelId])
@@ -207,8 +211,8 @@ model PostLike {
   userId    String
   createdAt DateTime @default(now())
 
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@index([postId])
@@ -222,8 +226,8 @@ model Bookmark {
   userId    String
   createdAt DateTime @default(now())
 
-  reel      Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([reelId, userId])
   @@index([reelId])
@@ -232,28 +236,28 @@ model Bookmark {
 }
 
 model Conversation {
-  id            String                    @id @default(uuid())
+  id            String    @id @default(uuid())
   title         String?
   lastMessage   String?
   lastMessageAt DateTime?
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  participants  ConversationParticipant[]
-  messages      Message[]
+  participants ConversationParticipant[]
+  messages     Message[]
 
   @@index([lastMessageAt])
   @@map("conversations")
 }
 
 model ConversationParticipant {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   conversationId String
   userId         String
-  joinedAt       DateTime     @default(now())
+  joinedAt       DateTime @default(now())
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([userId])
@@ -262,14 +266,14 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   text           String
   conversationId String
   senderId       String
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([senderId])
@@ -287,8 +291,8 @@ model Notification {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  recipient   User     @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  triggerer   User?    @relation("triggerer", fields: [triggererId], references: [id])
+  recipient User  @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  triggerer User? @relation("triggerer", fields: [triggererId], references: [id])
 
   @@index([recipientId, isRead])
   @@index([createdAt])
@@ -305,8 +309,8 @@ model ConnectionRequest {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  sender     User     @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender   User @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
   @@index([senderId])
@@ -316,52 +320,56 @@ model ConnectionRequest {
 }
 
 model Profile {
-  id          String        @id @default(uuid())
-  userId      String        @unique
-  vanityUrl   String        @unique
-  headline    String?
-  bio         String?
-  title       String?
-  bannerUrl   String?
+  id        String  @id @default(uuid())
+  userId    String  @unique
+  vanityUrl String  @unique
+  headline  String?
+  bio       String?
+  title     String?
+  bannerUrl String?
 
   // arrays stored as Postgres text[]
-  roles       String[]
-  tags        String[]
+  roles String[]
+  tags  String[]
 
   // ✅ FIX: Prisma expects this field; DB needs column too.
   availabilityStatus String? @map("availabilityStatus")
 
   location    Json?
-  privacy     Json          @default("{}")
+  privacy     Json  @default("{}")
   socialLinks Json?
   budgetMin   Int?
   budgetMax   Int?
 
   // Profile display fields
-  pronouns    String?
-  showPronouns Boolean @default(true)
-  showLocation Boolean @default(true)
+  pronouns         String?
+  showPronouns     Boolean @default(true)
+  showLocation     Boolean @default(true)
   showAvailability Boolean @default(true)
 
   // Privacy & messaging preferences (Phase 2)
-  visibility String @default("PUBLIC")
-  messagePermission String @default("EVERYONE")
-  isSearchable Boolean @default(true)
+  visibility        String  @default("PUBLIC")
+  messagePermission String  @default("EVERYONE")
+  isSearchable      Boolean @default(true)
 
   // Notification preferences (Phase 2)
-  notifyOnFollow Boolean @default(true)
-  notifyOnMessage Boolean @default(true)
+  notifyOnFollow    Boolean @default(true)
+  notifyOnMessage   Boolean @default(true)
   notifyOnPostShare Boolean @default(true)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  // Follower counts (denormalized for performance)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
 
-  credits     Credit[]
-  education   Education[]
-  media       Media[]
-  links       ProfileLink[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credits   Credit[]
+  education Education[]
+  media     Media[]
+  links     ProfileLink[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([vanityUrl])
   @@index([userId])
@@ -381,8 +389,8 @@ model ProfileLink {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([profileId])
@@ -401,14 +409,14 @@ model Education {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@map("education")
 }
 
 model Media {
-  id              String        @id @default(uuid())
+  id              String   @id @default(uuid())
   profileId       String
   type            String
   s3Key           String
@@ -419,18 +427,18 @@ model Media {
   width           Int?
   height          Int?
   fileSize        Int?
-  privacy         String        @default("public")
-  processedStatus String        @default("pending")
+  privacy         String   @default("public")
+  processedStatus String   @default("pending")
   metadata        Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   // ✅ FIX: relation name must match Post.mediaAttached
-  posts           Post[]        @relation("PostMedia")
+  posts Post[] @relation("PostMedia")
 
-  reelRequests    ReelRequest[]
+  reelRequests ReelRequest[]
 
   @@index([profileId])
   @@index([type])
@@ -453,7 +461,7 @@ model Credit {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@index([year])
@@ -471,7 +479,7 @@ model UserSettings {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
 }
@@ -487,9 +495,9 @@ model ReelRequest {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  media       Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  owner       User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  media     Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  owner     User  @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  requester User  @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
 
   @@unique([mediaId, requesterId])
   @@index([mediaId])
@@ -505,7 +513,7 @@ model EmailVerificationToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -521,7 +529,7 @@ model PasswordResetToken {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -537,7 +545,7 @@ model TwoFactorRecoveryCode {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, used])
@@ -554,7 +562,7 @@ model Session {
   lastActivity DateTime @default(now())
   createdAt    DateTime @default(now())
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -575,7 +583,7 @@ model AuditLog {
   metadata   Json?
   createdAt  DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([action])
@@ -599,12 +607,12 @@ model analytics_events {
 }
 
 model moderation_actions {
-  id                 String             @id
-  reportId           String
-  action             String
-  reason             String?
-  actorId            String
-  createdAt          DateTime           @default(now())
+  id        String   @id
+  reportId  String
+  action    String
+  reason    String?
+  actorId   String
+  createdAt DateTime @default(now())
 
   moderation_reports moderation_reports @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
@@ -614,17 +622,17 @@ model moderation_actions {
 }
 
 model moderation_reports {
-  id                 String               @id
-  reporterId         String
-  targetType         String
-  targetId           String
-  category           String
-  description        String?
-  evidenceUrls       String[]             @default([])
-  status             String               @default("open")
-  severity           Int                  @default(0)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime
+  id           String   @id
+  reporterId   String
+  targetType   String
+  targetId     String
+  category     String
+  description  String?
+  evidenceUrls String[] @default([])
+  status       String   @default("open")
+  severity     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
 
   moderation_actions moderation_actions[]
 
@@ -658,7 +666,7 @@ model refresh_tokens {
   createdAt     DateTime  @default(now())
   lastUsedAt    DateTime  @default(now())
 
-  users         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([jti])
   @@index([userId])
@@ -702,9 +710,9 @@ model AccessRequest {
   message     String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  
-  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  requester   User          @relation("AccessRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  requester User @relation("AccessRequests", fields: [requesterId], references: [id], onDelete: Cascade)
 
   @@unique([postId, requesterId])
   @@index([postId])
@@ -714,18 +722,52 @@ model AccessRequest {
 }
 
 model AccessGrant {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   postId    String
   userId    String
-  grantedAt DateTime @default(now())
+  grantedAt DateTime  @default(now())
   expiresAt DateTime?
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation("AccessGrants", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@index([postId])
   @@index([userId])
   @@index([expiresAt])
   @@map("access_grants")
+}
+
+// ========================================
+// Social Graph (Follow/Block)
+// ========================================
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("blocks")
 }
