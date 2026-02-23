@@ -16,11 +16,14 @@ export default function Notifications() {
   const [followLoading, setFollowLoading] = useState({});
 
   // Fetch notifications from API with fallback
-  const { data: notifications, loading, usingFallback, refetch } = useApiFallback(
+  const { data: notificationsData, loading, usingFallback, refetch } = useApiFallback(
     () => getNotifications({ unreadOnly: filter === 'unread' }),
-    [],
+    { notifications: [] },
     { diagnosticContext: 'Notifications.getNotifications' }
   );
+
+  // Extract notifications array from response
+  const notifications = notificationsData?.notifications || [];
 
   // Check follow status for FOLLOW notifications
   useEffect(() => {
@@ -103,7 +106,7 @@ export default function Notifications() {
   // Handle marking a single notification as read and navigate
   const handleNotificationClick = async (notification) => {
     // Mark as read if unread
-    if (!notification.read && !usingFallback) {
+    if (!notification.isRead && !usingFallback) {
       try {
         await markNotificationRead(notification.id);
         refreshUnreadCounts(); // Update badge counts
@@ -207,7 +210,7 @@ export default function Notifications() {
 
   const filteredNotifications = filter === 'all' 
     ? notifications 
-    : notifications.filter(n => !n.read);
+    : notifications.filter(n => !n.isRead);
 
   // Group notifications by date
   const groupedNotifications = groupNotificationsByDate(filteredNotifications);
@@ -235,7 +238,7 @@ export default function Notifications() {
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
                 className={`p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer ${
-                  notification.read
+                  notification.isRead
                     ? 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700'
                     : 'bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20'
                 }`}
@@ -251,7 +254,7 @@ export default function Notifications() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-1">
-                      <p className={`text-sm ${notification.read ? 'text-neutral-900 dark:text-white' : 'text-neutral-900 dark:text-white font-semibold'}`}>
+                      <p className={`text-sm ${notification.isRead ? 'text-neutral-900 dark:text-white' : 'text-neutral-900 dark:text-white font-semibold'}`}>
                         {getNotificationMessage(notification)}
                       </p>
                       <span className="text-xs text-neutral-500 flex-shrink-0 ml-2">
@@ -291,7 +294,7 @@ export default function Notifications() {
                     )}
                     
                     {/* Show unread indicator */}
-                    {!notification.read && (
+                    {!notification.isRead && (
                       <div className="mt-2">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#0CCE6B]/10 text-[#0CCE6B]">
                           Unread
@@ -349,9 +352,9 @@ export default function Notifications() {
           }`}
         >
           Unread
-          {notifications.filter(n => !n.read).length > 0 && (
+          {notifications.filter(n => !n.isRead).length > 0 && (
             <span className="ml-2 px-2 py-0.5 bg-[#0CCE6B] text-white text-xs rounded-full">
-              {notifications.filter(n => !n.read).length}
+              {notifications.filter(n => !n.isRead).length}
             </span>
           )}
         </button>
