@@ -2,6 +2,8 @@
 
 All transactional emails are sent from **support@joint-networking** (display name: *Joint Networking*).
 
+> **Note:** `support@joint-networking` is a placeholder sender address used until the production domain is confirmed. Replace with the full domain address (e.g., `support@joint-networking.com`) before launch.
+
 ---
 
 ## 1. Email Verification (Account Creation)
