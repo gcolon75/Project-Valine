@@ -57,8 +57,23 @@ export const getPostComments = async (id, limit = 50, cursor = null) => {
   return data;
 };
 
-export const addPostComment = async (id, text) => {
-  const { data } = await apiClient.post(`/posts/${id}/comments`, { text });
+export const addPostComment = async (id, text, parentId = null) => {
+  const { data } = await apiClient.post(`/posts/${id}/comments`, { text, parentId });
+  return data;
+};
+
+export const updateComment = async (commentId, text) => {
+  const { data } = await apiClient.put(`/comments/${commentId}`, { text });
+  return data;
+};
+
+export const deleteComment = async (commentId) => {
+  const { data } = await apiClient.delete(`/comments/${commentId}`);
+  return data;
+};
+
+export const getCommentReplies = async (commentId, limit = 20, cursor = null) => {
+  const { data } = await apiClient.get(`/comments/${commentId}/replies`, { params: { limit, cursor } });
   return data;
 };
 

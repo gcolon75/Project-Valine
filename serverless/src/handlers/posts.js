@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
+import { createNotification } from './notifications.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -1076,7 +1077,7 @@ export const likePost = async (event) => {
     // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true }
+      select: { id: true, authorId: true, content: true }
     });
 
     if (!post) {
@@ -1104,6 +1105,21 @@ export const likePost = async (event) => {
         userId
       }
     });
+
+    // Create notification for post author (only if liker is not the author)
+    if (post.authorId !== userId) {
+      try {
+        await createNotification(prisma, {
+          type: 'LIKE',
+          message: 'liked your post',
+          recipientId: post.authorId,
+          triggererId: userId,
+          metadata: { postId, postPreview: post.content?.substring(0, 100) }
+        });
+      } catch (notifErr) {
+        console.error('Failed to create like notification:', notifErr);
+      }
+    }
 
     // Get updated like count
     const likeCount = await prisma.postLike.count({
