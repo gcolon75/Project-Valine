@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useApiFallback } from '../hooks/useApiFallback';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followProfile, getProfileStatus } from '../services/connectionService';
 import { formatRelativeTime, groupNotificationsByDate } from '../utils/formatTime';
@@ -14,21 +13,32 @@ export default function Notifications() {
   const { refresh: refreshUnreadCounts } = useUnread();
   const [followingStates, setFollowingStates] = useState({});
   const [followLoading, setFollowLoading] = useState({});
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch notifications from API with fallback
-  const { data: notificationsData, loading, usingFallback, refetch } = useApiFallback(
-    () => getNotifications({ unreadOnly: filter === 'unread' }),
-    { notifications: [] },
-    { diagnosticContext: 'Notifications.getNotifications' }
-  );
+  // Fetch notifications from API
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const data = await getNotifications({ unreadOnly: filter === 'unread' });
+      setNotifications(data.notifications || []);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Extract notifications array from response
-  const notifications = notificationsData?.notifications || [];
+  // Fetch on mount and when filter changes
+  useEffect(() => {
+    fetchNotifications();
+  }, [filter]);
 
   // Check follow status for FOLLOW notifications
   useEffect(() => {
     const checkFollowStatus = async () => {
-      if (!notifications || usingFallback) return;
+      if (!notifications || notifications.length === 0) return;
       
       const followNotifs = notifications.filter(n => 
         (typeof n.type === 'string' ? n.type.toLowerCase() : n.type) === 'follow'
@@ -54,7 +64,7 @@ export default function Notifications() {
     };
     
     checkFollowStatus();
-  }, [notifications, usingFallback]);
+  }, [notifications]);
 
   // Handle follow back action
   const handleFollowBack = async (profileId, e) => {
@@ -77,10 +87,10 @@ export default function Notifications() {
   // Mark all notifications as read when page loads
   useEffect(() => {
     const markAllRead = async () => {
-      if (!usingFallback && notifications && notifications.length > 0) {
+      if (notifications && notifications.length > 0) {
         try {
           await markAllNotificationsRead();
-          refetch();
+          fetchNotifications();
           refreshUnreadCounts(); // Update badge counts
         } catch (err) {
           console.error('Failed to mark all as read:', err);
@@ -93,20 +103,19 @@ export default function Notifications() {
 
   // Handle marking all notifications as read
   const handleMarkAllRead = async () => {
-    if (!usingFallback) {
-      try {
-        await markAllNotificationsRead();
-        refetch(); // Refresh notifications
-      } catch (err) {
-        console.error('Failed to mark all as read:', err);
-      }
+    try {
+      await markAllNotificationsRead();
+      fetchNotifications(); // Refresh notifications
+      refreshUnreadCounts();
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
     }
   };
 
   // Handle marking a single notification as read and navigate
   const handleNotificationClick = async (notification) => {
     // Mark as read if unread
-    if (!notification.isRead && !usingFallback) {
+    if (!notification.isRead) {
       try {
         await markNotificationRead(notification.id);
         refreshUnreadCounts(); // Update badge counts
