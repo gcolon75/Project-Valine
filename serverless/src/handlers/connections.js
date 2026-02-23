@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
+import { createNotification } from './notifications.js';
 
 export const sendRequest = async (event) => {
   try {
@@ -215,6 +216,21 @@ export const followUser = async (event) => {
           status: 'accepted', // Auto-accept for follow functionality
         },
       });
+
+      // Create a notification for the user being followed
+      try {
+        await createNotification(prisma, {
+          type: 'FOLLOW',
+          message: 'started following you',
+          recipientId: targetUserId,
+          triggererId: userId,
+          metadata: {}
+        });
+      } catch (notifErr) {
+        // Don't fail the follow if notification creation fails
+        console.error('Failed to create follow notification:', notifErr);
+      }
+
       return json({ isFollowing: true, message: 'Followed successfully' }, 201);
     }
   } catch (e) {

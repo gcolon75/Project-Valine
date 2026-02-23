@@ -42,7 +42,7 @@ export const markNotificationRead = async (id) => {
  * @returns {Promise} Success response
  */
 export const markAllNotificationsRead = async () => {
-  const { data } = await apiClient.patch('/notifications/read-all');
+  const { data } = await apiClient.patch('/notifications/mark-all');
   return data;
 };
 

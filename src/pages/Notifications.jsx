@@ -215,7 +215,9 @@ export default function Notifications() {
     }
 
     // Navigate based on notification type
-    if (notification.type === 'FOLLOW' || notification.type === 'follow') {
+    const normalizedType = typeof notification.type === 'string' ? notification.type.toLowerCase() : notification.type;
+
+    if (normalizedType === 'follow') {
       // Navigate to the follower's profile
       const username = notification.triggerer?.username || notification.user?.username;
       const userId = notification.triggerer?.id || notification.user?.id;
@@ -224,12 +226,18 @@ export default function Notifications() {
       } else if (userId) {
         navigate(`/profile/${userId}`);
       }
-    } else if (notification.type === 'MESSAGE' || notification.type === 'message') {
+    } else if (normalizedType === 'message') {
       // Navigate to the message thread
       if (notification.messageThreadId) {
         navigate(`/inbox/${notification.messageThreadId}`);
       } else {
         navigate('/inbox');
+      }
+    } else if (normalizedType === 'like' || normalizedType === 'comment') {
+      // Navigate to the reel if we have reelId in metadata
+      const reelId = notification.metadata?.reelId;
+      if (reelId) {
+        navigate(`/reels/${reelId}`);
       }
     }
     // For other notification types, no navigation (can be extended)
@@ -280,7 +288,7 @@ export default function Notifications() {
   const getNotificationMessage = (notification) => {
     const normalizedType = typeof notification.type === 'string' ? notification.type.toLowerCase() : notification.type;
     const user = notification.triggerer || notification.user;
-    const username = user?.username || user?.name || 'Someone';
+    const username = user?.displayName || user?.username || user?.name || 'Someone';
 
     switch (normalizedType) {
       case 'follow':
@@ -288,9 +296,12 @@ export default function Notifications() {
       case 'message':
         return notification.message || `New message from @${username}`;
       case 'like':
-        return notification.action || `liked your post`;
+        return `@${username} liked your reel`;
       case 'comment':
-        return notification.action || `commented on your post`;
+        const commentPreview = notification.metadata?.commentText;
+        return commentPreview
+          ? `@${username} commented: "${commentPreview.length > 50 ? commentPreview.substring(0, 50) + '...' : commentPreview}"`
+          : `@${username} commented on your reel`;
       default:
         return notification.action || notification.message || 'New notification';
     }
