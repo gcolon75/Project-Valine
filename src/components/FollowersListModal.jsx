@@ -1,5 +1,6 @@
 // src/components/FollowersListModal.jsx
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Search, UserPlus, UserCheck } from 'lucide-react';
 import { getProfileFollowers, getProfileFollowing, followProfile, unfollowProfile } from '../services/connectionService';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +18,7 @@ export default function FollowersListModal({
   count = 0
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,32 +160,45 @@ export default function FollowersListModal({
                 const isFollowing = followingStates[itemProfileId];
                 const isLoading = followLoading[itemProfileId];
 
+                const handleProfileClick = () => {
+                  if (item.username) {
+                    onClose();
+                    navigate(`/profile/${item.username}`);
+                  }
+                };
+
                 return (
                   <div
                     key={itemId}
                     className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                   >
-                    {/* Avatar */}
-                    <img
-                      src={item.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName || item.username || 'User')}&background=0CCE6B&color=fff`}
-                      alt={item.displayName || item.username}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                    {/* Avatar & User Info - Clickable to visit profile */}
+                    <button
+                      onClick={handleProfileClick}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+                    >
+                      {/* Avatar */}
+                      <img
+                        src={item.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName || item.username || 'User')}&background=0CCE6B&color=fff`}
+                        alt={item.displayName || item.username}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
 
-                    {/* User Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-neutral-900 dark:text-white truncate">
-                        {item.displayName || item.name || item.username}
-                      </div>
-                      <div className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
-                        @{item.username}
-                      </div>
-                      {item.title && (
-                        <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate mt-0.5">
-                          {item.title}
+                      {/* User Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-neutral-900 dark:text-white truncate hover:underline">
+                          {item.displayName || item.name || item.username}
                         </div>
-                      )}
-                    </div>
+                        <div className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                          @{item.username}
+                        </div>
+                        {item.title && (
+                          <div className="text-xs text-neutral-500 dark:text-neutral-500 truncate mt-0.5">
+                            {item.title}
+                          </div>
+                        )}
+                      </div>
+                    </button>
 
                     {/* Follow Button */}
                     {!isOwnProfile && (
