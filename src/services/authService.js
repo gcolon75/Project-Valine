@@ -142,6 +142,37 @@ export const verifyEmail = async (token) => {
 };
 
 /**
+ * Request an email verification code (placeholder - frontend stub)
+ * Sends a one-time verification code to the given email address.
+ * NOTE: Requires a dedicated backend endpoint (/auth/request-email-code) that
+ * does not yet exist. This stub uses a separate route so it does not conflict
+ * with the existing token-based /auth/verify-email endpoint.
+ * Replace with a real backend call once the endpoint is implemented.
+ * @param {string} email - User email
+ * @returns {Promise<{message}>} Success message
+ */
+export const requestEmailVerification = async (email) => {
+  const { data } = await apiClient.post('/auth/request-email-code', { email });
+  return data;
+};
+
+/**
+ * Verify email with a one-time code (placeholder - frontend stub)
+ * Submits the code entered by the user to confirm their email address.
+ * NOTE: Requires a dedicated backend endpoint (/auth/verify-email-code) that
+ * does not yet exist. This stub uses a separate route so it does not conflict
+ * with the existing token-based /auth/verify-email endpoint.
+ * Replace with a real backend call once the endpoint is implemented.
+ * @param {string} email - User email
+ * @param {string} code - Verification code entered by user
+ * @returns {Promise<{user, verified}>} Verified user data
+ */
+export const verifyEmailCode = async (email, code) => {
+  const { data } = await apiClient.post('/auth/verify-email-code', { email, code });
+  return data;
+};
+
+/**
  * Resend email verification
  * @param {string} email - User email to resend verification to
  * @returns {Promise<{message}>} Success message

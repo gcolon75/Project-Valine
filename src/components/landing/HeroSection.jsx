@@ -21,17 +21,13 @@ const HeroSection = () => {
             </span>
           </div>
           
-          <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl pb-2 leading-tight" style={{ animationDelay: '0.1s' }}>
+          {/* pb-4 and leading-[1.15] prevent gradient text clipping on descenders across screen sizes */}
+          <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl pb-4 leading-[1.15]" style={{ animationDelay: '0.1s' }}>
             Showcase your work. Connect with artists. Collaborate and grow.
           </h1>
-
-          {/* Subtitle Text - Below Main Title */}
-          <p className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl text-center" style={{ animationDelay: '0.2s' }}>
-            Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists. Co-created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.
-          </p>
           
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.3s' }}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.2s' }}>
             <Link
               to="/join"
               className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
@@ -50,7 +46,7 @@ const HeroSection = () => {
           </div>
 
           {/* Hero Visual - Centered */}
-          <div className="relative animate-slide-up max-w-2xl w-full" style={{ animationDelay: '0.4s' }}>
+          <div className="relative animate-slide-up max-w-2xl w-full" style={{ animationDelay: '0.3s' }}>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
               <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
                 <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
@@ -67,14 +63,21 @@ const HeroSection = () => {
               </div>
             </div>
           </div>
+
+          {/* Subtitle Text - Below Hero Visual */}
+          <div className="text-lg md:text-xl text-neutral-600 mt-8 animate-slide-up max-w-3xl text-center space-y-4" style={{ animationDelay: '0.4s' }}>
+            <p>Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists.</p>
+            <p>Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.</p>
+          </div>
         </div>
 
-        {/* Stats Cards Below - Centered in a Row */}
+        {/* TODO: Re-enable stat cards when real data is available (10K+ Creators, 50K+ Posts, 5K+ Projects)
         <div className="flex flex-wrap justify-center gap-6 mt-16 animate-slide-up" style={{ animationDelay: '0.5s' }}>
           <StatCard number="10K+" label="Creators" delay="0s" />
           <StatCard number="50K+" label="Posts" delay="0.1s" />
           <StatCard number="5K+" label="Projects" delay="0.2s" />
         </div>
+        */}
       </div>
     </section>
   );
