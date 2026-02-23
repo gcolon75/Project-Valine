@@ -257,4 +257,53 @@ describe('authService', () => {
       await expect(authService.resendVerification('test@example.com')).rejects.toMatchObject(error);
     });
   });
+
+  describe('requestEmailVerification', () => {
+    it('should post to /auth/request-email-code with email', async () => {
+      const mockResponse = {
+        data: { message: 'Verification code sent' },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await authService.requestEmailVerification('test@example.com');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/auth/request-email-code', {
+        email: 'test@example.com',
+      });
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should propagate errors from requestEmailVerification', async () => {
+      const error = { response: { status: 429, data: { message: 'Too many requests' } } };
+      apiClient.post.mockRejectedValue(error);
+
+      await expect(authService.requestEmailVerification('test@example.com')).rejects.toMatchObject(error);
+    });
+  });
+
+  describe('verifyEmailCode', () => {
+    it('should post to /auth/verify-email-code with email and code', async () => {
+      const mockResponse = {
+        data: { user: { id: '1', email: 'test@example.com', emailVerified: true }, verified: true },
+      };
+
+      apiClient.post.mockResolvedValue(mockResponse);
+
+      const result = await authService.verifyEmailCode('test@example.com', '123456');
+
+      expect(apiClient.post).toHaveBeenCalledWith('/auth/verify-email-code', {
+        email: 'test@example.com',
+        code: '123456',
+      });
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should propagate errors from verifyEmailCode', async () => {
+      const error = { response: { status: 400, data: { message: 'Invalid code' } } };
+      apiClient.post.mockRejectedValue(error);
+
+      await expect(authService.verifyEmailCode('test@example.com', 'wrong')).rejects.toMatchObject(error);
+    });
+  });
 });

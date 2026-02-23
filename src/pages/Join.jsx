@@ -104,13 +104,16 @@ const Join = () => {
           <div className="text-center mb-8">
             <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-4">
               <Sparkles className="w-4 h-4 text-[#0CCE6B]" />
-              <span className="text-sm font-medium text-[#0CCE6B]">
+              <span className="text-lg font-bold text-[#0CCE6B]">
                 Join Joint
               </span>
             </div>
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">
               Create your account
             </h1>
+            <p className="mt-3 text-base font-semibold text-[#0CCE6B] text-center">
+              Account creation will be available in Q2 2026
+            </p>
             <p className="text-neutral-600">
               Start connecting with voice actors and artists today
             </p>
