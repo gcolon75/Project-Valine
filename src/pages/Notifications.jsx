@@ -8,108 +8,6 @@ import { formatRelativeTime, groupNotificationsByDate } from '../utils/formatTim
 import { useUnread } from '../context/UnreadContext';
 import toast from 'react-hot-toast';
 
-// Mock/fallback notifications data
-const FALLBACK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'like',
-    icon: Heart,
-    user: {
-      name: 'Sarah Johnson',
-      username: 'voiceactor_sarah',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-    },
-    action: 'liked your post',
-    content: '"Just finished recording for my latest project..."',
-    timestamp: '5m ago',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'comment',
-    icon: MessageCircle,
-    user: {
-      name: 'Michael Chen',
-      username: 'audio_engineer_mike',
-      avatar: 'https://i.pravatar.cc/150?img=12',
-    },
-    action: 'commented on your post',
-    content: 'Great work! Love the energy in this performance.',
-    timestamp: '15m ago',
-    read: false,
-  },
-  {
-    id: 3,
-    type: 'follow',
-    icon: UserPlus,
-    user: {
-      name: 'Emily Rodriguez',
-      username: 'writer_emily',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-    },
-    action: 'started following you',
-    content: null,
-    timestamp: '1h ago',
-    read: true,
-  },
-  {
-    id: 4,
-    type: 'reel',
-    icon: Video,
-    user: {
-      name: 'James Wilson',
-      username: 'director_james',
-      avatar: 'https://i.pravatar.cc/150?img=8',
-    },
-    action: 'mentioned you in a reel',
-    content: null,
-    timestamp: '2h ago',
-    read: true,
-  },
-  {
-    id: 5,
-    type: 'script',
-    icon: FileText,
-    user: {
-      name: 'Alex Thompson',
-      username: 'scriptwriter_alex',
-      avatar: 'https://i.pravatar.cc/150?img=15',
-    },
-    action: 'shared a script with you',
-    content: '"Sci-Fi Short Film - Draft 2"',
-    timestamp: '3h ago',
-    read: true,
-  },
-  {
-    id: 6,
-    type: 'like',
-    icon: Heart,
-    user: {
-      name: 'Olivia Martinez',
-      username: 'actress_olivia',
-      avatar: 'https://i.pravatar.cc/150?img=20',
-    },
-    action: 'liked your reel',
-    content: null,
-    timestamp: '5h ago',
-    read: true,
-  },
-  {
-    id: 7,
-    type: 'comment',
-    icon: MessageCircle,
-    user: {
-      name: 'David Lee',
-      username: 'producer_david',
-      avatar: 'https://i.pravatar.cc/150?img=25',
-    },
-    action: 'replied to your comment',
-    content: 'I totally agree with your perspective on this.',
-    timestamp: '1d ago',
-    read: true,
-  },
-];
-
 export default function Notifications() {
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
@@ -120,7 +18,7 @@ export default function Notifications() {
   // Fetch notifications from API with fallback
   const { data: notifications, loading, usingFallback, refetch } = useApiFallback(
     () => getNotifications({ unreadOnly: filter === 'unread' }),
-    FALLBACK_NOTIFICATIONS,
+    [],
     { diagnosticContext: 'Notifications.getNotifications' }
   );
 
