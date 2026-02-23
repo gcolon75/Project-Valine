@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
-import { followProfile, getProfileStatus } from '../services/connectionService';
+import { followUser, getConnectionStatus } from '../services/connectionService';
 import { formatRelativeTime, groupNotificationsByDate } from '../utils/formatTime';
 import { useUnread } from '../context/UnreadContext';
 import toast from 'react-hot-toast';
@@ -39,48 +39,48 @@ export default function Notifications() {
   useEffect(() => {
     const checkFollowStatus = async () => {
       if (!notifications || notifications.length === 0) return;
-      
-      const followNotifs = notifications.filter(n => 
+
+      const followNotifs = notifications.filter(n =>
         (typeof n.type === 'string' ? n.type.toLowerCase() : n.type) === 'follow'
       );
-      
+
       const statuses = {};
       for (const notif of followNotifs) {
         const user = notif.triggerer || notif.user;
-        const profileId = user?.id;
-        if (profileId && !followingStates[profileId]) {
+        const userId = user?.id;
+        if (userId && !followingStates[userId]) {
           try {
-            const status = await getProfileStatus(profileId);
-            statuses[profileId] = status.isFollowing || false;
+            const status = await getConnectionStatus(userId);
+            statuses[userId] = status.isFollowing || false;
           } catch (err) {
             console.warn('Failed to check follow status:', err);
           }
         }
       }
-      
+
       if (Object.keys(statuses).length > 0) {
         setFollowingStates(prev => ({ ...prev, ...statuses }));
       }
     };
-    
+
     checkFollowStatus();
   }, [notifications]);
 
   // Handle follow back action
-  const handleFollowBack = async (profileId, e) => {
+  const handleFollowBack = async (userId, e) => {
     e.stopPropagation(); // Prevent notification click
-    if (followLoading[profileId]) return;
+    if (followLoading[userId]) return;
 
-    setFollowLoading(prev => ({ ...prev, [profileId]: true }));
+    setFollowLoading(prev => ({ ...prev, [userId]: true }));
     try {
-      await followProfile(profileId);
-      setFollowingStates(prev => ({ ...prev, [profileId]: true }));
+      await followUser(userId);
+      setFollowingStates(prev => ({ ...prev, [userId]: true }));
       toast.success('Following!');
     } catch (err) {
       console.error('Failed to follow:', err);
       toast.error('Failed to follow');
     } finally {
-      setFollowLoading(prev => ({ ...prev, [profileId]: false }));
+      setFollowLoading(prev => ({ ...prev, [userId]: false }));
     }
   };
 
