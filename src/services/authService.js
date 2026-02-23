@@ -142,34 +142,34 @@ export const verifyEmail = async (token) => {
 };
 
 /**
- * Request email verification code (placeholder - frontend stub)
- * Sends a verification code to the given email address.
- * NOTE: Backend support for this flow is not implemented yet.
- * Replace with a real backend call (e.g. dedicated request/verify-code endpoints)
- * before using this helper in production code.
+ * Request an email verification code (placeholder - frontend stub)
+ * Sends a one-time verification code to the given email address.
+ * NOTE: Requires a dedicated backend endpoint (/auth/request-email-code) that
+ * does not yet exist. This stub uses a separate route so it does not conflict
+ * with the existing token-based /auth/verify-email endpoint.
+ * Replace with a real backend call once the endpoint is implemented.
  * @param {string} email - User email
- * @returns {Promise<never>} Rejects until backend support is implemented
+ * @returns {Promise<{message}>} Success message
  */
 export const requestEmailVerification = async (email) => {
-  throw new Error(
-    'requestEmailVerification is not implemented: backend /auth verify-code endpoint is not available yet.',
-  );
+  const { data } = await apiClient.post('/auth/request-email-code', { email });
+  return data;
 };
 
 /**
  * Verify email with a one-time code (placeholder - frontend stub)
- * Submits the code entered by the user to verify their email.
- * NOTE: Backend support for this flow is not implemented yet.
- * Replace with a real backend call (e.g. dedicated request/verify-code endpoints)
- * before using this helper in production code.
+ * Submits the code entered by the user to confirm their email address.
+ * NOTE: Requires a dedicated backend endpoint (/auth/verify-email-code) that
+ * does not yet exist. This stub uses a separate route so it does not conflict
+ * with the existing token-based /auth/verify-email endpoint.
+ * Replace with a real backend call once the endpoint is implemented.
  * @param {string} email - User email
  * @param {string} code - Verification code entered by user
- * @returns {Promise<never>} Rejects until backend support is implemented
+ * @returns {Promise<{user, verified}>} Verified user data
  */
 export const verifyEmailCode = async (email, code) => {
-  throw new Error(
-    'verifyEmailCode is not implemented: backend /auth verify-code endpoint is not available yet.',
-  );
+  const { data } = await apiClient.post('/auth/verify-email-code', { email, code });
+  return data;
 };
 
 /**

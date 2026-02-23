@@ -9,23 +9,35 @@ All transactional emails are sent from **support@joint-networking** (display nam
 ## 1. Email Verification (Account Creation)
 
 **Subject:** Verify your email address — Joint Networking  
-**Trigger:** User registers or requests a new verification code.
+**Trigger:** User registers; system sends a tokenised verification link.
 
-**Plain text:**
+> **Current implementation:** The backend sends a one-click verification link
+> (`/verify-email?token=…`) using `POST /auth/verify-email { token }`.
+> The plain-text copy below reflects this token-link flow.
+>
+> **Planned (future):** A one-time code (OTP) flow is scaffolded on the frontend
+> (`requestEmailVerification` / `verifyEmailCode` in `authService.js`) and will
+> replace or supplement this flow once the backend endpoints
+> `/auth/request-email-code` and `/auth/verify-email-code` are implemented.
+
+**Plain text (token-link flow):**
 ```
 Hi [name],
 
-Welcome to Joint Networking! Please verify your email address by entering the code below:
+Welcome to Joint Networking! Please verify your email address by clicking the
+link below:
 
-Verification code: [CODE]
+[VERIFICATION_LINK]
 
-This code expires in 30 minutes. If you didn't create an account, you can safely ignore this email.
+This link expires in 24 hours. If you didn't create an account, you can safely
+ignore this email.
 
 — The Joint Networking Team
 support@joint-networking
 ```
 
-**HTML summary:** Centered card with green header, large bold [CODE], 30-minute expiry notice.
+**HTML summary:** Centered card with green header, large CTA button linking to
+`[VERIFICATION_LINK]`, 24-hour expiry notice.
 
 ---
 
