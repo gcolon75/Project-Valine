@@ -6,7 +6,10 @@ import PostCard from "../components/PostCard";
 import { Search, TrendingUp, User, UserPlus, Loader2 } from "lucide-react";
 import { followProfile, unfollowProfile, sendConnectionRequest, getMyFollowing } from "../services/connectionService";
 import { searchUsers as searchUsersApi } from "../services/search";
+import { listPosts as listPostsApi } from "../services/postService";
 import toast from "react-hot-toast";
+
+const MIN_SEARCH_LENGTH = 2;
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -16,8 +19,11 @@ export default function Discover() {
   const [userResults, setUserResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [followingIds, setFollowingIds] = useState(new Set());
+  const [apiPostResults, setApiPostResults] = useState([]);
+  const [postSearchLoading, setPostSearchLoading] = useState(false);
   
-  const postResults = useMemo(() => search(q), [q, search]);
+  // Local fallback search through FeedContext cache
+  const localPostResults = useMemo(() => search(q), [q, search]);
 
   // Fetch current user's following list on mount to know who is already followed
   useEffect(() => {
@@ -39,7 +45,7 @@ export default function Discover() {
 
   // Search users via API (real users only)
   const searchUsers = async (query) => {
-    if (!query || query.length < 2) {
+    if (!query || query.length < MIN_SEARCH_LENGTH) {
       setUserResults([]);
       return;
     }
@@ -70,11 +76,65 @@ export default function Discover() {
     }
   };
 
+  // Search posts via API
+  const searchPostsFromApi = async (query) => {
+    if (!query || query.length < MIN_SEARCH_LENGTH) {
+      setApiPostResults([]);
+      return;
+    }
+    setPostSearchLoading(true);
+    try {
+      const posts = await listPostsApi({ limit: 50 });
+      const items = Array.isArray(posts) ? posts : (posts?.posts ?? []);
+      const lq = query.toLowerCase();
+      const filtered = items.filter(post => {
+        const content = (post.content || '').toLowerCase();
+        const tags = (post.tags || []).join(' ').toLowerCase();
+        return content.includes(lq) || tags.includes(lq);
+      });
+      setApiPostResults(filtered.map(post => ({
+        id: post.id,
+        authorId: post.authorId,
+        author: {
+          id: post.author?.id,
+          name: post.author?.displayName,
+          role: post.author?.username,
+          avatar: post.author?.avatar || ''
+        },
+        title: '',
+        body: post.content,
+        tags: post.tags || [],
+        createdAt: new Date(post.createdAt).getTime(),
+        mediaUrl: post.media?.[0] || '',
+        mediaId: post.mediaId,
+        mediaAttachment: post.mediaAttachment,
+        visibility: post.visibility || 'PUBLIC',
+        likes: post.likes || 0,
+        isLiked: post.isLiked || false,
+        saved: false,
+        comments: post.comments || 0,
+        requiresAccess: post.requiresAccess || false,
+        hasAccess: post.hasAccess || false,
+        accessStatus: post.accessStatus || null,
+        isFree: post.isFree !== undefined ? post.isFree : true,
+        price: post.price || null,
+      })));
+    } catch (err) {
+      console.error('API post search failed:', err);
+      setApiPostResults([]);
+    } finally {
+      setPostSearchLoading(false);
+    }
+  };
+
   // Debounced search effect
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchType === 'users' || searchType === 'all') {
         searchUsers(q);
+      }
+      if (searchType === 'posts' || searchType === 'all') {
+        searchPostsFromApi(q);
       }
     }, 300);
 
@@ -117,7 +177,7 @@ export default function Discover() {
   };
 
   // Only show search results (no featured/fake users when no search)
-  const displayUsers = q.length >= 2 ? userResults : [];
+  const displayUsers = q.length >= MIN_SEARCH_LENGTH ? userResults : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6 animate-fade-in">
@@ -168,10 +228,10 @@ export default function Discover() {
       {(searchType === 'all' || searchType === 'users') && (
         <div>
           <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">
-            {q.length >= 2 ? 'People' : 'Search for people'}
+            {q.length >= MIN_SEARCH_LENGTH ? 'People' : 'Search for people'}
           </h3>
           
-          {q.length < 2 ? (
+          {q.length < MIN_SEARCH_LENGTH ? (
             <div className="text-center py-8 text-neutral-500">
               Enter at least 2 characters to search for people
             </div>
@@ -251,23 +311,24 @@ export default function Discover() {
         <div>
           <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">Posts</h3>
           
-          {postResults.length === 0 ? (
-            <div className="text-center py-8 text-neutral-500">
-              {q ? `No posts found for "${q}"` : 'No posts yet'}
+          {postSearchLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
             </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {postResults.map((p) => (
-                <PostCard key={p.id} post={p} />
-              ))}
-            </div>
-          )}
-
-          {postResults.length > 0 && (
-            <div className="text-xs text-center text-neutral-600 dark:text-neutral-500 mt-4">
-              Showing {postResults.length} of {rawPosts.length} posts
-            </div>
-          )}
+          ) : (() => {
+            const postResults = q.length >= MIN_SEARCH_LENGTH ? apiPostResults : localPostResults;
+            return postResults.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                {q ? `No posts found for "${q}"` : 'No posts yet'}
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {postResults.map((p) => (
+                  <PostCard key={p.id} post={p} />
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

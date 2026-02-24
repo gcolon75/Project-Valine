@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, Lock, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -149,8 +149,16 @@ export default function Notifications() {
       if (postId) {
         navigate(`/posts/${postId}`);
       }
+    } else if (normalizedType === 'access_request') {
+      // Creator got a new post access request — go to Requests page
+      navigate('/requests');
+    } else if (normalizedType === 'access_granted' || normalizedType === 'access_denied') {
+      // Requester got a decision — navigate to the post
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/posts/${postId}`);
+      }
     }
-    // For other notification types, no navigation (can be extended)
   };
 
   const getIconColor = (type) => {
@@ -171,6 +179,12 @@ export default function Notifications() {
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
       case 'script':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
+      case 'access_request':
+        return 'text-[#0CCE6B] bg-[#0CCE6B]/10';
+      case 'access_granted':
+        return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
+      case 'access_denied':
+        return 'text-red-500 bg-red-50 dark:bg-red-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
     }
@@ -195,6 +209,12 @@ export default function Notifications() {
         return FileText;
       case 'script':
         return FileText;
+      case 'access_request':
+        return Lock;
+      case 'access_granted':
+        return CheckCircle;
+      case 'access_denied':
+        return XCircle;
       default:
         return Bell;
     }
@@ -222,6 +242,12 @@ export default function Notifications() {
           : `@${username} commented on your post`;
       case 'mention':
         return `@${username} mentioned you in a comment`;
+      case 'access_request':
+        return `${username} requested access to your post`;
+      case 'access_granted':
+        return notification.message || `${username} approved your access request`;
+      case 'access_denied':
+        return notification.message || `${username} denied your access request`;
       default:
         return notification.action || notification.message || 'New notification';
     }

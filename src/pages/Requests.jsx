@@ -2,13 +2,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getConnectionRequests, approveRequest, rejectRequest, followBack } from '../services/connectionService';
+import { getUserAccessRequests, grantPostAccess } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
-import { Users, UserPlus, Check, X, UserCheck } from 'lucide-react';
+import { Users, UserPlus, Check, X, UserCheck, Lock, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Requests() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('follow'); // 'follow' | 'post'
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,9 +18,20 @@ export default function Requests() {
   const [approvedUser, setApprovedUser] = useState(null);
   const [processingIds, setProcessingIds] = useState(new Set());
 
+  // Post access requests state
+  const [postRequests, setPostRequests] = useState([]);
+  const [postRequestsLoading, setPostRequestsLoading] = useState(false);
+  const [postRequestsError, setPostRequestsError] = useState(null);
+
   useEffect(() => {
     loadRequests();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'post' && user?.id) {
+      loadPostRequests();
+    }
+  }, [activeTab, user?.id]);
 
   const loadRequests = async () => {
     try {
@@ -32,6 +45,50 @@ export default function Requests() {
       setRequests([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPostRequests = async () => {
+    if (!user?.id) return;
+    setPostRequestsLoading(true);
+    setPostRequestsError(null);
+    try {
+      const data = await getUserAccessRequests(user.id, 'PENDING');
+      setPostRequests(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load post access requests:', err);
+      setPostRequestsError(err.message || 'Failed to load post access requests');
+      setPostRequests([]);
+    } finally {
+      setPostRequestsLoading(false);
+    }
+  };
+
+  const handleApprovePostRequest = async (req) => {
+    setProcessingIds(prev => new Set([...prev, req.id]));
+    try {
+      await grantPostAccess(req.postId, req.id, 'approve');
+      setPostRequests(prev => prev.filter(r => r.id !== req.id));
+      toast.success(`Access granted to ${req.requester?.displayName || req.requester?.username}`);
+    } catch (err) {
+      console.error('Failed to approve post request:', err);
+      toast.error('Failed to approve request. Please try again.');
+    } finally {
+      setProcessingIds(prev => { const next = new Set(prev); next.delete(req.id); return next; });
+    }
+  };
+
+  const handleDenyPostRequest = async (req) => {
+    setProcessingIds(prev => new Set([...prev, req.id]));
+    try {
+      await grantPostAccess(req.postId, req.id, 'deny');
+      setPostRequests(prev => prev.filter(r => r.id !== req.id));
+      toast.success('Request denied');
+    } catch (err) {
+      console.error('Failed to deny post request:', err);
+      toast.error('Failed to deny request. Please try again.');
+    } finally {
+      setProcessingIds(prev => { const next = new Set(prev); next.delete(req.id); return next; });
     }
   };
 
@@ -100,12 +157,47 @@ export default function Requests() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
       <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-2">
-        Follow Requests
+        Requests
       </h1>
-      <p className="text-neutral-600 dark:text-neutral-400 mb-8">
-        People who want to follow you
+      <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+        Manage follow and post access requests
       </p>
-      
+
+      {/* Tab switcher */}
+      <div className="flex gap-2 mb-8 border-b border-neutral-200 dark:border-neutral-700">
+        <button
+          onClick={() => setActiveTab('follow')}
+          className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors ${
+            activeTab === 'follow'
+              ? 'border-[#0CCE6B] text-[#0CCE6B]'
+              : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Follow Requests
+          {requests.length > 0 && (
+            <span className="ml-1 px-2 py-0.5 bg-[#0CCE6B] text-white text-xs rounded-full">{requests.length}</span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('post')}
+          className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors ${
+            activeTab === 'post'
+              ? 'border-[#0CCE6B] text-[#0CCE6B]'
+              : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+          }`}
+        >
+          <Lock className="w-4 h-4" />
+          Post Access Requests
+          {postRequests.length > 0 && (
+            <span className="ml-1 px-2 py-0.5 bg-[#0CCE6B] text-white text-xs rounded-full">{postRequests.length}</span>
+          )}
+        </button>
+      </div>
+
+      {/* ── Follow Requests Tab ── */}
+      {activeTab === 'follow' && (
+        <>
       {loading && (
         <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-neutral-300 dark:border-neutral-700 border-t-[#0CCE6B] mb-4" />
@@ -126,7 +218,7 @@ export default function Requests() {
             <Users className="w-10 h-10 text-[#0CCE6B]" />
           </div>
           <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
-            No pending requests
+            No pending follow requests
           </h3>
           <p className="text-neutral-600 dark:text-neutral-400 mb-6">
             When someone wants to follow you, you'll see them here
@@ -210,6 +302,114 @@ export default function Requests() {
             </div>
           ))}
         </div>
+      )}
+        </>
+      )}
+
+      {/* ── Post Access Requests Tab ── */}
+      {activeTab === 'post' && (
+        <>
+          {postRequestsLoading && (
+            <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-neutral-300 dark:border-neutral-700 border-t-[#0CCE6B] mb-4" />
+              <p className="text-neutral-600 dark:text-neutral-300">Loading post access requests...</p>
+            </div>
+          )}
+
+          {postRequestsError && !postRequestsLoading && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 text-amber-800 dark:text-amber-200">
+              <p className="font-medium">Unable to load post access requests</p>
+              <p className="text-sm mt-1">{postRequestsError}</p>
+            </div>
+          )}
+
+          {!postRequestsLoading && !postRequestsError && postRequests.length === 0 && (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 mb-6">
+                <Lock className="w-10 h-10 text-[#0CCE6B]" />
+              </div>
+              <h3 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+                No pending post access requests
+              </h3>
+              <p className="text-neutral-600 dark:text-neutral-400">
+                When someone requests access to your gated posts, you'll see them here
+              </p>
+            </div>
+          )}
+
+          {!postRequestsLoading && postRequests.length > 0 && (
+            <div className="space-y-4">
+              {postRequests.map((req, index) => (
+                <div
+                  key={req.id}
+                  className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all animate-slide-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div
+                      className="flex items-center space-x-4 cursor-pointer flex-1 min-w-0"
+                      onClick={() => navigate(`/profile/${req.requester?.username}`)}
+                    >
+                      <div className="p-0.5 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex-shrink-0">
+                        {req.requester?.avatar ? (
+                          <img
+                            src={req.requester.avatar}
+                            alt={req.requester.displayName}
+                            className="w-14 h-14 rounded-full border-2 border-white dark:border-[#1a1a1a] object-cover"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full border-2 border-white dark:border-[#1a1a1a] bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                            <Users className="w-7 h-7 text-neutral-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-neutral-900 dark:text-white hover:text-[#0CCE6B] transition-colors truncate">
+                          {req.requester?.displayName || req.requester?.username}
+                        </p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          @{req.requester?.username}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1 text-xs text-neutral-500">
+                          <FileText className="w-3 h-3" />
+                          <span className="truncate">{(req.post?.content || '').slice(0, 60)}{(req.post?.content || '').length > 60 ? '…' : ''}</span>
+                        </div>
+                        {req.message && (
+                          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400 italic">
+                            "{req.message}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleApprovePostRequest(req)}
+                        disabled={processingIds.has(req.id)}
+                        className="flex items-center gap-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:scale-105 text-sm"
+                      >
+                        {processingIds.has(req.id) ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleDenyPostRequest(req)}
+                        disabled={processingIds.has(req.id)}
+                        className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 text-neutral-900 dark:text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                      >
+                        <X className="w-4 h-4" />
+                        Deny
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Follow Back Modal */}

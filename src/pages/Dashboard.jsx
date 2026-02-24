@@ -100,11 +100,16 @@ export default function Dashboard() {
             mediaUrl: post.media?.[0] || '',
             mediaId: post.mediaId,
             mediaAttachment: post.mediaAttachment,
-            visibility: post.visibility || 'public',
+            visibility: post.visibility || 'PUBLIC',
             likes: post.likes || 0,
             isLiked: post.isLiked || false,
             saved: post.isSaved || false,
-            comments: post.comments || 0
+            comments: post.comments || 0,
+            requiresAccess: post.requiresAccess || false,
+            hasAccess: post.hasAccess || false,
+            accessStatus: post.accessStatus || null,
+            isFree: post.isFree !== undefined ? post.isFree : true,
+            price: post.price || null,
           }));
           setApiPosts(transformed);
         }

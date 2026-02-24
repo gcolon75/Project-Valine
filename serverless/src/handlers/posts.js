@@ -217,14 +217,51 @@ export const listPosts = async (event) => {
       return json([]);
     }
 
-    // Build where clause
-    const where = {};
-    if (authorId) {
-      where.authorId = authorId;
-    }
-
-    // Get authenticated user ID for like status
+    // Get authenticated user ID for visibility filtering and like status
     const authUserId = getUserIdFromEvent(event);
+
+    // Build visibility-aware where clause
+    let where = {};
+    if (authorId) {
+      // Profile page: posts by a specific author
+      where.authorId = authorId;
+      if (authorId === authUserId) {
+        // Own profile: see all posts (PUBLIC + FOLLOWERS_ONLY)
+      } else if (authUserId) {
+        // Check if the viewer follows the author
+        const isFollowing = await prisma.connectionRequest.findFirst({
+          where: { senderId: authUserId, receiverId: authorId, status: 'accepted' },
+          select: { id: true }
+        });
+        // Followers see PUBLIC + FOLLOWERS_ONLY; others see only PUBLIC
+        if (!isFollowing) {
+          where.visibility = 'PUBLIC';
+        }
+      } else {
+        // Unauthenticated: only public posts by this author
+        where.visibility = 'PUBLIC';
+      }
+    } else {
+      // General list/explore: apply visibility rules
+      if (!authUserId) {
+        // Unauthenticated: only public posts
+        where.visibility = 'PUBLIC';
+      } else {
+        // Authenticated: own posts + PUBLIC + FOLLOWERS_ONLY from followed users
+        const following = await prisma.connectionRequest.findMany({
+          where: { senderId: authUserId, status: 'accepted' },
+          select: { receiverId: true }
+        });
+        const followedIds = following.map(f => f.receiverId);
+        where = {
+          OR: [
+            { authorId: authUserId },
+            { visibility: 'PUBLIC' },
+            { authorId: { in: followedIds }, visibility: 'FOLLOWERS_ONLY' }
+          ]
+        };
+      }
+    }
 
     const posts = await prisma.post.findMany({
       where,
@@ -349,8 +386,20 @@ export const getPost = async (event) => {
     if (!post) {
       return error(404, 'Post not found');
     }
-    
-    // Fetch media attachment if present
+
+    // Enforce FOLLOWERS_ONLY visibility: only author and their followers can view
+    if (post.visibility === 'FOLLOWERS_ONLY' && authUserId !== post.authorId) {
+      if (!authUserId) {
+        return error(403, 'This post is only visible to followers');
+      }
+      const isFollowing = await prisma.connectionRequest.findFirst({
+        where: { senderId: authUserId, receiverId: post.authorId, status: 'accepted' },
+        select: { id: true }
+      });
+      if (!isFollowing) {
+        return error(403, 'This post is only visible to followers');
+      }
+    }
     let responsePost = post;
     if (post.mediaId) {
       const mediaRecord = await prisma.media.findUnique({
@@ -653,14 +702,23 @@ export const requestPostAccess = async (event) => {
       }
     });
     
-    // TODO: Send email notification to post author
-    // This would integrate with your email service (e.g., SES, SendGrid)
-    // Example:
-    // await sendEmail({
-    //   to: post.author.email,
-    //   subject: `Access request for your post`,
-    //   body: `${authUser.displayName} has requested access to your post.`
-    // });
+    // Notify post owner about the new access request
+    try {
+      const requester = await prisma.user.findUnique({
+        where: { id: authUserId },
+        select: { displayName: true, username: true }
+      });
+      const displayName = requester?.displayName || requester?.username || 'Someone';
+      await createNotification(prisma, {
+        type: 'ACCESS_REQUEST',
+        message: `${displayName} requested access to your post`,
+        recipientId: post.authorId,
+        triggererId: authUserId,
+        metadata: { postId, requestId: accessRequest.id }
+      });
+    } catch (notifErr) {
+      console.warn('[requestPostAccess] Notification failed (non-fatal):', notifErr.message);
+    }
     
     log('post_access_requested', { 
       route, 
@@ -853,6 +911,21 @@ export const grantAccess = async (event) => {
           grantedAt: new Date()
         }
       });
+    }
+
+    // Notify the requester about the decision
+    try {
+      await createNotification(prisma, {
+        type: action === 'approve' ? 'ACCESS_GRANTED' : 'ACCESS_DENIED',
+        message: action === 'approve'
+          ? 'Your access request was approved — you can now view the post'
+          : 'Your access request was denied',
+        recipientId: accessRequest.requesterId,
+        triggererId: authUserId,
+        metadata: { postId }
+      });
+    } catch (notifErr) {
+      console.warn('[grantAccess] Notification failed (non-fatal):', notifErr.message);
     }
     
     log('access_grant_processed', { 

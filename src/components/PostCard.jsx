@@ -7,8 +7,8 @@ import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
 import ConfirmationModal from "./ConfirmationModal";
-import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService";
-import { deletePost } from "../services/postService";
+import { getMediaAccessUrl } from "../services/mediaService";
+import { deletePost, requestPostAccess } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
 export default function PostCard({ post, onDelete, onLike }) {
@@ -18,11 +18,11 @@ export default function PostCard({ post, onDelete, onLike }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [accessRequested, setAccessRequested] = useState(post.accessRequestStatus === 'pending');
+  const [accessRequested, setAccessRequested] = useState(post.accessStatus === 'pending');
   const [hasAccess, setHasAccess] = useState(
-    post.visibility === "public" || 
-    post.hasAccess || 
-    post.accessRequestStatus === 'approved'
+    !post.requiresAccess ||
+    post.hasAccess === true ||
+    post.accessStatus === 'granted'
   );
   const [downloading, setDownloading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -45,8 +45,8 @@ export default function PostCard({ post, onDelete, onLike }) {
     user.id === post.ownerId
   );
   
-  // Check if content is gated (has a mediaId and is not public)
-  const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
+  // Check if content is gated (requires access request and viewer is not the author)
+  const isGated = post.requiresAccess && !isAuthor;
   
   // Image fallback: use mediaAttachment url, post image, or placeholder
   const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
@@ -59,9 +59,7 @@ export default function PostCard({ post, onDelete, onLike }) {
     }
 
     try {
-      if (post.mediaId) {
-        await requestMediaAccess(post.mediaId, user.id);
-      }
+      await requestPostAccess(post.id);
       setAccessRequested(true);
       toast.success("Access request sent! You'll be notified when approved.");
     } catch (error) {
@@ -279,7 +277,7 @@ export default function PostCard({ post, onDelete, onLike }) {
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/40">
               <Lock className="w-8 h-8 text-white mb-2" />
               <span className="text-white text-sm font-medium">
-                {post.visibility === "private" ? "Private Content" : "Access Required"}
+                Access Required
               </span>
             </div>
           </div>
