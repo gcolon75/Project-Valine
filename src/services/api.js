@@ -232,7 +232,7 @@ apiClient.interceptors.response.use(
         case 500:
         case 502:
         case 503:
-          error.userMessage = 'Server error. Our team has been notified. Please try again later.';
+          error.userMessage = 'Server error. Please try again later or contact support if the problem persists.';
           break;
         default:
           error.userMessage = error.response.data?.error || error.response.data?.message || error.message;

@@ -60,15 +60,15 @@ curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
 
 # Auth endpoint
 curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me `
-  -H "Cookie: accessToken=YOUR_TOKEN"
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ```powershell
 # Test database connection
 cd C:\Users\ghawk\Documents\GitHub\Project-Valine\api
-npx prisma db execute --stdin <<EOF
+@"
 SELECT 1;
-EOF
+"@ | npx prisma db execute --stdin
 ```
 
 ---

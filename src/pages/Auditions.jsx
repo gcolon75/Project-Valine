@@ -1,6 +1,6 @@
 import useInfiniteList from '../hooks/useInfiniteList';
 import * as api from '../services/api.js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
 import { Mic } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default function Auditions() {
       ) : (
         items.map(a => (
           <div key={a.id} className="card mb-4">
-            <a href={'/auditions/' + a.id}><b>{a.title}</b></a>
+            <Link to={'/auditions/' + a.id}><b>{a.title}</b></Link>
             <p>{a.summary}</p>
           </div>
         ))

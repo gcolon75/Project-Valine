@@ -178,9 +178,11 @@ const Join = () => {
             
             {/* Username */}
             <div>
+              <label htmlFor="username" className="sr-only">Username</label>
               <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
                 <input
+                  id="username"
                   type="text"
                   required
                   placeholder="yourusername"
@@ -209,9 +211,11 @@ const Join = () => {
 
             {/* Name */}
             <div>
+              <label htmlFor="displayName" className="sr-only">Display name</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
                 <input
+                  id="displayName"
                   type="text"
                   required
                   placeholder="Name"
@@ -236,9 +240,11 @@ const Join = () => {
 
             {/* Email */}
             <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
                 <input
+                  id="email"
                   type="email"
                   required
                   placeholder="Email"
@@ -263,9 +269,11 @@ const Join = () => {
 
             {/* Password */}
             <div>
+              <label htmlFor="password" className="sr-only">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
                 <input
+                  id="password"
                   type="password"
                   required
                   placeholder="Password"

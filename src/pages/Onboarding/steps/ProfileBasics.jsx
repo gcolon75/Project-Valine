@@ -23,38 +23,25 @@ export default function ProfileBasics({ userData, onUpdate }) {
     banner: userData?.banner || null,
   });
 
-  // Validate a single field or all fields
+  // Validate a single field based solely on the provided value
   const validateField = (name, value) => {
-    const fieldErrors = {};
-    if (name === 'displayName' || name === undefined) {
-      if (!formData.displayName.trim() && (name === 'displayName' ? !value?.trim() : true)) {
-        fieldErrors.displayName = 'Display name is required';
-      } else if ((name === 'displayName' ? value : formData.displayName).length > 100) {
-        fieldErrors.displayName = 'Display name must be 100 characters or less';
-      }
+    if (name === 'displayName') {
+      if (!value?.trim()) return 'Display name is required';
+      if (value.length > 100) return 'Display name must be 100 characters or less';
     }
-    if (name === 'title' || name === undefined) {
-      if ((name === 'title' ? value : formData.title).length > 100) {
-        fieldErrors.title = 'Title must be 100 characters or less';
-      }
+    if (name === 'title') {
+      if (value && value.length > 100) return 'Title must be 100 characters or less';
     }
-    return fieldErrors;
+    return '';
   };
 
-  // Validate form data
-  const validate = () => {
+  // Validate all fields using validateField as single source of truth
+  const validate = (data = formData) => {
     const newErrors = {};
-
-    if (!formData.displayName.trim()) {
-      newErrors.displayName = 'Display name is required';
-    } else if (formData.displayName.length > 100) {
-      newErrors.displayName = 'Display name must be 100 characters or less';
-    }
-
-    if (formData.title.length > 100) {
-      newErrors.title = 'Title must be 100 characters or less';
-    }
-
+    const displayNameError = validateField('displayName', data.displayName);
+    if (displayNameError) newErrors.displayName = displayNameError;
+    const titleError = validateField('title', data.title);
+    if (titleError) newErrors.title = titleError;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -71,16 +58,14 @@ export default function ProfileBasics({ userData, onUpdate }) {
     setFormData(prev => ({ ...prev, [name]: value }));
     // Show errors in real-time for already-touched fields
     if (touched[name]) {
-      const fieldErrors = validateField(name, value);
-      setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
+      setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
     }
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-    const fieldErrors = validateField(name, value);
-    setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
+    setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
   };
 
   const handleAvatarSave = (imageData) => {

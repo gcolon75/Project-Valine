@@ -1,6 +1,6 @@
 import useInfiniteList from '../hooks/useInfiniteList';
 import * as api from '../services/api.js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import EmptyState from '../components/EmptyState';
 import { FileText } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export default function Scripts() {
       ) : (
         items.map(s => (
           <div key={s.id} className="card mb-4">
-            <a href={'/scripts/' + s.id}><b>{s.title}</b></a>
+            <Link to={'/scripts/' + s.id}><b>{s.title}</b></Link>
             <p>{s.summary}</p>
           </div>
         ))
