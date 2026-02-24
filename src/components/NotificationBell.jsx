@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Heart, MessageCircle, UserPlus, Loader2 } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUnread } from '../context/UnreadContext';
 import { getNotifications, markAllNotificationsRead } from '../services/notificationsService';
@@ -71,6 +71,8 @@ export default function NotificationBell() {
         return <MessageCircle className="w-4 h-4 text-blue-500" />;
       case 'follow':
         return <UserPlus className="w-4 h-4 text-[#0CCE6B]" />;
+      case 'mention':
+        return <AtSign className="w-4 h-4 text-yellow-500" />;
       default:
         return <Bell className="w-4 h-4 text-neutral-500" />;
     }
@@ -89,6 +91,8 @@ export default function NotificationBell() {
         return <><span className="font-semibold">{username}</span> liked your post</>;
       case 'comment':
         return <><span className="font-semibold">{username}</span> commented on your post</>;
+      case 'mention':
+        return <><span className="font-semibold">{username}</span> mentioned you in a comment</>;
       default:
         return notification.message || 'New notification';
     }
@@ -105,9 +109,12 @@ export default function NotificationBell() {
       if (username) {
         navigate(`/profile/${username}`);
       }
+    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention') {
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/post/${postId}`);
+      }
     }
-    // For likes and comments, could navigate to the post if metadata has postId
-    // For now, just close the dropdown
   };
 
   return (

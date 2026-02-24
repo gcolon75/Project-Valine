@@ -84,8 +84,8 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
     if (!window.confirm("Delete this comment? This will also delete all replies.")) return;
 
     try {
-      await deleteComment(comment.id);
-      onDelete(comment.id);
+      const result = await deleteComment(comment.id);
+      onDelete(comment.id, result.commentCount);
     } catch (err) {
       console.error("Failed to delete comment:", err);
     }
@@ -129,9 +129,10 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
   };
 
   // Handle reply deletion from nested comment
-  const handleReplyDelete = (replyId) => {
+  const handleReplyDelete = (replyId, newCount) => {
     setReplies((prev) => prev.filter((r) => r.id !== replyId));
     setReplyCount((prev) => Math.max(0, prev - 1));
+    if (onReplyAdded) onReplyAdded(newCount); // Pass count to parent
   };
 
   // Handle reply update from nested comment
@@ -373,9 +374,9 @@ export default function CommentList({ postId, onCommentAdded }) {
   };
 
   // Handle comment deletion
-  const handleDelete = (commentId) => {
+  const handleDelete = (commentId, newCount) => {
     setComments((prev) => prev.filter((c) => c.id !== commentId));
-    if (onCommentAdded) onCommentAdded(); // Refresh count
+    if (onCommentAdded) onCommentAdded(newCount); // Pass the new count
   };
 
   // Handle comment update
