@@ -146,6 +146,8 @@ export const searchUsers = async (event) => {
           select: {
             id: true,
             visibility: true,
+            title: true,
+            headline: true,
           },
         },
       },
