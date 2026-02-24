@@ -47,8 +47,8 @@ npx prisma generate
 |----------|-------|-----------|-------------|-------------|
 | P0 | 7 | 5 | 0 | 2 |
 | P1 | 14 | 0 | 1 | 13 |
-| P2 | 10 | 0 | 0 | 10 |
-| **Total** | **31** | **5** | **1** | **25** |
+| P2 | 10 | 4 | 0 | 6 |
+| **Total** | **31** | **9** | **1** | **21** |
 
 ---
 
@@ -609,26 +609,29 @@ api.interceptors.response.use(
 
 ---
 
-### P2-006: Payment processing (Stripe)
-**Status:** Not Started
+### P2-006: Payment processing (Stripe) — Hide/feature-flag paid-post UI until payments exist
+**Status:** ✅ DONE (feature-flagged, Stripe pending)
 **Priority:** P2 | **Estimate:** L (24h+) | **User Flow:** Flow 4
 **Dependencies:** Product/payment design
 
-**What:** Stripe integration for paid post access
+**What:** Feature-flagged paid post UI — "coming soon" notices replace live Pay buttons and price badges. Stripe integration deferred.
 
-**Files:** serverless/src/handlers/payments.js (create)
+**Files changed:**
+- src/pages/PostDetail.jsx — Pay button → "Paid access — coming soon"; price badge replaced
+- src/pages/Post.jsx — Price input → static notice; price forced to 0
+- serverless/src/handlers/payments.js (create — deferred)
 
 **Reference:** docs/REPO_AUDIT_TRUTH_DOC.md Top 10 #5
 
 ---
 
 ### P2-007: CLEANUP: Remove /server directory
-**Status:** Not Started
+**Status:** ✅ DONE
 **Priority:** P2 | **Estimate:** S (1-2h)
 
-**What:** Archive or remove legacy /server directory
+**What:** Archive legacy /server directory with notice file
 
-**Files:** /server directory (if exists)
+**Files:** /server/ARCHIVED_SERVER_NOTICE.md (created)
 
 **Reference:** docs/REPO_AUDIT_TRUTH_DOC.md §8.5
 
@@ -675,6 +678,26 @@ api.interceptors.response.use(
 - serverless/src/handlers/mentions.js (create)
 
 **Reference:** docs/REPO_AUDIT_TRUTH_DOC.md Top 10 #7
+
+---
+
+### QA: Add smoke-test checklist for beta rollout
+**Status:** ✅ DONE (PowerShell version added)
+**Priority:** P0 | **Estimate:** S (1-2h)
+
+**What:** PowerShell script that hits 4 critical prod endpoints and prints pass/fail for each.
+
+**Files:** scripts/deployment/smoke-test.ps1 (created)
+
+---
+
+### PostCard visibility label fix (data model alignment)
+**Status:** ✅ DONE
+**Priority:** P2 | **Estimate:** XS (<1h)
+
+**What:** Fix visibility label in PostCard.jsx — schema uses `FOLLOWERS_ONLY` not `private`. Changed "Private"/"On Request" to "Followers Only"/"Access Required".
+
+**Files:** src/components/PostCard.jsx — visibility label updated
 
 ---
 

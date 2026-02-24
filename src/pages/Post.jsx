@@ -296,7 +296,7 @@ export default function Post() {
     
     try {
       // Calculate price value
-      const priceValue = formData.isFree ? 0 : (parseFloat(formData.price) || 0);
+      const priceValue = 0;
       
       // Prepare post data
       const postPayload = {
@@ -694,36 +694,7 @@ export default function Post() {
             </label>
             
             {/* Price Input */}
-            {!formData.isFree && (
-              <div>
-                <label htmlFor="price" className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-                  Set a price for this post
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-neutral-400" />
-                  </div>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => handleChange('price', e.target.value)}
-                    placeholder="0.00"
-                    className="block w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    aria-invalid={!!errors.price}
-                  />
-                </div>
-                {errors.price && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">{errors.price}</p>
-                )}
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  Users will need to request access to view paid posts
-                </p>
-              </div>
-            )}
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">💳 Paid posts — coming soon. All posts are free for now.</p>
           </div>
         </div>
 
