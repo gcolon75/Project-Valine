@@ -301,7 +301,7 @@ export default function Post() {
       // Prepare post data
       const postPayload = {
         content: formData.description || formData.title,
-        authorId: user?.id, // Let backend validate this
+        authorId: user?.userId || user?.id, // userId from profile, id from auth
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
