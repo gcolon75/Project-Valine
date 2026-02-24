@@ -27,7 +27,11 @@ const HeroSection = () => {
           </h1>
 
           {/* Subtitle Text - Directly below title, above CTA buttons */}
-          <div className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl text-center space-y-4 leading-relaxed" style={{ animationDelay: '0.15s' }}>
+          <div
+            data-testid="hero-subtitle"
+            className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl text-center space-y-4 leading-relaxed"
+            style={{ animationDelay: '0.15s' }}
+          >
             <p>Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists.</p>
             <p>Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.</p>
           </div>
