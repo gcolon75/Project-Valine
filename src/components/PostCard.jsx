@@ -49,14 +49,27 @@ export default function PostCard({ post, onDelete, onLike }) {
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
 
   // Check if media is a document (PDF, script, etc.)
-  // Also treat as document if there's a mediaId but no poster/image URL (documents don't generate thumbnails)
-  const hasMediaButNoPoster = post.mediaId && !post.mediaAttachment?.posterUrl && !post.mediaUrl && !post.imageUrl;
+  // Also treat as document if there's media but no poster/image URL (documents don't generate thumbnails)
+  const hasMedia = post.mediaId || post.mediaAttachment;
+  const hasPoster = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
+  const hasMediaButNoPoster = hasMedia && !hasPoster;
   const isDocument = post.mediaAttachment?.type === 'pdf' ||
                      post.mediaAttachment?.type === 'document' ||
                      post.mediaAttachment?.s3Key?.endsWith('.pdf') ||
                      post.mediaAttachment?.s3Key?.endsWith('.doc') ||
                      post.mediaAttachment?.s3Key?.endsWith('.docx') ||
                      hasMediaButNoPoster;
+
+  // Debug logging - check browser console
+  console.log('PostCard Debug:', {
+    postId: post.id,
+    mediaId: post.mediaId,
+    hasMediaAttachment: !!post.mediaAttachment,
+    mediaType: post.mediaAttachment?.type,
+    hasMedia,
+    hasPoster,
+    isDocument
+  });
 
   // Image fallback: use mediaAttachment url, post image, or placeholder
   const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
