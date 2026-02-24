@@ -16,7 +16,7 @@ export default function Auditions() {
           icon={Mic}
           title="No auditions available"
           description="Check back soon for new audition opportunities, or browse other content."
-          actionText="Browse Auditions"
+          actionText="Discover Content"
           onAction={() => navigate('/discover')}
         />
       ) : (
