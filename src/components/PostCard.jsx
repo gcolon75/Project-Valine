@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
@@ -47,7 +47,13 @@ export default function PostCard({ post, onDelete, onLike }) {
   
   // Check if content is gated (has a mediaId and is not public)
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
-  
+
+  // Check if media is a document (PDF, script, etc.)
+  const isDocument = post.mediaAttachment?.type === 'document' ||
+                     post.mediaAttachment?.s3Key?.endsWith('.pdf') ||
+                     post.mediaAttachment?.s3Key?.endsWith('.doc') ||
+                     post.mediaAttachment?.s3Key?.endsWith('.docx');
+
   // Image fallback: use mediaAttachment url, post image, or placeholder
   const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
 
@@ -286,11 +292,22 @@ export default function PostCard({ post, onDelete, onLike }) {
               </span>
             </div>
           </div>
+        ) : isDocument ? (
+          // Document content - show document icon
+          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+            <FileText className="w-16 h-16 text-neutral-500 dark:text-neutral-400 mb-2" />
+            <span className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">
+              {post.title || "Document"}
+            </span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              Click to view
+            </span>
+          </div>
         ) : (
-          // Full content
+          // Image/video content
           imageUrl && (
-            <img 
-              src={imageUrl} 
+            <img
+              src={imageUrl}
               alt={post.title || "Post image"}
               className="w-full h-full object-cover"
               onError={(e) => {
