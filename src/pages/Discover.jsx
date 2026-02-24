@@ -55,7 +55,7 @@ export default function Discover() {
           displayName: user.displayName || user.username,
           username: user.username,
           avatar: user.avatar,
-          title: user.title || user.bio || user.role || '',
+          title: user.profile?.title || user.profile?.headline || user.bio || '',
           profileVisibility: user.profile?.visibility === 'FOLLOWERS_ONLY' ? 'private' : 'public',
         }));
         setUserResults(mappedUsers);

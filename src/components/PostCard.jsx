@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
@@ -362,6 +362,23 @@ export default function PostCard({ post, onDelete, onLike }) {
           >
             <Eye className="w-4 h-4" aria-hidden="true" />
             <span>View</span>
+          </button>
+
+          {/* Share button - copy link to clipboard */}
+          <button
+            onClick={() => {
+              const postUrl = `${window.location.origin}/posts/${post.id}`;
+              navigator.clipboard.writeText(postUrl).then(() => {
+                toast.success("Link copied to clipboard!");
+              }).catch(() => {
+                toast.error("Failed to copy link");
+              });
+            }}
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            aria-label="Share post"
+          >
+            <Share2 className="w-4 h-4" aria-hidden="true" />
+            <span>Share</span>
           </button>
           
           {/* Request/Download button */}
