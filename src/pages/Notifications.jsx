@@ -147,7 +147,7 @@ export default function Notifications() {
       // Navigate to the post if we have postId in metadata
       const postId = notification.metadata?.postId;
       if (postId) {
-        navigate(`/post/${postId}`);
+        navigate(`/posts/${postId}`);
       }
     }
     // For other notification types, no navigation (can be extended)

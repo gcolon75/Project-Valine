@@ -112,7 +112,7 @@ export default function NotificationBell() {
     } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention') {
       const postId = notification.metadata?.postId;
       if (postId) {
-        navigate(`/post/${postId}`);
+        navigate(`/posts/${postId}`);
       }
     }
   };
