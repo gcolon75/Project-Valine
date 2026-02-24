@@ -140,12 +140,13 @@ export const getUploadUrl = async (event) => {
     });
 
     // Generate signed upload URL (valid for 15 minutes)
-    // ContentLength enforces the declared size at S3 level
+    // Note: We don't include ContentLength in the presigned URL as it can cause
+    // CORS/signature issues. File size is validated before generating URL and
+    // again on the complete endpoint.
     const command = new PutObjectCommand({
       Bucket: MEDIA_BUCKET,
       Key: s3Key,
       ContentType: validatedContentType,
-      ContentLength: fileSize,
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
