@@ -86,9 +86,9 @@ export default function NotificationBell() {
       case 'follow':
         return <><span className="font-semibold">{username}</span> started following you</>;
       case 'like':
-        return <><span className="font-semibold">{username}</span> liked your reel</>;
+        return <><span className="font-semibold">{username}</span> liked your post</>;
       case 'comment':
-        return <><span className="font-semibold">{username}</span> commented on your reel</>;
+        return <><span className="font-semibold">{username}</span> commented on your post</>;
       default:
         return notification.message || 'New notification';
     }
@@ -106,7 +106,7 @@ export default function NotificationBell() {
         navigate(`/profile/${username}`);
       }
     }
-    // For likes and comments, could navigate to the reel if metadata has reelId
+    // For likes and comments, could navigate to the post if metadata has postId
     // For now, just close the dropdown
   };
 
