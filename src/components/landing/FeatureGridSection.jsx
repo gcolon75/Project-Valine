@@ -22,12 +22,12 @@ const FeatureGridSection = () => {
           <FeatureCard
             icon={FileText}
             title="Share Your Work"
-            description="Post your scripts, music, demos, samples—whatever you're working on. Decide who gets to see it: everyone, select people, or make them pay for access."
+            description="Post your scripts, music, demos, samples, and whatever you're working on. Decide who gets to see it: everyone, select people, or make them pay for access."
           />
           <FeatureCard
             icon={Mic}
             title="Find Opportunities"
-            description="Find auditions, collaborations, and gigs across film, TV, theater, music, gaming—all the stuff that matches what you do."
+            description="Find auditions, collaborations, and gigs across film, TV, theater, music, and gaming, all the stuff that matches what you do."
           />
           <FeatureCard
             icon={MessageSquare}
@@ -55,12 +55,12 @@ const FeatureGridSection = () => {
             <FeatureItem
               icon={MessageCircle}
               title="Direct Messaging"
-              description="Message people directly—no need to leave the platform to have a conversation."
+              description="Message people directly. No need to leave the platform to have a conversation."
             />
             <FeatureItem
               icon={Award}
               title="Portfolio Showcase"
-              description="Build your portfolio with everything you've made—scripts, art, music, samples—all in one place."
+              description="Build your portfolio with everything you've made: scripts, art, music, samples, all in one place."
             />
             <FeatureItem
               icon={BarChart}
@@ -70,7 +70,7 @@ const FeatureGridSection = () => {
             <FeatureItem
               icon={Mic}
               title="Audio Samples"
-              description="Share audio samples—voice demos, music tracks, sound design—right in your posts."
+              description="Share audio samples: voice demos, music tracks, sound design, right in your posts."
             />
             <FeatureItem
               icon={Search}

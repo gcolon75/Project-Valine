@@ -124,21 +124,21 @@ graph TD
 
 **Code Reference**:
 ```javascript
-// src/pages/Home.jsx and src/components/landing/HeroSection.jsx
-<Link to="/join" className="btn-primary-lg">
+// src/components/landing/HeroSection.jsx (center hero CTA)
+<Link to="/join" className="...">
   Join for Free
 </Link>
 
 // src/layouts/MarketingLayout.jsx (top-right nav)
-<Link to="/join" className="btn-primary">
+<Link to="/join" className="...">
   Sign up
 </Link>
 ```
 
 **Navigation Flow**:
-- Landing page (/) → Sign Up button → /signup
-- Marketing pages (/features, /about-us) → Sign Up CTA → /signup
-- Login page (/login) → "Need an account? Sign up" link → /signup
+- Landing page (/) → "Join for Free" hero button → /join
+- Landing page (/) → "Sign up" nav button → /join
+- Login page (/login) → "Sign up" link → /join
 
 #### Step 2: Display Signup Form
 **User Action**: Page loads with signup form showing email, password, and username fields.

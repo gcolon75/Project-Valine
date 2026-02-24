@@ -58,7 +58,7 @@ const FAQItem = ({ question, answer }) => {
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-[#0CCE6B]"
+        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-[#0CCE6B] focus-visible:outline-offset-2"
         aria-expanded={isOpen}
         aria-controls={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
       >

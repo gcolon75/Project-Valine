@@ -36,7 +36,7 @@ const Home = () => {
                   <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-8 animate-slide-up">
                     <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
                     <span className="text-sm font-medium text-[#0CCE6B]">
-                      Scripts, auditions, and creative collaboration
+                      The Professional Network for Voice Actors
                     </span>
                   </div>
                   
@@ -45,7 +45,7 @@ const Home = () => {
                   </h1>
                   
                   <p className="text-xl text-neutral-600 mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                    Find scripts, auditions, and collaborators, then share voice work, music, and other creative projects with artists who get it.
+                    Joint is where voice actors, writers, and artists come together to share their work, find opportunities, and build their careers.
                   </p>
                   
                   {/* CTA Buttons */}
