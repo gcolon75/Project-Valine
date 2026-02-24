@@ -300,14 +300,16 @@ export default function PostCard({ post, onDelete, onLike }) {
             </div>
           </div>
         ) : isDocument ? (
-          // Document content - show document icon
-          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 dark:bg-neutral-700">
-            <FileText className="w-16 h-16 text-neutral-500 dark:text-neutral-400 mb-2" />
-            <span className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">
-              {post.title || "Document"}
+          // Document content - show document icon with title
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800 p-4">
+            <FileText className="w-12 h-12 text-red-500 dark:text-red-400 mb-3" />
+            <span className="text-base text-neutral-800 dark:text-neutral-100 font-semibold text-center line-clamp-2 px-2">
+              {post.title || post.mediaAttachment?.title || "Document"}
             </span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-              Click to view
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 flex items-center gap-1">
+              <span>PDF</span>
+              <span>•</span>
+              <span>Click to view</span>
             </span>
           </div>
         ) : imageUrl ? (

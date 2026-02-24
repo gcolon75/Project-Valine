@@ -93,7 +93,7 @@ export default function Dashboard() {
               role: post.author?.username,
               avatar: post.author?.avatar || ''
             },
-            title: '',
+            title: post.mediaAttachment?.title || '',
             body: post.content,
             tags: post.tags || [],
             createdAt: new Date(post.createdAt).getTime(),

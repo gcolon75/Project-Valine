@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
 import { getMediaAccessUrl } from '../services/mediaService';
+import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -36,6 +37,7 @@ export default function PostDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [likingInProgress, setLikingInProgress] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   // Helper function to safely format price
   const formatPrice = (price) => {
@@ -65,6 +67,22 @@ export default function PostDetail() {
       fetchPost();
     }
   }, [id]);
+
+  // Fetch PDF URL when post has a PDF attachment
+  useEffect(() => {
+    const fetchPdfUrl = async () => {
+      if (post?.mediaAttachment?.type === 'pdf' && post.mediaAttachment.id) {
+        try {
+          const { viewUrl } = await getMediaAccessUrl(post.mediaAttachment.id);
+          setPdfUrl(viewUrl);
+        } catch (err) {
+          console.error('Error fetching PDF URL:', err);
+        }
+      }
+    };
+
+    fetchPdfUrl();
+  }, [post?.mediaAttachment]);
 
   const handleRequestAccess = async () => {
     if (!user) {
@@ -298,11 +316,11 @@ export default function PostDetail() {
 
       {/* Post Card */}
       <article className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
-        {/* Thumbnail - show post thumbnail, or PDF poster as fallback */}
-        {(post.thumbnailUrl || post.mediaAttachment?.posterUrl) && (
+        {/* Thumbnail - only show if post has a custom thumbnail (not for PDFs - they render below) */}
+        {post.thumbnailUrl && post.mediaAttachment?.type !== 'pdf' && (
           <div className="w-full aspect-video bg-neutral-100 dark:bg-neutral-800">
             <img
-              src={post.thumbnailUrl || post.mediaAttachment?.posterUrl}
+              src={post.thumbnailUrl}
               alt="Post thumbnail"
               className="w-full h-full object-cover"
             />
@@ -405,22 +423,12 @@ export default function PostDetail() {
                     />
                   ) : post.mediaAttachment.type === 'pdf' ? (
                     <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                      {/* PDF Thumbnail Preview */}
-                      {post.mediaAttachment.posterUrl ? (
-                        <div className="bg-neutral-100 dark:bg-neutral-800 p-4">
-                          <img
-                            src={post.mediaAttachment.posterUrl}
-                            alt="PDF preview"
-                            className="max-w-full h-auto mx-auto rounded shadow-lg"
-                            style={{ maxHeight: '500px' }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="bg-neutral-100 dark:bg-neutral-800 p-8 flex flex-col items-center justify-center">
-                          <FileText className="w-16 h-16 text-neutral-400 mb-2" />
-                          <span className="text-neutral-600 dark:text-neutral-400">PDF Document</span>
-                        </div>
-                      )}
+                      {/* PDF Thumbnail Preview - rendered client-side */}
+                      <PDFThumbnail
+                        pdfUrl={pdfUrl}
+                        title={post.mediaAttachment.title || 'Document'}
+                        className="w-full min-h-[300px]"
+                      />
                       {/* PDF Info & Actions */}
                       <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
@@ -428,12 +436,11 @@ export default function PostDetail() {
                           <span className="font-medium">{post.mediaAttachment.title || 'Document'}</span>
                         </div>
                         <button
-                          onClick={async () => {
-                            try {
-                              const { viewUrl } = await getMediaAccessUrl(post.mediaAttachment.id);
-                              window.open(viewUrl, '_blank');
-                            } catch (err) {
-                              toast.error('Failed to open PDF');
+                          onClick={() => {
+                            if (pdfUrl) {
+                              window.open(pdfUrl, '_blank');
+                            } else {
+                              toast.error('PDF not ready yet');
                             }
                           }}
                           className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
