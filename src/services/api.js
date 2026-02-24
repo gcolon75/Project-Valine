@@ -162,6 +162,7 @@ apiClient.interceptors.response.use(
       if (import.meta.env.DEV) {
         console.warn('[API Client] Unauthorized request (401):', config?.url);
       }
+      error.userMessage = 'Your session has expired. Please log in again.';
       return Promise.reject(error);
     }
     
@@ -211,6 +212,31 @@ apiClient.interceptors.response.use(
         code: error.code,
         retries: config._retryCount
       });
+    }
+    
+    // Attach clear, actionable user-facing message to the error
+    if (!error.response) {
+      // Network error (no response received)
+      error.userMessage = navigator.onLine
+        ? 'Unable to connect to the server. Please try again in a few moments.'
+        : 'No internet connection. Please check your network and try again.';
+    } else {
+      const status = error.response.status;
+      switch (status) {
+        case 403:
+          error.userMessage = 'You do not have permission to perform this action.';
+          break;
+        case 404:
+          error.userMessage = 'The requested resource was not found.';
+          break;
+        case 500:
+        case 502:
+        case 503:
+          error.userMessage = 'Server error. Please try again later or contact support if the problem persists.';
+          break;
+        default:
+          error.userMessage = error.response.data?.error || error.response.data?.message || error.message;
+      }
     }
     
     // Enhanced DEBUG logging (opt-in via VITE_DEBUG_API env var)

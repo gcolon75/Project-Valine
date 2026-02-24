@@ -16,10 +16,56 @@ const Join = () => {
     displayName: '',
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   // Show restriction notice if allowlist is active
   // (actual enforcement happens on backend, this is just UX improvement)
   const allowlistActive = isAllowlistActive();
+
+  // Validate a single field
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'username':
+        if (!value) return 'Username is required';
+        if (value.length < 3) return 'Username must be at least 3 characters';
+        if (value.length > 30) return 'Username must be 30 characters or less';
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscores';
+        return '';
+      case 'displayName':
+        if (!value.trim()) return 'Display name is required';
+        if (value.length > 100) return 'Display name must be 100 characters or less';
+        return '';
+      case 'email':
+        if (!value) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+        return '';
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length < 8) return 'Password must be at least 8 characters';
+        if (!/[A-Z]/.test(value)) return 'Password must include at least one uppercase letter';
+        if (!/[a-z]/.test(value)) return 'Password must include at least one lowercase letter';
+        if (!/[0-9]/.test(value)) return 'Password must include at least one number';
+        if (!/[^A-Za-z0-9]/.test(value)) return 'Password must include at least one special character';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const error = validateField(field, formData[field]);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,59 +178,126 @@ const Join = () => {
             
             {/* Username */}
             <div>
+              <label htmlFor="username" className="sr-only">Username</label>
               <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
                 <input
+                  id="username"
                   type="text"
                   required
                   placeholder="yourusername"
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  onChange={(e) => handleChange('username', e.target.value)}
+                  onBlur={() => handleBlur('username')}
+                  className={`w-full pl-10 pr-4 py-3 bg-neutral-50 border rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.username && touched.username
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-neutral-200 focus:ring-emerald-500'
+                  }`}
+                  aria-invalid={!!(errors.username && touched.username)}
+                  aria-describedby={errors.username && touched.username ? 'username-error' : 'username-hint'}
                 />
               </div>
-              <p className="text-xs text-neutral-500 mt-1">
-                Used for mentions and your profile URL
-              </p>
+              {errors.username && touched.username ? (
+                <p id="username-error" className="text-sm text-red-600 mt-1" role="alert">
+                  {errors.username}
+                </p>
+              ) : (
+                <p id="username-hint" className="text-xs text-neutral-500 mt-1">
+                  Used for mentions and your profile URL
+                </p>
+              )}
             </div>
 
             {/* Name */}
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-              <input
-                type="text"
-                required
-                placeholder="Name"
-                value={formData.displayName}
-                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              />
+            <div>
+              <label htmlFor="displayName" className="sr-only">Display name</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
+                <input
+                  id="displayName"
+                  type="text"
+                  required
+                  placeholder="Name"
+                  value={formData.displayName}
+                  onChange={(e) => handleChange('displayName', e.target.value)}
+                  onBlur={() => handleBlur('displayName')}
+                  className={`w-full pl-10 pr-4 py-3 bg-neutral-50 border rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.displayName && touched.displayName
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-neutral-200 focus:ring-emerald-500'
+                  }`}
+                  aria-invalid={!!(errors.displayName && touched.displayName)}
+                  aria-describedby={errors.displayName && touched.displayName ? 'displayName-error' : undefined}
+                />
+              </div>
+              {errors.displayName && touched.displayName && (
+                <p id="displayName-error" className="text-sm text-red-600 mt-1" role="alert">
+                  {errors.displayName}
+                </p>
+              )}
             </div>
 
             {/* Email */}
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-              <input
-                type="email"
-                required
-                placeholder="Email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              />
+            <div>
+              <label htmlFor="email" className="sr-only">Email address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
+                  className={`w-full pl-10 pr-4 py-3 bg-neutral-50 border rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.email && touched.email
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-neutral-200 focus:ring-emerald-500'
+                  }`}
+                  aria-invalid={!!(errors.email && touched.email)}
+                  aria-describedby={errors.email && touched.email ? 'email-error' : undefined}
+                />
+              </div>
+              {errors.email && touched.email && (
+                <p id="email-error" className="text-sm text-red-600 mt-1" role="alert">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             {/* Password */}
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-              <input
-                type="password"
-                required
-                placeholder="Password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              />
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" aria-hidden="true" />
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  onBlur={() => handleBlur('password')}
+                  className={`w-full pl-10 pr-4 py-3 bg-neutral-50 border rounded-lg text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 transition-all ${
+                    errors.password && touched.password
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-neutral-200 focus:ring-emerald-500'
+                  }`}
+                  aria-invalid={!!(errors.password && touched.password)}
+                  aria-describedby={errors.password && touched.password ? 'password-error' : 'password-hint'}
+                />
+              </div>
+              {errors.password && touched.password ? (
+                <p id="password-error" className="text-sm text-red-600 mt-1" role="alert">
+                  {errors.password}
+                </p>
+              ) : (
+                <p id="password-hint" className="text-xs text-neutral-500 mt-1">
+                  8+ characters with uppercase, lowercase, number, and special character
+                </p>
+              )}
             </div>
 
             {/* Terms and Privacy Consent */}

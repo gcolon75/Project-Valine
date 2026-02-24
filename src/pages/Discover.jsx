@@ -125,7 +125,7 @@ export default function Discover() {
       <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] rounded-2xl p-6 text-white">
         <div className="flex items-center space-x-3 mb-2">
           <TrendingUp className="w-6 h-6" />
-          <h2 className="text-2xl font-bold">Discover</h2>
+          <h1 className="text-2xl font-bold">Discover</h1>
         </div>
         <p className="text-white/90">Find and connect with artists in the community</p>
       </div>

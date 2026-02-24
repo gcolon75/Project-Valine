@@ -390,7 +390,7 @@ export default function Notifications() {
               No notifications yet
             </p>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              When you get notifications, they'll show up here
+              When you get notifications, they'll show up here. Check back later!
             </p>
           </div>
         ) : (

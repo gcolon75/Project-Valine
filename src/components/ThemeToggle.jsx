@@ -10,8 +10,8 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm theme-chip hover:opacity-90 transition-all duration-200"
-      aria-label="Toggle color theme"
-      title="Toggle color theme"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {isDark ? (
         <Sun className="w-4 h-4 transition-transform duration-200" aria-hidden="true" />

@@ -24,6 +24,21 @@ export default {
           light:   '#D1FAE5',   // emerald-100
           fg:      '#ECFDF5'    // on-brand foreground
         },
+        // Explicit neutral scale for WCAG AA contrast compliance
+        // Use neutral-600+ for body text on white backgrounds (4.5:1 minimum)
+        neutral: {
+          50:  '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
         // Surface tier tokens for depth and separation
         surface: {
           0: 'var(--surface-0)',

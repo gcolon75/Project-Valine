@@ -357,7 +357,7 @@ export default function PostCard({ post, onDelete, onLike }) {
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <button
             onClick={() => likePost(post.id)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
               post.isLiked
                 ? "border-red-500 dark:border-red-600 bg-red-50 dark:bg-red-600/20 text-red-700 dark:text-red-300"
                 : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
@@ -369,7 +369,7 @@ export default function PostCard({ post, onDelete, onLike }) {
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
               open
                 ? "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300"
                 : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:hover:border-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-300"
@@ -383,7 +383,7 @@ export default function PostCard({ post, onDelete, onLike }) {
           <button
             onClick={() => toggleSave(post.id)}
             className={[
-              "rounded-full px-3 py-1.5 text-sm border transition-colors flex items-center gap-1.5",
+              "rounded-full px-3 py-1.5 text-sm border transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1",
               post.saved
                 ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                 : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
@@ -404,7 +404,7 @@ export default function PostCard({ post, onDelete, onLike }) {
                 toast.error("Failed to copy link");
               });
             }}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1"
             aria-label="Share post"
           >
             <Share2 className="w-4 h-4" aria-hidden="true" />

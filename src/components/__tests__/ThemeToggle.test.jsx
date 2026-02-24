@@ -16,7 +16,7 @@ describe('ThemeToggle', () => {
   it('should render theme toggle button', () => {
     renderWithTheme();
     
-    const button = screen.getByRole('button', { name: /toggle color theme/i });
+    const button = screen.getByRole('button', { name: /switch to (dark|light) mode/i });
     expect(button).toBeInTheDocument();
   });
 
@@ -46,12 +46,23 @@ describe('ThemeToggle', () => {
     expect(button.textContent).toContain('Light mode');
   });
 
-  it('should have proper accessibility attributes', () => {
+  it('should have proper accessibility attributes in light mode', () => {
     renderWithTheme();
     
     const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-label', 'Toggle color theme');
-    expect(button).toHaveAttribute('title', 'Toggle color theme');
+    expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
+    expect(button).toHaveAttribute('title', 'Switch to dark mode');
+  });
+
+  it('should update aria-label after toggling to dark mode', async () => {
+    const user = userEvent.setup();
+    renderWithTheme();
+    
+    const button = screen.getByRole('button');
+    await user.click(button);
+    
+    expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
+    expect(button).toHaveAttribute('title', 'Switch to light mode');
   });
 
   it('should apply correct CSS classes', () => {
