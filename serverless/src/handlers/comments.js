@@ -536,6 +536,23 @@ export const likeComment = async (event) => {
       },
     });
 
+    // Create notification for comment author (if not self)
+    if (comment.authorId !== userId) {
+      try {
+        await prisma.notification.create({
+          data: {
+            type: 'comment_like',
+            message: 'liked your comment',
+            recipientId: comment.authorId,
+            triggererId: userId,
+            metadata: { commentId, postId: comment.postId },
+          },
+        });
+      } catch (notifErr) {
+        console.warn('Failed to create comment like notification:', notifErr.message);
+      }
+    }
+
     // Get updated like count
     const likeCount = await prisma.commentLike.count({
       where: { commentId },
