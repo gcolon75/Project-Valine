@@ -6,23 +6,9 @@ import { csrfProtection } from '../middleware/csrfMiddleware.js';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
-import { generatePdfThumbnail } from '../utils/pdfThumbnail.js';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
-
-/**
- * Convert a readable stream to a Buffer
- * @param {ReadableStream} stream
- * @returns {Promise<Buffer>}
- */
-async function streamToBuffer(stream) {
-  const chunks = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
 
 // Upload size limits (in bytes)
 const MAX_FILE_SIZES = {
@@ -255,60 +241,14 @@ export const completeUpload = async (event) => {
     // Note: Avatar and banner uploads are now handled separately through updateMyProfile endpoint
     // This endpoint is for gallery media only
 
-    // Generate PDF thumbnail if this is a PDF
-    let posterS3Key = null;
-    if (media.type === 'pdf') {
-      try {
-        console.log('[completeUpload] Generating PDF thumbnail for:', media.s3Key);
-
-        // Download the PDF from S3
-        const getCommand = new GetObjectCommand({
-          Bucket: MEDIA_BUCKET,
-          Key: media.s3Key,
-        });
-        const pdfResponse = await s3Client.send(getCommand);
-        const pdfBuffer = await streamToBuffer(pdfResponse.Body);
-
-        // Generate thumbnail
-        const thumbnailBuffer = await generatePdfThumbnail(pdfBuffer);
-
-        // Upload thumbnail to S3
-        posterS3Key = media.s3Key.replace(/\.pdf$/i, '_thumb.png');
-        const uploadCommand = new PutObjectCommand({
-          Bucket: MEDIA_BUCKET,
-          Key: posterS3Key,
-          Body: thumbnailBuffer,
-          ContentType: 'image/png',
-        });
-        await s3Client.send(uploadCommand);
-
-        // Update media record with poster key
-        await prisma.media.update({
-          where: { id: mediaId },
-          data: {
-            posterS3Key,
-            processedStatus: 'complete',
-          },
-        });
-
-        console.log('[completeUpload] PDF thumbnail generated:', posterS3Key);
-      } catch (thumbnailError) {
-        console.error('[completeUpload] PDF thumbnail generation failed:', thumbnailError);
-        // Continue without thumbnail - don't fail the whole upload
-      }
-    }
-
-    // Get updated media record
-    const updatedMedia = await prisma.media.findUnique({
-      where: { id: mediaId },
-    });
+    // TODO: Trigger background processing (Lambda, SQS, etc.)
+    // For now, we'll mark it as complete immediately
+    // In production, this would queue a job for transcoding/thumbnail generation
 
     return json({
-      media: updatedMedia || media,
+      media,
       s3Url,
-      message: media.type === 'pdf' && posterS3Key
-        ? 'Upload complete with thumbnail'
-        : 'Upload marked as complete, processing started',
+      message: 'Upload marked as complete, processing started',
     });
   } catch (e) {
     console.error('Complete upload error:', e);
