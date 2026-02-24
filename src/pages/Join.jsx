@@ -117,7 +117,7 @@ const Join = () => {
               aria-live="polite"
               className="w-full max-w-sm mx-auto mb-4 animate-fade-in border-l-4 border-[#0CCE6B] bg-[#0CCE6B]/10 rounded-lg px-5 py-4 text-center"
             >
-              <p className="text-xl font-bold text-[#0CCE6B] leading-snug">
+              <p className="text-xl font-bold text-neutral-900 leading-snug">
                 Account creation will be available in Q2 2026
               </p>
             </div>
