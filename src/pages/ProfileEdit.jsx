@@ -591,7 +591,18 @@ export default function ProfileEdit() {
       const nonEmptyLinks = sanitizedData.profileLinks.filter(link =>
         (link.label && link.label.trim() !== '') || (link.url && link.url.trim() !== '')
       );
-      sanitizedData.profileLinks = nonEmptyLinks;
+
+      // Auto-add https:// to URLs that are missing a protocol
+      const fixedLinks = nonEmptyLinks.map(link => {
+        if (link.url && link.url.trim() !== '') {
+          const url = link.url.trim();
+          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            return { ...link, url: `https://${url}` };
+          }
+        }
+        return link;
+      });
+      sanitizedData.profileLinks = fixedLinks;
 
       // Validate all remaining links before saving using the validation utility
       const { validateProfileLinks } = await import('../utils/urlValidation');
