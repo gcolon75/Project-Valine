@@ -130,13 +130,13 @@ const Login = () => {
             aria-live="polite"
             className="w-full mb-6 animate-fade-in border-l-4 border-[#0CCE6B] bg-[#0CCE6B]/10 rounded-lg px-5 py-4 text-center"
           >
-            <p className="text-base font-semibold text-[#0CCE6B] leading-snug mb-1">
+            <p className="text-base font-semibold text-neutral-900 leading-snug mb-1">
               Only admin and approved beta users can log in until Q2 2026. If you are part of our beta, use your invite credentials.
             </p>
             {/* TODO: Replace placeholder email with real support address once available */}
             <a
               href="mailto:support@joint-networking"
-              className="text-sm text-[#0CCE6B] underline hover:text-[#0BBE60] transition-colors"
+              className="text-sm text-neutral-800 underline hover:text-neutral-900 transition-colors"
             >
               Need access? Contact support@joint-networking
             </a>
