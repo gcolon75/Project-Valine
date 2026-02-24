@@ -60,16 +60,6 @@ export default function PostCard({ post, onDelete, onLike }) {
                      post.mediaAttachment?.s3Key?.endsWith('.docx') ||
                      hasMediaButNoPoster;
 
-  // Debug logging - check browser console
-  console.log('PostCard Debug:', {
-    postId: post.id,
-    mediaId: post.mediaId,
-    hasMediaAttachment: !!post.mediaAttachment,
-    mediaType: post.mediaAttachment?.type,
-    hasMedia,
-    hasPoster,
-    isDocument
-  });
 
   // Image fallback: use mediaAttachment url, post image, or placeholder
   const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;

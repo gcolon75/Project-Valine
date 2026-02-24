@@ -2,6 +2,11 @@ import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
 import { createNotification } from './notifications.js';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
+const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -252,10 +257,23 @@ export const listPosts = async (event) => {
       const mediaRecords = await prisma.media.findMany({
         where: { id: { in: mediaIds } },
       });
-      mediaMap = mediaRecords.reduce((acc, media) => {
-        acc[media.id] = media;
-        return acc;
-      }, {});
+
+      // Generate signed URLs for poster images
+      for (const media of mediaRecords) {
+        let posterUrl = null;
+        if (media.posterS3Key) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: media.posterS3Key,
+            });
+            posterUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate poster URL:', e.message);
+          }
+        }
+        mediaMap[media.id] = { ...media, posterUrl };
+      }
     }
 
     // Get user's likes for these posts (gracefully handle if PostLike table doesn't exist yet)
@@ -357,7 +375,20 @@ export const getPost = async (event) => {
         where: { id: post.mediaId },
       });
       if (mediaRecord) {
-        responsePost = { ...post, mediaAttachment: mediaRecord };
+        // Generate signed URL for poster if exists
+        let posterUrl = null;
+        if (mediaRecord.posterS3Key) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: mediaRecord.posterS3Key,
+            });
+            posterUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate poster URL:', e.message);
+          }
+        }
+        responsePost = { ...post, mediaAttachment: { ...mediaRecord, posterUrl } };
       }
     }
     

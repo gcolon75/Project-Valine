@@ -15,9 +15,11 @@ import {
   XCircle,
   Eye,
   EyeOff,
-  Download
+  Download,
+  FileText
 } from 'lucide-react';
 import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
+import { getMediaAccessUrl } from '../services/mediaService';
 import CommentList from '../components/CommentList';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -296,11 +298,11 @@ export default function PostDetail() {
 
       {/* Post Card */}
       <article className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
-        {/* Thumbnail */}
-        {post.thumbnailUrl && (
+        {/* Thumbnail - show post thumbnail, or PDF poster as fallback */}
+        {(post.thumbnailUrl || post.mediaAttachment?.posterUrl) && (
           <div className="w-full aspect-video bg-neutral-100 dark:bg-neutral-800">
             <img
-              src={post.thumbnailUrl}
+              src={post.thumbnailUrl || post.mediaAttachment?.posterUrl}
               alt="Post thumbnail"
               className="w-full h-full object-cover"
             />
@@ -401,6 +403,46 @@ export default function PostDetail() {
                       alt="Post attachment"
                       className="w-full rounded-lg"
                     />
+                  ) : post.mediaAttachment.type === 'pdf' ? (
+                    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                      {/* PDF Thumbnail Preview */}
+                      {post.mediaAttachment.posterUrl ? (
+                        <div className="bg-neutral-100 dark:bg-neutral-800 p-4">
+                          <img
+                            src={post.mediaAttachment.posterUrl}
+                            alt="PDF preview"
+                            className="max-w-full h-auto mx-auto rounded shadow-lg"
+                            style={{ maxHeight: '500px' }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="bg-neutral-100 dark:bg-neutral-800 p-8 flex flex-col items-center justify-center">
+                          <FileText className="w-16 h-16 text-neutral-400 mb-2" />
+                          <span className="text-neutral-600 dark:text-neutral-400">PDF Document</span>
+                        </div>
+                      )}
+                      {/* PDF Info & Actions */}
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                          <FileText className="w-5 h-5" />
+                          <span className="font-medium">{post.mediaAttachment.title || 'Document'}</span>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { viewUrl } = await getMediaAccessUrl(post.mediaAttachment.id);
+                              window.open(viewUrl, '_blank');
+                            } catch (err) {
+                              toast.error('Failed to open PDF');
+                            }
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View PDF
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               )}
