@@ -144,10 +144,10 @@ export default function Notifications() {
         navigate('/inbox');
       }
     } else if (normalizedType === 'like' || normalizedType === 'comment') {
-      // Navigate to the reel if we have reelId in metadata
-      const reelId = notification.metadata?.reelId;
-      if (reelId) {
-        navigate(`/reels/${reelId}`);
+      // Navigate to the post if we have postId in metadata
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/post/${postId}`);
       }
     }
     // For other notification types, no navigation (can be extended)
@@ -164,7 +164,7 @@ export default function Notifications() {
         return 'text-[#0CCE6B] bg-[#0CCE6B]/10';
       case 'message':
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
-      case 'reel':
+      case 'post':
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
       case 'script':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
@@ -185,8 +185,8 @@ export default function Notifications() {
         return UserPlus;
       case 'message':
         return Mail;
-      case 'reel':
-        return Video;
+      case 'post':
+        return FileText;
       case 'script':
         return FileText;
       default:
@@ -206,12 +206,12 @@ export default function Notifications() {
       case 'message':
         return notification.message || `New message from @${username}`;
       case 'like':
-        return `@${username} liked your reel`;
+        return `@${username} liked your post`;
       case 'comment':
         const commentPreview = notification.metadata?.commentText;
         return commentPreview
           ? `@${username} commented: "${commentPreview.length > 50 ? commentPreview.substring(0, 50) + '...' : commentPreview}"`
-          : `@${username} commented on your reel`;
+          : `@${username} commented on your post`;
       default:
         return notification.action || notification.message || 'New notification';
     }
