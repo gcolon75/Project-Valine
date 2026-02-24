@@ -124,14 +124,14 @@ graph TD
 
 **Code Reference**:
 ```javascript
-// src/pages/Landing.jsx
-<Link to="/signup" className="btn-primary-lg">
-  Get Started Free
+// src/pages/Home.jsx and src/components/landing/HeroSection.jsx
+<Link to="/join" className="btn-primary-lg">
+  Join for Free
 </Link>
 
-// src/components/Header.jsx
-<Link to="/signup" className="btn-primary">
-  Sign Up
+// src/layouts/MarketingLayout.jsx (top-right nav)
+<Link to="/join" className="btn-primary">
+  Sign up
 </Link>
 ```
 
