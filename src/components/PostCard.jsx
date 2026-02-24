@@ -190,7 +190,7 @@ export default function PostCard({ post, onDelete, onLike }) {
             {isGated && (
               <span className="flex items-center gap-1 text-xs text-neutral-500">
                 <Lock className="w-3 h-3" />
-                {post.visibility === "private" ? "Private" : "On Request"}
+                {post.visibility === "FOLLOWERS_ONLY" ? "Followers Only" : "Access Required"}
               </span>
             )}
             {/* Price badge */}

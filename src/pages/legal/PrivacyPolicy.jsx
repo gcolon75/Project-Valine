@@ -262,7 +262,7 @@ export default function PrivacyPolicy() {
               </li>
             </ul>
             <p className="text-neutral-700 leading-relaxed mt-4">
-              <strong>Note:</strong> Contact form and dedicated DSAR request flow are planned for future releases.
+              <strong>Note:</strong> Contact us via our <a href="/contact" className="text-[#0CCE6B] hover:underline">Contact page</a> or email <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">privacy@joint-networking.com</a>.
             </p>
           </section>
 

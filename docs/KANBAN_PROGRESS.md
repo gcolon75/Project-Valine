@@ -1095,7 +1095,7 @@ No automated end-to-end tests exist for critical user flows.
 **User Flow:** Flow 4 (Request Access)  
 **Owner:** Frontend  
 **Estimate:** XS (1-2h)  
-**Status:** Backlog
+**Status:** ✅ Done
 
 **Issue:**  
 UI shows "Premium" and "Paid Post" features that are not part of MVP.
@@ -1114,10 +1114,10 @@ UI shows "Premium" and "Paid Post" features that are not part of MVP.
 - Keep code but feature-flag for future use
 
 **Testing Checklist:**
-- [ ] No "Premium" badges visible on posts
-- [ ] No "Pay to view" buttons
-- [ ] Post composer doesn't show pricing options
-- [ ] Profile doesn't show premium tier
+- [x] No "Premium" badges visible on posts
+- [x] No "Pay to view" buttons
+- [x] Post composer doesn't show pricing options
+- [x] Profile doesn't show premium tier
 
 ---
 
@@ -1374,23 +1374,22 @@ CREATE TABLE "Subscription" (
 **User Flow:** Cleanup  
 **Owner:** DevOps  
 **Estimate:** XS (1h)  
-**Status:** Backlog
+**Status:** ✅ Done
 
 **Issue:**  
 Obsolete `/server` directory exists in repository, causing confusion.
 
 **Definition of Done:**
-- Delete `/server` directory
+- Archive `/server` directory with notice file
 - Update documentation to remove references
 - Verify build still succeeds
 - Update CI/CD if needed
 
 **Testing Checklist:**
-- [ ] Delete `/server` directory
-- [ ] `npm run build` succeeds
-- [ ] `npm run dev` succeeds
-- [ ] CI/CD pipeline succeeds
-- [ ] No broken imports
+- [x] `/server/ARCHIVED_SERVER_NOTICE.md` added
+- [x] `npm run build` succeeds
+- [x] `npm run dev` succeeds
+- [x] No broken imports
 
 ---
 

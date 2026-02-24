@@ -255,23 +255,10 @@ export default function PostDetail() {
         </p>
         <div className="flex gap-3">
           {isPaidPost ? (
-            <button
-              onClick={handlePayForAccess}
-              disabled={processingPayment}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {processingPayment ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <DollarSign className="w-4 h-4" />
-                  Pay ${formatPrice(post.price)}
-                </>
-              )}
-            </button>
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-lg font-medium text-sm">
+              <Lock className="w-4 h-4" />
+              Paid access — coming soon
+            </span>
           ) : (
             <button
               onClick={handleRequestAccess}
@@ -362,9 +349,9 @@ export default function PostDetail() {
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
             {isPaidPost && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
-                <DollarSign className="w-4 h-4" />
-                ${formatPrice(post.price)}
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-full text-sm font-medium">
+                <Lock className="w-4 h-4" />
+                Paid access — coming soon
               </span>
             )}
             {!isPaidPost && post.isFree && requiresAccess && (
