@@ -31,9 +31,10 @@ export const getContentType = (file, mediaType) => {
  * @param {string} description - Media description (optional)
  * @param {string} privacy - Privacy setting (public, on-request, private)
  * @param {string} contentType - MIME type of the file (optional)
+ * @param {number} fileSize - File size in bytes (required)
  * @returns {Promise<Object>} Upload URL data with mediaId, uploadUrl, s3Key
  */
-export const getUploadUrl = async (profileId, type, title = null, description = null, privacy = 'public', contentType = null) => {
+export const getUploadUrl = async (profileId, type, title = null, description = null, privacy = 'public', contentType = null, fileSize = null) => {
   if (!profileId) {
     throw new Error('Profile ID is required');
   }
@@ -42,12 +43,17 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
     throw new Error('Valid type is required (image, video, or pdf)');
   }
 
+  if (!fileSize || typeof fileSize !== 'number' || fileSize <= 0) {
+    throw new Error('File size is required');
+  }
+
   try {
     const requestBody = {
       type,
       title,
       description,
       privacy,
+      fileSize,
     };
 
     // Include contentType if provided
@@ -60,7 +66,7 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
     return data;
   } catch (error) {
     console.error('Failed to get upload URL:', error);
-    
+
     // Provide helpful error messages
     // Check for specific backend message first (e.g., email verification required)
     // Backend uses { error: message } format, not { message: message }
@@ -71,7 +77,7 @@ export const getUploadUrl = async (profileId, type, title = null, description = 
     } else if (error.response?.status === 404) {
       throw new Error('Profile not found');
     }
-    
+
     throw new Error('Failed to get upload URL. Please try again.');
   }
 };
@@ -272,8 +278,8 @@ export const uploadMedia = async (profileId, file, type, options = {}) => {
     
     // Get content type from file
     const contentType = getContentType(file, type);
-    
-    const { mediaId, uploadUrl } = await getUploadUrl(profileId, type, title, description, privacy, contentType);
+
+    const { mediaId, uploadUrl } = await getUploadUrl(profileId, type, title, description, privacy, contentType, file.size);
 
     // Step 2: Upload to S3 with progress tracking
     await uploadToS3(uploadUrl, file, type, (progress) => {

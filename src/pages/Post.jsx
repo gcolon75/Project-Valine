@@ -201,7 +201,8 @@ export default function Post() {
           formData.title || selectedFile.name,
           formData.description,
           formData.visibility,
-          contentType
+          contentType,
+          selectedFile.size
         );
 
         // Step 2: Upload to S3
