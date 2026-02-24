@@ -154,15 +154,15 @@ export default function Contact() {
             <li>
               <strong>General:</strong>{' '}
               {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-              <a href="mailto:support@joint-networking" className="text-[#0CCE6B] hover:underline">
-                support@joint-networking
+              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                support@joint-networking.com
               </a>
             </li>
             <li>
               <strong>Privacy/Legal:</strong>{' '}
               {/* TODO: replace with full domain once confirmed, e.g. privacy@joint-networking.com */}
-              <a href="mailto:privacy@joint-networking" className="text-[#0CCE6B] hover:underline">
-                privacy@joint-networking
+              <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                privacy@joint-networking.com
               </a>
             </li>
           </ul>

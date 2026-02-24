@@ -176,7 +176,7 @@ const ForgotPassword = () => {
           Need help?{' '}
           {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
           <a 
-            href="mailto:support@example.com" 
+            href="mailto:support@joint-networking.com" 
             className="text-[#0CCE6B] font-medium hover:underline"
           >
             Contact Support

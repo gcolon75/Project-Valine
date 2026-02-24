@@ -272,15 +272,15 @@ export default function CookieDisclosure() {
               <li>
                 <strong>Email:</strong>{' '}
                 {/* TODO: replace with full domain once confirmed, e.g. privacy@joint-networking.com */}
-                <a href="mailto:privacy@joint-networking" className="text-[#0CCE6B] hover:underline">
-                  privacy@joint-networking
+                <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  privacy@joint-networking.com
                 </a>
               </li>
               <li>
                 <strong>General Support:</strong>{' '}
                 {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-                <a href="mailto:support@joint-networking" className="text-[#0CCE6B] hover:underline">
-                  support@joint-networking
+                <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  support@joint-networking.com
                 </a>
               </li>
             </ul>

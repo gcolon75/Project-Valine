@@ -110,8 +110,8 @@ export default function TermsOfService() {
             <p className="text-neutral-700 leading-relaxed mb-4">
               You may close your account at any time through account settings or by contacting us at{' '}
               {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-              <a href="mailto:support@joint-networking" className="text-[#0CCE6B] hover:underline">
-                support@joint-networking
+              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                support@joint-networking.com
               </a>.
             </p>
             <p className="text-neutral-700 leading-relaxed mb-4">
@@ -188,8 +188,8 @@ export default function TermsOfService() {
             <p className="text-neutral-700 leading-relaxed mb-4">
               If you have any concerns or disputes, please contact us first at{' '}
               {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-              <a href="mailto:support@joint-networking" className="text-[#0CCE6B] hover:underline">
-                support@joint-networking
+              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                support@joint-networking.com
               </a>
               {' '}to attempt to resolve the issue informally.
             </p>
@@ -253,15 +253,15 @@ export default function TermsOfService() {
               <li>
                 <strong>Email:</strong>{' '}
                 {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-                <a href="mailto:support@joint-networking" className="text-[#0CCE6B] hover:underline">
-                  support@joint-networking
+                <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  support@joint-networking.com
                 </a>
               </li>
               <li>
                 <strong>Legal Inquiries:</strong>{' '}
                 {/* TODO: replace with full domain once confirmed, e.g. legal@joint-networking.com */}
-                <a href="mailto:legal@joint-networking" className="text-[#0CCE6B] hover:underline">
-                  legal@joint-networking
+                <a href="mailto:legal@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  legal@joint-networking.com
                 </a>
               </li>
             </ul>
