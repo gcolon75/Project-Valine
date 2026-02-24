@@ -479,11 +479,19 @@ export default function Profile() {
                   >
                     Edit Profile
                   </Button>
-                  <Button 
+                  <Button
                     variant="secondary"
                     size="md"
                     aria-label="Share profile"
                     className="!p-2 !min-h-[44px] !min-w-[44px]"
+                    onClick={() => {
+                      const profileUrl = `${window.location.origin}/profile/${displayData.username}`;
+                      navigator.clipboard.writeText(profileUrl).then(() => {
+                        toast.success("Link copied to clipboard!");
+                      }).catch(() => {
+                        toast.error("Failed to copy link");
+                      });
+                    }}
                   >
                     <Share2 className="w-5 h-5" />
                   </Button>
@@ -619,11 +627,19 @@ export default function Profile() {
                     )}
                   </div>
                   
-                  <Button 
+                  <Button
                     variant="secondary"
                     size="md"
                     aria-label="Share profile"
                     className="!p-2 !min-h-[44px] !min-w-[44px]"
+                    onClick={() => {
+                      const profileUrl = `${window.location.origin}/profile/${displayData.username}`;
+                      navigator.clipboard.writeText(profileUrl).then(() => {
+                        toast.success("Link copied to clipboard!");
+                      }).catch(() => {
+                        toast.error("Failed to copy link");
+                      });
+                    }}
                   >
                     <Share2 className="w-5 h-5" />
                   </Button>

@@ -473,6 +473,14 @@ export default function PostDetail() {
             <span>Save</span>
           </button>
           <button
+            onClick={() => {
+              const postUrl = `${window.location.origin}/posts/${id}`;
+              navigator.clipboard.writeText(postUrl).then(() => {
+                toast.success("Link copied to clipboard!");
+              }).catch(() => {
+                toast.error("Failed to copy link");
+              });
+            }}
             className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-purple-500 transition ml-auto"
             aria-label="Share post"
           >

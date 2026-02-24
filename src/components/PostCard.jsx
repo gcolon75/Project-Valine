@@ -261,8 +261,11 @@ export default function PostCard({ post, onDelete, onLike }) {
           </div>
         </div>
 
-      {/* Media */}
-      <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden">
+      {/* Media - clickable to view post */}
+      <div
+        className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden cursor-pointer"
+        onClick={() => navigate(`/posts/${post.id}`)}
+      >
         {isGated && !hasAccess ? (
           // Gated content - show blurred preview
           <div className="relative w-full h-full">
@@ -300,8 +303,14 @@ export default function PostCard({ post, onDelete, onLike }) {
 
       {/* Body */}
       <div className="px-4 py-3">
-        <div className="font-semibold text-neutral-900 dark:text-white">{post.title}</div>
-        <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">{post.body}</p>
+        {/* Title and body - clickable to view post */}
+        <div
+          className="cursor-pointer"
+          onClick={() => navigate(`/posts/${post.id}`)}
+        >
+          <div className="font-semibold text-neutral-900 dark:text-white">{post.title}</div>
+          <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">{post.body}</p>
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {post.tags.map((t) => (
             <span
@@ -352,16 +361,6 @@ export default function PostCard({ post, onDelete, onLike }) {
           >
             <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.saved ? "Saved" : "Save"}</span>
-          </button>
-          
-          {/* View button - navigate to post detail page */}
-          <button
-            onClick={() => navigate(`/posts/${post.id}`)}
-            className="rounded-full border border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 px-3 py-1.5 text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 transition-colors flex items-center gap-1.5"
-            aria-label="View full post details"
-          >
-            <Eye className="w-4 h-4" aria-hidden="true" />
-            <span>View</span>
           </button>
 
           {/* Share button - copy link to clipboard */}

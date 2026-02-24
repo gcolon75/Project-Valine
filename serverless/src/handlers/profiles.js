@@ -302,7 +302,8 @@ export const getProfileByVanity = async (event) => {
       return error('This profile is private', 403);
     }
 
-    return json(filteredProfile);
+    // Use no-cache to ensure profile changes (avatar, banner) are seen immediately
+    return jsonNoCache(filteredProfile);
   } catch (e) {
     console.error('Get profile error:', e);
     return error('Server error: ' + e.message, 500);
@@ -399,7 +400,8 @@ export const getProfileById = async (event) => {
       }
     };
 
-    return json(responseProfile);
+    // Use no-cache to ensure profile changes are seen immediately
+    return jsonNoCache(responseProfile);
   } catch (e) {
     console.error('Get profile by ID error:', e);
     return error('Server error: ' + e.message, 500);
@@ -744,7 +746,8 @@ export const updateProfile = async (event) => {
       });
     });
 
-    return json(profile);
+    // Use no-cache to ensure profile changes are seen immediately
+    return jsonNoCache(profile);
   } catch (e) {
     console.error('Update profile error:', e);
     return error('Server error: ' + e.message, 500);
