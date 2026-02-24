@@ -40,7 +40,7 @@ function validateComment(text) {
 
 /**
  * GET /api/posts/:postId/comments
- * List comments for a post with pagination
+ * List comments for a post with pagination, sorted by likes
  */
 export const getPostComments = async (event) => {
   try {
@@ -52,6 +52,7 @@ export const getPostComments = async (event) => {
     const { limit = '20', cursor, includeReplies = 'false' } = event.queryStringParameters || {};
     const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
     const showReplies = includeReplies === 'true';
+    const userId = getUserFromEvent(event); // Optional - for isLiked
 
     const prisma = getPrisma();
 
@@ -65,7 +66,7 @@ export const getPostComments = async (event) => {
       return error(404, 'Post not found');
     }
 
-    // Fetch top-level comments (no parent)
+    // Fetch top-level comments (no parent), sorted by like count
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -73,27 +74,64 @@ export const getPostComments = async (event) => {
       },
       take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { likes: { _count: 'desc' } }, // Most liked first
+        { createdAt: 'desc' }, // Then by newest
+      ],
       include: {
         author: {
           select: { id: true, username: true, displayName: true, avatar: true },
         },
+        _count: {
+          select: { likes: true, replies: true },
+        },
+        ...(userId && {
+          likes: {
+            where: { userId },
+            select: { id: true },
+          },
+        }),
         ...(showReplies && {
           replies: {
             take: 3, // Preview of replies
-            orderBy: { createdAt: 'asc' },
+            orderBy: [
+              { likes: { _count: 'desc' } },
+              { createdAt: 'asc' },
+            ],
             include: {
               author: {
                 select: { id: true, username: true, displayName: true, avatar: true },
               },
+              _count: {
+                select: { likes: true, replies: true },
+              },
+              ...(userId && {
+                likes: {
+                  where: { userId },
+                  select: { id: true },
+                },
+              }),
             },
-          },
-          _count: {
-            select: { replies: true },
           },
         }),
       },
     });
+
+    // Transform to include isLiked and likeCount
+    const transformedComments = comments.map(comment => ({
+      ...comment,
+      likeCount: comment._count?.likes || 0,
+      replyCount: comment._count?.replies || 0,
+      isLiked: userId ? (comment.likes?.length > 0) : false,
+      likes: undefined, // Remove raw likes array
+      replies: comment.replies?.map(reply => ({
+        ...reply,
+        likeCount: reply._count?.likes || 0,
+        replyCount: reply._count?.replies || 0,
+        isLiked: userId ? (reply.likes?.length > 0) : false,
+        likes: undefined,
+      })),
+    }));
 
     // Get total count for pagination info
     const totalCount = await prisma.comment.count({
@@ -101,7 +139,7 @@ export const getPostComments = async (event) => {
     });
 
     return json({
-      comments,
+      comments: transformedComments,
       totalCount,
       nextCursor: comments.length === parsedLimit ? comments[comments.length - 1]?.id : null,
     });
@@ -113,7 +151,7 @@ export const getPostComments = async (event) => {
 
 /**
  * GET /api/comments/:commentId/replies
- * Get replies to a specific comment
+ * Get replies to a specific comment, sorted by likes
  */
 export const getCommentReplies = async (event) => {
   try {
@@ -124,6 +162,7 @@ export const getCommentReplies = async (event) => {
 
     const { limit = '20', cursor } = event.queryStringParameters || {};
     const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const userId = getUserFromEvent(event); // Optional - for isLiked
 
     const prisma = getPrisma();
 
@@ -141,16 +180,37 @@ export const getCommentReplies = async (event) => {
       where: { parentId: commentId },
       take: parsedLimit,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-      orderBy: { createdAt: 'asc' },
+      orderBy: [
+        { likes: { _count: 'desc' } }, // Most liked first
+        { createdAt: 'asc' }, // Then by oldest (conversation order)
+      ],
       include: {
         author: {
           select: { id: true, username: true, displayName: true, avatar: true },
         },
+        _count: {
+          select: { likes: true, replies: true },
+        },
+        ...(userId && {
+          likes: {
+            where: { userId },
+            select: { id: true },
+          },
+        }),
       },
     });
 
+    // Transform to include isLiked and likeCount
+    const transformedReplies = replies.map(reply => ({
+      ...reply,
+      likeCount: reply._count?.likes || 0,
+      replyCount: reply._count?.replies || 0,
+      isLiked: userId ? (reply.likes?.length > 0) : false,
+      likes: undefined, // Remove raw likes array
+    }));
+
     return json({
-      replies,
+      replies: transformedReplies,
       nextCursor: replies.length === parsedLimit ? replies[replies.length - 1]?.id : null,
     });
   } catch (e) {
@@ -422,6 +482,122 @@ export const getCommentCount = async (event) => {
     return json({ postId, count });
   } catch (e) {
     console.error('getCommentCount error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /api/comments/:commentId/like
+ * Like a comment
+ */
+export const likeComment = async (event) => {
+  try {
+    const { commentId } = event.pathParameters || {};
+    if (!commentId) {
+      return error(400, 'commentId is required');
+    }
+
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const prisma = getPrisma();
+
+    // Check if comment exists
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, authorId: true, postId: true },
+    });
+
+    if (!comment) {
+      return error(404, 'Comment not found');
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.commentLike.findUnique({
+      where: {
+        commentId_userId: {
+          commentId,
+          userId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      return error(400, 'Comment already liked');
+    }
+
+    // Create like
+    await prisma.commentLike.create({
+      data: {
+        commentId,
+        userId,
+      },
+    });
+
+    // Get updated like count
+    const likeCount = await prisma.commentLike.count({
+      where: { commentId },
+    });
+
+    return json({ success: true, likeCount, isLiked: true });
+  } catch (e) {
+    console.error('likeComment error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * DELETE /api/comments/:commentId/like
+ * Unlike a comment
+ */
+export const unlikeComment = async (event) => {
+  try {
+    const { commentId } = event.pathParameters || {};
+    if (!commentId) {
+      return error(400, 'commentId is required');
+    }
+
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const prisma = getPrisma();
+
+    // Check if like exists
+    const existingLike = await prisma.commentLike.findUnique({
+      where: {
+        commentId_userId: {
+          commentId,
+          userId,
+        },
+      },
+    });
+
+    if (!existingLike) {
+      return error(404, 'Like not found');
+    }
+
+    // Delete like
+    await prisma.commentLike.delete({
+      where: {
+        commentId_userId: {
+          commentId,
+          userId,
+        },
+      },
+    });
+
+    // Get updated like count
+    const likeCount = await prisma.commentLike.count({
+      where: { commentId },
+    });
+
+    return json({ success: true, likeCount, isLiked: false });
+  } catch (e) {
+    console.error('unlikeComment error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

@@ -395,6 +395,12 @@ functions:
       - httpApi:
           path: /comments/{id}/replies
           method: get
+      - httpApi:
+          path: /comments/{id}/like
+          method: post
+      - httpApi:
+          path: /comments/{id}/like
+          method: delete
 
   # ========== SCRIPTS ==========
   listScripts:

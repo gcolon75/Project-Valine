@@ -77,6 +77,16 @@ export const getCommentReplies = async (commentId, limit = 20, cursor = null) =>
   return data;
 };
 
+export const likeComment = async (commentId) => {
+  const { data } = await apiClient.post(`/comments/${commentId}/like`);
+  return data;
+};
+
+export const unlikeComment = async (commentId) => {
+  const { data } = await apiClient.delete(`/comments/${commentId}/like`);
+  return data;
+};
+
 /**
  * Get presigned URL for audio file upload
  * @param {string} filename - The original filename

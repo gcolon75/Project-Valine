@@ -1,9 +1,9 @@
 // src/components/CommentList.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getPostComments, addPostComment, updateComment, deleteComment, getCommentReplies } from "../services/postService";
+import { getPostComments, addPostComment, updateComment, deleteComment, getCommentReplies, likeComment, unlikeComment } from "../services/postService";
 import { useAuth } from "../context/AuthContext";
-import { MoreHorizontal, Edit2, Trash2, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit2, Trash2, MessageCircle, ChevronDown, ChevronUp, Heart } from "lucide-react";
 
 // Format relative time (1s, 1m, 1h, 1d, 1w, 1mo, 1yr)
 const formatRelativeTime = (dateString) => {
@@ -34,7 +34,7 @@ const formatRelativeTime = (dateString) => {
   return `${years}yr`;
 };
 
-// Single Comment component with edit/delete/reply functionality
+// Single Comment component with edit/delete/reply/like functionality
 function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, depth = 0 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -46,6 +46,9 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
   const [showReplies, setShowReplies] = useState(false);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [replyCount, setReplyCount] = useState(comment._count?.replies || comment.replyCount || 0);
+  const [isLiked, setIsLiked] = useState(comment.isLiked || false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount || comment._count?.likes || 0);
+  const [likingInProgress, setLikingInProgress] = useState(false);
 
   const isAuthor = user?.id === comment.author?.id || user?.id === comment.authorId;
   const maxDepth = 4; // Maximum nesting depth for visual purposes
@@ -109,6 +112,28 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
       console.error("Failed to add reply:", err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handle like/unlike
+  const handleLike = async () => {
+    if (!user || likingInProgress) return;
+
+    setLikingInProgress(true);
+    try {
+      if (isLiked) {
+        const result = await unlikeComment(comment.id);
+        setIsLiked(false);
+        setLikeCount(result.likeCount);
+      } else {
+        const result = await likeComment(comment.id);
+        setIsLiked(true);
+        setLikeCount(result.likeCount);
+      }
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    } finally {
+      setLikingInProgress(false);
     }
   };
 
@@ -211,9 +236,23 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
           )}
 
           {/* Action buttons */}
-          {!isEditing && user && (
+          {!isEditing && (
             <div className="flex items-center gap-3 mt-1">
-              {depth < maxDepth && (
+              {/* Like button - always visible */}
+              <button
+                onClick={handleLike}
+                disabled={!user || likingInProgress}
+                className={`text-xs flex items-center gap-1 transition-colors ${
+                  isLiked
+                    ? "text-red-500"
+                    : "text-neutral-500 hover:text-red-500"
+                } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <Heart className={`w-3 h-3 ${isLiked ? "fill-current" : ""}`} />
+                {likeCount > 0 && <span>{likeCount}</span>}
+              </button>
+
+              {user && depth < maxDepth && (
                 <button
                   onClick={() => setIsReplying(!isReplying)}
                   className="text-xs text-neutral-500 hover:text-brand flex items-center gap-1"
@@ -222,7 +261,7 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
                   Reply
                 </button>
               )}
-              {isAuthor && (
+              {user && isAuthor && (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}

@@ -140,6 +140,20 @@ export const handler = async (event, context) => {
       return comments.deleteComment(event, context);
     }
 
+    // POST /comments/{id}/like
+    if (method === 'POST' && /^\/comments\/[^/]+\/like$/.test(path)) {
+      const commentId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, commentId };
+      return comments.likeComment(event, context);
+    }
+
+    // DELETE /comments/{id}/like
+    if (method === 'DELETE' && /^\/comments\/[^/]+\/like$/.test(path)) {
+      const commentId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, commentId };
+      return comments.unlikeComment(event, context);
+    }
+
     // Fallback
     console.warn('postsRouter: no route match', { method, path });
     return {

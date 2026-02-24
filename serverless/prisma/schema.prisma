@@ -34,6 +34,7 @@ model User {
   auditions               Audition[]
   bookmarks               Bookmark[]
   comments                Comment[]
+  commentLikes            CommentLike[]
   receivedRequests        ConnectionRequest[]       @relation("receiver")
   sentRequests            ConnectionRequest[]       @relation("sender")
   conversations           ConversationParticipant[]
@@ -176,11 +177,12 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  reel    Reel?     @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reel    Reel?         @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  post    Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[]     @relation("CommentReplies")
+  likes   CommentLike[]
 
   @@index([reelId])
   @@index([postId])
@@ -188,6 +190,21 @@ model Comment {
   @@index([parentId])
   @@index([createdAt])
   @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_likes")
 }
 
 model Like {
