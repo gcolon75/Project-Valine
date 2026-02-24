@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -143,7 +143,7 @@ export default function Notifications() {
       } else {
         navigate('/inbox');
       }
-    } else if (normalizedType === 'like' || normalizedType === 'comment') {
+    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention') {
       // Navigate to the post if we have postId in metadata
       const postId = notification.metadata?.postId;
       if (postId) {
@@ -162,6 +162,8 @@ export default function Notifications() {
         return 'text-blue-500 bg-blue-50 dark:bg-blue-500/10';
       case 'follow':
         return 'text-[#0CCE6B] bg-[#0CCE6B]/10';
+      case 'mention':
+        return 'text-yellow-500 bg-yellow-50 dark:bg-yellow-500/10';
       case 'message':
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
       case 'post':
@@ -183,6 +185,8 @@ export default function Notifications() {
         return MessageCircle;
       case 'follow':
         return UserPlus;
+      case 'mention':
+        return AtSign;
       case 'message':
         return Mail;
       case 'post':
@@ -212,6 +216,8 @@ export default function Notifications() {
         return commentPreview
           ? `@${username} commented: "${commentPreview.length > 50 ? commentPreview.substring(0, 50) + '...' : commentPreview}"`
           : `@${username} commented on your post`;
+      case 'mention':
+        return `@${username} mentioned you in a comment`;
       default:
         return notification.action || notification.message || 'New notification';
     }

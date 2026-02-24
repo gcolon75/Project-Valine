@@ -227,7 +227,7 @@ export const createComment = async (event) => {
       },
     });
 
-    // TODO: Create notification for post author (if not self)
+    // Create notification for post author (if not self)
     if (post.authorId !== userId) {
       try {
         await prisma.notification.create({
@@ -241,6 +241,38 @@ export const createComment = async (event) => {
         });
       } catch (notifErr) {
         console.warn('Failed to create comment notification:', notifErr.message);
+      }
+    }
+
+    // Parse @mentions and notify mentioned users
+    const mentionRegex = /@(\w+)/g;
+    const mentions = [...validation.sanitized.matchAll(mentionRegex)].map(m => m[1]);
+
+    if (mentions.length > 0) {
+      try {
+        // Look up mentioned users by username
+        const mentionedUsers = await prisma.user.findMany({
+          where: {
+            username: { in: mentions },
+            id: { notIn: [userId, post.authorId] }, // Don't notify self or post author (already notified)
+          },
+          select: { id: true, username: true },
+        });
+
+        // Create notifications for each mentioned user
+        for (const mentionedUser of mentionedUsers) {
+          await prisma.notification.create({
+            data: {
+              type: 'mention',
+              message: 'mentioned you in a comment',
+              recipientId: mentionedUser.id,
+              triggererId: userId,
+              metadata: { postId, commentId: comment.id },
+            },
+          });
+        }
+      } catch (mentionErr) {
+        console.warn('Failed to create mention notifications:', mentionErr.message);
       }
     }
 
@@ -350,12 +382,20 @@ export const deleteComment = async (event) => {
       return error(403, 'Forbidden - not authorized to delete this comment');
     }
 
+    // Get the postId before deleting
+    const postId = comment.postId;
+
     // Delete comment (cascades to replies)
     await prisma.comment.delete({
       where: { id: commentId },
     });
 
-    return json({ message: 'Comment deleted successfully' });
+    // Get updated comment count
+    const commentCount = await prisma.comment.count({
+      where: { postId },
+    });
+
+    return json({ message: 'Comment deleted successfully', commentCount });
   } catch (e) {
     console.error('deleteComment error:', e);
     return error(500, 'Server error: ' + e.message);
