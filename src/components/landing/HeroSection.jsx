@@ -25,7 +25,17 @@ const HeroSection = () => {
           <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl pb-4 leading-[1.15]" style={{ animationDelay: '0.1s' }}>
             Showcase your work. Connect with artists. Collaborate and grow.
           </h1>
-          
+
+          {/* Subtitle Text - Directly below title, above CTA buttons */}
+          <div
+            data-testid="hero-subtitle"
+            className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl text-center space-y-4 leading-relaxed"
+            style={{ animationDelay: '0.15s' }}
+          >
+            <p>Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists.</p>
+            <p>Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.</p>
+          </div>
+
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.2s' }}>
             <Link
@@ -62,12 +72,6 @@ const HeroSection = () => {
                 <span className="text-sm font-semibold text-neutral-900">New!</span>
               </div>
             </div>
-          </div>
-
-          {/* Subtitle Text - Below Hero Visual */}
-          <div className="text-lg md:text-xl text-neutral-600 mt-8 animate-slide-up max-w-3xl text-center space-y-4" style={{ animationDelay: '0.4s' }}>
-            <p>Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists.</p>
-            <p>Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.</p>
           </div>
         </div>
 
