@@ -586,7 +586,14 @@ export default function ProfileEdit() {
         return;
       }
 
-      // Validate all links before saving using the validation utility
+      // Filter out empty links (where both label and URL are empty) before validation
+      // This allows users to click "Add Link" but not fill it out without blocking save
+      const nonEmptyLinks = sanitizedData.profileLinks.filter(link =>
+        (link.label && link.label.trim() !== '') || (link.url && link.url.trim() !== '')
+      );
+      sanitizedData.profileLinks = nonEmptyLinks;
+
+      // Validate all remaining links before saving using the validation utility
       const { validateProfileLinks } = await import('../utils/urlValidation');
       const linksValidation = validateProfileLinks(sanitizedData.profileLinks);
 
@@ -594,7 +601,11 @@ export default function ProfileEdit() {
         if (linksValidation.globalErrors.length > 0) {
           toast.error(linksValidation.globalErrors[0]);
         } else {
-          toast.error('Please fix validation errors in profile links before saving');
+          // Find the first link with errors and show a helpful message
+          const errorIndex = Object.keys(linksValidation.errors)[0];
+          const linkErrors = linksValidation.errors[errorIndex];
+          const firstError = Object.values(linkErrors)[0];
+          toast.error(`Link ${parseInt(errorIndex) + 1}: ${firstError}`);
         }
         return;
       }
