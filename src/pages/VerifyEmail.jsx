@@ -246,8 +246,9 @@ const VerifyEmail = () => {
               {/* Help Link */}
               <p className="mt-6 text-sm text-neutral-600">
                 Need help?{' '}
+                {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
                 <a 
-                  href="mailto:support@projectvaline.com" 
+                  href="mailto:support@joint-networking.com" 
                   className="text-[#0CCE6B] font-medium hover:underline"
                 >
                   Contact Support

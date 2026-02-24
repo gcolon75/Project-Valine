@@ -271,14 +271,16 @@ export default function CookieDisclosure() {
             <ul className="list-none text-neutral-700 space-y-2">
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:privacy@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  privacy@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. privacy@joint-networking.com */}
+                <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  privacy@joint-networking.com
                 </a>
               </li>
               <li>
                 <strong>General Support:</strong>{' '}
-                <a href="mailto:support@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  support@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
+                <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  support@joint-networking.com
                 </a>
               </li>
             </ul>

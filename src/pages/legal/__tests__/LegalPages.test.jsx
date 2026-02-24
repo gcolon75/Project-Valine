@@ -51,7 +51,7 @@ describe('Legal Pages - Privacy Policy', () => {
   it('contains contact information', () => {
     renderWithRouter(<PrivacyPolicy />);
     expect(screen.getByText(/Contact Information/i)).toBeInTheDocument();
-    const privacyEmails = screen.getAllByText(/privacy@projectvaline.com/i);
+    const privacyEmails = screen.getAllByText(/privacy@joint-networking/i);
     expect(privacyEmails.length).toBeGreaterThan(0);
   });
 
@@ -115,7 +115,7 @@ describe('Legal Pages - Terms of Service', () => {
   it('contains contact information', () => {
     renderWithRouter(<TermsOfService />);
     expect(screen.getByText(/Contact Information/i)).toBeInTheDocument();
-    const supportEmails = screen.getAllByText(/support@projectvaline.com/i);
+    const supportEmails = screen.getAllByText(/support@joint-networking/i);
     expect(supportEmails.length).toBeGreaterThan(0);
   });
 
@@ -200,7 +200,7 @@ describe('Legal Pages - Cookie Disclosure', () => {
     renderWithRouter(<CookieDisclosure />);
     const questions = screen.getAllByText(/Questions/i);
     expect(questions.length).toBeGreaterThan(0);
-    const privacyEmails = screen.getAllByText(/privacy@projectvaline.com/i);
+    const privacyEmails = screen.getAllByText(/privacy@joint-networking/i);
     expect(privacyEmails.length).toBeGreaterThan(0);
   });
 

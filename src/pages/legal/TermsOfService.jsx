@@ -109,8 +109,9 @@ export default function TermsOfService() {
             <h3 className="text-xl font-semibold text-neutral-900 mb-3">Voluntary Termination</h3>
             <p className="text-neutral-700 leading-relaxed mb-4">
               You may close your account at any time through account settings or by contacting us at{' '}
-              <a href="mailto:support@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                support@projectvaline.com
+              {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
+              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                support@joint-networking.com
               </a>.
             </p>
             <p className="text-neutral-700 leading-relaxed mb-4">
@@ -186,8 +187,9 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Dispute Resolution</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
               If you have any concerns or disputes, please contact us first at{' '}
-              <a href="mailto:support@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                support@projectvaline.com
+              {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
+              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                support@joint-networking.com
               </a>
               {' '}to attempt to resolve the issue informally.
             </p>
@@ -250,14 +252,16 @@ export default function TermsOfService() {
             <ul className="list-none text-neutral-700 space-y-2">
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:support@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  support@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
+                <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  support@joint-networking.com
                 </a>
               </li>
               <li>
                 <strong>Legal Inquiries:</strong>{' '}
-                <a href="mailto:legal@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  legal@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. legal@joint-networking.com */}
+                <a href="mailto:legal@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  legal@joint-networking.com
                 </a>
               </li>
             </ul>

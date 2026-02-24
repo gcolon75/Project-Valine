@@ -123,8 +123,9 @@ export default function PrivacyPolicy() {
             <h3 className="text-xl font-semibold text-neutral-900 mb-3">Access & Export</h3>
             <p className="text-neutral-700 leading-relaxed mb-2">
               Request a copy of your data through the account settings page or by contacting us at{' '}
-              <a href="mailto:privacy@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                privacy@projectvaline.com
+              {/* TODO: replace with full domain once confirmed, e.g. privacy@joint-networking.com */}
+              <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                privacy@joint-networking.com
               </a>.
             </p>
             <p className="text-neutral-700 leading-relaxed mb-4">
@@ -247,14 +248,16 @@ export default function PrivacyPolicy() {
             <ul className="list-none text-neutral-700 space-y-2">
               <li>
                 <strong>Email:</strong>{' '}
-                <a href="mailto:privacy@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  privacy@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. privacy@joint-networking.com */}
+                <a href="mailto:privacy@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  privacy@joint-networking.com
                 </a>
               </li>
               <li>
                 <strong>General Support:</strong>{' '}
-                <a href="mailto:support@projectvaline.com" className="text-[#0CCE6B] hover:underline">
-                  support@projectvaline.com
+                {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
+                <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
+                  support@joint-networking.com
                 </a>
               </li>
             </ul>
