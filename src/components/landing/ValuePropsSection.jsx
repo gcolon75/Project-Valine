@@ -9,7 +9,7 @@ const ValuePropsSection = () => {
             Built for everyone in entertainment
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Whether you're acting, producing, writing, or directing—this is your space to connect and grow.
+            Whether you're acting, producing, writing, or directing, this is your space to connect and grow.
           </p>
         </div>
         
@@ -17,12 +17,12 @@ const ValuePropsSection = () => {
           <ValueCard
             icon={Target}
             title="Our Mission"
-            description="Connect you with the right people and help you land your next opportunity—no matter where you are in your career."
+            description="Connect you with the right people and help you land your next opportunity, no matter where you are in your career."
           />
           <ValueCard
             icon={Users}
             title="Our Community"
-            description="Real people building real careers—from your first project to your biggest break, we're all here figuring it out together."
+            description="Real people building real careers. From your first project to your biggest break, we're all here figuring it out together."
           />
           <ValueCard
             icon={Zap}

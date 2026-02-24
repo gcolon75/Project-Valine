@@ -5,19 +5,19 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "What is Joint?",
-      answer: "Joint is where people in entertainment connect. Actors, producers, writers, directors, agents, editors—anyone creating or working in film, TV, theater, music, or gaming. Share your work, find collabs, and get paid."
+      answer: "Joint is where people in entertainment connect. Actors, producers, writers, directors, agents, editors, and anyone creating or working in film, TV, theater, music, or gaming. Share your work, find collabs, and get paid."
     },
     {
       question: "Is Joint free to use?",
-      answer: "Yep! You can create a profile, connect with people, share your work, and browse opportunities—all for free."
+      answer: "Yep! You can create a profile, connect with people, share your work, and browse opportunities, all for free."
     },
     {
       question: "How do I get started?",
-      answer: "Hit 'Get Started,' set up your profile, add some work, and you're good to go. Takes like 2 minutes."
+      answer: "Click \"Join for Free\", set up your profile, add some work, and you're good to go. Takes like 2 minutes."
     },
     {
       question: "Can I showcase my work?",
-      answer: "Absolutely. Upload demos, samples, scripts, art, music—whatever shows what you do. It all lives in your profile."
+      answer: "Absolutely. Upload demos, samples, scripts, art, music, and whatever shows what you do. It all lives in your profile."
     },
     {
       question: "How do I find collaboration opportunities?",
@@ -58,7 +58,7 @@ const FAQItem = ({ question, answer }) => {
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
+        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-[#0CCE6B] focus-visible:outline-offset-2"
         aria-expanded={isOpen}
         aria-controls={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
       >
