@@ -143,7 +143,7 @@ export default function Notifications() {
       } else {
         navigate('/inbox');
       }
-    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention') {
+    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention' || normalizedType === 'comment_like') {
       // Navigate to the post if we have postId in metadata
       const postId = notification.metadata?.postId;
       if (postId) {
@@ -157,6 +157,7 @@ export default function Notifications() {
     const normalizedType = typeof type === 'string' ? type.toLowerCase() : type;
     switch (normalizedType) {
       case 'like':
+      case 'comment_like':
         return 'text-red-500 bg-red-50 dark:bg-red-500/10';
       case 'comment':
         return 'text-blue-500 bg-blue-50 dark:bg-blue-500/10';
@@ -180,6 +181,7 @@ export default function Notifications() {
     const normalizedType = typeof type === 'string' ? type.toLowerCase() : type;
     switch (normalizedType) {
       case 'like':
+      case 'comment_like':
         return Heart;
       case 'comment':
         return MessageCircle;
@@ -211,6 +213,8 @@ export default function Notifications() {
         return notification.message || `New message from @${username}`;
       case 'like':
         return `@${username} liked your post`;
+      case 'comment_like':
+        return `@${username} liked your comment`;
       case 'comment':
         const commentPreview = notification.metadata?.commentText;
         return commentPreview

@@ -66,6 +66,7 @@ export default function NotificationBell() {
     const normalizedType = typeof type === 'string' ? type.toLowerCase() : type;
     switch (normalizedType) {
       case 'like':
+      case 'comment_like':
         return <Heart className="w-4 h-4 text-red-500" />;
       case 'comment':
         return <MessageCircle className="w-4 h-4 text-blue-500" />;
@@ -89,6 +90,8 @@ export default function NotificationBell() {
         return <><span className="font-semibold">{username}</span> started following you</>;
       case 'like':
         return <><span className="font-semibold">{username}</span> liked your post</>;
+      case 'comment_like':
+        return <><span className="font-semibold">{username}</span> liked your comment</>;
       case 'comment':
         return <><span className="font-semibold">{username}</span> commented on your post</>;
       case 'mention':
@@ -109,7 +112,7 @@ export default function NotificationBell() {
       if (username) {
         navigate(`/profile/${username}`);
       }
-    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention') {
+    } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention' || normalizedType === 'comment_like') {
       const postId = notification.metadata?.postId;
       if (postId) {
         navigate(`/posts/${postId}`);
