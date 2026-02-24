@@ -49,13 +49,17 @@ export default function PostCard({ post, onDelete, onLike }) {
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
 
   // Check if media is a document (PDF, script, etc.)
-  const isDocument = post.mediaAttachment?.type === 'document' ||
+  // Also treat as document if there's a mediaId but no poster/image URL (documents don't generate thumbnails)
+  const hasMediaButNoPoster = post.mediaId && !post.mediaAttachment?.posterUrl && !post.mediaUrl && !post.imageUrl;
+  const isDocument = post.mediaAttachment?.type === 'pdf' ||
+                     post.mediaAttachment?.type === 'document' ||
                      post.mediaAttachment?.s3Key?.endsWith('.pdf') ||
                      post.mediaAttachment?.s3Key?.endsWith('.doc') ||
-                     post.mediaAttachment?.s3Key?.endsWith('.docx');
+                     post.mediaAttachment?.s3Key?.endsWith('.docx') ||
+                     hasMediaButNoPoster;
 
   // Image fallback: use mediaAttachment url, post image, or placeholder
-  const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl || '/placeholders/post.svg';
+  const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
 
   // Handle request access
   const handleRequestAccess = async () => {
@@ -303,18 +307,23 @@ export default function PostCard({ post, onDelete, onLike }) {
               Click to view
             </span>
           </div>
+        ) : imageUrl ? (
+          // Image/video content with actual URL
+          <img
+            src={imageUrl}
+            alt={post.title || "Post image"}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
         ) : (
-          // Image/video content
-          imageUrl && (
-            <img
-              src={imageUrl}
-              alt={post.title || "Post image"}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          )
+          // No image available - show placeholder
+          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              No preview available
+            </span>
+          </div>
         )}
       </div>
 
