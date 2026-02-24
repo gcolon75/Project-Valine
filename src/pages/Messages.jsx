@@ -119,9 +119,9 @@ export default function Messages() {
       <div className="w-full md:w-80 lg:w-96 border-r border-neutral-200 dark:border-neutral-700 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
-          <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">
             Messages
-          </h2>
+          </h1>
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />

@@ -13,6 +13,7 @@ export default function ProfileBasics({ userData, onUpdate }) {
   const [showCropper, setShowCropper] = useState(false);
   const [showBannerCropper, setShowBannerCropper] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   const [formData, setFormData] = useState({
     displayName: userData?.displayName || '',
@@ -21,6 +22,24 @@ export default function ProfileBasics({ userData, onUpdate }) {
     avatar: userData?.avatar || null,
     banner: userData?.banner || null,
   });
+
+  // Validate a single field or all fields
+  const validateField = (name, value) => {
+    const fieldErrors = {};
+    if (name === 'displayName' || name === undefined) {
+      if (!formData.displayName.trim() && (name === 'displayName' ? !value?.trim() : true)) {
+        fieldErrors.displayName = 'Display name is required';
+      } else if ((name === 'displayName' ? value : formData.displayName).length > 100) {
+        fieldErrors.displayName = 'Display name must be 100 characters or less';
+      }
+    }
+    if (name === 'title' || name === undefined) {
+      if ((name === 'title' ? value : formData.title).length > 100) {
+        fieldErrors.title = 'Title must be 100 characters or less';
+      }
+    }
+    return fieldErrors;
+  };
 
   // Validate form data
   const validate = () => {
@@ -50,6 +69,18 @@ export default function ProfileBasics({ userData, onUpdate }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Show errors in real-time for already-touched fields
+    if (touched[name]) {
+      const fieldErrors = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const fieldErrors = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
   };
 
   const handleAvatarSave = (imageData) => {
@@ -150,15 +181,20 @@ export default function ProfileBasics({ userData, onUpdate }) {
           name="displayName"
           value={formData.displayName}
           onChange={handleChange}
+          onBlur={handleBlur}
           maxLength={100}
           required
-          className="w-full px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
+          className={`w-full px-4 py-3 bg-white dark:bg-neutral-800 border rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:border-transparent ${
+            errors.displayName && touched.displayName
+              ? 'border-red-500 focus:ring-red-500'
+              : 'border-neutral-300 dark:border-neutral-700 focus:ring-[#0CCE6B]'
+          }`}
           placeholder="Your professional name"
           aria-required="true"
-          aria-invalid={!!errors.displayName}
-          aria-describedby={errors.displayName ? 'displayName-error' : 'displayName-hint'}
+          aria-invalid={!!(errors.displayName && touched.displayName)}
+          aria-describedby={errors.displayName && touched.displayName ? 'displayName-error' : 'displayName-hint'}
         />
-        {errors.displayName ? (
+        {errors.displayName && touched.displayName ? (
           <p id="displayName-error" className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert">
             {errors.displayName}
           </p>
@@ -185,15 +221,27 @@ export default function ProfileBasics({ userData, onUpdate }) {
             name="title"
             value={formData.title}
             onChange={handleChange}
+            onBlur={handleBlur}
             maxLength={100}
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
+            className={`w-full pl-11 pr-4 py-3 bg-white dark:bg-neutral-800 border rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:border-transparent ${
+              errors.title && touched.title
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-neutral-300 dark:border-neutral-700 focus:ring-[#0CCE6B]'
+            }`}
             placeholder="e.g., Actor, Producer, Director, Writer, Agent"
-            aria-describedby="title-hint"
+            aria-invalid={!!(errors.title && touched.title)}
+            aria-describedby={errors.title && touched.title ? 'title-error' : 'title-hint'}
           />
         </div>
-        <p id="title-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-          {formData.title.length}/100 characters
-        </p>
+        {errors.title && touched.title ? (
+          <p id="title-error" className="text-sm text-red-600 dark:text-red-400 mt-1" role="alert">
+            {errors.title}
+          </p>
+        ) : (
+          <p id="title-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+            {formData.title.length}/100 characters
+          </p>
+        )}
       </div>
 
       {/* Location */}

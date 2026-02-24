@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { Button } from '../components/ui';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { exportAccountData, deleteAccount } from '../services/settingsService';
@@ -318,21 +319,23 @@ export default function Settings() {
                 aria-label="New email address"
               />
               <div className="flex space-x-2">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={() => {
                     // TODO: Save email
                     setEditingSection(null);
                   }}
-                  className="px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg text-sm font-semibold"
                 >
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setEditingSection(null)}
-                  className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -349,12 +352,13 @@ export default function Settings() {
           description="Keep your account secure"
         >
           <SettingItem label="Password">
-            <button 
+            <Button 
+              variant="secondary"
+              size="sm"
               onClick={() => setActiveModal('change-password')}
-              className="text-sm text-[#0CCE6B] hover:text-[#0BBE60] font-medium"
             >
               Change Password
-            </button>
+            </Button>
           </SettingItem>
           
           {is2FAEnabled() && (
@@ -365,7 +369,9 @@ export default function Settings() {
                   {twoFactorEnabled ? 'Enabled - Extra layer of security active' : 'Add an extra layer of security'}
                 </p>
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   if (twoFactorEnabled) {
                     setActiveModal('disable-2fa');
@@ -374,7 +380,6 @@ export default function Settings() {
                   }
                 }}
                 disabled={isEnrolling2FA}
-                className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isEnrolling2FA ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -383,7 +388,7 @@ export default function Settings() {
                 ) : (
                   'Setup'
                 )}
-              </button>
+              </Button>
             </div>
           )}
           
@@ -809,24 +814,25 @@ export default function Settings() {
               </div>
 
               <div className="flex space-x-3 pt-2">
-                <button
+                <Button
+                  variant="primary"
                   onClick={handleVerify2FA}
                   disabled={twoFactorCode.length !== 6}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1"
                 >
                   Verify & Enable
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => {
                     setActiveModal(null);
                     setTwoFactorCode('');
                     setTwoFactorQR(null);
                     setTwoFactorSecret(null);
                   }}
-                  className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -858,15 +864,16 @@ export default function Settings() {
                 </div>
               </div>
 
-              <button
+              <Button
+                variant="primary"
+                className="w-full"
                 onClick={() => {
                   setActiveModal(null);
                   setRecoveryCodes([]);
                 }}
-                className="w-full px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold"
               >
                 I've Saved My Codes
-              </button>
+              </Button>
             </div>
           </div>
         </div>

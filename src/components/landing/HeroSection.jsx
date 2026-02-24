@@ -33,15 +33,14 @@ const HeroSection = () => {
             style={{ animationDelay: '0.15s' }}
           >
             <p>Find scripts, auditions, and collaborators, then share voice work, music, and other creative projects.</p>
-            <p>Actors, Writers, Influencers, Musicians, and Producers… Joint Networking is a safe and secure platform to collaborate with other artists.</p>
-            <p>Co created by Justin Valine and Gabriel Colon, Joint Networking is a site focused on connecting people that are interested or are currently working in entertainment. Joint Networking allows you to showcase your work, earn insightful feedback from real industry professionals, and share your media with exclusive privacy.</p>
+            <p>Actors, Writers, Influencers, Musicians, and Producers — Joint Networking is a safe, secure platform built for entertainment professionals to showcase their work, earn insightful feedback, and connect with the right people.</p>
           </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.2s' }}>
             <Link
               to="/join"
-              className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+              className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
               aria-label="Sign up for a free account"
             >
               <span>Join for Free</span>
@@ -49,7 +48,7 @@ const HeroSection = () => {
             </Link>
             <a
               href="#about"
-              className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105"
+              className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
               aria-label="Learn more about Joint"
             >
               Learn More
