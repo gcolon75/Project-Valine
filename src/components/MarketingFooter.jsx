@@ -63,9 +63,9 @@ const MarketingFooter = () => {
                 </a>
               </li>
               <li>
-                <span className="text-neutral-400 cursor-not-allowed" aria-disabled="true">
+                <Link to="/contact" className="text-neutral-600 hover:text-[#0CCE6B] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
                   Contact
-                </span>
+                </Link>
               </li>
             </ul>
           </nav>

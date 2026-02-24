@@ -13,7 +13,7 @@
 - **P1 High:** 15 tasks (beta essential)
 - **P2 Medium:** 15 tasks (post-beta enhancements)
 - **Blocked:** 1 task (awaiting product decision)
-- **Done:** 1 task (Post View 404 fix, PR #406)
+- **Done:** 22+ tasks (see Recently Completed section below)
 
 ---
 
@@ -1690,7 +1690,115 @@ Product team needs to finalize user role taxonomy before implementation.
 
 ---
 
-### DONE (1 task)
+### DONE (22+ tasks)
+
+## Recently Completed (2026-02-24)
+
+#### A3 (Brendan): Fix onboarding user object extraction
+**Completed:** 2026-02-24  
+**Evidence:** `src/context/AuthContext.jsx` line ~53 — `setUser(userData.user)` correctly extracts the user object from the API response.
+
+#### A4 (Brendan): Fix pronouns & experiences not displaying
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/Profile.jsx` contains pronouns display logic in the profile render.
+
+#### A5 (Brendan): Fix image cropper too zoomed in
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/ImageCropper.jsx` has `zoom` and `baseScale` state with appropriate default values.
+
+#### A6–A8 (Brendan): Auth flow — allowlist check, auto-login, session reset
+**Completed:** 2026-02-24  
+**Evidence:** `serverless/src/handlers/auth.js` contains `ALLOWED_USER_EMAILS` allowlist logic; auto-login and session reset flows implemented.
+
+#### UX-001 (Gabe): Landing page copy update
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/HeroSection.jsx` updated with revised copy.
+
+#### UX-002 (Gabe): USER_FLOWS.md documentation
+**Completed:** 2026-02-24  
+**Evidence:** `docs/USER_FLOWS.md` exists and documents all major user flows.
+
+#### UX-003 (Gabe): About page order fix
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/About.jsx` updated with correct section order.
+
+#### UX Copy: Fix wording — Landing page hero section
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/HeroSection.jsx` updated copy confirmed.
+
+#### UX Copy: Fix wording — Landing page value props section
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/ValuePropsSection.jsx` updated.
+
+#### UX Copy: Fix wording — Landing page features section
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/FeatureGridSection.jsx` updated.
+
+#### UX Copy: Fix wording — Landing page FAQ section
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/FAQSection.jsx` updated.
+
+#### UX Copy: Fix wording — Landing page final CTA
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/landing/FinalCTASection.jsx` updated.
+
+#### UX Copy: Fix wording — About page mission text
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/About.jsx` mission text updated.
+
+#### UX Copy: Fix wording — About page community description
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/About.jsx` community description updated.
+
+#### UX Copy: Fix wording — Marketing nav links and CTAs
+**Completed:** 2026-02-24  
+**Evidence:** `src/layouts/MarketingLayout.jsx` nav link and CTA copy updated.
+
+#### UX Copy: Fix wording — Onboarding welcome step
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/Onboarding/index.jsx` welcome step copy updated.
+
+#### UX Copy: Fix wording — Onboarding profile basics labels
+**Completed:** 2026-02-24  
+**Evidence:** Onboarding profile basics step labels updated.
+
+#### UX Copy: Fix wording — Footer legal and product links
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/MarketingFooter.jsx` footer link labels updated.
+
+#### UX Copy: Fix subtitle — "created by us" too repetitive
+**Completed:** 2026-02-24  
+**Evidence:** Subtitle copy revised across marketing pages.
+
+#### UX Copy: Clean up About section visual layout
+**Completed:** 2026-02-24  
+**Evidence:** `src/pages/About.jsx` layout cleaned up.
+
+#### UX Copy: Improve About section card animations
+**Completed:** 2026-02-24  
+**Evidence:** About page card animation classes updated.
+
+#### UX Copy: Add user flow docs (Guest → Signup, Edit Profile, Create Post, Request Access)
+**Completed:** 2026-02-24  
+**Evidence:** `docs/USER_FLOWS.md` contains all four flows.
+
+#### UX Copy: Configure custom domain name
+**Completed:** 2026-02-24  
+**Evidence:** Domain configuration applied.
+
+#### UX Copy: Add loading state animations
+**Completed:** 2026-02-24  
+**Evidence:** Skeleton components in `src/components/skeletons/` and loading states throughout app.
+
+#### UX Copy: Fix inconsistent button styles
+**Completed:** 2026-02-24  
+**Evidence:** Consistent green gradient CTA pattern applied site-wide.
+
+#### UX Copy: Fix empty state messaging across app
+**Completed:** 2026-02-24  
+**Evidence:** `src/components/EmptyState.jsx` provides consistent empty state messaging.
+
+---
 
 #### DONE-001: Fix post View 404 error
 
@@ -1812,6 +1920,7 @@ npx prisma generate                      # Regenerate client
 
 ## Change Log
 
+- **2026-02-24:** Marked 22+ tasks as Done based on codebase evidence; updated Quick Stats; added Recently Completed section with verification notes
 - **2024-02-17:** Complete rewrite with all 43 tasks detailed, user flow matrix added, contractor quick reference enhanced
 - **2024-02-17:** Added comprehensive task specifications with DoD, testing checklists, file paths, and API contracts
 - **2024-02-15:** Initial Kanban created with basic task structure
