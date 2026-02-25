@@ -1,6 +1,6 @@
 # Brendan's Kanban - Engineering Tasks
 
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-25
 **Owner:** Brendan (Engineer/Coder)
 **Focus:** All frontend, backend, and fullstack development tasks
 
@@ -45,14 +45,14 @@ npx prisma generate
 
 | Priority | Total | Completed | In Progress | Not Started |
 |----------|-------|-----------|-------------|-------------|
-| P0 | 7 | 5 | 0 | 2 |
-| P1 | 14 | 0 | 1 | 13 |
+| P0 | 7 | 7 | 0 | 0 |
+| P1 | 14 | 3 | 1 | 10 |
 | P2 | 10 | 4 | 0 | 6 |
-| **Total** | **31** | **9** | **1** | **21** |
+| **Total** | **31** | **14** | **1** | **16** |
 
 ---
 
-## ✅ Completed Tasks (5)
+## ✅ Completed Tasks (10)
 
 ### ✅ A2: Fix post 'View' button 404
 **Status:** ✅ COMPLETED (PR #406)
@@ -152,6 +152,111 @@ npx prisma generate
 **Reference:** serverless/src/handlers/auth.js, src/context/AuthContext.jsx
 
 ---
+
+### ✅ A9: Settings.jsx button component migration
+**Status:** ✅ COMPLETED (PR #423)
+**Priority:** P0 | **User Flow:** Flow 16 (Settings)
+
+**What was done:**
+- All 12 buttons in Settings.jsx now use Button component
+- Consistent styling: primary, secondary, ghost variants
+- Loading states work correctly (2FA, Export, Session Terminate)
+- Accessibility improved with focus states
+
+**Files changed:**
+- src/pages/Settings.jsx - Migrated 12 inline buttons to Button component
+
+**Verification:**
+✅ Confirmed: All Settings.jsx buttons use <Button> component with proper variants
+
+**Reference:** PR #423
+
+---
+
+### ✅ A10: Accessibility improvements (focus states + responsive)
+**Status:** ✅ COMPLETED (PR #423)
+**Priority:** P0 | **User Flow:** All flows
+
+**What was done:**
+- Added focus-visible states to all interactive elements
+- Responsive breakpoints applied: sm: (640px), md: (768px), lg: (1024px)
+- Mobile-first responsive design
+- WCAG 2.1 AA compliance improved
+
+**Files changed:**
+- Multiple components and pages
+- Enhanced keyboard navigation
+
+**Verification:**
+✅ Confirmed: Tab navigation works, focus rings visible, mobile responsive
+
+**Reference:** PR #423
+
+---
+
+### ✅ B13: Notifications - Access request events
+**Status:** ✅ COMPLETED (PR #422)
+**Priority:** P1 | **User Flow:** Flow 4, Flow 13
+
+**What was done:**
+- Access request/approve/deny now generate notifications
+- Unread count updates correctly
+- Owner notified when user requests access
+- Requester notified when owner approves/denies
+
+**Files changed:**
+- serverless/src/handlers/requests.js - Added notification triggers
+- serverless/src/handlers/notifications.js - Event handling
+
+**Verification:**
+✅ Confirmed: Request access → owner gets notification; approve → requester gets notification
+
+**Reference:** PR #422, docs/REPO_AUDIT_TRUTH_DOC.md §5.6
+
+---
+
+### ✅ B14: POSTS - Owner UI for access requests
+**Status:** ✅ COMPLETED (PR #422)
+**Priority:** P1 | **User Flow:** Flow 13
+
+**What was done:**
+- Created AccessRequests page for owners
+- Owners can review pending requests with approve/deny actions
+- Request status updates in real-time
+- Requester sees updated status
+- Fixed "Request Access" button calling wrong endpoint (now uses POST /api/posts/:id/request correctly)
+
+**Files changed:**
+- src/pages/AccessRequests.jsx (created)
+- src/components/AccessRequestCard.jsx (created)
+- src/components/PostCard.jsx - Fixed Request Access button API
+- Post access control logic wired
+
+**Verification:**
+✅ Confirmed: Owner can approve/deny requests; requester can view gated content after approval
+
+**Reference:** PR #422, docs/REPO_AUDIT_TRUTH_DOC.md §5.6
+
+---
+
+### ✅ B15: Profile layout improvements (LinkedIn-style)
+**Status:** ✅ COMPLETED (PR #414)
+**Priority:** P1 | **User Flow:** Flow 2 (Profile)
+
+**What was done:**
+- Profile redesigned with horizontal layout
+- Avatar, bio, and stats displayed side-by-side
+- Improved visual hierarchy
+- Onboarding banner upload added
+
+**Files changed:**
+- src/pages/Profile.jsx - Layout redesign
+- src/pages/Onboarding/* - Banner upload step
+
+**Verification:**
+✅ Confirmed: Profile displays in horizontal layout; banner upload works
+
+**Reference:** PR #414
 
 ## 🚧 In Progress (1)
 
@@ -445,7 +550,7 @@ api.interceptors.response.use(
 ---
 
 ### P1-007: Notifications: Access request events
-**Status:** Not Started
+**Status:** ✅ COMPLETED (PR #422) — see B13 in Completed Tasks above
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 4, Flow 13
 
 **What:** Generate notifications when access requested/approved/denied
@@ -459,7 +564,7 @@ api.interceptors.response.use(
 ---
 
 ### P1-008: POSTS: Owner UI for access requests
-**Status:** Not Started
+**Status:** ✅ COMPLETED (PR #422) — see B14 in Completed Tasks above
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 13
 
 **What:** Owners can review pending access requests

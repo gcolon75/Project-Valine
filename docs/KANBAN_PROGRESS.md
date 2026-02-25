@@ -1,6 +1,6 @@
 # Project Valine - Complete Kanban Task Tracker
 
-**Last Updated:** 2024-02-17  
+**Last Updated:** 2026-02-25  
 **Purpose:** Comprehensive task tracking with user flow backing for contractor execution  
 **Status:** Active Development - Beta-50 Milestone
 
@@ -14,6 +14,47 @@
 - **P2 Medium:** 15 tasks (post-beta enhancements)
 - **Blocked:** 1 task (awaiting product decision)
 - **Done:** 22+ tasks (see Recently Completed section below)
+
+---
+
+## Recently Completed (Last 7 Days)
+
+**Sprint Summary (Feb 18-25, 2026):** Completed 15 tasks across UX polish, accessibility, and post access control.
+
+### PR #423: 11 UX, Accessibility & Infrastructure Quick Wins (Feb 25, 2026)
+- ✅ Settings.jsx button migration (P0)
+- ✅ Accessibility: focus states (P0)
+- ✅ Responsive breakpoints (P0)
+- ✅ Empty state CTA improvements
+- ✅ Form validation feedback
+- ✅ FAQ styling cleanup
+- ✅ Hero layout reflow
+- ✅ Subtitle repetition fix
+
+### PR #422: Post Access Control System (Feb 24, 2026)
+- ✅ Notifications: access request events (P1-007)
+- ✅ POSTS: Owner UI for access requests (P1-008)
+- ✅ Bug fix: Request Access button API
+- ✅ Post visibility enforcement
+
+### PR #421: Contact Us + Email Canon (Feb 24, 2026)
+- ✅ Contact Us page created
+- ✅ Email canonicalization to joint-networking.com
+
+### PR #420: Marketing Copy Polish (Feb 24, 2026)
+- ✅ Removed em-dashes from copy
+- ✅ Updated CTA labels
+- ✅ FAQ cleanup
+
+### PR #414: Landing Page UX Improvements (Feb 21, 2026)
+- ✅ Profile layout (LinkedIn-style)
+- ✅ Onboarding banner upload
+- ✅ Landing page text updates
+
+### PR #410: Hero Section + Component Audits (Feb 18, 2026)
+- ✅ Hero section updated
+- ✅ Navigation order fixed
+- ✅ Component audits (EmptyState, Button, Skeleton)
 
 ---
 
@@ -728,7 +769,7 @@ Unclear whether to build custom DM system or integrate third-party solution (Sen
 **User Flow:** Flow 4 (Request Access), Flow 11 (Notifications), Flow 13 (Manage Requests)  
 **Owner:** Backend  
 **Estimate:** M (6-12h)  
-**Status:** Backlog
+**Status:** ✅ Done (PR #422)
 
 **Issue:**  
 Content owners don't receive notifications when someone requests access to their private content.
@@ -790,7 +831,7 @@ CREATE TABLE "Notification" (
 **User Flow:** Flow 13 (Owner → Manage Access Requests)  
 **Owner:** Frontend  
 **Estimate:** M (6-12h)  
-**Status:** Backlog
+**Status:** ✅ Done (PR #422)
 
 **Issue:**  
 Content owners have no UI to view and manage access requests.
@@ -1919,6 +1960,7 @@ npx prisma generate                      # Regenerate client
 
 ## Change Log
 
+- **2026-02-25:** Updated all Kanban docs to reflect completed work from PRs #410, #414, #420-423; marked P1-007 and P1-008 as Done; added Recently Completed section; fixed date typo (2024 → 2026)
 - **2026-02-24:** Marked 22+ tasks as Done based on codebase evidence; updated Quick Stats; added Recently Completed section with verification notes
 - **2024-02-17:** Complete rewrite with all 43 tasks detailed, user flow matrix added, contractor quick reference enhanced
 - **2024-02-17:** Added comprehensive task specifications with DoD, testing checklists, file paths, and API contracts
