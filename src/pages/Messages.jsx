@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile } from 'lucide-react';
 import { useApiFallback } from '../hooks/useApiFallback';
 import { getConversations, getMessages, sendMessage, searchConversations } from '../services/messagesService';
+import SkeletonCard from '../components/skeletons/SkeletonCard';
 
 // Mock/fallback conversations data
 const FALLBACK_CONVERSATIONS = [
@@ -137,7 +138,13 @@ export default function Messages() {
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.map((conv) => (
+          {loading ? (
+            <div className="p-4 space-y-3">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : filteredConversations.map((conv) => (
             <button
               key={conv.id}
               onClick={() => setSelectedChat(conv)}

@@ -22,6 +22,7 @@ import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } fr
 import { getMediaAccessUrl } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
+import SkeletonCard from '../components/skeletons/SkeletonCard';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -171,11 +172,9 @@ export default function PostDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3 text-neutral-600 dark:text-neutral-400">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Loading post...</span>
-        </div>
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
