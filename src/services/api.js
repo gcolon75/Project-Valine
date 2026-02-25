@@ -224,7 +224,7 @@ apiClient.interceptors.response.use(
       const status = error.response.status;
       switch (status) {
         case 403:
-          error.userMessage = 'You do not have permission to perform this action.';
+          error.userMessage = error.response.data?.error || error.response.data?.message || 'You do not have permission to perform this action.';
           break;
         case 404:
           error.userMessage = 'The requested resource was not found.';
