@@ -1,6 +1,6 @@
 # Gabe's Kanban - Infrastructure, Operations, QA & UX
 
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-25
 **Owner:** Gabriel Colon (Infrastructure/Operations/QA/UX Lead)
 **Focus:** Infrastructure, deployment, DevOps, quality assurance, documentation, and UX polish
 
@@ -80,12 +80,12 @@ aws s3 ls | grep project-valine
 | P0 Infrastructure | 5 | 0 | 0 | 5 |
 | P1 DevOps/QA | 4 | 0 | 0 | 4 |
 | P2 Security/Infra | 5 | 0 | 0 | 5 |
-| UX/Docs | 8 | 3 | 0 | 5 |
-| **Total** | **22** | **3** | **0** | **19** |
+| UX/Docs | 16 | 11 | 0 | 5 |
+| **Total** | **30** | **11** | **0** | **19** |
 
 ---
 
-## ✅ Completed Tasks (3)
+## ✅ Completed Tasks (11)
 
 ### ✅ UX-001: Landing page copy update
 **Status:** ✅ COMPLETED
@@ -150,6 +150,178 @@ aws s3 ls | grep project-valine
 **Reference:** src/pages/About.jsx
 
 ---
+
+### ✅ UX-007: Empty state CTAs improvement
+**Status:** ✅ COMPLETED (PR #423)
+**Category:** UX/Content
+**Priority:** P1
+
+**What was done:**
+- Improved empty state messaging across all pages
+- Better CTA button labels and placement
+- Enhanced user guidance for next actions
+- Applied to Dashboard, Inbox, Profile tabs
+
+**Files changed:**
+- src/components/EmptyState.jsx - Improved messaging
+- Multiple page components - Better CTA integration
+
+**Verification:**
+✅ Confirmed: Empty states show clear next actions
+
+**Reference:** PR #423
+
+---
+
+### ✅ UX-008: Form validation feedback improvements
+**Status:** ✅ COMPLETED (PR #423)
+**Category:** UX/Forms
+**Priority:** P1
+
+**What was done:**
+- Enhanced form validation with clear error messages
+- Real-time validation feedback
+- Improved error state styling
+- Better accessibility for screen readers
+
+**Files changed:**
+- src/pages/ProfileEdit.jsx - Enhanced validation
+- src/pages/Settings.jsx - Improved error states
+
+**Verification:**
+✅ Confirmed: Form errors clear and actionable
+
+**Reference:** PR #423
+
+---
+
+### ✅ UX-009: FAQ styling cleanup
+**Status:** ✅ COMPLETED (PR #423)
+**Category:** UX/Content
+**Priority:** P2
+
+**What was done:**
+- Removed visual bugs (green line on FAQ items)
+- Improved spacing and typography
+- Better mobile responsiveness
+- Cleaner accordion animation
+
+**Files changed:**
+- src/pages/Marketing.jsx - FAQ section styling
+
+**Verification:**
+✅ Confirmed: FAQ displays cleanly without visual artifacts
+
+**Reference:** PR #423
+
+---
+
+### ✅ UX-010: Marketing copy polish
+**Status:** ✅ COMPLETED (PR #420)
+**Category:** UX/Content
+**Priority:** P1
+
+**What was done:**
+- Removed em-dashes from marketing copy
+- Simplified language for clarity
+- Updated CTA button labels
+- Improved FAQ formatting
+
+**Files changed:**
+- src/pages/Marketing.jsx - Copy updates
+
+**Verification:**
+✅ Confirmed: Marketing copy clear and professional
+
+**Reference:** PR #420
+
+---
+
+### ✅ UX-011: Contact Us page
+**Status:** ✅ COMPLETED (PR #421)
+**Category:** Infrastructure/Frontend
+**Priority:** P1
+
+**What was done:**
+- Created /contact route and page
+- Wired contact form (or email link)
+- Email canonicalized to joint-networking.com
+- Added to main navigation/footer
+
+**Files changed:**
+- src/pages/ContactUs.jsx (created)
+- src/App.jsx - Route added
+- Navigation components - Link added
+
+**Verification:**
+✅ Confirmed: /contact loads; form/email link works
+
+**Reference:** PR #421
+
+---
+
+### ✅ UX-012: Email canonicalization to joint-networking.com
+**Status:** ✅ COMPLETED (PR #421)
+**Category:** Infrastructure/Docs
+**Priority:** P2
+
+**What was done:**
+- All support/contact emails now use joint-networking.com
+- Updated across documentation
+- Consistent branding
+- No more mixed email domains
+
+**Files changed:**
+- Multiple documentation files
+- Frontend contact displays
+
+**Verification:**
+✅ Confirmed: All email references use joint-networking.com
+
+**Reference:** PR #421
+
+---
+
+### ✅ UX-013: Profile layout improvements (LinkedIn-style)
+**Status:** ✅ COMPLETED (PR #414)
+**Category:** UX/Profile
+**Priority:** P1
+
+**What was done:**
+- Profile redesigned with horizontal layout
+- Avatar, bio, stats side-by-side
+- Better visual hierarchy
+- Onboarding banner upload added
+
+**Files changed:**
+- src/pages/Profile.jsx - Layout redesign
+- src/pages/Onboarding/* - Banner upload
+
+**Verification:**
+✅ Confirmed: Profile displays horizontally; banner upload works
+
+**Reference:** PR #414
+
+---
+
+### ✅ UX-014: Onboarding text and banner improvements
+**Status:** ✅ COMPLETED (PR #414)
+**Category:** UX/Onboarding
+**Priority:** P1
+
+**What was done:**
+- Updated onboarding copy for clarity
+- Added banner upload step
+- Improved progress indicators
+- Better step transitions
+
+**Files changed:**
+- src/pages/Onboarding/* - Multiple improvements
+
+**Verification:**
+✅ Confirmed: Onboarding flow smooth; banner upload works
+
+**Reference:** PR #414
 
 ## 📋 P0 Critical Infrastructure Tasks (5 remaining)
 
