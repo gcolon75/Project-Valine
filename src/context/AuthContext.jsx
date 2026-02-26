@@ -5,6 +5,7 @@ import { trackLogin, trackSignup, trackLogout } from "../analytics/client";
 import { isEmailAllowed, isAllowlistActive } from "../utils/allowlistConfig";
 
 const AuthCtx = createContext(null);
+export const AuthContext = AuthCtx;
 export const useAuth = () => useContext(AuthCtx);
 
 const LS_KEY = "valine-demo-user";

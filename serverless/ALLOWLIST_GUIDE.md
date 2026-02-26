@@ -255,7 +255,7 @@ All registration attempts will receive HTTP 403.
 ### Test Allowed Email
 
 ```bash
-API_URL="https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+API_URL="https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
 
 curl -X POST $API_URL/auth/register \
   -H "Content-Type: application/json" \

@@ -82,13 +82,13 @@ docs/KANBAN_PROGRESS.md
 │   │   │   └── Testing Checklist (5 tests)
 │   │   │
 │   │   ├── P0-004: Load test Prisma connections
-│   │   ├── P0-005: Fix deploy bot API base URL
-│   │   ├── P0-006: Fix vite build error
-│   │   ├── P0-007: Backend upload validation
+│   │   ├── P0-005: Fix deploy bot API base URL [IN PROGRESS - 2026-02-25]
+│   │   ├── P0-006: Fix vite build error [IN PROGRESS - 2026-02-25]
+│   │   ├── P0-007: Backend upload validation [IN PROGRESS - 2026-02-25]
 │   │   ├── P0-008: S3 orphan cleanup job
-│   │   ├── P0-009: Avatar+banner race condition fix
+│   │   ├── P0-009: Avatar+banner race condition fix [IN PROGRESS - 2026-02-25]
 │   │   ├── P0-010: Network connection error handling
-│   │   ├── P0-011: 403 errors investigation
+│   │   ├── P0-011: 403 errors investigation [IN PROGRESS - 2026-02-25]
 │   │   └── P0-012: Login failures investigation
 │   │
 │   ├── P1 HIGH (15 tasks) - Beta Essential

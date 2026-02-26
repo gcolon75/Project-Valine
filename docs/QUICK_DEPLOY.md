@@ -1,7 +1,7 @@
 # Quick Deploy Guide
 
-**Version**: 1.0  
-**Last Updated**: 2026-01-06  
+**Version**: 1.1  
+**Last Updated**: 2026-02-25  
 **Status**: Production Deployment Reference
 
 This guide provides a streamlined, one-command deployment flow for Project Valine production infrastructure.
@@ -35,7 +35,9 @@ git pull origin main
 
 This script performs:
 - Backend: `npm ci`, environment validation, Prisma layer check/build, `npx serverless@3 deploy`
-- Frontend: `npm ci`, `npm run build`, `aws s3 sync dist/ s3://valine-frontend-prod --delete`
+- Frontend: `npm ci` (**not** `npm ci --omit=dev` — devDependencies such as `vite` are required for the build step), `npm run build`, `aws s3 sync dist/ s3://valine-frontend-prod --delete`
+
+> **Note (Task 1 fix):** Always use `npm ci` (without `--omit=dev`) for the frontend. Running `npm ci --omit=dev` omits `vite` which is a devDependency, causing `'vite' is not recognized` and a failed build.
 
 ---
 
@@ -127,11 +129,13 @@ npx prisma generate
 | Resource | Value |
 |----------|-------|
 | **Frontend URL** | `https://dkmxy676d3vgc.cloudfront.net` |
-| **API Base URL** | `https://ce73w43mga.execute-api.us-west-2.amazonaws.com` ⚠️ Verify: `.deploy/last-api-base.txt` |
+| **API Base URL** | `https://ce73w43mga.execute-api.us-west-2.amazonaws.com` ⚠️ Do NOT change without updating `.env.production` and all deploy paths |
 | **Frontend S3 Bucket** | `s3://valine-frontend-prod` |
 | **AWS Region** | `us-west-2` |
 | **CloudFront Distribution** | `E16LPJDBIL5DEE` |
 | **Database Host** | `project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com` |
+
+> **Note (Task 2 fix):** `VITE_API_BASE_URL` in `.env.production` must be `https://ce73w43mga.execute-api.us-west-2.amazonaws.com`. This value is baked into the frontend bundle at build time. A wrong value here causes login to fail with 401/403 immediately after deploy. Do **not** overwrite `.env.production` in any deploy script or CI workflow without verifying this URL.
 
 **Database URL (no spaces):**
 ```

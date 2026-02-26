@@ -56,10 +56,10 @@ Run these commands in PowerShell:
 
 ```powershell
 # Health check
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health
+curl https://ce73w43mga.execute-api.us-west-2.amazonaws.com/health
 
 # Auth endpoint
-curl https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me `
+curl https://ce73w43mga.execute-api.us-west-2.amazonaws.com/auth/me `
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -94,7 +94,7 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ## Key Endpoints
 
 - Frontend: https://dkmxy676d3vgc.cloudfront.net
-- API: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- API: https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 
 ---
 

@@ -15,7 +15,7 @@
 ## Current State
 
 ### Production Infrastructure
-- **API:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
 - **Database:** RDS PostgreSQL (us-west-2)
 
@@ -33,7 +33,7 @@
 
 ### UX Changes Only
 ```bash
-export VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+export VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 export S3_BUCKET=your-bucket
 export CLOUDFRONT_DISTRIBUTION_ID=your-dist-id
 ./scripts/deploy-ux-only.sh

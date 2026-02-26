@@ -1,5 +1,29 @@
 # KANBAN_PROGRESS.md Update Summary
 
+## Sprint Update — 2026-02-25
+
+### 5 P0 Tasks Picked Up (Beta-50 Sprint)
+
+The following tasks moved from **Backlog → In Progress**:
+
+| Task ID | Description | Status |
+|---------|-------------|--------|
+| P0-006 | DEPLOY: Fix frontend build failing ('vite' not recognized) | In Progress |
+| P0-005 | DEPLOY: Fix Discord/GitHub deploy bot using wrong API base (login breaks after push) | In Progress |
+| P0-009 | STABILITY: Fix avatar+banner 'save together' race condition | In Progress |
+| P0-011 | STABILITY: Investigate frequent 403 errors / 'No profile found' scenarios | In Progress |
+| P0-007 | MEDIA: Backend: enforce upload size/type validation before presigned URL generation | In Progress |
+
+**Changes made in this sprint:**
+- `.env.production`: Fixed `VITE_API_BASE_URL` to correct prod API Gateway endpoint (`ce73w43mga`)
+- `docs/QUICK_DEPLOY.md`: Documented `npm ci` (not `--omit=dev`) requirement and correct API base URL
+- `serverless/src/handlers/uploads.js`: Added MIME type and file size validation before presigned URL generation
+- `src/context/AuthContext.jsx`: Exported `AuthContext` to fix avatar+banner test setup
+- `src/services/api.js`: 403 responses now surface backend-specific error messages (e.g., "Please verify your email first.") instead of generic "You do not have permission"
+- `serverless/src/handlers/profiles.js` + `getMyProfile`: Already auto-provisions profile for new users (confirmed no change needed)
+
+---
+
 ## Overview
 Successfully created a comprehensive `docs/KANBAN_PROGRESS.md` file that completely replaces the existing version with contractor-ready, production-quality task tracking.
 

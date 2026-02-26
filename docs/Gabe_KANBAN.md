@@ -11,7 +11,7 @@
 ### Infrastructure Endpoints
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
 - **CloudFront Distribution:** E16LPJDBIL5DEE
-- **API Gateway:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API Gateway:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 - **Database:** project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com
 - **S3 Frontend:** s3://project-valine-frontend-prod
 - **S3 Media:** s3://project-valine-media-prod (if exists)
@@ -406,8 +406,8 @@ curl -I https://dkmxy676d3vgc.cloudfront.net/some-missing-asset.js
 // scripts/smoke-test.js
 const tests = [
   { name: 'Frontend loads', url: 'https://dkmxy676d3vgc.cloudfront.net' },
-  { name: 'API health', url: 'https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health' },
-  { name: 'Auth endpoint', url: 'https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/health' },
+  { name: 'API health', url: 'https://ce73w43mga.execute-api.us-west-2.amazonaws.com/health' },
+  { name: 'Auth endpoint', url: 'https://ce73w43mga.execute-api.us-west-2.amazonaws.com/auth/health' },
   // ... more tests
 ];
 
@@ -598,7 +598,7 @@ module.exports = { getPrismaClient };
 ```yaml
 # tests/load/basic-load-test.yml
 config:
-  target: 'https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com'
+  target: 'https://ce73w43mga.execute-api.us-west-2.amazonaws.com'
   phases:
     - duration: 60
       arrivalRate: 10
@@ -945,7 +945,7 @@ const cspHeader = [
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' https: data:",
   "media-src 'self' https://project-valine-media-prod.s3.amazonaws.com",
-  "connect-src 'self' https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
+  "connect-src 'self' https://ce73w43mga.execute-api.us-west-2.amazonaws.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'"

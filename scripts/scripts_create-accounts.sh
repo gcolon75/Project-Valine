@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Create the two allowlisted accounts via the public API, login, and complete onboarding.
-# Usage: ./scripts/create-accounts.sh https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+# Usage: ./scripts/create-accounts.sh https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 set -euo pipefail
 
 API_BASE="${1:-}"
 if [[ -z "$API_BASE" ]]; then
-  echo "Usage: $0 <API_BASE_URL>   e.g. https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+  echo "Usage: $0 <API_BASE_URL>   e.g. https://ce73w43mga.execute-api.us-west-2.amazonaws.com"
   exit 2
 fi
 

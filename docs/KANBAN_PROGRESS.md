@@ -90,7 +90,7 @@ cd api; npx prisma migrate deploy; npx prisma generate
 ### Key Endpoints
 
 - **Frontend:** https://dkmxy676d3vgc.cloudfront.net
-- **API Base:** https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- **API Base:** https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 
 ---
 
@@ -276,7 +276,7 @@ Production builds have hardcoded `localhost:3000` API base URL instead of produc
 
 **Definition of Done:**
 - `VITE_API_BASE_URL` environment variable properly injected at build time
-- Production builds use `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com`
+- Production builds use `https://ce73w43mga.execute-api.us-west-2.amazonaws.com`
 - Development builds use `http://localhost:3000`
 - Build logs show correct API URL being used
 - No hardcoded URLs in source code
@@ -1543,7 +1543,7 @@ Content-Security-Policy:
   style-src 'self' 'unsafe-inline'; 
   img-src 'self' https://project-valine-assets.s3.amazonaws.com data:; 
   font-src 'self' data:; 
-  connect-src 'self' https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com;
+  connect-src 'self' https://ce73w43mga.execute-api.us-west-2.amazonaws.com;
   report-uri /api/csp-report
 ```
 

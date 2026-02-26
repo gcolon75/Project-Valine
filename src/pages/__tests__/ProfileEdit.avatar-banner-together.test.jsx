@@ -28,38 +28,20 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
-// Mock child components
-vi.mock('../../components/AvatarUploader', () => ({
-  default: ({ onUpload, onCancel }) => (
-    <div data-testid="avatar-uploader">
+// Mock ImageCropper — used for both avatar and banner uploads in ProfileEdit
+vi.mock('../../components/ImageCropper', () => ({
+  default: ({ onSave, onCancel, title }) => (
+    <div data-testid={title === 'Crop Avatar' ? 'avatar-uploader' : 'banner-uploader'}>
       <button
-        data-testid="upload-avatar-btn"
+        data-testid={title === 'Crop Avatar' ? 'upload-avatar-btn' : 'upload-image-btn'}
         onClick={() => {
-          const file = new File(['avatar'], 'avatar.jpg', { type: 'image/jpeg' });
-          onUpload(file, vi.fn());
+          const file = new File(['test'], title === 'Crop Avatar' ? 'avatar.jpg' : 'banner.jpg', { type: 'image/jpeg' });
+          onSave(file);
         }}
       >
-        Upload Avatar
+        {title}
       </button>
       <button onClick={onCancel}>Cancel</button>
-    </div>
-  ),
-}));
-
-vi.mock('../../components/MediaUploader', () => ({
-  default: ({ onUpload, uploadType }) => (
-    <div data-testid={`media-uploader-${uploadType}`}>
-      <button
-        data-testid={`upload-${uploadType}-btn`}
-        onClick={() => {
-          const file = new File(['test'], `test.${uploadType === 'video' ? 'mp4' : 'jpg'}`, { 
-            type: uploadType === 'video' ? 'video/mp4' : 'image/jpeg' 
-          });
-          onUpload(file, vi.fn());
-        }}
-      >
-        Upload {uploadType}
-      </button>
     </div>
   ),
 }));
@@ -335,12 +317,27 @@ describe('ProfileEdit - Avatar and Banner Together Bug Fix', () => {
       );
     });
 
-    // Upload banner
+    // Open the banner cropper (click 'Change' for the existing banner)
+    const changeBannerBtn = screen.getByText('Change');
+    fireEvent.click(changeBannerBtn);
+
+    // Wait for banner uploader to appear and click upload
     await waitFor(() => {
-      const uploadImageBtn = screen.queryByTestId('upload-image-btn');
-      if (uploadImageBtn) {
-        fireEvent.click(uploadImageBtn);
-      }
+      expect(screen.getByTestId('banner-uploader')).toBeInTheDocument();
+    });
+
+    const uploadBannerBtn = screen.getByTestId('upload-image-btn');
+    fireEvent.click(uploadBannerBtn);
+
+    await waitFor(() => {
+      expect(mediaService.uploadMedia).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.any(File),
+        'image',
+        expect.objectContaining({
+          title: 'Profile Banner',
+        })
+      );
     });
 
     // Click save
