@@ -24,10 +24,18 @@ const MAX_FILE_SIZES = {
 export const presign = async (evt) => {
   try {
     const { filename, contentType, fileSize, mimeType, userId = 'anon' } = JSON.parse(evt.body || '{}');
-    if (!filename || !contentType) return { statusCode: 400, body: JSON.stringify({ error: 'filename and contentType required' }) };
 
-    // Resolve the MIME type to validate (prefer explicit mimeType, fall back to contentType)
+    // Resolve the MIME type (prefer explicit mimeType, fall back to contentType)
     const resolvedMimeType = mimeType || contentType;
+
+    // Both filename and a MIME type (via mimeType or contentType) are required
+    if (!filename || !resolvedMimeType) {
+      return {
+        statusCode: 400,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ error: 'filename and either mimeType or contentType are required' }),
+      };
+    }
 
     // Validate MIME type against allowlist
     if (!ALLOWED_MIME_TYPES.includes(resolvedMimeType)) {
@@ -38,21 +46,32 @@ export const presign = async (evt) => {
       };
     }
 
-    // Validate file size if provided
-    if (fileSize !== undefined && fileSize !== null) {
-      const parsedSize = typeof fileSize === 'number' ? fileSize : parseInt(fileSize, 10);
-      if (isNaN(parsedSize) || parsedSize <= 0) {
-        return { statusCode: 400, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ error: 'fileSize must be a positive number' }) };
-      }
-      const maxSize = MAX_FILE_SIZES[resolvedMimeType];
-      if (parsedSize > maxSize) {
-        const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-        return {
-          statusCode: 400,
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ error: `File too large. Max size for ${resolvedMimeType} is ${maxSizeMB}MB.` }),
-        };
-      }
+    // fileSize is required — omitting it would bypass size enforcement
+    if (fileSize === undefined || fileSize === null) {
+      return {
+        statusCode: 400,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ error: 'fileSize (in bytes) is required' }),
+      };
+    }
+
+    const parsedSize = typeof fileSize === 'number' ? fileSize : parseInt(fileSize, 10);
+    if (isNaN(parsedSize) || parsedSize <= 0) {
+      return {
+        statusCode: 400,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ error: 'fileSize must be a positive number' }),
+      };
+    }
+
+    const maxSize = MAX_FILE_SIZES[resolvedMimeType];
+    if (parsedSize > maxSize) {
+      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+      return {
+        statusCode: 400,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ error: `File too large. Max size for ${resolvedMimeType} is ${maxSizeMB}MB.` }),
+      };
     }
 
     const safeName = filename.replace(/[^\w.\-]+/g, '_');
@@ -68,6 +87,6 @@ export const presign = async (evt) => {
     return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, key }) };
   } catch (e) {
     console.error(e);
-    return { statusCode: 500, body: JSON.stringify({ error: 'presign error' }) };
+    return { statusCode: 500, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ error: 'presign error' }) };
   }
 };
