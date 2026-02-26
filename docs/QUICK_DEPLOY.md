@@ -129,13 +129,13 @@ npx prisma generate
 | Resource | Value |
 |----------|-------|
 | **Frontend URL** | `https://dkmxy676d3vgc.cloudfront.net` |
-| **API Base URL** | `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com` ⚠️ Do NOT change without updating `.env.production` and all deploy paths |
+| **API Base URL** | `https://ce73w43mga.execute-api.us-west-2.amazonaws.com` ⚠️ Do NOT change without updating `.env.production` and all deploy paths |
 | **Frontend S3 Bucket** | `s3://valine-frontend-prod` |
 | **AWS Region** | `us-west-2` |
 | **CloudFront Distribution** | `E16LPJDBIL5DEE` |
 | **Database Host** | `project-valine-dev.c9aqq6yoiyvt.us-west-2.rds.amazonaws.com` |
 
-> **Note (Task 2 fix):** `VITE_API_BASE_URL` in `.env.production` must be `https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com`. This value is baked into the frontend bundle at build time. A wrong value here causes login to fail with 401/403 immediately after deploy. Do **not** overwrite `.env.production` in any deploy script or CI workflow without verifying this URL.
+> **Note (Task 2 fix):** `VITE_API_BASE_URL` in `.env.production` must be `https://ce73w43mga.execute-api.us-west-2.amazonaws.com`. This value is baked into the frontend bundle at build time. A wrong value here causes login to fail with 401/403 immediately after deploy. Do **not** overwrite `.env.production` in any deploy script or CI workflow without verifying this URL.
 
 **Database URL (no spaces):**
 ```

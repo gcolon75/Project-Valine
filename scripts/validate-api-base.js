@@ -58,7 +58,7 @@ Examples:
   # Strict mode - DNS failures block build
   REQUIRE_API_BASE_DNS=true node scripts/validate-api-base.js
   
-  VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com node scripts/validate-api-base.js
+  VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com node scripts/validate-api-base.js
 `);
   process.exit(0);
 }
@@ -91,7 +91,7 @@ function extractHostname(url) {
 }
 
 function extractApiId(hostname) {
-  // Extract API ID from hostname like: i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+  // Extract API ID from hostname like: ce73w43mga.execute-api.us-west-2.amazonaws.com
   const match = hostname.match(/^([a-z0-9]+)\.execute-api\./);
   return match ? match[1] : null;
 }
@@ -129,7 +129,7 @@ async function main() {
   if (!apiBase) {
     console.error('❌ Error: VITE_API_BASE is not set');
     console.error('\nPlease set VITE_API_BASE in your environment or .env.production file');
-    console.error('Example: VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com\n');
+    console.error('Example: VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com\n');
     process.exit(1);
   }
   

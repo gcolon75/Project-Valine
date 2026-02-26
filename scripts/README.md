@@ -175,7 +175,7 @@ VITE_API_BASE=https://your-api.execute-api.us-west-2.amazonaws.com \
 ALLOW_API_BASE_DNS_FAILURE=true node scripts/validate-api-base.js
 
 # Cross-check with expected API ID
-STACK_API_ID=i72dxlcfcc node scripts/validate-api-base.js
+STACK_API_ID=ce73w43mga node scripts/validate-api-base.js
 ```
 
 **What it checks**:

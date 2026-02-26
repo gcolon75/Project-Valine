@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verify onboardingComplete persisted by calling /auth/login then /me/profile
-# Usage: ./scripts/verify-onboarding.sh https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+# Usage: ./scripts/verify-onboarding.sh https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 set -euo pipefail
 
 API_BASE="${1:-}"

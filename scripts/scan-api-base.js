@@ -32,7 +32,7 @@ const STALE_HOSTS = [
 ];
 
 // Current valid host (for reference)
-const VALID_HOST = 'i72dxlcfcc.execute-api.us-west-2.amazonaws.com';
+const VALID_HOST = 'ce73w43mga.execute-api.us-west-2.amazonaws.com';
 
 // Patterns to search for
 const PATTERNS = {

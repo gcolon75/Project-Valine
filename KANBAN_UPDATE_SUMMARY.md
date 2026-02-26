@@ -15,7 +15,7 @@ The following tasks moved from **Backlog → In Progress**:
 | P0-007 | MEDIA: Backend: enforce upload size/type validation before presigned URL generation | In Progress |
 
 **Changes made in this sprint:**
-- `.env.production`: Fixed `VITE_API_BASE_URL` to correct prod API Gateway endpoint (`i72dxlcfcc`)
+- `.env.production`: Fixed `VITE_API_BASE_URL` to correct prod API Gateway endpoint (`ce73w43mga`)
 - `docs/QUICK_DEPLOY.md`: Documented `npm ci` (not `--omit=dev`) requirement and correct API base URL
 - `serverless/src/handlers/uploads.js`: Added MIME type and file size validation before presigned URL generation
 - `src/context/AuthContext.jsx`: Exported `AuthContext` to fix avatar+banner test setup

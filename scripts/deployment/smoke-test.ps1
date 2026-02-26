@@ -1,5 +1,5 @@
 param(
-  [string]$ApiBase = "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com",
+  [string]$ApiBase = "https://ce73w43mga.execute-api.us-west-2.amazonaws.com",
   [string]$FrontendUrl = "https://dkmxy676d3vgc.cloudfront.net"
 )
 

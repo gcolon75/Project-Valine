@@ -59,7 +59,7 @@ See `docs/runbooks/prod-deploy-and-routing.md` Section 13: WAF Detachment Proced
       "Effect": "Allow",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*"
+      "Resource": "arn:aws:execute-api:us-west-2:*:ce73w43mga/*"
     }
   ]
 }
@@ -237,7 +237,7 @@ EMAIL_ENABLED=true
 
 ```bash
 # API Configuration
-VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 VITE_ENABLE_REGISTRATION=false
 
 # Build Environment
@@ -249,7 +249,7 @@ NODE_ENV=production
 | Resource | ID/Domain | Purpose |
 |----------|-----------|---------|
 | CloudFront Distribution | `dkmxy676d3vgc.cloudfront.net` | Frontend CDN + WAF |
-| API Gateway HTTP API | `i72dxlcfcc` | Backend REST API (primary) |
+| API Gateway HTTP API | `ce73w43mga` | Backend REST API (primary) |
 | API Gateway REST API (legacy) | `oocr9ahsyk` | Deprecated, protected by Regional WAF |
 | S3 Media Bucket | `valine-media-uploads` | User-uploaded media |
 | RDS PostgreSQL | (private subnet) | Application database |
@@ -462,7 +462,7 @@ aws wafv2 update-ip-set \
       "Effect": "Deny",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": "arn:aws:execute-api:us-west-2:*:i72dxlcfcc/*",
+      "Resource": "arn:aws:execute-api:us-west-2:*:ce73w43mga/*",
       "Condition": {
         "NotIpAddress": {
           "aws:SourceIp": ["<new-owner-ip>/32"]
@@ -549,14 +549,14 @@ curl -I https://dkmxy676d3vgc.cloudfront.net
 **Test Commands:**
 ```bash
 # Allowlisted user (should succeed)
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+curl -X POST https://ce73w43mga.execute-api.us-west-2.amazonaws.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"owner@example.com","password":"validpassword"}' \
   -v
 # Expected: 200 OK, Set-Cookie headers
 
 # Non-allowlisted user (should fail at app layer)
-curl -X POST https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/login \
+curl -X POST https://ce73w43mga.execute-api.us-west-2.amazonaws.com/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"unauthorized@example.com","password":"validpassword"}' \
   -v
@@ -657,7 +657,7 @@ Content-Security-Policy:
   script-src 'self' 'nonce-{random}'; 
   style-src 'self' 'unsafe-inline'; 
   img-src 'self' https://valine-media-uploads.s3.amazonaws.com;
-  connect-src 'self' https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com;
+  connect-src 'self' https://ce73w43mga.execute-api.us-west-2.amazonaws.com;
   frame-ancestors 'none';
 ```
 

@@ -37,7 +37,7 @@ npx prisma generate
 
 ### Key Endpoints
 - Frontend: https://dkmxy676d3vgc.cloudfront.net
-- API: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
+- API: https://ce73w43mga.execute-api.us-west-2.amazonaws.com
 
 ---
 
