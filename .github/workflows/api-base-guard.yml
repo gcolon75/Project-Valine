@@ -20,7 +20,6 @@ jobs:
   api-base-scan:
     name: Scan for Stale API Hosts
     runs-on: ubuntu-latest
-    if: ${{ secrets.AWS_ROLE_ARN != '' }}
     permissions:
       contents: read
     

@@ -23,7 +23,6 @@ jobs:
   lint:
     name: Python Linting
     runs-on: ubuntu-latest
-    if: ${{ secrets.AWS_ROLE_ARN != '' }}
     
     steps:
       - name: Checkout code

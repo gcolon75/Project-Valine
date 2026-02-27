@@ -22,7 +22,6 @@ jobs:
   preflight:
     name: Serverless Preflight Checks
     runs-on: ubuntu-latest
-    if: ${{ secrets.AWS_ROLE_ARN != '' }}
     permissions:
       contents: read
     

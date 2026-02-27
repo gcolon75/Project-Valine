@@ -116,7 +116,7 @@ jobs:
               repo: context.repo.repo,
               body: coverageSummary
             });
-        if: success()
+        if: steps.check-tests.outputs.has_tests == 'true' && success()
 
   # Job 3: Build check
   build:
