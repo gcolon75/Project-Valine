@@ -83,10 +83,10 @@ docs/KANBAN_PROGRESS.md
 │   │   │
 │   │   ├── P0-004: Load test Prisma connections
 │   │   ├── P0-005: Fix deploy bot API base URL [IN PROGRESS - 2026-02-25]
-│   │   ├── P0-006: Fix vite build error [IN PROGRESS - 2026-02-25]
-│   │   ├── P0-007: Backend upload validation [IN PROGRESS - 2026-02-25]
+│   │   ├── P0-006: Fix vite build error [IN PROGRESS - 2026-02-26]
+│   │   ├── P0-007: Backend upload validation [IN PROGRESS - 2026-02-26]
 │   │   ├── P0-008: S3 orphan cleanup job
-│   │   ├── P0-009: Avatar+banner race condition fix [IN PROGRESS - 2026-02-25]
+│   │   ├── P0-009: Avatar+banner race condition fix [IN PROGRESS - 2026-02-26]
 │   │   ├── P0-010: Network connection error handling
 │   │   ├── P0-011: 403 errors investigation [IN PROGRESS - 2026-02-25]
 │   │   └── P0-012: Login failures investigation
@@ -196,6 +196,8 @@ docs/KANBAN_PROGRESS.md
 │       └── Database (migrate, studio, generate)
 │
 └── Change Log
+    ├── 2026-02-26: P0-006, P0-007, P0-009 implementation complete (PR submitted, pending merge)
+    ├── 2026-02-25: P0-005, P0-006, P0-007, P0-009, P0-011 picked up (Backlog → In Progress)
     ├── 2024-02-17: Complete rewrite with 43 tasks
     ├── 2024-02-17: Added comprehensive specifications
     └── 2024-02-15: Initial Kanban created

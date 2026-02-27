@@ -1,10 +1,11 @@
 /**
- * Tests for media upload content type validation
- * Ensures backend properly validates and uses contentType parameter
+ * Tests for media upload content type and file size validation
+ * Ensures backend properly validates mimeType, contentType, and fileSize before presigning
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getUploadUrl } from '../src/handlers/media.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 // Mock dependencies
 vi.mock('../src/db/client.js', () => ({
@@ -58,16 +59,16 @@ vi.mock('../src/middleware/csrfMiddleware.js', () => ({
 }));
 
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(() => ({})),
-  PutObjectCommand: vi.fn((params) => params),
-  GetObjectCommand: vi.fn((params) => params),
+  S3Client: vi.fn(function() {}),
+  PutObjectCommand: vi.fn(function() {}),
+  GetObjectCommand: vi.fn(function() {}),
 }));
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn().mockResolvedValue('https://s3.amazonaws.com/presigned-url'),
 }));
 
-describe('Media Handler - Content Type Validation', () => {
+describe('Media Handler - Content Type and File Size Validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -80,6 +81,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'image',
           contentType: 'image/jpeg',
+          fileSize: 1024 * 1024, // 1 MB
         }),
       };
 
@@ -98,6 +100,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'image',
           contentType: 'image/png',
+          fileSize: 1024 * 1024, // 1 MB
         }),
       };
 
@@ -115,6 +118,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'image',
           contentType: 'image/webp',
+          fileSize: 1024 * 1024, // 1 MB
         }),
       };
 
@@ -132,6 +136,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'video',
           contentType: 'video/mp4',
+          fileSize: 50 * 1024 * 1024, // 50 MB
         }),
       };
 
@@ -149,6 +154,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'pdf',
           contentType: 'application/pdf',
+          fileSize: 1024 * 1024, // 1 MB
         }),
       };
 
@@ -166,6 +172,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'image',
           contentType: 'image/gif', // Not in allowlist
+          fileSize: 1024 * 1024,
         }),
       };
 
@@ -173,7 +180,7 @@ describe('Media Handler - Content Type Validation', () => {
       const body = JSON.parse(response.body);
 
       expect(response.statusCode).toBe(400);
-      expect(body.error).toContain('Invalid contentType');
+      expect(body.error).toContain('Invalid MIME type');
     });
 
     it('should reject malicious contentType', async () => {
@@ -183,6 +190,7 @@ describe('Media Handler - Content Type Validation', () => {
         body: JSON.stringify({
           type: 'image',
           contentType: 'application/x-executable',
+          fileSize: 1024 * 1024,
         }),
       };
 
@@ -190,7 +198,7 @@ describe('Media Handler - Content Type Validation', () => {
       const body = JSON.parse(response.body);
 
       expect(response.statusCode).toBe(400);
-      expect(body.error).toContain('Invalid contentType');
+      expect(body.error).toContain('Invalid MIME type');
     });
 
     it('should fall back to image/jpeg when contentType not provided for image type', async () => {
@@ -199,6 +207,7 @@ describe('Media Handler - Content Type Validation', () => {
         pathParameters: { id: 'test-profile-id' },
         body: JSON.stringify({
           type: 'image',
+          fileSize: 1024 * 1024,
           // No contentType provided
         }),
       };
@@ -217,6 +226,7 @@ describe('Media Handler - Content Type Validation', () => {
         pathParameters: { id: 'test-profile-id' },
         body: JSON.stringify({
           type: 'video',
+          fileSize: 50 * 1024 * 1024,
           // No contentType provided
         }),
       };
@@ -235,6 +245,7 @@ describe('Media Handler - Content Type Validation', () => {
         pathParameters: { id: 'test-profile-id' },
         body: JSON.stringify({
           type: 'pdf',
+          fileSize: 1024 * 1024,
           // No contentType provided
         }),
       };
@@ -256,6 +267,7 @@ describe('Media Handler - Content Type Validation', () => {
           title: 'My Image',
           description: 'Test description',
           privacy: 'public',
+          fileSize: 1024 * 1024,
           // No contentType field
         }),
       };
@@ -266,6 +278,175 @@ describe('Media Handler - Content Type Validation', () => {
       expect(response.statusCode).toBe(201);
       expect(body.mediaId).toBeDefined();
       expect(body.uploadUrl).toBeDefined();
+    });
+  });
+
+  describe('getUploadUrl with mimeType (P0 upload validation)', () => {
+    it('should accept valid mimeType field (prefer over contentType)', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          mimeType: 'image/webp',
+          fileSize: 1024 * 1024,
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(201);
+      expect(body.mediaId).toBe('test-media-id');
+    });
+
+    it('should prefer mimeType over contentType when both are provided', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          mimeType: 'image/png',
+          contentType: 'image/jpeg', // mimeType should take precedence
+          fileSize: 1024 * 1024,
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(201);
+      expect(body.mediaId).toBe('test-media-id');
+      // Verify the S3 command was issued with mimeType ('image/png'), not contentType ('image/jpeg')
+      expect(PutObjectCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ ContentType: 'image/png' })
+      );
+    });
+
+    it('should reject invalid mimeType', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          mimeType: 'image/bmp', // Not in allowlist
+          fileSize: 1024 * 1024,
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(400);
+      expect(body.error).toContain('Invalid MIME type');
+    });
+  });
+
+  describe('getUploadUrl file size validation', () => {
+    it('should reject request with missing fileSize', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          contentType: 'image/jpeg',
+          // No fileSize
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(400);
+      expect(body.error).toContain('fileSize');
+    });
+
+    it('should reject request with zero fileSize', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          contentType: 'image/jpeg',
+          fileSize: 0,
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should reject image over 10 MB', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          contentType: 'image/jpeg',
+          fileSize: 11 * 1024 * 1024, // 11 MB — over 10 MB limit
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(413);
+      expect(body.error).toContain('File too large');
+    });
+
+    it('should reject video over 100 MB', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'video',
+          contentType: 'video/mp4',
+          fileSize: 150 * 1024 * 1024, // 150 MB — over 100 MB limit
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(413);
+      expect(body.error).toContain('File too large');
+    });
+
+    it('should accept video at exactly the max size limit', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'video',
+          contentType: 'video/mp4',
+          fileSize: 100 * 1024 * 1024, // exactly 100 MB
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(201);
+    });
+
+    it('should return maxFileSize in response', async () => {
+      const event = {
+        mockUserId: 'test-user-id',
+        pathParameters: { id: 'test-profile-id' },
+        body: JSON.stringify({
+          type: 'image',
+          contentType: 'image/jpeg',
+          fileSize: 1024 * 1024,
+        }),
+      };
+
+      const response = await getUploadUrl(event);
+      const body = JSON.parse(response.body);
+
+      expect(response.statusCode).toBe(201);
+      expect(body.maxFileSize).toBe(10 * 1024 * 1024); // 10 MB for images
     });
   });
 });
