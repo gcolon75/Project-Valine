@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getUploadUrl } from '../src/handlers/media.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 // Mock dependencies
 vi.mock('../src/db/client.js', () => ({
@@ -316,6 +317,10 @@ describe('Media Handler - Content Type and File Size Validation', () => {
 
       expect(response.statusCode).toBe(201);
       expect(body.mediaId).toBe('test-media-id');
+      // Verify the S3 command was issued with mimeType ('image/png'), not contentType ('image/jpeg')
+      expect(PutObjectCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ ContentType: 'image/png' })
+      );
     });
 
     it('should reject invalid mimeType', async () => {

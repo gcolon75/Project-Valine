@@ -14,10 +14,12 @@ The following tasks moved from **Backlog → In Progress** (implementation compl
 
 **Changes made in this sprint:**
 - `serverless/src/handlers/media.js`: Added `mimeType` support alongside `contentType` (prefer `mimeType`, fall back to `contentType`); hardened `fileSize` validation to handle string coercion; updated error messages to "Invalid MIME type"
-- `serverless/tests/media-content-type-validation.test.js`: Fixed S3Client/PutObjectCommand constructor mocks; added `fileSize` to all valid requests; added tests for `mimeType`, oversize rejection (413), and missing `fileSize` (400)
-- `scripts/quick-deploy.ps1`: Frontend deploy uses `npm ci` (no `--omit=dev`) at repo root — ensures `vite` devDependency is installed before `npm run build`
-- `docs/QUICK_DEPLOY.md`: Documented `npm ci` requirement and correct API base URL (`ce73w43mga`)
-- `src/pages/ProfileEdit.jsx`: Single `PATCH` payload via `mapFormToProfileUpdate` — both avatar and banner URLs included together, no null/blob values sent, guarded by `uploadingAvatar || uploadingBanner` check before save
+- `serverless/tests/media-content-type-validation.test.js`: Fixed S3Client/PutObjectCommand constructor mocks; added `fileSize` to all valid requests; added tests for `mimeType` preference (verifies correct ContentType in PutObjectCommand), oversize rejection (413), and missing `fileSize` (400)
+
+**Verified already-correct (no code change needed):**
+- `scripts/quick-deploy.ps1`: Confirmed frontend deploy uses bare `npm ci` (no `--omit=dev`) at repo root — `vite` devDependency is present for build
+- `docs/QUICK_DEPLOY.md`: Confirmed `npm ci` requirement and correct API base URL (`ce73w43mga`) already documented
+- `src/pages/ProfileEdit.jsx`: Confirmed single `PATCH` payload via `mapFormToProfileUpdate` with functional `setFormData` updater — no race condition; guarded by `uploadingAvatar || uploadingBanner` check before save
 
 ---
 
