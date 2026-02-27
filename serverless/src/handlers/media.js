@@ -43,24 +43,28 @@ export const getUploadUrl = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { type, title, description, privacy, contentType, fileSize } = body;
+    const { type, title, description, privacy, contentType, mimeType, fileSize } = body;
 
     if (!type || !['image', 'video', 'pdf'].includes(type)) {
       return error(400, 'Valid type is required (image, video, or pdf)');
     }
 
     // Validate file size before presigning
-    if (!fileSize || typeof fileSize !== 'number' || fileSize <= 0) {
+    if (fileSize === undefined || fileSize === null) {
       return error(400, 'fileSize (in bytes) is required');
+    }
+    const parsedFileSize = typeof fileSize === 'number' ? fileSize : parseInt(fileSize, 10);
+    if (isNaN(parsedFileSize) || parsedFileSize <= 0) {
+      return error(400, 'fileSize must be a positive number');
     }
 
     const maxSize = MAX_FILE_SIZES[type];
-    if (fileSize > maxSize) {
+    if (parsedFileSize > maxSize) {
       const maxSizeMB = Math.round(maxSize / (1024 * 1024));
       return error(413, `File too large. Maximum size for ${type}: ${maxSizeMB} MB`);
     }
 
-    // Validate and normalize contentType
+    // Validate and normalize MIME type — prefer explicit mimeType, fall back to contentType
     const allowedContentTypes = [
       'image/jpeg',
       'image/png',
@@ -69,13 +73,14 @@ export const getUploadUrl = async (event) => {
       'application/pdf'
     ];
 
+    const resolvedMimeType = mimeType || contentType;
     let validatedContentType;
-    if (contentType) {
-      // If contentType is provided, validate it against allowlist
-      if (!allowedContentTypes.includes(contentType)) {
-        return error(400, `Invalid contentType. Allowed types: ${allowedContentTypes.join(', ')}`);
+    if (resolvedMimeType) {
+      // If a MIME type is provided, validate it against allowlist
+      if (!allowedContentTypes.includes(resolvedMimeType)) {
+        return error(400, `Invalid MIME type. Allowed types: ${allowedContentTypes.join(', ')}`);
       }
-      validatedContentType = contentType;
+      validatedContentType = resolvedMimeType;
     } else {
       // Fall back to type-based defaults for backward compatibility
       validatedContentType = type === 'video' ? 'video/mp4' : type === 'image' ? 'image/jpeg' : 'application/pdf';
@@ -135,7 +140,7 @@ export const getUploadUrl = async (event) => {
         description: description || null,
         privacy: privacy || 'public',
         processedStatus: 'pending',
-        fileSize,
+        fileSize: parsedFileSize,
       },
     });
 

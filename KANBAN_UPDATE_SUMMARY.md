@@ -1,5 +1,26 @@
 # KANBAN_PROGRESS.md Update Summary
 
+## Sprint Update — 2026-02-26
+
+### 3 P0 Tasks Implemented (Beta-50 Sprint)
+
+The following tasks moved from **Backlog → In Progress** (implementation complete, pending merge):
+
+| Task ID | Description | Status |
+|---------|-------------|--------|
+| P0-006 | DEPLOY: Fix frontend build failing ('vite' not recognized) | In Progress |
+| P0-007 | MEDIA: Backend: enforce upload size/type validation before presigned URL generation | In Progress |
+| P0-009 | STABILITY: Fix avatar+banner 'save together' race condition | In Progress |
+
+**Changes made in this sprint:**
+- `serverless/src/handlers/media.js`: Added `mimeType` support alongside `contentType` (prefer `mimeType`, fall back to `contentType`); hardened `fileSize` validation to handle string coercion; updated error messages to "Invalid MIME type"
+- `serverless/tests/media-content-type-validation.test.js`: Fixed S3Client/PutObjectCommand constructor mocks; added `fileSize` to all valid requests; added tests for `mimeType`, oversize rejection (413), and missing `fileSize` (400)
+- `scripts/quick-deploy.ps1`: Frontend deploy uses `npm ci` (no `--omit=dev`) at repo root — ensures `vite` devDependency is installed before `npm run build`
+- `docs/QUICK_DEPLOY.md`: Documented `npm ci` requirement and correct API base URL (`ce73w43mga`)
+- `src/pages/ProfileEdit.jsx`: Single `PATCH` payload via `mapFormToProfileUpdate` — both avatar and banner URLs included together, no null/blob values sent, guarded by `uploadingAvatar || uploadingBanner` check before save
+
+---
+
 ## Sprint Update — 2026-02-25
 
 ### 5 P0 Tasks Picked Up (Beta-50 Sprint)
