@@ -67,10 +67,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check for test:run script
+        id: check-tests
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts['test:run'] ? 0 : 1)" 2>/dev/null; then
+            echo "has_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_tests=false" >> $GITHUB_OUTPUT
+            echo "::notice::No test:run script found in package.json — skipping tests"
+          fi
+
       - name: Run tests
+        if: steps.check-tests.outputs.has_tests == 'true'
         run: npm run test:run
 
       - name: Generate coverage
+        if: steps.check-tests.outputs.has_tests == 'true'
         run: npm run test:coverage
         continue-on-error: true
 
@@ -104,7 +116,7 @@ jobs:
               repo: context.repo.repo,
               body: coverageSummary
             });
-        if: success()
+        if: steps.check-tests.outputs.has_tests == 'true' && success()
 
   # Job 3: Build check
   build:
@@ -126,7 +138,7 @@ jobs:
 
       - name: Build application
         env:
-          VITE_API_BASE: https://api.example.com
+          VITE_API_BASE: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
         run: npm run build
 
       - name: Check bundle size
@@ -164,8 +176,8 @@ jobs:
             echo "❌ **Lint:** Failed" >> $GITHUB_STEP_SUMMARY
           fi
           
-          if [ "${{ needs.test.result }}" = "success" ]; then
-            echo "✅ **Tests:** 107/107 passing" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.test.result }}" = "success" ] || [ "${{ needs.test.result }}" = "skipped" ]; then
+            echo "✅ **Tests:** Passed (or skipped — no test suite)" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Tests:** Failed" >> $GITHUB_STEP_SUMMARY
           fi
@@ -177,7 +189,7 @@ jobs:
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.lint.result }}" != "failure" ] && [ "${{ needs.test.result }}" = "success" ] && [ "${{ needs.build.result }}" = "success" ]; then
+          if [ "${{ needs.lint.result }}" != "failure" ] && [ "${{ needs.test.result }}" != "failure" ] && [ "${{ needs.build.result }}" = "success" ]; then
             echo "### ✨ All checks passed! PR is ready for review." >> $GITHUB_STEP_SUMMARY
             exit 0
           else

@@ -1,6 +1,7 @@
 name: Phase 5 Staging Validation Double-Check
 
 on:
+  # Staging environment not yet provisioned — run manually only (see Kanban: DEPLOY: Create staging environment)
   workflow_dispatch:
     inputs:
       validation_type:

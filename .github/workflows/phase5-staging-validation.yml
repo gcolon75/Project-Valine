@@ -1,6 +1,7 @@
 name: Phase 5 Staging Validation
 
 on:
+  # Staging environment not yet provisioned — run manually only (see Kanban: DEPLOY: Create staging environment)
   workflow_dispatch:
     inputs:
       validation_type:
@@ -24,10 +25,6 @@ on:
         description: 'Trace ID to collect logs for (optional)'
         required: false
         type: string
-  
-  schedule:
-    # Run weekly validation on Mondays at 9 AM UTC
-    - cron: '0 9 * * 1'
 
 jobs:
   validate-phase5:
