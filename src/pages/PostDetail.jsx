@@ -365,6 +365,13 @@ export default function PostDetail() {
 
         {/* Post Content */}
         <div className="p-6">
+          {/* Post Title */}
+          {post.title && (
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
+              {post.title}
+            </h1>
+          )}
+
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
             {isPaidPost && (
