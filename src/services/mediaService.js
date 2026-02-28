@@ -409,3 +409,37 @@ export const requestMediaAccess = async (mediaId, requesterId, reason = '') => {
     throw new Error('Failed to request access. Please try again.');
   }
 };
+
+/**
+ * Get watermarked PDF for download
+ * The PDF is watermarked with the viewer's username for tracking
+ * @param {string} mediaId - Media ID
+ * @returns {Promise<Blob>} - Watermarked PDF blob
+ */
+export const getWatermarkedPdf = async (mediaId) => {
+  if (!mediaId) {
+    throw new Error('Media ID is required');
+  }
+
+  try {
+    const response = await apiClient.get(`/media/${mediaId}/watermarked-pdf`, {
+      responseType: 'blob',
+      timeout: 60000, // 60 second timeout for large PDFs
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get watermarked PDF:', error);
+
+    if (error.response?.status === 401) {
+      throw new Error('Please log in to download this PDF');
+    } else if (error.response?.status === 403) {
+      throw new Error('You do not have permission to download this PDF');
+    } else if (error.response?.status === 413) {
+      throw new Error('This PDF is too large for watermarking. Please contact support.');
+    } else if (error.response?.status === 400) {
+      throw new Error('This file is not a PDF');
+    }
+
+    throw new Error('Failed to download PDF. Please try again.');
+  }
+};

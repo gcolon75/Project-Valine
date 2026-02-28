@@ -7,7 +7,7 @@ import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
 import ConfirmationModal from "./ConfirmationModal";
-import { getMediaAccessUrl, requestMediaAccess } from "../services/mediaService";
+import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf } from "../services/mediaService";
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
@@ -88,24 +88,40 @@ export default function PostCard({ post, onDelete, onLike }) {
 
     setDownloading(true);
     try {
-      const response = await getMediaAccessUrl(post.mediaId, user?.id);
-      // Backend returns viewUrl, posterUrl. Use viewUrl for download.
-      const downloadUrl = response.viewUrl || response.downloadUrl;
-      
-      if (!downloadUrl) {
-        throw new Error('No download URL available');
+      // For PDFs, use watermarked endpoint (adds viewer's username as watermark)
+      if (isPdf) {
+        const pdfBlob = await getWatermarkedPdf(post.mediaId);
+
+        // Create download link from blob
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${post.title || 'document'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.success("PDF downloaded!");
+      } else {
+        // Non-PDF: use existing S3 signed URL flow
+        const response = await getMediaAccessUrl(post.mediaId, user?.id);
+        const downloadUrl = response.viewUrl || response.downloadUrl;
+
+        if (!downloadUrl) {
+          throw new Error('No download URL available');
+        }
+
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = post.title || "download";
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success("Download started!");
       }
-      
-      // Create download link
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = post.title || "download";
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Download started!");
     } catch (error) {
       console.error("Download failed:", error);
       toast.error(error.message || "Failed to download. Please try again.");

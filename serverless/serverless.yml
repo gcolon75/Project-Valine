@@ -722,6 +722,16 @@ functions:
       - httpApi:
           path: /media/{id}/access-url
           method: get
+  getWatermarkedPdf:
+    handler: src/handlers/media.getWatermarkedPdf
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    timeout: 60
+    memorySize: 1024
+    events:
+      - httpApi:
+          path: /media/{id}/watermarked-pdf
+          method: get
 
   # ========== CREDITS ==========
   listCredits:

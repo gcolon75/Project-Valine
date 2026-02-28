@@ -19,7 +19,7 @@ import {
   FileText
 } from 'lucide-react';
 import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
-import { getMediaAccessUrl } from '../services/mediaService';
+import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
@@ -39,6 +39,8 @@ export default function PostDetail() {
   const [likesCount, setLikesCount] = useState(0);
   const [likingInProgress, setLikingInProgress] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [viewingPdf, setViewingPdf] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Helper function to safely format price
   const formatPrice = (price) => {
@@ -157,6 +159,55 @@ export default function PostDetail() {
   // Called when a new comment is added
   const handleCommentAdded = () => {
     setCommentsCount((prev) => prev + 1);
+  };
+
+  // View watermarked PDF in new tab
+  const handleViewPdf = async () => {
+    if (!post?.mediaAttachment?.id) {
+      toast.error('PDF not available');
+      return;
+    }
+
+    setViewingPdf(true);
+    try {
+      const pdfBlob = await getWatermarkedPdf(post.mediaAttachment.id);
+      const url = window.URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      // Clean up after delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      console.error('Error viewing PDF:', err);
+      toast.error(err.message || 'Failed to load PDF');
+    } finally {
+      setViewingPdf(false);
+    }
+  };
+
+  // Download watermarked PDF
+  const handleDownloadPdf = async () => {
+    if (!post?.mediaAttachment?.id) {
+      toast.error('PDF not available');
+      return;
+    }
+
+    setDownloadingPdf(true);
+    try {
+      const pdfBlob = await getWatermarkedPdf(post.mediaAttachment.id);
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${post.title || 'document'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF downloaded!');
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      toast.error(err.message || 'Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -440,19 +491,40 @@ export default function PostDetail() {
                         className="w-full min-h-[400px]"
                       />
                       {/* PDF Actions */}
-                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-end">
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-end gap-3">
                         <button
-                          onClick={() => {
-                            if (pdfUrl) {
-                              window.open(pdfUrl, '_blank');
-                            } else {
-                              toast.error('PDF not ready yet');
-                            }
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
+                          onClick={handleDownloadPdf}
+                          disabled={downloadingPdf}
+                          className="flex items-center gap-2 px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Eye className="w-4 h-4" />
-                          View PDF
+                          {downloadingPdf ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              Download
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={handleViewPdf}
+                          disabled={viewingPdf}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {viewingPdf ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4" />
+                              View PDF
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -460,17 +532,17 @@ export default function PostDetail() {
                 </div>
               )}
 
-              {/* Download Button */}
-              {hasAccess && post.allowDownload && (post.mediaAttachment || post.audioUrl) && (
+              {/* Download Button - for non-PDF media (PDFs have their own download in the PDF actions section) */}
+              {hasAccess && post.allowDownload && post.audioUrl && (
                 <div className="mb-6">
-                  <button
-                    disabled
-                    title="Download feature coming soon"
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium transition opacity-50 cursor-not-allowed"
+                  <a
+                    href={post.audioUrl}
+                    download
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
                   >
                     <Download className="w-4 h-4" />
-                    Download (Watermarked) - Coming Soon
-                  </button>
+                    Download Audio
+                  </a>
                 </div>
               )}
             </>

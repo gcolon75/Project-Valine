@@ -1,11 +1,12 @@
 import { getPrisma } from '../db/client.js';
-import { json, error } from '../utils/headers.js';
+import { json, error, getCorsHeaders } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { requireEmailVerified } from '../utils/authMiddleware.js';
 import { csrfProtection } from '../middleware/csrfMiddleware.js';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
+import { watermarkPdf } from '../utils/pdfWatermark.js';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
@@ -447,6 +448,142 @@ export const getAccessUrl = async (event) => {
     });
   } catch (e) {
     console.error('Get access URL error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// Maximum PDF size for watermarking (50MB)
+const MAX_WATERMARK_PDF_SIZE = 50 * 1024 * 1024;
+
+/**
+ * Helper to convert S3 stream to buffer
+ */
+async function streamToBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+/**
+ * GET /api/media/:id/watermarked-pdf
+ * Stream watermarked PDF to authenticated viewer
+ * The PDF is watermarked with the viewer's username for tracking
+ */
+export const getWatermarkedPdf = async (event) => {
+  try {
+    const { id } = event.pathParameters || {};
+    if (!id) {
+      return error(400, 'id is required');
+    }
+
+    // Require authentication - we need the viewer's username
+    const viewerId = getUserFromEvent(event);
+    if (!viewerId) {
+      return error(401, 'Authentication required to download PDFs');
+    }
+
+    const prisma = getPrisma();
+
+    // Get media with profile info
+    const media = await prisma.media.findUnique({
+      where: { id },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!media) {
+      return error(404, 'Media not found');
+    }
+
+    // Verify it's a PDF
+    if (media.type !== 'pdf') {
+      return error(400, 'This endpoint only supports PDF files');
+    }
+
+    const isOwner = viewerId === media.profile.userId;
+
+    // Check privacy access (same as getAccessUrl)
+    if (media.privacy === 'private' && !isOwner) {
+      return error(403, 'This media is private');
+    }
+
+    if (media.privacy === 'on-request' && !isOwner) {
+      const request = await prisma.reelRequest.findUnique({
+        where: {
+          mediaId_requesterId: {
+            mediaId: id,
+            requesterId: viewerId,
+          },
+        },
+      });
+      if (!request || request.status !== 'approved') {
+        return error(403, 'Access request required or pending');
+      }
+    }
+
+    // Get viewer's username for watermark
+    const viewer = await prisma.user.findUnique({
+      where: { id: viewerId },
+      select: { username: true },
+    });
+
+    if (!viewer?.username) {
+      return error(500, 'Could not retrieve viewer information');
+    }
+
+    // Fetch PDF from S3
+    const getCommand = new GetObjectCommand({
+      Bucket: MEDIA_BUCKET,
+      Key: media.s3Key,
+    });
+
+    let s3Response;
+    try {
+      s3Response = await s3Client.send(getCommand);
+    } catch (s3Error) {
+      console.error('S3 fetch error:', s3Error);
+      return error(500, 'Failed to retrieve PDF from storage');
+    }
+
+    const pdfBuffer = await streamToBuffer(s3Response.Body);
+
+    // Check file size - reject if too large for Lambda memory
+    if (pdfBuffer.length > MAX_WATERMARK_PDF_SIZE) {
+      return error(413, 'PDF too large for watermarking. Maximum size: 50MB');
+    }
+
+    // Apply watermark
+    let watermarkedPdf;
+    try {
+      watermarkedPdf = await watermarkPdf(pdfBuffer, viewer.username);
+    } catch (pdfError) {
+      console.error('PDF watermarking error:', pdfError);
+      return error(500, 'Unable to process this PDF');
+    }
+
+    // Generate filename
+    const filename = media.title
+      ? `${media.title.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`
+      : 'document.pdf';
+
+    // Return binary PDF with appropriate headers
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': watermarkedPdf.length.toString(),
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        ...getCorsHeaders(event),
+      },
+      body: Buffer.from(watermarkedPdf).toString('base64'),
+      isBase64Encoded: true,
+    };
+  } catch (e) {
+    console.error('Get watermarked PDF error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };
