@@ -127,16 +127,61 @@ export default function Post() {
     return 'pdf'; // Default fallback
   };
 
-  // Handle file selection
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Handle drag events
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processAndUploadFile(file);
+    }
+  };
+
+  // Handle file selection from input
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      processAndUploadFile(file);
+    }
+  };
 
+  // Process file and auto-upload
+  const processAndUploadFile = async (file) => {
     const maxSize = MAX_FILE_SIZES[formData.contentType] || 100;
-    
+
     // Validate file size
     if (file.size > maxSize * 1024 * 1024) {
       setUploadError(`File size must be less than ${maxSize}MB`);
+      return;
+    }
+
+    // Validate file type
+    const acceptedTypes = ACCEPTED_TYPES[formData.contentType]?.split(',') || [];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!acceptedTypes.some(type => type.trim() === fileExtension)) {
+      setUploadError(`Invalid file type. Accepted: ${ACCEPTED_TYPES[formData.contentType]}`);
       return;
     }
 
@@ -144,15 +189,19 @@ export default function Post() {
     setUploadError(null);
     setUploadedMediaId(null);
     setUploadedAudioUrl(null);
+
+    // Auto-upload the file
+    await uploadFile(file);
   };
 
   // Upload file to S3
-  const handleFileUpload = async () => {
-    if (!selectedFile) {
+  const uploadFile = async (file) => {
+    const fileToUpload = file || selectedFile;
+    if (!fileToUpload) {
       setUploadError('Please select a file first.');
       return;
     }
-    
+
     // Use profile.id if available, otherwise fall back to user.id
     // Backend will auto-create profile if it doesn't exist
     const targetProfileId = profileId || user?.id;
@@ -165,18 +214,21 @@ export default function Post() {
     setUploadProgress(0);
     setUploadError(null);
 
+    // Use the passed file for upload
+    const uploadingFile = fileToUpload;
+
     try {
       // Check if this is an audio-only post type
       if (formData.contentType === 'audio') {
         // Use audio-specific upload flow
         setUploadProgress(5);
         const { uploadUrl, audioUrl } = await getAudioUploadUrl(
-          selectedFile.name,
-          selectedFile.type || 'audio/mpeg'
+          uploadingFile.name,
+          uploadingFile.type || 'audio/mpeg'
         );
 
         // Upload to S3
-        await uploadAudioToS3(uploadUrl, selectedFile, (progress) => {
+        await uploadAudioToS3(uploadUrl, uploadingFile, (progress) => {
           setUploadProgress(5 + Math.floor(progress * 0.9)); // 5-95%
         });
 
@@ -185,10 +237,10 @@ export default function Post() {
         toast.success('Audio uploaded successfully!');
       } else {
         // Standard media upload flow
-        const mediaType = getMediaType(formData.contentType, selectedFile);
-        
+        const mediaType = getMediaType(formData.contentType, uploadingFile);
+
         // Get content type from file
-        const contentType = selectedFile.type || 
+        const contentType = uploadingFile.type || 
           (mediaType === 'video' ? 'video/mp4' : 
            mediaType === 'image' ? 'image/jpeg' : 
            'application/pdf');
@@ -198,22 +250,22 @@ export default function Post() {
         const { mediaId, uploadUrl } = await getUploadUrl(
           targetProfileId,
           mediaType,
-          formData.title || selectedFile.name,
+          formData.title || uploadingFile.name,
           formData.description,
           formData.visibility,
           contentType,
-          selectedFile.size
+          uploadingFile.size
         );
 
         // Step 2: Upload to S3
-        await uploadToS3(uploadUrl, selectedFile, mediaType, (progress) => {
+        await uploadToS3(uploadUrl, uploadingFile, mediaType, (progress) => {
           setUploadProgress(5 + Math.floor(progress * 0.85)); // 5-90%
         });
 
         // Step 3: Complete upload
         setUploadProgress(95);
         await completeUpload(targetProfileId, mediaId, {
-          fileSize: selectedFile.size,
+          fileSize: uploadingFile.size,
         });
 
         setUploadProgress(100);
@@ -480,13 +532,23 @@ export default function Post() {
               Upload your {formData.contentType} file (max {MAX_FILE_SIZES[formData.contentType]}MB)
             </p>
 
-            {/* File not selected yet */}
-            {!selectedFile && !uploadedMediaId && (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors bg-neutral-50 dark:bg-neutral-800/50">
+            {/* File not selected yet - Drop zone */}
+            {!selectedFile && !uploadedMediaId && !isUploading && (
+              <label
+                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                  isDragging
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                    : 'border-neutral-300 dark:border-neutral-700 hover:border-emerald-500 bg-neutral-50 dark:bg-neutral-800/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <div className="flex flex-col items-center justify-center py-4">
-                  <Upload className="w-8 h-8 text-neutral-400 mb-2" />
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Click to upload or drag and drop
+                  <Upload className={`w-8 h-8 mb-2 ${isDragging ? 'text-emerald-500' : 'text-neutral-400'}`} />
+                  <p className={`text-sm ${isDragging ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-600 dark:text-neutral-400'}`}>
+                    {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
                   </p>
                   <p className="text-xs text-neutral-500 mt-1">
                     Accepted: {ACCEPTED_TYPES[formData.contentType]}
@@ -499,50 +561,6 @@ export default function Post() {
                   onChange={handleFileSelect}
                 />
               </label>
-            )}
-
-            {/* File selected but not uploaded */}
-            {selectedFile && !uploadedMediaId && !isUploading && (
-              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {selectedFile.type.startsWith('video/') ? (
-                      <Film className="w-8 h-8 text-emerald-500" />
-                    ) : selectedFile.type.startsWith('audio/') ? (
-                      <Mic className="w-8 h-8 text-emerald-500" />
-                    ) : selectedFile.type === 'application/pdf' ? (
-                      <FileText className="w-8 h-8 text-emerald-500" />
-                    ) : (
-                      <ImageIcon className="w-8 h-8 text-emerald-500" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate max-w-xs">
-                        {selectedFile.name}
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleFileUpload}
-                      className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition"
-                    >
-                      Upload
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveFile}
-                      className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition"
-                      aria-label="Remove file"
-                    >
-                      <X className="w-5 h-5 text-neutral-500" />
-                    </button>
-                  </div>
-                </div>
-              </div>
             )}
 
             {/* Uploading progress */}
