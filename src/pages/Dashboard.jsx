@@ -19,6 +19,7 @@ export default function Dashboard() {
   const { posts } = useFeed();
   const [apiPosts, setApiPosts] = useState([]);
   const [loadingApi, setLoadingApi] = useState(false);
+  const [usedApiData, setUsedApiData] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -77,6 +78,11 @@ export default function Dashboard() {
     }
   };
 
+  // Handle post deletion - remove from local state immediately
+  const handleDeletePost = (postId) => {
+    setApiPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+  };
+
   // Try to fetch posts from API, fallback to context posts
   useEffect(() => {
     setLoadingApi(true);
@@ -93,7 +99,7 @@ export default function Dashboard() {
               role: post.author?.username,
               avatar: post.author?.avatar || ''
             },
-            title: post.mediaAttachment?.title || '',
+            title: post.title || post.mediaAttachment?.title || '',
             body: post.content,
             tags: post.tags || [],
             createdAt: new Date(post.createdAt).getTime(),
@@ -107,6 +113,7 @@ export default function Dashboard() {
             comments: post.comments || 0
           }));
           setApiPosts(transformed);
+          setUsedApiData(true);
         }
       })
       .catch(err => {
@@ -115,8 +122,8 @@ export default function Dashboard() {
       .finally(() => setLoadingApi(false));
   }, []);
 
-  // Use API posts if available, otherwise fall back to context posts
-  const displayPosts = apiPosts.length > 0 ? apiPosts : posts;
+  // Use API posts if we successfully fetched from API, otherwise fall back to context posts
+  const displayPosts = usedApiData ? apiPosts : posts;
 
   // Use curated tags from ALLOWED_TAGS - first 8 as trending/saved
   const [savedTags, setSavedTags] = useState(
@@ -285,6 +292,7 @@ export default function Dashboard() {
                     key={p.id}
                     post={p}
                     onLike={handleLikePost}
+                    onDelete={handleDeletePost}
                     style={{ animationDelay: `${i * 0.05}s` }}
                   />
                 ))
