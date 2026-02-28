@@ -105,6 +105,7 @@ model Audition {
 
 model Post {
   id        String   @id @default(uuid())
+  title     String?
   content   String
   media     String[] @map("media")
   tags      String[]

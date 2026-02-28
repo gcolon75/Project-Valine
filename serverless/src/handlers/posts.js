@@ -65,14 +65,15 @@ export const createPost = async (event) => {
       return error(400, 'Invalid JSON in request body');
     }
     
-    const { 
-      content, 
-      media, 
-      authorId, 
-      mediaId, 
-      tags, 
-      visibility, 
-      audioUrl, 
+    const {
+      title,
+      content,
+      media,
+      authorId,
+      mediaId,
+      tags,
+      visibility,
+      audioUrl,
       price,
       thumbnailUrl,
       requiresAccess,
@@ -171,9 +172,10 @@ export const createPost = async (event) => {
     const postIsFree = isFree !== undefined ? isFree : (!postPrice || postPrice === 0);
     
     const post = await prisma.post.create({
-      data: { 
-        content, 
-        media: media || [], 
+      data: {
+        title: title || null,
+        content,
+        media: media || [],
         tags: safeTags,
         authorId,
         mediaId: mediaId || null,

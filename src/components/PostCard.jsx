@@ -1,7 +1,7 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
 import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
@@ -194,25 +194,29 @@ export default function PostCard({ post, onDelete, onLike }) {
 
           {/* Author info and meta - Secondary */}
           <div className="flex items-center gap-2">
-            {post.author.avatar ? (
-              <img
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="h-6 w-6 rounded-full object-cover"
-                onError={(e) => {
-                  e.target.src = '';
-                }}
-              />
-            ) : (
-              <div className="h-6 w-6 rounded-full bg-neutral-200 dark:bg-white/10" />
-            )}
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              {post.author.name}
-            </span>
+            <Link to={`/profile/${post.author.role}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              {post.author.avatar ? (
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.name}
+                  className="h-6 w-6 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = '';
+                  }}
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-neutral-200 dark:bg-white/10" />
+              )}
+              <span className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200">
+                {post.author.name}
+              </span>
+            </Link>
             {post.author.role && (
               <>
                 <span className="text-neutral-400 dark:text-neutral-500">·</span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-500">{post.author.role}</span>
+                <Link to={`/profile/${post.author.role}`} className="text-xs text-neutral-500 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                  @{post.author.role}
+                </Link>
               </>
             )}
             <span className="text-neutral-400 dark:text-neutral-500">·</span>

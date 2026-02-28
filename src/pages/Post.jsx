@@ -300,6 +300,7 @@ export default function Post() {
       
       // Prepare post data
       const postPayload = {
+        title: formData.title, // Post title
         content: formData.description || formData.title,
         authorId: user?.userId || user?.id, // userId from profile, id from auth
         tags: Array.isArray(formData.tags) ? formData.tags : [],
