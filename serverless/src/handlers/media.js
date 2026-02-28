@@ -199,7 +199,7 @@ export const completeUpload = async (event) => {
     }
 
     const body = JSON.parse(event.body || '{}');
-    const { mediaId, width, height, fileSize } = body;
+    const { mediaId, width, height, fileSize, posterS3Key } = body;
 
     if (!mediaId) {
       return error(400, 'mediaId is required');
@@ -237,6 +237,7 @@ export const completeUpload = async (event) => {
         width: width || null,
         height: height || null,
         fileSize: fileSize || null,
+        posterS3Key: posterS3Key || null,
       },
     });
 

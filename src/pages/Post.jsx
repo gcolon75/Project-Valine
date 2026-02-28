@@ -3,12 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as pdfjsLib from 'pdfjs-dist';
 import TagSelector from '../components/forms/TagSelector';
 import { validateTags } from '../constants/tags';
 import { useAuth } from '../context/AuthContext';
 import { createPost, getAudioUploadUrl, uploadAudioToS3 } from '../services/postService';
 import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
 import { getMyProfile } from '../services/profileService';
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const CONTENT_TYPES = [
   { value: 'script', label: 'Script', icon: '📝' },
@@ -127,6 +131,57 @@ export default function Post() {
     return 'pdf'; // Default fallback
   };
 
+  /**
+   * Generate a thumbnail image from the first page of a PDF
+   * @param {File} pdfFile - The PDF file
+   * @returns {Promise<Blob>} - JPEG blob of the first page
+   */
+  const generatePdfThumbnail = async (pdfFile) => {
+    try {
+      // Read the PDF file as ArrayBuffer
+      const arrayBuffer = await pdfFile.arrayBuffer();
+
+      // Load the PDF
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      // Get the first page
+      const page = await pdf.getPage(1);
+
+      // Set up canvas for rendering
+      const scale = 2; // Higher scale for better quality
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      // Render the page
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+
+      // Convert canvas to JPEG blob
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create thumbnail blob'));
+            }
+          },
+          'image/jpeg',
+          0.85 // Quality
+        );
+      });
+    } catch (error) {
+      console.error('Failed to generate PDF thumbnail:', error);
+      throw error;
+    }
+  };
+
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
 
@@ -240,13 +295,48 @@ export default function Post() {
         const mediaType = getMediaType(formData.contentType, uploadingFile);
 
         // Get content type from file
-        const contentType = uploadingFile.type || 
-          (mediaType === 'video' ? 'video/mp4' : 
-           mediaType === 'image' ? 'image/jpeg' : 
+        const contentType = uploadingFile.type ||
+          (mediaType === 'video' ? 'video/mp4' :
+           mediaType === 'image' ? 'image/jpeg' :
            'application/pdf');
-        
-        // Step 1: Get presigned upload URL
-        setUploadProgress(5);
+
+        // For PDFs, generate and upload thumbnail first
+        let posterS3Key = null;
+        if (mediaType === 'pdf') {
+          try {
+            setUploadProgress(2);
+            toast.loading('Generating PDF preview...', { id: 'pdf-thumbnail' });
+
+            // Generate thumbnail from first page
+            const thumbnailBlob = await generatePdfThumbnail(uploadingFile);
+            const thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', { type: 'image/jpeg' });
+
+            // Upload thumbnail as image
+            setUploadProgress(5);
+            const { uploadUrl: thumbUploadUrl, s3Key: thumbS3Key } = await getUploadUrl(
+              targetProfileId,
+              'image',
+              `${formData.title || uploadingFile.name} - Thumbnail`,
+              'PDF thumbnail',
+              'public',
+              'image/jpeg',
+              thumbnailFile.size
+            );
+
+            await uploadToS3(thumbUploadUrl, thumbnailFile, 'image', () => {});
+            posterS3Key = thumbS3Key;
+
+            toast.success('Preview generated!', { id: 'pdf-thumbnail' });
+            setUploadProgress(15);
+          } catch (thumbError) {
+            console.warn('Failed to generate PDF thumbnail:', thumbError);
+            toast.dismiss('pdf-thumbnail');
+            // Continue without thumbnail - not a critical error
+          }
+        }
+
+        // Step 1: Get presigned upload URL for main file
+        setUploadProgress(posterS3Key ? 20 : 5);
         const { mediaId, uploadUrl } = await getUploadUrl(
           targetProfileId,
           mediaType,
@@ -257,16 +347,21 @@ export default function Post() {
           uploadingFile.size
         );
 
-        // Step 2: Upload to S3
+        // Step 2: Upload main file to S3
+        const progressStart = posterS3Key ? 20 : 5;
         await uploadToS3(uploadUrl, uploadingFile, mediaType, (progress) => {
-          setUploadProgress(5 + Math.floor(progress * 0.85)); // 5-90%
+          setUploadProgress(progressStart + Math.floor(progress * 0.7)); // 20-90% or 5-75%
         });
 
-        // Step 3: Complete upload
+        // Step 3: Complete upload with poster if available
         setUploadProgress(95);
-        await completeUpload(targetProfileId, mediaId, {
+        const completeData = {
           fileSize: uploadingFile.size,
-        });
+        };
+        if (posterS3Key) {
+          completeData.posterS3Key = posterS3Key;
+        }
+        await completeUpload(targetProfileId, mediaId, completeData);
 
         setUploadProgress(100);
         setUploadedMediaId(mediaId);
