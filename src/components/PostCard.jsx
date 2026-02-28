@@ -181,37 +181,56 @@ export default function PostCard({ post, onDelete, onLike }) {
     <>
       <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3">
-          {post.author.avatar ? (
-            <img 
-              src={post.author.avatar} 
-              alt={post.author.name}
-              className="h-8 w-8 rounded-full object-cover"
-              onError={(e) => {
-                e.target.src = ''; // Clear broken image
-              }}
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-white/10" />
+        <div className="px-4 py-3">
+          {/* Post Title - Primary */}
+          {post.title && (
+            <h2
+              className="text-lg font-bold text-neutral-900 dark:text-white mb-2 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+              onClick={() => navigate(`/posts/${post.id}`)}
+            >
+              {post.title}
+            </h2>
           )}
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium truncate text-neutral-900 dark:text-white">{post.author.name}</div>
-            <div className="text-xs text-neutral-600 dark:text-neutral-400 truncate">{post.author.role}</div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            {/* Visibility indicator */}
+
+          {/* Author info and meta - Secondary */}
+          <div className="flex items-center gap-2">
+            {post.author.avatar ? (
+              <img
+                src={post.author.avatar}
+                alt={post.author.name}
+                className="h-6 w-6 rounded-full object-cover"
+                onError={(e) => {
+                  e.target.src = '';
+                }}
+              />
+            ) : (
+              <div className="h-6 w-6 rounded-full bg-neutral-200 dark:bg-white/10" />
+            )}
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              {post.author.name}
+            </span>
+            {post.author.role && (
+              <>
+                <span className="text-neutral-400 dark:text-neutral-500">·</span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-500">{post.author.role}</span>
+              </>
+            )}
+            <span className="text-neutral-400 dark:text-neutral-500">·</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-500">
+              {timeAgo(post.createdAt)}
+            </span>
+
+            {/* Badges */}
             {isGated && (
-              <span className="flex items-center gap-1 text-xs text-neutral-500">
+              <span className="flex items-center gap-1 text-xs text-neutral-500 ml-1">
                 <Lock className="w-3 h-3" />
-                {post.visibility === "FOLLOWERS_ONLY" ? "Followers Only" : "Access Required"}
               </span>
             )}
-            {/* Price badge */}
             {post.price !== undefined && post.price !== null && (() => {
               const priceValue = parseFloat(post.price);
               return (
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  priceValue > 0 
+                  priceValue > 0
                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                 }`}>
@@ -219,12 +238,9 @@ export default function PostCard({ post, onDelete, onLike }) {
                 </span>
               );
             })()}
-            <span className="text-xs text-neutral-600 dark:text-neutral-400">
-              {timeAgo(post.createdAt)}
-            </span>
-            
+
             {/* 3-dot menu */}
-            <div className="relative">
+            <div className="relative ml-auto">
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors"
@@ -232,12 +248,12 @@ export default function PostCard({ post, onDelete, onLike }) {
               >
                 <MoreVertical className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
               </button>
-              
+
               {showMenu && (
                 <>
                   {/* Backdrop to close menu */}
-                  <div 
-                    className="fixed inset-0 z-10" 
+                  <div
+                    className="fixed inset-0 z-10"
                     onClick={() => setShowMenu(false)}
                   />
                   {/* Menu */}
@@ -253,7 +269,7 @@ export default function PostCard({ post, onDelete, onLike }) {
                         {sharingViaDM ? "Opening..." : "Share via DM"}
                       </button>
                     )}
-                    
+
                     {/* Delete - only for author */}
                     {isAuthor && (
                       <button
@@ -334,13 +350,12 @@ export default function PostCard({ post, onDelete, onLike }) {
 
       {/* Body */}
       <div className="px-4 py-3">
-        {/* Title and body - clickable to view post */}
+        {/* Body content - clickable to view post */}
         <div
           className="cursor-pointer"
           onClick={() => navigate(`/posts/${post.id}`)}
         >
-          <div className="font-semibold text-neutral-900 dark:text-white">{post.title}</div>
-          <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">{post.body}</p>
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">{post.body}</p>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {post.tags.map((t) => (

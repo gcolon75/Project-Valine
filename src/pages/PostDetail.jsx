@@ -326,51 +326,55 @@ export default function PostDetail() {
           </div>
         )}
 
-        {/* Author Header */}
+        {/* Header with Title and Author */}
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-          <div className="flex items-center gap-4">
+          {/* Post Title - Primary */}
+          {post.title && (
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
+              {post.title}
+            </h1>
+          )}
+
+          {/* Author info - Secondary */}
+          <div className="flex items-center gap-3">
             <Link to={`/profile/${post.author?.username}`}>
               {post.author?.avatar ? (
                 <img
                   src={post.author.avatar}
                   alt={post.author.displayName || post.author.username}
-                  className="w-12 h-12 rounded-full object-cover hover:ring-2 ring-emerald-500 transition"
+                  className="w-8 h-8 rounded-full object-cover hover:ring-2 ring-emerald-500 transition"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-lg hover:ring-2 ring-emerald-500 transition">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium text-sm hover:ring-2 ring-emerald-500 transition">
                   {(post.author?.displayName || post.author?.username || 'U')[0].toUpperCase()}
                 </div>
               )}
             </Link>
-            <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
               <Link to={`/profile/${post.author?.username}`} className="hover:underline">
-                <h3 className="font-semibold text-neutral-900 dark:text-white">
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   {post.author?.displayName || post.author?.username || 'Unknown User'}
-                </h3>
+                </span>
               </Link>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  @{post.author?.username || 'unknown'}
-                </p>
-                {isFollowersOnly && (
+              <span className="text-neutral-400 dark:text-neutral-500">·</span>
+              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                @{post.author?.username || 'unknown'}
+              </span>
+              {isFollowersOnly && (
+                <>
+                  <span className="text-neutral-400 dark:text-neutral-500">·</span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-xs font-medium">
                     <EyeOff className="w-3 h-3" />
                     Followers Only
                   </span>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Post Content */}
         <div className="p-6">
-          {/* Post Title */}
-          {post.title && (
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">
-              {post.title}
-            </h1>
-          )}
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
