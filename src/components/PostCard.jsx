@@ -49,16 +49,12 @@ export default function PostCard({ post, onDelete, onLike }) {
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
 
   // Check if media is a document (PDF, script, etc.)
-  // Also treat as document if there's media but no poster/image URL (documents don't generate thumbnails)
-  const hasMedia = post.mediaId || post.mediaAttachment;
-  const hasPoster = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
-  const hasMediaButNoPoster = hasMedia && !hasPoster;
-  const isDocument = post.mediaAttachment?.type === 'pdf' ||
-                     post.mediaAttachment?.type === 'document' ||
-                     post.mediaAttachment?.s3Key?.endsWith('.pdf') ||
-                     post.mediaAttachment?.s3Key?.endsWith('.doc') ||
-                     post.mediaAttachment?.s3Key?.endsWith('.docx') ||
-                     hasMediaButNoPoster;
+  const isPdf = post.mediaAttachment?.type === 'pdf' ||
+                post.mediaAttachment?.s3Key?.endsWith('.pdf');
+  const isDoc = post.mediaAttachment?.type === 'document' ||
+                post.mediaAttachment?.s3Key?.endsWith('.doc') ||
+                post.mediaAttachment?.s3Key?.endsWith('.docx');
+  const isDocument = isPdf || isDoc;
 
 
   // Image fallback: use mediaAttachment url, post image, or placeholder
@@ -321,26 +317,27 @@ export default function PostCard({ post, onDelete, onLike }) {
           </div>
         ) : isDocument ? (
           // Document content - show poster thumbnail if available, otherwise icon
-          <div className="w-full h-full relative bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800">
-            {/* Fallback icon - always present behind image */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
+          post.mediaAttachment?.posterUrl ? (
+            <img
+              src={post.mediaAttachment.posterUrl}
+              alt={post.title || "Document preview"}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // On error, replace with fallback
+                const fallback = document.createElement('div');
+                fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800';
+                fallback.innerHTML = '<span class="text-xs text-neutral-500">PDF Document</span>';
+                e.target.parentNode.replaceChild(fallback, e.target);
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800">
               <FileText className="w-16 h-16 text-red-500 dark:text-red-400" />
               <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
                 PDF Document
               </span>
             </div>
-            {/* Poster image - covers fallback when loaded */}
-            {post.mediaAttachment?.posterUrl && (
-              <img
-                src={post.mediaAttachment.posterUrl}
-                alt={post.title || "Document preview"}
-                className="absolute inset-0 w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-          </div>
+          )
         ) : imageUrl ? (
           // Image/video content with actual URL
           <img

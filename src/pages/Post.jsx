@@ -325,6 +325,7 @@ export default function Post() {
 
             await uploadToS3(thumbUploadUrl, thumbnailFile, 'image', () => {});
             posterS3Key = thumbS3Key;
+            console.log('PDF thumbnail uploaded, posterS3Key:', posterS3Key);
 
             toast.success('Preview generated!', { id: 'pdf-thumbnail' });
             setUploadProgress(15);
@@ -360,6 +361,7 @@ export default function Post() {
         };
         if (posterS3Key) {
           completeData.posterS3Key = posterS3Key;
+          console.log('Completing upload with posterS3Key:', posterS3Key);
         }
         await completeUpload(targetProfileId, mediaId, completeData);
 
