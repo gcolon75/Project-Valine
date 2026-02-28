@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import TagSelector from '../components/forms/TagSelector';
 import { validateTags } from '../constants/tags';
 import { useAuth } from '../context/AuthContext';
@@ -11,8 +12,8 @@ import { createPost, getAudioUploadUrl, uploadAudioToS3 } from '../services/post
 import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
 import { getMyProfile } from '../services/profileService';
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set up PDF.js worker from local package
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const CONTENT_TYPES = [
   { value: 'script', label: 'Script', icon: '📝' },
