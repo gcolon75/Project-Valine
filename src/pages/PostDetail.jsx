@@ -433,23 +433,11 @@ export default function PostDetail() {
                     />
                   ) : post.mediaAttachment.type === 'pdf' ? (
                     <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                      {/* PDF Title Header */}
-                      <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-b border-neutral-200 dark:border-neutral-700">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-8 h-8 text-red-500 dark:text-red-400 flex-shrink-0" />
-                          <div>
-                            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                              {post.mediaAttachment.title || 'Document'}
-                            </h3>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400">PDF Document</p>
-                          </div>
-                        </div>
-                      </div>
                       {/* PDF Thumbnail Preview - rendered client-side */}
                       <PDFThumbnail
                         pdfUrl={pdfUrl}
-                        title={post.mediaAttachment.title || 'Document'}
-                        className="w-full min-h-[300px]"
+                        title={post.title || post.mediaAttachment.title || 'Document'}
+                        className="w-full min-h-[400px]"
                       />
                       {/* PDF Actions */}
                       <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-end">
