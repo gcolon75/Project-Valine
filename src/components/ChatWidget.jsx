@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, ArrowLeft, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, ArrowLeft, Loader2, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getThreads, getThread, sendThreadMessage, createThread } from '../services/messagesService';
 import { useAuth } from '../context/AuthContext';
@@ -12,10 +12,7 @@ export default function ChatWidget() {
   const { unreadCounts } = useUnread();
   const messagesEndRef = useRef(null);
 
-  // Hide widget when on inbox pages (full-screen messaging)
-  const isOnInboxPage = location.pathname.startsWith('/inbox');
-  if (isOnInboxPage) return null;
-
+  // All useState hooks must be called before any early returns
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('threads'); // 'threads' or 'conversation'
   const [threads, setThreads] = useState([]);
@@ -25,17 +22,26 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // Fetch threads when widget opens
+  // Determine if we should hide the widget
+  const isOnInboxPage = location.pathname.startsWith('/inbox');
+
+  // Fetch threads when widget opens (hook must be before any returns)
   useEffect(() => {
-    if (isOpen && view === 'threads') {
+    if (isOpen && view === 'threads' && user && !isOnInboxPage) {
       fetchThreads();
     }
-  }, [isOpen, view]);
+  }, [isOpen, view, user, isOnInboxPage]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (user && !isOnInboxPage) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, user, isOnInboxPage]);
+
+  // Early returns AFTER all hooks
+  if (isOnInboxPage) return null;
+  if (!user) return null;
 
   const fetchThreads = async () => {
     setLoading(true);
@@ -102,9 +108,6 @@ export default function ChatWidget() {
     if (diffDays < 7) return `${diffDays}d`;
     return date.toLocaleDateString();
   };
-
-  // Don't render if not logged in
-  if (!user) return null;
 
   return (
     <>
@@ -212,23 +215,43 @@ export default function ChatWidget() {
             ) : (
               /* Messages */
               <div className="flex flex-col p-4 space-y-3">
-                {messages.map(msg => (
+                {messages.map(msg => {
+                  const isOwn = msg.senderId === user?.id;
+                  const senderAvatar = isOwn ? user?.avatar : currentThread?.otherUser?.avatar;
+                  return (
                   <div
                     key={msg.id}
-                    className={`max-w-[80%] p-3 rounded-2xl ${
-                      msg.senderId === user?.id
-                        ? 'ml-auto bg-[#0CCE6B] text-white rounded-br-md'
-                        : 'mr-auto bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-bl-md'
-                    }`}
+                    className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
                   >
-                    <p className="text-sm">{msg.body}</p>
-                    <p className={`text-xs mt-1 ${
-                      msg.senderId === user?.id ? 'text-white/70' : 'text-neutral-500'
-                    }`}>
-                      {formatTime(msg.createdAt)}
-                    </p>
+                    {/* Avatar */}
+                    {senderAvatar ? (
+                      <img
+                        src={senderAvatar}
+                        alt="Avatar"
+                        className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-neutral-400" />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[75%] p-3 rounded-2xl ${
+                        isOwn
+                          ? 'bg-[#0CCE6B] text-white rounded-br-md'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-bl-md'
+                      }`}
+                    >
+                      <p className="text-sm">{msg.body}</p>
+                      <p className={`text-xs mt-1 ${
+                        isOwn ? 'text-white/70' : 'text-neutral-500'
+                      }`}>
+                        {formatTime(msg.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
             )}
