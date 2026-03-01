@@ -316,7 +316,7 @@ export default function Inbox() {
                         />
                       ) : (
                         // 2x2 grid of avatars
-                        <div className="w-12 h-12 grid grid-cols-2 gap-0.5 rounded-full overflow-hidden">
+                        <div className="w-12 h-12 grid grid-cols-2 rounded-full overflow-hidden">
                           {groupAvatars.slice(0, 4).map((avatar, idx) => (
                             avatar ? (
                               <img

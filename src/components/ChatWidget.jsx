@@ -461,8 +461,39 @@ export default function ChatWidget() {
                       >
                         {/* Avatar - Group or Individual */}
                         {thread.isGroup ? (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
-                            <Users className="w-6 h-6 text-white" />
+                          // 2x2 grid of participant avatars for group chats
+                          <div className="w-12 h-12 flex-shrink-0">
+                            {!thread.participants?.length ? (
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+                                <Users className="w-6 h-6 text-white" />
+                              </div>
+                            ) : thread.participants.length === 1 ? (
+                              <img
+                                src={thread.participants[0]?.avatar}
+                                alt=""
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 grid grid-cols-2 rounded-full overflow-hidden">
+                                {thread.participants.slice(0, 4).map((p, idx) => (
+                                  p?.avatar ? (
+                                    <img
+                                      key={idx}
+                                      src={p.avatar}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div
+                                      key={idx}
+                                      className="w-full h-full bg-neutral-300 dark:bg-neutral-600 flex items-center justify-center"
+                                    >
+                                      <User className="w-3 h-3 text-neutral-500" />
+                                    </div>
+                                  )
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ) : thread.otherUser?.avatar ? (
                           <img
