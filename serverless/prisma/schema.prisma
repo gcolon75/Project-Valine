@@ -67,6 +67,11 @@ model User {
   directMessages          DirectMessage[]           @relation("DirectMessageSender")
   threadParticipations    ThreadParticipant[]
 
+  // Feedback system
+  receivedFeedbackRequests FeedbackRequest[]        @relation("FeedbackRequestOwner")
+  sentFeedbackRequests     FeedbackRequest[]        @relation("FeedbackRequestRequester")
+  feedbackAnnotations      FeedbackAnnotation[]
+
   @@index([email])
   @@index([normalizedEmail])
   @@index([username])
@@ -130,6 +135,7 @@ model Post {
   thumbnailUrl   String?
   requiresAccess Boolean    @default(false)
   allowDownload  Boolean    @default(false)
+  allowFeedback  Boolean    @default(false)
 
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -139,6 +145,9 @@ model Post {
   // Access control relations
   grants   AccessGrant[]
   requests AccessRequest[]
+
+  // Feedback requests
+  feedbackRequests FeedbackRequest[]
 
   // Comments
   comments Comment[]
@@ -862,4 +871,54 @@ model DirectMessage {
   @@index([createdAt])
   @@index([threadId, readAt])
   @@map("direct_messages")
+}
+
+// ========================================
+// PDF Feedback System
+// ========================================
+
+model FeedbackRequest {
+  id          String   @id @default(uuid())
+  postId      String
+  requesterId String
+  ownerId     String
+  status      String   @default("pending") // pending, approved, denied
+  message     String?                      // Optional message from requester
+  response    String?                      // Optional response from owner
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  post        Post                 @relation(fields: [postId], references: [id], onDelete: Cascade)
+  owner       User                 @relation("FeedbackRequestOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  requester   User                 @relation("FeedbackRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  annotations FeedbackAnnotation[]
+
+  @@unique([postId, requesterId])
+  @@index([postId])
+  @@index([requesterId])
+  @@index([ownerId, status])
+  @@map("feedback_requests")
+}
+
+model FeedbackAnnotation {
+  id                String   @id @default(uuid())
+  feedbackRequestId String
+  authorId          String
+  type              String   // HIGHLIGHT, PAGE_COMMENT, GENERAL_COMMENT
+  pageNumber        Int?
+  selectionData     Json?    // {startOffset, endOffset, rects: [{x,y,width,height}]}
+  highlightedText   String?  // The actual highlighted text snippet
+  content           String   // Comment/annotation text
+  positionX         Float?   // Position on page (for PAGE_COMMENT)
+  positionY         Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  feedbackRequest FeedbackRequest @relation(fields: [feedbackRequestId], references: [id], onDelete: Cascade)
+  author          User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackRequestId])
+  @@index([authorId])
+  @@index([pageNumber])
+  @@map("feedback_annotations")
 }
