@@ -4,6 +4,7 @@ import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, AlertTriangle, 
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
+import ChatWidget from "../components/ChatWidget";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -103,6 +104,9 @@ export default function AppLayout() {
           <MobileNavItem to="/profile" icon={User} label="Profile" />
         </div>
       </nav>
+
+      {/* Chat Widget - Bottom Right */}
+      <ChatWidget />
     </div>
   );
 }
