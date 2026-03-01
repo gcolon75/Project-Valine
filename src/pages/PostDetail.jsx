@@ -16,9 +16,11 @@ import {
   Eye,
   EyeOff,
   Download,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
+import { requestFeedback, getFeedbackStatus } from '../services/feedbackService';
 import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
@@ -42,6 +44,8 @@ export default function PostDetail() {
   const [videoUrl, setVideoUrl] = useState(null);
   const [viewingPdf, setViewingPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState(null);
+  const [requestingFeedback, setRequestingFeedback] = useState(false);
 
   // Helper function to safely format price
   const formatPrice = (price) => {
@@ -103,6 +107,43 @@ export default function PostDetail() {
 
     fetchVideoUrl();
   }, [post?.mediaAttachment]);
+
+  // Fetch feedback status for PDFs that allow feedback
+  useEffect(() => {
+    const fetchFeedbackStatus = async () => {
+      if (post?.allowFeedback && post?.mediaAttachment?.type === 'pdf' && user && post.authorId !== user.id) {
+        try {
+          const status = await getFeedbackStatus(post.id);
+          setFeedbackStatus(status);
+        } catch (err) {
+          console.error('Error fetching feedback status:', err);
+        }
+      }
+    };
+
+    fetchFeedbackStatus();
+  }, [post?.id, post?.allowFeedback, post?.mediaAttachment?.type, post?.authorId, user]);
+
+  const handleRequestFeedback = async () => {
+    if (!user) {
+      toast.error('Please log in to request feedback access');
+      return;
+    }
+
+    try {
+      setRequestingFeedback(true);
+      await requestFeedback(id);
+      toast.success('Feedback request sent to post owner');
+      // Refresh feedback status
+      const status = await getFeedbackStatus(id);
+      setFeedbackStatus(status);
+    } catch (err) {
+      console.error('Error requesting feedback:', err);
+      toast.error(err.response?.data?.message || 'Failed to request feedback access');
+    } finally {
+      setRequestingFeedback(false);
+    }
+  };
 
   const handleRequestAccess = async () => {
     if (!user) {
@@ -515,43 +556,100 @@ export default function PostDetail() {
                         className="w-full min-h-[400px]"
                       />
                       {/* PDF Actions */}
-                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-end gap-3">
-                        {post.allowDownload && (
+                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-between gap-3">
+                        {/* Feedback Button - Left Side */}
+                        <div>
+                          {post.allowFeedback && !isOwnPost && (
+                            <>
+                              {!feedbackStatus?.hasRequest ? (
+                                <button
+                                  onClick={handleRequestFeedback}
+                                  disabled={requestingFeedback}
+                                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {requestingFeedback ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                      Requesting...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <MessageSquare className="w-4 h-4" />
+                                      Request Feedback Access
+                                    </>
+                                  )}
+                                </button>
+                              ) : feedbackStatus.request?.status === 'pending' ? (
+                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-medium">
+                                  <Clock className="w-4 h-4" />
+                                  Feedback Request Pending
+                                </span>
+                              ) : feedbackStatus.request?.status === 'approved' ? (
+                                <Link
+                                  to={`/feedback/${feedbackStatus.request.id}`}
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Give Feedback
+                                </Link>
+                              ) : feedbackStatus.request?.status === 'denied' ? (
+                                <span className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg font-medium">
+                                  <XCircle className="w-4 h-4" />
+                                  Feedback Request Denied
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                          {post.allowFeedback && isOwnPost && (
+                            <Link
+                              to={`/profile?tab=feedback`}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              View Feedback Requests
+                            </Link>
+                          )}
+                        </div>
+
+                        {/* View/Download Buttons - Right Side */}
+                        <div className="flex items-center gap-3">
+                          {post.allowDownload && (
+                            <button
+                              onClick={handleDownloadPdf}
+                              disabled={downloadingPdf}
+                              className="flex items-center gap-2 px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {downloadingPdf ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Downloading...
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4" />
+                                  Download
+                                </>
+                              )}
+                            </button>
+                          )}
                           <button
-                            onClick={handleDownloadPdf}
-                            disabled={downloadingPdf}
-                            className="flex items-center gap-2 px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleViewPdf}
+                            disabled={viewingPdf}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {downloadingPdf ? (
+                            {viewingPdf ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Downloading...
+                                Loading...
                               </>
                             ) : (
                               <>
-                                <Download className="w-4 h-4" />
-                                Download
+                                <Eye className="w-4 h-4" />
+                                View PDF
                               </>
                             )}
                           </button>
-                        )}
-                        <button
-                          onClick={handleViewPdf}
-                          disabled={viewingPdf}
-                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {viewingPdf ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="w-4 h-4" />
-                              View PDF
-                            </>
-                          )}
-                        </button>
+                        </div>
                       </div>
                     </div>
                   ) : null}

@@ -865,6 +865,88 @@ functions:
           path: /reel-requests/{id}/deny
           method: post
 
+  # ========== FEEDBACK REQUESTS ==========
+  createFeedbackRequest:
+    handler: src/handlers/feedbackRequests.createFeedbackRequest
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /posts/{id}/feedback-request
+          method: post
+  listFeedbackRequests:
+    handler: src/handlers/feedbackRequests.listFeedbackRequests
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests
+          method: get
+  getFeedbackRequest:
+    handler: src/handlers/feedbackRequests.getFeedbackRequest
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests/{id}
+          method: get
+  approveFeedbackRequest:
+    handler: src/handlers/feedbackRequests.approveFeedbackRequest
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests/{id}/approve
+          method: post
+  denyFeedbackRequest:
+    handler: src/handlers/feedbackRequests.denyFeedbackRequest
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests/{id}/deny
+          method: post
+  getFeedbackAnnotations:
+    handler: src/handlers/feedbackRequests.getAnnotations
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests/{id}/annotations
+          method: get
+  createFeedbackAnnotation:
+    handler: src/handlers/feedbackRequests.createAnnotation
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /feedback-requests/{id}/annotations
+          method: post
+  updateFeedbackAnnotation:
+    handler: src/handlers/feedbackRequests.updateAnnotation
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /annotations/{id}
+          method: put
+  deleteFeedbackAnnotation:
+    handler: src/handlers/feedbackRequests.deleteAnnotation
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /annotations/{id}
+          method: delete
+  getFeedbackStatus:
+    handler: src/handlers/feedbackRequests.getFeedbackStatus
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /posts/{id}/feedback-status
+          method: get
+
   # ========== SEARCH ==========
   searchProfiles:
     handler: src/handlers/search.searchProfiles

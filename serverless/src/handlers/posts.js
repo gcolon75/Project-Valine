@@ -78,6 +78,7 @@ export const createPost = async (event) => {
       thumbnailUrl,
       requiresAccess,
       allowDownload,
+      allowFeedback,
       isFree
     } = body;
     
@@ -186,6 +187,7 @@ export const createPost = async (event) => {
         thumbnailUrl: thumbnailUrl || null,
         requiresAccess: requiresAccess || false,
         allowDownload: allowDownload || false,
+        allowFeedback: allowFeedback || false,
       },
       include: { 
         author: { 

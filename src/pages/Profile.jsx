@@ -1,11 +1,12 @@
 // src/pages/Profile.jsx
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
 import { followProfile, unfollowProfile, blockProfile, unblockProfile, getProfileStatus } from '../services/connectionService';
 import { createThread } from '../services/messagesService';
 import { listPosts, likePost as likePostApi, unlikePost as unlikePostApi } from '../services/postService';
+import { listFeedbackRequests, approveFeedbackRequest, denyFeedbackRequest } from '../services/feedbackService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
@@ -98,7 +99,9 @@ export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('posts');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'posts';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,6 +109,13 @@ export default function Profile() {
   // Posts state
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
+
+  // Feedback state (only for own profile)
+  const [receivedFeedback, setReceivedFeedback] = useState([]);
+  const [givenFeedback, setGivenFeedback] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [feedbackSubTab, setFeedbackSubTab] = useState('received');
+  const [processingFeedback, setProcessingFeedback] = useState(null);
   
   // Handler to remove a post from local state after deletion
   const handlePostDelete = (postId) => {
@@ -414,6 +424,67 @@ export default function Profile() {
 
     fetchPosts();
   }, [profile?.userId, profile?.id]);
+
+  // Fetch feedback data when feedback tab is active (own profile only)
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      if (!isOwnProfile || activeTab !== 'feedback') return;
+
+      setLoadingFeedback(true);
+      try {
+        const [received, given] = await Promise.all([
+          listFeedbackRequests({ type: 'received' }),
+          listFeedbackRequests({ type: 'sent' })
+        ]);
+        setReceivedFeedback(received || []);
+        setGivenFeedback(given || []);
+      } catch (err) {
+        console.error('Failed to fetch feedback:', err);
+        setReceivedFeedback([]);
+        setGivenFeedback([]);
+      } finally {
+        setLoadingFeedback(false);
+      }
+    };
+
+    fetchFeedback();
+  }, [isOwnProfile, activeTab]);
+
+  // Handle approve feedback request
+  const handleApproveFeedback = async (requestId) => {
+    setProcessingFeedback(requestId);
+    try {
+      await approveFeedbackRequest(requestId);
+      // Update local state
+      setReceivedFeedback(prev => prev.map(req =>
+        req.id === requestId ? { ...req, status: 'approved' } : req
+      ));
+      toast.success('Feedback request approved');
+    } catch (err) {
+      console.error('Failed to approve feedback:', err);
+      toast.error('Failed to approve request');
+    } finally {
+      setProcessingFeedback(null);
+    }
+  };
+
+  // Handle deny feedback request
+  const handleDenyFeedback = async (requestId) => {
+    setProcessingFeedback(requestId);
+    try {
+      await denyFeedbackRequest(requestId);
+      // Update local state
+      setReceivedFeedback(prev => prev.map(req =>
+        req.id === requestId ? { ...req, status: 'denied' } : req
+      ));
+      toast.success('Feedback request denied');
+    } catch (err) {
+      console.error('Failed to deny feedback:', err);
+      toast.error('Failed to deny request');
+    } finally {
+      setProcessingFeedback(null);
+    }
+  };
 
   if (loading) return <SkeletonProfile />;
   
@@ -769,6 +840,15 @@ export default function Profile() {
             icon={User}
             label="About"
           />
+          {isOwnProfile && (
+            <ProfileTab
+              active={activeTab === 'feedback'}
+              onClick={() => setActiveTab('feedback')}
+              icon={MessageSquare}
+              label="Feedback"
+              count={receivedFeedback.filter(r => r.status === 'pending').length || undefined}
+            />
+          )}
         </div>
       </div>
 
@@ -1084,16 +1164,214 @@ export default function Profile() {
             )}
 
             {/* Empty state when no sections have data */}
-            {!displayData.title && !displayData.bio && 
-             !displayData.credits?.length && 
-             !displayData.education?.length && 
-             !displayData.roles?.length && !displayData.primaryRoles?.length && 
-             !displayData.tags?.length && !displayData.skills?.length && 
+            {!displayData.title && !displayData.bio &&
+             !displayData.credits?.length &&
+             !displayData.education?.length &&
+             !displayData.roles?.length && !displayData.primaryRoles?.length &&
+             !displayData.tags?.length && !displayData.skills?.length &&
              !displayData.externalLinks && (
               <Card padding="default">
                 <p className="text-neutral-500 dark:text-neutral-400 text-center italic py-8">
                   No profile information available yet
                 </p>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'feedback' && isOwnProfile && (
+          <div className="space-y-6">
+            {/* Feedback Sub-tabs */}
+            <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-700">
+              <button
+                onClick={() => setFeedbackSubTab('received')}
+                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+                  feedbackSubTab === 'received'
+                    ? 'border-[#0CCE6B] text-[#0CCE6B]'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                Received Feedback
+                {receivedFeedback.filter(r => r.status === 'pending').length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs">
+                    {receivedFeedback.filter(r => r.status === 'pending').length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setFeedbackSubTab('given')}
+                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+                  feedbackSubTab === 'given'
+                    ? 'border-[#0CCE6B] text-[#0CCE6B]'
+                    : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                Given Feedback
+              </button>
+            </div>
+
+            {loadingFeedback ? (
+              <Card padding="default">
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-[#0CCE6B] border-t-transparent rounded-full animate-spin" />
+                </div>
+              </Card>
+            ) : feedbackSubTab === 'received' ? (
+              <div className="space-y-4">
+                {/* Pending Requests Section */}
+                {receivedFeedback.filter(r => r.status === 'pending').length > 0 && (
+                  <Card title="Pending Approval" padding="default">
+                    <div className="space-y-4">
+                      {receivedFeedback.filter(r => r.status === 'pending').map(request => (
+                        <div key={request.id} className="flex items-start gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <img
+                            src={request.requester?.avatar || 'https://i.pravatar.cc/150?img=1'}
+                            alt={request.requester?.displayName || request.requester?.username}
+                            className="w-12 h-12 rounded-full flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-neutral-900 dark:text-white">
+                              {request.requester?.displayName || request.requester?.username}
+                            </p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                              wants to give feedback on <span className="font-medium">{request.post?.title || 'your PDF'}</span>
+                            </p>
+                            {request.message && (
+                              <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-2 italic">
+                                "{request.message}"
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleApproveFeedback(request.id)}
+                              disabled={processingFeedback === request.id}
+                            >
+                              {processingFeedback === request.id ? 'Processing...' : 'Approve'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleDenyFeedback(request.id)}
+                              disabled={processingFeedback === request.id}
+                            >
+                              Deny
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Approved/Active Feedback Sessions */}
+                <Card title="Active Feedback" padding="default">
+                  {receivedFeedback.filter(r => r.status === 'approved').length > 0 ? (
+                    <div className="space-y-4">
+                      {receivedFeedback.filter(r => r.status === 'approved').map(request => (
+                        <div
+                          key={request.id}
+                          onClick={() => navigate(`/feedback/${request.id}`)}
+                          className="flex items-center gap-4 p-4 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:border-[#0CCE6B] cursor-pointer transition-colors"
+                        >
+                          <img
+                            src={request.requester?.avatar || 'https://i.pravatar.cc/150?img=1'}
+                            alt={request.requester?.displayName || request.requester?.username}
+                            className="w-12 h-12 rounded-full flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-neutral-900 dark:text-white">
+                              {request.requester?.displayName || request.requester?.username}
+                            </p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                              Feedback on <span className="font-medium">{request.post?.title || 'PDF'}</span>
+                            </p>
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {request._count?.annotations || 0} annotations
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 text-[#0CCE6B]">
+                            <span className="text-sm font-medium">View</span>
+                            <ExternalLink className="w-4 h-4" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No active feedback"
+                      description="Approved feedback sessions will appear here"
+                    />
+                  )}
+                </Card>
+              </div>
+            ) : (
+              /* Given Feedback Tab */
+              <Card title="Feedback You've Given" padding="default">
+                {givenFeedback.length > 0 ? (
+                  <div className="space-y-4">
+                    {givenFeedback.map(request => (
+                      <div
+                        key={request.id}
+                        onClick={() => request.status === 'approved' && navigate(`/feedback/${request.id}`)}
+                        className={`flex items-center gap-4 p-4 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-lg transition-colors ${
+                          request.status === 'approved' ? 'hover:border-[#0CCE6B] cursor-pointer' : ''
+                        }`}
+                      >
+                        {request.post?.thumbnailUrl ? (
+                          <img
+                            src={request.post.thumbnailUrl}
+                            alt={request.post.title}
+                            className="w-16 h-20 rounded object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-20 rounded bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-8 h-8 text-neutral-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-neutral-900 dark:text-white">
+                            {request.post?.title || 'Untitled PDF'}
+                          </p>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            by {request.owner?.displayName || request.owner?.username}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              request.status === 'approved'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                : request.status === 'pending'
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                            }`}>
+                              {request.status === 'approved' ? 'Approved' : request.status === 'pending' ? 'Pending' : 'Denied'}
+                            </span>
+                            {request.status === 'approved' && (
+                              <span className="text-xs text-neutral-500">
+                                {request._count?.annotations || 0} annotations
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {request.status === 'approved' && (
+                          <div className="flex items-center gap-2 text-[#0CCE6B]">
+                            <span className="text-sm font-medium">Continue</span>
+                            <ExternalLink className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="No feedback given yet"
+                    description="Feedback you give on others' PDFs will appear here"
+                  />
+                )}
               </Card>
             )}
           </div>

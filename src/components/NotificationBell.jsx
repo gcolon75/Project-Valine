@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, MessageSquare, CheckCircle, XCircle, FileText } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUnread } from '../context/UnreadContext';
 import { getNotifications, markAllNotificationsRead } from '../services/notificationsService';
@@ -74,6 +74,14 @@ export default function NotificationBell() {
         return <UserPlus className="w-4 h-4 text-[#0CCE6B]" />;
       case 'mention':
         return <AtSign className="w-4 h-4 text-yellow-500" />;
+      case 'feedback_request':
+        return <MessageSquare className="w-4 h-4 text-purple-500" />;
+      case 'feedback_request_approved':
+        return <CheckCircle className="w-4 h-4 text-[#0CCE6B]" />;
+      case 'feedback_request_denied':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'new_feedback':
+        return <FileText className="w-4 h-4 text-purple-500" />;
       default:
         return <Bell className="w-4 h-4 text-neutral-500" />;
     }
@@ -96,6 +104,14 @@ export default function NotificationBell() {
         return <><span className="font-semibold">{username}</span> commented on your post</>;
       case 'mention':
         return <><span className="font-semibold">{username}</span> mentioned you in a comment</>;
+      case 'feedback_request':
+        return <><span className="font-semibold">{username}</span> requested to give feedback on your PDF</>;
+      case 'feedback_request_approved':
+        return <>Your feedback request was approved</>;
+      case 'feedback_request_denied':
+        return <>Your feedback request was denied</>;
+      case 'new_feedback':
+        return <><span className="font-semibold">{username}</span> left feedback on your PDF</>;
       default:
         return notification.message || 'New notification';
     }
@@ -113,6 +129,27 @@ export default function NotificationBell() {
         navigate(`/profile/${username}`);
       }
     } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention' || normalizedType === 'comment_like') {
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/posts/${postId}`);
+      }
+    } else if (normalizedType === 'feedback_request') {
+      // Go to profile feedback tab to manage requests
+      navigate('/profile?tab=feedback');
+    } else if (normalizedType === 'feedback_request_approved' || normalizedType === 'new_feedback') {
+      // Go to the feedback view for the specific request
+      const requestId = notification.metadata?.requestId;
+      if (requestId) {
+        navigate(`/feedback/${requestId}`);
+      } else {
+        // Fallback to the post
+        const postId = notification.metadata?.postId;
+        if (postId) {
+          navigate(`/posts/${postId}`);
+        }
+      }
+    } else if (normalizedType === 'feedback_request_denied') {
+      // Go to the post
       const postId = notification.metadata?.postId;
       if (postId) {
         navigate(`/posts/${postId}`);

@@ -18,6 +18,7 @@ import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
 import ProfileEdit from './pages/ProfileEdit.jsx';
 import PostDetail from './pages/PostDetail.jsx';
+import FeedbackView from './pages/FeedbackView.jsx';
 import ScriptsIndex from './pages/Scripts/Index.jsx';
 import ScriptsNew from './pages/Scripts/New.jsx';
 import ScriptsShow from './pages/Scripts/Show.jsx';
@@ -67,6 +68,8 @@ function App() {
         <Route path="/profile-edit" element={<ProfileEdit />} />
         {/* Posts */}
         <Route path="/posts/:id" element={<PostDetail />} />
+        {/* Feedback */}
+        <Route path="/feedback/:id" element={<FeedbackView />} />
         {/* Scripts */}
         <Route path="/scripts" element={<ScriptsIndex />} />
         <Route path="/scripts/new" element={<ScriptsNew />} />
