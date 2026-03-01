@@ -65,6 +65,7 @@ model User {
   threadsAsA              MessageThread[]           @relation("ThreadUserA")
   threadsAsB              MessageThread[]           @relation("ThreadUserB")
   directMessages          DirectMessage[]           @relation("DirectMessageSender")
+  threadParticipations    ThreadParticipant[]
 
   @@index([email])
   @@index([normalizedEmail])
@@ -805,20 +806,42 @@ model Block {
 
 model MessageThread {
   id        String   @id @default(uuid())
-  userAId   String
-  userBId   String
+  // For 1:1 chats (legacy support)
+  userAId   String?
+  userBId   String?
+  // For group chats
+  isGroup   Boolean  @default(false)
+  name      String?  // Group name (null for 1:1 chats)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userA    User            @relation("ThreadUserA", fields: [userAId], references: [id], onDelete: Cascade)
-  userB    User            @relation("ThreadUserB", fields: [userBId], references: [id], onDelete: Cascade)
-  messages DirectMessage[]
+  userA        User?               @relation("ThreadUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB        User?               @relation("ThreadUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages     DirectMessage[]
+  participants ThreadParticipant[]
 
   @@unique([userAId, userBId])
   @@index([userAId])
   @@index([userBId])
   @@index([updatedAt])
+  @@index([isGroup])
   @@map("message_threads")
+}
+
+model ThreadParticipant {
+  id        String   @id @default(uuid())
+  threadId  String
+  userId    String
+  role      String   @default("member") // "admin" or "member"
+  joinedAt  DateTime @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("thread_participants")
 }
 
 model DirectMessage {

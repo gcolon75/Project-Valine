@@ -99,6 +99,11 @@ export const handler = async (event, context) => {
       }
     }
 
+    // /me/messages/threads/group (create group chat) - must come before generic {threadId}
+    if (method === 'POST' && path === '/me/messages/threads/group') {
+      return messages.createGroupThread(event, context);
+    }
+
     // /me/messages/threads/{threadId}
     if (method === 'GET' && /^\/me\/messages\/threads\/[^/]+$/.test(path)) {
       return messages.getThread(event, context);

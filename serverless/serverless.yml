@@ -543,6 +543,9 @@ functions:
           path: /me/messages/threads
           method: post
       - httpApi:
+          path: /me/messages/threads/group
+          method: post
+      - httpApi:
           path: /me/messages/threads/{threadId}
           method: get
       - httpApi:

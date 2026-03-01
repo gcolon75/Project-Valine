@@ -117,6 +117,17 @@ export const createThread = async (recipientUserId) => {
 };
 
 /**
+ * Create a new group chat
+ * @param {string} name - Group name
+ * @param {string[]} participantIds - Array of user IDs to add
+ * @returns {Promise<Object>} Thread data
+ */
+export const createGroupThread = async (name, participantIds) => {
+  const { data } = await apiClient.post('/me/messages/threads/group', { name, participantIds });
+  return data;
+};
+
+/**
  * Get messages in a DM thread
  * @param {string} threadId - Thread ID
  * @param {number} limit - Number of messages

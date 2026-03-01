@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, ArrowLeft, Loader2, User, Search, Plus } from 'lucide-react';
+import { MessageSquare, X, Send, ArrowLeft, Loader2, User, Search, Plus, Users, Check } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getThreads, getThread, sendThreadMessage, createThread } from '../services/messagesService';
+import { getThreads, getThread, sendThreadMessage, createThread, createGroupThread } from '../services/messagesService';
 import { searchUsers } from '../services/search';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
@@ -28,6 +28,11 @@ export default function ChatWidget() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [creatingThread, setCreatingThread] = useState(false);
+
+  // Group chat state
+  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [groupName, setGroupName] = useState('');
 
   // Determine if we should hide the widget
   const isOnInboxPage = location.pathname.startsWith('/inbox');
@@ -126,24 +131,68 @@ export default function ChatWidget() {
     setMessages([]);
     setSearchQuery('');
     setSearchResults([]);
+    setIsGroupMode(false);
+    setSelectedUsers([]);
+    setGroupName('');
     fetchThreads();
   };
 
   const handleStartConversation = async (selectedUser) => {
+    if (isGroupMode) {
+      // Toggle user selection for group
+      setSelectedUsers(prev => {
+        const isSelected = prev.some(u => u.id === selectedUser.id);
+        if (isSelected) {
+          return prev.filter(u => u.id !== selectedUser.id);
+        } else {
+          return [...prev, selectedUser];
+        }
+      });
+    } else {
+      // Start 1:1 conversation
+      setCreatingThread(true);
+      try {
+        const thread = await createThread(selectedUser.id);
+        setSearchQuery('');
+        setSearchResults([]);
+        setCurrentThread({
+          id: thread.id,
+          otherUser: selectedUser
+        });
+        setView('conversation');
+        setMessages([]);
+      } catch (err) {
+        console.error('Failed to create thread:', err);
+      } finally {
+        setCreatingThread(false);
+      }
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedUsers.length === 0) return;
+
     setCreatingThread(true);
     try {
-      const thread = await createThread(selectedUser.id);
+      const thread = await createGroupThread(
+        groupName.trim(),
+        selectedUsers.map(u => u.id)
+      );
       setSearchQuery('');
       setSearchResults([]);
-      // Set up the thread and switch to conversation view
+      setIsGroupMode(false);
+      setSelectedUsers([]);
+      setGroupName('');
       setCurrentThread({
         id: thread.id,
-        otherUser: selectedUser
+        isGroup: true,
+        name: thread.name,
+        participants: thread.participants
       });
       setView('conversation');
       setMessages([]);
     } catch (err) {
-      console.error('Failed to create thread:', err);
+      console.error('Failed to create group:', err);
     } finally {
       setCreatingThread(false);
     }
@@ -198,10 +247,16 @@ export default function ChatWidget() {
             )}
             <div className="flex-1">
               <h3 className="text-white font-semibold">
-                {view === 'threads' ? 'Messages' : view === 'search' ? 'New Message' : currentThread?.otherUser?.displayName || 'Chat'}
+                {view === 'threads' ? 'Messages' :
+                 view === 'search' ? (isGroupMode ? 'New Group' : 'New Message') :
+                 currentThread?.isGroup ? currentThread.name :
+                 currentThread?.otherUser?.displayName || 'Chat'}
               </h3>
-              {view === 'conversation' && currentThread?.otherUser?.username && (
+              {view === 'conversation' && !currentThread?.isGroup && currentThread?.otherUser?.username && (
                 <p className="text-white/70 text-sm">@{currentThread.otherUser.username}</p>
+              )}
+              {view === 'conversation' && currentThread?.isGroup && currentThread?.participants && (
+                <p className="text-white/70 text-sm">{currentThread.participants.length + 1} members</p>
               )}
             </div>
             {view === 'threads' && (
@@ -230,6 +285,67 @@ export default function ChatWidget() {
             ) : view === 'search' ? (
               /* User Search View */
               <div className="flex flex-col h-full">
+                {/* Mode Toggle */}
+                <div className="p-3 border-b border-neutral-200 dark:border-neutral-700 flex gap-2">
+                  <button
+                    onClick={() => { setIsGroupMode(false); setSelectedUsers([]); setGroupName(''); }}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      !isGroupMode
+                        ? 'bg-[#0CCE6B] text-white'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    <User className="w-4 h-4 inline mr-1" />
+                    Direct
+                  </button>
+                  <button
+                    onClick={() => setIsGroupMode(true)}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                      isGroupMode
+                        ? 'bg-[#0CCE6B] text-white'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 inline mr-1" />
+                    Group
+                  </button>
+                </div>
+
+                {/* Group Name Input (only in group mode) */}
+                {isGroupMode && (
+                  <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <input
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="Group name..."
+                      className="w-full px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                    />
+                  </div>
+                )}
+
+                {/* Selected Users (only in group mode) */}
+                {isGroupMode && selectedUsers.length > 0 && (
+                  <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUsers.map(u => (
+                        <span
+                          key={u.id}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#0CCE6B]/20 text-[#0CCE6B] rounded-full text-xs"
+                        >
+                          {u.displayName || u.username}
+                          <button
+                            onClick={() => setSelectedUsers(prev => prev.filter(x => x.id !== u.id))}
+                            className="hover:text-red-500"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Search Input */}
                 <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
                   <div className="relative">
@@ -266,40 +382,73 @@ export default function ChatWidget() {
                     </div>
                   ) : (
                     <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-                      {searchResults.map(searchUser => (
-                        <button
-                          key={searchUser.id}
-                          onClick={() => handleStartConversation(searchUser)}
-                          disabled={creatingThread}
-                          className="w-full p-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left disabled:opacity-50"
-                        >
-                          {searchUser.avatar ? (
-                            <img
-                              src={searchUser.avatar}
-                              alt={searchUser.displayName || searchUser.username}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
-                              <User className="w-5 h-5 text-neutral-400" />
+                      {searchResults.map(searchUser => {
+                        const isSelected = selectedUsers.some(u => u.id === searchUser.id);
+                        return (
+                          <button
+                            key={searchUser.id}
+                            onClick={() => handleStartConversation(searchUser)}
+                            disabled={creatingThread && !isGroupMode}
+                            className={`w-full p-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left disabled:opacity-50 ${
+                              isSelected ? 'bg-[#0CCE6B]/10' : ''
+                            }`}
+                          >
+                            {searchUser.avatar ? (
+                              <img
+                                src={searchUser.avatar}
+                                alt={searchUser.displayName || searchUser.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                                <User className="w-5 h-5 text-neutral-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-neutral-900 dark:text-white truncate">
+                                {searchUser.displayName || searchUser.username}
+                              </p>
+                              <p className="text-sm text-neutral-500 truncate">
+                                @{searchUser.username}
+                              </p>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-neutral-900 dark:text-white truncate">
-                              {searchUser.displayName || searchUser.username}
-                            </p>
-                            <p className="text-sm text-neutral-500 truncate">
-                              @{searchUser.username}
-                            </p>
-                          </div>
-                          {creatingThread && (
-                            <Loader2 className="w-4 h-4 text-[#0CCE6B] animate-spin" />
-                          )}
-                        </button>
-                      ))}
+                            {isGroupMode ? (
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                isSelected
+                                  ? 'bg-[#0CCE6B] border-[#0CCE6B]'
+                                  : 'border-neutral-300 dark:border-neutral-600'
+                              }`}>
+                                {isSelected && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                            ) : creatingThread && (
+                              <Loader2 className="w-4 h-4 text-[#0CCE6B] animate-spin" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
+
+                {/* Create Group Button */}
+                {isGroupMode && selectedUsers.length > 0 && (
+                  <div className="p-3 border-t border-neutral-200 dark:border-neutral-700">
+                    <button
+                      onClick={handleCreateGroup}
+                      disabled={!groupName.trim() || creatingThread}
+                      className="w-full py-2 bg-[#0CCE6B] text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0BBE60] transition-colors flex items-center justify-center gap-2"
+                    >
+                      {creatingThread ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Users className="w-4 h-4" />
+                          Create Group ({selectedUsers.length} members)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : view === 'threads' ? (
               /* Thread List */
@@ -317,7 +466,12 @@ export default function ChatWidget() {
                       onClick={() => openThread(thread)}
                       className="w-full p-4 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left"
                     >
-                      {thread.otherUser?.avatar ? (
+                      {/* Avatar - Group or Individual */}
+                      {thread.isGroup ? (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+                          <Users className="w-6 h-6 text-white" />
+                        </div>
+                      ) : thread.otherUser?.avatar ? (
                         <img
                           src={thread.otherUser.avatar}
                           alt={thread.otherUser.displayName}
@@ -325,13 +479,13 @@ export default function ChatWidget() {
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
-                          <MessageSquare className="w-6 h-6 text-neutral-400" />
+                          <User className="w-6 h-6 text-neutral-400" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-semibold text-neutral-900 dark:text-white truncate">
-                            {thread.otherUser?.displayName || 'Unknown'}
+                            {thread.isGroup ? thread.name : thread.otherUser?.displayName || 'Unknown'}
                           </p>
                           <span className="text-xs text-neutral-500">
                             {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
@@ -355,39 +509,50 @@ export default function ChatWidget() {
               <div className="flex flex-col p-4 space-y-3">
                 {messages.map(msg => {
                   const isOwn = msg.senderId === user?.id;
-                  const senderAvatar = isOwn ? user?.avatar : currentThread?.otherUser?.avatar;
+                  // For group chats, use the sender from the message; for 1:1, use otherUser
+                  const senderAvatar = isOwn
+                    ? user?.avatar
+                    : msg.sender?.avatar || currentThread?.otherUser?.avatar;
+                  const senderName = isOwn
+                    ? null
+                    : msg.sender?.displayName || currentThread?.otherUser?.displayName;
+
                   return (
-                  <div
-                    key={msg.id}
-                    className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-                  >
-                    {/* Avatar */}
-                    {senderAvatar ? (
-                      <img
-                        src={senderAvatar}
-                        alt="Avatar"
-                        className="w-7 h-7 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-neutral-400" />
-                      </div>
-                    )}
                     <div
-                      className={`max-w-[75%] p-3 rounded-2xl ${
-                        isOwn
-                          ? 'bg-[#0CCE6B] text-white rounded-br-md'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-bl-md'
-                      }`}
+                      key={msg.id}
+                      className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
                     >
-                      <p className="text-sm">{msg.body}</p>
-                      <p className={`text-xs mt-1 ${
-                        isOwn ? 'text-white/70' : 'text-neutral-500'
-                      }`}>
-                        {formatTime(msg.createdAt)}
-                      </p>
+                      {/* Avatar */}
+                      {senderAvatar ? (
+                        <img
+                          src={senderAvatar}
+                          alt="Avatar"
+                          className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-neutral-400" />
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-[75%] p-3 rounded-2xl ${
+                          isOwn
+                            ? 'bg-[#0CCE6B] text-white rounded-br-md'
+                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-bl-md'
+                        }`}
+                      >
+                        {/* Show sender name for group chats */}
+                        {currentThread?.isGroup && !isOwn && senderName && (
+                          <p className="text-xs font-medium text-[#0CCE6B] mb-1">{senderName}</p>
+                        )}
+                        <p className="text-sm">{msg.body}</p>
+                        <p className={`text-xs mt-1 ${
+                          isOwn ? 'text-white/70' : 'text-neutral-500'
+                        }`}>
+                          {formatTime(msg.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
                   );
                 })}
                 <div ref={messagesEndRef} />
