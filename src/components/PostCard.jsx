@@ -521,8 +521,8 @@ export default function PostCard({ post, onDelete, onLike }) {
                   </>
                 )}
               </button>
-            ) : post.mediaId || post.mediaUrl ? (
-              // Download button for accessible content with media
+            ) : post.allowDownload && (post.mediaId || post.mediaUrl) ? (
+              // Download button for accessible content with media (only if downloads allowed)
               <button
                 onClick={handleDownload}
                 disabled={downloading}

@@ -817,6 +817,8 @@ export default function Profile() {
                     mediaUrl: post.media?.[0] || '',
                     mediaId: post.mediaId,
                     mediaAttachment: post.mediaAttachment,
+                    audioUrl: post.audioUrl,
+                    allowDownload: post.allowDownload,
                     visibility: post.visibility || 'public',
                     hasAccess: post.hasAccess,
                     accessRequestStatus: post.accessRequestStatus,
