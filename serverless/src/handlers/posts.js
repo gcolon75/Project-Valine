@@ -265,8 +265,13 @@ export const listPosts = async (event) => {
         let posterUrl = null;
         let url = null;
 
+        // Check if media is video/audio by type OR file extension
+        const isVideoByExtension = media.s3Key && /\.(mp4|mov|webm)$/i.test(media.s3Key);
+        const isAudioByExtension = media.s3Key && /\.(mp3|wav|m4a)$/i.test(media.s3Key);
+        const needsSignedUrl = media.type === 'video' || media.type === 'audio' || isVideoByExtension || isAudioByExtension;
+
         // Generate signed URL for the main media file (for videos and audio)
-        if (media.s3Key && (media.type === 'video' || media.type === 'audio')) {
+        if (media.s3Key && needsSignedUrl) {
           try {
             const command = new GetObjectCommand({
               Bucket: MEDIA_BUCKET,
@@ -396,8 +401,13 @@ export const getPost = async (event) => {
         let url = null;
         let posterUrl = null;
 
+        // Check if media is video/audio by type OR file extension
+        const isVideoByExtension = mediaRecord.s3Key && /\.(mp4|mov|webm)$/i.test(mediaRecord.s3Key);
+        const isAudioByExtension = mediaRecord.s3Key && /\.(mp3|wav|m4a)$/i.test(mediaRecord.s3Key);
+        const needsSignedUrl = mediaRecord.type === 'video' || mediaRecord.type === 'audio' || isVideoByExtension || isAudioByExtension;
+
         // Generate signed URL for main media file (for videos and audio)
-        if (mediaRecord.s3Key && (mediaRecord.type === 'video' || mediaRecord.type === 'audio')) {
+        if (mediaRecord.s3Key && needsSignedUrl) {
           try {
             const command = new GetObjectCommand({
               Bucket: MEDIA_BUCKET,
