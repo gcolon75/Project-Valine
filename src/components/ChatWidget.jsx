@@ -29,8 +29,7 @@ export default function ChatWidget() {
   const [searching, setSearching] = useState(false);
   const [creatingThread, setCreatingThread] = useState(false);
 
-  // Group chat state
-  const [isGroupMode, setIsGroupMode] = useState(false);
+  // Multi-select state (1 user = DM, 2+ users = group)
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [groupName, setGroupName] = useState('');
 
@@ -131,68 +130,62 @@ export default function ChatWidget() {
     setMessages([]);
     setSearchQuery('');
     setSearchResults([]);
-    setIsGroupMode(false);
     setSelectedUsers([]);
     setGroupName('');
     fetchThreads();
   };
 
-  const handleStartConversation = async (selectedUser) => {
-    if (isGroupMode) {
-      // Toggle user selection for group
-      setSelectedUsers(prev => {
-        const isSelected = prev.some(u => u.id === selectedUser.id);
-        if (isSelected) {
-          return prev.filter(u => u.id !== selectedUser.id);
-        } else {
-          return [...prev, selectedUser];
-        }
-      });
-    } else {
-      // Start 1:1 conversation
-      setCreatingThread(true);
-      try {
-        const thread = await createThread(selectedUser.id);
-        setSearchQuery('');
-        setSearchResults([]);
-        setCurrentThread({
-          id: thread.id,
-          otherUser: selectedUser
-        });
-        setView('conversation');
-        setMessages([]);
-      } catch (err) {
-        console.error('Failed to create thread:', err);
-      } finally {
-        setCreatingThread(false);
+  const handleToggleUser = (selectedUser) => {
+    setSelectedUsers(prev => {
+      const isSelected = prev.some(u => u.id === selectedUser.id);
+      if (isSelected) {
+        return prev.filter(u => u.id !== selectedUser.id);
+      } else {
+        return [...prev, selectedUser];
       }
-    }
+    });
   };
 
-  const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedUsers.length === 0) return;
+  const handleStartChat = async () => {
+    if (selectedUsers.length === 0) return;
 
     setCreatingThread(true);
     try {
-      const thread = await createGroupThread(
-        groupName.trim(),
-        selectedUsers.map(u => u.id)
-      );
-      setSearchQuery('');
-      setSearchResults([]);
-      setIsGroupMode(false);
-      setSelectedUsers([]);
-      setGroupName('');
-      setCurrentThread({
-        id: thread.id,
-        isGroup: true,
-        name: thread.name,
-        participants: thread.participants
-      });
-      setView('conversation');
-      setMessages([]);
+      if (selectedUsers.length === 1) {
+        // 1:1 chat
+        const thread = await createThread(selectedUsers[0].id);
+        setSearchQuery('');
+        setSearchResults([]);
+        setSelectedUsers([]);
+        setCurrentThread({
+          id: thread.id,
+          otherUser: selectedUsers[0]
+        });
+        setView('conversation');
+        setMessages([]);
+      } else {
+        // Group chat - need a name
+        if (!groupName.trim()) return;
+
+        const thread = await createGroupThread(
+          groupName.trim(),
+          selectedUsers.map(u => u.id)
+        );
+        setSearchQuery('');
+        setSearchResults([]);
+        setSelectedUsers([]);
+        setGroupName('');
+        setCurrentThread({
+          id: thread.id,
+          isGroup: true,
+          name: thread.name,
+          participants: thread.participants
+        });
+        setView('conversation');
+        setMessages([]);
+      }
     } catch (err) {
-      console.error('Failed to create group:', err);
+      console.error('Failed to create chat:', err);
     } finally {
       setCreatingThread(false);
     }
@@ -248,7 +241,7 @@ export default function ChatWidget() {
             <div className="flex-1">
               <h3 className="text-white font-semibold">
                 {view === 'threads' ? 'Messages' :
-                 view === 'search' ? (isGroupMode ? 'New Group' : 'New Message') :
+                 view === 'search' ? 'New Chat' :
                  currentThread?.isGroup ? currentThread.name :
                  currentThread?.otherUser?.displayName || 'Chat'}
               </h3>
@@ -285,47 +278,8 @@ export default function ChatWidget() {
             ) : view === 'search' ? (
               /* User Search View */
               <div className="flex flex-col h-full">
-                {/* Mode Toggle */}
-                <div className="p-3 border-b border-neutral-200 dark:border-neutral-700 flex gap-2">
-                  <button
-                    onClick={() => { setIsGroupMode(false); setSelectedUsers([]); setGroupName(''); }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                      !isGroupMode
-                        ? 'bg-[#0CCE6B] text-white'
-                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    <User className="w-4 h-4 inline mr-1" />
-                    Direct
-                  </button>
-                  <button
-                    onClick={() => setIsGroupMode(true)}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                      isGroupMode
-                        ? 'bg-[#0CCE6B] text-white'
-                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    <Users className="w-4 h-4 inline mr-1" />
-                    Group
-                  </button>
-                </div>
-
-                {/* Group Name Input (only in group mode) */}
-                {isGroupMode && (
-                  <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
-                    <input
-                      type="text"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="Group name..."
-                      className="w-full px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
-                    />
-                  </div>
-                )}
-
-                {/* Selected Users (only in group mode) */}
-                {isGroupMode && selectedUsers.length > 0 && (
+                {/* Selected Users */}
+                {selectedUsers.length > 0 && (
                   <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
                     <div className="flex flex-wrap gap-2">
                       {selectedUsers.map(u => (
@@ -346,6 +300,19 @@ export default function ChatWidget() {
                   </div>
                 )}
 
+                {/* Group Name Input (only when 2+ users selected) */}
+                {selectedUsers.length >= 2 && (
+                  <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <input
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="Group name..."
+                      className="w-full px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                    />
+                  </div>
+                )}
+
                 {/* Search Input */}
                 <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
                   <div className="relative">
@@ -354,7 +321,7 @@ export default function ChatWidget() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search for a user..."
+                      placeholder="Search for users..."
                       autoFocus
                       className="w-full pl-9 pr-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                     />
@@ -369,7 +336,7 @@ export default function ChatWidget() {
                   {searchQuery.length < 2 ? (
                     <div className="flex flex-col items-center justify-center h-full text-neutral-500 p-4">
                       <Search className="w-10 h-10 mb-2 opacity-50" />
-                      <p className="text-sm">Enter at least 2 characters</p>
+                      <p className="text-sm text-center">Search for users to chat with.<br/>Select multiple for a group chat.</p>
                     </div>
                   ) : searching ? (
                     <div className="flex items-center justify-center h-full">
@@ -387,9 +354,8 @@ export default function ChatWidget() {
                         return (
                           <button
                             key={searchUser.id}
-                            onClick={() => handleStartConversation(searchUser)}
-                            disabled={creatingThread && !isGroupMode}
-                            className={`w-full p-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left disabled:opacity-50 ${
+                            onClick={() => handleToggleUser(searchUser)}
+                            className={`w-full p-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left ${
                               isSelected ? 'bg-[#0CCE6B]/10' : ''
                             }`}
                           >
@@ -412,17 +378,13 @@ export default function ChatWidget() {
                                 @{searchUser.username}
                               </p>
                             </div>
-                            {isGroupMode ? (
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                isSelected
-                                  ? 'bg-[#0CCE6B] border-[#0CCE6B]'
-                                  : 'border-neutral-300 dark:border-neutral-600'
-                              }`}>
-                                {isSelected && <Check className="w-3 h-3 text-white" />}
-                              </div>
-                            ) : creatingThread && (
-                              <Loader2 className="w-4 h-4 text-[#0CCE6B] animate-spin" />
-                            )}
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected
+                                ? 'bg-[#0CCE6B] border-[#0CCE6B]'
+                                : 'border-neutral-300 dark:border-neutral-600'
+                            }`}>
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                            </div>
                           </button>
                         );
                       })}
@@ -430,16 +392,21 @@ export default function ChatWidget() {
                   )}
                 </div>
 
-                {/* Create Group Button */}
-                {isGroupMode && selectedUsers.length > 0 && (
+                {/* Start Chat Button */}
+                {selectedUsers.length > 0 && (
                   <div className="p-3 border-t border-neutral-200 dark:border-neutral-700">
                     <button
-                      onClick={handleCreateGroup}
-                      disabled={!groupName.trim() || creatingThread}
+                      onClick={handleStartChat}
+                      disabled={(selectedUsers.length >= 2 && !groupName.trim()) || creatingThread}
                       className="w-full py-2 bg-[#0CCE6B] text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0BBE60] transition-colors flex items-center justify-center gap-2"
                     >
                       {creatingThread ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : selectedUsers.length === 1 ? (
+                        <>
+                          <MessageSquare className="w-4 h-4" />
+                          Start Chat
+                        </>
                       ) : (
                         <>
                           <Users className="w-4 h-4" />
