@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, ArrowLeft, Loader2, User, Search, Plus, Users, Check } from 'lucide-react';
+import { MessageSquare, X, Send, ArrowLeft, Loader2, User, Search, Plus, Users, Check, Trash2, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getThreads, getThread, sendThreadMessage, createThread, createGroupThread } from '../services/messagesService';
+import { getThreads, getThread, sendThreadMessage, createThread, createGroupThread, leaveThread } from '../services/messagesService';
 import { searchUsers } from '../services/search';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
@@ -32,6 +32,10 @@ export default function ChatWidget() {
   // Multi-select state (1 user = DM, 2+ users = group)
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [groupName, setGroupName] = useState('');
+
+  // Delete/leave thread state
+  const [threadToDelete, setThreadToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Determine if we should hide the widget
   const isOnInboxPage = location.pathname.startsWith('/inbox');
@@ -188,6 +192,20 @@ export default function ChatWidget() {
       console.error('Failed to create chat:', err);
     } finally {
       setCreatingThread(false);
+    }
+  };
+
+  const handleDeleteThread = async () => {
+    if (!threadToDelete) return;
+    setDeleting(true);
+    try {
+      await leaveThread(threadToDelete.id);
+      setThreads(prev => prev.filter(t => t.id !== threadToDelete.id));
+      setThreadToDelete(null);
+    } catch (err) {
+      console.error('Failed to delete/leave thread:', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -428,46 +446,55 @@ export default function ChatWidget() {
               ) : (
                 <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
                   {threads.map(thread => (
-                    <button
-                      key={thread.id}
-                      onClick={() => openThread(thread)}
-                      className="w-full p-4 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left"
-                    >
-                      {/* Avatar - Group or Individual */}
-                      {thread.isGroup ? (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
-                          <Users className="w-6 h-6 text-white" />
-                        </div>
-                      ) : thread.otherUser?.avatar ? (
-                        <img
-                          src={thread.otherUser.avatar}
-                          alt={thread.otherUser.displayName}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
-                          <User className="w-6 h-6 text-neutral-400" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-neutral-900 dark:text-white truncate">
-                            {thread.isGroup ? thread.name : thread.otherUser?.displayName || 'Unknown'}
+                    <div key={thread.id} className="relative group">
+                      <button
+                        onClick={() => openThread(thread)}
+                        className="w-full p-4 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left"
+                      >
+                        {/* Avatar - Group or Individual */}
+                        {thread.isGroup ? (
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+                            <Users className="w-6 h-6 text-white" />
+                          </div>
+                        ) : thread.otherUser?.avatar ? (
+                          <img
+                            src={thread.otherUser.avatar}
+                            alt={thread.otherUser.displayName}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                            <User className="w-6 h-6 text-neutral-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-neutral-900 dark:text-white truncate">
+                              {thread.isGroup ? thread.name : thread.otherUser?.displayName || 'Unknown'}
+                            </p>
+                            <span className="text-xs text-neutral-500 group-hover:hidden">
+                              {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-neutral-500 truncate">
+                            {thread.lastMessage?.body || 'No messages yet'}
                           </p>
-                          <span className="text-xs text-neutral-500">
-                            {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
-                          </span>
                         </div>
-                        <p className="text-sm text-neutral-500 truncate">
-                          {thread.lastMessage?.body || 'No messages yet'}
-                        </p>
-                      </div>
-                      {thread.unreadCount > 0 && (
-                        <span className="bg-[#0CCE6B] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                          {thread.unreadCount}
-                        </span>
-                      )}
-                    </button>
+                        {thread.unreadCount > 0 && (
+                          <span className="bg-[#0CCE6B] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold group-hover:hidden">
+                            {thread.unreadCount}
+                          </span>
+                        )}
+                      </button>
+                      {/* Delete/Leave button on hover */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setThreadToDelete(thread); }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                        title={thread.isGroup ? 'Leave group' : 'Delete conversation'}
+                      >
+                        {thread.isGroup ? <LogOut className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )
@@ -552,6 +579,49 @@ export default function ChatWidget() {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* Delete/Leave Confirmation Modal */}
+      {threadToDelete && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+              {threadToDelete.isGroup ? 'Leave group?' : 'Delete conversation?'}
+            </h3>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+              {threadToDelete.isGroup
+                ? `You will leave "${threadToDelete.name}" and won't receive any new messages.`
+                : `This conversation with ${threadToDelete.otherUser?.displayName || 'this user'} will be permanently deleted.`}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setThreadToDelete(null)}
+                className="flex-1 px-4 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteThread}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : threadToDelete.isGroup ? (
+                  <>
+                    <LogOut className="w-4 h-4" />
+                    Leave
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
