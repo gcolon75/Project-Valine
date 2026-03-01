@@ -156,7 +156,7 @@ export default function Messages() {
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 grid grid-cols-2 rounded-full overflow-hidden">
+                    <div className="w-12 h-12 grid grid-cols-2 grid-rows-2 gap-0 rounded-full overflow-hidden">
                       {thread.participants.slice(0, 4).map((p, idx) => (
                         p?.avatar ? (
                           <img
