@@ -7,8 +7,16 @@ import { apiClient } from './api.js';
  * @returns {string|null} preferences.theme - Theme preference ('light', 'dark', or null for system)
  */
 export const getPreferences = async () => {
-  const { data } = await apiClient.get('/me/preferences');
-  return data;
+  try {
+    const { data } = await apiClient.get('/me/preferences');
+    return data;
+  } catch (error) {
+    // Silently handle 401 - user not authenticated
+    if (error.response?.status === 401) {
+      return { theme: null };
+    }
+    throw error;
+  }
 };
 
 /**
@@ -17,8 +25,16 @@ export const getPreferences = async () => {
  * @returns {Promise<Object>} Updated preferences
  */
 export const updateThemePreference = async (theme) => {
-  const { data } = await apiClient.put('/me/preferences', { theme });
-  return data;
+  try {
+    const { data } = await apiClient.put('/me/preferences', { theme });
+    return data;
+  } catch (error) {
+    // Silently handle 401 - user not authenticated
+    if (error.response?.status === 401) {
+      return { theme };
+    }
+    throw error;
+  }
 };
 
 /**
@@ -36,9 +52,8 @@ export const syncThemeToBackend = async () => {
       return result;
     }
     return null;
-  } catch (error) {
-    console.error('Failed to sync theme to backend:', error);
-    // Don't clear localStorage if sync failed
+  } catch {
+    // Silently handle errors - don't clear localStorage if sync failed
     return null;
   }
 };
@@ -52,8 +67,7 @@ export const loadThemePreference = async () => {
   try {
     const preferences = await getPreferences();
     return preferences.theme || 'light'; // Default to light if null
-  } catch (error) {
-    console.error('Failed to load theme preference:', error);
+  } catch {
     // Fallback to localStorage
     const storedTheme = localStorage.getItem('theme');
     return (storedTheme === 'light' || storedTheme === 'dark') ? storedTheme : 'light';

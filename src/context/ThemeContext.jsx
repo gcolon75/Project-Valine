@@ -43,8 +43,7 @@ export function ThemeProvider({ children }) {
         setTheme(backendTheme);
       }
     } catch (error) {
-      console.error('Failed to load theme from backend:', error);
-      // Keep current theme on error
+      // Silently handle errors - keep current theme
     }
   }, [theme]);
 
@@ -53,12 +52,12 @@ export function ThemeProvider({ children }) {
    */
   const syncToBackend = useCallback(async () => {
     if (isSyncing) return;
-    
+
     setIsSyncing(true);
     try {
       await syncThemeToBackend();
-    } catch (error) {
-      console.error('Failed to sync theme to backend:', error);
+    } catch {
+      // Silently handle errors
     } finally {
       setIsSyncing(false);
     }
@@ -68,19 +67,16 @@ export function ThemeProvider({ children }) {
    * Toggle theme and persist to backend
    */
   const toggle = useCallback(async () => {
-    const previousTheme = theme;
     const newTheme = theme === 'dark' ? 'light' : 'dark';
-    
+
     // Optimistic update
     setTheme(newTheme);
-    
-    // Persist to backend
+
+    // Persist to backend (silently handle errors)
     try {
       await updateThemePreference(newTheme);
-    } catch (error) {
-      console.error('Failed to save theme preference:', error);
-      // Rollback on error
-      setTheme(previousTheme);
+    } catch {
+      // Keep the new theme even if backend fails
     }
   }, [theme]);
 
@@ -89,24 +85,19 @@ export function ThemeProvider({ children }) {
    */
   const setThemeWithBackend = useCallback(async (newTheme) => {
     if (newTheme !== 'light' && newTheme !== 'dark') {
-      console.error('Invalid theme value:', newTheme);
       return;
     }
 
-    const previousTheme = theme;
-    
     // Optimistic update
     setTheme(newTheme);
-    
-    // Persist to backend
+
+    // Persist to backend (silently handle errors)
     try {
       await updateThemePreference(newTheme);
-    } catch (error) {
-      console.error('Failed to save theme preference:', error);
-      // Rollback on error
-      setTheme(previousTheme);
+    } catch {
+      // Keep the new theme even if backend fails
     }
-  }, [theme]);
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ 
