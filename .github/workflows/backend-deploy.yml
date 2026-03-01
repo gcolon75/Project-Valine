@@ -26,6 +26,11 @@ jobs:
         run: |
           npm ci
           npx prisma generate --schema=prisma/schema.prisma
+      - name: Apply database schema changes
+        working-directory: serverless
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate
       - name: Build Prisma Lambda Layer
         working-directory: serverless
         run: |
