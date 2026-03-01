@@ -1,15 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getThreads, getThread, sendThreadMessage, createThread } from '../services/messagesService';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
 
 export default function ChatWidget() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { unreadCounts } = useUnread();
   const messagesEndRef = useRef(null);
+
+  // Hide widget when on inbox pages (full-screen messaging)
+  const isOnInboxPage = location.pathname.startsWith('/inbox');
+  if (isOnInboxPage) return null;
 
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('threads'); // 'threads' or 'conversation'

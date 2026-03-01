@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, Send, Loader2, X, Shield } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, X, Shield, User } from 'lucide-react';
 import { getThread, sendThreadMessage } from '../services/messagesService';
 import { getProfileStatus } from '../services/connectionService';
 import { useAuth } from '../context/AuthContext';
@@ -161,17 +161,32 @@ export default function Conversation() {
           </div>
         ) : (
           messages.map((message) => {
-            const isOwn = message.sender?.id === user?.id;
+            const isOwn = message.senderId === user?.id || message.sender?.id === user?.id;
+            const senderAvatar = isOwn ? user?.avatar : otherUser?.avatar;
+            const senderName = isOwn ? (user?.displayName || user?.name) : otherUser?.displayName;
             return (
               <div
                 key={message.id}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
               >
+                {/* Avatar */}
+                {senderAvatar ? (
+                  <img
+                    src={senderAvatar}
+                    alt={senderName}
+                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-neutral-400" />
+                  </div>
+                )}
+
                 <div
                   className={`max-w-[70%] rounded-2xl px-4 py-2 ${
                     isOwn
-                      ? 'bg-[#0CCE6B] text-white'
-                      : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700'
+                      ? 'bg-[#0CCE6B] text-white rounded-br-md'
+                      : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 rounded-bl-md'
                   }`}
                 >
                   {/* Forwarded post preview */}
