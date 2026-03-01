@@ -1,76 +1,63 @@
-import api from './api';
+import { apiClient } from './api.js';
 
 // Request to give feedback on a post
 export const requestFeedback = async (postId, message = '') => {
-  const response = await api.post(`/posts/${postId}/feedback-request`, { message });
-  return response.data;
+  const { data } = await apiClient.post(`/posts/${postId}/feedback-request`, { message });
+  return data;
 };
 
 // Get the current user's feedback status for a post
 export const getFeedbackStatus = async (postId) => {
-  const response = await api.get(`/posts/${postId}/feedback-status`);
-  return response.data;
+  const { data } = await apiClient.get(`/posts/${postId}/feedback-status`);
+  return data;
 };
 
 // List feedback requests (sent or received)
 export const listFeedbackRequests = async ({ type = 'received', status = null } = {}) => {
   const params = new URLSearchParams({ type });
   if (status) params.append('status', status);
-  const response = await api.get(`/feedback-requests?${params.toString()}`);
-  return response.data;
+  const { data } = await apiClient.get(`/feedback-requests?${params.toString()}`);
+  return data;
 };
 
 // Get a single feedback request with full details
 export const getFeedbackRequest = async (requestId) => {
-  const response = await api.get(`/feedback-requests/${requestId}`);
-  return response.data;
+  const { data } = await apiClient.get(`/feedback-requests/${requestId}`);
+  return data;
 };
 
 // Approve a feedback request (owner only)
-export const approveFeedbackRequest = async (requestId, response = '') => {
-  const res = await api.post(`/feedback-requests/${requestId}/approve`, { response });
-  return res.data;
+export const approveFeedbackRequest = async (requestId, responseMsg = '') => {
+  const { data } = await apiClient.post(`/feedback-requests/${requestId}/approve`, { response: responseMsg });
+  return data;
 };
 
 // Deny a feedback request (owner only)
-export const denyFeedbackRequest = async (requestId, response = '') => {
-  const res = await api.post(`/feedback-requests/${requestId}/deny`, { response });
-  return res.data;
+export const denyFeedbackRequest = async (requestId, responseMsg = '') => {
+  const { data } = await apiClient.post(`/feedback-requests/${requestId}/deny`, { response: responseMsg });
+  return data;
 };
 
 // Get all annotations for a feedback request
 export const getAnnotations = async (feedbackRequestId) => {
-  const response = await api.get(`/feedback-requests/${feedbackRequestId}/annotations`);
-  return response.data;
+  const { data } = await apiClient.get(`/feedback-requests/${feedbackRequestId}/annotations`);
+  return data;
 };
 
 // Create a new annotation
 export const createAnnotation = async (feedbackRequestId, annotation) => {
-  const response = await api.post(`/feedback-requests/${feedbackRequestId}/annotations`, annotation);
-  return response.data;
+  const { data } = await apiClient.post(`/feedback-requests/${feedbackRequestId}/annotations`, annotation);
+  return data;
 };
 
 // Update an annotation
 export const updateAnnotation = async (annotationId, updates) => {
-  const response = await api.put(`/annotations/${annotationId}`, updates);
-  return response.data;
+  const { data } = await apiClient.put(`/annotations/${annotationId}`, updates);
+  return data;
 };
 
 // Delete an annotation
 export const deleteAnnotation = async (annotationId) => {
-  const response = await api.delete(`/annotations/${annotationId}`);
-  return response.data;
-};
-
-export default {
-  requestFeedback,
-  getFeedbackStatus,
-  listFeedbackRequests,
-  getFeedbackRequest,
-  approveFeedbackRequest,
-  denyFeedbackRequest,
-  getAnnotations,
-  createAnnotation,
-  updateAnnotation,
-  deleteAnnotation,
+  const { data } = await apiClient.delete(`/annotations/${annotationId}`);
+  return data;
 };
