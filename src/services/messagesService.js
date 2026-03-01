@@ -156,3 +156,15 @@ export const sendThreadMessage = async (threadId, body, forwardedPostId = null) 
   });
   return data;
 };
+
+/**
+ * Leave or delete a thread
+ * - For 1:1 chats: deletes the conversation
+ * - For group chats: leaves the group
+ * @param {string} threadId - Thread ID
+ * @returns {Promise<Object>} { deleted, message }
+ */
+export const leaveThread = async (threadId) => {
+  const { data } = await apiClient.delete(`/me/messages/threads/${threadId}`);
+  return data;
+};

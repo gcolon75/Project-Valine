@@ -551,6 +551,9 @@ functions:
       - httpApi:
           path: /me/messages/threads/{threadId}/messages
           method: post
+      - httpApi:
+          path: /me/messages/threads/{threadId}
+          method: delete
 
   # ========== NOTIFICATIONS ROUTER ==========
   notificationsRouter:

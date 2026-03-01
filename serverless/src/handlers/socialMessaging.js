@@ -114,6 +114,11 @@ export const handler = async (event, context) => {
       return messages.sendMessage(event, context);
     }
 
+    // /me/messages/threads/{threadId} (DELETE - leave/delete thread)
+    if (method === 'DELETE' && /^\/me\/messages\/threads\/[^/]+$/.test(path)) {
+      return messages.leaveThread(event, context);
+    }
+
     // Fallback
     console.warn('socialMessaging: no route match', { method, path });
     return {

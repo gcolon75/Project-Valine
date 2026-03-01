@@ -249,7 +249,7 @@ export default function ChatWidget() {
                 <p className="text-white/70 text-sm">@{currentThread.otherUser.username}</p>
               )}
               {view === 'conversation' && currentThread?.isGroup && currentThread?.participants && (
-                <p className="text-white/70 text-sm">{currentThread.participants.length + 1} members</p>
+                <p className="text-white/70 text-sm">{currentThread.participants.length} members</p>
               )}
             </div>
             {view === 'threads' && (

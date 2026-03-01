@@ -867,3 +867,79 @@ export const sendMessage = async (event) => {
     return error(500, 'Server error: ' + e.message);
   }
 };
+
+/**
+ * DELETE /me/messages/threads/{threadId}
+ * Leave or delete a thread
+ * - For 1:1 chats: deletes the entire thread
+ * - For group chats: removes user from participants
+ * - If last participant leaves group: deletes the thread
+ */
+export const leaveThread = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const threadId = event.pathParameters?.threadId;
+    if (!threadId) {
+      return error(400, 'threadId is required');
+    }
+
+    const prisma = getPrisma();
+
+    const thread = await prisma.messageThread.findUnique({
+      where: { id: threadId },
+      include: {
+        participants: true
+      }
+    });
+
+    if (!thread) {
+      return error(404, 'Thread not found');
+    }
+
+    // Check authorization
+    const isParticipant = thread.isGroup
+      ? thread.participants.some(p => p.userId === userId)
+      : thread.userAId === userId || thread.userBId === userId;
+
+    if (!isParticipant) {
+      return error(403, 'Not authorized to leave this thread');
+    }
+
+    if (thread.isGroup) {
+      // Group chat - remove user from participants
+      const remainingParticipants = thread.participants.filter(p => p.userId !== userId);
+
+      if (remainingParticipants.length <= 1) {
+        // Last person or only one left - delete the entire thread
+        await prisma.messageThread.delete({
+          where: { id: threadId }
+        });
+        return json({ deleted: true, message: 'Group deleted' });
+      } else {
+        // Remove user from participants
+        await prisma.threadParticipant.delete({
+          where: {
+            threadId_userId: {
+              threadId,
+              userId
+            }
+          }
+        });
+        return json({ deleted: false, message: 'Left group' });
+      }
+    } else {
+      // 1:1 chat - delete the entire thread
+      await prisma.messageThread.delete({
+        where: { id: threadId }
+      });
+      return json({ deleted: true, message: 'Conversation deleted' });
+    }
+  } catch (e) {
+    console.error('Leave thread error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
