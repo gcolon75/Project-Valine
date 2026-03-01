@@ -125,10 +125,10 @@ export const getThreads = async (event) => {
       const lastMessage = thread.messages[0];
 
       if (thread.isGroup) {
-        // Group chat - get all participants except current user
-        const otherParticipants = thread.participants
-          .filter(p => p.userId !== userId)
+        // Group chat - get all participants (including current user for avatar display)
+        const allParticipants = thread.participants
           .map(p => ({
+            id: p.user.id,
             userId: p.user.id,
             username: p.user.username,
             displayName: p.user.displayName,
@@ -150,7 +150,7 @@ export const getThreads = async (event) => {
           id: thread.id,
           isGroup: true,
           name: thread.name,
-          participants: otherParticipants,
+          participants: allParticipants,
           lastMessage: lastMessage ? {
             id: lastMessage.id,
             body: lastMessage.body,
@@ -647,6 +647,7 @@ export const getThread = async (event) => {
     let threadData;
     if (thread.isGroup) {
       const participants = thread.participants.map(p => ({
+        id: p.user.id,
         userId: p.user.id,
         username: p.user.username,
         displayName: p.user.displayName,
