@@ -37,6 +37,9 @@ export default function ChatWidget() {
   const [threadToDelete, setThreadToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // View members modal
+  const [showMembers, setShowMembers] = useState(false);
+
   // Determine if we should hide the widget
   const isOnInboxPage = location.pathname.startsWith('/inbox');
 
@@ -267,7 +270,12 @@ export default function ChatWidget() {
                 <p className="text-white/70 text-sm">@{currentThread.otherUser.username}</p>
               )}
               {view === 'conversation' && currentThread?.isGroup && currentThread?.participants && (
-                <p className="text-white/70 text-sm">{currentThread.participants.length} members</p>
+                <button
+                  onClick={() => setShowMembers(true)}
+                  className="text-white/70 text-sm hover:text-white hover:underline transition-colors text-left"
+                >
+                  {currentThread.participants.length} members · tap to view
+                </button>
               )}
             </div>
             {view === 'threads' && (
@@ -620,6 +628,63 @@ export default function ChatWidget() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Members Modal */}
+      {showMembers && currentThread?.isGroup && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl max-w-sm w-full">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Group Members ({currentThread.participants?.length || 0})
+              </h3>
+              <button
+                onClick={() => setShowMembers(false)}
+                className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-neutral-500" />
+              </button>
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto p-2">
+              {currentThread.participants?.map((participant) => (
+                <button
+                  key={participant.id}
+                  onClick={() => {
+                    setShowMembers(false);
+                    setIsOpen(false);
+                    navigate(`/profile/${participant.username || participant.id}`);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-left"
+                >
+                  {participant.avatar ? (
+                    <img
+                      src={participant.avatar}
+                      alt={participant.displayName}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                      <User className="w-5 h-5 text-neutral-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-neutral-900 dark:text-white truncate">
+                      {participant.displayName || participant.username}
+                    </p>
+                    <p className="text-sm text-neutral-500 truncate">
+                      @{participant.username}
+                    </p>
+                  </div>
+                  {participant.id === user?.id && (
+                    <span className="text-xs text-neutral-500 px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded">
+                      You
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>

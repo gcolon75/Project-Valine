@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, Send, Loader2, X, Shield, User } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, X, Shield, User, Users } from 'lucide-react';
 import { getThread, sendThreadMessage } from '../services/messagesService';
 import { getProfileStatus } from '../services/connectionService';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ export default function Conversation() {
   const location = useLocation();
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
-  
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -21,24 +21,41 @@ export default function Conversation() {
   const [forwardedPost, setForwardedPost] = useState(location.state?.forwardedPost || null);
   const [isBlocked, setIsBlocked] = useState(false);
 
+  // Group chat state
+  const [isGroup, setIsGroup] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [participants, setParticipants] = useState([]);
+  const [showMembers, setShowMembers] = useState(false);
+
   // Fetch thread and messages
   useEffect(() => {
     const fetchThread = async () => {
       if (!threadId) return;
-      
+
       setLoading(true);
       try {
         const data = await getThread(threadId);
         setMessages(data.messages || []);
-        setOtherUser(data.thread?.otherUser || null);
-        
-        // Check if other user is blocked
-        if (data.thread?.otherUser?.id) {
-          try {
-            const status = await getProfileStatus(data.thread.otherUser.id);
-            setIsBlocked(status.isBlocked || status.isBlockedBy || false);
-          } catch (err) {
-            console.warn('Failed to check block status:', err);
+
+        // Handle group vs 1:1 thread
+        if (data.thread?.isGroup) {
+          setIsGroup(true);
+          setGroupName(data.thread.name || 'Group Chat');
+          setParticipants(data.thread.participants || []);
+          setOtherUser(null);
+        } else {
+          setIsGroup(false);
+          setOtherUser(data.thread?.otherUser || null);
+          setParticipants([]);
+
+          // Check if other user is blocked (only for 1:1)
+          if (data.thread?.otherUser?.id) {
+            try {
+              const status = await getProfileStatus(data.thread.otherUser.id);
+              setIsBlocked(status.isBlocked || status.isBlockedBy || false);
+            } catch (err) {
+              console.warn('Failed to check block status:', err);
+            }
           }
         }
       } catch (err) {
@@ -110,15 +127,33 @@ export default function Conversation() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        
-        {otherUser && (
-          <Link 
+
+        {isGroup ? (
+          // Group chat header
+          <button
+            onClick={() => setShowMembers(true)}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity flex-1"
+          >
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <div className="font-semibold text-neutral-900 dark:text-white">
+                {groupName}
+              </div>
+              <div className="text-sm text-neutral-500">
+                {participants.length} members · tap to view
+              </div>
+            </div>
+          </button>
+        ) : otherUser && (
+          <Link
             to={`/profile/${otherUser.username || otherUser.id}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             {otherUser.avatar ? (
-              <img 
-                src={otherUser.avatar} 
+              <img
+                src={otherUser.avatar}
                 alt={otherUser.displayName}
                 className="w-10 h-10 rounded-full"
               />
@@ -162,8 +197,12 @@ export default function Conversation() {
         ) : (
           messages.map((message) => {
             const isOwn = message.senderId === user?.id || message.sender?.id === user?.id;
-            const senderAvatar = isOwn ? user?.avatar : otherUser?.avatar;
-            const senderName = isOwn ? (user?.displayName || user?.name) : otherUser?.displayName;
+            // For group chats, find sender from participants or message.sender
+            const sender = isGroup
+              ? (message.sender || participants.find(p => p.id === message.senderId))
+              : otherUser;
+            const senderAvatar = isOwn ? user?.avatar : sender?.avatar;
+            const senderName = isOwn ? (user?.displayName || user?.name) : sender?.displayName;
             return (
               <div
                 key={message.id}
@@ -189,6 +228,10 @@ export default function Conversation() {
                       : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 rounded-bl-md'
                   }`}
                 >
+                  {/* Sender name for group chats */}
+                  {isGroup && !isOwn && senderName && (
+                    <p className="text-xs font-medium text-[#0CCE6B] mb-1">{senderName}</p>
+                  )}
                   {/* Forwarded post preview */}
                   {message.forwardedPost && (
                     <div className="mb-2 p-3 rounded-lg bg-white/10 border border-white/20">
@@ -300,6 +343,60 @@ export default function Conversation() {
           </>
         )}
       </form>
+
+      {/* Members Modal for Group Chats */}
+      {showMembers && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Group Members ({participants.length})
+              </h2>
+              <button
+                onClick={() => setShowMembers(false)}
+                className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-neutral-500" />
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto p-2">
+              {participants.map((participant) => (
+                <Link
+                  key={participant.id}
+                  to={`/profile/${participant.username || participant.id}`}
+                  onClick={() => setShowMembers(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                >
+                  {participant.avatar ? (
+                    <img
+                      src={participant.avatar}
+                      alt={participant.displayName}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                      <User className="w-5 h-5 text-neutral-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-neutral-900 dark:text-white truncate">
+                      {participant.displayName || participant.username}
+                    </p>
+                    <p className="text-sm text-neutral-500 truncate">
+                      @{participant.username}
+                    </p>
+                  </div>
+                  {participant.id === user?.id && (
+                    <span className="text-xs text-neutral-500 px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded">
+                      You
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

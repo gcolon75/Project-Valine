@@ -395,6 +395,7 @@ async function login(event) {
           email: user.email,
           username: user.username || null,
           displayName: user.displayName || user.name || null,
+          avatar: user.avatar || null,
           onboardingComplete: user.onboardingComplete || false,
           profileComplete: user.profileComplete || false,
           createdAt: user.createdAt,
@@ -610,6 +611,7 @@ async function register(event) {
         email: user.email,
         username: user.username,
         displayName: user.displayName,
+        avatar: user.avatar || null,
         onboardingComplete: user.onboardingComplete || false,
         profileComplete: user.profileComplete || false,
         createdAt: user.createdAt

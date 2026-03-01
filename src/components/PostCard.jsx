@@ -56,8 +56,14 @@ export default function PostCard({ post, onDelete, onLike }) {
                 post.mediaAttachment?.s3Key?.endsWith('.docx');
   const isDocument = isPdf || isDoc;
 
-  // Check if media is audio
-  const isAudio = post.audioUrl || post.mediaAttachment?.type === 'audio';
+  // Check if media is audio (by type or file extension)
+  const isAudio = post.audioUrl ||
+                  post.mediaAttachment?.type === 'audio' ||
+                  post.mediaAttachment?.s3Key?.endsWith('.mp3') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.wav') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.m4a') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.ogg') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.aac');
 
   // Check if media is video
   const isVideo = post.mediaAttachment?.type === 'video' ||
