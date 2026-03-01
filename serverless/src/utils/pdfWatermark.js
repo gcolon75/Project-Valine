@@ -1,39 +1,45 @@
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 
 /**
- * Apply diagonal watermark text to each page of a PDF
+ * Apply repeating diagonal watermark text to each page of a PDF
  * @param {Buffer|Uint8Array} pdfBuffer - Original PDF bytes
- * @param {string} username - Viewer's username for watermark
+ * @param {string} ownerUsername - Owner's username for watermark
  * @returns {Promise<Uint8Array>} - Watermarked PDF bytes
  */
-export async function watermarkPdf(pdfBuffer, username) {
+export async function watermarkPdf(pdfBuffer, ownerUsername) {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   const pages = pdfDoc.getPages();
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  const watermarkText = `Downloaded by @${username}`;
-  const fontSize = 48;
+  const watermarkText = `Joint-Networking.com/profile/${ownerUsername}`;
+  const fontSize = 32;
+  const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
 
   for (const page of pages) {
     const { width, height } = page.getSize();
 
-    // Calculate text width for centering
-    const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
+    // Draw repeating diagonal watermarks across the entire page
+    const spacingX = textWidth * 0.8;
+    const spacingY = 120;
 
-    // Draw semi-transparent diagonal watermark in center
-    page.drawText(watermarkText, {
-      x: (width - textWidth * 0.7) / 2, // Approximate centering accounting for rotation
-      y: height / 2,
-      size: fontSize,
-      font: helveticaFont,
-      color: rgb(0.5, 0.5, 0.5), // Gray
-      opacity: 0.3, // 30% opacity
-      rotate: degrees(-45), // Diagonal
-    });
+    // Start from outside the page to ensure full coverage when rotated
+    for (let y = -200; y < height + 400; y += spacingY) {
+      for (let x = -200; x < width + 400; x += spacingX) {
+        page.drawText(watermarkText, {
+          x: x,
+          y: y,
+          size: fontSize,
+          font: helveticaFont,
+          color: rgb(0.5, 0.5, 0.5),
+          opacity: 0.15,
+          rotate: degrees(-45),
+        });
+      }
+    }
 
-    // Add additional watermarks in corners for extra protection
+    // Add username in corners
     const smallFontSize = 12;
-    const smallText = `@${username}`;
+    const smallText = ownerUsername;
 
     // Bottom-left corner
     page.drawText(smallText, {
@@ -48,6 +54,26 @@ export async function watermarkPdf(pdfBuffer, username) {
     // Top-right corner
     page.drawText(smallText, {
       x: width - helveticaFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
+      y: height - 30,
+      size: smallFontSize,
+      font: helveticaFont,
+      color: rgb(0.6, 0.6, 0.6),
+      opacity: 0.4,
+    });
+
+    // Bottom-right corner
+    page.drawText(smallText, {
+      x: width - helveticaFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
+      y: 20,
+      size: smallFontSize,
+      font: helveticaFont,
+      color: rgb(0.6, 0.6, 0.6),
+      opacity: 0.4,
+    });
+
+    // Top-left corner
+    page.drawText(smallText, {
+      x: 20,
       y: height - 30,
       size: smallFontSize,
       font: helveticaFont,

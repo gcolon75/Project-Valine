@@ -469,7 +469,7 @@ async function streamToBuffer(stream) {
 /**
  * GET /api/media/:id/watermarked-pdf
  * Stream watermarked PDF to authenticated viewer
- * The PDF is watermarked with the viewer's username for tracking
+ * The PDF is watermarked with the owner's profile URL for branding
  */
 export const getWatermarkedPdf = async (event) => {
   try {
@@ -478,7 +478,7 @@ export const getWatermarkedPdf = async (event) => {
       return error(400, 'id is required');
     }
 
-    // Require authentication - we need the viewer's username
+    // Require authentication for privacy checks
     const viewerId = getUserFromEvent(event);
     if (!viewerId) {
       return error(401, 'Authentication required to download PDFs');
@@ -524,14 +524,14 @@ export const getWatermarkedPdf = async (event) => {
       }
     }
 
-    // Get viewer's username for watermark
-    const viewer = await prisma.user.findUnique({
-      where: { id: viewerId },
+    // Get owner's username for watermark (the person who uploaded the PDF)
+    const owner = await prisma.user.findUnique({
+      where: { id: media.profile.userId },
       select: { username: true },
     });
 
-    if (!viewer?.username) {
-      return error(500, 'Could not retrieve viewer information');
+    if (!owner?.username) {
+      return error(500, 'Could not retrieve owner information');
     }
 
     // Fetch PDF from S3
@@ -555,10 +555,10 @@ export const getWatermarkedPdf = async (event) => {
       return error(413, 'PDF too large for watermarking. Maximum size: 50MB');
     }
 
-    // Apply watermark
+    // Apply watermark with owner's username
     let watermarkedPdf;
     try {
-      watermarkedPdf = await watermarkPdf(pdfBuffer, viewer.username);
+      watermarkedPdf = await watermarkPdf(pdfBuffer, owner.username);
     } catch (pdfError) {
       console.error('PDF watermarking error:', pdfError);
       return error(500, 'Unable to process this PDF');
