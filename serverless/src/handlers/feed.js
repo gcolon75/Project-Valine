@@ -88,9 +88,30 @@ export const getFeed = async (event) => {
         where: { id: { in: mediaIds } }
       });
 
-      // Generate signed URLs for poster images
+      // Generate signed URLs for media content and poster images
       for (const media of mediaRecords) {
         let posterUrl = null;
+        let url = null;
+
+        // Check if media is video/audio by type OR file extension
+        const isVideoByExtension = media.s3Key && /\.(mp4|mov|webm)$/i.test(media.s3Key);
+        const isAudioByExtension = media.s3Key && /\.(mp3|wav|m4a)$/i.test(media.s3Key);
+        const needsSignedUrl = media.type === 'video' || media.type === 'audio' || isVideoByExtension || isAudioByExtension;
+
+        // Generate signed URL for the main media file (for videos and audio)
+        if (media.s3Key && needsSignedUrl) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: media.s3Key,
+            });
+            url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate media URL:', e.message);
+          }
+        }
+
+        // Generate signed URL for poster image
         if (media.posterS3Key) {
           try {
             const command = new GetObjectCommand({
@@ -102,7 +123,7 @@ export const getFeed = async (event) => {
             console.warn('Failed to generate poster URL:', e.message);
           }
         }
-        mediaMap[media.id] = { ...media, posterUrl };
+        mediaMap[media.id] = { ...media, url, posterUrl };
       }
     }
     
