@@ -116,6 +116,9 @@ model Post {
   // Optional attachment to a Media row
   mediaId String?
 
+  // Audio URL for audio posts
+  audioUrl String?
+
   // 4-Tier Content System fields
   visibility     Visibility @default(PUBLIC)
   isFree         Boolean    @default(true)

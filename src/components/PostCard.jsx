@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
@@ -56,9 +56,20 @@ export default function PostCard({ post, onDelete, onLike }) {
                 post.mediaAttachment?.s3Key?.endsWith('.docx');
   const isDocument = isPdf || isDoc;
 
+  // Check if media is audio
+  const isAudio = post.audioUrl || post.mediaAttachment?.type === 'audio';
+
+  // Check if media is video
+  const isVideo = post.mediaAttachment?.type === 'video' ||
+                  post.mediaAttachment?.s3Key?.endsWith('.mp4') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.mov') ||
+                  post.mediaAttachment?.s3Key?.endsWith('.webm');
 
   // Image fallback: use mediaAttachment url, post image, or placeholder
   const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
+
+  // Video URL
+  const videoUrl = post.mediaAttachment?.url || post.mediaUrl;
 
   // Handle request access
   const handleRequestAccess = async () => {
@@ -331,6 +342,32 @@ export default function PostCard({ post, onDelete, onLike }) {
               </span>
             </div>
           </div>
+        ) : isAudio ? (
+          // Audio content - show audio player
+          <div
+            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Mic className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mb-3" />
+            <audio controls className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+              <source src={post.audioUrl || post.mediaAttachment?.url} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+              {post.title || "Audio Post"}
+            </span>
+          </div>
+        ) : isVideo && videoUrl ? (
+          // Video content - show video player
+          <video
+            controls
+            className="w-full h-full object-cover"
+            onClick={(e) => e.stopPropagation()}
+            poster={post.mediaAttachment?.posterUrl}
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video element.
+          </video>
         ) : isDocument ? (
           // Document content - show poster thumbnail if available, otherwise icon
           post.mediaAttachment?.posterUrl ? (

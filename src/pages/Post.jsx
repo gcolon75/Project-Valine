@@ -18,7 +18,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 const CONTENT_TYPES = [
   { value: 'script', label: 'Script', icon: '📝' },
   { value: 'audition', label: 'Audition', icon: '🎭' },
-  { value: 'reel', label: 'Reel', icon: '🎬' },
   { value: 'audio', label: 'Audio', icon: '🎤' },
 ];
 
@@ -31,7 +30,6 @@ const VISIBILITY_OPTIONS = [
 const ACCEPTED_TYPES = {
   script: '.pdf,.doc,.docx',
   audition: '.mp4,.mov,.webm,.mp3,.wav',
-  reel: '.mp4,.mov,.webm',
   audio: '.mp3,.wav,.m4a',
 };
 
@@ -39,7 +37,6 @@ const ACCEPTED_TYPES = {
 const MAX_FILE_SIZES = {
   script: 10,
   audition: 500,
-  reel: 500,
   audio: 100,
 };
 
@@ -457,7 +454,7 @@ export default function Post() {
         media: [], // Legacy field - array of media URLs
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
         visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS_ONLY
-        // audioUrl removed - not supported in Post schema yet
+        audioUrl: uploadedAudioUrl || null, // Audio URL for audio posts
         price: priceValue, // Post price (0 for free)
         isFree: formData.isFree, // Whether post is free
         thumbnailUrl: formData.thumbnailUrl || null, // Thumbnail URL

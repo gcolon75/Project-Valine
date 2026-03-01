@@ -180,7 +180,7 @@ export const createPost = async (event) => {
         authorId,
         mediaId: mediaId || null,
         visibility: postVisibility,
-        // audioUrl removed - not in Post schema
+        audioUrl: audioUrl || null,
         price: (postPrice && postPrice > 0) ? postPrice : null,
         isFree: postIsFree,
         thumbnailUrl: thumbnailUrl || null,
@@ -260,9 +260,25 @@ export const listPosts = async (event) => {
         where: { id: { in: mediaIds } },
       });
 
-      // Generate signed URLs for poster images
+      // Generate signed URLs for media content and poster images
       for (const media of mediaRecords) {
         let posterUrl = null;
+        let url = null;
+
+        // Generate signed URL for the main media file (for videos and audio)
+        if (media.s3Key && (media.type === 'video' || media.type === 'audio')) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: media.s3Key,
+            });
+            url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate media URL:', e.message);
+          }
+        }
+
+        // Generate signed URL for poster image
         if (media.posterS3Key) {
           try {
             const command = new GetObjectCommand({
@@ -274,7 +290,7 @@ export const listPosts = async (event) => {
             console.warn('Failed to generate poster URL:', e.message);
           }
         }
-        mediaMap[media.id] = { ...media, posterUrl };
+        mediaMap[media.id] = { ...media, url, posterUrl };
       }
     }
 
@@ -377,8 +393,23 @@ export const getPost = async (event) => {
         where: { id: post.mediaId },
       });
       if (mediaRecord) {
-        // Generate signed URL for poster if exists
+        let url = null;
         let posterUrl = null;
+
+        // Generate signed URL for main media file (for videos and audio)
+        if (mediaRecord.s3Key && (mediaRecord.type === 'video' || mediaRecord.type === 'audio')) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: mediaRecord.s3Key,
+            });
+            url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate media URL:', e.message);
+          }
+        }
+
+        // Generate signed URL for poster if exists
         if (mediaRecord.posterS3Key) {
           try {
             const command = new GetObjectCommand({
@@ -390,7 +421,7 @@ export const getPost = async (event) => {
             console.warn('Failed to generate poster URL:', e.message);
           }
         }
-        responsePost = { ...post, mediaAttachment: { ...mediaRecord, posterUrl } };
+        responsePost = { ...post, mediaAttachment: { ...mediaRecord, url, posterUrl } };
       }
     }
     

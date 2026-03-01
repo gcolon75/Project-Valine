@@ -106,6 +106,7 @@ export default function Dashboard() {
             mediaUrl: post.media?.[0] || '',
             mediaId: post.mediaId,
             mediaAttachment: post.mediaAttachment,
+            audioUrl: post.audioUrl,
             visibility: post.visibility || 'public',
             likes: post.likes || 0,
             isLiked: post.isLiked || false,

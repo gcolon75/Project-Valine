@@ -39,6 +39,7 @@ export default function PostDetail() {
   const [likesCount, setLikesCount] = useState(0);
   const [likingInProgress, setLikingInProgress] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
   const [viewingPdf, setViewingPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
@@ -85,6 +86,22 @@ export default function PostDetail() {
     };
 
     fetchPdfUrl();
+  }, [post?.mediaAttachment]);
+
+  // Fetch video URL when post has a video attachment
+  useEffect(() => {
+    const fetchVideoUrl = async () => {
+      if (post?.mediaAttachment?.type === 'video' && post.mediaAttachment.id) {
+        try {
+          const { viewUrl } = await getMediaAccessUrl(post.mediaAttachment.id);
+          setVideoUrl(viewUrl);
+        } catch (err) {
+          console.error('Error fetching video URL:', err);
+        }
+      }
+    };
+
+    fetchVideoUrl();
   }, [post?.mediaAttachment]);
 
   const handleRequestAccess = async () => {
@@ -471,14 +488,21 @@ export default function PostDetail() {
               {post.mediaAttachment && (
                 <div className="mb-6">
                   {post.mediaAttachment.type === 'video' ? (
-                    <video
-                      src={post.mediaAttachment.s3Key}
-                      controls
-                      className="w-full rounded-lg"
-                    />
+                    videoUrl ? (
+                      <video
+                        src={videoUrl}
+                        controls
+                        className="w-full rounded-lg"
+                        poster={post.mediaAttachment.posterUrl}
+                      />
+                    ) : (
+                      <div className="w-full aspect-video bg-neutral-200 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+                      </div>
+                    )
                   ) : post.mediaAttachment.type === 'image' ? (
                     <img
-                      src={post.mediaAttachment.s3Key}
+                      src={post.mediaAttachment.url || post.mediaAttachment.s3Key}
                       alt="Post attachment"
                       className="w-full rounded-lg"
                     />
