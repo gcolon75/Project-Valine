@@ -316,19 +316,19 @@ export default function Inbox() {
                         />
                       ) : (
                         // 2x2 grid of avatars
-                        <div className="w-12 h-12 grid grid-cols-2 grid-rows-2 gap-0 rounded-full overflow-hidden">
+                        <div className="w-12 h-12 rounded-full overflow-hidden flex flex-wrap">
                           {groupAvatars.slice(0, 4).map((avatar, idx) => (
                             avatar ? (
                               <img
                                 key={idx}
                                 src={avatar}
                                 alt=""
-                                className="w-full h-full object-cover"
+                                className="w-6 h-6 object-cover"
                               />
                             ) : (
                               <div
                                 key={idx}
-                                className="w-full h-full bg-neutral-300 dark:bg-neutral-600 flex items-center justify-center"
+                                className="w-6 h-6 bg-neutral-300 dark:bg-neutral-600 flex items-center justify-center"
                               >
                                 <User className="w-3 h-3 text-neutral-500" />
                               </div>

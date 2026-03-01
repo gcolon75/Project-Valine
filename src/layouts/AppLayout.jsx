@@ -9,10 +9,14 @@ import ChatWidget from "../components/ChatWidget";
 export default function AppLayout() {
   const navigate = useNavigate();
   const { unreadCounts } = useUnread();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem('dev_user');
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
     navigate('/');
   };
 
