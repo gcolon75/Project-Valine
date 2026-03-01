@@ -262,14 +262,16 @@ export default function Profile() {
 
   // Handle message button - create thread and navigate
   const handleMessage = async () => {
-    if (!profile?.userId) {
+    // Try userId first (from profile), then id (from user object)
+    const recipientId = profile?.userId || profile?.id;
+    if (!recipientId) {
       toast.error('Unable to message this user');
       return;
     }
-    
+
     setMessageLoading(true);
     try {
-      const thread = await createThread(profile.userId);
+      const thread = await createThread(recipientId);
       navigate(`/inbox/${thread.id}`);
     } catch (err) {
       console.error('Failed to create thread:', err);
