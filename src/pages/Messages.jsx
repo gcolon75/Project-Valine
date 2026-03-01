@@ -1,118 +1,102 @@
-import { useState, useEffect } from 'react';
-import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile } from 'lucide-react';
-import { useApiFallback } from '../hooks/useApiFallback';
-import { getConversations, getMessages, sendMessage, searchConversations } from '../services/messagesService';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, User, Users, Loader2 } from 'lucide-react';
+import { getThreads, getThread, sendThreadMessage } from '../services/messagesService';
+import { useAuth } from '../context/AuthContext';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
 
-// Mock/fallback conversations data
-const FALLBACK_CONVERSATIONS = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    username: 'voiceactor_sarah',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    lastMessage: 'Sounds great! Looking forward to it.',
-    timestamp: '2m ago',
-    unread: 2,
-    online: true,
-  },
-  {
-    id: 2,
-    name: 'Michael Chen',
-    username: 'audio_engineer_mike',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-    lastMessage: 'Let me know when you're available.',
-    timestamp: '1h ago',
-    unread: 0,
-    online: true,
-  },
-  {
-    id: 3,
-    name: 'Emily Rodriguez',
-    username: 'writer_emily',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    lastMessage: 'Thanks for the feedback!',
-    timestamp: '3h ago',
-    unread: 0,
-    online: false,
-  },
-  {
-    id: 4,
-    name: 'James Wilson',
-    username: 'director_james',
-    avatar: 'https://i.pravatar.cc/150?img=8',
-    lastMessage: 'Can we schedule a call?',
-    timestamp: '1d ago',
-    unread: 1,
-    online: false,
-  },
-];
-
 export default function Messages() {
-  const [selectedChat, setSelectedChat] = useState(null);
+  const { user } = useAuth();
+  const messagesEndRef = useRef(null);
+
+  const [threads, setThreads] = useState([]);
+  const [selectedThread, setSelectedThread] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  // Fetch conversations from API with fallback
-  const { data: conversations, loading, usingFallback, refetch } = useApiFallback(
-    () => searchQuery ? searchConversations(searchQuery) : getConversations(),
-    FALLBACK_CONVERSATIONS,
-    { 
-      diagnosticContext: 'Messages.getConversations',
-      immediate: true
-    }
-  );
-
-  // Refetch when search query changes
+  // Fetch threads on mount
   useEffect(() => {
-    if (searchQuery.length > 2 || searchQuery.length === 0) {
-      refetch();
+    fetchThreads();
+  }, []);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const fetchThreads = async () => {
+    setLoading(true);
+    try {
+      const data = await getThreads();
+      setThreads(data.items || []);
+    } catch (err) {
+      console.error('Failed to load threads:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [searchQuery, refetch]);
-
-  // Mock messages for selected chat
-  const mockMessages = selectedChat ? [
-    {
-      id: 1,
-      senderId: selectedChat.id,
-      content: 'Hey! How are you doing?',
-      timestamp: '10:30 AM',
-      isMine: false,
-    },
-    {
-      id: 2,
-      senderId: 'me',
-      content: 'I'm doing great! How about you?',
-      timestamp: '10:32 AM',
-      isMine: true,
-    },
-    {
-      id: 3,
-      senderId: selectedChat.id,
-      content: 'Doing well! I wanted to discuss the project.',
-      timestamp: '10:35 AM',
-      isMine: false,
-    },
-    {
-      id: 4,
-      senderId: 'me',
-      content: 'Sure! What would you like to know?',
-      timestamp: '10:36 AM',
-      isMine: true,
-    },
-  ] : [];
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!message.trim()) return;
-    // TODO: API call to send message
-    setMessage('');
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const openThread = async (thread) => {
+    setSelectedThread(thread);
+    setLoadingMessages(true);
+    try {
+      const data = await getThread(thread.id);
+      setMessages(data.messages || []);
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!message.trim() || sending || !selectedThread) return;
+
+    setSending(true);
+    try {
+      const result = await sendThreadMessage(selectedThread.id, message.trim());
+      if (result?.message) {
+        setMessages(prev => [...prev, result.message]);
+      }
+      setMessage('');
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Filter threads by search query
+  const filteredThreads = threads.filter(thread => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    if (thread.isGroup) {
+      return thread.name?.toLowerCase().includes(query);
+    }
+    return (
+      thread.otherUser?.displayName?.toLowerCase().includes(query) ||
+      thread.otherUser?.username?.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="h-[calc(100vh-4rem)] flex bg-white dark:bg-neutral-950">
@@ -136,7 +120,7 @@ export default function Messages() {
           </div>
         </div>
 
-        {/* Conversations List */}
+        {/* Threads List */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="p-4 space-y-3">
@@ -144,23 +128,35 @@ export default function Messages() {
               <SkeletonCard />
               <SkeletonCard />
             </div>
-          ) : filteredConversations.map((conv) => (
+          ) : filteredThreads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-neutral-500 p-4">
+              <User className="w-12 h-12 mb-2 opacity-50" />
+              <p className="text-sm">No conversations yet</p>
+            </div>
+          ) : filteredThreads.map((thread) => (
             <button
-              key={conv.id}
-              onClick={() => setSelectedChat(conv)}
+              key={thread.id}
+              onClick={() => openThread(thread)}
               className={`w-full p-4 flex items-start space-x-3 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors ${
-                selectedChat?.id === conv.id ? 'bg-neutral-50 dark:bg-neutral-900' : ''
+                selectedThread?.id === thread.id ? 'bg-neutral-50 dark:bg-neutral-900' : ''
               }`}
             >
-              {/* Avatar with online indicator */}
+              {/* Avatar */}
               <div className="relative flex-shrink-0">
-                <img
-                  src={conv.avatar}
-                  alt={conv.name}
-                  className="w-12 h-12 rounded-full"
-                />
-                {conv.online && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#0CCE6B] rounded-full border-2 border-white dark:border-neutral-950" />
+                {thread.isGroup ? (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                ) : thread.otherUser?.avatar ? (
+                  <img
+                    src={thread.otherUser.avatar}
+                    alt={thread.otherUser.displayName || thread.otherUser.username}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                    <User className="w-6 h-6 text-neutral-400" />
+                  </div>
                 )}
               </div>
 
@@ -168,22 +164,22 @@ export default function Messages() {
               <div className="flex-1 min-w-0 text-left">
                 <div className="flex items-center justify-between mb-1">
                   <p className="font-semibold text-neutral-900 dark:text-white truncate">
-                    {conv.name}
+                    {thread.isGroup ? thread.name : thread.otherUser?.displayName || 'Unknown'}
                   </p>
                   <span className="text-xs text-neutral-500 flex-shrink-0 ml-2">
-                    {conv.timestamp}
+                    {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
                   </span>
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
-                  {conv.lastMessage}
+                  {thread.lastMessage?.body || 'No messages yet'}
                 </p>
               </div>
 
               {/* Unread badge */}
-              {conv.unread > 0 && (
+              {thread.unreadCount > 0 && (
                 <div className="flex-shrink-0 w-5 h-5 bg-[#0CCE6B] rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-semibold">
-                    {conv.unread}
+                    {thread.unreadCount}
                   </span>
                 </div>
               )}
@@ -193,28 +189,42 @@ export default function Messages() {
       </div>
 
       {/* Chat Area */}
-      {selectedChat ? (
+      {selectedThread ? (
         <div className="flex-1 flex flex-col">
           {/* Chat Header */}
           <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <img
-                  src={selectedChat.avatar}
-                  alt={selectedChat.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                {selectedChat.online && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#0CCE6B] rounded-full border-2 border-white dark:border-neutral-950" />
+                {selectedThread.isGroup ? (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                ) : selectedThread.otherUser?.avatar ? (
+                  <img
+                    src={selectedThread.otherUser.avatar}
+                    alt={selectedThread.otherUser.displayName || selectedThread.otherUser.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                    <User className="w-5 h-5 text-neutral-400" />
+                  </div>
                 )}
               </div>
               <div>
                 <p className="font-semibold text-neutral-900 dark:text-white">
-                  {selectedChat.name}
+                  {selectedThread.isGroup ? selectedThread.name : selectedThread.otherUser?.displayName || 'Unknown'}
                 </p>
-                <p className="text-sm text-neutral-500">
-                  {selectedChat.online ? 'Online' : 'Offline'}
-                </p>
+                {selectedThread.isGroup && selectedThread.participants && (
+                  <p className="text-sm text-neutral-500">
+                    {selectedThread.participants.length} members
+                  </p>
+                )}
+                {!selectedThread.isGroup && selectedThread.otherUser?.username && (
+                  <p className="text-sm text-neutral-500">
+                    @{selectedThread.otherUser.username}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -234,29 +244,50 @@ export default function Messages() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {mockMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                    msg.isMine
-                      ? 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white'
-                  }`}
-                >
-                  <p className="text-sm">{msg.content}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      msg.isMine ? 'text-white/70' : 'text-neutral-500'
-                    }`}
-                  >
-                    {msg.timestamp}
-                  </p>
-                </div>
+            {loadingMessages ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 text-[#0CCE6B] animate-spin" />
               </div>
-            ))}
+            ) : messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-neutral-500">
+                <p className="text-sm">No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((msg) => {
+                const isOwn = msg.senderId === user?.id;
+                const senderName = !isOwn && selectedThread.isGroup
+                  ? msg.sender?.displayName || 'Unknown'
+                  : null;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                        isOwn
+                          ? 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white'
+                      }`}
+                    >
+                      {senderName && (
+                        <p className="text-xs font-medium text-[#0CCE6B] mb-1">{senderName}</p>
+                      )}
+                      <p className="text-sm">{msg.body}</p>
+                      <p
+                        className={`text-xs mt-1 ${
+                          isOwn ? 'text-white/70' : 'text-neutral-500'
+                        }`}
+                      >
+                        {formatTime(msg.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message Input */}
@@ -286,11 +317,15 @@ export default function Messages() {
               />
               <button
                 type="submit"
-                disabled={!message.trim()}
+                disabled={!message.trim() || sending}
                 className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] disabled:opacity-50 text-white w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
                 aria-label="Send message"
               >
-                <Send className="w-5 h-5" />
+                {sending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
               </button>
             </div>
           </form>
