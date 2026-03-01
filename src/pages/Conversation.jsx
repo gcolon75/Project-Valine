@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Conversation() {
-  const { id: threadId } = useParams();
+  const { threadId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();

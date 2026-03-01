@@ -10,6 +10,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Search from './services/Search.jsx/index.js';
 import Messages from './pages/Messages.jsx';
+import Inbox from './pages/Inbox.jsx';
+import Conversation from './pages/Conversation.jsx';
 import Bookmarks from './pages/Bookmarks.jsx';
 import Notifications from './pages/Notifications.jsx';
 import Settings from './pages/Settings.jsx';
@@ -55,6 +57,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/search" element={<Search />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/inbox" element={<Inbox />} />
+        <Route path="/inbox/:threadId" element={<Conversation />} />
         <Route path="/bookmarks" element={<Bookmarks />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />

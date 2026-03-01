@@ -62,6 +62,9 @@ model User {
   following               Follow[]                  @relation("Follower")
   blocking                Block[]                   @relation("Blocker")
   blockedBy               Block[]                   @relation("Blocked")
+  threadsAsA              MessageThread[]           @relation("ThreadUserA")
+  threadsAsB              MessageThread[]           @relation("ThreadUserB")
+  directMessages          DirectMessage[]           @relation("DirectMessageSender")
 
   @@index([email])
   @@index([normalizedEmail])
@@ -141,6 +144,9 @@ model Post {
 
   // Likes
   likes PostLike[]
+
+  // Forwarded in messages
+  forwardedInMessages DirectMessage[] @relation("ForwardedMessages")
 
   @@index([authorId])
   @@index([createdAt])
@@ -791,4 +797,46 @@ model Block {
   @@index([blockerId])
   @@index([blockedId])
   @@map("blocks")
+}
+
+// ========================================
+// Direct Messaging System
+// ========================================
+
+model MessageThread {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userA    User            @relation("ThreadUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB    User            @relation("ThreadUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages DirectMessage[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+  @@index([updatedAt])
+  @@map("message_threads")
+}
+
+model DirectMessage {
+  id              String    @id @default(uuid())
+  threadId        String
+  senderId        String
+  body            String
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+  forwardedPostId String?
+
+  thread        MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender        User          @relation("DirectMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  forwardedPost Post?         @relation("ForwardedMessages", fields: [forwardedPostId], references: [id], onDelete: SetNull)
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([threadId, readAt])
+  @@map("direct_messages")
 }
