@@ -4,6 +4,7 @@ import { MessageSquare, Search, User, Plus, X, Loader2 } from 'lucide-react';
 import { getThreads, createThread } from '../services/messagesService';
 import { searchUsers } from '../services/search';
 import { useUnread } from '../context/UnreadContext';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import EmptyState from '../components/EmptyState';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
@@ -62,6 +63,7 @@ const DEMO_THREADS = [
 
 export default function Inbox() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { markMessagesRead } = useUnread();
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +78,12 @@ export default function Inbox() {
   const [creatingThread, setCreatingThread] = useState(false);
 
   useEffect(() => {
+    // Wait for user to be authenticated before fetching threads
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     const fetchThreads = async () => {
       setLoading(true);
       try {
@@ -99,7 +107,7 @@ export default function Inbox() {
 
     fetchThreads();
     markMessagesRead();
-  }, [markMessagesRead]);
+  }, [user, markMessagesRead]);
 
   // Search for users when query changes
   useEffect(() => {

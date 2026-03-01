@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, ArrowLeft, Loader2, User } from 'lucide-react';
+import { MessageSquare, X, Send, ArrowLeft, Loader2, User, Search, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getThreads, getThread, sendThreadMessage, createThread } from '../services/messagesService';
+import { searchUsers } from '../services/search';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
 
@@ -14,13 +15,19 @@ export default function ChatWidget() {
 
   // All useState hooks must be called before any early returns
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState('threads'); // 'threads' or 'conversation'
+  const [view, setView] = useState('threads'); // 'threads', 'conversation', or 'search'
   const [threads, setThreads] = useState([]);
   const [currentThread, setCurrentThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [creatingThread, setCreatingThread] = useState(false);
 
   // Determine if we should hide the widget
   const isOnInboxPage = location.pathname.startsWith('/inbox');
@@ -38,6 +45,32 @@ export default function ChatWidget() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, user, isOnInboxPage]);
+
+  // Search for users when query changes
+  useEffect(() => {
+    if (!user || isOnInboxPage) return;
+
+    const searchForUsers = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearching(true);
+      try {
+        const response = await searchUsers({ query: searchQuery, limit: 10 });
+        setSearchResults(response?.items || []);
+      } catch (err) {
+        console.error('Failed to search users:', err);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    const timer = setTimeout(searchForUsers, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, user, isOnInboxPage]);
 
   // Early returns AFTER all hooks
   if (isOnInboxPage) return null;
@@ -91,7 +124,29 @@ export default function ChatWidget() {
     setView('threads');
     setCurrentThread(null);
     setMessages([]);
+    setSearchQuery('');
+    setSearchResults([]);
     fetchThreads();
+  };
+
+  const handleStartConversation = async (selectedUser) => {
+    setCreatingThread(true);
+    try {
+      const thread = await createThread(selectedUser.id);
+      setSearchQuery('');
+      setSearchResults([]);
+      // Set up the thread and switch to conversation view
+      setCurrentThread({
+        id: thread.id,
+        otherUser: selectedUser
+      });
+      setView('conversation');
+      setMessages([]);
+    } catch (err) {
+      console.error('Failed to create thread:', err);
+    } finally {
+      setCreatingThread(false);
+    }
   };
 
   const formatTime = (dateString) => {
@@ -136,19 +191,28 @@ export default function ChatWidget() {
         <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[500px] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] p-4 flex items-center gap-3">
-            {view === 'conversation' && (
+            {(view === 'conversation' || view === 'search') && (
               <button onClick={goBack} className="text-white hover:bg-white/20 rounded-lg p-1">
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
             <div className="flex-1">
               <h3 className="text-white font-semibold">
-                {view === 'threads' ? 'Messages' : currentThread?.otherUser?.displayName || 'Chat'}
+                {view === 'threads' ? 'Messages' : view === 'search' ? 'New Message' : currentThread?.otherUser?.displayName || 'Chat'}
               </h3>
               {view === 'conversation' && currentThread?.otherUser?.username && (
                 <p className="text-white/70 text-sm">@{currentThread.otherUser.username}</p>
               )}
             </div>
+            {view === 'threads' && (
+              <button
+                onClick={() => setView('search')}
+                className="text-white hover:bg-white/20 rounded-lg p-1.5"
+                title="New message"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            )}
             <button
               onClick={() => navigate('/inbox')}
               className="text-white/70 hover:text-white text-sm"
@@ -162,6 +226,80 @@ export default function ChatWidget() {
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 text-[#0CCE6B] animate-spin" />
+              </div>
+            ) : view === 'search' ? (
+              /* User Search View */
+              <div className="flex flex-col h-full">
+                {/* Search Input */}
+                <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search for a user..."
+                      autoFocus
+                      className="w-full pl-9 pr-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                    />
+                    {searching && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 animate-spin" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Results */}
+                <div className="flex-1 overflow-y-auto">
+                  {searchQuery.length < 2 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-neutral-500 p-4">
+                      <Search className="w-10 h-10 mb-2 opacity-50" />
+                      <p className="text-sm">Enter at least 2 characters</p>
+                    </div>
+                  ) : searching ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader2 className="w-8 h-8 text-[#0CCE6B] animate-spin" />
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-neutral-500 p-4">
+                      <User className="w-10 h-10 mb-2 opacity-50" />
+                      <p className="text-sm">No users found</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                      {searchResults.map(searchUser => (
+                        <button
+                          key={searchUser.id}
+                          onClick={() => handleStartConversation(searchUser)}
+                          disabled={creatingThread}
+                          className="w-full p-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left disabled:opacity-50"
+                        >
+                          {searchUser.avatar ? (
+                            <img
+                              src={searchUser.avatar}
+                              alt={searchUser.displayName || searchUser.username}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                              <User className="w-5 h-5 text-neutral-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-neutral-900 dark:text-white truncate">
+                              {searchUser.displayName || searchUser.username}
+                            </p>
+                            <p className="text-sm text-neutral-500 truncate">
+                              @{searchUser.username}
+                            </p>
+                          </div>
+                          {creatingThread && (
+                            <Loader2 className="w-4 h-4 text-[#0CCE6B] animate-spin" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : view === 'threads' ? (
               /* Thread List */
