@@ -9,11 +9,11 @@ import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 export async function watermarkPdf(pdfBuffer, ownerUsername) {
   const pdfDoc = await PDFDocument.load(pdfBuffer);
   const pages = pdfDoc.getPages();
-  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const watermarkText = `Joint-Networking.com/profile/${ownerUsername}`;
   const fontSize = 32;
-  const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
+  const textWidth = boldFont.widthOfTextAtSize(watermarkText, fontSize);
 
   for (const page of pages) {
     const { width, height } = page.getSize();
@@ -29,9 +29,9 @@ export async function watermarkPdf(pdfBuffer, ownerUsername) {
           x: x,
           y: y,
           size: fontSize,
-          font: helveticaFont,
-          color: rgb(0.5, 0.5, 0.5),
-          opacity: 0.15,
+          font: boldFont,
+          color: rgb(0.3, 0.3, 0.3),
+          opacity: 0.35,
           rotate: degrees(-45),
         });
       }
@@ -46,29 +46,29 @@ export async function watermarkPdf(pdfBuffer, ownerUsername) {
       x: 20,
       y: 20,
       size: smallFontSize,
-      font: helveticaFont,
-      color: rgb(0.6, 0.6, 0.6),
-      opacity: 0.4,
+      font: boldFont,
+      color: rgb(0.3, 0.3, 0.3),
+      opacity: 0.5,
     });
 
     // Top-right corner
     page.drawText(smallText, {
-      x: width - helveticaFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
+      x: width - boldFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
       y: height - 30,
       size: smallFontSize,
-      font: helveticaFont,
-      color: rgb(0.6, 0.6, 0.6),
-      opacity: 0.4,
+      font: boldFont,
+      color: rgb(0.3, 0.3, 0.3),
+      opacity: 0.5,
     });
 
     // Bottom-right corner
     page.drawText(smallText, {
-      x: width - helveticaFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
+      x: width - boldFont.widthOfTextAtSize(smallText, smallFontSize) - 20,
       y: 20,
       size: smallFontSize,
-      font: helveticaFont,
-      color: rgb(0.6, 0.6, 0.6),
-      opacity: 0.4,
+      font: boldFont,
+      color: rgb(0.3, 0.3, 0.3),
+      opacity: 0.5,
     });
 
     // Top-left corner
@@ -76,9 +76,9 @@ export async function watermarkPdf(pdfBuffer, ownerUsername) {
       x: 20,
       y: height - 30,
       size: smallFontSize,
-      font: helveticaFont,
-      color: rgb(0.6, 0.6, 0.6),
-      opacity: 0.4,
+      font: boldFont,
+      color: rgb(0.3, 0.3, 0.3),
+      opacity: 0.5,
     });
   }
 
