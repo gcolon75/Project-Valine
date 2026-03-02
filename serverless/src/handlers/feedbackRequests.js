@@ -10,12 +10,12 @@ export const createFeedbackRequest = async (event) => {
   try {
     const { id: postId } = event.pathParameters || {};
     if (!postId) {
-      return error('postId is required', 400);
+      return error(400, 'postId is required');
     }
 
     const requesterId = getUserFromEvent(event);
     if (!requesterId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -38,18 +38,18 @@ export const createFeedbackRequest = async (event) => {
     });
 
     if (!post) {
-      return error('Post not found', 404);
+      return error(404, 'Post not found');
     }
 
     if (!post.allowFeedback) {
-      return error('This post does not allow feedback requests', 400);
+      return error(400, 'This post does not allow feedback requests');
     }
 
     const ownerId = post.authorId;
 
     // Check if user is owner
     if (requesterId === ownerId) {
-      return error('You cannot request feedback on your own post', 400);
+      return error(400, 'You cannot request feedback on your own post');
     }
 
     // Check if request already exists
@@ -64,13 +64,13 @@ export const createFeedbackRequest = async (event) => {
 
     if (existingRequest) {
       if (existingRequest.status === 'approved') {
-        return error('You already have access to give feedback on this post', 400);
+        return error(400, 'You already have access to give feedback on this post');
       }
       if (existingRequest.status === 'pending') {
-        return error('You already have a pending feedback request for this post', 400);
+        return error(400, 'You already have a pending feedback request for this post');
       }
       if (existingRequest.status === 'denied') {
-        return error('Your previous feedback request was denied', 400);
+        return error(400, 'Your previous feedback request was denied');
       }
     }
 
@@ -119,7 +119,7 @@ export const createFeedbackRequest = async (event) => {
     return json(request, 201);
   } catch (e) {
     console.error('Create feedback request error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -131,7 +131,7 @@ export const listFeedbackRequests = async (event) => {
   try {
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const { status, type = 'received' } = event.queryStringParameters || {};
@@ -185,7 +185,7 @@ export const listFeedbackRequests = async (event) => {
     return json(requests);
   } catch (e) {
     console.error('List feedback requests error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -197,12 +197,12 @@ export const getFeedbackRequest = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -259,18 +259,18 @@ export const getFeedbackRequest = async (event) => {
     });
 
     if (!request) {
-      return error('Feedback request not found', 404);
+      return error(404, 'Feedback request not found');
     }
 
     // Only owner or requester can view
     if (request.ownerId !== userId && request.requesterId !== userId) {
-      return error('Forbidden', 403);
+      return error(403, 'Forbidden');
     }
 
     return json(request);
   } catch (e) {
     console.error('Get feedback request error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -282,12 +282,12 @@ export const approveFeedbackRequest = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -304,15 +304,15 @@ export const approveFeedbackRequest = async (event) => {
     });
 
     if (!request) {
-      return error('Request not found', 404);
+      return error(404, 'Request not found');
     }
 
     if (request.ownerId !== userId) {
-      return error('Forbidden - not post owner', 403);
+      return error(403, 'Forbidden - not post owner');
     }
 
     if (request.status !== 'pending') {
-      return error('Request has already been processed', 400);
+      return error(400, 'Request has already been processed');
     }
 
     // Approve request
@@ -357,7 +357,7 @@ export const approveFeedbackRequest = async (event) => {
     return json(updatedRequest);
   } catch (e) {
     console.error('Approve feedback request error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -369,12 +369,12 @@ export const denyFeedbackRequest = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -391,15 +391,15 @@ export const denyFeedbackRequest = async (event) => {
     });
 
     if (!request) {
-      return error('Request not found', 404);
+      return error(404, 'Request not found');
     }
 
     if (request.ownerId !== userId) {
-      return error('Forbidden - not post owner', 403);
+      return error(403, 'Forbidden - not post owner');
     }
 
     if (request.status !== 'pending') {
-      return error('Request has already been processed', 400);
+      return error(400, 'Request has already been processed');
     }
 
     // Deny request
@@ -444,7 +444,7 @@ export const denyFeedbackRequest = async (event) => {
     return json(updatedRequest);
   } catch (e) {
     console.error('Deny feedback request error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -456,12 +456,12 @@ export const getAnnotations = async (event) => {
   try {
     const { id: feedbackRequestId } = event.pathParameters || {};
     if (!feedbackRequestId) {
-      return error('feedbackRequestId is required', 400);
+      return error(400, 'feedbackRequestId is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -472,12 +472,12 @@ export const getAnnotations = async (event) => {
     });
 
     if (!request) {
-      return error('Feedback request not found', 404);
+      return error(404, 'Feedback request not found');
     }
 
     // Only owner or requester can view annotations
     if (request.ownerId !== userId && request.requesterId !== userId) {
-      return error('Forbidden', 403);
+      return error(403, 'Forbidden');
     }
 
     const annotations = await prisma.feedbackAnnotation.findMany({
@@ -501,7 +501,7 @@ export const getAnnotations = async (event) => {
     return json(annotations);
   } catch (e) {
     console.error('Get annotations error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -513,23 +513,23 @@ export const createAnnotation = async (event) => {
   try {
     const { id: feedbackRequestId } = event.pathParameters || {};
     if (!feedbackRequestId) {
-      return error('feedbackRequestId is required', 400);
+      return error(400, 'feedbackRequestId is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
     const { type, pageNumber, selectionData, highlightedText, content, positionX, positionY } = body;
 
     if (!type || !content) {
-      return error('type and content are required', 400);
+      return error(400, 'type and content are required');
     }
 
     if (!['HIGHLIGHT', 'PAGE_COMMENT', 'GENERAL_COMMENT'].includes(type)) {
-      return error('Invalid annotation type', 400);
+      return error(400, 'Invalid annotation type');
     }
 
     const prisma = getPrisma();
@@ -543,16 +543,16 @@ export const createAnnotation = async (event) => {
     });
 
     if (!request) {
-      return error('Feedback request not found', 404);
+      return error(404, 'Feedback request not found');
     }
 
     if (request.status !== 'approved') {
-      return error('Feedback request is not approved', 403);
+      return error(403, 'Feedback request is not approved');
     }
 
     // Only the requester can create annotations
     if (request.requesterId !== userId) {
-      return error('Only the approved feedback requester can create annotations', 403);
+      return error(403, 'Only the approved feedback requester can create annotations');
     }
 
     // Create annotation
@@ -598,7 +598,7 @@ export const createAnnotation = async (event) => {
     return json(annotation, 201);
   } catch (e) {
     console.error('Create annotation error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -610,12 +610,12 @@ export const updateAnnotation = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -629,11 +629,11 @@ export const updateAnnotation = async (event) => {
     });
 
     if (!annotation) {
-      return error('Annotation not found', 404);
+      return error(404, 'Annotation not found');
     }
 
     if (annotation.authorId !== userId) {
-      return error('Forbidden - not annotation author', 403);
+      return error(403, 'Forbidden - not annotation author');
     }
 
     // Update annotation
@@ -661,7 +661,7 @@ export const updateAnnotation = async (event) => {
     return json(updatedAnnotation);
   } catch (e) {
     console.error('Update annotation error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -673,12 +673,12 @@ export const deleteAnnotation = async (event) => {
   try {
     const { id } = event.pathParameters || {};
     if (!id) {
-      return error('id is required', 400);
+      return error(400, 'id is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -689,11 +689,11 @@ export const deleteAnnotation = async (event) => {
     });
 
     if (!annotation) {
-      return error('Annotation not found', 404);
+      return error(404, 'Annotation not found');
     }
 
     if (annotation.authorId !== userId) {
-      return error('Forbidden - not annotation author', 403);
+      return error(403, 'Forbidden - not annotation author');
     }
 
     // Delete annotation
@@ -704,7 +704,7 @@ export const deleteAnnotation = async (event) => {
     return json({ deleted: true });
   } catch (e) {
     console.error('Delete annotation error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
 
@@ -716,12 +716,12 @@ export const getFeedbackStatus = async (event) => {
   try {
     const { id: postId } = event.pathParameters || {};
     if (!postId) {
-      return error('postId is required', 400);
+      return error(400, 'postId is required');
     }
 
     const userId = getUserFromEvent(event);
     if (!userId) {
-      return error('Unauthorized', 401);
+      return error(401, 'Unauthorized');
     }
 
     const prisma = getPrisma();
@@ -748,6 +748,6 @@ export const getFeedbackStatus = async (event) => {
     });
   } catch (e) {
     console.error('Get feedback status error:', e);
-    return error('Server error: ' + e.message, 500);
+    return error(500, 'Server error: ' + e.message);
   }
 };
