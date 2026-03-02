@@ -24,6 +24,7 @@ import { requestFeedback, getFeedbackStatus } from '../services/feedbackService'
 import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
+import ConfirmationModal from '../components/ConfirmationModal';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -46,6 +47,7 @@ export default function PostDetail() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState(null);
   const [requestingFeedback, setRequestingFeedback] = useState(false);
+  const [showFeedbackConfirm, setShowFeedbackConfirm] = useState(false);
 
   // Helper function to safely format price
   const formatPrice = (price) => {
@@ -124,11 +126,16 @@ export default function PostDetail() {
     fetchFeedbackStatus();
   }, [post?.id, post?.allowFeedback, post?.mediaAttachment?.type, post?.authorId, user]);
 
-  const handleRequestFeedback = async () => {
+  const handleRequestFeedbackClick = () => {
     if (!user) {
       toast.error('Please log in to request feedback access');
       return;
     }
+    setShowFeedbackConfirm(true);
+  };
+
+  const handleConfirmFeedbackRequest = async () => {
+    setShowFeedbackConfirm(false);
 
     try {
       setRequestingFeedback(true);
@@ -563,7 +570,7 @@ export default function PostDetail() {
                             <>
                               {!feedbackStatus?.hasRequest ? (
                                 <button
-                                  onClick={handleRequestFeedback}
+                                  onClick={handleRequestFeedbackClick}
                                   disabled={requestingFeedback}
                                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -745,6 +752,17 @@ export default function PostDetail() {
           <CommentList postId={id} onCommentAdded={handleCommentAdded} />
         </div>
       </article>
+
+      {/* Feedback Request Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showFeedbackConfirm}
+        onClose={() => setShowFeedbackConfirm(false)}
+        onConfirm={handleConfirmFeedbackRequest}
+        title="Request Feedback Access"
+        message="Are you sure you want to request feedback access? The post owner will be notified and can approve or deny your request."
+        confirmText="Request Access"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

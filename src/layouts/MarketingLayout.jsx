@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Mic } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import MarketingFooter from '../components/MarketingFooter';
 import MetaInjector from '../seo/MetaInjector';
 import StructuredData from '../seo/StructuredData';
@@ -14,6 +15,7 @@ import { isAllowlistActive } from '../utils/allowlistConfig';
  */
 export default function MarketingLayout() {
   const { theme, setTheme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const allowlistActive = isAllowlistActive();
   
@@ -115,21 +117,32 @@ export default function MarketingLayout() {
               </a>
             </nav>
 
-            {/* CTA Buttons - Hide Join/Get Started when allowlist is active */}
+            {/* CTA Buttons - Show different options for logged in vs logged out users */}
             <div className="flex items-center space-x-3">
-              <Link
-                to="/login"
-                className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded"
-              >
-                Sign In
-              </Link>
-              {!allowlistActive && (
+              {isAuthenticated ? (
                 <Link
-                  to="/join"
+                  to="/dashboard"
                   className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
                 >
-                  Sign up
+                  Go to Dashboard
                 </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-neutral-600 hover:text-[#0CCE6B] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded"
+                  >
+                    Sign In
+                  </Link>
+                  {!allowlistActive && (
+                    <Link
+                      to="/join"
+                      className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+                    >
+                      Sign up
+                    </Link>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, Mic } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import { useAuth } from '../context/AuthContext';
 
 const NotFound = () => {
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 dark:from-neutral-950 dark:via-[#1a1a1a] dark:to-neutral-950">
       
@@ -30,18 +32,29 @@ const NotFound = () => {
             </nav>
 
             <div className="flex items-center space-x-3">
-              <Link
-                to="/login"
-                className="hidden sm:block text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/join"
-                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/dashboard"
+                  className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden sm:block text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] font-medium transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/join"
+                    className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -66,11 +79,11 @@ const NotFound = () => {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Link
-              to="/"
+              to={isAuthenticated ? "/dashboard" : "/"}
               className="flex items-center space-x-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 shadow-lg"
             >
               <Home className="w-5 h-5" />
-              <span>Go Home</span>
+              <span>{isAuthenticated ? "Go to Dashboard" : "Go Home"}</span>
             </Link>
             <button
               onClick={() => window.history.back()}
