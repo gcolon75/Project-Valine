@@ -4,7 +4,7 @@
 
 ### Beta-50 Sprint: All P0 Build/Deploy Blockers Resolved
 
-**Completed this sprint (PRs #425–#428, Finn383 commits):**
+**Completed this sprint (PRs #422–#429, Finn383 commits):**
 
 #### ✅ P0 Items — All Build/Deploy Blockers DONE
 - **P0-005: Fix Discord/GitHub deploy bot API base** → DONE (PR #426)  

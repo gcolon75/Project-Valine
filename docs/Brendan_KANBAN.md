@@ -52,7 +52,7 @@ npx prisma generate
 
 ---
 
-## ✅ Completed Tasks (24)
+## ✅ Completed Tasks (21)
 
 ### ✅ A2: Fix post 'View' button 404
 **Status:** ✅ COMPLETED (PR #406)
