@@ -129,7 +129,21 @@ async function main() {
   if (!apiBase) {
     console.error('❌ Error: VITE_API_BASE is not set');
     console.error('\nPlease set VITE_API_BASE in your environment or .env.production file');
-    console.error('Example: VITE_API_BASE=https://ce73w43mga.execute-api.us-west-2.amazonaws.com\n');
+    console.error('Example: VITE_API_BASE=https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com\n');
+    process.exit(1);
+  }
+  
+  // Check for deprecated/stale API hosts — fail immediately if detected
+  const DEPRECATED_HOSTS = [
+    'fb9pxd6m09.execute-api.us-west-2.amazonaws.com',
+    'ce73w43mga.execute-api.us-west-2.amazonaws.com'
+  ];
+  const deprecatedMatch = DEPRECATED_HOSTS.find(h => apiBase.includes(h));
+  if (deprecatedMatch) {
+    console.error(`\n❌ DEPRECATED HOST DETECTED: ${deprecatedMatch}`);
+    console.error(`   Configured: ${apiBase}`);
+    console.error('   This host is no longer valid. Build blocked.');
+    console.error('   Set VITE_API_BASE to: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com\n');
     process.exit(1);
   }
   

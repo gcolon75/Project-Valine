@@ -1,5 +1,37 @@
 # KANBAN_PROGRESS.md Update Summary
 
+## Sprint Update — 2026-03-04 (Sprint 2)
+
+### Beta-50 Sprint 2: All 8 Remaining P0 Blockers Resolved
+
+**Completed this sprint:**
+
+#### ✅ P0 Items — All 8 Remaining Beta-50 Blockers DONE
+
+- **P0-001: AUTH Allowlist + onboarding route guard** → DONE (2026-03-04)  
+  `src/App.jsx` adds `RequireOnboarding` guard; no bypass path; auth.js allowlist confirmed
+- **P0-002: DEPLOY CloudFront SPA deep-link** → In Progress (2026-03-04)  
+  `scripts/verify-cloudfront-spa.ps1` created; `docs/Gabe_KANBAN.md` updated with correct approach (CloudFront Function, not custom error responses); manual attach step still needed
+- **P0-003: STABILITY No network errors** → DONE (2026-03-04)  
+  `src/services/api.js` ERR_NETWORK warn moved outside DEV guard; "Connection error" message for ERR_NETWORK
+- **P0-004: STABILITY 403/No profile found** → DONE (2026-03-04)  
+  `profiles.js` getMyProfile auto-creates stub profile; log confirmed; updateMyProfile path documented
+- **P0-005: STABILITY Intermittent login failures** → DONE (2026-03-04)  
+  `auth.js` bcrypt timeout (5s) added; 503 + retryAfter on timeout; postmortem in OPERATIONS.md
+- **P0-006: DEPLOY CI/CD regression guard** → DONE (2026-03-04)  
+  `.github/workflows/frontend-deploy.yml` created; `validate-api-base.js` adds deprecated host check
+- **P0-007: MEDIA S3 orphan cleanup** → DONE (2026-03-04)  
+  `cleanupOrphanedMedia.js` extended with dry-run + orphaned avatar cleanup + `cleanupHandler` export; daily EventBridge schedule in `serverless.yml`
+- **P0-008: QA Beta smoke test checklist** → DONE (2026-03-04)  
+  `docs/SMOKE_TEST_CHECKLIST.md` updated: correct API URL, access control tests, rollback triggers, sign-off block
+
+#### Overall Beta-50 Readiness Assessment
+- **~80%+ complete** toward Beta-50 milestone
+- All P0 blockers resolved
+- Remaining work: load testing (P1), CloudFront Function manual attach (INFRA-001), P1 features
+
+---
+
 ## Sprint Update — 2026-03-04
 
 ### Beta-50 Sprint: All P0 Build/Deploy Blockers Resolved

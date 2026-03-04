@@ -1024,3 +1024,17 @@ functions:
       - httpApi:
           path: /analytics/config
           method: get
+
+  # ========== SCHEDULED JOBS ==========
+  cleanupOrphanedMedia:
+    handler: src/scripts/cleanupOrphanedMedia.cleanupHandler
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    environment:
+      MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
+      DATABASE_URL: ${env:DATABASE_URL}
+    events:
+      - schedule:
+          rate: cron(0 3 * * ? *)
+          description: "Daily S3 orphan media cleanup at 03:00 UTC"
+          enabled: true

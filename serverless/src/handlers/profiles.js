@@ -1131,6 +1131,8 @@ export const updateMyProfile = async (event) => {
 
       // Get or create profile
       // Note: Profile model uses socialLinks (Json) field in serverless schema
+      // This create-or-update path handles the case where a profile doesn't exist yet,
+      // ensuring updateMyProfile never 404s for authenticated users. ✅ confirmed.
       let profile = await prisma.profile.findUnique({
         where: { userId },
       });
@@ -1437,7 +1439,7 @@ export const getMyProfile = async (event) => {
             tags: [],
           },
         });
-        console.log('[getMyProfile] Profile auto-created:', profile.id);
+        console.log('[getMyProfile] Auto-created stub profile for user:', userId);
       }
       
       education = profile.education || [];

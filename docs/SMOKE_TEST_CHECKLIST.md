@@ -4,7 +4,7 @@
 
 **Duration:** ~5 minutes
 
-**Rollback Triggers:** Any ❌ result requires immediate investigation or rollback.
+**Rollback Triggers:** Any ❌ result requires immediate investigation or rollback (see [Rollback Triggers](#rollback-triggers) below).
 
 ---
 
@@ -25,6 +25,7 @@
 - [ ] **Login** with existing account → dashboard loads
 - [ ] **Logout** → redirected to home page
 - [ ] **Session persistence** → refresh page while logged in → still logged in
+- [ ] **Onboarding guard** → new user with `onboardingComplete=false` directed to `/onboarding`, cannot skip to `/dashboard` via direct URL
 
 ### 2. Profile
 - [ ] **View profile** → profile page loads with correct data
@@ -50,17 +51,26 @@
 
 ---
 
+## Access Control Smoke Tests
+
+- [ ] **Request access to a restricted post** → post owner receives an in-app notification
+- [ ] **Owner approves access request** → requester can view gated content after approval
+- [ ] **Non-allowlisted email signup** → blocked with clear error message (not admitted to app)
+- [ ] **Allowlisted email signup** → proceeds to onboarding normally
+
+---
+
 ## API Health Checks
 
 Run these commands in PowerShell:
 
 ```powershell
 # Health check
-curl https://ce73w43mga.execute-api.us-west-2.amazonaws.com/health
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/health"
 
 # Auth endpoint
-curl https://ce73w43mga.execute-api.us-west-2.amazonaws.com/auth/me `
-  -H "Authorization: Bearer YOUR_TOKEN"
+Invoke-RestMethod -Uri "https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com/auth/me" `
+  -Headers @{ Authorization = "Bearer YOUR_TOKEN" }
 ```
 
 ```powershell
@@ -70,6 +80,20 @@ cd C:\Users\ghawk\Documents\GitHub\Project-Valine\api
 SELECT 1;
 "@ | npx prisma db execute --stdin
 ```
+
+---
+
+## Rollback Triggers
+
+The following conditions require **immediate rollback**:
+
+| Condition | Threshold | Action |
+|-----------|-----------|--------|
+| Login success rate drops | < 95% over 5 minutes | Rollback backend + notify team |
+| `/me/profile` error rate | > 5% of requests | Rollback backend |
+| CloudFront returning XML/S3 errors on SPA routes | Any occurrence | Check CloudFront Function, rollback if needed |
+| Frontend returning blank page or 5xx | Any occurrence | Rollback frontend S3 deploy |
+| Database query error rate | > 1% | Check Prisma/RDS, rollback if needed |
 
 ---
 
@@ -85,7 +109,7 @@ npx serverless rollback --stage prod --region us-west-2 --timestamp <PREVIOUS_TI
 git checkout <PREVIOUS_COMMIT>
 npm ci
 npm run build
-aws s3 sync dist/ s3://valine-frontend-prod --delete
+aws s3 sync dist/ s3://project-valine-frontend-prod --delete
 aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ```
 
@@ -94,7 +118,7 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 ## Key Endpoints
 
 - Frontend: https://dkmxy676d3vgc.cloudfront.net
-- API: https://ce73w43mga.execute-api.us-west-2.amazonaws.com
+- API: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com
 
 ---
 
@@ -103,3 +127,15 @@ aws cloudfront create-invalidation --distribution-id E16LPJDBIL5DEE --paths "/*"
 - `docs/DEPLOYMENT_BIBLE.md` - Full deployment process
 - `docs/USER_FLOWS.md` - User flows for context
 - `docs/KANBAN_PROGRESS.md` - Current task status
+- `scripts/verify-cloudfront-spa.ps1` - CloudFront SPA routing verification
+
+---
+
+## Sign-off
+
+| Field | Value |
+|-------|-------|
+| Tested by | ___ |
+| Date | ___ |
+| Result | Pass / Fail |
+| Notes | ___ |

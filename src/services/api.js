@@ -191,22 +191,22 @@ apiClient.interceptors.response.use(
     }
     
     // Log failed requests for debugging
+    // Always log ERR_NETWORK (true outage) with full URL for diagnostics
+    if (error.code === 'ERR_NETWORK' && !error.response) {
+      const fullUrl = (config?.baseURL || '') + (config?.url || '');
+      console.warn(
+        `[API Client] ERR_NETWORK - connection failed.\n` +
+        `  Attempted URL: ${fullUrl}\n` +
+        `  Check VITE_API_BASE (current: ${import.meta.env.VITE_API_BASE || 'not set'})\n` +
+        `  Tip: Ensure API Gateway URL is correct or start local backend.`
+      );
+    }
+    
     if (import.meta.env.DEV) {
-      // Enhanced diagnostics for network errors
-      if (error.code === 'ERR_NETWORK' && !error.response) {
-        const fullUrl = config?.baseURL + (config?.url || '');
-        console.warn(
-          `[API Client] Network Error - DNS or connection failed.\n` +
-          `  Attempted URL: ${fullUrl}\n` +
-          `  Check VITE_API_BASE (current: ${import.meta.env.VITE_API_BASE || 'not set'})\n` +
-          `  Tip: Ensure API Gateway URL is correct or start local backend.`
-        );
-      }
-      
       console.error('[API Client] Request failed:', {
         method: config?.method,
         url: config?.url,
-        fullUrl: config?.baseURL + (config?.url || ''),
+        fullUrl: (config?.baseURL || '') + (config?.url || ''),
         status: error.response?.status,
         message: error.message,
         code: error.code,
@@ -216,10 +216,14 @@ apiClient.interceptors.response.use(
     
     // Attach clear, actionable user-facing message to the error
     if (!error.response) {
-      // Network error (no response received)
-      error.userMessage = navigator.onLine
-        ? 'Unable to connect to the server. Please try again in a few moments.'
-        : 'No internet connection. Please check your network and try again.';
+      // Distinguish ERR_NETWORK (true outage / CORS block) from offline state
+      if (error.code === 'ERR_NETWORK') {
+        error.userMessage = 'Connection error — check your network or try again.';
+      } else {
+        error.userMessage = navigator.onLine
+          ? 'Unable to connect to the server. Please try again in a few moments.'
+          : 'No internet connection. Please check your network and try again.';
+      }
     } else {
       const status = error.response.status;
       switch (status) {

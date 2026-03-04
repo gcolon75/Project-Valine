@@ -333,7 +333,7 @@ aws s3 ls | grep project-valine
 ## 📋 P0 Critical Infrastructure Tasks (5 remaining)
 
 ### INFRA-001: CloudFront SPA deep-link fix
-**Status:** Not Started
+**Status:** In Progress
 **Priority:** P0 | **Estimate:** S (2-4h)
 **User Flow:** Flow 6 (View Post Detail)
 
@@ -344,37 +344,40 @@ aws s3 ls | grep project-valine
 - Hard refresh on any route except / fails
 - Shared links to posts don't work
 
-**Solution:**
-Configure CloudFront error responses to redirect 403/404 to index.html
+**Correct Approach: CloudFront Function (NOT custom error responses)**
+`infra/cloudfront/functions/spaRewrite.js` already exists and is correct.
+The function must be attached to distribution E16LPJDBIL5DEE as a **viewer-request** function.
+Custom error responses (403/404 → /index.html) should be **removed** once the function is attached —
+having both is redundant and the function approach is more precise.
 
 **Steps:**
-1. [ ] Open CloudFront console → Distribution E16LPJDBIL5DEE
-2. [ ] Go to Error Pages tab
-3. [ ] Create custom error response:
-   - HTTP Error Code: 403 Forbidden
-   - Response Page Path: /index.html
-   - HTTP Response Code: 200 OK
-4. [ ] Create second custom error response:
-   - HTTP Error Code: 404 Not Found
-   - Response Page Path: /index.html
-   - HTTP Response Code: 200 OK
-5. [ ] Wait for CloudFront to deploy changes (~5 minutes)
-6. [ ] Test:
+1. [x] CloudFront Function `spaRewrite.js` created at `infra/cloudfront/functions/spaRewrite.js`
+2. [x] Verification script created: `scripts/verify-cloudfront-spa.ps1`
+3. [ ] Deploy the CloudFront Function to AWS (manual step — requires AWS Console or CLI)
+4. [ ] Attach function to distribution E16LPJDBIL5DEE as a viewer-request function
+5. [ ] Remove any custom error responses (403/404 → /index.html) from the distribution
+6. [ ] Run `./scripts/verify-cloudfront-spa.ps1` and confirm PASS
+7. [ ] Test:
    - Direct URL to /posts/[some-id]
    - Direct URL to /profile/[username]
    - Hard refresh on any route
    - 404 on actual missing routes still shows 404 page
 
+**Verification Script:**
+```powershell
+./scripts/verify-cloudfront-spa.ps1
+# Expected: PASS on both checks
+```
+
 **Mermaid Diagram:**
 ```mermaid
 flowchart TD
-    A[User opens /posts/123] --> B[CloudFront receives request]
-    B --> C{File exists in S3?}
-    C -->|No| D[Return 404/403]
-    D --> E[Error Response Rule]
-    E --> F[Serve /index.html with 200]
-    F --> G[React Router handles /posts/123]
-    G --> H[PostDetail page renders]
+    A[User opens /posts/123] --> B[CloudFront viewer-request]
+    B --> C{spaRewrite.js}
+    C -->|Not a file extension| D[Rewrite to /index.html]
+    D --> E[S3 returns index.html]
+    E --> F[React Router handles /posts/123]
+    F --> G[PostDetail page renders]
 ```
 
 **Testing:**
@@ -388,7 +391,7 @@ curl -I https://dkmxy676d3vgc.cloudfront.net/some-missing-asset.js
 # Should return 404
 ```
 
-**Reference:** docs/KANBAN_PROGRESS.md P0-001, AWS CloudFront docs
+**Reference:** docs/KANBAN_PROGRESS.md P0-001, scripts/verify-cloudfront-spa.ps1
 
 ---
 

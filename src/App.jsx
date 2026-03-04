@@ -1,5 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from './context/AuthContext.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import MarketingLayout from './layouts/MarketingLayout.jsx';
 import Landing from './pages/Landing.jsx';
@@ -30,6 +31,18 @@ import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Onboarding from './pages/Onboarding/index.jsx';
 
+/**
+ * Route guard: requires authentication and completed onboarding.
+ * - Unauthenticated users → /login
+ * - Authenticated users with onboardingComplete === false → /onboarding (no bypass)
+ */
+function RequireOnboarding() {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.onboardingComplete) return <Navigate to="/onboarding" replace />;
+  return <Outlet />;
+}
+
 function App() {
   return (
     <Routes>
@@ -52,8 +65,9 @@ function App() {
       </Route>
       {/* Onboarding - Standalone route for multi-step wizard */}
       <Route path="/onboarding" element={<Onboarding />} />
-      {/* Authenticated pages under AppLayout */}
-      <Route element={<AppLayout />}>
+      {/* Authenticated pages under AppLayout — onboarding guard enforced */}
+      <Route element={<RequireOnboarding />}>
+        <Route element={<AppLayout />}>
         <Route path="/feed" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/search" element={<Search />} />
@@ -79,6 +93,7 @@ function App() {
         <Route path="/auditions/new" element={<AuditionsNew />} />
         <Route path="/auditions/:id" element={<AuditionsShow />} />
         <Route path="/requests" element={<Requests />} />
+        </Route>
       </Route>
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />

@@ -290,6 +290,35 @@ Next update in: 15 minutes
 
 ---
 
+## Postmortems
+
+### 2026-03-04 — Intermittent Login Failures
+
+**Date:** 2026-03-04  
+**Severity:** P0  
+**Status:** Mitigated
+
+**Symptom:** Intermittent login failures reported by beta users — requests would hang indefinitely or return generic 500 errors.
+
+**Root Causes:**
+1. **Cold-start Prisma pool exhaustion** — Lambda cold-starts under load exhausted available Prisma connection pool slots, causing login queries to queue or time out.
+2. **bcrypt timeout on cold Lambda** — `bcrypt.compare` on first Lambda invocation could take longer than the client timeout (8s), causing the request to appear to hang. No timeout guard was in place.
+
+**Mitigations Applied:**
+- `bcrypt.compare` is now wrapped in a 5-second `Promise.race` timeout. If it times out, the Lambda returns `{ error: 'SERVER_BUSY', retryAfter: 3 }` with HTTP 503 + `Retry-After: 3` header, so clients can retry gracefully instead of hanging.
+- Degraded-mode path (`isPrismaDegraded()`) already returns 503 with structured log; confirmed still active.
+- Structured log `login_bcrypt_timeout` emitted to CloudWatch on timeout events.
+
+**CloudWatch Log Group:** `/aws/lambda/pv-api-prod-authRouter`  
+**Log Query:** `filter event = "login_bcrypt_timeout" | stats count() by bin(5m)`
+
+**Follow-up Actions:**
+- [ ] Set Lambda reserved concurrency to prevent pool exhaustion under spike load
+- [ ] Enable Prisma connection pool size tuning via `DATABASE_CONNECTION_LIMIT` env var
+- [ ] Add CloudWatch alarm on `login_bcrypt_timeout` count > 0 in any 5-minute window
+
+---
+
 ## Maintenance Windows
 
 ### Scheduled Maintenance
