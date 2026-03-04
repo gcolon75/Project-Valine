@@ -16,7 +16,7 @@ docs/KANBAN_PROGRESS.md
 │   ├── P1 High: 15
 │   ├── P2 Medium: 15
 │   ├── Blocked: 1
-│   └── Done: 1
+│   └── Done: 28+ tasks (see Recently Completed section)
 │
 ├── Key Infrastructure
 │   ├── Database URL Template
@@ -196,6 +196,7 @@ docs/KANBAN_PROGRESS.md
 │       └── Database (migrate, studio, generate)
 │
 └── Change Log
+    ├── 2026-03-04: Post access control DONE (PR #422); UX Polish DONE (PR #425); P0-005 DONE (PR #426); P0-006, P0-007, P0-009 DONE (PR #427); CI/CD fixed (PR #428); DM group chat + Feedback System added (Finn383 Mar 1–2)
     ├── 2026-02-26: P0-006, P0-007, P0-009 implementation complete (PR submitted, pending merge)
     ├── 2026-02-25: P0-005, P0-006, P0-007, P0-009, P0-011 picked up (Backlog → In Progress)
     ├── 2024-02-17: Complete rewrite with 43 tasks

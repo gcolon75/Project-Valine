@@ -1,5 +1,52 @@
 # KANBAN_PROGRESS.md Update Summary
 
+## Sprint Update — 2026-03-04
+
+### Beta-50 Sprint: All P0 Build/Deploy Blockers Resolved
+
+**Completed this sprint (PRs #422–#429, Finn383 commits):**
+
+#### ✅ P0 Items — All Build/Deploy Blockers DONE
+- **P0-005: Fix Discord/GitHub deploy bot API base** → DONE (PR #426)  
+  `.env.production` reverted to correct `ce73w43mga` endpoint; 10+ docs/scripts updated
+- **P0-006: Fix frontend build failing ('vite' not recognized)** → DONE (PR #427)  
+  `scripts/quick-deploy.ps1` confirmed to use `npm ci`; docs updated
+- **P0-007: Backend upload MIME/size validation** → DONE (PR #427)  
+  `serverless/src/handlers/media.js` validates mimeType + fileSize; 20 tests pass
+- **P0-009: Fix avatar+banner save race condition** → DONE (PR #427)  
+  `ProfileEdit.jsx` uses single PATCH via `mapFormToProfileUpdate`; 4 tests pass
+- **CI/CD workflow fixes** → DONE (PR #428)  
+  Guards added for missing test suites + AWS secrets; stale cron triggers removed
+
+#### ✅ P1 Items Completed
+- **UX: Loading Skeletons, ErrorMessage & LoadingSpinner** → DONE (PR #425)  
+  `ErrorMessage.jsx` + `LoadingSpinner.jsx` created; PostDetail + Messages loading fixed
+- **ONBOARDING: Skills/specializations sync** → DONE (Finn383, Jan 30)  
+  Skills and specialization options now in sync with frontend config
+- **MESSAGING: DM Group Chat + lifecycle** → DONE (Finn383, Mar 1)  
+  Group chats, delete/leave, fixed Messages tab, group chat profile pictures
+- **FEATURE: PDF Feedback System** → DONE (Finn383, Mar 1–2)  
+  FeedbackRequest/FeedbackAnnotation models, API handlers, FeedbackView page
+
+#### 🔴 P0 Items Still Outstanding (Beta Blockers)
+- P0-001: CloudFront SPA deep-link fix — NOT STARTED
+- P0-002: Smoke test checklist — NOT STARTED (smoke-test.ps1 script exists but full QA run pending)
+- P0-003: Allowlist-only signup enforcement — NOT STARTED
+- P0-004: Load test Prisma connections — NOT STARTED
+- P0-008: S3 orphan cleanup job — NOT STARTED
+- P0-010: Network connection error handling — NOT STARTED
+- P0-011: 403 errors investigation — NOT STARTED
+- P0-012: Login failures investigation — NOT STARTED
+
+#### Overall Beta-50 Readiness Assessment
+- **~55% complete** toward Beta-50 milestone
+- All build/deploy infrastructure blockers are now resolved
+- Core features working: auth, onboarding, profiles, posts, DMs, notifications, access control, PDF feedback
+- Remaining P0 work: CloudFront routing, allowlist enforcement, load testing, stability investigations
+- Recommendation: prioritize P0-003 (allowlist) and P0-001 (CloudFront routing) before any beta invite wave
+
+---
+
 ## Sprint Update — 2026-02-26
 
 ### 3 P0 Tasks Implemented (Beta-50 Sprint)

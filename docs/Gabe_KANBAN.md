@@ -1,6 +1,6 @@
 # Gabe's Kanban - Infrastructure, Operations, QA & UX
 
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-03-04
 **Owner:** Gabriel Colon (Infrastructure/Operations/QA/UX Lead)
 **Focus:** Infrastructure, deployment, DevOps, quality assurance, documentation, and UX polish
 
@@ -82,6 +82,13 @@ aws s3 ls | grep project-valine
 | P2 Security/Infra | 5 | 0 | 0 | 5 |
 | UX/Docs | 16 | 11 | 0 | 5 |
 | **Total** | **30** | **11** | **0** | **19** |
+
+> **Cross-Team Infrastructure Updates (2026-03-04):** The following infrastructure-related work was completed by Brendan (PRs #426–#428) since the last update. None of these directly resolve Gabe's INFRA-xxx items, but they address related concerns:
+> - **PR #426** — Fixed prod API base URL (`VITE_API_BASE_URL` corrected to `ce73w43mga`); this doc was among the 10 docs updated in that PR. No INFRA item directly resolved.
+> - **PR #427** — Fixed frontend build failure (vite devDependency) and hardened upload MIME/size validation. Related to INFRA-005 (load testing readiness) but INFRA-005 itself is not yet started.
+> - **PR #428** — Fixed GitHub Actions CI/CD workflow failures (guards for missing test suites, AWS secret checks, removed stale cron triggers). Gabe has no specific "Fix CI/CD workflows" item; INFRA-002 (smoke test suite) and the staging deployment workflows remain as separate backlog items.
+>
+> **INFRA task status unchanged** — All 5 P0 Infrastructure items (INFRA-001 through INFRA-005) remain **Not Started**. Prioritize INFRA-001 (CloudFront SPA routing) and INFRA-005 (load testing) as the next infrastructure milestones for Beta-50.
 
 ---
 
