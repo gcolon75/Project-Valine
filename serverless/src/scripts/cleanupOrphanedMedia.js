@@ -138,6 +138,7 @@ async function cleanupOrphanedMedia() {
     where: {
       OR: [
         { avatar: { not: null } },
+        { profile: { bannerUrl: { not: null } } },
       ],
     },
     select: {

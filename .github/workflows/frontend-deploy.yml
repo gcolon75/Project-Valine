@@ -55,7 +55,6 @@ jobs:
           if [ -z "${{ env.VITE_API_BASE }}" ]; then
             echo "❌ API_BASE_URL secret is not set."
             echo "   Set the API_BASE_URL repo/org secret to the correct API Gateway URL."
-            echo "   Correct value: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
             exit 1
           fi
           if [ -z "${{ env.S3_BUCKET }}" ]; then
