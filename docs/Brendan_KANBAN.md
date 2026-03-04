@@ -1,6 +1,6 @@
 # Brendan's Kanban - Engineering Tasks
 
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-03-04
 **Owner:** Brendan (Engineer/Coder)
 **Focus:** All frontend, backend, and fullstack development tasks
 
@@ -45,14 +45,14 @@ npx prisma generate
 
 | Priority | Total | Completed | In Progress | Not Started |
 |----------|-------|-----------|-------------|-------------|
-| P0 | 7 | 7 | 0 | 0 |
-| P1 | 14 | 3 | 1 | 10 |
+| P0 | 12 | 10 | 0 | 2 |
+| P1 | 18 | 7 | 1 | 10 |
 | P2 | 10 | 4 | 0 | 6 |
-| **Total** | **31** | **14** | **1** | **16** |
+| **Total** | **40** | **21** | **1** | **18** |
 
 ---
 
-## ✅ Completed Tasks (10)
+## ✅ Completed Tasks (24)
 
 ### ✅ A2: Fix post 'View' button 404
 **Status:** ✅ COMPLETED (PR #406)
@@ -258,6 +258,200 @@ npx prisma generate
 
 **Reference:** PR #414
 
+---
+
+### ✅ C1: P0-005: DEPLOY: Fix Discord/GitHub deploy bot using wrong API base
+**Status:** ✅ COMPLETED (PR #426)
+**Priority:** P0 | **User Flow:** Flow 5 (Login)
+
+**What was done:**
+- Fixed `.env.production` VITE_API_BASE_URL from wrong `i72dxlcfcc` endpoint back to correct `ce73w43mga` endpoint
+- Updated 10+ docs, scripts, and smoke tests referencing the wrong endpoint
+- Hardened presign handler validation in `serverless/src/handlers/uploads.js`
+
+**Files changed:**
+- `.env.production` — VITE_API_BASE_URL corrected
+- `docs/QUICK_DEPLOY.md` — correct API base documented
+- `scripts/scan-api-base.js` — scanner updated
+- `scripts/deployment/smoke-test.ps1` — smoke tests updated
+- `serverless/src/handlers/uploads.js` — presign handler hardened
+- 10 additional docs with API base URL references
+
+**Verification:**
+✅ Login works after deploy; `grep i72dxlcfcc` returns zero hits in non-archive source files
+
+**Reference:** PR #426
+
+---
+
+### ✅ C2: P0-006: DEPLOY: Fix frontend build failing ('vite' not recognized)
+**Status:** ✅ COMPLETED (PR #427)
+**Priority:** P0 | **User Flow:** Deploy process
+
+**What was done:**
+- Confirmed `scripts/quick-deploy.ps1` uses bare `npm ci` (not `--omit=dev`) so vite devDependency is installed
+- Documented fix in `docs/QUICK_DEPLOY.md`
+
+**Files changed:**
+- `scripts/quick-deploy.ps1` (verified correct)
+- `docs/QUICK_DEPLOY.md` — npm ci requirement documented
+
+**Verification:**
+✅ `npm run build` completes; `dist/` directory produced
+
+**Reference:** PR #427
+
+---
+
+### ✅ C3: P0-007: MEDIA: Backend upload MIME/size validation
+**Status:** ✅ COMPLETED (PR #427)
+**Priority:** P0 | **User Flow:** Flow 7 (Upload Media)
+
+**What was done:**
+- `serverless/src/handlers/media.js` now validates `mimeType` (prefers `mimeType`, falls back to `contentType`)
+- Hardened `fileSize` validation; returns 400/413 JSON errors for invalid MIME or oversized files
+
+**Files changed:**
+- `serverless/src/handlers/media.js` — MIME/size validation added
+- `serverless/tests/media-content-type-validation.test.js` — 20 tests added
+
+**Verification:**
+✅ 20 tests pass; oversize → 413; invalid MIME → 400; missing fileSize → 400
+
+**Reference:** PR #427
+
+---
+
+### ✅ C4: P0-009: STABILITY: Fix avatar+banner 'save together' race condition
+**Status:** ✅ COMPLETED (PR #427)
+**Priority:** P0 | **User Flow:** Flow 7 (Upload Media)
+
+**What was done:**
+- `src/pages/ProfileEdit.jsx` uses functional `setFormData` updater + single PATCH via `mapFormToProfileUpdate`
+- Guarded by `uploadingAvatar || uploadingBanner` check before save
+
+**Files changed:**
+- `src/pages/ProfileEdit.jsx` — single PATCH via mapFormToProfileUpdate; functional state updater
+
+**Verification:**
+✅ Avatar+banner both persist after single save; 4 tests pass; no race condition
+
+**Reference:** PR #427
+
+---
+
+### ✅ C5: DEVOPS: Fix CI/CD workflow failures
+**Status:** ✅ COMPLETED (PR #428)
+**Priority:** P0 | **User Flow:** All flows (CI/CD)
+
+**What was done:**
+- Guarded `npm run test:run` in `ci-pr-check.yml` to skip gracefully if no test suite
+- Added AWS secret-presence guard to `frontend-verify.yml`
+- Removed stale cron triggers from staging workflows
+
+**Files changed:**
+- `.github/workflows/ci-pr-check.yml`
+- `.github/workflows/frontend-verify.yml`
+- `.github/workflows/phase5-staging-validation.yml`
+- `.github/workflows/ci-cd-staging.yml`
+- `.github/workflows/phase5-staging-validation-doublecheck.yml`
+
+**Verification:**
+✅ CI passes on PRs; no false failures; staging workflows manual-only
+
+**Reference:** PR #428
+
+---
+
+### ✅ C6: UX: Loading Skeletons, ErrorMessage & LoadingSpinner Components
+**Status:** ✅ COMPLETED (PR #425)
+**Priority:** P1 | **User Flow:** All flows
+
+**What was done:**
+- Created `src/components/ErrorMessage.jsx` (with `role="alert"`, `AlertCircle` icon, optional retry button)
+- Created `src/components/LoadingSpinner.jsx` (sm/md/lg sizes, `role="status"`, sr-only text)
+- Fixed skeleton loading in `PostDetail.jsx` and `Messages.jsx`
+
+**Files changed:**
+- `src/components/ErrorMessage.jsx` (created)
+- `src/components/LoadingSpinner.jsx` (created)
+- `src/pages/PostDetail.jsx` — skeleton loading improved
+- `src/pages/Messages.jsx` — skeleton loading improved
+
+**Verification:**
+✅ `ErrorBoundary.test.jsx` — 9 tests pass; PostDetail and Messages show skeletons during loading
+
+**Reference:** PR #425
+
+---
+
+### ✅ C7: ONBOARDING: Synced allowed skills/specializations from frontend
+**Status:** ✅ COMPLETED (Finn383 commit, Jan 30)
+**Priority:** P1 | **User Flow:** Flow 1 (Signup → Onboarding)
+
+**What was done:**
+- Skills and specialization options in onboarding/profile now match the canonical list defined in frontend config
+- Prevents stale/mismatched options from appearing in onboarding
+
+**Files changed:**
+- Onboarding components (skills/specializations data)
+
+**Verification:**
+✅ Confirmed: skills and specializations render correctly in onboarding
+
+**Reference:** Finn383 commit, Jan 30, 2026
+
+---
+
+### ✅ C8: MESSAGING: Direct Messages — Group Chat & Lifecycle
+**Status:** ✅ COMPLETED (Finn383 commits, Mar 1, 2026)
+**Priority:** P1 | **User Flow:** Flow 12 (Direct Messages)
+
+**What was done:**
+- Added group chat support to DM system
+- Delete/leave functionality for chats
+- Fixed Messages tab rendering
+- Group chat profile pictures added
+
+**Files changed:**
+- `src/components/ChatWidget.jsx`
+- `src/pages/Messages.jsx`
+- Related DM components
+
+**Verification:**
+✅ Group chats created and displayed; delete/leave works; Messages tab renders correctly
+
+**Reference:** Finn383 commits, Mar 1, 2026
+
+---
+
+### ✅ C9: FEATURE: PDF Feedback System
+**Status:** ✅ COMPLETED (Finn383 commits, Mar 1–2, 2026)
+**Priority:** P1 | **User Flow:** New — PDF Feedback Flow
+
+**What was done:**
+- Full feedback request/annotation system for PDFs
+- `FeedbackRequest` and `FeedbackAnnotation` Prisma models added
+- `serverless/src/handlers/feedbackRequests.js` handler created
+- `FeedbackView` page and route added
+- Confirmation modal before requesting feedback access
+- Auth-aware marketing pages
+
+**Files changed:**
+- `api/prisma/schema.prisma` — FeedbackRequest and FeedbackAnnotation models
+- `serverless/src/handlers/feedbackRequests.js` (created)
+- `src/pages/FeedbackView.jsx` (created)
+- `src/routes/App.jsx` — FeedbackView route added
+- `src/pages/PostDetail.jsx` — confirmation modal
+- Marketing components — auth-awareness added
+
+**Verification:**
+✅ Feedback routes work; database schema deployed; confirmation modal functional
+
+**Reference:** Finn383 commits, Mar 1–2, 2026
+
+---
+
 ## 🚧 In Progress (1)
 
 ### 🚧 B12: Comments system for posts
@@ -336,7 +530,9 @@ sequenceDiagram
 
 ---
 
-## 📋 P0 Critical Tasks (2 remaining)
+## 📋 P0 Critical Tasks (Remaining)
+
+> **Note:** P0-005, P0-006, P0-007, P0-009 are now **COMPLETED** — see C1–C4 in the Completed Tasks section above. The CI/CD workflow failures (C5) are also resolved (PR #428). The two items below still require work.
 
 ### P0-001: AUTH: Allowlist-only signup + full onboarding
 **Status:** Not Started
@@ -810,19 +1006,21 @@ api.interceptors.response.use(
 
 | Flow # | User Flow | Relevant Tasks |
 |--------|-----------|----------------|
-| 1 | Signup → Onboarding → Dashboard | P0-001, P1-001, P1-002 |
+| 1 | Signup → Onboarding → Dashboard | P0-001, P1-001, P1-002, ✅ C7 (skills sync) |
 | 2 | Edit Profile | ✅ A4 (done) |
 | 3 | Create Post | P1-006, P2-010 |
-| 4 | Request Access | P1-007, P1-008, P1-009 |
-| 5 | Login | P0-002, P1-012, P1-013 |
+| 4 | Request Access | ✅ P1-007/B13 (done), ✅ P1-008/B14 (done), P1-009 |
+| 5 | Login | P0-002, ✅ C1/P0-005 (done), P1-012, P1-013 |
 | 6 | View Post Detail | ✅ A2 (done) |
-| 7 | Upload Media | ✅ A5 (done), P2-004 |
+| 7 | Upload Media | ✅ A5 (done), ✅ C3/P0-007 (done), ✅ C4/P0-009 (done), P2-004 |
 | 8 | Like/Comment | 🚧 B12 (in progress), P1-005 |
 | 9 | Connect | P2-002 |
-| 12 | Direct Messages | P1-011 |
+| 12 | Direct Messages | ✅ C8 (DM group chat done) |
 | 15 | Email Verification | P1-003 |
 | 16 | Privacy Settings | P1-010, P2-001 |
 | 17 | Moderation | P2-005 |
+| All flows | CI/CD & UX | ✅ C5 (CI/CD fixed), ✅ C6 (loading skeletons) |
+| New | PDF Feedback | ✅ C9 (Feedback System done) |
 
 ---
 

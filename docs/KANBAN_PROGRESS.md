@@ -1,8 +1,53 @@
 # Project Valine - Complete Kanban Task Tracker
 
-**Last Updated:** 2026-02-25  
+**Last Updated:** 2026-03-04  
 **Purpose:** Comprehensive task tracking with user flow backing for contractor execution  
 **Status:** Active Development - Beta-50 Milestone
+
+---
+
+## Sprint Update — 2026-03-04
+
+### 9 Tasks Completed — Beta-50 Sprint (PRs #422–#429)
+
+The following tasks moved to **Done** since the last update:
+
+| PR | Task | Priority | Status |
+|----|------|----------|--------|
+| #422 | Post Access Control: notifications + owner UI | P1 | ✅ DONE |
+| #425 | UX Polish: Loading Skeletons, ErrorMessage, LoadingSpinner | P1 | ✅ DONE |
+| #426 | DEPLOY: Fix prod API base URL (P0-005) | P0 | ✅ DONE |
+| #427 | DEPLOY: Fix frontend build failing (P0-006) | P0 | ✅ DONE |
+| #427 | MEDIA: Backend upload MIME/size validation (P0-007) | P0 | ✅ DONE |
+| #427 | STABILITY: Avatar+banner race condition fix (P0-009) | P0 | ✅ DONE |
+| #428 | DEVOPS: Fix CI/CD workflow failures | P0 | ✅ DONE |
+| Finn383 Jan 30 | ONBOARDING: Synced skills/specializations from frontend | P1 | ✅ DONE |
+| Finn383 Mar 1–2 | MESSAGING: DM group chat + delete/leave | P1 | ✅ DONE |
+| Finn383 Mar 1–2 | FEATURE: PDF Feedback System (FeedbackRequest/Annotation) | P1 (new) | ✅ DONE |
+
+**P0 tasks now fully resolved:**
+- P0-005: Fix deploy bot API base URL → **DONE** (PR #426)
+- P0-006: Fix vite build error → **DONE** (PR #427)
+- P0-007: Backend upload validation → **DONE** (PR #427)
+- P0-009: Avatar+banner race condition → **DONE** (PR #427)
+
+**P0 tasks still outstanding:**
+- P0-001: CloudFront SPA deep-link fix — Backlog
+- P0-002: Smoke test checklist — Backlog (smoke-test.ps1 exists; full QA checklist not yet run)
+- P0-003: Allowlist signup enforcement — Backlog
+- P0-004: Load test Prisma connections — Backlog
+- P0-008: S3 orphan cleanup job — Backlog
+- P0-010: Network connection error handling — Backlog
+- P0-011: 403 errors investigation — Backlog
+- P0-012: Login failures investigation — Backlog
+
+**Updated Quick Stats:**
+- P0 Done: 4 of 12 (P0-005, P0-006, P0-007, P0-009)
+- P1 Done: 7+ (P1-007, P1-008 from PR #422; UX Polish PR #425; skills sync; DM group chat; Feedback System)
+- P2 Done: 4 (P2-006, P2-007, P2-013, PostCard label)
+- Beta-50 milestone estimate: **~55% complete** — all P0 build/deploy blockers resolved; onboarding enforcement and prod stability remain
+
+**PR #429 (Dependabot):** Dependency bumps only (glob, react-router, js-yaml); no Kanban items.
 
 ---
 
@@ -13,7 +58,7 @@
 - **P1 High:** 15 tasks (beta essential)
 - **P2 Medium:** 15 tasks (post-beta enhancements)
 - **Blocked:** 1 task (awaiting product decision)
-- **Done:** 22+ tasks (see Recently Completed section below)
+- **Done:** 28+ tasks (see Recently Completed section below)
 
 ---
 
