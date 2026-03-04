@@ -43,7 +43,7 @@ The following tasks moved to **Done** since the last update:
 
 **Updated Quick Stats:**
 - P0 Done: 4 of 12 (P0-005, P0-006, P0-007, P0-009)
-- P1 Done: 7+ (P1-007, P1-008 from PR #422; UX Polish PR #425; skills sync; DM group chat; Feedback System)
+- P1 Done: 6+ (P1-007 access request notifications PR #422; P1-008 owner UI PR #422; UX Polish PR #425; skills sync; DM group chat; Feedback System)
 - P2 Done: 4 (P2-006, P2-007, P2-013, PostCard label)
 - Beta-50 milestone estimate: **~55% complete** — all P0 build/deploy blockers resolved; onboarding enforcement and prod stability remain
 
