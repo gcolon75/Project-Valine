@@ -404,7 +404,7 @@ npx prisma generate
 ---
 
 ### ✅ C8: MESSAGING: Direct Messages — Group Chat & Lifecycle
-**Status:** ✅ COMPLETED (Finn383 commits, Mar 1, 2026)
+**Status:** ✅ COMPLETED (Finn383 commits, Mar 1–2, 2026)
 **Priority:** P1 | **User Flow:** Flow 12 (Direct Messages)
 
 **What was done:**
@@ -421,7 +421,7 @@ npx prisma generate
 **Verification:**
 ✅ Group chats created and displayed; delete/leave works; Messages tab renders correctly
 
-**Reference:** Finn383 commits, Mar 1, 2026
+**Reference:** Finn383 commits, Mar 1–2, 2026
 
 ---
 
