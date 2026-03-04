@@ -320,8 +320,26 @@ async function login(event) {
 
       let valid;
       try {
-        valid = await bcrypt.compare(password, user.passwordHash);
+        // Wrap bcrypt.compare in a 5-second timeout to prevent hanging on cold Lambda
+        const BCRYPT_TIMEOUT_MS = 5000;
+        valid = await Promise.race([
+          bcrypt.compare(password, user.passwordHash),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('BCRYPT_TIMEOUT')), BCRYPT_TIMEOUT_MS)
+          )
+        ]);
       } catch (bcryptError) {
+        if (bcryptError.message === 'BCRYPT_TIMEOUT') {
+          logStructured(correlationId, 'login_bcrypt_timeout', {
+            userId: user.id,
+            bcrypt_timeout: true
+          }, 'error');
+          return {
+            statusCode: 503,
+            headers: buildHeaders(event, { 'Content-Type': 'application/json', 'Retry-After': '3' }),
+            body: JSON.stringify({ error: 'SERVER_BUSY', retryAfter: 3 })
+          };
+        }
         logStructured(correlationId, 'login_bcrypt_error', {
           userId: user.id,
           email: redactEmail(user.email),

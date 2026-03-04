@@ -1,0 +1,110 @@
+name: Frontend Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.env.production'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: "Force deploy even without source changes"
+        required: false
+        default: "false"
+
+run-name: "Frontend Deploy — ${{ github.sha }} by ${{ github.actor }}"
+
+jobs:
+  validate-and-deploy:
+    name: Validate, Build, Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      # VITE_API_BASE must come from the API_BASE_URL secret — never hardcoded
+      VITE_API_BASE: ${{ secrets.API_BASE_URL }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      AWS_REGION: us-west-2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::579939802800:role/ProjectValine-GitHubDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify required secrets
+        run: |
+          if [ -z "${{ env.VITE_API_BASE }}" ]; then
+            echo "❌ API_BASE_URL secret is not set."
+            echo "   Set the API_BASE_URL repo/org secret to the correct API Gateway URL."
+            echo "   Correct value: https://i72dxlcfcc.execute-api.us-west-2.amazonaws.com"
+            exit 1
+          fi
+          if [ -z "${{ env.S3_BUCKET }}" ]; then
+            echo "❌ S3_BUCKET secret is not set."; exit 1
+          fi
+          if [ -z "${{ env.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+            echo "❌ CLOUDFRONT_DISTRIBUTION_ID secret is not set."; exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate API base URL (regression guard)
+        # Blocks the build if VITE_API_BASE is missing, deprecated, or wrong.
+        # Prevents deploy-bot regressions that write stale API base URLs.
+        run: node scripts/validate-api-base.js
+        env:
+          VITE_API_BASE: ${{ env.VITE_API_BASE }}
+
+      - name: Build frontend (Vite)
+        run: npm run build
+        env:
+          VITE_API_BASE: ${{ env.VITE_API_BASE }}
+
+      - name: Deploy assets to S3 (cached)
+        run: |
+          aws s3 sync dist "s3://${{ env.S3_BUCKET }}" \
+            --delete \
+            --cache-control "public, max-age=300" \
+            --exclude "*.html"
+
+      - name: Deploy HTML to S3 (no-cache)
+        run: |
+          aws s3 sync dist "s3://${{ env.S3_BUCKET }}" \
+            --exclude "*" --include "*.html" \
+            --cache-control "no-cache"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ env.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
+
+      - name: Deployment summary
+        run: |
+          echo "## Frontend Deploy Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Key | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| S3 Bucket | ${{ env.S3_BUCKET }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| CloudFront | ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| API Base | ${{ env.VITE_API_BASE }} |" >> "$GITHUB_STEP_SUMMARY"

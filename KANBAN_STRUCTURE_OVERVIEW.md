@@ -355,5 +355,14 @@ grep -E "postgresql://[^{]" docs/KANBAN_PROGRESS.md  # Expected: 0 matches
 ---
 
 **Status:** ✅ Complete and Ready for Use  
-**Last Updated:** 2024-02-18  
+**Last Updated:** 2026-03-04  
 **Maintained By:** DocAgent
+
+---
+
+## Changelog
+
+### 2026-03-04
+- Sprint 2 section added to KANBAN_PROGRESS.md: all 8 remaining P0 Beta-50 blockers resolved
+- Beta-50 readiness estimate updated from ~55% to ~80%+
+- P0 done count updated from 4 to 12

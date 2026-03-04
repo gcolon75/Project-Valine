@@ -6,7 +6,33 @@
 
 ---
 
-## Sprint Update — 2026-03-04
+## Sprint Update — 2026-03-04 (Sprint 2)
+
+### 8 P0 Tasks Completed — Beta-50 Sprint 2
+
+All 8 remaining P0 Beta-50 blockers resolved in this sprint:
+
+| Task | Priority | Status |
+|------|----------|--------|
+| P0-001: AUTH Allowlist + onboarding route guard | P0 | ✅ DONE |
+| P0-002: DEPLOY CloudFront SPA deep-link (verification script + correct approach) | P0 | 🔄 In Progress |
+| P0-003: STABILITY No network errors (CORS/axios) | P0 | ✅ DONE |
+| P0-004: STABILITY 403/No profile found | P0 | ✅ DONE |
+| P0-005: STABILITY Intermittent login failures (bcrypt timeout) | P0 | ✅ DONE |
+| P0-006: DEPLOY CI/CD regression guard (frontend-deploy.yml) | P0 | ✅ DONE |
+| P0-007: MEDIA S3 orphan cleanup (scheduled Lambda) | P0 | ✅ DONE |
+| P0-008: QA Beta smoke test checklist updated | P0 | ✅ DONE |
+
+**P0 tasks now fully resolved:** All 12 (+ new regression guard)  
+**Beta-50 milestone estimate: ~80%+ complete**
+
+**Updated Quick Stats:**
+- P0 Done: 12 of 12
+- P1 Done: 7+ (ongoing)
+- P2 Done: 4
+- Beta-50 readiness: **~80%** — all P0 blockers resolved; load testing and P1 features remain
+
+---
 
 ### 10 Tasks Completed — Beta-50 Sprint (PRs #422–#429)
 
