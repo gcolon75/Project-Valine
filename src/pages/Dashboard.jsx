@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart } from "lucide-react";
+import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft } from "lucide-react";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
@@ -11,7 +11,7 @@ import { getFeedPosts, likePost as likePostApi, unlikePost as unlikePostApi } fr
 import toast from "react-hot-toast";
 import { getMyProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
-import { ALLOWED_TAGS } from "../constants/tags";
+import { ALLOWED_TAGS, TAG_CATEGORIES } from "../constants/tags";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -132,6 +132,8 @@ export default function Dashboard() {
     ALLOWED_TAGS.slice(0, 8)
   );
   const [activeTag, setActiveTag] = useState("");
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
 
   const results = useMemo(() => {
     if (!activeTag) return displayPosts;
@@ -215,25 +217,103 @@ export default function Dashboard() {
             </div>
 
             {/* Saved tags */}
-            <Card title="Trending tags" padding="default">
-              <div className="flex flex-wrap gap-2">
-                {savedTags.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setActiveTag((v) => (v === t ? "" : t))}
-                    className={[
-                      "rounded-full border px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
-                      activeTag === t
-                        ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
-                        : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
-                    ].join(" ")}
-                    aria-pressed={activeTag === t}
-                    aria-label={`Filter by ${t}`}
-                  >
-                    {t}
-                  </button>
-                ))}
+            <Card padding="default">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  {showAllTags ? "All tags" : "Trending tags"}
+                </h3>
+                <button
+                  onClick={() => { setShowAllTags((v) => !v); setTagSearch(""); }}
+                  className="text-xs font-medium text-[#0CCE6B] hover:text-[#0BBE60] transition-colors"
+                >
+                  {showAllTags ? (
+                    <span className="flex items-center gap-1"><ChevronLeft className="w-3 h-3" />Back</span>
+                  ) : "View all"}
+                </button>
               </div>
+
+              {showAllTags && (
+                <div className="relative mb-3">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Search tags..."
+                    value={tagSearch}
+                    onChange={(e) => setTagSearch(e.target.value)}
+                    className="w-full bg-neutral-100 dark:bg-neutral-800 border-0 rounded-lg pl-8 pr-8 py-1.5 text-xs text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                  />
+                  {tagSearch && (
+                    <button
+                      onClick={() => setTagSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                    >
+                      <X className="w-3.5 h-3.5 text-neutral-400 hover:text-neutral-600" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {showAllTags ? (
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                  {Object.entries(TAG_CATEGORIES)
+                    .map(([category, tags]) => {
+                      const filtered = tagSearch
+                        ? tags.filter((t) => t.toLowerCase().includes(tagSearch.toLowerCase()))
+                        : tags;
+                      if (filtered.length === 0) return null;
+                      return (
+                        <div key={category}>
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">
+                            {category}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {filtered.map((t) => (
+                              <button
+                                key={t}
+                                onClick={() => setActiveTag((v) => (v === t ? "" : t))}
+                                className={[
+                                  "rounded-full border px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
+                                  activeTag === t
+                                    ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
+                                    : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
+                                ].join(" ")}
+                                aria-pressed={activeTag === t}
+                                aria-label={`Filter by ${t}`}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                    .filter(Boolean)}
+                  {tagSearch && Object.values(TAG_CATEGORIES).every((tags) =>
+                    tags.every((t) => !t.toLowerCase().includes(tagSearch.toLowerCase()))
+                  ) && (
+                    <p className="text-xs text-neutral-500 text-center py-2">No tags found</p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {savedTags.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setActiveTag((v) => (v === t ? "" : t))}
+                      className={[
+                        "rounded-full border px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
+                        activeTag === t
+                          ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
+                          : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
+                      ].join(" ")}
+                      aria-pressed={activeTag === t}
+                      aria-label={`Filter by ${t}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
             </Card>
           </aside>
 

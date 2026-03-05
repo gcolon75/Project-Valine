@@ -459,6 +459,7 @@ export default function Post() {
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
         visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS_ONLY
         audioUrl: uploadedAudioUrl || null, // Audio URL for audio posts
+        contentType: formData.contentType || null, // Content type: script, audition, reel, audio
         price: priceValue, // Post price (0 for free)
         isFree: formData.isFree, // Whether post is free
         thumbnailUrl: formData.thumbnailUrl || null, // Thumbnail URL

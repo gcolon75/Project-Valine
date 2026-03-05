@@ -11,6 +11,13 @@ import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf } from "../ser
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
+const CONTENT_TYPE_LABELS = {
+  script: { icon: '📝', label: 'Script' },
+  audition: { icon: '🎭', label: 'Audition' },
+  reel: { icon: '🎬', label: 'Reel' },
+  audio: { icon: '🎤', label: 'Audio' },
+};
+
 export default function PostCard({ post, onDelete, onLike }) {
   const { likePost: contextLikePost, toggleSave } = useFeed();
   // Use provided onLike handler or fall back to context
@@ -252,6 +259,16 @@ export default function PostCard({ post, onDelete, onLike }) {
             <span className="text-xs text-neutral-500 dark:text-neutral-500">
               {timeAgo(post.createdAt)}
             </span>
+
+            {/* Content type badge */}
+            {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
+              <>
+                <span className="text-neutral-400 dark:text-neutral-500">·</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+                  {CONTENT_TYPE_LABELS[post.contentType].icon} {CONTENT_TYPE_LABELS[post.contentType].label}
+                </span>
+              </>
+            )}
 
             {/* Badges */}
             {isGated && (

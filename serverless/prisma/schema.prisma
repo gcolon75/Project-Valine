@@ -128,6 +128,9 @@ model Post {
   // Audio URL for audio posts
   audioUrl String?
 
+  // Content type: script, audition, reel, audio
+  contentType String?
+
   // 4-Tier Content System fields
   visibility     Visibility @default(PUBLIC)
   isFree         Boolean    @default(true)

@@ -693,10 +693,18 @@ export default function PostDetail() {
             </div>
           )}
 
-          {/* Timestamp */}
+          {/* Timestamp and content type */}
           <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-6">
             <Clock className="w-4 h-4" />
             <span>{formatDate(post.createdAt)}</span>
+            {post.contentType && { script: '📝 Script', audition: '🎭 Audition', reel: '🎬 Reel', audio: '🎤 Audio' }[post.contentType] && (
+              <>
+                <span>·</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+                  {{ script: '📝 Script', audition: '🎭 Audition', reel: '🎬 Reel', audio: '🎤 Audio' }[post.contentType]}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

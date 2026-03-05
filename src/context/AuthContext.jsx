@@ -65,6 +65,22 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
+  // Listen for auth:unauthorized events (fired when token refresh also fails)
+  useEffect(() => {
+    const handleUnauthorized = async () => {
+      console.warn('[AuthContext] Session expired, logging out');
+      try {
+        await authService.logout();
+      } catch (_) {
+        // ignore logout errors
+      }
+      setUser(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, []);
+
   // Persist user to localStorage
   useEffect(() => {
     if (user) localStorage.setItem(LS_KEY, JSON.stringify(user));
