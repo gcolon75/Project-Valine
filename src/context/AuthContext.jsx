@@ -68,13 +68,17 @@ export function AuthProvider({ children }) {
   // Listen for auth:unauthorized events (fired when token refresh also fails)
   useEffect(() => {
     const handleUnauthorized = async () => {
-      console.warn('[AuthContext] Session expired, logging out');
+      console.warn('[AuthContext] Session expired, logging out and redirecting to login');
       try {
         await authService.logout();
       } catch (_) {
         // ignore logout errors
       }
       setUser(null);
+      // Redirect to login immediately so user never sees empty/broken UI
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = '/login';
+      }
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
