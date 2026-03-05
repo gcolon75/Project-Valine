@@ -80,7 +80,8 @@ export const createPost = async (event) => {
       allowDownload,
       allowFeedback,
       isFree,
-      contentType
+      contentType,
+      includeWatermark
     } = body;
     
     // Log incoming request (payload size for observability)
@@ -184,6 +185,7 @@ export const createPost = async (event) => {
         visibility: postVisibility,
         audioUrl: audioUrl || null,
         contentType: contentType || null,
+        includeWatermark: includeWatermark || false,
         price: (postPrice && postPrice > 0) ? postPrice : null,
         isFree: postIsFree,
         thumbnailUrl: thumbnailUrl || null,

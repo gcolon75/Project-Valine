@@ -131,6 +131,9 @@ model Post {
   // Content type: script, audition, reel, audio
   contentType String?
 
+  // Watermark flag for script/PDF posts
+  includeWatermark Boolean @default(false)
+
   // 4-Tier Content System fields
   visibility     Visibility @default(PUBLIC)
   isFree         Boolean    @default(true)

@@ -215,13 +215,20 @@ export default function PostCard({ post, onDelete, onLike }) {
 
   return (
     <>
-      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
+      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up relative">
+        {/* Content type emoji - top right */}
+        {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
+          <span className="absolute top-3 right-3 text-xl z-10" title={CONTENT_TYPE_LABELS[post.contentType].label}>
+            {CONTENT_TYPE_LABELS[post.contentType].icon}
+          </span>
+        )}
+
         {/* Header */}
         <div className="px-4 py-3">
           {/* Post Title - Primary */}
           {post.title && (
             <h2
-              className="text-lg font-bold text-neutral-900 dark:text-white mb-2 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+              className="text-lg font-bold text-neutral-900 dark:text-white mb-2 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors pr-8"
               onClick={() => navigate(`/posts/${post.id}`)}
             >
               {post.title}
@@ -259,16 +266,6 @@ export default function PostCard({ post, onDelete, onLike }) {
             <span className="text-xs text-neutral-500 dark:text-neutral-500">
               {timeAgo(post.createdAt)}
             </span>
-
-            {/* Content type badge */}
-            {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
-              <>
-                <span className="text-neutral-400 dark:text-neutral-500">·</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
-                  {CONTENT_TYPE_LABELS[post.contentType].icon} {CONTENT_TYPE_LABELS[post.contentType].label}
-                </span>
-              </>
-            )}
 
             {/* Badges */}
             {isGated && (

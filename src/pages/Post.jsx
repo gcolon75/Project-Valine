@@ -90,6 +90,7 @@ export default function Post() {
     requiresAccess: false,
     allowDownload: false,
     allowFeedback: false,
+    includeWatermark: false,
     thumbnailUrl: '',
   });
   
@@ -108,6 +109,9 @@ export default function Post() {
       setUploadedAudioUrl(null);
       setUploadProgress(0);
       setUploadError(null);
+      // Auto-enable watermark for scripts/PDFs
+      setFormData(prev => ({ ...prev, [field]: value, includeWatermark: value === 'script' }));
+      return;
     }
     // Handle "Make Free" checkbox
     if (field === 'isFree' && value === true) {
@@ -466,6 +470,7 @@ export default function Post() {
         requiresAccess: formData.requiresAccess || false, // Whether access needs to be requested
         allowDownload: formData.allowDownload || false, // Whether download is allowed
         allowFeedback: formData.allowFeedback || false, // Whether feedback requests are allowed (PDF only)
+        includeWatermark: formData.includeWatermark || false, // Whether to watermark downloaded PDFs
       };
       
       // Call API to create post
@@ -888,6 +893,24 @@ export default function Post() {
                   <div className="font-medium text-neutral-900 dark:text-neutral-100">Allow Feedback Requests</div>
                   <div className="text-sm text-neutral-600 dark:text-neutral-400">
                     Let others request to provide private feedback and annotations on your PDF
+                  </div>
+                </div>
+              </label>
+            )}
+
+            {/* Include Watermark Toggle - Only for PDFs/Scripts */}
+            {formData.contentType === 'script' && (
+              <label className="flex items-start p-4 rounded-lg border-2 border-neutral-300 dark:border-neutral-700 cursor-pointer hover:border-emerald-300 transition-all">
+                <input
+                  type="checkbox"
+                  checked={formData.includeWatermark}
+                  onChange={(e) => handleChange('includeWatermark', e.target.checked)}
+                  className="mt-1 mr-3 w-5 h-5 rounded border-neutral-300 dark:border-neutral-700 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <div className="font-medium text-neutral-900 dark:text-neutral-100">Include Watermark</div>
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Add a watermark to downloaded PDFs to protect your work
                   </div>
                 </div>
               </label>

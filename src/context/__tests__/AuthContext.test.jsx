@@ -97,7 +97,6 @@ describe('AuthContext', () => {
       expect(authService.getCurrentUser).toHaveBeenCalled();
       expect(result.current.user).toEqual(mockUser);
     } else {
-      // In dev bypass mode, user state is handled by login/devLogin
       expect(result.current.isInitialized).toBe(true);
     }
   });
@@ -134,7 +133,7 @@ describe('AuthContext', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('should handle login with fallback on API failure', async () => {
+  it('should throw on login API failure', async () => {
     authService.isAuthenticated.mockReturnValue(false);
     authService.login.mockRejectedValue(new Error('Network Error'));
 
@@ -146,16 +145,13 @@ describe('AuthContext', () => {
       expect(result.current.isInitialized).toBe(true);
     });
 
-    let returnedUser;
     await act(async () => {
-      returnedUser = await result.current.login('test@example.com', 'password', 'artist');
+      await expect(
+        result.current.login('test@example.com', 'password', 'artist')
+      ).rejects.toThrow('Network Error');
     });
 
-    // Should create demo user as fallback
-    expect(returnedUser).toBeDefined();
-    expect(returnedUser.email).toBe('test@example.com');
-    expect(returnedUser.role).toBe('artist');
-    expect(result.current.user).toBeDefined();
+    expect(result.current.user).toBeNull();
   });
 
   it('should handle register successfully', async () => {
@@ -265,7 +261,7 @@ describe('AuthContext', () => {
     expect(result.current.user.profileComplete).toBe(true);
   });
 
-  it('should expose devLogin only in development', async () => {
+  it('should not expose devLogin or devBypass', async () => {
     authService.isAuthenticated.mockReturnValue(false);
 
     const { result } = renderHook(() => useAuth(), {
@@ -276,12 +272,7 @@ describe('AuthContext', () => {
       expect(result.current.isInitialized).toBe(true);
     });
 
-    // In test environment, DEV is true, so devLogin should exist
-    if (import.meta.env.DEV) {
-      expect(result.current.devLogin).toBeDefined();
-      expect(typeof result.current.devLogin).toBe('function');
-    } else {
-      expect(result.current.devLogin).toBeUndefined();
-    }
+    expect(result.current.devLogin).toBeUndefined();
+    expect(result.current.devBypass).toBeUndefined();
   });
 });

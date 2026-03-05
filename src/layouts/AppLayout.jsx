@@ -1,6 +1,6 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, AlertTriangle, Mail } from "lucide-react";
+import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, Mail } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
@@ -20,24 +20,10 @@ export default function AppLayout() {
     navigate('/');
   };
 
-  // Check if user is in dev bypass mode
-  const isDevBypass = user?.roles?.includes('DEV_BYPASS');
-
   return (
     <div className="min-h-screen bg-surface-0">
-      {/* Dev Bypass Warning Banner */}
-      {isDevBypass && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 text-center font-semibold shadow-lg">
-          <div className="flex items-center justify-center space-x-2">
-            <AlertTriangle className="w-5 h-5" />
-            <span>DEV SESSION (NO REAL AUTH) - Localhost Only</span>
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-        </div>
-      )}
-      
       {/* Desktop Header - Hidden on mobile */}
-      <header className={`hidden md:block fixed left-0 right-0 z-50 bg-surface-2/80 backdrop-blur-lg border-b border-subtle ${isDevBypass ? 'top-10' : 'top-0'}`}>
+      <header className="hidden md:block fixed left-0 right-0 z-50 bg-surface-2/80 backdrop-blur-lg border-b border-subtle top-0">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             
@@ -90,7 +76,7 @@ export default function AppLayout() {
       </header>
 
       {/* Content with padding for desktop header and mobile bottom nav */}
-      <main className={`pb-20 md:pb-6 ${isDevBypass ? 'md:pt-[120px] pt-10' : 'md:pt-20'}`}>
+      <main className="pb-20 md:pb-6 md:pt-20">
         <Outlet />
       </main>
 

@@ -443,10 +443,17 @@ export default function PostDetail() {
         )}
 
         {/* Header with Title and Author */}
-        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 relative">
+          {/* Content type emoji - top right */}
+          {post.contentType && { script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType] && (
+            <span className="absolute top-6 right-6 text-xl" title={{ script: 'Script', audition: 'Audition', reel: 'Reel', audio: 'Audio' }[post.contentType]}>
+              {{ script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType]}
+            </span>
+          )}
+
           {/* Post Title - Primary */}
           {post.title && (
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
+            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 pr-8">
               {post.title}
             </h1>
           )}
@@ -693,18 +700,10 @@ export default function PostDetail() {
             </div>
           )}
 
-          {/* Timestamp and content type */}
+          {/* Timestamp */}
           <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-6">
             <Clock className="w-4 h-4" />
             <span>{formatDate(post.createdAt)}</span>
-            {post.contentType && { script: '📝 Script', audition: '🎭 Audition', reel: '🎬 Reel', audio: '🎤 Audio' }[post.contentType] && (
-              <>
-                <span>·</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
-                  {{ script: '📝 Script', audition: '🎭 Audition', reel: '🎬 Reel', audio: '🎤 Audio' }[post.contentType]}
-                </span>
-              </>
-            )}
           </div>
         </div>
 

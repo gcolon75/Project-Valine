@@ -135,8 +135,7 @@ async function main() {
   
   // Check for deprecated/stale API hosts — fail immediately if detected
   const DEPRECATED_HOSTS = [
-    'fb9pxd6m09.execute-api.us-west-2.amazonaws.com',
-    'ce73w43mga.execute-api.us-west-2.amazonaws.com'
+    'fb9pxd6m09.execute-api.us-west-2.amazonaws.com'
   ];
   const deprecatedMatch = DEPRECATED_HOSTS.find(h => apiBase.includes(h));
   if (deprecatedMatch) {
