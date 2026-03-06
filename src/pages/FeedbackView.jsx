@@ -45,6 +45,27 @@ export default function FeedbackView() {
   const isOwner = feedbackRequest?.ownerId === user?.id;
   const canAnnotate = isRequester && feedbackRequest?.status === 'approved';
 
+  // Clear selection helper
+  const clearSelection = useCallback(() => {
+    window.getSelection()?.removeAllRanges();
+    setSelectedText('');
+    setSelectionRects([]);
+    setShowCommentInput(false);
+    setCommentText('');
+  }, []);
+
+  // Cleanup selection on unmount and page navigation
+  useEffect(() => {
+    return () => {
+      window.getSelection()?.removeAllRanges();
+    };
+  }, []);
+
+  // Clear selection when changing pages
+  useEffect(() => {
+    clearSelection();
+  }, [currentPage, clearSelection]);
+
   // Fetch feedback request data
   useEffect(() => {
     const fetchData = async () => {
@@ -341,7 +362,11 @@ export default function FeedbackView() {
                 {annotation.selectionData?.rects?.map((rect, i) => (
                   <div
                     key={i}
-                    className="absolute bg-yellow-300/40 cursor-pointer hover:bg-yellow-300/60 transition"
+                    className={`absolute cursor-pointer transition-all duration-200 rounded-sm ${
+                      selectedAnnotation?.id === annotation.id
+                        ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1'
+                        : 'bg-amber-300/30 hover:bg-amber-400/40'
+                    }`}
                     style={{
                       left: rect.x,
                       top: rect.y,
@@ -358,10 +383,14 @@ export default function FeedbackView() {
             {pageAnnotations.filter(a => a.type === 'PAGE_COMMENT').map(annotation => (
               <div
                 key={annotation.id}
-                className="absolute w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition shadow-lg"
+                className={`absolute w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md ${
+                  selectedAnnotation?.id === annotation.id
+                    ? 'bg-purple-600 scale-125 ring-2 ring-purple-400 ring-offset-2'
+                    : 'bg-purple-500 hover:scale-110 hover:bg-purple-600'
+                }`}
                 style={{
-                  left: (annotation.positionX || 0) - 12,
-                  top: (annotation.positionY || 0) - 12,
+                  left: (annotation.positionX || 0) - 14,
+                  top: (annotation.positionY || 0) - 14,
                 }}
                 onClick={() => setSelectedAnnotation(annotation)}
               >
@@ -373,7 +402,11 @@ export default function FeedbackView() {
             {showCommentInput && selectionRects.map((rect, i) => (
               <div
                 key={i}
-                className={`absolute ${annotationType === 'HIGHLIGHT' ? 'bg-yellow-300/60' : 'bg-purple-500/60'} pointer-events-none`}
+                className={`absolute pointer-events-none rounded-sm animate-pulse ${
+                  annotationType === 'HIGHLIGHT'
+                    ? 'bg-amber-400/50 ring-2 ring-amber-500'
+                    : 'bg-purple-500/50 ring-2 ring-purple-600'
+                }`}
                 style={{
                   left: rect.x,
                   top: rect.y,
@@ -415,9 +448,9 @@ export default function FeedbackView() {
           {showCommentInput && (
             <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
               {selectedText && (
-                <div className="mb-3 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded text-sm">
-                  <p className="text-xs text-neutral-500 mb-1">Selected text:</p>
-                  <p className="text-neutral-700 dark:text-neutral-300 italic">"{selectedText}"</p>
+                <div className="mb-3 p-2 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">Selected text:</p>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300 italic">"{selectedText}"</p>
                 </div>
               )}
               <textarea
@@ -504,9 +537,9 @@ export default function FeedbackView() {
                         )}
                       </div>
                       {annotation.highlightedText && (
-                        <p className="text-xs text-neutral-500 italic mt-2 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded">
+                        <div className="mt-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r text-xs text-neutral-600 dark:text-neutral-400 italic">
                           "{annotation.highlightedText}"
-                        </p>
+                        </div>
                       )}
                       <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-2">
                         {annotation.content}
