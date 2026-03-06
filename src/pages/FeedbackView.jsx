@@ -35,6 +35,8 @@ export default function FeedbackView() {
   const [annotationType, setAnnotationType] = useState('HIGHLIGHT');
   const [submitting, setSubmitting] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
+  const [liveSelectionRects, setLiveSelectionRects] = useState([]);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
@@ -50,6 +52,8 @@ export default function FeedbackView() {
     window.getSelection()?.removeAllRanges();
     setSelectedText('');
     setSelectionRects([]);
+    setLiveSelectionRects([]);
+    setIsSelecting(false);
     setShowCommentInput(false);
     setCommentText('');
   }, []);
@@ -162,33 +166,67 @@ export default function FeedbackView() {
     renderPage();
   }, [pdfDocument, currentPage, scale]);
 
-  // Handle text selection
+  // Get selection rects helper
+  const getSelectionRects = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return [];
+
+    const text = selection.toString().trim();
+    if (!text) return [];
+
+    const range = selection.getRangeAt(0);
+    const rects = Array.from(range.getClientRects()).map(rect => {
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      return {
+        x: rect.left - (containerRect?.left || 0),
+        y: rect.top - (containerRect?.top || 0),
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+    return rects;
+  }, []);
+
+  // Live selection update
+  useEffect(() => {
+    if (!canAnnotate) return;
+
+    const handleSelectionChange = () => {
+      if (!isSelecting) return;
+      const rects = getSelectionRects();
+      setLiveSelectionRects(rects);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [canAnnotate, isSelecting, getSelectionRects]);
+
+  // Handle mouse down to start selection tracking
+  const handleMouseDown = useCallback(() => {
+    if (!canAnnotate) return;
+    setIsSelecting(true);
+    setLiveSelectionRects([]);
+  }, [canAnnotate]);
+
+  // Handle text selection complete
   const handleMouseUp = useCallback(() => {
     if (!canAnnotate) return;
+    setIsSelecting(false);
 
     const selection = window.getSelection();
     const text = selection?.toString().trim();
 
     if (text && text.length > 0) {
       setSelectedText(text);
-
-      // Get selection rectangles
-      const range = selection.getRangeAt(0);
-      const rects = Array.from(range.getClientRects()).map(rect => {
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        return {
-          x: rect.left - (containerRect?.left || 0),
-          y: rect.top - (containerRect?.top || 0),
-          width: rect.width,
-          height: rect.height,
-        };
-      });
-
+      const rects = getSelectionRects();
       setSelectionRects(rects);
+      setLiveSelectionRects([]);
       setAnnotationType('HIGHLIGHT');
       setShowCommentInput(true);
+    } else {
+      setLiveSelectionRects([]);
     }
-  }, [canAnnotate]);
+  }, [canAnnotate, getSelectionRects]);
 
   // Handle page click for page comments
   const handleCanvasClick = useCallback((e) => {
@@ -337,6 +375,7 @@ export default function FeedbackView() {
             ref={containerRef}
             className="relative mx-auto bg-white dark:bg-neutral-800 shadow-lg"
             style={{ width: 'fit-content' }}
+            onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
           >
             <canvas
@@ -408,11 +447,25 @@ export default function FeedbackView() {
               </div>
             ))}
 
-            {/* Selection highlight preview */}
-            {showCommentInput && selectionRects.map((rect, i) => (
+            {/* Live selection highlight (while dragging) */}
+            {isSelecting && liveSelectionRects.map((rect, i) => (
+              <div
+                key={`live-${i}`}
+                className="absolute pointer-events-none rounded-sm bg-amber-400/40"
+                style={{
+                  left: rect.x,
+                  top: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                }}
+              />
+            ))}
+
+            {/* Selection highlight preview (after selection, while commenting) */}
+            {showCommentInput && !isSelecting && selectionRects.map((rect, i) => (
               <div
                 key={i}
-                className={`absolute pointer-events-none rounded-sm animate-pulse ${
+                className={`absolute pointer-events-none rounded-sm ${
                   annotationType === 'HIGHLIGHT'
                     ? 'bg-amber-400/50 ring-2 ring-amber-500'
                     : 'bg-purple-500/50 ring-2 ring-purple-600'
