@@ -193,12 +193,18 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           refreshPromise = null;
 
-          // Refresh failed — session is truly expired, notify auth system
-          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
+          // Refresh failed — session is truly expired
+          // Clear localStorage immediately to prevent broken UI state
+          localStorage.removeItem('valine-demo-user');
+          localStorage.removeItem('auth_token');
 
           if (import.meta.env.DEV) {
             console.warn('[API Client] Token refresh failed, session expired:', config?.url);
           }
+
+          // Notify auth system to complete logout and redirect
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
+
           error.userMessage = 'Your session has expired. Please log in again.';
           return Promise.reject(error);
         }
