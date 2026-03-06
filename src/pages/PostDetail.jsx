@@ -446,7 +446,7 @@ export default function PostDetail() {
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 relative">
           {/* Content type emoji - top right */}
           {post.contentType && { script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType] && (
-            <span className="absolute top-6 right-6 text-xl" title={{ script: 'Script', audition: 'Audition', reel: 'Reel', audio: 'Audio' }[post.contentType]}>
+            <span className="absolute top-6 right-6 text-3xl" title={{ script: 'Script', audition: 'Audition', reel: 'Reel', audio: 'Audio' }[post.contentType]}>
               {{ script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType]}
             </span>
           )}
