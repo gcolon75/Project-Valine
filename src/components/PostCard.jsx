@@ -228,7 +228,7 @@ export default function PostCard({ post, onDelete, onLike }) {
                 {post.title}
               </h2>
               {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
-                <span className="text-xl flex-shrink-0" title={CONTENT_TYPE_LABELS[post.contentType].label}>
+                <span className="text-3xl flex-shrink-0" title={CONTENT_TYPE_LABELS[post.contentType].label}>
                   {CONTENT_TYPE_LABELS[post.contentType].icon}
                 </span>
               )}

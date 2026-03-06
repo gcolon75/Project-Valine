@@ -112,7 +112,8 @@ export default function Dashboard() {
             likes: post.likes || 0,
             isLiked: post.isLiked || false,
             saved: post.isSaved || false,
-            comments: post.comments || 0
+            comments: post.comments || 0,
+            contentType: post.contentType
           }));
           setApiPosts(transformed);
           setUsedApiData(true);
