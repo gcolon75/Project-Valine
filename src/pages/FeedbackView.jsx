@@ -348,13 +348,23 @@ export default function FeedbackView() {
             {/* Text layer for selection */}
             <div
               ref={textLayerRef}
+              data-feedback-text-layer
               className="absolute top-0 left-0 overflow-hidden"
               style={{
                 width: canvasRef.current?.width,
                 height: canvasRef.current?.height,
-                pointerEvents: canAnnotate ? 'auto' : 'none'
+                pointerEvents: canAnnotate ? 'auto' : 'none',
               }}
             />
+            {/* Hide default blue selection, show custom highlight instead */}
+            <style>{`
+              [data-feedback-text-layer]::selection,
+              [data-feedback-text-layer] *::selection,
+              [data-feedback-text-layer] span::selection {
+                background: transparent !important;
+                color: transparent !important;
+              }
+            `}</style>
 
             {/* Highlight overlays for current page */}
             {pageAnnotations.filter(a => a.type === 'HIGHLIGHT').map(annotation => (
