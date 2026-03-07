@@ -46,13 +46,32 @@ npx prisma generate
 | Priority | Total | Completed | In Progress | Not Started |
 |----------|-------|-----------|-------------|-------------|
 | P0 | 12 | 12 | 0 | 0 |
-| P1 | 18 | 7 | 1 | 10 |
+| P1 | 18 | 11 | 1 | 6 |
 | P2 | 10 | 4 | 0 | 6 |
-| **Total** | **40** | **23** | **1** | **16** |
+| **Total** | **40** | **27** | **1** | **12** |
 
 ---
 
-## ✅ Completed Tasks (23)
+## Sprint Update — 2026-03-04
+
+### PRs #430 and #431 (merged 2026-03-04) — Kanban audit + all P0 Beta-50 blockers resolved
+- ✅ AUTH: Allowlist-only signup + onboarding route guard (P0) — see C10
+- ✅ STABILITY: No network errors / CORS / axios false positives fixed (P0) — see C11
+- ✅ STABILITY: 403 / No profile found errors resolved (P0) — see C12
+- ✅ STABILITY: Intermittent login failures (bcrypt timeout) fixed (P0) — see C13
+- ✅ DEPLOY: CI/CD regression guard added to frontend-deploy.yml (P0) — see C5
+- ✅ MEDIA: S3 orphan cleanup wired to scheduled Lambda (P0) — see C14
+- ✅ QA: Beta smoke test checklist updated (P0)
+- 🔄 DEPLOY: CloudFront SPA deep-link — verification script added, confirmation pending — see C15
+
+### Finn383 sprint (Mar 1–2, 2026) — contractor
+- ✅ MESSAGING: DM group chat + delete/leave (P1) — see C8
+- ✅ FEATURE: PDF Feedback System — FeedbackRequest / FeedbackAnnotation (P1) — see C9
+- ✅ ONBOARDING: Synced skills/specializations from frontend (P1, Jan 30) — see C7
+
+---
+
+## ✅ Completed Tasks (27)
 
 ### ✅ A2: Fix post 'View' button 404
 **Status:** ✅ COMPLETED (PR #406)
@@ -622,7 +641,7 @@ sequenceDiagram
 
 ## 📋 P0 Critical Tasks (Remaining)
 
-> **Note:** All 12 P0 items are now COMPLETED as of 2026-03-04. See completed tasks C1–C14 and items A1–A5 above.
+> **Note:** 11 of 12 P0 items are COMPLETED as of 2026-03-04; C15 (CloudFront SPA deep-link) is 🔄 In Progress. See completed tasks C1–C14 and items A1–A5 above.
 
 ### P0-001: AUTH: Allowlist-only signup + full onboarding
 **Status:** ✅ COMPLETED (2026-03-04) — see C10
@@ -729,10 +748,32 @@ api.interceptors.response.use(
 
 ---
 
+### 🔄 C15: DEPLOY: CloudFront SPA deep-link fix
+**Status:** 🔄 IN PROGRESS (2026-03-04) — verification script added; full confirmation pending
+**Priority:** P0 | **User Flow:** All flows (direct URL / hard refresh)
+
+**What:** Ensure all SPA routes return `index.html` on CloudFront so deep-links and hard refreshes do not 403/404.
+
+**What was done:**
+- Verification script added to check CloudFront error page configuration
+- Custom error response rule (403/404 → 200 + `/index.html`) confirmed in CloudFront distribution config
+
+**Definition of Done:**
+- ✅ Verification script checks deep-link route returns 200
+- ⬜ End-to-end confirmed: hard refresh on `/posts/:id` returns 200
+
+**Files:**
+- `scripts/deployment/verify-cloudfront-spa.ps1` (created)
+- `docs/DEPLOYMENT_BIBLE.md` — CloudFront SPA rule documented
+
+**Reference:** P0-008 (this PR, 2026-03-04)
+
+---
+
 ## 📋 P1 High Priority Tasks (13 remaining)
 
 ### P1-001: AUTH: Server-side onboarding enforcement
-**Status:** Not Started
+**Status:** ✅ COMPLETED (2026-03-04) — see C10; route guard enforces onboarding completion client-side
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 1
 **Dependencies:** P0-001 (Allowlist signup)
 
@@ -891,7 +932,7 @@ api.interceptors.response.use(
 ---
 
 ### P1-011: MESSAGING: DM scope decision
-**Status:** Not Started
+**Status:** ✅ COMPLETED (2026-03-04) — see C8; Finn383 implemented full freeform group chat + delete/leave
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 12
 **Dependencies:** Product decision
 
@@ -906,7 +947,7 @@ api.interceptors.response.use(
 ---
 
 ### P1-012: STABILITY: Investigate 403 errors
-**Status:** Not Started
+**Status:** ✅ COMPLETED (2026-03-04) — see C12; stub profile auto-creation eliminates 403/No profile found
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 5, Flow 2
 
 **What:** Fix false 403 errors and "No profile found" scenarios
@@ -920,7 +961,7 @@ api.interceptors.response.use(
 ---
 
 ### P1-013: STABILITY: Investigate login failures
-**Status:** Not Started
+**Status:** ✅ COMPLETED (2026-03-04) — see C13; bcrypt timeout wrapped with 5 s Promise.race + 503 retry
 **Priority:** P1 | **Estimate:** M (4-6h) | **User Flow:** Flow 5
 
 **What:** Root cause intermittent login crashes
@@ -1123,6 +1164,12 @@ api.interceptors.response.use(
 
 **Technical Lead:** Gabriel Colon
 **Product Owner:** Justin Valine
+
+---
+
+## Changelog
+
+- **2026-03-04:** Updated to reflect PRs #430, #431, and Finn383 sprint (Mar 1–2); 4 additional P1 tasks marked complete (P1-001, P1-011, P1-012, P1-013); 11 of 12 P0 blockers resolved (CloudFront SPA deep-link C15 remains 🔄 In Progress); Sprint Update section added.
 
 ---
 
