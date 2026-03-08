@@ -7,7 +7,6 @@ import Join from '../../../pages/Join';
 vi.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({
     register: vi.fn(),
-    devLogin: null,
     loading: false,
   }),
 }));

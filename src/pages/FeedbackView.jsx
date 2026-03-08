@@ -35,6 +35,8 @@ export default function FeedbackView() {
   const [annotationType, setAnnotationType] = useState('HIGHLIGHT');
   const [submitting, setSubmitting] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
+  const [liveSelectionRects, setLiveSelectionRects] = useState([]);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
@@ -44,6 +46,29 @@ export default function FeedbackView() {
   const isRequester = feedbackRequest?.requesterId === user?.id;
   const isOwner = feedbackRequest?.ownerId === user?.id;
   const canAnnotate = isRequester && feedbackRequest?.status === 'approved';
+
+  // Clear selection helper
+  const clearSelection = useCallback(() => {
+    window.getSelection()?.removeAllRanges();
+    setSelectedText('');
+    setSelectionRects([]);
+    setLiveSelectionRects([]);
+    setIsSelecting(false);
+    setShowCommentInput(false);
+    setCommentText('');
+  }, []);
+
+  // Cleanup selection on unmount and page navigation
+  useEffect(() => {
+    return () => {
+      window.getSelection()?.removeAllRanges();
+    };
+  }, []);
+
+  // Clear selection when changing pages
+  useEffect(() => {
+    clearSelection();
+  }, [currentPage, clearSelection]);
 
   // Fetch feedback request data
   useEffect(() => {
@@ -141,33 +166,67 @@ export default function FeedbackView() {
     renderPage();
   }, [pdfDocument, currentPage, scale]);
 
-  // Handle text selection
+  // Get selection rects helper
+  const getSelectionRects = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return [];
+
+    const text = selection.toString().trim();
+    if (!text) return [];
+
+    const range = selection.getRangeAt(0);
+    const rects = Array.from(range.getClientRects()).map(rect => {
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      return {
+        x: rect.left - (containerRect?.left || 0),
+        y: rect.top - (containerRect?.top || 0),
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+    return rects;
+  }, []);
+
+  // Live selection update
+  useEffect(() => {
+    if (!canAnnotate) return;
+
+    const handleSelectionChange = () => {
+      if (!isSelecting) return;
+      const rects = getSelectionRects();
+      setLiveSelectionRects(rects);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [canAnnotate, isSelecting, getSelectionRects]);
+
+  // Handle mouse down to start selection tracking
+  const handleMouseDown = useCallback(() => {
+    if (!canAnnotate) return;
+    setIsSelecting(true);
+    setLiveSelectionRects([]);
+  }, [canAnnotate]);
+
+  // Handle text selection complete
   const handleMouseUp = useCallback(() => {
     if (!canAnnotate) return;
+    setIsSelecting(false);
 
     const selection = window.getSelection();
     const text = selection?.toString().trim();
 
     if (text && text.length > 0) {
       setSelectedText(text);
-
-      // Get selection rectangles
-      const range = selection.getRangeAt(0);
-      const rects = Array.from(range.getClientRects()).map(rect => {
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        return {
-          x: rect.left - (containerRect?.left || 0),
-          y: rect.top - (containerRect?.top || 0),
-          width: rect.width,
-          height: rect.height,
-        };
-      });
-
+      const rects = getSelectionRects();
       setSelectionRects(rects);
+      setLiveSelectionRects([]);
       setAnnotationType('HIGHLIGHT');
       setShowCommentInput(true);
+    } else {
+      setLiveSelectionRects([]);
     }
-  }, [canAnnotate]);
+  }, [canAnnotate, getSelectionRects]);
 
   // Handle page click for page comments
   const handleCanvasClick = useCallback((e) => {
@@ -316,6 +375,7 @@ export default function FeedbackView() {
             ref={containerRef}
             className="relative mx-auto bg-white dark:bg-neutral-800 shadow-lg"
             style={{ width: 'fit-content' }}
+            onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
           >
             <canvas
@@ -327,13 +387,23 @@ export default function FeedbackView() {
             {/* Text layer for selection */}
             <div
               ref={textLayerRef}
+              data-feedback-text-layer
               className="absolute top-0 left-0 overflow-hidden"
               style={{
                 width: canvasRef.current?.width,
                 height: canvasRef.current?.height,
-                pointerEvents: canAnnotate ? 'auto' : 'none'
+                pointerEvents: canAnnotate ? 'auto' : 'none',
               }}
             />
+            {/* Hide default blue selection, show custom highlight instead */}
+            <style>{`
+              [data-feedback-text-layer]::selection,
+              [data-feedback-text-layer] *::selection,
+              [data-feedback-text-layer] span::selection {
+                background: transparent !important;
+                color: transparent !important;
+              }
+            `}</style>
 
             {/* Highlight overlays for current page */}
             {pageAnnotations.filter(a => a.type === 'HIGHLIGHT').map(annotation => (
@@ -341,7 +411,11 @@ export default function FeedbackView() {
                 {annotation.selectionData?.rects?.map((rect, i) => (
                   <div
                     key={i}
-                    className="absolute bg-yellow-300/40 cursor-pointer hover:bg-yellow-300/60 transition"
+                    className={`absolute cursor-pointer transition-all duration-200 rounded-sm ${
+                      selectedAnnotation?.id === annotation.id
+                        ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1'
+                        : 'bg-amber-300/30 hover:bg-amber-400/40'
+                    }`}
                     style={{
                       left: rect.x,
                       top: rect.y,
@@ -358,10 +432,14 @@ export default function FeedbackView() {
             {pageAnnotations.filter(a => a.type === 'PAGE_COMMENT').map(annotation => (
               <div
                 key={annotation.id}
-                className="absolute w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition shadow-lg"
+                className={`absolute w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md ${
+                  selectedAnnotation?.id === annotation.id
+                    ? 'bg-purple-600 scale-125 ring-2 ring-purple-400 ring-offset-2'
+                    : 'bg-purple-500 hover:scale-110 hover:bg-purple-600'
+                }`}
                 style={{
-                  left: (annotation.positionX || 0) - 12,
-                  top: (annotation.positionY || 0) - 12,
+                  left: (annotation.positionX || 0) - 14,
+                  top: (annotation.positionY || 0) - 14,
                 }}
                 onClick={() => setSelectedAnnotation(annotation)}
               >
@@ -369,11 +447,29 @@ export default function FeedbackView() {
               </div>
             ))}
 
-            {/* Selection highlight preview */}
-            {showCommentInput && selectionRects.map((rect, i) => (
+            {/* Live selection highlight (while dragging) */}
+            {isSelecting && liveSelectionRects.map((rect, i) => (
+              <div
+                key={`live-${i}`}
+                className="absolute pointer-events-none rounded-sm bg-amber-400/40"
+                style={{
+                  left: rect.x,
+                  top: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                }}
+              />
+            ))}
+
+            {/* Selection highlight preview (after selection, while commenting) */}
+            {showCommentInput && !isSelecting && selectionRects.map((rect, i) => (
               <div
                 key={i}
-                className={`absolute ${annotationType === 'HIGHLIGHT' ? 'bg-yellow-300/60' : 'bg-purple-500/60'} pointer-events-none`}
+                className={`absolute pointer-events-none rounded-sm ${
+                  annotationType === 'HIGHLIGHT'
+                    ? 'bg-amber-400/50 ring-2 ring-amber-500'
+                    : 'bg-purple-500/50 ring-2 ring-purple-600'
+                }`}
                 style={{
                   left: rect.x,
                   top: rect.y,
@@ -415,9 +511,9 @@ export default function FeedbackView() {
           {showCommentInput && (
             <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
               {selectedText && (
-                <div className="mb-3 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded text-sm">
-                  <p className="text-xs text-neutral-500 mb-1">Selected text:</p>
-                  <p className="text-neutral-700 dark:text-neutral-300 italic">"{selectedText}"</p>
+                <div className="mb-3 p-2 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">Selected text:</p>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300 italic">"{selectedText}"</p>
                 </div>
               )}
               <textarea
@@ -504,9 +600,9 @@ export default function FeedbackView() {
                         )}
                       </div>
                       {annotation.highlightedText && (
-                        <p className="text-xs text-neutral-500 italic mt-2 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded">
+                        <div className="mt-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r text-xs text-neutral-600 dark:text-neutral-400 italic">
                           "{annotation.highlightedText}"
-                        </p>
+                        </div>
                       )}
                       <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-2">
                         {annotation.content}

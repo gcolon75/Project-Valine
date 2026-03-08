@@ -239,9 +239,23 @@ export const getProfileFollowers = async (event) => {
     }
 
     // Filter out blocked users
-    const items = followers
-      .filter(f => !blockedUserIds.includes(f.follower.id))
-      .map(f => ({
+    const filteredFollowers = followers
+      .filter(f => !blockedUserIds.includes(f.follower.id));
+
+    // Check which users the viewing user is following
+    let followingSet = new Set();
+    if (userId) {
+      const viewerFollows = await prisma.follow.findMany({
+        where: {
+          followerId: userId,
+          followingId: { in: filteredFollowers.map(f => f.follower.id) }
+        },
+        select: { followingId: true }
+      });
+      followingSet = new Set(viewerFollows.map(f => f.followingId));
+    }
+
+    const items = filteredFollowers.map(f => ({
         userId: f.follower.id,
         username: f.follower.username,
         displayName: f.follower.displayName,
@@ -249,7 +263,8 @@ export const getProfileFollowers = async (event) => {
         title: f.follower.profile?.title,
         profileId: f.follower.profile?.id,
         vanityUrl: f.follower.profile?.vanityUrl,
-        followedAt: f.createdAt
+        followedAt: f.createdAt,
+        isFollowing: followingSet.has(f.follower.id)
       }));
 
     return json({ items, count: items.length });
@@ -330,9 +345,23 @@ export const getProfileFollowing = async (event) => {
     }
 
     // Filter out blocked users
-    const items = following
-      .filter(f => !blockedUserIds.includes(f.following.id))
-      .map(f => ({
+    const filteredFollowing = following
+      .filter(f => !blockedUserIds.includes(f.following.id));
+
+    // Check which users the viewing user is following
+    let followingSet = new Set();
+    if (userId) {
+      const viewerFollows = await prisma.follow.findMany({
+        where: {
+          followerId: userId,
+          followingId: { in: filteredFollowing.map(f => f.following.id) }
+        },
+        select: { followingId: true }
+      });
+      followingSet = new Set(viewerFollows.map(f => f.followingId));
+    }
+
+    const items = filteredFollowing.map(f => ({
         userId: f.following.id,
         username: f.following.username,
         displayName: f.following.displayName,
@@ -340,7 +369,8 @@ export const getProfileFollowing = async (event) => {
         title: f.following.profile?.title,
         profileId: f.following.profile?.id,
         vanityUrl: f.following.profile?.vanityUrl,
-        followedAt: f.createdAt
+        followedAt: f.createdAt,
+        isFollowing: followingSet.has(f.following.id)
       }));
 
     return json({ items, count: items.length });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Sparkles, Code, AtSign } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Sparkles, AtSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { isEmailAllowed, isAllowlistActive } from '../utils/allowlistConfig';
@@ -8,7 +8,7 @@ import RestrictedRegistrationNotice from '../components/RestrictedRegistrationNo
 
 const Join = () => {
   const navigate = useNavigate();
-  const { register, devLogin, loading } = useAuth();
+  const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -119,15 +119,6 @@ const Join = () => {
       } else {
         toast.error(errorMessage);
       }
-    }
-  };
-
-  // DEV BYPASS - Only available in development mode
-  const handleDevSignup = () => {
-    if (devLogin) {
-      devLogin();
-      toast.success('Dev mode: Logged in!');
-      navigate('/onboarding');
     }
   };
 
@@ -345,22 +336,6 @@ const Join = () => {
               )}
             </button>
           </form>
-
-          {/* DEV MODE BUTTON */}
-          {import.meta.env.DEV && (
-            <div className="mt-6 pt-6 border-t border-neutral-200">
-              <button
-                onClick={handleDevSignup}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <Code className="w-5 h-5" />
-                <span>Dev Sign Up (Skip Auth)</span>
-              </button>
-              <p className="text-xs text-neutral-500 text-center mt-2">
-                Development mode only - bypasses authentication
-              </p>
-            </div>
-          )}
 
           {/* Footer */}
           <p className="mt-6 text-center text-neutral-600 text-sm">

@@ -147,18 +147,70 @@ apiClient.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Track whether a token refresh is already in progress to avoid parallel refreshes
+let isRefreshing = false;
+let refreshPromise = null;
+
 // Response interceptor - handle retries and errors
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
-    
-    // Handle 401 Unauthorized - notify auth system
-    if (error.response?.status === 401) {
-      // Dispatch custom event for AuthProvider to handle
-      window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
-      
-      // Don't retry 401 errors
+
+    // Handle 401 Unauthorized - attempt token refresh before giving up
+    if (error.response?.status === 401 && !config._authRetried) {
+      // Don't try to refresh on auth endpoints themselves
+      const isAuthEndpoint = config?.url?.includes('/auth/login') ||
+                             config?.url?.includes('/auth/register') ||
+                             config?.url?.includes('/auth/refresh');
+
+      if (!isAuthEndpoint) {
+        config._authRetried = true;
+
+        try {
+          // If a refresh is already in progress, wait for it
+          if (!isRefreshing) {
+            isRefreshing = true;
+            refreshPromise = apiClient.post('/auth/refresh').then(res => {
+              // For non-cookie auth, store the new token
+              if (res.data?.token) {
+                localStorage.setItem('auth_token', res.data.token);
+              }
+            });
+          }
+
+          await refreshPromise;
+          isRefreshing = false;
+          refreshPromise = null;
+
+          // Retry the original request with the new token
+          const token = getAccessToken();
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+          return apiClient(config);
+        } catch (refreshError) {
+          isRefreshing = false;
+          refreshPromise = null;
+
+          // Refresh failed — session is truly expired
+          // Clear localStorage immediately to prevent broken UI state
+          localStorage.removeItem('valine-demo-user');
+          localStorage.removeItem('auth_token');
+
+          if (import.meta.env.DEV) {
+            console.warn('[API Client] Token refresh failed, session expired:', config?.url);
+          }
+
+          // Notify auth system to complete logout and redirect
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
+
+          error.userMessage = 'Your session has expired. Please log in again.';
+          return Promise.reject(error);
+        }
+      }
+
+      // Auth endpoint 401 — just reject
       if (import.meta.env.DEV) {
         console.warn('[API Client] Unauthorized request (401):', config?.url);
       }

@@ -10,8 +10,8 @@ import { validateEnvVar } from './envValidation.js';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
 
 // Token expiry configuration
-const ACCESS_TOKEN_EXPIRES_IN = '30m'; // 30 minutes
-const REFRESH_TOKEN_EXPIRES_IN = '7d'; // 7 days
+const ACCESS_TOKEN_EXPIRES_IN = '24h'; // 24 hours
+const REFRESH_TOKEN_EXPIRES_IN = '30d'; // 30 days
 
 /**
  * Validate JWT secret on startup - fail-fast for default secrets in production
@@ -268,7 +268,7 @@ export const getCookieHeader = (event) => {
  * @returns {string} Set-Cookie header value
  */
 export const generateAccessTokenCookie = (token) => {
-  const maxAge = 30 * 60; // 30 minutes in seconds
+  const maxAge = 24 * 60 * 60; // 24 hours in seconds
   
   // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
   // Without SameSite=None, browsers block cookies on cross-site XHR/fetch requests
@@ -293,7 +293,7 @@ export const generateAccessTokenCookie = (token) => {
  * @returns {string} Set-Cookie header value
  */
 export const generateRefreshTokenCookie = (token) => {
-  const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
+  const maxAge = 30 * 24 * 60 * 60; // 30 days in seconds
   
   // CRITICAL: Use SameSite=None for cross-site requests (CloudFront → API Gateway)
   // Without SameSite=None, browsers block cookies on cross-site XHR/fetch requests

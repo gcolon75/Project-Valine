@@ -11,6 +11,13 @@ import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf } from "../ser
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
+const CONTENT_TYPE_LABELS = {
+  script: { icon: '📝', label: 'Script' },
+  audition: { icon: '🎭', label: 'Audition' },
+  reel: { icon: '🎬', label: 'Reel' },
+  audio: { icon: '🎤', label: 'Audio' },
+};
+
 export default function PostCard({ post, onDelete, onLike }) {
   const { likePost: contextLikePost, toggleSave } = useFeed();
   // Use provided onLike handler or fall back to context
@@ -208,17 +215,24 @@ export default function PostCard({ post, onDelete, onLike }) {
 
   return (
     <>
-      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up">
+      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up relative">
         {/* Header */}
         <div className="px-4 py-3">
-          {/* Post Title - Primary */}
+          {/* Post Title with Content Type Emoji */}
           {post.title && (
-            <h2
-              className="text-lg font-bold text-neutral-900 dark:text-white mb-2 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-              onClick={() => navigate(`/posts/${post.id}`)}
-            >
-              {post.title}
-            </h2>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h2
+                className="text-lg font-bold text-neutral-900 dark:text-white cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                onClick={() => navigate(`/posts/${post.id}`)}
+              >
+                {post.title}
+              </h2>
+              {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
+                <span className="text-3xl flex-shrink-0" title={CONTENT_TYPE_LABELS[post.contentType].label}>
+                  {CONTENT_TYPE_LABELS[post.contentType].icon}
+                </span>
+              )}
+            </div>
           )}
 
           {/* Author info and meta - Secondary */}
