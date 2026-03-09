@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, MessageSquare, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, MessageSquare, CheckCircle, XCircle, FileText, DollarSign } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUnread } from '../context/UnreadContext';
 import { getNotifications, markAllNotificationsRead } from '../services/notificationsService';
@@ -82,6 +82,8 @@ export default function NotificationBell() {
         return <XCircle className="w-4 h-4 text-orange-500" />;
       case 'new_feedback':
         return <FileText className="w-4 h-4 text-orange-500" />;
+      case 'purchase':
+        return <DollarSign className="w-4 h-4 text-emerald-500" />;
       default:
         return <Bell className="w-4 h-4 text-neutral-500" />;
     }
@@ -112,6 +114,8 @@ export default function NotificationBell() {
         return <>Your feedback request was denied</>;
       case 'new_feedback':
         return <><span className="font-semibold">{username}</span> left feedback on your script</>;
+      case 'purchase':
+        return <><span className="font-semibold">{username}</span> purchased your script</>;
       default:
         return notification.message || 'New notification';
     }
@@ -150,6 +154,11 @@ export default function NotificationBell() {
       }
     } else if (normalizedType === 'feedback_request_denied') {
       // Go to the post
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/posts/${postId}`);
+      }
+    } else if (normalizedType === 'purchase') {
       const postId = notification.metadata?.postId;
       if (postId) {
         navigate(`/posts/${postId}`);

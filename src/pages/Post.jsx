@@ -115,7 +115,11 @@ export default function Post() {
     }
     // Handle "Make Free" checkbox
     if (field === 'isFree' && value === true) {
-      setFormData(prev => ({ ...prev, [field]: value, price: '' }));
+      setFormData(prev => ({ ...prev, [field]: value, price: '', requiresAccess: false }));
+      return;
+    }
+    if (field === 'isFree' && value === false) {
+      setFormData(prev => ({ ...prev, [field]: value, requiresAccess: true }));
       return;
     }
   };
@@ -407,10 +411,10 @@ export default function Post() {
     }
     
     // Validate price if not free
-    if (!formData.isFree && formData.price) {
+    if (!formData.isFree) {
       const priceValue = parseFloat(formData.price);
-      if (isNaN(priceValue) || priceValue < 0) {
-        newErrors.price = 'Price must be a valid positive number';
+      if (!formData.price || isNaN(priceValue) || priceValue < 0.50) {
+        newErrors.price = 'Price must be at least $0.50';
       }
     }
     
@@ -451,7 +455,7 @@ export default function Post() {
     
     try {
       // Calculate price value
-      const priceValue = 0;
+      const priceValue = formData.isFree ? 0 : parseFloat(formData.price) || 0;
       
       // Prepare post data
       const postPayload = {
@@ -819,7 +823,29 @@ export default function Post() {
             </label>
             
             {/* Price Input */}
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">💳 Paid posts — coming soon. All posts are free for now.</p>
+            {!formData.isFree && (
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Price (USD)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400 font-medium">$</span>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={(e) => handleChange('price', e.target.value)}
+                    min="0.50"
+                    step="0.01"
+                    placeholder="0.50"
+                    className="w-full pl-7 pr-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Minimum price: $0.50. A 15% platform fee applies.</p>
+              </div>
+            )}
           </div>
         </div>
 

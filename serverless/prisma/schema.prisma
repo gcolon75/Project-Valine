@@ -72,6 +72,10 @@ model User {
   sentFeedbackRequests     FeedbackRequest[]        @relation("FeedbackRequestRequester")
   feedbackAnnotations      FeedbackAnnotation[]
 
+  // Purchases
+  purchases Purchase[] @relation("Purchases")
+  sales     Purchase[] @relation("Sales")
+
   @@index([email])
   @@index([normalizedEmail])
   @@index([username])
@@ -154,6 +158,9 @@ model Post {
 
   // Feedback requests
   feedbackRequests FeedbackRequest[]
+
+  // Purchases
+  purchases Purchase[]
 
   // Comments
   comments Comment[]
@@ -927,4 +934,35 @@ model FeedbackAnnotation {
   @@index([authorId])
   @@index([pageNumber])
   @@map("feedback_annotations")
+}
+
+// ========================================
+// Purchase / Payment System
+// ========================================
+
+model Purchase {
+  id              String    @id @default(uuid())
+  postId          String
+  buyerId         String
+  sellerId        String
+  amount          Float
+  platformFee     Float
+  sellerEarnings  Float
+  currency        String    @default("usd")
+  stripeSessionId String    @unique
+  stripePaymentId String?
+  status          String    @default("pending") // pending, completed, failed, refunded
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  buyer  User @relation("Purchases", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller User @relation("Sales", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, buyerId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([stripeSessionId])
+  @@index([status])
+  @@map("purchases")
 }

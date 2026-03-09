@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, MessageSquare, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -169,6 +169,11 @@ export default function Notifications() {
       if (postId) {
         navigate(`/posts/${postId}`);
       }
+    } else if (normalizedType === 'purchase') {
+      const postId = notification.metadata?.postId;
+      if (postId) {
+        navigate(`/posts/${postId}`);
+      }
     }
   };
 
@@ -195,6 +200,8 @@ export default function Notifications() {
       case 'feedback_request_denied':
       case 'new_feedback':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
+      case 'purchase':
+        return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
     }
@@ -227,6 +234,8 @@ export default function Notifications() {
         return XCircle;
       case 'new_feedback':
         return FileText;
+      case 'purchase':
+        return DollarSign;
       default:
         return Bell;
     }
@@ -262,6 +271,8 @@ export default function Notifications() {
         return 'Your feedback request was denied';
       case 'new_feedback':
         return `@${username} left feedback on your script`;
+      case 'purchase':
+        return `@${username} purchased your script`;
       default:
         return notification.action || notification.message || 'New notification';
     }

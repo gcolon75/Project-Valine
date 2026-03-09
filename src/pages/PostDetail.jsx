@@ -1,6 +1,6 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Heart,
@@ -19,7 +19,7 @@ import {
   FileText,
   MessageSquare
 } from 'lucide-react';
-import { getPost, requestPostAccess, payForPostAccess, likePost, unlikePost } from '../services/postService';
+import { getPost, requestPostAccess, payForPostAccess, createCheckoutSession, likePost, unlikePost } from '../services/postService';
 import { requestFeedback, getFeedbackStatus } from '../services/feedbackService';
 import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
@@ -31,6 +31,7 @@ import toast from 'react-hot-toast';
 
 export default function PostDetail() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,28 @@ export default function PostDetail() {
       fetchPost();
     }
   }, [id]);
+
+  // Handle payment return from Stripe
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Payment successful! You now have access.');
+      // Remove the query param and refresh post data
+      setSearchParams({}, { replace: true });
+      const refreshPost = async () => {
+        try {
+          const data = await getPost(id);
+          setPost(data);
+        } catch (err) {
+          console.error('Error refreshing post:', err);
+        }
+      };
+      refreshPost();
+    } else if (paymentStatus === 'cancelled') {
+      toast('Payment cancelled', { icon: 'ℹ️' });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, id]);
 
   // Fetch PDF URL when post has a PDF attachment
   useEffect(() => {
@@ -181,15 +204,12 @@ export default function PostDetail() {
 
     try {
       setProcessingPayment(true);
-      await payForPostAccess(id);
-      toast.success('Payment successful! You now have access.');
-      // Refresh post to get updated status
-      const data = await getPost(id);
-      setPost(data);
+      const { checkoutUrl } = await createCheckoutSession(id);
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutUrl;
     } catch (err) {
-      console.error('Error processing payment:', err);
-      toast.error(err.response?.data?.message || 'Failed to process payment');
-    } finally {
+      console.error('Error creating checkout session:', err);
+      toast.error(err.response?.data?.message || 'Failed to start payment');
       setProcessingPayment(false);
     }
   };
@@ -390,10 +410,23 @@ export default function PostDetail() {
         </p>
         <div className="flex gap-3">
           {isPaidPost ? (
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-lg font-medium text-sm">
-              <Lock className="w-4 h-4" />
-              Paid access — coming soon
-            </span>
+            <button
+              onClick={handlePayForAccess}
+              disabled={processingPayment}
+              className="flex items-center gap-2 px-4 py-2 bg-[#0CCE6B] hover:bg-[#0BBE60] text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {processingPayment ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Redirecting...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="w-4 h-4" />
+                  Purchase for ${formatPrice(post.price)}
+                </>
+              )}
+            </button>
           ) : (
             <button
               onClick={handleRequestAccess}
@@ -502,9 +535,9 @@ export default function PostDetail() {
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
             {isPaidPost && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-full text-sm font-medium">
-                <Lock className="w-4 h-4" />
-                Paid access — coming soon
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
+                <DollarSign className="w-4 h-4" />
+                ${formatPrice(post.price)}
               </span>
             )}
             {!isPaidPost && post.isFree && requiresAccess && (

@@ -131,6 +131,8 @@ provider:
     ANALYTICS_CONSENT_COOKIE: ${env:ANALYTICS_CONSENT_COOKIE, "analytics_consent"}
     STRICT_ALLOWLIST: ${env:STRICT_ALLOWLIST, "0"}
     ADMIN_SEED_TOKEN: ${env:ADMIN_SEED_TOKEN, ""}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ""}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, ""}
 
 custom:
   esbuild:
@@ -369,6 +371,12 @@ functions:
       - httpApi:
           path: /posts/{id}/pay
           method: post
+      - httpApi:
+          path: /posts/{id}/create-checkout
+          method: post
+      - httpApi:
+          path: /posts/{id}/purchase-status
+          method: get
       # Likes
       - httpApi:
           path: /posts/{id}/like
@@ -401,6 +409,16 @@ functions:
       - httpApi:
           path: /comments/{id}/like
           method: delete
+
+  # ========== STRIPE WEBHOOK ==========
+  stripeWebhook:
+    handler: src/handlers/payments.stripeWebhook
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /stripe/webhook
+          method: post
 
   # ========== SCRIPTS ==========
   listScripts:

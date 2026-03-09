@@ -173,6 +173,26 @@ export const payForPostAccess = async (postId) => {
 };
 
 /**
+ * Create a Stripe Checkout Session for purchasing post access
+ * @param {string} postId - Post ID
+ * @returns {Promise<{checkoutUrl: string}>}
+ */
+export const createCheckoutSession = async (postId) => {
+  const { data } = await apiClient.post(`/posts/${postId}/create-checkout`);
+  return data;
+};
+
+/**
+ * Check if the user has purchased a post
+ * @param {string} postId - Post ID
+ * @returns {Promise<{purchased: boolean, status: string|null}>}
+ */
+export const getPurchaseStatus = async (postId) => {
+  const { data } = await apiClient.get(`/posts/${postId}/purchase-status`);
+  return data;
+};
+
+/**
  * Get access requests for user's posts
  * @param {string} userId - User ID
  * @param {string} status - Filter by status (PENDING, APPROVED, DENIED)

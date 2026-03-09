@@ -3,6 +3,7 @@
 
 import * as posts from './posts.js';
 import * as comments from './comments.js';
+import * as payments from './payments.js';
 
 /**
  * Normalize path to remove stage prefix if present (e.g. "/prod/posts/..." -> "/posts/...")
@@ -67,9 +68,23 @@ export const handler = async (event, context) => {
       return posts.grantAccess(event, context);
     }
 
-    // POST /posts/{id}/pay
+    // POST /posts/{id}/pay (legacy stub - redirects to checkout)
     if (method === 'POST' && /^\/posts\/[^/]+\/pay$/.test(path)) {
       return posts.payForAccess(event, context);
+    }
+
+    // POST /posts/{id}/create-checkout
+    if (method === 'POST' && /^\/posts\/[^/]+\/create-checkout$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
+      return payments.createCheckoutSession(event, context);
+    }
+
+    // GET /posts/{id}/purchase-status
+    if (method === 'GET' && /^\/posts\/[^/]+\/purchase-status$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
+      return payments.getPurchaseStatus(event, context);
     }
 
     // POST /posts/{id}/like
