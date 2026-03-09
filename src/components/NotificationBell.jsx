@@ -105,13 +105,13 @@ export default function NotificationBell() {
       case 'mention':
         return <><span className="font-semibold">{username}</span> mentioned you in a comment</>;
       case 'feedback_request':
-        return <><span className="font-semibold">{username}</span> requested to give feedback on your PDF</>;
+        return <><span className="font-semibold">{username}</span> requested to give feedback on your script</>;
       case 'feedback_request_approved':
         return <>Your feedback request was approved</>;
       case 'feedback_request_denied':
         return <>Your feedback request was denied</>;
       case 'new_feedback':
-        return <><span className="font-semibold">{username}</span> left feedback on your PDF</>;
+        return <><span className="font-semibold">{username}</span> left feedback on your script</>;
       default:
         return notification.message || 'New notification';
     }
