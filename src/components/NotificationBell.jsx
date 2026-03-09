@@ -75,13 +75,13 @@ export default function NotificationBell() {
       case 'mention':
         return <AtSign className="w-4 h-4 text-yellow-500" />;
       case 'feedback_request':
-        return <MessageSquare className="w-4 h-4 text-purple-500" />;
+        return <MessageSquare className="w-4 h-4 text-orange-500" />;
       case 'feedback_request_approved':
-        return <CheckCircle className="w-4 h-4 text-[#0CCE6B]" />;
+        return <CheckCircle className="w-4 h-4 text-orange-500" />;
       case 'feedback_request_denied':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-orange-500" />;
       case 'new_feedback':
-        return <FileText className="w-4 h-4 text-purple-500" />;
+        return <FileText className="w-4 h-4 text-orange-500" />;
       default:
         return <Bell className="w-4 h-4 text-neutral-500" />;
     }

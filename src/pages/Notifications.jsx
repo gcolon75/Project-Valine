@@ -191,13 +191,10 @@ export default function Notifications() {
       case 'script':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       case 'feedback_request':
-        return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
       case 'feedback_request_approved':
-        return 'text-[#0CCE6B] bg-[#0CCE6B]/10';
       case 'feedback_request_denied':
-        return 'text-red-500 bg-red-50 dark:bg-red-500/10';
       case 'new_feedback':
-        return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
+        return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
     }

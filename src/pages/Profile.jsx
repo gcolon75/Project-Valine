@@ -825,7 +825,7 @@ export default function Profile() {
             onClick={() => setActiveTab('scripts')}
             icon={FileText}
             label="Scripts"
-            count={displayData.scriptsCount || 0}
+            count={posts.filter(p => p.contentType === 'script').length}
           />
           <ProfileTab
             active={activeTab === 'about'}
@@ -915,11 +915,67 @@ export default function Profile() {
         )}
         
         {activeTab === 'scripts' && (
-          <EmptyState
-            icon={FileText}
-            title="No scripts yet"
-            description="Scripts shared by this user will appear here"
-          />
+          <Card title="Scripts" padding="default">
+            {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
+              <EmptyState
+                icon={Shield}
+                title="Content Not Available"
+                description={connectionStatus.isBlocked ? "You have blocked this user" : "This user has blocked you"}
+              />
+            ) : loadingPosts ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden animate-pulse">
+                    <div className="h-8 bg-neutral-200 dark:bg-neutral-800 m-4" />
+                    <div className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded" />
+                      <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-3/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : posts.filter(p => p.contentType === 'script').length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {posts.filter(p => p.contentType === 'script').map(post => {
+                  const transformedPost = {
+                    id: post.id,
+                    authorId: post.authorId,
+                    author: {
+                      id: post.author?.id || post.authorId,
+                      name: post.author?.displayName || displayData.displayName,
+                      role: post.author?.username || displayData.username,
+                      avatar: post.author?.avatar || displayData.avatar || ''
+                    },
+                    title: post.title || '',
+                    body: post.content || '',
+                    tags: post.tags || [],
+                    createdAt: new Date(post.createdAt).getTime(),
+                    mediaUrl: post.media?.[0] || '',
+                    mediaId: post.mediaId,
+                    mediaAttachment: post.mediaAttachment,
+                    audioUrl: post.audioUrl,
+                    allowDownload: post.allowDownload,
+                    visibility: post.visibility || 'public',
+                    hasAccess: post.hasAccess,
+                    accessRequestStatus: post.accessRequestStatus,
+                    likes: post.likes || 0,
+                    isLiked: post.isLiked || false,
+                    saved: post.isSaved || false,
+                    comments: post.comments || post._count?.comments || 0,
+                    price: post.price
+                  };
+                  return <PostCard key={post.id} post={transformedPost} onDelete={handlePostDelete} onLike={handleLikePost} />;
+                })}
+              </div>
+            ) : (
+              <EmptyState
+                icon={FileText}
+                title="No scripts yet"
+                description="Scripts shared by this user will appear here"
+              />
+            )}
+          </Card>
         )}
         
         {activeTab === 'about' && (
