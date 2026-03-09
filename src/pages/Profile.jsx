@@ -14,7 +14,7 @@ import PostCard from '../components/PostCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FollowersListModal from '../components/FollowersListModal';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, Video, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle } from 'lucide-react';
+import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
@@ -821,13 +821,6 @@ export default function Profile() {
             count={displayData._count?.posts || displayData.postsCount}
           />
           <ProfileTab
-            active={activeTab === 'reels'}
-            onClick={() => setActiveTab('reels')}
-            icon={Video}
-            label="Reels"
-            count={displayData.reelsCount || 0}
-          />
-          <ProfileTab
             active={activeTab === 'scripts'}
             onClick={() => setActiveTab('scripts')}
             icon={FileText}
@@ -918,17 +911,6 @@ export default function Profile() {
                 description="Posts shared by this user will appear here"
               />
             )}
-          </Card>
-        )}
-        
-        {activeTab === 'reels' && (
-          <Card title="Reels" padding="default">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Reels thumbnails */}
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
-              <div className="aspect-[9/16] bg-neutral-200 dark:bg-neutral-800 rounded-lg" aria-hidden="true" />
-            </div>
           </Card>
         )}
         
