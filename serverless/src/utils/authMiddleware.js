@@ -5,15 +5,12 @@
 import { getUserIdFromEvent } from './tokenManager.js';
 
 /**
- * Check if user's email is verified
- * Returns error response if not verified, null otherwise
- * 
- * Email verification disabled for beta — always passes.
- * 
- * @param {string} userId - User ID to check
- * @returns {Promise<Object|null>} Error response or null if verified
+ * No-op: email verification is disabled for beta.
+ * Always returns null so callers proceed without a 403.
+ *
+ * @returns {Promise<null>}
  */
-export async function requireEmailVerified(userId) {
+export async function requireEmailVerified(_userId) {
   // Email verification disabled for beta — always passes
   return null;
 }
