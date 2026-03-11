@@ -42,14 +42,6 @@ const Login = () => {
       const user = await login(formData.email, formData.password);
       toast.success('Welcome back!');
       
-      // Check if email is verified (if auth is enabled)
-      if (user.emailVerified === false) {
-        // Redirect to verify page with message
-        toast.error('Please verify your email address to continue');
-        navigate('/verify-email?unverified=true');
-        return;
-      }
-      
       // Always go directly to dashboard after sign in - no onboarding redirect
       navigate('/dashboard');
     } catch (err) {
