@@ -2,38 +2,17 @@
  * Authentication middleware utilities for serverless handlers
  */
 
-import { getPrisma } from '../db/client.js';
-import { error } from './headers.js';
 import { getUserIdFromEvent } from './tokenManager.js';
 
 /**
- * Check if user's email is verified
- * Returns error response if not verified, null otherwise
- * 
- * @param {string} userId - User ID to check
- * @returns {Promise<Object|null>} Error response or null if verified
+ * No-op: email verification is disabled for beta.
+ * Always returns null so callers proceed without a 403.
+ *
+ * @returns {Promise<null>}
  */
-export async function requireEmailVerified(userId) {
-  if (!userId) {
-    return error(401, 'Unauthorized - No valid token provided');
-  }
-
-  const prisma = getPrisma();
-  
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { emailVerified: true }
-  });
-
-  if (!user) {
-    return error(404, 'User not found');
-  }
-
-  if (!user.emailVerified) {
-    return error(403, 'Please verify your email first.');
-  }
-
-  return null; // User is verified, no error
+export async function requireEmailVerified(_userId) {
+  // Email verification disabled for beta — always passes
+  return null;
 }
 
 /**
