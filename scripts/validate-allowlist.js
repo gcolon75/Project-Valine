@@ -15,7 +15,12 @@
 
 const REQUIRED_EMAILS = [
   'ghawk075@gmail.com',
-  'valinejustin@gmail.com'
+  'valinejustin@gmail.com',
+  'brenny.sullivan@gmail.com',
+  'kiernan.sullivan@gmail.com',
+  'mmacalalag@ucsd.edu',
+  'piersonhurst@gmail.com',
+  'katelin.shum@cox.net'
 ];
 
 const PRODUCTION_DOMAINS = [

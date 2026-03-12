@@ -11,7 +11,7 @@ function getAllowlistInfo() {
     .map(e => e.trim().toLowerCase())
     .filter(Boolean);
   
-  const requiredEmails = ['ghawk075@gmail.com', 'valinejustin@gmail.com'];
+  const requiredEmails = ['ghawk075@gmail.com', 'valinejustin@gmail.com', 'brenny.sullivan@gmail.com', 'kiernan.sullivan@gmail.com', 'mmacalalag@ucsd.edu', 'piersonhurst@gmail.com', 'katelin.shum@cox.net'];
   const allowlistActive = allowlist.length > 0;
   const allowlistCount = allowlist.length;
   // Misconfigured if we expect exactly 2 emails but don't have them
