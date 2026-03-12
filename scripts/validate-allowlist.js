@@ -20,7 +20,8 @@ const REQUIRED_EMAILS = [
   'kiernan.sullivan@gmail.com',
   'mmacalalag@ucsd.edu',
   'piersonhurst@gmail.com',
-  'katelin.shum@cox.net'
+  'katelin.shum@cox.net',
+  'gabedeulloa@gmail.com'
 ];
 
 const PRODUCTION_DOMAINS = [
