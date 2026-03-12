@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Home } from 'lucide-react';
+import { ShieldAlert, Home, KeyRound } from 'lucide-react';
 
 /**
  * RestrictedRegistrationNotice
@@ -33,14 +33,23 @@ const RestrictedRegistrationNotice = () => {
             If you believe you should have access, please contact the administrator.
           </p>
 
-          {/* Action Button */}
-          <Link
-            to="/"
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
-          >
-            <Home className="w-5 h-5" />
-            <span>Return to Home</span>
-          </Link>
+          {/* Action Buttons */}
+          <div className="flex flex-col space-y-3">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-3 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+            >
+              <Home className="w-5 h-5" />
+              <span>Return to Home</span>
+            </Link>
+            <Link
+              to="/join?special=true"
+              className="inline-flex items-center justify-center space-x-2 border-2 border-[#0CCE6B] text-[#0CCE6B] hover:bg-[#0CCE6B]/10 px-6 py-3 rounded-lg font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+            >
+              <KeyRound className="w-5 h-5" />
+              <span>I have special access</span>
+            </Link>
+          </div>
         </div>
 
         {/* Footer Link */}

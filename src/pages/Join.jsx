@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Sparkles, AtSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,8 @@ import RestrictedRegistrationNotice from '../components/RestrictedRegistrationNo
 
 const Join = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const hasSpecialAccess = searchParams.get('special') === 'true';
   const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
@@ -122,8 +124,8 @@ const Join = () => {
     }
   };
 
-  // If allowlist is active, show restriction notice instead of form
-  if (allowlistActive) {
+  // If allowlist is active and user hasn't claimed special access, show restriction notice
+  if (allowlistActive && !hasSpecialAccess) {
     return <RestrictedRegistrationNotice />;
   }
 

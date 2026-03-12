@@ -134,14 +134,12 @@ export default function MarketingLayout() {
                   >
                     Sign In
                   </Link>
-                  {!allowlistActive && (
-                    <Link
-                      to="/join"
-                      className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
-                    >
-                      Sign up
-                    </Link>
-                  )}
+                  <Link
+                    to="/join"
+                    className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2 rounded-lg font-semibold transition-all hover:scale-105 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+                  >
+                    Sign up
+                  </Link>
                 </>
               )}
             </div>
