@@ -1,23 +1,107 @@
 // src/pages/Discover.jsx
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFeed } from "../context/FeedContext";
 import PostCard from "../components/PostCard";
 import { Search, TrendingUp, User, UserPlus, Loader2 } from "lucide-react";
 import { followProfile, unfollowProfile, sendConnectionRequest, getMyFollowing } from "../services/connectionService";
-import { searchUsers as searchUsersApi } from "../services/search";
+import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
+import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
 
 export default function Discover() {
   const navigate = useNavigate();
-  const { rawPosts, search } = useFeed();
+  const [discoverPosts, setDiscoverPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
   const [q, setQ] = useState("");
   const [searchType, setSearchType] = useState("all"); // 'all', 'users', 'posts'
   const [userResults, setUserResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [followingIds, setFollowingIds] = useState(new Set());
-  
-  const postResults = useMemo(() => search(q), [q, search]);
+
+  // Fetch all public posts for discover (no following required)
+  useEffect(() => {
+    const fetchDiscoverPosts = async () => {
+      setLoadingPosts(true);
+      try {
+        const posts = await getDiscoverPosts(50);
+        // Transform API posts to match expected format
+        const transformed = (posts || []).map(post => ({
+          id: post.id,
+          authorId: post.authorId,
+          author: {
+            id: post.author?.id,
+            name: post.author?.displayName,
+            role: post.author?.username,
+            avatar: post.author?.avatar || ''
+          },
+          title: post.title || post.mediaAttachment?.title || '',
+          body: post.content,
+          tags: post.tags || [],
+          createdAt: new Date(post.createdAt).getTime(),
+          mediaUrl: post.media?.[0] || '',
+          mediaId: post.mediaId,
+          mediaAttachment: post.mediaAttachment,
+          audioUrl: post.audioUrl,
+          allowDownload: post.allowDownload,
+          visibility: post.visibility || 'public',
+          likes: post.likes || 0,
+          isLiked: post.isLiked || false,
+          saved: post.isSaved || false,
+          comments: post.comments || 0,
+          contentType: post.contentType
+        }));
+        setDiscoverPosts(transformed);
+      } catch (error) {
+        console.error('Failed to fetch discover posts:', error);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+
+    fetchDiscoverPosts();
+  }, []);
+
+  // Filter posts based on search query
+  const postResults = useMemo(() => {
+    if (!q) return discoverPosts;
+    return searchPosts(discoverPosts, q, {});
+  }, [q, discoverPosts]);
+
+  // Handler for liking/unliking posts
+  const handleLikePost = async (postId) => {
+    const post = discoverPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const isCurrentlyLiked = post.isLiked;
+
+    // Optimistic update
+    setDiscoverPosts(prevPosts => prevPosts.map(p =>
+      p.id === postId ? {
+        ...p,
+        likes: isCurrentlyLiked ? Math.max(0, (p.likes || 0) - 1) : (p.likes || 0) + 1,
+        isLiked: !isCurrentlyLiked
+      } : p
+    ));
+
+    try {
+      if (isCurrentlyLiked) {
+        await unlikePostApi(postId);
+      } else {
+        await likePostApi(postId);
+      }
+    } catch (error) {
+      // Rollback on error
+      setDiscoverPosts(prevPosts => prevPosts.map(p =>
+        p.id === postId ? {
+          ...p,
+          likes: isCurrentlyLiked ? (p.likes || 0) + 1 : Math.max(0, (p.likes || 0) - 1),
+          isLiked: isCurrentlyLiked
+        } : p
+      ));
+      console.error('Failed to toggle like:', error);
+      toast.error('Failed to update like');
+    }
+  };
 
   // Fetch current user's following list on mount to know who is already followed
   useEffect(() => {
@@ -250,22 +334,26 @@ export default function Discover() {
       {(searchType === 'all' || searchType === 'posts') && (
         <div>
           <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4">Posts</h3>
-          
-          {postResults.length === 0 ? (
+
+          {loadingPosts ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 text-[#0CCE6B] animate-spin" />
+            </div>
+          ) : postResults.length === 0 ? (
             <div className="text-center py-8 text-neutral-500">
               {q ? `No posts found for "${q}"` : 'No posts yet'}
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {postResults.map((p) => (
-                <PostCard key={p.id} post={p} />
+                <PostCard key={p.id} post={p} onLike={handleLikePost} />
               ))}
             </div>
           )}
 
           {postResults.length > 0 && (
             <div className="text-xs text-center text-neutral-600 dark:text-neutral-500 mt-4">
-              Showing {postResults.length} of {rawPosts.length} posts
+              Showing {postResults.length} of {discoverPosts.length} posts
             </div>
           )}
         </div>

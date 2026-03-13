@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
+import { getUserIdFromEvent } from '../utils/tokenManager.js';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -181,6 +182,154 @@ export const getFeed = async (event) => {
     });
   } catch (e) {
     console.error('getFeed error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /discover
+ * Get all PUBLIC posts for the discover/explore page
+ * No following required - shows all public content from all users
+ *
+ * Returns:
+ * - All PUBLIC visibility posts ordered by most recent
+ * - Excludes FOLLOWERS_ONLY posts (those require following the author)
+ */
+export const getDiscoverPosts = async (event) => {
+  try {
+    const { limit = '20', cursor } = event.queryStringParameters || {};
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const prisma = getPrisma();
+
+    // Get authenticated user ID for like status (optional - discover works for logged out users too)
+    const authUserId = getUserIdFromEvent(event);
+
+    // Fetch all PUBLIC posts (no following required)
+    const posts = await prisma.post.findMany({
+      where: {
+        visibility: 'PUBLIC'
+      },
+      take: parsedLimit,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true, avatar: true }
+        },
+        _count: {
+          select: { comments: true }
+        }
+      }
+    });
+
+    // Collect all mediaIds that need to be fetched
+    const mediaIds = posts
+      .filter(post => post.mediaId)
+      .map(post => post.mediaId);
+
+    // Fetch all media records in a single query
+    let mediaMap = {};
+    if (mediaIds.length > 0) {
+      const mediaRecords = await prisma.media.findMany({
+        where: { id: { in: mediaIds } }
+      });
+
+      // Generate signed URLs for media content and poster images
+      for (const media of mediaRecords) {
+        let posterUrl = null;
+        let url = null;
+
+        // Check if media is video/audio by type OR file extension
+        const isVideoByExtension = media.s3Key && /\.(mp4|mov|webm)$/i.test(media.s3Key);
+        const isAudioByExtension = media.s3Key && /\.(mp3|wav|m4a)$/i.test(media.s3Key);
+        const needsSignedUrl = media.type === 'video' || media.type === 'audio' || isVideoByExtension || isAudioByExtension;
+
+        // Generate signed URL for the main media file (for videos and audio)
+        if (media.s3Key && needsSignedUrl) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: media.s3Key,
+            });
+            url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate media URL:', e.message);
+          }
+        }
+
+        // Generate signed URL for poster image
+        if (media.posterS3Key) {
+          try {
+            const command = new GetObjectCommand({
+              Bucket: MEDIA_BUCKET,
+              Key: media.posterS3Key,
+            });
+            posterUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          } catch (e) {
+            console.warn('Failed to generate poster URL:', e.message);
+          }
+        }
+        mediaMap[media.id] = { ...media, url, posterUrl };
+      }
+    }
+
+    // Get user's likes for these posts (gracefully handle if PostLike table doesn't exist yet)
+    const postIds = posts.map(p => p.id);
+    let likedPostIds = new Set();
+    if (authUserId && postIds.length > 0) {
+      try {
+        const userLikes = await prisma.postLike.findMany({
+          where: {
+            userId: authUserId,
+            postId: { in: postIds }
+          },
+          select: { postId: true }
+        });
+        likedPostIds = new Set(userLikes.map(l => l.postId));
+      } catch (e) {
+        // PostLike table may not exist yet - continue without like data
+        console.warn('PostLike query failed (table may not exist):', e.message);
+      }
+    }
+
+    // Get like counts for posts (gracefully handle if PostLike table doesn't exist)
+    let likeCounts = {};
+    if (postIds.length > 0) {
+      try {
+        const counts = await prisma.postLike.groupBy({
+          by: ['postId'],
+          where: { postId: { in: postIds } },
+          _count: { postId: true }
+        });
+        likeCounts = counts.reduce((acc, c) => {
+          acc[c.postId] = c._count.postId;
+          return acc;
+        }, {});
+      } catch (e) {
+        console.warn('PostLike count failed (table may not exist):', e.message);
+      }
+    }
+
+    // Attach media, like status, and counts to posts
+    const postsWithMedia = posts.map(post => {
+      const enrichedPost = {
+        ...post,
+        isLiked: likedPostIds.has(post.id),
+        likes: likeCounts[post.id] || 0,
+        comments: post._count?.comments || 0
+      };
+      if (post.mediaId && mediaMap[post.mediaId]) {
+        enrichedPost.mediaAttachment = mediaMap[post.mediaId];
+      }
+      return enrichedPost;
+    });
+
+    return json({
+      posts: postsWithMedia,
+      nextCursor: posts.length > 0 ? posts[posts.length - 1].id : null
+    });
+  } catch (e) {
+    console.error('getDiscoverPosts error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

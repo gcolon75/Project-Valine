@@ -482,6 +482,16 @@ functions:
           path: /feed
           method: get
 
+  # ========== DISCOVER ==========
+  getDiscoverPosts:
+    handler: src/handlers/feed.getDiscoverPosts
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /discover
+          method: get
+
   # ========== CONVERSATIONS ==========
   listConversations:
     handler: src/handlers/conversations.listConversations

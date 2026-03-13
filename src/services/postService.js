@@ -6,6 +6,17 @@ export const getFeedPosts = async (limit = 20, cursor = null) => {
 };
 
 /**
+ * Get all public posts for discover page (no following required)
+ * @param {number} limit - Maximum number of posts to return
+ * @param {string} cursor - Pagination cursor
+ * @returns {Promise<Array>} Array of public posts
+ */
+export const getDiscoverPosts = async (limit = 20, cursor = null) => {
+  const { data } = await apiClient.get('/discover', { params: { limit, cursor } });
+  return data?.posts ?? data;
+};
+
+/**
  * List posts with optional filtering
  * @param {Object} options - Query options
  * @param {number} options.limit - Maximum number of posts to return
