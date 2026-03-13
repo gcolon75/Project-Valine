@@ -7,7 +7,7 @@ import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
 import { Card, Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
-import { getFeedPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
+import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
 import { getMyProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
@@ -83,10 +83,10 @@ export default function Dashboard() {
     setApiPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
   };
 
-  // Try to fetch posts from API, fallback to context posts
+  // Fetch all public posts (no following required)
   useEffect(() => {
     setLoadingApi(true);
-    getFeedPosts()
+    getDiscoverPosts()
       .then(data => {
         if (data && data.length > 0) {
           // Transform API posts to match the expected format
