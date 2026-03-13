@@ -36,6 +36,7 @@ export default function Notifications() {
   }, [filter]);
 
   // Check follow status for FOLLOW notifications
+  // Re-check on mount, when notifications change, or when page becomes visible
   useEffect(() => {
     const checkFollowStatus = async () => {
       if (!notifications || notifications.length === 0) return;
@@ -48,7 +49,7 @@ export default function Notifications() {
       for (const notif of followNotifs) {
         const user = notif.triggerer || notif.user;
         const userId = user?.id;
-        if (userId && !followingStates[userId]) {
+        if (userId) {
           try {
             const status = await getConnectionStatus(userId);
             statuses[userId] = status.isFollowing || false;
@@ -64,6 +65,26 @@ export default function Notifications() {
     };
 
     checkFollowStatus();
+
+    // Re-check when page becomes visible (user navigated back from profile)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkFollowStatus();
+      }
+    };
+
+    // Re-check when window gains focus (user switched tabs/windows)
+    const handleFocus = () => {
+      checkFollowStatus();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [notifications]);
 
   // Handle follow back action

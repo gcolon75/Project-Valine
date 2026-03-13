@@ -9,9 +9,36 @@ import LinksSetup from './steps/LinksSetup';
 import PreferencesSetup from './steps/PreferencesSetup';
 import toast from 'react-hot-toast';
 import { updateMyProfile } from '../../services/profileService';
+import { uploadMedia } from '../../services/mediaService';
 
 const ONBOARDING_STORAGE_KEY = 'valine-onboarding-progress';
 const TOTAL_STEPS = 4;
+
+/**
+ * Convert a base64 data URL to a Blob
+ * @param {string} dataUrl - Base64 data URL (e.g., "data:image/jpeg;base64,...")
+ * @returns {Blob} - Blob object
+ */
+const dataUrlToBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+/**
+ * Check if a string is a base64 data URL
+ * @param {string} str - String to check
+ * @returns {boolean} - True if it's a data URL
+ */
+const isDataUrl = (str) => {
+  return str && typeof str === 'string' && str.startsWith('data:');
+};
 
 /**
  * Onboarding Index - Main orchestrator for multi-step onboarding wizard
@@ -111,13 +138,65 @@ export default function Onboarding() {
 
   const completeOnboarding = async () => {
     setIsSaving(true);
-    
+
     try {
       // Defensive check - onboardingData should always be initialized but check anyway
       if (!onboardingData) {
         console.error('[Onboarding] onboardingData is null/undefined');
         toast.error('Something went wrong. Please refresh and try again.');
         return;
+      }
+
+      // Upload avatar to S3 if it's a base64 data URL
+      let avatarUrl = null;
+      if (onboardingData.avatar && isDataUrl(onboardingData.avatar)) {
+        try {
+          console.log('[Onboarding] Uploading avatar to S3...');
+          const avatarBlob = dataUrlToBlob(onboardingData.avatar);
+          const profileId = user?.id || 'me';
+          const result = await uploadMedia(profileId, avatarBlob, 'image', {
+            title: 'Profile Avatar',
+            description: 'Profile picture from onboarding',
+            privacy: 'public',
+          });
+          if (result?.s3Url) {
+            avatarUrl = result.s3Url;
+            console.log('[Onboarding] Avatar uploaded successfully:', avatarUrl);
+          }
+        } catch (uploadError) {
+          console.error('[Onboarding] Failed to upload avatar:', uploadError);
+          // Don't block onboarding completion, but warn user
+          toast.error('Could not upload profile picture. You can add it later in settings.');
+        }
+      } else if (onboardingData.avatar && !isDataUrl(onboardingData.avatar)) {
+        // Already an S3 URL or external URL
+        avatarUrl = onboardingData.avatar;
+      }
+
+      // Upload banner to S3 if it's a base64 data URL
+      let bannerUrl = null;
+      if (onboardingData.banner && isDataUrl(onboardingData.banner)) {
+        try {
+          console.log('[Onboarding] Uploading banner to S3...');
+          const bannerBlob = dataUrlToBlob(onboardingData.banner);
+          const profileId = user?.id || 'me';
+          const result = await uploadMedia(profileId, bannerBlob, 'image', {
+            title: 'Profile Banner',
+            description: 'Cover banner from onboarding',
+            privacy: 'public',
+          });
+          if (result?.s3Url) {
+            bannerUrl = result.s3Url;
+            console.log('[Onboarding] Banner uploaded successfully:', bannerUrl);
+          }
+        } catch (uploadError) {
+          console.error('[Onboarding] Failed to upload banner:', uploadError);
+          // Don't block onboarding completion
+          toast.error('Could not upload cover banner. You can add it later in settings.');
+        }
+      } else if (onboardingData.banner && !isDataUrl(onboardingData.banner)) {
+        // Already an S3 URL or external URL
+        bannerUrl = onboardingData.banner;
       }
 
       // Update user profile with onboarding data
@@ -128,7 +207,8 @@ export default function Onboarding() {
         bio: onboardingData.bio || '',
         roles: onboardingData.roles || [],
         tags: onboardingData.tags || [],
-        avatarUrl: onboardingData.avatar || null,
+        avatarUrl: avatarUrl,
+        bannerUrl: bannerUrl,
         links: onboardingData.profileLinks || [],
         // Notification preferences
         notifyOnFollow: onboardingData.emailNotifications ?? true,

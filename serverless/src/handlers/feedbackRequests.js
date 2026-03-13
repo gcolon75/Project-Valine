@@ -528,7 +528,7 @@ export const createAnnotation = async (event) => {
       return error(400, 'type and content are required');
     }
 
-    if (!['HIGHLIGHT', 'PAGE_COMMENT', 'GENERAL_COMMENT'].includes(type)) {
+    if (!['HIGHLIGHT', 'PAGE_COMMENT', 'GENERAL_COMMENT', 'PAGE_FEEDBACK'].includes(type)) {
       return error(400, 'Invalid annotation type');
     }
 

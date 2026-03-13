@@ -37,6 +37,8 @@ export default function FeedbackView() {
   const [selectedAnnotation, setSelectedAnnotation] = useState(null);
   const [liveSelectionRects, setLiveSelectionRects] = useState([]);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [pageComment, setPageComment] = useState('');
+  const [submittingPageComment, setSubmittingPageComment] = useState(false);
 
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
@@ -304,8 +306,37 @@ export default function FeedbackView() {
     window.getSelection()?.removeAllRanges();
   };
 
+  // Submit page-level feedback
+  const handleSubmitPageComment = async () => {
+    if (!pageComment.trim()) return;
+
+    setSubmittingPageComment(true);
+    try {
+      const annotationData = {
+        type: 'PAGE_FEEDBACK',
+        pageNumber: currentPage,
+        content: pageComment.trim(),
+        highlightedText: null,
+        selectionData: null,
+        positionX: null,
+        positionY: null,
+      };
+
+      const newAnnotation = await createAnnotation(id, annotationData);
+      setAnnotations(prev => [...prev, newAnnotation]);
+      setPageComment('');
+      toast.success('Page feedback added');
+    } catch (err) {
+      console.error('Failed to create page feedback:', err);
+      toast.error('Failed to add page feedback');
+    } finally {
+      setSubmittingPageComment(false);
+    }
+  };
+
   // Get annotations for current page
-  const pageAnnotations = annotations.filter(a => a.pageNumber === currentPage);
+  const pageAnnotations = annotations.filter(a => a.pageNumber === currentPage && a.type !== 'GENERAL_COMMENT');
+  const pageFeedback = annotations.filter(a => a.pageNumber === currentPage && a.type === 'PAGE_FEEDBACK');
   const generalAnnotations = annotations.filter(a => a.type === 'GENERAL_COMMENT');
 
   if (loading) {
@@ -547,13 +578,68 @@ export default function FeedbackView() {
             </div>
           )}
 
-          {/* Instructions for annotating */}
+          {/* Instructions for annotating - More prominent */}
           {canAnnotate && !showCommentInput && (
-            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-purple-50 dark:bg-purple-900/20">
-              <p className="text-sm text-purple-700 dark:text-purple-300">
-                <Highlighter className="w-4 h-4 inline mr-1" />
-                Select text to highlight, or click on the page to add a comment.
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-gradient-to-r from-amber-50 to-purple-50 dark:from-amber-900/20 dark:to-purple-900/20">
+              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-3">
+                How to give feedback:
               </p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-amber-400/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Highlighter className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <span className="font-medium text-amber-600 dark:text-amber-400">Highlight text:</span> Click and drag to select any text on the PDF
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-purple-400/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <span className="font-medium text-purple-600 dark:text-purple-400">Page comment:</span> Click anywhere on the page to pin a comment
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-[#0CCE6B]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FileText className="w-3.5 h-3.5 text-[#0CCE6B]" />
+                  </div>
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                    <span className="font-medium text-[#0CCE6B]">Page feedback:</span> Use the text box below for overall page thoughts
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Per-page feedback text box */}
+          {canAnnotate && !showCommentInput && (
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                Page {currentPage} Feedback
+              </label>
+              <textarea
+                value={pageComment}
+                onChange={(e) => setPageComment(e.target.value)}
+                placeholder={`Share your thoughts on page ${currentPage}...`}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white resize-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent text-sm"
+                rows={3}
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleSubmitPageComment}
+                  disabled={!pageComment.trim() || submittingPageComment}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#0CCE6B] text-white rounded-lg hover:bg-[#0BBE60] disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {submittingPageComment ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Add Page Feedback
+                </button>
+              </div>
             </div>
           )}
 
@@ -563,7 +649,7 @@ export default function FeedbackView() {
             {pageAnnotations.length > 0 && (
               <div className="p-4">
                 <h3 className="text-xs font-medium text-neutral-500 uppercase mb-3">
-                  Page {currentPage}
+                  Page {currentPage} Annotations
                 </h3>
                 <div className="space-y-3">
                   {pageAnnotations.map(annotation => (
@@ -578,6 +664,21 @@ export default function FeedbackView() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
+                          {annotation.type === 'HIGHLIGHT' && (
+                            <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                              <Highlighter className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          )}
+                          {annotation.type === 'PAGE_COMMENT' && (
+                            <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                              <MessageCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            </div>
+                          )}
+                          {annotation.type === 'PAGE_FEEDBACK' && (
+                            <div className="w-6 h-6 rounded-full bg-[#0CCE6B]/20 flex items-center justify-center">
+                              <FileText className="w-3.5 h-3.5 text-[#0CCE6B]" />
+                            </div>
+                          )}
                           <img
                             src={annotation.author?.avatar || 'https://i.pravatar.cc/150?img=1'}
                             alt=""
@@ -602,6 +703,11 @@ export default function FeedbackView() {
                       {annotation.highlightedText && (
                         <div className="mt-2 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 rounded-r text-xs text-neutral-600 dark:text-neutral-400 italic">
                           "{annotation.highlightedText}"
+                        </div>
+                      )}
+                      {annotation.type === 'PAGE_FEEDBACK' && (
+                        <div className="mt-1 text-xs text-[#0CCE6B] font-medium">
+                          Page {annotation.pageNumber} Feedback
                         </div>
                       )}
                       <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-2">
