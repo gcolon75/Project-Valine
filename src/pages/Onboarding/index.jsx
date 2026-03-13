@@ -61,13 +61,20 @@ export default function Onboarding() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setCurrentStep(parsed.currentStep || 1);
-        return parsed.data || {};
+        // Only restore saved progress if it belongs to the current user
+        if (parsed.userId && parsed.userId === user?.id) {
+          setCurrentStep(parsed.currentStep || 1);
+          return parsed.data || {};
+        } else {
+          // Clear stale data from a different user
+          localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+        }
       } catch (e) {
         console.error('Failed to parse saved onboarding data', e);
+        localStorage.removeItem(ONBOARDING_STORAGE_KEY);
       }
     }
-    
+
     return {
       displayName: user?.displayName || user?.name || '',
       title: user?.title || '',
@@ -88,13 +95,15 @@ export default function Onboarding() {
 
   // Autosave to localStorage whenever data changes
   useEffect(() => {
+    if (!user?.id) return; // Don't save without a user ID
     const dataToSave = {
+      userId: user.id,
       currentStep,
       data: onboardingData,
       timestamp: Date.now(),
     };
     localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [currentStep, onboardingData]);
+  }, [currentStep, onboardingData, user?.id]);
 
   // Focus management: focus on step content when step changes
   useEffect(() => {
