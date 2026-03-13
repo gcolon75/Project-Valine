@@ -241,6 +241,277 @@ describe('Profile Onboarding Persistence', () => {
     });
   });
 
+  describe('updateMyProfile - All Profile Fields Persistence', () => {
+    it('should save title and location when creating a new profile', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          title: 'Senior Voice Actor',
+          location: 'Los Angeles, CA',
+          bio: 'Professional with 10 years experience',
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.title).toBe('Senior Voice Actor');
+      expect(createdProfile.location).toBe('Los Angeles, CA');
+      expect(createdProfile.bio).toBe('Professional with 10 years experience');
+    });
+
+    it('should save pronouns and availabilityStatus when creating a new profile', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          pronouns: 'she/her',
+          availabilityStatus: 'available',
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.pronouns).toBe('she/her');
+      expect(createdProfile.availabilityStatus).toBe('available');
+    });
+
+    it('should save links (socialLinks) when creating a new profile', async () => {
+      const profileLinks = [
+        { label: 'Portfolio', url: 'https://example.com', type: 'website' },
+        { label: 'Reel', url: 'https://vimeo.com/123', type: 'showreel' }
+      ];
+
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          links: profileLinks,
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.socialLinks).toEqual(profileLinks);
+    });
+
+    it('should save budgetMin and budgetMax when creating a new profile', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          budgetMin: 500,
+          budgetMax: 2000,
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.budgetMin).toBe(500);
+      expect(createdProfile.budgetMax).toBe(2000);
+    });
+
+    it('should save notification preferences when creating a new profile', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          notifyOnFollow: false,
+          notifyOnMessage: true,
+          notifyOnPostShare: false,
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.notifyOnFollow).toBe(false);
+      expect(createdProfile.notifyOnMessage).toBe(true);
+      expect(createdProfile.notifyOnPostShare).toBe(false);
+    });
+
+    it('should save privacy preferences when creating a new profile', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          visibility: 'FOLLOWERS_ONLY',
+          messagePermission: 'FOLLOWERS_ONLY',
+          isSearchable: false,
+          roles: ['Voice Actor'],
+          tags: ['Animation']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.visibility).toBe('FOLLOWERS_ONLY');
+      expect(createdProfile.messagePermission).toBe('FOLLOWERS_ONLY');
+      expect(createdProfile.isSearchable).toBe(false);
+    });
+
+    it('should save all onboarding fields in a single call when profile does not exist', async () => {
+      const profileLinks = [{ label: 'Portfolio', url: 'https://example.com', type: 'website' }];
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          displayName: 'Jane Voice',
+          title: 'Professional Voice Actor',
+          bio: 'Award-winning voice actor with 15 years of experience.',
+          location: 'New York, NY',
+          pronouns: 'they/them',
+          availabilityStatus: 'available',
+          roles: ['Voice Actor', 'Actor'],
+          tags: ['Animation', 'Commercial', 'Narration'],
+          links: profileLinks,
+          budgetMin: 250,
+          budgetMax: 1500,
+          notifyOnFollow: true,
+          notifyOnMessage: false,
+          notifyOnPostShare: true,
+          visibility: 'PUBLIC',
+          isSearchable: true,
+          profileComplete: true,
+          onboardingComplete: true
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.title).toBe('Professional Voice Actor');
+      expect(createdProfile.bio).toBe('Award-winning voice actor with 15 years of experience.');
+      expect(createdProfile.location).toBe('New York, NY');
+      expect(createdProfile.pronouns).toBe('they/them');
+      expect(createdProfile.availabilityStatus).toBe('available');
+      expect(createdProfile.roles).toEqual(['Voice Actor', 'Actor']);
+      expect(createdProfile.tags).toEqual(['Animation', 'Commercial', 'Narration']);
+      expect(createdProfile.socialLinks).toEqual(profileLinks);
+      expect(createdProfile.budgetMin).toBe(250);
+      expect(createdProfile.budgetMax).toBe(1500);
+      expect(createdProfile.notifyOnFollow).toBe(true);
+      expect(createdProfile.notifyOnMessage).toBe(false);
+      expect(createdProfile.notifyOnPostShare).toBe(true);
+      expect(createdProfile.visibility).toBe('PUBLIC');
+      expect(createdProfile.isSearchable).toBe(true);
+
+      const updatedUser = mockUsers.get(mockUserId);
+      expect(updatedUser.displayName).toBe('Jane Voice');
+      expect(updatedUser.onboardingComplete).toBe(true);
+      expect(updatedUser.profileComplete).toBe(true);
+    });
+
+    it('should save all onboarding fields in a single call when profile already exists (update path)', async () => {
+      // Pre-create a profile to test the UPDATE path
+      mockProfiles.set(mockUserId, {
+        id: 'profile-' + mockUserId,
+        userId: mockUserId,
+        vanityUrl: 'testuser',
+        headline: 'Old Headline',
+        title: 'Old Title',
+        bio: 'Old bio',
+        location: 'Old City',
+        pronouns: 'he/him',
+        availabilityStatus: 'unavailable',
+        roles: ['Writer'],
+        tags: ['Drama'],
+        socialLinks: null,
+        budgetMin: null,
+        budgetMax: null,
+        notifyOnFollow: true,
+        notifyOnMessage: true,
+        notifyOnPostShare: true,
+        visibility: 'PUBLIC',
+        isSearchable: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      const profileLinks = [{ label: 'IMDb', url: 'https://imdb.com/name/nm123', type: 'imdb' }];
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          title: 'Senior Voice Actor',
+          bio: 'Updated professional bio.',
+          location: 'Los Angeles, CA',
+          pronouns: 'she/her',
+          availabilityStatus: 'available',
+          roles: ['Voice Actor', 'Director'],
+          tags: ['Voice Acting', 'Animation'],
+          links: profileLinks,
+          budgetMin: 500,
+          budgetMax: 3000,
+          notifyOnFollow: false,
+          notifyOnMessage: true,
+          notifyOnPostShare: false,
+          visibility: 'FOLLOWERS_ONLY',
+          isSearchable: false
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const updatedProfile = mockProfiles.get(mockUserId);
+      expect(updatedProfile.title).toBe('Senior Voice Actor');
+      expect(updatedProfile.bio).toBe('Updated professional bio.');
+      expect(updatedProfile.location).toBe('Los Angeles, CA');
+      expect(updatedProfile.pronouns).toBe('she/her');
+      expect(updatedProfile.availabilityStatus).toBe('available');
+      expect(updatedProfile.roles).toEqual(['Voice Actor', 'Director']);
+      expect(updatedProfile.tags).toEqual(['Voice Acting', 'Animation']);
+      expect(updatedProfile.socialLinks).toEqual(profileLinks);
+      expect(updatedProfile.budgetMin).toBe(500);
+      expect(updatedProfile.budgetMax).toBe(3000);
+      expect(updatedProfile.notifyOnFollow).toBe(false);
+      expect(updatedProfile.notifyOnMessage).toBe(true);
+      expect(updatedProfile.notifyOnPostShare).toBe(false);
+      expect(updatedProfile.visibility).toBe('FOLLOWERS_ONLY');
+      expect(updatedProfile.isSearchable).toBe(false);
+    });
+
+    it('should map primaryRoles and skills to roles and tags respectively', async () => {
+      const event = {
+        headers: { authorization: 'Bearer test-token' },
+        body: JSON.stringify({
+          primaryRoles: ['Actor', 'Director'],
+          skills: ['Stage Acting', 'Directing']
+        })
+      };
+
+      const response = await updateMyProfile(event);
+      expect(response.statusCode).toBe(200);
+
+      const createdProfile = mockProfiles.get(mockUserId);
+      expect(createdProfile).toBeDefined();
+      expect(createdProfile.roles).toEqual(['Actor', 'Director']);
+      expect(createdProfile.tags).toEqual(['Stage Acting', 'Directing']);
+    });
+  });
+
   describe('updateMyProfile - Validation', () => {
     it('should return 401 for unauthenticated requests', async () => {
       const event = {
