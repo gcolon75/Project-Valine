@@ -68,13 +68,33 @@ export default function ProfileBasics({ userData, onUpdate }) {
     setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
   };
 
-  const handleAvatarSave = (imageData) => {
-    setFormData(prev => ({ ...prev, avatar: imageData }));
+  const handleAvatarSave = (croppedFile) => {
+    // Convert File to data URL for preview display
+    if (croppedFile instanceof File || croppedFile instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({ ...prev, avatar: e.target.result }));
+      };
+      reader.readAsDataURL(croppedFile);
+    } else {
+      // If it's already a string (data URL), use directly
+      setFormData(prev => ({ ...prev, avatar: croppedFile }));
+    }
     setShowCropper(false);
   };
 
-  const handleBannerSave = (imageData) => {
-    setFormData(prev => ({ ...prev, banner: imageData }));
+  const handleBannerSave = (croppedFile) => {
+    // Convert File to data URL for preview display
+    if (croppedFile instanceof File || croppedFile instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({ ...prev, banner: e.target.result }));
+      };
+      reader.readAsDataURL(croppedFile);
+    } else {
+      // If it's already a string (data URL), use directly
+      setFormData(prev => ({ ...prev, banner: croppedFile }));
+    }
     setShowBannerCropper(false);
   };
 

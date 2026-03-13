@@ -91,21 +91,11 @@ export const getUploadUrl = async (event) => {
 
     // Ensure profile exists for the user - auto-create if not
     let profile;
-    if (profileId) {
-      // If profileId is provided, verify ownership
-      profile = await prisma.profile.findUnique({
-        where: { id: profileId },
-      });
 
-      if (!profile) {
-        return error(404, 'Profile not found');
-      }
-
-      if (profile.userId !== userId) {
-        return error(403, 'Forbidden - not profile owner');
-      }
-    } else {
-      // If no profileId, find or create profile for the user
+    // Handle 'me' as a special profile ID that resolves to current user's profile
+    // Also handle when profileId matches userId (common frontend pattern)
+    if (!profileId || profileId === 'me' || profileId === userId) {
+      // Find or create profile for the user
       profile = await prisma.profile.findUnique({
         where: { userId },
       });
@@ -123,6 +113,19 @@ export const getUploadUrl = async (event) => {
           },
         });
         console.log('[getUploadUrl] Auto-created profile for user:', userId);
+      }
+    } else {
+      // If profileId is provided and not 'me'/userId, verify ownership
+      profile = await prisma.profile.findUnique({
+        where: { id: profileId },
+      });
+
+      if (!profile) {
+        return error(404, 'Profile not found');
+      }
+
+      if (profile.userId !== userId) {
+        return error(403, 'Forbidden - not profile owner');
       }
     }
 
@@ -208,10 +211,17 @@ export const completeUpload = async (event) => {
 
     const prisma = getPrisma();
 
-    // Verify profile ownership
-    const profile = await prisma.profile.findUnique({
-      where: { id: profileId },
-    });
+    // Verify profile ownership - handle 'me' and userId as special cases
+    let profile;
+    if (profileId === 'me' || profileId === userId) {
+      profile = await prisma.profile.findUnique({
+        where: { userId },
+      });
+    } else {
+      profile = await prisma.profile.findUnique({
+        where: { id: profileId },
+      });
+    }
 
     if (!profile) {
       return error(404, 'Profile not found');
