@@ -11,6 +11,16 @@ import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf } from "../ser
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
+function renderBody(text) {
+  if (!text) return null;
+  const parts = text.split(/(@\w+)/g);
+  return parts.map((part, i) =>
+    /^@\w+$/.test(part)
+      ? <Link key={i} to={`/profile/${part.slice(1)}`} className="text-[#0CCE6B] hover:underline">{part}</Link>
+      : <span key={i}>{part}</span>
+  );
+}
+
 const CONTENT_TYPE_LABELS = {
   script: { icon: '📝', label: 'Script' },
   audition: { icon: '🎭', label: 'Audition' },
@@ -438,7 +448,7 @@ export default function PostCard({ post, onDelete, onLike }) {
           className="cursor-pointer"
           onClick={() => navigate(`/posts/${post.id}`)}
         >
-          <p className="text-sm text-neutral-700 dark:text-neutral-300">{post.body}</p>
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">{renderBody(post.body)}</p>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {post.tags.map((t) => (

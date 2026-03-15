@@ -6,6 +6,7 @@ import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import { uploadMedia } from "../services/mediaService";
 import { getMyProfile } from "../services/profileService";
+import MentionTextarea from "./MentionTextarea";
 
 export default function PostComposer() {
   const { createPost } = useFeed();
@@ -178,9 +179,9 @@ export default function PostComposer() {
         className="w-full bg-transparent text-base md:text-lg font-semibold text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500"
         placeholder="Share a script, audition, or reel..."
       />
-      <textarea
+      <MentionTextarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(val) => setBody(val)}
         rows={3}
         className="mt-2 w-full bg-transparent text-sm text-neutral-700 dark:text-neutral-300 outline-none placeholder:text-neutral-500"
         placeholder="Add a short description (optional)"

@@ -95,8 +95,10 @@ export default function AppLayout() {
         </div>
       </nav>
 
-      {/* Chat Widget - Bottom Right */}
-      <ChatWidget />
+      {/* Chat Widget - Desktop only (mobile uses bottom nav Messages link) */}
+      <div className="hidden md:block">
+        <ChatWidget />
+      </div>
     </div>
   );
 }

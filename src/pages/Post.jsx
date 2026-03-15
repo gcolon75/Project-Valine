@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { createPost, getAudioUploadUrl, uploadAudioToS3 } from '../services/postService';
 import { getUploadUrl, uploadToS3, completeUpload } from '../services/mediaService';
 import { getMyProfile } from '../services/profileService';
+import MentionTextarea from '../components/MentionTextarea';
 
 // Set up PDF.js worker from local package
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -610,17 +611,12 @@ export default function Post() {
           <label htmlFor="description" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             Description
           </label>
-          <textarea
-            id="description"
-            name="description"
+          <MentionTextarea
             value={formData.description}
-            onChange={(e) => handleChange('description', e.target.value)}
+            onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
             rows={6}
-            maxLength={1000}
             placeholder="Describe context, goals, or feedback needed..."
             className="block w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-neutral-500"
-            aria-invalid={!!errors.description}
-            aria-describedby="description-count"
           />
           <div className="mt-1 flex justify-between text-sm">
             {errors.description && (
