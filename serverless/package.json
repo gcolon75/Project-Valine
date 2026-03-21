@@ -21,16 +21,16 @@
   },
   "devDependencies": {
     "@prisma/client": "^6.19.0",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.27.3",
     "eslint": "^8.57.0",
     "prisma": "6.19.0",
-    "serverless": "^3.40.0",
+    "serverless": "^4.33.0",
     "serverless-esbuild": "^1.57.0",
     "vitest": "^1.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.637.0",
-    "@aws-sdk/s3-request-presigner": "^3.637.0",
+    "@aws-sdk/client-s3": "^3.1014.0",
+    "@aws-sdk/s3-request-presigner": "^3.1014.0",
     "bcryptjs": "^3.0.3",
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
