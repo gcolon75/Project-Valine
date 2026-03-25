@@ -289,6 +289,7 @@ export const getProfileByVanity = async (event) => {
       location: profile.location,
       tags: profile.tags,
       socialLinks: profile.socialLinks,
+      links: profile.links,
       user: profile.user,
       media: profile.media,
       credits: profile.credits,

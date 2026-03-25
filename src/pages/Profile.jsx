@@ -778,6 +778,38 @@ export default function Profile() {
             )}
           </div>
 
+          {/* Link Tree */}
+          {(() => {
+            const links = Array.isArray(displayData.links) && displayData.links.length > 0
+              ? displayData.links
+              : Array.isArray(displayData.socialLinks) && displayData.socialLinks.length > 0
+              ? displayData.socialLinks
+              : null;
+            if (!links) return null;
+            return (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {links.filter(l => isValidUrl(l.url)).map((link, i) => {
+                  const Icon = link.type === 'imdb' ? Film
+                    : link.type === 'showreel' ? Film
+                    : link.type === 'website' ? Globe
+                    : ExternalLink;
+                  return (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-700 dark:text-neutral-300 hover:border-[#0CCE6B] hover:text-[#0CCE6B] transition-colors"
+                    >
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      {link.label}
+                    </a>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Stats */}
           <div className="flex items-center gap-4 sm:gap-6 pt-4 border-t border-subtle flex-wrap">
             <div>
