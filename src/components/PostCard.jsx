@@ -101,7 +101,7 @@ export default function PostCard({ post, onDelete, onLike }) {
   // Auto-fix: if author views their own PDF with no poster, generate and upload one silently
   const mediaId = post.mediaId || post.mediaAttachment?.id;
   useEffect(() => {
-    if (!isPdf || post.mediaAttachment?.posterUrl || !isAuthor || !mediaId) return;
+    if (!isPdf || post.mediaAttachment?.posterUrl || localPosterUrl || !isAuthor || !mediaId) return;
     let cancelled = false;
 
     const fix = async () => {
@@ -119,8 +119,7 @@ export default function PostCard({ post, onDelete, onLike }) {
 
     fix();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaId]);
+  }, [mediaId, isAuthor, isPdf]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle request access
   const handleRequestAccess = async () => {
