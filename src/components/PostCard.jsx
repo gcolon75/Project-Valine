@@ -106,9 +106,9 @@ export default function PostCard({ post, onDelete, onLike }) {
 
     const fix = async () => {
       try {
-        const { downloadUrl } = await getMediaAccessUrl(mediaId);
-        if (cancelled || !downloadUrl) return;
-        const base64 = await generatePdfThumbnailBase64(downloadUrl);
+        const { viewUrl } = await getMediaAccessUrl(mediaId);
+        if (cancelled || !viewUrl) return;
+        const base64 = await generatePdfThumbnailBase64(viewUrl);
         if (cancelled) return;
         const { posterUrl: newUrl } = await uploadPdfPoster(mediaId, base64);
         if (!cancelled) setLocalPosterUrl(newUrl);
