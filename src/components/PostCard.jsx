@@ -54,12 +54,13 @@ export default function PostCard({ post, onDelete, onLike }) {
   };
 
   // Check if current user is the post author
-  // Include fallback checks for different property name variations
-  const isAuthor = user && (
-    user.id === post.author?.id || 
-    user.id === post.authorId || 
-    user.id === post.userId || 
-    user.id === post.ownerId
+  // user.id may be a profile ID after refreshUser(); user.userId is always the account ID
+  const myId = user?.userId || user?.id;
+  const isAuthor = !!myId && (
+    myId === post.author?.id ||
+    myId === post.authorId ||
+    myId === post.userId ||
+    myId === post.ownerId
   );
   
   // Check if content is gated (has a mediaId and is not public)
