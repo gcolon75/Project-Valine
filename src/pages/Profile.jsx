@@ -780,14 +780,29 @@ export default function Profile() {
 
           {/* Link Tree */}
           {(() => {
-            const links = (Array.isArray(displayData.links) && displayData.links.length > 0)
-              ? displayData.links
-              : (Array.isArray(displayData.profile?.links) && displayData.profile.links.length > 0)
-              ? displayData.profile.links
-              : (Array.isArray(displayData.socialLinks) && displayData.socialLinks.length > 0)
-              ? displayData.socialLinks
-              : null;
-            if (!links) return null;
+            // Normalize socialLinks which may be an array OR old {website,imdb,...} object
+            const normalizeSocialLinks = (sl) => {
+              if (!sl) return [];
+              if (Array.isArray(sl)) return sl;
+              // Legacy object format
+              const out = [];
+              if (sl.website) out.push({ label: 'Website', url: sl.website, type: 'website' });
+              if (sl.imdb) out.push({ label: 'IMDb', url: sl.imdb, type: 'imdb' });
+              if (sl.showreel) out.push({ label: 'Showreel', url: sl.showreel, type: 'showreel' });
+              if (sl.instagram) out.push({ label: 'Instagram', url: sl.instagram, type: 'other' });
+              if (sl.linkedin) out.push({ label: 'LinkedIn', url: sl.linkedin, type: 'other' });
+              return out;
+            };
+
+            // Check all possible sources: own profile (links=socialLinks), other profile (profile.links relation + profile.socialLinks)
+            const fromLinks = Array.isArray(displayData.links) ? displayData.links : [];
+            const fromProfileLinks = Array.isArray(displayData.profile?.links) ? displayData.profile.links : [];
+            const fromSocialLinks = normalizeSocialLinks(displayData.socialLinks || displayData.profile?.socialLinks);
+            const merged = [...fromLinks, ...fromProfileLinks, ...fromSocialLinks];
+            // Deduplicate by url
+            const seen = new Set();
+            const links = merged.filter(l => l?.url && !seen.has(l.url) && seen.add(l.url));
+            if (!links.length) return null;
             return (
               <div className="flex flex-wrap gap-2 mb-4">
                 {links.filter(l => isValidUrl(l.url)).map((link, i) => {
