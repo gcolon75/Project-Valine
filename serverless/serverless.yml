@@ -748,6 +748,14 @@ functions:
       - httpApi:
           path: /media/{id}
           method: delete
+  uploadPoster:
+    handler: src/handlers/media.uploadPoster
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /media/{id}/poster
+          method: post
   getAccessUrl:
     handler: src/handlers/media.getAccessUrl
     layers:

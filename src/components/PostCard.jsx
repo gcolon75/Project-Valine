@@ -1,5 +1,5 @@
 // src/components/PostCard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -7,7 +7,8 @@ import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
 import ConfirmationModal from "./ConfirmationModal";
-import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf } from "../services/mediaService";
+import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf, uploadPdfPoster } from "../services/mediaService";
+import { generatePdfThumbnailBase64 } from "../utils/pdfThumbnailGenerator";
 import { deletePost } from "../services/postService";
 import { createThread } from "../services/messagesService";
 
@@ -47,6 +48,7 @@ export default function PostCard({ post, onDelete, onLike }) {
   const [deleting, setDeleting] = useState(false);
   const [sharingViaDM, setSharingViaDM] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments || 0);
+  const [localPosterUrl, setLocalPosterUrl] = useState(null);
 
   // Handle comment added
   const handleCommentAdded = () => {
@@ -89,11 +91,36 @@ export default function PostCard({ post, onDelete, onLike }) {
                   post.mediaAttachment?.s3Key?.endsWith('.mov') ||
                   post.mediaAttachment?.s3Key?.endsWith('.webm');
 
-  // Image fallback: use mediaAttachment url, post image, or placeholder
-  const imageUrl = post.mediaAttachment?.posterUrl || post.mediaUrl || post.imageUrl;
+  // Image fallback: use local poster (freshly generated), then mediaAttachment url, then post image
+  const posterUrl = localPosterUrl || post.mediaAttachment?.posterUrl;
+  const imageUrl = posterUrl || post.mediaUrl || post.imageUrl;
 
   // Video URL
   const videoUrl = post.mediaAttachment?.url || post.mediaUrl;
+
+  // Auto-fix: if author views their own PDF with no poster, generate and upload one silently
+  const mediaId = post.mediaId || post.mediaAttachment?.id;
+  useEffect(() => {
+    if (!isPdf || post.mediaAttachment?.posterUrl || !isAuthor || !mediaId) return;
+    let cancelled = false;
+
+    const fix = async () => {
+      try {
+        const { downloadUrl } = await getMediaAccessUrl(mediaId);
+        if (cancelled || !downloadUrl) return;
+        const base64 = await generatePdfThumbnailBase64(downloadUrl);
+        if (cancelled) return;
+        const { posterUrl: newUrl } = await uploadPdfPoster(mediaId, base64);
+        if (!cancelled) setLocalPosterUrl(newUrl);
+      } catch (err) {
+        console.warn('PDF auto-thumbnail failed (non-fatal):', err);
+      }
+    };
+
+    fix();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaId]);
 
   // Handle request access
   const handleRequestAccess = async () => {
@@ -401,9 +428,9 @@ export default function PostCard({ post, onDelete, onLike }) {
           </video>
         ) : isDocument ? (
           // Document content - show poster thumbnail if available, otherwise icon
-          post.mediaAttachment?.posterUrl ? (
+          posterUrl ? (
             <img
-              src={post.mediaAttachment.posterUrl}
+              src={posterUrl}
               alt={post.title || "Document preview"}
               className="w-full h-full object-cover"
               onError={(e) => {

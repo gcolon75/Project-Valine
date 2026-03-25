@@ -381,6 +381,67 @@ export const deleteMedia = async (event) => {
 };
 
 /**
+ * POST /api/media/:id/poster
+ * Upload a poster/thumbnail image for a media record (owner only)
+ * Body: { imageDataBase64: "<base64 encoded JPEG>" }
+ */
+export const uploadPoster = async (event) => {
+  try {
+    const csrfError = csrfProtection(event);
+    if (csrfError) return csrfError;
+
+    const { id } = event.pathParameters || {};
+    if (!id) return error(400, 'id is required');
+
+    const userId = getUserFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const body = JSON.parse(event.body || '{}');
+    const { imageDataBase64 } = body;
+    if (!imageDataBase64) return error(400, 'imageDataBase64 is required');
+
+    // Limit to ~750KB of base64 (covers ~500KB image)
+    if (imageDataBase64.length > 1_000_000) {
+      return error(413, 'Image data too large (max ~500KB)');
+    }
+
+    const prisma = getPrisma();
+
+    const media = await prisma.media.findUnique({
+      where: { id },
+      include: { profile: true },
+    });
+
+    if (!media) return error(404, 'Media not found');
+    if (media.profile.userId !== userId) return error(403, 'Forbidden - not media owner');
+
+    const imageBuffer = Buffer.from(imageDataBase64, 'base64');
+    const posterS3Key = `profiles/${media.profile.id}/media/posters/${Date.now()}-${id}.jpg`;
+
+    await s3Client.send(new PutObjectCommand({
+      Bucket: MEDIA_BUCKET,
+      Key: posterS3Key,
+      Body: imageBuffer,
+      ContentType: 'image/jpeg',
+    }));
+
+    await prisma.media.update({
+      where: { id },
+      data: { posterS3Key },
+    });
+
+    // Return a signed URL for immediate use
+    const getCmd = new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: posterS3Key });
+    const posterUrl = await getSignedUrl(s3Client, getCmd, { expiresIn: 3600 });
+
+    return json({ posterS3Key, posterUrl, message: 'Poster uploaded successfully' });
+  } catch (e) {
+    console.error('Upload poster error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
  * GET /api/media/:id/access-url
  * Get signed viewing URL with privacy checks
  */

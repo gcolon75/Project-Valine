@@ -411,6 +411,20 @@ export const requestMediaAccess = async (mediaId, requesterId, reason = '') => {
 };
 
 /**
+ * Upload a poster/thumbnail image for a media record
+ * @param {string} mediaId - Media ID
+ * @param {string} imageDataBase64 - Base64-encoded JPEG (no data: prefix)
+ * @returns {Promise<{ posterS3Key: string, posterUrl: string }>}
+ */
+export const uploadPdfPoster = async (mediaId, imageDataBase64) => {
+  if (!mediaId) throw new Error('Media ID is required');
+  if (!imageDataBase64) throw new Error('Image data is required');
+
+  const { data } = await apiClient.post(`/media/${mediaId}/poster`, { imageDataBase64 });
+  return data;
+};
+
+/**
  * Get watermarked PDF for download
  * The PDF is watermarked with the viewer's username for tracking
  * @param {string} mediaId - Media ID

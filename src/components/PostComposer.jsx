@@ -4,7 +4,8 @@ import { Send, X, Upload, FileText, Video, Image, File } from "lucide-react";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
-import { uploadMedia } from "../services/mediaService";
+import { uploadMedia, uploadPdfPoster } from "../services/mediaService";
+import { generatePdfThumbnailBase64 } from "../utils/pdfThumbnailGenerator";
 import { getMyProfile } from "../services/profileService";
 import MentionTextarea from "./MentionTextarea";
 
@@ -136,6 +137,13 @@ export default function PostComposer() {
             }
           );
           mediaId = mediaResult?.id;
+
+          // For PDFs, generate and upload a thumbnail in the background (non-blocking)
+          if (selectedFile.type === 'application/pdf' && mediaId) {
+            generatePdfThumbnailBase64(selectedFile)
+              .then((base64) => uploadPdfPoster(mediaId, base64))
+              .catch((err) => console.warn('PDF thumbnail generation failed (non-fatal):', err));
+          }
         } catch (uploadError) {
           console.error("Upload failed:", uploadError);
           toast.error(uploadError.message || "Failed to upload file. Please try again.");
