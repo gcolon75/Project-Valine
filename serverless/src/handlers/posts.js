@@ -200,9 +200,36 @@ export const createPost = async (event) => {
       },
     });
     
+    // Parse @mentions and notify mentioned users
+    const mentionRegex = /@(\w+)/g;
+    const mentionUsernames = [...(content || '').matchAll(mentionRegex)].map(m => m[1]);
+    if (mentionUsernames.length > 0) {
+      try {
+        const mentionedUsers = await prisma.user.findMany({
+          where: { username: { in: mentionUsernames, mode: 'insensitive' } },
+          select: { id: true },
+        });
+        for (const mentionedUser of mentionedUsers) {
+          if (mentionedUser.id !== authUserId) {
+            await prisma.notification.create({
+              data: {
+                type: 'mention',
+                message: 'mentioned you in a post',
+                recipientId: mentionedUser.id,
+                triggererId: authUserId,
+                metadata: { postId: post.id, postPreview: (content || '').slice(0, 100) },
+              },
+            });
+          }
+        }
+      } catch (mentionErr) {
+        console.warn('Failed to create mention notifications:', mentionErr.message);
+      }
+    }
+
     // Include media attachment in response if present
     const responsePost = mediaAttachment ? { ...post, mediaAttachment } : post;
-    
+
     log('create_post_success', { route, userId: authUserId, postId: post.id });
     return json(responsePost, 201);
   } catch (e) {
@@ -816,11 +843,10 @@ export const deletePost = async (event) => {
       return error(403, 'Forbidden - you can only delete your own posts');
     }
     
-    // Note: Since there's no PostAccessRequest model in the schema yet,
-    // we'll just delete the post. When PostAccessRequest is added later,
-    // we should add: await prisma.postAccessRequest.deleteMany({ where: { postId } });
-    
-    // Delete the post (cascade will handle related data)
+    // Delete related records before deleting the post
+    await prisma.accessRequest.deleteMany({ where: { postId } });
+    await prisma.accessGrant.deleteMany({ where: { postId } });
+
     await prisma.post.delete({
       where: { id: postId }
     });

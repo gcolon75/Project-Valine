@@ -103,11 +103,15 @@ export const handler = async (event, context) => {
 
     // GET /posts/{id}
     if (method === 'GET' && /^\/posts\/[^/]+$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
       return posts.getPost(event, context);
     }
 
     // DELETE /posts/{id}
     if (method === 'DELETE' && /^\/posts\/[^/]+$/.test(path)) {
+      const postId = path.split('/')[2];
+      event.pathParameters = { ...event.pathParameters, id: postId };
       return posts.deletePost(event, context);
     }
 
