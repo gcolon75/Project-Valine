@@ -966,3 +966,13 @@ model Purchase {
   @@index([status])
   @@map("purchases")
 }
+
+
+model AllowedEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  addedBy   String?
+  createdAt DateTime @default(now())
+
+  @@map("allowed_emails")
+}

@@ -14,7 +14,8 @@ import PostCard from '../components/PostCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FollowersListModal from '../components/FollowersListModal';
 import { Button, Card } from '../components/ui';
-import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle } from 'lucide-react';
+import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
+import AdminEmailPanel from '../components/AdminEmailPanel';
 import toast from 'react-hot-toast';
 import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
@@ -182,6 +183,8 @@ export default function Profile() {
     if (!user) return false;
     return id === user.id || id === user.username;
   }, [id, user]);
+
+  const isAdmin = user?.role === 'admin';
 
   // Fetch connection status for other users' profiles
   useEffect(() => {
@@ -891,6 +894,14 @@ export default function Profile() {
               count={receivedFeedback.filter(r => r.status === 'pending').length || undefined}
             />
           )}
+          {isAdmin && isOwnProfile && (
+            <ProfileTab
+              active={activeTab === 'admin'}
+              onClick={() => setActiveTab('admin')}
+              icon={Settings}
+              label="Admin"
+            />
+          )}
         </div>
       </div>
 
@@ -1462,6 +1473,11 @@ export default function Profile() {
               </Card>
             )}
           </div>
+        )}
+        {activeTab === 'admin' && isAdmin && isOwnProfile && (
+          <Card padding="default">
+            <AdminEmailPanel />
+          </Card>
         )}
       </div>
 

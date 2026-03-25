@@ -1062,6 +1062,30 @@ functions:
           method: get
 
   # ========== SCHEDULED JOBS ==========
+  getAdminAllowedEmails:
+    handler: src/handlers/admin.getAdminAllowedEmails
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /admin/allowed-emails
+          method: get
+  addAdminAllowedEmail:
+    handler: src/handlers/admin.addAdminAllowedEmail
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /admin/allowed-emails
+          method: post
+  deleteAdminAllowedEmail:
+    handler: src/handlers/admin.deleteAdminAllowedEmail
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /admin/allowed-emails/{email}
+          method: delete
   cleanupOrphanedMedia:
     handler: src/scripts/cleanupOrphanedMedia.cleanupHandler
     layers:

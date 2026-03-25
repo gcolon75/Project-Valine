@@ -87,6 +87,22 @@ function clearAllowlistCache() {
   cachedAllowlist = null;
 }
 
+/**
+ * Returns the effective allowlist, preferring the DB over the env var.
+ * Falls back to env var if the DB table is empty or unreachable.
+ */
+async function getEffectiveAllowlist(prisma) {
+  try {
+    const dbEmails = await prisma.allowedEmail.findMany({ select: { email: true } });
+    if (dbEmails.length > 0) {
+      return dbEmails.map(r => r.email.toLowerCase().trim());
+    }
+  } catch (err) {
+    console.warn('Allowlist DB check failed, falling back to env var:', err.message);
+  }
+  return getActiveAllowlist();
+}
+
 /* ---------------------- Helpers ---------------------- */
 
 function buildHeaders(event = null, extra = {}) {
@@ -177,8 +193,8 @@ async function login(event) {
       email: redactEmail(email)
     }, 'info');
 
-    // Defense-in-depth: Check allowlist before DB lookup
-    const allowlist = getActiveAllowlist();
+    // Defense-in-depth: Check allowlist before DB lookup (DB-backed, env var fallback)
+    const allowlist = await getEffectiveAllowlist(getPrisma());
     if (allowlist.length > 0 && !allowlist.includes(email.toLowerCase())) {
       logStructured(correlationId, 'login_denied', {
         email: redactEmail(email),
@@ -474,8 +490,8 @@ async function register(event) {
     // Generate displayName from email if not provided
     const finalDisplayName = displayName || email.split('@')[0];
 
-    // Enforce allowlist early (before database operations)
-    const allowlist = getActiveAllowlist();
+    // Enforce allowlist early (before database operations) — DB-backed, env var fallback
+    const allowlist = await getEffectiveAllowlist(getPrisma());
     const enableRegistration = (process.env.ENABLE_REGISTRATION || 'false') === 'true';
     const strictAllowlist = (process.env.STRICT_ALLOWLIST || '0') === '1';
 
