@@ -1,6 +1,7 @@
 // src/pages/Onboarding/steps/ProfileBasics.jsx
 import { useState, useEffect } from 'react';
-import { User, MapPin, Briefcase } from 'lucide-react';
+import { User, Briefcase } from 'lucide-react';
+import CityAutocomplete from '../../../components/CityAutocomplete';
 import ImageCropper from '../../../components/ImageCropper';
 import Button from '../../../components/ui/Button';
 
@@ -257,22 +258,13 @@ export default function ProfileBasics({ userData, onUpdate }) {
         >
           Location
         </label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-600" aria-hidden="true" />
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            maxLength={100}
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
-            placeholder="e.g., Los Angeles, CA"
-            aria-describedby="location-hint"
-          />
-        </div>
-        <p id="location-hint" className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-          Where you're based (City, State, or Country)
+        <CityAutocomplete
+          value={formData.location}
+          onChange={(val) => setFormData(prev => ({ ...prev, location: val }))}
+          placeholder="Search for your city…"
+        />
+        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+          Start typing to search — city and country will be filled in automatically
         </p>
       </div>
 
