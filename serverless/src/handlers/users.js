@@ -55,7 +55,14 @@ export const getUser = async (event) => {
       where: { username },
       include: {
         posts: { orderBy: { createdAt: 'desc' }, take: 20 },
-        profile: { select: { id: true, followersCount: true, followingCount: true } },
+        profile: {
+          select: {
+            id: true,
+            followersCount: true,
+            followingCount: true,
+            links: { orderBy: { position: 'asc' }, select: { id: true, label: true, url: true, type: true } },
+          },
+        },
         _count: { select: { posts: true } }
       },
     });

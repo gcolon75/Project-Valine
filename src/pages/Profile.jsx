@@ -780,9 +780,11 @@ export default function Profile() {
 
           {/* Link Tree */}
           {(() => {
-            const links = Array.isArray(displayData.links) && displayData.links.length > 0
+            const links = (Array.isArray(displayData.links) && displayData.links.length > 0)
               ? displayData.links
-              : Array.isArray(displayData.socialLinks) && displayData.socialLinks.length > 0
+              : (Array.isArray(displayData.profile?.links) && displayData.profile.links.length > 0)
+              ? displayData.profile.links
+              : (Array.isArray(displayData.socialLinks) && displayData.socialLinks.length > 0)
               ? displayData.socialLinks
               : null;
             if (!links) return null;
