@@ -430,6 +430,7 @@ async function login(event) {
           username: user.username || null,
           displayName: user.displayName || user.name || null,
           avatar: user.avatar || null,
+          role: user.role || 'artist',
           onboardingComplete: user.onboardingComplete || false,
           profileComplete: user.profileComplete || false,
           createdAt: user.createdAt,
@@ -646,6 +647,7 @@ async function register(event) {
         username: user.username,
         displayName: user.displayName,
         avatar: user.avatar || null,
+        role: user.role || 'artist',
         onboardingComplete: user.onboardingComplete || false,
         profileComplete: user.profileComplete || false,
         createdAt: user.createdAt
@@ -736,6 +738,7 @@ async function me(event) {
         username: user.username || null,
         displayName: user.displayName || user.name || null,
         avatar: user.avatar || null,
+        role: user.role || 'artist',
         headline: profile?.headline || null,
         // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,
