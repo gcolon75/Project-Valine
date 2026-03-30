@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 
 /**
- * City autocomplete backed by the Photon / OpenStreetMap geocoder.
+ * City autocomplete backed by Nominatim / OpenStreetMap.
  * Free, no API key required, returns city + country results.
  *
  * Props:
@@ -22,17 +22,18 @@ export default function CityAutocomplete({
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  // Track whether the current inputText matches a confirmed selection
-  const [confirmed, setConfirmed] = useState(!!value);
 
   const debounceRef = useRef(null);
   const containerRef = useRef(null);
   const abortRef = useRef(null);
+  // Prevent the useEffect from resetting input while user is actively typing
+  const isTypingRef = useRef(false);
 
-  // Keep inputText in sync when parent value changes externally
+  // Sync inputText when parent sets a value externally (e.g. pre-fill)
   useEffect(() => {
-    setInputText(value || '');
-    setConfirmed(!!value);
+    if (!isTypingRef.current) {
+      setInputText(value || '');
+    }
   }, [value]);
 
   // Close dropdown on outside click
@@ -53,29 +54,37 @@ export default function CityAutocomplete({
       return;
     }
 
-    // Cancel previous in-flight request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
     setLoading(true);
     try {
-      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8&layer=city`;
-      const res = await fetch(url, { signal: abortRef.current.signal });
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&addressdetails=1`;
+      const res = await fetch(url, {
+        signal: abortRef.current.signal,
+        headers: {
+          'Accept-Language': 'en',
+          'User-Agent': 'ProjectValine/1.0',
+        },
+      });
       const data = await res.json();
 
-      const cities = (data.features || [])
-        .filter((f) => f.properties?.name)
-        .map((f) => {
-          const { name, country, state, countrycode } = f.properties;
-          // Format: "City, State, Country" for US/CA, otherwise "City, Country"
-          const useLong = state && ['US', 'CA', 'AU'].includes(countrycode?.toUpperCase());
-          const label = useLong
-            ? `${name}, ${state}, ${country}`
-            : `${name}, ${country}`;
-          return { label, key: `${f.geometry?.coordinates?.join(',')}-${label}` };
+      const PLACE_TYPES = new Set(['city', 'town', 'village', 'suburb', 'municipality', 'borough', 'hamlet', 'locality']);
+
+      const cities = data
+        .filter(r => r.address && (r.class === 'place' || PLACE_TYPES.has(r.type)))
+        .map(r => {
+          const { address } = r;
+          const city = address.city || address.town || address.village || address.municipality || address.suburb || r.name;
+          const country = address.country;
+          const state = address.state;
+          const countryCode = address.country_code?.toUpperCase();
+          const useLong = state && ['US', 'CA', 'AU'].includes(countryCode);
+          const label = useLong ? `${city}, ${state}, ${country}` : `${city}, ${country}`;
+          return { label, key: r.place_id };
         })
-        // Deduplicate by label
-        .filter((item, i, arr) => arr.findIndex((x) => x.label === item.label) === i);
+        .filter(item => item.label && !item.label.includes('undefined') && !item.label.includes('null'))
+        .filter((item, i, arr) => arr.findIndex(x => x.label === item.label) === i);
 
       setResults(cities);
       setOpen(cities.length > 0);
@@ -90,49 +99,47 @@ export default function CityAutocomplete({
 
   const handleInput = (e) => {
     const text = e.target.value;
+    isTypingRef.current = true;
     setInputText(text);
-    setConfirmed(false);
-    // Clear the parent value while the user is typing
-    onChange('');
 
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(text), 300);
+    debounceRef.current = setTimeout(() => {
+      search(text);
+    }, 400);
   };
 
   const handleSelect = (label) => {
+    isTypingRef.current = false;
     setInputText(label);
-    setConfirmed(true);
     setOpen(false);
     setResults([]);
     onChange(label);
   };
 
   const handleClear = () => {
+    isTypingRef.current = false;
     setInputText('');
-    setConfirmed(false);
     setResults([]);
     setOpen(false);
     onChange('');
   };
 
-  // On blur, if nothing was confirmed, revert to last confirmed value (or clear)
   const handleBlur = () => {
     setTimeout(() => {
-      if (!confirmed) {
-        const revert = value || '';
-        setInputText(revert);
-        if (!revert) setResults([]);
-        setOpen(false);
+      isTypingRef.current = false;
+      setOpen(false);
+      // If nothing was selected, revert to last confirmed value
+      if (!results.some(r => r.label === inputText)) {
+        setInputText(value || '');
       }
-    }, 150); // small delay so click-on-option fires first
+    }, 150);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
+      isTypingRef.current = false;
       setOpen(false);
-      if (!confirmed) {
-        setInputText(value || '');
-      }
+      setInputText(value || '');
     }
   };
 
@@ -157,7 +164,6 @@ export default function CityAutocomplete({
           className="w-full pl-11 pr-10 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
         />
 
-        {/* Right side: spinner or clear button */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {loading ? (
             <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
