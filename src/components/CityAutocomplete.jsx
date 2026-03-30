@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Loader2, X } from 'lucide-react';
 
 /**
- * City autocomplete backed by Nominatim / OpenStreetMap.
- * Free, no API key required, returns city + country results.
+ * City autocomplete backed by the Open-Meteo Geocoding API.
+ * Free, no API key, no rate limits, full CORS support.
  *
  * Props:
  *   value        – current location string
@@ -26,10 +26,9 @@ export default function CityAutocomplete({
   const debounceRef = useRef(null);
   const containerRef = useRef(null);
   const abortRef = useRef(null);
-  // Prevent the useEffect from resetting input while user is actively typing
   const isTypingRef = useRef(false);
 
-  // Sync inputText when parent sets a value externally (e.g. pre-fill)
+  // Sync input when parent sets value externally (e.g. pre-fill), but not while typing
   useEffect(() => {
     if (!isTypingRef.current) {
       setInputText(value || '');
@@ -59,32 +58,17 @@ export default function CityAutocomplete({
 
     setLoading(true);
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=8&addressdetails=1`;
-      const res = await fetch(url, {
-        signal: abortRef.current.signal,
-        headers: {
-          'Accept-Language': 'en',
-          'User-Agent': 'ProjectValine/1.0',
-        },
-      });
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=en&format=json`;
+      const res = await fetch(url, { signal: abortRef.current.signal });
       const data = await res.json();
 
-      const PLACE_TYPES = new Set(['city', 'town', 'village', 'suburb', 'municipality', 'borough', 'hamlet', 'locality']);
-
-      const cities = data
-        .filter(r => r.address && (r.class === 'place' || PLACE_TYPES.has(r.type)))
-        .map(r => {
-          const { address } = r;
-          const city = address.city || address.town || address.village || address.municipality || address.suburb || r.name;
-          const country = address.country;
-          const state = address.state;
-          const countryCode = address.country_code?.toUpperCase();
-          const useLong = state && ['US', 'CA', 'AU'].includes(countryCode);
-          const label = useLong ? `${city}, ${state}, ${country}` : `${city}, ${country}`;
-          return { label, key: r.place_id };
-        })
-        .filter(item => item.label && !item.label.includes('undefined') && !item.label.includes('null'))
-        .filter((item, i, arr) => arr.findIndex(x => x.label === item.label) === i);
+      const cities = (data.results || []).map((r) => {
+        const useState = r.admin1 && ['US', 'CA', 'AU'].includes(r.country_code);
+        const label = useState
+          ? `${r.name}, ${r.admin1}, ${r.country}`
+          : `${r.name}, ${r.country}`;
+        return { label, key: r.id };
+      }).filter((item, i, arr) => arr.findIndex(x => x.label === item.label) === i);
 
       setResults(cities);
       setOpen(cities.length > 0);
@@ -101,11 +85,8 @@ export default function CityAutocomplete({
     const text = e.target.value;
     isTypingRef.current = true;
     setInputText(text);
-
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      search(text);
-    }, 400);
+    debounceRef.current = setTimeout(() => search(text), 300);
   };
 
   const handleSelect = (label) => {
@@ -128,10 +109,7 @@ export default function CityAutocomplete({
     setTimeout(() => {
       isTypingRef.current = false;
       setOpen(false);
-      // If nothing was selected, revert to last confirmed value
-      if (!results.some(r => r.label === inputText)) {
-        setInputText(value || '');
-      }
+      setInputText(value || '');
     }, 150);
   };
 
@@ -163,7 +141,6 @@ export default function CityAutocomplete({
           placeholder={placeholder}
           className="w-full pl-11 pr-10 py-3 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
         />
-
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {loading ? (
             <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
@@ -180,7 +157,6 @@ export default function CityAutocomplete({
         </div>
       </div>
 
-      {/* Dropdown */}
       {open && results.length > 0 && (
         <ul
           role="listbox"
