@@ -1,6 +1,7 @@
 // src/components/PostCard.jsx
 import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic } from "lucide-react";
+import { parseVideoEmbed } from "../utils/videoEmbed";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useFeed } from "../context/FeedContext";
@@ -90,6 +91,9 @@ export default function PostCard({ post, onDelete, onLike }) {
                   post.mediaAttachment?.s3Key?.endsWith('.mp4') ||
                   post.mediaAttachment?.s3Key?.endsWith('.mov') ||
                   post.mediaAttachment?.s3Key?.endsWith('.webm');
+
+  // Check if post has an embedded video URL (YouTube / Vimeo stored in legacy media array)
+  const embedInfo = parseVideoEmbed(post.media?.[0]);
 
   // Image fallback: use local poster (freshly generated), then mediaAttachment url, then post image
   const posterUrl = localPosterUrl || post.mediaAttachment?.posterUrl;
@@ -399,6 +403,16 @@ export default function PostCard({ post, onDelete, onLike }) {
               </span>
             </div>
           </div>
+        ) : embedInfo ? (
+          // Embedded video (YouTube / Vimeo)
+          <iframe
+            src={embedInfo.embedUrl}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title={post.title || 'Embedded video'}
+            onClick={(e) => e.stopPropagation()}
+          />
         ) : isAudio ? (
           // Audio content - show audio player
           <div

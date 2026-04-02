@@ -1,7 +1,8 @@
 // src/pages/Post.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music } from 'lucide-react';
+import { Upload, X, CheckCircle, FileText, Film, Image as ImageIcon, Mic, DollarSign, Music, Link as LinkIcon } from 'lucide-react';
+import { parseVideoEmbed } from '../utils/videoEmbed';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -79,6 +80,11 @@ export default function Post() {
   const [uploadedMediaId, setUploadedMediaId] = useState(null);
   const [uploadedAudioUrl, setUploadedAudioUrl] = useState(null);
   const [uploadError, setUploadError] = useState(null);
+
+  // Video embed state (YouTube / Vimeo URL instead of file upload)
+  const [videoLinkInput, setVideoLinkInput] = useState('');
+  const [videoEmbedUrl, setVideoEmbedUrl] = useState(null);
+  const [videoLinkError, setVideoLinkError] = useState(null);
   
   const [formData, setFormData] = useState({
     contentType: '',
@@ -110,6 +116,9 @@ export default function Post() {
       setUploadedAudioUrl(null);
       setUploadProgress(0);
       setUploadError(null);
+      setVideoLinkInput('');
+      setVideoEmbedUrl(null);
+      setVideoLinkError(null);
       // Auto-enable watermark for scripts/PDFs
       setFormData(prev => ({ ...prev, [field]: value, includeWatermark: value === 'script' }));
       return;
@@ -255,6 +264,10 @@ export default function Post() {
     setUploadError(null);
     setUploadedMediaId(null);
     setUploadedAudioUrl(null);
+    // Clear any video embed URL when a file is selected
+    setVideoLinkInput('');
+    setVideoEmbedUrl(null);
+    setVideoLinkError(null);
 
     // Auto-upload the file
     await uploadFile(file);
@@ -397,6 +410,32 @@ export default function Post() {
     setUploadProgress(0);
     setUploadError(null);
   };
+
+  // Handle video link input
+  const handleVideoLinkChange = (e) => {
+    const val = e.target.value;
+    setVideoLinkInput(val);
+    setVideoLinkError(null);
+
+    if (!val.trim()) {
+      setVideoEmbedUrl(null);
+      return;
+    }
+
+    const parsed = parseVideoEmbed(val.trim());
+    if (parsed) {
+      setVideoEmbedUrl(parsed.embedUrl);
+      // Clear any uploaded file since they're mutually exclusive
+      setSelectedFile(null);
+      setUploadedMediaId(null);
+      setUploadedAudioUrl(null);
+      setUploadProgress(0);
+      setUploadError(null);
+    } else {
+      setVideoEmbedUrl(null);
+      setVideoLinkError('Not a valid YouTube or Vimeo URL');
+    }
+  };
   
   const validateForm = () => {
     const newErrors = {};
@@ -464,7 +503,7 @@ export default function Post() {
         content: formData.description || formData.title,
         authorId: user?.userId || user?.id, // userId from profile, id from auth
         tags: Array.isArray(formData.tags) ? formData.tags : [],
-        media: [], // Legacy field - array of media URLs
+        media: videoEmbedUrl ? [videoEmbedUrl] : [], // Store video embed URL in legacy array
         mediaId: uploadedMediaId || null, // New: Link to uploaded Media record
         visibility: formData.visibility || 'PUBLIC', // Post visibility: PUBLIC or FOLLOWERS_ONLY
         audioUrl: uploadedAudioUrl || null, // Audio URL for audio posts
@@ -638,8 +677,56 @@ export default function Post() {
               Upload your {formData.contentType} file (max {MAX_FILE_SIZES[formData.contentType]}MB)
             </p>
 
+            {/* Video embed URL option — reel and audition only */}
+            {(formData.contentType === 'reel' || formData.contentType === 'audition') && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <LinkIcon className="w-4 h-4 text-neutral-500" />
+                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Paste a YouTube or Vimeo link
+                  </span>
+                </div>
+                <input
+                  type="url"
+                  value={videoLinkInput}
+                  onChange={handleVideoLinkChange}
+                  placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                  className="block w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-neutral-400"
+                />
+                {videoLinkError && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{videoLinkError}</p>
+                )}
+                {videoEmbedUrl && (
+                  <div className="mt-3 rounded-lg overflow-hidden aspect-video relative border border-emerald-300 dark:border-emerald-700">
+                    <iframe
+                      src={videoEmbedUrl}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Video preview"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setVideoLinkInput(''); setVideoEmbedUrl(null); setVideoLinkError(null); }}
+                      className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-lg transition"
+                      aria-label="Remove video link"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                {!videoEmbedUrl && (
+                  <div className="relative flex items-center my-4">
+                    <div className="flex-1 border-t border-neutral-300 dark:border-neutral-700" />
+                    <span className="mx-3 text-xs text-neutral-500 dark:text-neutral-400">or upload a file</span>
+                    <div className="flex-1 border-t border-neutral-300 dark:border-neutral-700" />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* File not selected yet - Drop zone */}
-            {!selectedFile && !uploadedMediaId && !isUploading && (
+            {!selectedFile && !uploadedMediaId && !isUploading && !videoEmbedUrl && (
               <label
                 className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
                   isDragging
@@ -670,7 +757,7 @@ export default function Post() {
             )}
 
             {/* Uploading progress */}
-            {isUploading && (
+            {isUploading && !videoEmbedUrl && (
               <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-neutral-700 dark:text-neutral-300">Uploading...</span>
