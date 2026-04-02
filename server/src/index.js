@@ -23,6 +23,7 @@ import usersRouter from './routes/users.js'
 import accountAuthRouter from './routes/accountAuth.js'
 import legalRouter from './routes/legal.js'
 import cacheMetricsRouter from './routes/cacheMetrics.js'
+import phoneRouter from './routes/phone.js'
 
 const app = express()
 
@@ -68,6 +69,7 @@ app.use('/api', preferencesRouter)
 app.use('/profiles', profilesRouter)
 app.use('/dashboard', dashboardRouter)
 app.use('/api/cache', cacheMetricsRouter)
+app.use('/api/phone', phoneRouter)
 
 // Root endpoint
 app.get('/', (req, res) => {

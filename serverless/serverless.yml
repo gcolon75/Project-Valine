@@ -133,6 +133,10 @@ provider:
     ADMIN_SEED_TOKEN: ${env:ADMIN_SEED_TOKEN, ""}
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ""}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, ""}
+    TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ""}
+    TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN, ""}
+    TWILIO_PHONE_NUMBER: ${env:TWILIO_PHONE_NUMBER, ""}
+    SMS_ENABLED: ${env:SMS_ENABLED, "false"}
 
 custom:
   esbuild:
@@ -1060,6 +1064,32 @@ functions:
       - httpApi:
           path: /analytics/config
           method: get
+
+  # ========== PHONE VERIFICATION ==========
+  phoneSendCode:
+    handler: src/handlers/phone.sendCode
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /api/phone/send-code
+          method: post
+  phoneVerifyCode:
+    handler: src/handlers/phone.verifyCode
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /api/phone/verify-code
+          method: post
+  phoneAdminSend:
+    handler: src/handlers/phone.adminSend
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /api/phone/admin/send
+          method: post
 
   # ========== SCHEDULED JOBS ==========
   getAdminAllowedEmails:

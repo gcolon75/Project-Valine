@@ -7,12 +7,13 @@ import Welcome from './steps/Welcome';
 import ProfileBasics from './steps/ProfileBasics';
 import LinksSetup from './steps/LinksSetup';
 import PreferencesSetup from './steps/PreferencesSetup';
+import PhoneVerification from './steps/PhoneVerification';
 import toast from 'react-hot-toast';
 import { updateMyProfile } from '../../services/profileService';
 import { uploadMedia } from '../../services/mediaService';
 
 const ONBOARDING_STORAGE_KEY = 'valine-onboarding-progress';
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 /**
  * Convert a base64 data URL to a Blob
@@ -53,6 +54,7 @@ export default function Onboarding() {
   const { user, updateUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const stepContentRef = useRef(null);
 
   // Initialize onboarding data from localStorage or user data
@@ -111,6 +113,10 @@ export default function Onboarding() {
       stepContentRef.current.focus();
     }
   }, [currentStep]);
+
+  const handlePhoneVerified = () => {
+    setPhoneVerified(true);
+  };
 
   const handleStepUpdate = (stepData) => {
     setOnboardingData(prev => ({
@@ -299,6 +305,8 @@ export default function Onboarding() {
         return 'Add your professional links';
       case 4:
         return 'Set your preferences';
+      case 5:
+        return 'Verify Your Phone';
       default:
         return 'Complete Your Profile';
     }
@@ -314,6 +322,8 @@ export default function Onboarding() {
         return <LinksSetup userData={onboardingData} onUpdate={handleStepUpdate} />;
       case 4:
         return <PreferencesSetup userData={onboardingData} onUpdate={handleStepUpdate} />;
+      case 5:
+        return <PhoneVerification onVerified={handlePhoneVerified} />;
       default:
         return null;
     }
@@ -329,6 +339,7 @@ export default function Onboarding() {
       onSkip={handleSkip}
       canSkip={currentStep === 3} // Can skip links setup
       canGoBack={!isSaving}
+      canNext={currentStep !== 5 || phoneVerified}
     >
       <div
         ref={stepContentRef}

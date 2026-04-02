@@ -13,7 +13,7 @@ import Button from '../../components/ui/Button';
  * - Resume capability from stored progress
  * - Accessibility: focus management, keyboard navigation
  */
-export default function OnboardingLayout({ children, currentStep, totalSteps, stepTitle, onNext, onBack, onSkip, canSkip = false, canGoBack = true }) {
+export default function OnboardingLayout({ children, currentStep, totalSteps, stepTitle, onNext, onBack, onSkip, canSkip = false, canGoBack = true, canNext = true }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -34,6 +34,7 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
     'Profile Basics',
     'Links & Portfolio',
     'Preferences',
+    'Phone',
   ];
 
   return (
@@ -148,6 +149,7 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
                 <Button
                   variant="primary"
                   onClick={onNext}
+                  disabled={!canNext}
                   aria-label={currentStep === totalSteps ? 'Complete onboarding' : 'Continue to next step'}
                 >
                   {currentStep === totalSteps ? 'Complete' : 'Continue'}

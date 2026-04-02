@@ -26,6 +26,8 @@ model User {
   onboardingComplete      Boolean                   @default(false)
   twoFactorEnabled        Boolean                   @default(false)
   twoFactorSecret         String?
+  phone                   String?
+  phoneVerified           Boolean                   @default(false)
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   profileComplete         Boolean                   @default(false)
@@ -56,6 +58,7 @@ model User {
   settings                UserSettings?
   accessRequests          AccessRequest[]           @relation("AccessRequests")
   accessGrants            AccessGrant[]             @relation("AccessGrants")
+  phoneVerifications      PhoneVerificationCode[]
 
   @@index([email])
   @@index([normalizedEmail])
@@ -65,6 +68,20 @@ model User {
   @@index([onboardingComplete], map: "users_onboardingcomplete_idx")
   @@index([profileComplete], map: "users_profilecomplete_idx")
   @@map("users")
+}
+
+model PhoneVerificationCode {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  phone     String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("phone_verification_codes")
 }
 
 model Script {
