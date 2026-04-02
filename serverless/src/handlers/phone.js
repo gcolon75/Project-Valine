@@ -70,7 +70,7 @@ export async function sendCode(event) {
   });
 
   try {
-    await sendSMS(phone, `Your verification code is ${plainCode}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+    await sendSMS(phone, `Your Joint Networking verification code is: ${plainCode}. It expires in ${CODE_TTL_MINUTES} minutes.`);
   } catch (smsErr) {
     console.error('[phone/send-code] SMS send failed:', smsErr);
     // Clean up the record so user can retry

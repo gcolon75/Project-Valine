@@ -1,7 +1,7 @@
 // src/pages/Onboarding/OnboardingLayout.jsx
 import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 
@@ -14,8 +14,13 @@ import Button from '../../components/ui/Button';
  * - Accessibility: focus management, keyboard navigation
  */
 export default function OnboardingLayout({ children, currentStep, totalSteps, stepTitle, onNext, onBack, onSkip, canSkip = false, canGoBack = true, canNext = true }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   // Redirect authenticated users who have completed profile
   if (!user) {
@@ -46,9 +51,19 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
             <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
               Complete Your Profile
             </h1>
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">
-              Step {currentStep} of {totalSteps}
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                Step {currentStep} of {totalSteps}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </div>
           </div>
 
           {/* Progress bar */}

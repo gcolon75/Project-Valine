@@ -41,9 +41,13 @@ const Login = () => {
     try {
       const user = await login(formData.email, formData.password);
       toast.success('Welcome back!');
-      
-      // Always go directly to dashboard after sign in - no onboarding redirect
-      navigate('/dashboard');
+
+      // Redirect to onboarding if not yet complete, otherwise dashboard
+      if (!user.onboardingComplete) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       // Handle specific error types
       const errorMessage = err.message || 'An error occurred';
