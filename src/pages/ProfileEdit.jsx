@@ -6,6 +6,7 @@ import {
   Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
 import ImageCropper from '../components/ImageCropper';
+import CityAutocomplete from '../components/CityAutocomplete';
 import MediaUploader from '../components/MediaUploader';
 import SkillsTags from '../components/SkillsTags';
 import ProfileLinksEditor from '../components/ProfileLinksEditor';
@@ -904,12 +905,10 @@ export default function ProfileEdit() {
                   </FormField>
 
                   <FormField label="Location">
-                    <input
-                      type="text"
+                    <CityAutocomplete
                       value={formData.location}
-                      onChange={(e) => handleChange('location', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Seattle, WA, USA"
+                      onChange={(val) => handleChange('location', val)}
+                      placeholder="Search for your city…"
                     />
                     <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
                       <input

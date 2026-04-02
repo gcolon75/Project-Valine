@@ -103,6 +103,7 @@ export default function Dashboard() {
             body: post.content,
             tags: post.tags || [],
             createdAt: new Date(post.createdAt).getTime(),
+            media: post.media || [],
             mediaUrl: post.media?.[0] || '',
             mediaId: post.mediaId,
             mediaAttachment: post.mediaAttachment,

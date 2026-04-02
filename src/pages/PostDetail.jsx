@@ -28,6 +28,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { parseVideoEmbed } from '../utils/videoEmbed';
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -560,6 +561,19 @@ export default function PostDetail() {
                   {post.content}
                 </p>
               </div>
+
+              {/* YouTube / Vimeo embed */}
+              {parseVideoEmbed(post.media?.[0]) && (
+                <div className="aspect-video mb-6 rounded-lg overflow-hidden">
+                  <iframe
+                    src={parseVideoEmbed(post.media?.[0]).embedUrl}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={post.title || 'Embedded video'}
+                  />
+                </div>
+              )}
 
               {/* Audio Player */}
               {post.audioUrl && (

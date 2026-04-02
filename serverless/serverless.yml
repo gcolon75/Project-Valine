@@ -1,5 +1,6 @@
 ﻿service: pv-api
 frameworkVersion: "3"
+useDotenv: true
 
 plugins:
   - serverless-esbuild
