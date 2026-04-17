@@ -47,6 +47,7 @@ const PricingPage = lazy(() => import("../pages/Pricing"));
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
 const SkeletonTestPage = lazy(() => import("../pages/SkeletonTest"));
+const WaitlistPage = lazy(() => import("../pages/Waitlist"));
 
 function Protected({ children }) {
   const { user, isInitialized } = useAuth();
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="legal/terms" element={<TermsOfServicePage />} />
           <Route path="legal/cookies" element={<CookieDisclosurePage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="waitlist" element={<WaitlistPage />} />
         </Route>
 
         {/* Auth flows - standalone pages without layout */}
