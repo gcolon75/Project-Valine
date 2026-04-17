@@ -16,6 +16,7 @@ import FollowersListModal from '../components/FollowersListModal';
 import { Button, Card } from '../components/ui';
 import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
 import AdminEmailPanel from '../components/AdminEmailPanel';
+import AdminWaitlistPanel from '../components/AdminWaitlistPanel';
 import toast from 'react-hot-toast';
 import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
@@ -902,6 +903,14 @@ export default function Profile() {
               label="Admin"
             />
           )}
+          {isAdmin && isOwnProfile && (
+            <ProfileTab
+              active={activeTab === 'waitlist'}
+              onClick={() => setActiveTab('waitlist')}
+              icon={Shield}
+              label="Waitlist"
+            />
+          )}
         </div>
       </div>
 
@@ -1477,6 +1486,11 @@ export default function Profile() {
         {activeTab === 'admin' && isAdmin && isOwnProfile && (
           <Card padding="default">
             <AdminEmailPanel />
+          </Card>
+        )}
+        {activeTab === 'waitlist' && isAdmin && isOwnProfile && (
+          <Card padding="default">
+            <AdminWaitlistPanel />
           </Card>
         )}
       </div>

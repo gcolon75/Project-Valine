@@ -30,6 +30,7 @@ import Requests from './pages/Requests.jsx';
 import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Onboarding from './pages/Onboarding/index.jsx';
+import Waitlist from './pages/Waitlist.jsx';
 
 /**
  * Route guard: requires authentication and completed onboarding.
@@ -60,6 +61,7 @@ function App() {
             <Route path="/signup-page" element={<SignupPage />} />
           </>
         )}
+        <Route path="/waitlist" element={<Waitlist />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-page" element={<LoginPage />} />
       </Route>

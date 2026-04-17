@@ -39,11 +39,11 @@ const HeroSection = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.2s' }}>
             <Link
-              to="/join"
+              to="/waitlist"
               className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
-              aria-label="Sign up for a free account"
+              aria-label="Join the waitlist"
             >
-              <span>Join for Free</span>
+              <span>Join the Waitlist Now!</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
             </Link>
             <a

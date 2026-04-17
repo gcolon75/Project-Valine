@@ -12,11 +12,11 @@ const FinalCTASection = () => {
           Create your profile, share your work, and start connecting. It's free to join.
         </p>
         <Link
-          to="/join"
+          to="/waitlist"
           className="inline-flex items-center space-x-2 bg-white hover:bg-neutral-100 text-[#474747] px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-xl focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0CCE6B]"
-          aria-label="Create a free account"
+          aria-label="Join the waitlist"
         >
-          <span>Join for Free</span>
+          <span>Join the Waitlist Now!</span>
           <ArrowRight className="w-5 h-5" aria-hidden="true" />
         </Link>
       </div>

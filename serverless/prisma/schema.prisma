@@ -995,3 +995,18 @@ model AllowedEmail {
 
   @@map("allowed_emails")
 }
+
+model WaitlistEntry {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String
+  status    String   @default("pending") // pending, approved, denied
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("waitlist_entries")
+}
