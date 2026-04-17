@@ -1093,27 +1093,17 @@ functions:
           method: post
 
   # ========== SCHEDULED JOBS ==========
-  submitWaitlist:
-    handler: src/handlers/waitlist.submitWaitlist
+  waitlist:
+    handler: src/handlers/waitlist.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
       - httpApi:
           path: /waitlist
           method: post
-  getWaitlist:
-    handler: src/handlers/waitlist.getWaitlist
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /admin/waitlist
           method: get
-  updateWaitlistStatus:
-    handler: src/handlers/waitlist.updateWaitlistStatus
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /admin/waitlist/{id}
           method: patch

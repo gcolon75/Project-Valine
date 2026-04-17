@@ -18,7 +18,18 @@ async function requireAdmin(event, prisma) {
  * Public — submit a waitlist entry.
  * Body: { firstName, lastName, email, phone }
  */
-export const submitWaitlist = async (event) => {
+export const handler = async (event) => {
+  const method = event.requestContext?.http?.method || event.httpMethod;
+  const path = event.requestContext?.http?.path || event.path || '';
+
+  if (method === 'POST' && path === '/waitlist') return submitWaitlist(event);
+  if (method === 'GET' && path === '/admin/waitlist') return getWaitlist(event);
+  if (method === 'PATCH' && path.startsWith('/admin/waitlist/')) return updateWaitlistStatus(event);
+
+  return error(404, 'Not found', { event });
+};
+
+async function submitWaitlist(event) {
   try {
     const prisma = getPrisma();
     const { firstName, lastName, email, phone } = JSON.parse(event.body || '{}');
@@ -57,7 +68,7 @@ export const submitWaitlist = async (event) => {
  * GET /admin/waitlist
  * Admin only — list all waitlist entries.
  */
-export const getWaitlist = async (event) => {
+async function getWaitlist(event) {
   try {
     const prisma = getPrisma();
     const admin = await requireAdmin(event, prisma);
@@ -79,7 +90,7 @@ export const getWaitlist = async (event) => {
  * Admin only — approve or deny a waitlist entry.
  * Body: { status: 'approved' | 'denied' }
  */
-export const updateWaitlistStatus = async (event) => {
+async function updateWaitlistStatus(event) {
   try {
     const prisma = getPrisma();
     const admin = await requireAdmin(event, prisma);
