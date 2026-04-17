@@ -160,6 +160,18 @@ const Join = () => {
                 Account creation will be available in Q2 2026
               </p>
             </div>
+            <div className="w-full max-w-sm mx-auto mb-4 bg-neutral-50 border border-neutral-200 rounded-lg px-5 py-4 text-center">
+              <p className="text-neutral-700 font-medium mb-3">
+                To create an account you must join the waitlist first.
+              </p>
+              <Link
+                to="/waitlist"
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 hover:scale-105 shadow-md"
+              >
+                <span>Join the Waitlist</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
             <p className="text-neutral-600">
               Start connecting with voice actors and artists today
             </p>
