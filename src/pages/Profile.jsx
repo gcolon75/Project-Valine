@@ -104,6 +104,7 @@ export default function Profile() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'posts';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [adminSubTab, setAdminSubTab] = useState('allowlist');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -903,14 +904,6 @@ export default function Profile() {
               label="Admin"
             />
           )}
-          {isAdmin && isOwnProfile && (
-            <ProfileTab
-              active={activeTab === 'waitlist'}
-              onClick={() => setActiveTab('waitlist')}
-              icon={Shield}
-              label="Waitlist"
-            />
-          )}
         </div>
       </div>
 
@@ -1485,12 +1478,31 @@ export default function Profile() {
         )}
         {activeTab === 'admin' && isAdmin && isOwnProfile && (
           <Card padding="default">
-            <AdminEmailPanel />
-          </Card>
-        )}
-        {activeTab === 'waitlist' && isAdmin && isOwnProfile && (
-          <Card padding="default">
-            <AdminWaitlistPanel />
+            {/* Admin sub-tabs */}
+            <div className="flex gap-2 mb-6 border-b border-neutral-200 dark:border-neutral-700">
+              <button
+                onClick={() => setAdminSubTab('allowlist')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                  adminSubTab === 'allowlist'
+                    ? 'border-[#0CCE6B] text-[#0CCE6B]'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                Allowlist
+              </button>
+              <button
+                onClick={() => setAdminSubTab('waitlist')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                  adminSubTab === 'waitlist'
+                    ? 'border-[#0CCE6B] text-[#0CCE6B]'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                Waitlist
+              </button>
+            </div>
+            {adminSubTab === 'allowlist' && <AdminEmailPanel />}
+            {adminSubTab === 'waitlist' && <AdminWaitlistPanel />}
           </Card>
         )}
       </div>
