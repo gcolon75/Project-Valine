@@ -109,6 +109,14 @@ async function updateWaitlistStatus(event) {
       data: { status },
     });
 
+    if (status === 'approved') {
+      await prisma.allowedEmail.upsert({
+        where: { email: entry.email },
+        update: {},
+        create: { email: entry.email, addedBy: 'waitlist' },
+      });
+    }
+
     return json(entry, 200, { event });
   } catch (e) {
     if (e.code === 'P2025') return error(404, 'Waitlist entry not found', { event });
