@@ -105,7 +105,9 @@ export default function AdminWaitlistPanel() {
                   {entry.firstName} {entry.lastName}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">{entry.email}</p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-500">{entry.phone}</p>
+                {entry.interest && (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-500 italic">"{entry.interest}"</p>
+                )}
                 <p className="text-xs text-neutral-400 mt-1">
                   {new Date(entry.createdAt).toLocaleDateString()}
                 </p>

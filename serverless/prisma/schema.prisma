@@ -1001,7 +1001,7 @@ model WaitlistEntry {
   firstName String
   lastName  String
   email     String   @unique
-  phone     String
+  interest  String?
   status    String   @default("pending") // pending, approved, denied
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

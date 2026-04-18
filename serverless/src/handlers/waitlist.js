@@ -32,9 +32,9 @@ export const handler = async (event) => {
 async function submitWaitlist(event) {
   try {
     const prisma = getPrisma();
-    const { firstName, lastName, email, phone } = JSON.parse(event.body || '{}');
+    const { firstName, lastName, email, interest } = JSON.parse(event.body || '{}');
 
-    if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !phone?.trim()) {
+    if (!firstName?.trim() || !lastName?.trim() || !email?.trim()) {
       return error(400, 'All fields are required', { event });
     }
 
@@ -53,7 +53,7 @@ async function submitWaitlist(event) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: normalizedEmail,
-        phone: phone.trim(),
+        interest: interest?.trim() || null,
       },
     });
 
