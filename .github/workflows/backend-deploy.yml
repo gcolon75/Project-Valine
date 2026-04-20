@@ -30,7 +30,7 @@ jobs:
         working-directory: serverless
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate
+        run: npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
       - name: Build Prisma Lambda Layer
         working-directory: serverless
         run: |
