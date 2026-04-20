@@ -84,7 +84,7 @@ export default function Waitlist() {
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-20">
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-neutral-900 mb-3">Join the Waitlist</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent mb-3">Join the Waitlist</h1>
           <p className="text-neutral-600">
             Be among the first to access Joint Networking when we open our doors.
           </p>
