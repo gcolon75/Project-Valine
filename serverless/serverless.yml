@@ -102,6 +102,7 @@ provider:
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     SES_ENABLED: ${env:SES_ENABLED, "true"}
     SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, "hello@joint-networking.com"}
+    SES_REGION: ${env:SES_REGION, "us-west-1"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "true"}

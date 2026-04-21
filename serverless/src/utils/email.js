@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
-const ses = new SESClient({ region: process.env.AWS_REGION || 'us-west-2' });
+const ses = new SESClient({ region: process.env.SES_REGION || 'us-west-1' });
 const FROM = process.env.SES_FROM_EMAIL || 'hello@joint-networking.com';
 const ENABLED = process.env.SES_ENABLED !== 'false';
 
