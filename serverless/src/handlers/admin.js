@@ -14,7 +14,9 @@ function approvalEmailHtml(firstName) {
         <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
           <tr>
             <td align="center" style="background:linear-gradient(to right,#474747,#0CCE6B);padding:32px 40px;">
-              <img src="https://joint-networking.com/assets/logo.png" alt="Joint Networking" width="160" style="display:block;max-width:160px;">
+              <div style="display:inline-block;background:#ffffff;border-radius:12px;padding:12px 24px;">
+                <img src="https://joint-networking.com/assets/logo.png" alt="Joint Networking" width="220" style="display:block;max-width:220px;">
+              </div>
             </td>
           </tr>
           <tr>
