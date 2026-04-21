@@ -189,10 +189,10 @@ async function updateWaitlistStatus(event) {
           html: emailTemplate({
             firstName: entry.firstName,
             heading: "You've been approved!",
-            body: `Congratulations, <strong>${entry.firstName}</strong>! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.<br><br>Click below to create your account and get started.`,
+            body: `Congratulations, <strong>${entry.firstName}</strong>! And thank you for becoming one of the first members of Joint Networking, ensuring you premium access and a free account.<br><br>Click below to create your account and get started.`,
             cta: { label: 'Create Your Account', url: 'https://joint-networking.com/join' },
           }),
-          text: `Hi ${entry.firstName},\n\nCongratulations! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.\n\nCreate your account at https://joint-networking.com/join.\n\nWelcome aboard!\n\n— The Joint Networking Team`,
+          text: `Hi ${entry.firstName},\n\nCongratulations! And thank you for becoming one of the first members of Joint Networking, ensuring you premium access and a free account.\n\nCreate your account at https://joint-networking.com/join.\n\nWelcome aboard!\n\n— The Joint Networking Team`,
         });
       } catch (e) {
         console.error('[waitlist] approval email failed:', e.message);
