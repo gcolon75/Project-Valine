@@ -101,7 +101,7 @@ provider:
     
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
     SES_ENABLED: ${env:SES_ENABLED, "true"}
-    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, "admin@joint-networking.com"}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, "hello@joint-networking.com"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "true"}

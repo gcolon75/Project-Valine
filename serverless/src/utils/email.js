@@ -1,7 +1,7 @@
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
 const ses = new SESClient({ region: process.env.AWS_REGION || 'us-west-2' });
-const FROM = process.env.SES_FROM_EMAIL || 'admin@joint-networking.com';
+const FROM = process.env.SES_FROM_EMAIL || 'hello@joint-networking.com';
 const ENABLED = process.env.SES_ENABLED !== 'false';
 
 export async function sendEmail({ to, subject, html, text }) {
