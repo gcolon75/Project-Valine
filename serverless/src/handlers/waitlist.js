@@ -1,6 +1,7 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
+import { sendEmail } from '../utils/email.js';
 
 async function requireAdmin(event, prisma) {
   const userId = getUserIdFromEvent(event);
@@ -56,6 +57,17 @@ async function submitWaitlist(event) {
         interest: interest?.trim() || null,
       },
     });
+
+    // Send confirmation email (non-blocking — don't fail the request if email fails)
+    sendEmail({
+      to: normalizedEmail,
+      subject: "You're on the Joint Networking waitlist!",
+      html: `<p>Hi ${entry.firstName},</p>
+<p>Thanks for signing up! You're now on the Joint Networking waitlist.</p>
+<p>We'll send you an email as soon as your account is approved.</p>
+<p>— The Joint Networking Team</p>`,
+      text: `Hi ${entry.firstName},\n\nThanks for signing up! You're now on the Joint Networking waitlist.\n\nWe'll send you an email as soon as your account is approved.\n\n— The Joint Networking Team`,
+    }).catch(e => console.error('[waitlist] confirmation email failed:', e.message));
 
     return json({ message: 'Added to waitlist', id: entry.id }, 201, { event });
   } catch (e) {
@@ -115,6 +127,18 @@ async function updateWaitlistStatus(event) {
         update: {},
         create: { email: entry.email, addedBy: 'waitlist' },
       });
+
+      // Send approval email (non-blocking)
+      sendEmail({
+        to: entry.email,
+        subject: "You've been approved for Joint Networking!",
+        html: `<p>Hi ${entry.firstName},</p>
+<p>Congratulations! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.</p>
+<p>You can now create your account at <a href="https://joint-networking.com/join">joint-networking.com/join</a>.</p>
+<p>Welcome aboard!</p>
+<p>— The Joint Networking Team</p>`,
+        text: `Hi ${entry.firstName},\n\nCongratulations! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.\n\nYou can now create your account at https://joint-networking.com/join.\n\nWelcome aboard!\n\n— The Joint Networking Team`,
+      }).catch(e => console.error('[waitlist] approval email failed:', e.message));
     }
 
     return json(entry, 200, { event });

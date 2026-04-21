@@ -27,6 +27,12 @@ provider:
             - s3:GetObject
           Resource:
             - arn:aws:s3:::${env:MEDIA_BUCKET, "valine-media-uploads"}/*
+        # SES permissions for transactional emails
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
   
   httpApi:
     cors:
@@ -94,6 +100,8 @@ provider:
     # These have defaults and are not validated at startup
     
     EMAIL_ENABLED: ${env:EMAIL_ENABLED, "false"}
+    SES_ENABLED: ${env:SES_ENABLED, "true"}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, "admin@joint-networking.com"}
     TWO_FACTOR_ENABLED: ${env:TWO_FACTOR_ENABLED, "false"}
     CSRF_ENABLED: ${env:CSRF_ENABLED, "false"}
     ENABLE_REGISTRATION: ${env:ENABLE_REGISTRATION, "true"}
@@ -151,6 +159,7 @@ custom:
     concurrency: 1
     external:
       - aws-sdk
+      - '@aws-sdk/*'
       # Prisma must be external for Lambda - esbuild cannot bundle native binaries
       - '@prisma/client'
       - '.prisma/*'
