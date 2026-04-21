@@ -105,18 +105,22 @@ async function submitWaitlist(event) {
       },
     });
 
-    // Send confirmation email (non-blocking — don't fail the request if email fails)
-    sendEmail({
-      to: normalizedEmail,
-      subject: "You're on the Joint Networking waitlist!",
-      html: emailTemplate({
-        firstName: entry.firstName,
-        heading: "You're on the list!",
-        body: `Thanks for signing up, <strong>${entry.firstName}</strong>! You're now on the Joint Networking waitlist.<br><br>We'll send you an email as soon as your account is approved.`,
-        cta: null,
-      }),
-      text: `Hi ${entry.firstName},\n\nThanks for signing up! You're now on the Joint Networking waitlist.\n\nWe'll send you an email as soon as your account is approved.\n\n— The Joint Networking Team`,
-    }).catch(e => console.error('[waitlist] confirmation email failed:', e.message));
+    // Send confirmation email (awaited so Lambda doesn't cut it off before sending)
+    try {
+      await sendEmail({
+        to: normalizedEmail,
+        subject: "You're on the Joint Networking waitlist!",
+        html: emailTemplate({
+          firstName: entry.firstName,
+          heading: "You're on the list!",
+          body: `Thanks for signing up, <strong>${entry.firstName}</strong>! You're now on the Joint Networking waitlist.<br><br>We'll send you an email as soon as your account is approved.`,
+          cta: null,
+        }),
+        text: `Hi ${entry.firstName},\n\nThanks for signing up! You're now on the Joint Networking waitlist.\n\nWe'll send you an email as soon as your account is approved.\n\n— The Joint Networking Team`,
+      });
+    } catch (e) {
+      console.error('[waitlist] confirmation email failed:', e.message);
+    }
 
     return json({ message: 'Added to waitlist', id: entry.id }, 201, { event });
   } catch (e) {
@@ -177,18 +181,22 @@ async function updateWaitlistStatus(event) {
         create: { email: entry.email, addedBy: 'waitlist' },
       });
 
-      // Send approval email (non-blocking)
-      sendEmail({
-        to: entry.email,
-        subject: "You've been approved for Joint Networking!",
-        html: emailTemplate({
-          firstName: entry.firstName,
-          heading: "You've been approved!",
-          body: `Congratulations, <strong>${entry.firstName}</strong>! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.<br><br>Click below to create your account and get started.`,
-          cta: { label: 'Create Your Account', url: 'https://joint-networking.com/join' },
-        }),
-        text: `Hi ${entry.firstName},\n\nCongratulations! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.\n\nCreate your account at https://joint-networking.com/join.\n\nWelcome aboard!\n\n— The Joint Networking Team`,
-      }).catch(e => console.error('[waitlist] approval email failed:', e.message));
+      // Send approval email (awaited so Lambda doesn't cut it off before sending)
+      try {
+        await sendEmail({
+          to: entry.email,
+          subject: "You've been approved for Joint Networking!",
+          html: emailTemplate({
+            firstName: entry.firstName,
+            heading: "You've been approved!",
+            body: `Congratulations, <strong>${entry.firstName}</strong>! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.<br><br>Click below to create your account and get started.`,
+            cta: { label: 'Create Your Account', url: 'https://joint-networking.com/join' },
+          }),
+          text: `Hi ${entry.firstName},\n\nCongratulations! And thank you for becoming one of the first members of Joint Networking — ensuring you premium access and a free account.\n\nCreate your account at https://joint-networking.com/join.\n\nWelcome aboard!\n\n— The Joint Networking Team`,
+        });
+      } catch (e) {
+        console.error('[waitlist] approval email failed:', e.message);
+      }
     }
 
     return json(entry, 200, { event });
