@@ -20,7 +20,7 @@ function emailTemplate({ firstName, heading, body, cta }) {
           <tr>
             <td align="center" style="background:linear-gradient(to right,#474747,#0CCE6B);padding:32px 40px;">
               <div style="display:inline-block;background:#ffffff;border-radius:12px;padding:12px 24px;">
-                <img src="${LOGO_DATA_URL}" alt="Joint Networking" width="220" style="display:block;max-width:220px;">
+                <img src="https://joint-networking.com/assets/logo-email.png" alt="Joint Networking" width="220" style="display:block;max-width:220px;">
               </div>
             </td>
           </tr>
@@ -50,7 +50,7 @@ function emailTemplate({ firstName, heading, body, cta }) {
 }
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
-import { sendEmail, LOGO_DATA_URL } from '../utils/email.js';
+import { sendEmail } from '../utils/email.js';
 
 async function requireAdmin(event, prisma) {
   const userId = getUserIdFromEvent(event);
