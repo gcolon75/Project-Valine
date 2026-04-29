@@ -57,6 +57,7 @@ export default function PrivacyPolicy() {
             <h3 className="text-xl font-semibold text-neutral-900 mb-3">Account Information</h3>
             <ul className="list-disc pl-6 mb-4 text-neutral-700 space-y-2">
               <li>Email address (required for account creation and verification)</li>
+              <li>Phone number (optional, for SMS verification and activity notifications)</li>
               <li>Username and display name</li>
               <li>Profile information (bio, title/headline, profile links, avatar)</li>
               <li>User preferences (theme, notification settings)</li>
@@ -89,7 +90,7 @@ export default function PrivacyPolicy() {
               <li><strong>Account Operation:</strong> To create, maintain, and authenticate your account</li>
               <li><strong>Security:</strong> To protect against unauthorized access, fraud, and abuse</li>
               <li><strong>Service Reliability:</strong> To monitor system performance and troubleshoot issues</li>
-              <li><strong>Communication:</strong> To send important account-related notifications (verification emails, password resets, security alerts)</li>
+              <li><strong>Communication:</strong> To send important account-related notifications including verification emails, password resets, security alerts, and SMS notifications for account verification and activity updates (likes, comments, follows) for users who have opted in</li>
               <li><strong>Legal Compliance:</strong> To comply with applicable laws and regulations</li>
             </ul>
           </section>
@@ -110,6 +111,20 @@ export default function PrivacyPolicy() {
 
             <p className="text-neutral-700 leading-relaxed mt-4">
               <strong>Analytics:</strong> Analytics cookies are currently disabled. If enabled in the future, they will be feature-flagged and disclosed in updated versions of this policy.
+            </p>
+          </section>
+
+          {/* SMS Notifications */}
+          <section className="mb-12" id="sms-notifications">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-4">SMS Notifications</h2>
+            <p className="text-neutral-700 leading-relaxed mb-4">
+              If you provide your phone number, you may receive SMS messages from Joint Networking including one-time verification codes and activity notifications (such as likes, comments, and follows). Message and data rates may apply. Message frequency varies based on your activity and notification settings.
+            </p>
+            <p className="text-neutral-700 leading-relaxed mb-4">
+              To opt out, reply <strong>STOP</strong> to any message. Reply <strong>HELP</strong> for support. You can also manage or remove your SMS preferences at any time through your account settings.
+            </p>
+            <p className="text-neutral-700 leading-relaxed">
+              Mobile opt-in data and phone numbers are not shared with third parties or used for marketing purposes.
             </p>
           </section>
 
@@ -188,10 +203,10 @@ export default function PrivacyPolicy() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Data Sharing & Disclosure</h2>
             <p className="text-neutral-700 leading-relaxed mb-4">
-              We do not sell, trade, or rent your personal information. We may share data only in the following circumstances:
+              We do not sell, trade, or rent your personal information. Mobile phone numbers and SMS opt-in data are not shared with third parties or used for marketing purposes. We may share data only in the following circumstances:
             </p>
             <ul className="list-disc pl-6 text-neutral-700 space-y-2">
-              <li><strong>Service Providers:</strong> Third-party services that help operate our platform (cloud hosting, email delivery) under strict confidentiality agreements</li>
+              <li><strong>Service Providers:</strong> Third-party services that help operate our platform (cloud hosting, email delivery, SMS delivery) under strict confidentiality agreements</li>
               <li><strong>Legal Requirements:</strong> When required by law, court order, or to protect our rights and safety</li>
               <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets (with notice to you)</li>
             </ul>
