@@ -27,6 +27,7 @@ const OnboardingPage = lazy(() => import("../pages/Onboarding"));
 const PrivacyPolicyPage = lazy(() => import("../pages/legal/PrivacyPolicy"));
 const TermsOfServicePage = lazy(() => import("../pages/legal/TermsOfService"));
 const CookieDisclosurePage = lazy(() => import("../pages/legal/CookieDisclosure"));
+const SmsOptInEvidencePage = lazy(() => import("../pages/legal/SmsOptInEvidence"));
 const ContactPage = lazy(() => import("../pages/Contact"));
 
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="legal/privacy" element={<PrivacyPolicyPage />} />
           <Route path="legal/terms" element={<TermsOfServicePage />} />
           <Route path="legal/cookies" element={<CookieDisclosurePage />} />
+          <Route path="sms-opt-in-evidence" element={<SmsOptInEvidencePage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="waitlist" element={<WaitlistPage />} />
         </Route>
