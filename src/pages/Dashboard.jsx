@@ -11,6 +11,7 @@ import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi 
 import toast from "react-hot-toast";
 import { getMyProfile } from "../services/profileService";
 import { useAuth } from "../context/AuthContext";
+import EmeraldBadge from "../components/EmeraldBadge";
 import { ALLOWED_TAGS, TAG_CATEGORIES } from "../constants/tags";
 
 export default function Dashboard() {
@@ -97,7 +98,8 @@ export default function Dashboard() {
               id: post.author?.id,
               name: post.author?.displayName,
               role: post.author?.username,
-              avatar: post.author?.avatar || ''
+              avatar: post.author?.avatar || '',
+              plan: post.author?.plan
             },
             title: post.title || post.mediaAttachment?.title || '',
             body: post.content,
@@ -163,8 +165,9 @@ export default function Dashboard() {
                   <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-white/10" aria-hidden="true" />
                 )}
                 <div>
-                  <div className="font-semibold text-neutral-900 dark:text-white">
+                  <div className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1">
                     {profileData?.displayName || user?.displayName || 'Your Name'}
+                    <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} />
                   </div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-400">
                     @{profileData?.username || user?.username || 'username'}

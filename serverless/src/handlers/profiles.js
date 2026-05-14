@@ -1479,6 +1479,7 @@ export const getMyProfile = async (event) => {
       username: user.username || null,
       displayName: user.displayName || user.name || null,
       avatar: user.avatar || null,
+      plan: user.plan || 'free',
       // Profile-specific fields
       vanityUrl: profile?.vanityUrl || null,
       headline: profile?.headline || null,
