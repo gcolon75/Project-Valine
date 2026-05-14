@@ -1,6 +1,6 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, Mail } from "lucide-react";
+import { Home, Search, PlusCircle, Bell, User, Settings, LogOut, Mail, FileText } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
@@ -46,6 +46,7 @@ export default function AppLayout() {
               <NavItem to="/dashboard" icon={Home} label="Home" />
               <NavItem to="/discover" icon={Search} label="Discover" />
               <NavItem to="/post" icon={PlusCircle} label="Create" />
+              <NavItem to="/feedback-request" icon={FileText} label="Feedback" />
               <NavItem to="/inbox" icon={Mail} label="Messages" badge={unreadCounts.messages} />
               <NavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
               <NavItem to="/profile" icon={User} label="Profile" />
@@ -89,6 +90,7 @@ export default function AppLayout() {
           <MobileNavItem to="/dashboard" icon={Home} label="Home" />
           <MobileNavItem to="/discover" icon={Search} label="Discover" />
           <MobileNavItem to="/post" icon={PlusCircle} label="Create" />
+          <MobileNavItem to="/feedback-request" icon={FileText} label="Feedback" />
           <MobileNavItem to="/inbox" icon={Mail} label="Messages" badge={unreadCounts.messages} />
           <MobileNavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
           <MobileNavItem to="/profile" icon={User} label="Profile" />

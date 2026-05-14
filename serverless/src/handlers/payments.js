@@ -420,6 +420,13 @@ export const stripeWebhook = async (event) => {
         return json({ received: true });
       }
 
+      // ===== Script feedback service checkout =====
+      if (session.metadata?.kind === 'script_feedback') {
+        const { handleScriptFeedbackPaymentCompleted } = await import('./scriptFeedback.js');
+        await handleScriptFeedbackPaymentCompleted(prisma, session);
+        return json({ received: true });
+      }
+
       // ===== One-time post purchase checkout =====
       const { postId, buyerId, sellerId } = session.metadata || {};
 

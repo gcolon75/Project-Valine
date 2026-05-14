@@ -740,6 +740,8 @@ async function me(event) {
         avatar: user.avatar || null,
         role: user.role || 'artist',
         plan: user.plan || 'free',
+        isReader: user.isReader || false,
+        pendingPayoutCents: user.pendingPayoutCents || 0,
         headline: profile?.headline || null,
         // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,

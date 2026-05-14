@@ -39,6 +39,10 @@ model User {
   subscriptionStatus            String?
   subscriptionCurrentPeriodEnd  DateTime?
 
+  // Script feedback reader pool
+  isReader            Boolean @default(false)
+  pendingPayoutCents  Int     @default(0)
+
   auditLogs               AuditLog[]
   auditions               Audition[]
   bookmarks               Bookmark[]
@@ -87,6 +91,10 @@ model User {
   // Purchases
   purchases Purchase[] @relation("Purchases")
   sales     Purchase[] @relation("Sales")
+
+  // Script feedback service (PDF Part 2 — paid feedback marketplace)
+  scriptFeedbackAsWriter ScriptFeedbackRequest[] @relation("ScriptFeedbackWriter")
+  scriptFeedbackAsReader ScriptFeedbackRequest[] @relation("ScriptFeedbackReader")
 
   @@index([email])
   @@index([normalizedEmail])
@@ -940,23 +948,28 @@ model FeedbackRequest {
 }
 
 model FeedbackAnnotation {
-  id                String   @id @default(uuid())
-  feedbackRequestId String
-  authorId          String
-  type              String   // HIGHLIGHT, PAGE_COMMENT, GENERAL_COMMENT
-  pageNumber        Int?
-  selectionData     Json?    // {startOffset, endOffset, rects: [{x,y,width,height}]}
-  highlightedText   String?  // The actual highlighted text snippet
-  content           String   // Comment/annotation text
-  positionX         Float?   // Position on page (for PAGE_COMMENT)
-  positionY         Float?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                       String   @id @default(uuid())
+  // Annotations attach to either a peer FeedbackRequest OR a paid ScriptFeedbackRequest.
+  // Exactly one of feedbackRequestId / scriptFeedbackRequestId must be set.
+  feedbackRequestId        String?
+  scriptFeedbackRequestId  String?
+  authorId                 String
+  type                     String   // HIGHLIGHT, PAGE_COMMENT, GENERAL_COMMENT
+  pageNumber               Int?
+  selectionData            Json?    // {startOffset, endOffset, rects: [{x,y,width,height}]}
+  highlightedText          String?  // The actual highlighted text snippet
+  content                  String   // Comment/annotation text
+  positionX                Float?   // Position on page (for PAGE_COMMENT)
+  positionY                Float?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
-  feedbackRequest FeedbackRequest @relation(fields: [feedbackRequestId], references: [id], onDelete: Cascade)
-  author          User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  feedbackRequest        FeedbackRequest?        @relation(fields: [feedbackRequestId], references: [id], onDelete: Cascade)
+  scriptFeedbackRequest  ScriptFeedbackRequest?  @relation(fields: [scriptFeedbackRequestId], references: [id], onDelete: Cascade)
+  author                 User                    @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([feedbackRequestId])
+  @@index([scriptFeedbackRequestId])
   @@index([authorId])
   @@index([pageNumber])
   @@map("feedback_annotations")
@@ -993,6 +1006,68 @@ model Purchase {
   @@map("purchases")
 }
 
+// ========================================
+// Script Feedback Service (PDF Part 2)
+// Paid marketplace: writer pays $0.50/page, reader earns $0.25/page,
+// Joint keeps $0.25/page. Admin approval gate before going to readers.
+// ========================================
+
+model ScriptFeedbackRequest {
+  id          String  @id @default(uuid())
+  writerId    String
+  readerId    String? // assigned when a reader claims the job
+  title       String
+  scriptUrl   String  // S3 URL of the uploaded PDF
+  pageCount   Int
+
+  // Payment (in cents)
+  totalPaidCents      Int  // pageCount * 50
+  readerEarningsCents Int  // pageCount * 25
+  platformFeeCents    Int  // pageCount * 25
+
+  // Status lifecycle:
+  //   pending_payment    -> Stripe checkout created, awaiting payment
+  //   pending_approval   -> paid, waiting for admin to approve
+  //   approved           -> available in reader pool
+  //   accepted           -> reader has claimed it; 24h timer running
+  //   completed          -> reader has submitted notes; reader earnings pending payout
+  //   denied             -> admin denied; writer refunded
+  //   refunded           -> refund processed
+  status String @default("pending_payment")
+
+  // Stripe
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String?
+  refundedAt            DateTime?
+
+  // Admin approval gate
+  adminApprovedBy String?
+  adminApprovedAt DateTime?
+  denyReason      String?
+
+  // Reader claim window
+  acceptedAt DateTime?
+  deadlineAt DateTime? // = acceptedAt + 24h
+  completedAt DateTime?
+
+  // Summary "1-4 pages of notes" overview (markdown).
+  // Inline annotations live on FeedbackAnnotation (shared with peer feedback).
+  summaryNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  writer      User                  @relation("ScriptFeedbackWriter", fields: [writerId], references: [id], onDelete: Cascade)
+  reader      User?                 @relation("ScriptFeedbackReader", fields: [readerId], references: [id], onDelete: SetNull)
+  annotations FeedbackAnnotation[]
+
+  @@index([writerId])
+  @@index([readerId])
+  @@index([status])
+  @@index([stripeSessionId])
+  @@index([createdAt])
+  @@map("script_feedback_requests")
+}
 
 model AllowedEmail {
   id        String   @id @default(uuid())

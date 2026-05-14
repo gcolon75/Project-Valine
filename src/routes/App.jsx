@@ -44,6 +44,10 @@ const RequestsPage = lazy(() => import("../pages/Requests"));
 const SettingsPage = lazy(() => import("../pages/Settings"));
 const NotificationsPage = lazy(() => import("../pages/Notifications"));
 const PricingPage = lazy(() => import("../pages/Pricing"));
+const FeedbackRequestHubPage = lazy(() => import("../pages/feedbackRequest/Hub"));
+const FeedbackRequestNewPage = lazy(() => import("../pages/feedbackRequest/Submit"));
+const FeedbackRequestDetailPage = lazy(() => import("../pages/feedbackRequest/Detail"));
+const FeedbackRequestAdminPage = lazy(() => import("../pages/feedbackRequest/AdminQueue"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
@@ -269,6 +273,40 @@ export default function App() {
             element={
               <Protected>
                 <PricingPage />
+              </Protected>
+            }
+          />
+
+          {/* Script Feedback Service (paid marketplace, PDF Part 2) */}
+          <Route
+            path="feedback-request"
+            element={
+              <Protected>
+                <FeedbackRequestHubPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="feedback-request/new"
+            element={
+              <Protected>
+                <FeedbackRequestNewPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="feedback-request/admin"
+            element={
+              <Protected>
+                <FeedbackRequestAdminPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="feedback-request/:id"
+            element={
+              <Protected>
+                <FeedbackRequestDetailPage />
               </Protected>
             }
           />

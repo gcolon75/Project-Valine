@@ -426,6 +426,49 @@ functions:
           path: /comments/{id}/like
           method: delete
 
+  # ========== SCRIPT FEEDBACK SERVICE ROUTER ==========
+  # Paid feedback marketplace (PDF Part 2). Writer pays $0.50/page,
+  # reader earns $0.25/page, Joint keeps $0.25/page. Admin gates each request.
+  # All routes consolidated into one Lambda to stay under the CFN 500-resource limit.
+  scriptFeedbackRouter:
+    handler: src/handlers/scriptFeedbackRouter.handler
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /script-feedback
+          method: get
+      - httpApi:
+          path: /script-feedback
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}
+          method: get
+      - httpApi:
+          path: /script-feedback/{id}/approve
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/deny
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/accept
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/submit-notes
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/annotations
+          method: get
+      - httpApi:
+          path: /script-feedback/{id}/annotations
+          method: post
+      - httpApi:
+          path: /script-feedback/annotations/{annotationId}
+          method: put
+      - httpApi:
+          path: /script-feedback/annotations/{annotationId}
+          method: delete
+
   # ========== BILLING + STRIPE ROUTER ==========
   # Single Lambda handles all /billing/* and /stripe/webhook routes.
   # Consolidated to stay under CloudFormation's 500-resource-per-stack limit.
