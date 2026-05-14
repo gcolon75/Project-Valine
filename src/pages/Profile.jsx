@@ -509,23 +509,18 @@ export default function Profile() {
     <div className="container mx-auto px-4 py-6 max-w-5xl">
       {/* Profile Header with Gradient Accent */}
       <Card padding="none" className="animate-slide-up">
-        {/* Cover Image with Gradient or Banner */}
-        <div className="h-32 sm:h-48 bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
-          {(displayData.bannerUrl || displayData.banner) ? (
-            <>
-              <img 
-                src={getCacheBustedBannerUrl(displayData.bannerUrl || displayData.banner, displayData)} 
-                alt="Profile banner" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Hide image on error, let gradient background show through
-                  e.target.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-black/20" />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-black/20" />
+        {/* Cover Image with Gradient or Banner — 4:1 aspect ratio matches the upload cropper */}
+        <div className="aspect-[4/1] bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
+          {(displayData.bannerUrl || displayData.banner) && (
+            <img
+              src={getCacheBustedBannerUrl(displayData.bannerUrl || displayData.banner, displayData)}
+              alt="Profile banner"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Hide image on error, let gradient background show through
+                e.target.style.display = 'none';
+              }}
+            />
           )}
         </div>
 

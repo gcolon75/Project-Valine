@@ -11,15 +11,20 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = 'brenny.sullivan@gmail.com';
+const ADMIN_EMAILS = [
+  'brenny.sullivan@gmail.com',
+  'admin@joint-networking.com',
+];
 
 async function main() {
-  // 1. Set admin role
-  const admin = await prisma.user.updateMany({
-    where: { normalizedEmail: ADMIN_EMAIL.toLowerCase() },
-    data: { role: 'admin' },
-  });
-  console.log(`Admin role set for ${ADMIN_EMAIL}: ${admin.count} user(s) updated`);
+  // 1. Set admin role for all configured admin emails
+  for (const email of ADMIN_EMAILS) {
+    const result = await prisma.user.updateMany({
+      where: { normalizedEmail: email.toLowerCase() },
+      data: { role: 'admin' },
+    });
+    console.log(`Admin role set for ${email}: ${result.count} user(s) updated`);
+  }
 
   // 2. Seed allowlist from env var
   const raw = process.env.ALLOWED_USER_EMAILS || '';
