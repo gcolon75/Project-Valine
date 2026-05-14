@@ -468,6 +468,16 @@ functions:
       - httpApi:
           path: /script-feedback/annotations/{annotationId}
           method: delete
+      # Admin reader management
+      - httpApi:
+          path: /script-feedback/admin/readers
+          method: get
+      - httpApi:
+          path: /script-feedback/admin/users
+          method: get
+      - httpApi:
+          path: /script-feedback/admin/readers/{userId}
+          method: post
 
   # ========== BILLING + STRIPE ROUTER ==========
   # Single Lambda handles all /billing/* and /stripe/webhook routes.

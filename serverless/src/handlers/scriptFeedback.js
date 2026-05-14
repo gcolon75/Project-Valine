@@ -732,6 +732,144 @@ export const deleteAnnotation = async (event) => {
 };
 
 /**
+ * GET /script-feedback/admin/readers   (admin only)
+ * Lists all users currently flagged as readers.
+ */
+export const listReaders = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const readers = await prisma.user.findMany({
+      where: { isReader: true },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        email: true,
+        avatar: true,
+        pendingPayoutCents: true,
+        createdAt: true,
+      },
+      orderBy: { username: 'asc' },
+    });
+
+    return json({ readers });
+  } catch (e) {
+    console.error('[scriptFeedback] listReaders error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /script-feedback/admin/users?q=...   (admin only)
+ * Search users by email or username (case-insensitive contains).
+ * Used by the readers admin page to find users to flag as readers.
+ */
+export const searchUsersForAdmin = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const q = (event.queryStringParameters?.q || '').trim();
+    if (!q || q.length < 2) {
+      return json({ users: [] });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: q, mode: 'insensitive' } },
+          { username: { contains: q, mode: 'insensitive' } },
+          { displayName: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        email: true,
+        avatar: true,
+        isReader: true,
+      },
+      take: 25,
+      orderBy: { username: 'asc' },
+    });
+
+    return json({ users });
+  } catch (e) {
+    console.error('[scriptFeedback] searchUsersForAdmin error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /script-feedback/admin/readers/:userId   (admin only)
+ * Body: { isReader: boolean }
+ * Toggles the isReader flag on a target user.
+ */
+export const setReaderFlag = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const userId = event.pathParameters?.userId;
+    if (!userId) return error(400, 'userId is required');
+
+    let body;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch (_) {
+      return error(400, 'Invalid JSON body');
+    }
+    const isReader = !!body.isReader;
+
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isReader: true },
+    });
+    if (!target) return error(404, 'User not found');
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { isReader },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        email: true,
+        avatar: true,
+        isReader: true,
+        pendingPayoutCents: true,
+      },
+    });
+
+    console.log('[scriptFeedback] reader flag updated', {
+      adminId: auth.id,
+      targetId: userId,
+      isReader,
+    });
+
+    return json({ user: updated });
+  } catch (e) {
+    console.error('[scriptFeedback] setReaderFlag error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
  * Internal: called from the Stripe webhook in billingRouter when a
  * checkout.session.completed arrives with metadata.kind === 'script_feedback'.
  * Moves a request from pending_payment -> pending_approval and stores the

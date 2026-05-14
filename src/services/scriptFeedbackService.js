@@ -66,3 +66,19 @@ export const updateFeedbackAnnotation = async (annotationId, patch) => {
 export const deleteFeedbackAnnotation = async (annotationId) => {
   await apiClient.delete(`/script-feedback/annotations/${annotationId}`);
 };
+
+// Admin reader management
+export const adminListReaders = async () => {
+  const { data } = await apiClient.get('/script-feedback/admin/readers');
+  return data?.readers ?? [];
+};
+
+export const adminSearchUsers = async (q) => {
+  const { data } = await apiClient.get('/script-feedback/admin/users', { params: { q } });
+  return data?.users ?? [];
+};
+
+export const adminSetReader = async (userId, isReader) => {
+  const { data } = await apiClient.post(`/script-feedback/admin/readers/${userId}`, { isReader });
+  return data?.user;
+};

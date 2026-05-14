@@ -28,6 +28,21 @@ export const handler = async (event, context) => {
       return sf.listRequests(event, context);
     }
 
+    // Admin reader management — must come before the generic /:id route
+    if (method === 'GET' && path === '/script-feedback/admin/readers') {
+      return sf.listReaders(event, context);
+    }
+    if (method === 'GET' && path === '/script-feedback/admin/users') {
+      return sf.searchUsersForAdmin(event, context);
+    }
+    {
+      const m = path.match(/^\/script-feedback\/admin\/readers\/([^/]+)$/);
+      if (m && method === 'POST') {
+        event.pathParameters = { ...(event.pathParameters || {}), userId: m[1] };
+        return sf.setReaderFlag(event, context);
+      }
+    }
+
     // Annotation routes (must match before generic /:id routes)
     let m;
     m = path.match(/^\/script-feedback\/annotations\/([^/]+)$/);

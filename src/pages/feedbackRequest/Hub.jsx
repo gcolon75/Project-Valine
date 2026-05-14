@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle2, XCircle, DollarSign, AlertCircle, Gem } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, XCircle, DollarSign, AlertCircle, Gem, Users, Shield } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { listFeedbackRequests } from '../../services/scriptFeedbackService';
@@ -248,6 +248,30 @@ export default function FeedbackRequestHub() {
           </p>
         </div>
 
+        {/* Admin tools — visible only to admins */}
+        {isAdmin && (
+          <div className="mb-6 bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-300 dark:border-amber-800 rounded-xl p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300 mb-3 inline-flex items-center gap-1">
+              <Shield className="w-4 h-4" />
+              Admin tools
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/feedback-request/admin">
+                <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition">
+                  <AlertCircle className="w-4 h-4" />
+                  Admin Queue
+                </button>
+              </Link>
+              <Link to="/feedback-request/admin/readers">
+                <button className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 hover:bg-amber-100 dark:hover:bg-neutral-700 text-amber-800 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 font-medium rounded-lg transition">
+                  <Users className="w-4 h-4" />
+                  Manage Readers
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-neutral-200 dark:border-neutral-700">
           <button
@@ -273,15 +297,6 @@ export default function FeedbackRequestHub() {
               <DollarSign className="inline w-4 h-4 mr-1" />
               Earn Money
             </button>
-          )}
-          {isAdmin && (
-            <Link
-              to="/feedback-request/admin"
-              className="px-4 py-2 font-medium border-b-2 border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 ml-auto"
-            >
-              <AlertCircle className="inline w-4 h-4 mr-1" />
-              Admin Queue
-            </Link>
           )}
         </div>
 

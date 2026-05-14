@@ -48,6 +48,7 @@ const FeedbackRequestHubPage = lazy(() => import("../pages/feedbackRequest/Hub")
 const FeedbackRequestNewPage = lazy(() => import("../pages/feedbackRequest/Submit"));
 const FeedbackRequestDetailPage = lazy(() => import("../pages/feedbackRequest/Detail"));
 const FeedbackRequestAdminPage = lazy(() => import("../pages/feedbackRequest/AdminQueue"));
+const FeedbackRequestAdminReadersPage = lazy(() => import("../pages/feedbackRequest/AdminReaders"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
@@ -299,6 +300,14 @@ export default function App() {
             element={
               <Protected>
                 <FeedbackRequestAdminPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="feedback-request/admin/readers"
+            element={
+              <Protected>
+                <FeedbackRequestAdminReadersPage />
               </Protected>
             }
           />
