@@ -43,6 +43,9 @@ model User {
   isReader            Boolean @default(false)
   pendingPayoutCents  Int     @default(0)
 
+  // Emerald perks usage tracking
+  monthlyFreeEvalUsedAt DateTime?
+
   auditLogs               AuditLog[]
   auditions               Audition[]
   bookmarks               Bookmark[]

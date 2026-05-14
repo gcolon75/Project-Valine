@@ -742,6 +742,16 @@ async function me(event) {
         plan: user.plan || 'free',
         isReader: user.isReader || false,
         pendingPayoutCents: user.pendingPayoutCents || 0,
+        // Emerald perk eligibility (free monthly script feedback)
+        freeEvalEligible: (() => {
+          if (user.plan !== 'emerald') return false;
+          if (!['active', 'trialing'].includes(user.subscriptionStatus || '')) return false;
+          if (!user.monthlyFreeEvalUsedAt) return true;
+          const used = new Date(user.monthlyFreeEvalUsedAt);
+          const now = new Date();
+          return used.getUTCFullYear() !== now.getUTCFullYear()
+              || used.getUTCMonth() !== now.getUTCMonth();
+        })(),
         headline: profile?.headline || null,
         // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,

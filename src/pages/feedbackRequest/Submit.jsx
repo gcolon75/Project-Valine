@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { ArrowLeft, Upload, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Loader2, Gem } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { uploadMedia } from '../../services/mediaService';
@@ -29,7 +29,16 @@ export default function SubmitFeedbackRequest() {
   const [progress, setProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const totalCents = pageCount ? pageCount * PRICE_PER_PAGE_CENTS : 0;
+  const freeEvalEligible = !!user?.freeEvalEligible;
+  const [useFreeEval, setUseFreeEval] = useState(freeEvalEligible);
+
+  // If the user object updates after mount, sync the default
+  useEffect(() => {
+    if (freeEvalEligible && !file) setUseFreeEval(true);
+  }, [freeEvalEligible]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isFree = useFreeEval && freeEvalEligible;
+  const totalCents = isFree ? 0 : pageCount ? pageCount * PRICE_PER_PAGE_CENTS : 0;
 
   const handleFileChange = async (e) => {
     setErrorMsg('');
@@ -99,19 +108,24 @@ export default function SubmitFeedbackRequest() {
 
       setProgress(80);
 
-      // 2. Create feedback request + Stripe Checkout session
-      const { checkoutUrl } = await submitFeedbackRequest({
+      // 2. Create feedback request — free eval skips Stripe, paid flows through Stripe
+      const result = await submitFeedbackRequest({
         title: title.trim(),
         scriptUrl,
         pageCount,
+        useFreeEval: isFree,
       });
 
       setProgress(100);
 
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      if (result?.checkoutUrl) {
+        // Paid path — redirect to Stripe
+        window.location.href = result.checkoutUrl;
+      } else if (result?.request?.id) {
+        // Free eval path — jump straight to the request detail page
+        navigate(`/feedback-request/${result.request.id}`);
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error('Unexpected response from server');
       }
     } catch (err) {
       console.error(err);
@@ -222,21 +236,64 @@ export default function SubmitFeedbackRequest() {
               )}
             </div>
 
+            {/* Emerald free eval toggle */}
+            {freeEvalEligible && pageCount && (
+              <label
+                htmlFor="use-free-eval"
+                className="flex items-start gap-3 cursor-pointer bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-2 border-emerald-400 rounded-lg p-4"
+              >
+                <input
+                  id="use-free-eval"
+                  type="checkbox"
+                  checked={useFreeEval}
+                  onChange={(e) => setUseFreeEval(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 flex-shrink-0 rounded border-emerald-500 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div className="text-sm">
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-1">
+                    <Gem className="w-4 h-4" />
+                    Use my Emerald free evaluation (1/month)
+                  </p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                    Skip the payment — included with your Emerald subscription.
+                  </p>
+                </div>
+              </label>
+            )}
+
             {/* Price preview */}
             {pageCount && (
               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-neutral-700 dark:text-neutral-300">
-                    {pageCount} pages × $0.50
-                  </span>
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    {formatUsd(totalCents)}
-                  </span>
-                </div>
-                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-2">
-                  You'll be charged via Stripe. If we deny your request (e.g. spam, off-topic),
-                  you'll be refunded automatically.
-                </p>
+                {isFree ? (
+                  <>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-neutral-700 dark:text-neutral-300">
+                        {pageCount} pages · Emerald free eval
+                      </span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                        FREE
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-2">
+                      No payment required. Once Joint approves, your script enters the reader pool.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-neutral-700 dark:text-neutral-300">
+                        {pageCount} pages × $0.50
+                      </span>
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                        {formatUsd(totalCents)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-2">
+                      You'll be charged via Stripe. If we deny your request (e.g. spam, off-topic),
+                      you'll be refunded automatically.
+                    </p>
+                  </>
+                )}
               </div>
             )}
 
@@ -269,6 +326,8 @@ export default function SubmitFeedbackRequest() {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Submitting…
                 </span>
+              ) : isFree ? (
+                'Submit for free Emerald evaluation'
               ) : (
                 `Continue to payment — ${formatUsd(totalCents)}`
               )}

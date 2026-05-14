@@ -42,8 +42,26 @@ async function getAuthUser(event, prisma) {
       isReader: true,
       pendingPayoutCents: true,
       plan: true,
+      subscriptionStatus: true,
+      monthlyFreeEvalUsedAt: true,
     },
   });
+}
+
+/**
+ * True if the user has an active Emerald subscription AND hasn't used
+ * their free eval yet in the current calendar month.
+ */
+export function isEligibleForFreeEval(user, now = new Date()) {
+  if (!user) return false;
+  if (user.plan !== 'emerald') return false;
+  if (!['active', 'trialing'].includes(user.subscriptionStatus || '')) return false;
+  if (!user.monthlyFreeEvalUsedAt) return true;
+  const used = new Date(user.monthlyFreeEvalUsedAt);
+  return (
+    used.getUTCFullYear() !== now.getUTCFullYear() ||
+    used.getUTCMonth() !== now.getUTCMonth()
+  );
 }
 
 function authorSelect() {
@@ -60,9 +78,13 @@ function authorSelect() {
 
 /**
  * POST /script-feedback
- * Writer submits a script for paid feedback. Creates a Stripe Checkout session.
- * Body: { title, scriptUrl, pageCount }
- * Returns: { checkoutUrl, requestId }
+ * Writer submits a script for paid feedback.
+ * Body: { title, scriptUrl, pageCount, useFreeEval?: boolean }
+ *
+ * Behavior:
+ *   - useFreeEval=true AND eligible -> skip Stripe; create directly as
+ *     pending_approval; mark monthlyFreeEvalUsedAt. Joint absorbs reader cost.
+ *   - Otherwise -> create as pending_payment and return a Stripe checkout URL.
  */
 export const submitRequest = async (event) => {
   try {
@@ -72,9 +94,6 @@ export const submitRequest = async (event) => {
     const auth = await getAuthUser(event, prisma);
     if (!auth) return error(401, 'Unauthorized');
 
-    const stripe = getStripe();
-    if (!stripe) return error(503, 'Payment service not configured');
-
     let body;
     try {
       body = JSON.parse(event.body || '{}');
@@ -82,7 +101,7 @@ export const submitRequest = async (event) => {
       return error(400, 'Invalid JSON body');
     }
 
-    const { title, scriptUrl, pageCount } = body;
+    const { title, scriptUrl, pageCount, useFreeEval } = body;
     if (!title || typeof title !== 'string' || !title.trim()) {
       return error(400, 'Title is required');
     }
@@ -94,11 +113,63 @@ export const submitRequest = async (event) => {
       return error(400, `pageCount must be between ${MIN_PAGE_COUNT} and ${MAX_PAGE_COUNT}`);
     }
 
-    const totalPaidCents = pages * PRICE_PER_PAGE_CENTS;
     const readerEarningsCents = pages * READER_EARNINGS_PER_PAGE_CENTS;
     const platformFeeCents = pages * PLATFORM_FEE_PER_PAGE_CENTS;
 
-    // Create the row first (status=pending_payment), then attach Stripe session.
+    // ── Free Emerald eval path ────────────────────────────────────────────
+    if (useFreeEval) {
+      if (!isEligibleForFreeEval(auth)) {
+        return error(403, 'Not eligible for a free evaluation this month');
+      }
+
+      // Use a transaction to atomically claim the monthly free slot AND create
+      // the request, so a double-submit can't burn through it twice.
+      const result = await prisma.$transaction(async (tx) => {
+        // Re-check inside the transaction with a fresh read
+        const fresh = await tx.user.findUnique({
+          where: { id: auth.id },
+          select: {
+            plan: true,
+            subscriptionStatus: true,
+            monthlyFreeEvalUsedAt: true,
+          },
+        });
+        if (!isEligibleForFreeEval(fresh)) {
+          return { error: 'Free evaluation already used this month', status: 409 };
+        }
+
+        const now = new Date();
+        await tx.user.update({
+          where: { id: auth.id },
+          data: { monthlyFreeEvalUsedAt: now },
+        });
+
+        const created = await tx.scriptFeedbackRequest.create({
+          data: {
+            writerId: auth.id,
+            title: title.trim().slice(0, 200),
+            scriptUrl,
+            pageCount: pages,
+            totalPaidCents: 0,           // writer pays nothing
+            readerEarningsCents,         // reader still earns
+            platformFeeCents: 0,         // Joint absorbs the reader cost
+            status: 'pending_approval',  // skip payment, straight to admin queue
+          },
+        });
+
+        return { request: created };
+      });
+
+      if (result.error) return error(result.status, result.error);
+      return json({ request: result.request, useFreeEval: true });
+    }
+
+    // ── Paid path ─────────────────────────────────────────────────────────
+    const stripe = getStripe();
+    if (!stripe) return error(503, 'Payment service not configured');
+
+    const totalPaidCents = pages * PRICE_PER_PAGE_CENTS;
+
     const created = await prisma.scriptFeedbackRequest.create({
       data: {
         writerId: auth.id,
@@ -321,10 +392,14 @@ export const denyRequest = async (event) => {
       return error(400, `Cannot deny a request in status: ${existing.status}`);
     }
 
-    // Refund via Stripe if we have a payment intent
+    // Refund via Stripe only if there was a real payment (paid path).
+    // Free Emerald evaluations have totalPaidCents=0 and no payment intent,
+    // so we just mark them denied without a refund call.
     const stripe = getStripe();
     let refundedAt = null;
-    if (stripe && existing.stripePaymentIntentId) {
+    const isPaidRequest = existing.totalPaidCents > 0 && existing.stripePaymentIntentId;
+
+    if (isPaidRequest && stripe) {
       try {
         await stripe.refunds.create({
           payment_intent: existing.stripePaymentIntentId,

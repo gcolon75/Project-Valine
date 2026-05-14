@@ -1,6 +1,7 @@
 -- Add reader-pool fields to users
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "isReader" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "pendingPayoutCents" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "monthlyFreeEvalUsedAt" TIMESTAMP(3);
 
 CREATE INDEX IF NOT EXISTS "users_isReader_idx" ON "users"("isReader");
 

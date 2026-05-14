@@ -4,8 +4,13 @@ import { apiClient } from './api.js';
  * POST /script-feedback — writer submits a new request
  * Returns { checkoutUrl, requestId }. Caller redirects to checkoutUrl.
  */
-export const submitFeedbackRequest = async ({ title, scriptUrl, pageCount }) => {
-  const { data } = await apiClient.post('/script-feedback', { title, scriptUrl, pageCount });
+export const submitFeedbackRequest = async ({ title, scriptUrl, pageCount, useFreeEval }) => {
+  const { data } = await apiClient.post('/script-feedback', {
+    title,
+    scriptUrl,
+    pageCount,
+    useFreeEval: !!useFreeEval,
+  });
   return data;
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle2, XCircle, DollarSign, AlertCircle } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, XCircle, DollarSign, AlertCircle, Gem } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { listFeedbackRequests } from '../../services/scriptFeedbackService';
@@ -229,6 +229,7 @@ export default function FeedbackRequestHub() {
 
   const isReader = !!user?.isReader;
   const isAdmin = user?.role === 'admin';
+  const freeEvalEligible = !!user?.freeEvalEligible;
 
   const pendingPayoutDollars = useMemo(
     () => formatUsd(user?.pendingPayoutCents || 0),
@@ -283,6 +284,21 @@ export default function FeedbackRequestHub() {
             </Link>
           )}
         </div>
+
+        {/* Emerald free eval banner (writer tab) */}
+        {tab === 'writer' && freeEvalEligible && (
+          <div className="mb-6 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-2 border-emerald-400 rounded-xl p-4 flex items-start gap-3">
+            <Gem className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                Your free Emerald evaluation is available this month
+              </p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">
+                Submit a script and check the "Use my Emerald free evaluation" box at checkout to skip the payment.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Reader earnings banner */}
         {isReader && tab === 'reader' && (user?.pendingPayoutCents || 0) > 0 && (
