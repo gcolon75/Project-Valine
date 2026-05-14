@@ -88,7 +88,7 @@ provider:
     # These should be set but have defaults or graceful degradation
     
     MEDIA_BUCKET: ${env:MEDIA_BUCKET, "valine-media-uploads"}
-    FRONTEND_URL: ${env:FRONTEND_URL, "https://dkmxy676d3vgc.cloudfront.net"}
+    FRONTEND_URL: ${env:FRONTEND_URL, "https://joint-networking.com"}
     
     # API_BASE_URL - Default value shown below may be outdated after new deployments
     # After deployment, the actual API Gateway endpoint is saved to .deploy/last-api-base.txt
