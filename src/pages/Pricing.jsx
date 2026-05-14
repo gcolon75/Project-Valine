@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Gem, Star } from 'lucide-react';
+import { Check, Gem, Star, User } from 'lucide-react';
 import { Button } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -181,7 +181,7 @@ export default function Pricing() {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
             const isLight = !plan.featured && !plan.gold; // light/white card
-            const Icon = plan.name === 'Emerald' ? Gem : plan.name === 'Executive' ? Star : null;
+            const Icon = plan.name === 'Emerald' ? Gem : plan.name === 'Executive' ? Star : plan.name === 'Basic' ? User : null;
 
             return (
               <div
@@ -370,7 +370,10 @@ export default function Pricing() {
                     </Button>
                   ) : plan.contact ? (
                     <Link to="/contact" className="block w-full">
-                      <Button variant="secondary" className="w-full">
+                      <Button
+                        variant="secondary"
+                        className="w-full bg-gradient-to-r from-amber-800 to-amber-950 hover:from-amber-900 hover:to-black text-amber-50 border-amber-900"
+                      >
                         {plan.cta}
                       </Button>
                     </Link>
