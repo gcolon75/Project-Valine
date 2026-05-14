@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, Gem, Star } from 'lucide-react';
 import { Button } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -111,7 +111,7 @@ export default function Pricing() {
         'Earn as a freelance reader',
         'Enter contests & limited events',
       ],
-      cta: 'Current Plan',
+      cta: isActiveEmerald ? 'Basic Plan' : 'Current Plan',
       disabled: true,
     },
     {
@@ -134,11 +134,12 @@ export default function Pricing() {
         { label: 'Featured Post (72 hrs)', price: '$6.99' },
         { label: 'Profile Spotlight (1 week)', price: '$19.99' },
       ],
-      cta: isActiveEmerald ? 'Manage Subscription' : 'Upgrade to Emerald',
+      cta: isActiveEmerald ? 'Current Plan' : 'Upgrade to Emerald',
       disabled: false,
     },
     {
       name: 'Executive',
+      gold: true,
       price: 'Request a Quote',
       period: '',
       subPrice: '$100–$500/week depending on scope',
@@ -178,175 +179,227 @@ export default function Pricing() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`rounded-xl p-8 flex flex-col ${
-                plan.featured
-                  ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-2xl md:transform md:scale-105'
-                  : 'bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700'
-              }`}
-            >
-              <h2
-                className={`text-2xl font-bold mb-1 inline-flex items-center gap-2 ${
+          {plans.map((plan) => {
+            const isLight = !plan.featured && !plan.gold; // light/white card
+            const Icon = plan.name === 'Emerald' ? Gem : plan.name === 'Executive' ? Star : null;
+
+            return (
+              <div
+                key={plan.name}
+                className={`rounded-xl p-8 flex flex-col ${
                   plan.featured
-                    ? 'text-white'
-                    : 'text-neutral-900 dark:text-neutral-100'
+                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-2xl md:transform md:scale-105'
+                    : plan.gold
+                    ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 text-neutral-900 shadow-2xl'
+                    : 'bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700'
                 }`}
               >
-                {plan.name}
-                {plan.name === 'Emerald' && isActiveEmerald && (
-                  <span
-                    className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                      plan.featured
-                        ? 'bg-white/20 text-white'
-                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                    }`}
-                  >
-                    Owned
-                  </span>
-                )}
-              </h2>
-
-              <div className="mb-6">
-                <div>
-                  <span
-                    className={`text-5xl font-bold ${
-                      plan.featured
-                        ? 'text-white'
-                        : 'text-neutral-900 dark:text-neutral-100'
-                    }`}
-                  >
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span
-                      className={`text-lg ${
+                {Icon && (
+                  <div className="flex justify-center mb-4">
+                    <div
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
                         plan.featured
-                          ? 'text-emerald-50'
-                          : 'text-neutral-600 dark:text-neutral-400'
+                          ? 'bg-white/20'
+                          : plan.gold
+                          ? 'bg-white/30'
+                          : 'bg-emerald-100 dark:bg-emerald-900/40'
                       }`}
                     >
-                      /{plan.period}
-                    </span>
-                  )}
-                </div>
-                {plan.subPrice && (
-                  <p
-                    className={`text-sm mt-1 ${
-                      plan.featured
-                        ? 'text-emerald-50'
-                        : 'text-neutral-500 dark:text-neutral-400'
-                    }`}
-                  >
-                    {plan.subPrice}
-                  </p>
+                      <Icon
+                        className={`w-7 h-7 ${
+                          plan.featured
+                            ? 'text-white'
+                            : plan.gold
+                            ? 'text-amber-700 fill-amber-700'
+                            : 'text-emerald-600'
+                        }`}
+                      />
+                    </div>
+                  </div>
                 )}
-              </div>
 
-              {plan.tagline && (
-                <p
-                  className={`text-sm font-semibold uppercase tracking-wide mb-4 ${
+                <h2
+                  className={`text-2xl font-bold mb-1 ${
                     plan.featured
-                      ? 'text-emerald-50'
-                      : 'text-neutral-700 dark:text-neutral-300'
+                      ? 'text-white'
+                      : plan.gold
+                      ? 'text-neutral-900'
+                      : 'text-neutral-900 dark:text-neutral-100'
                   }`}
                 >
-                  {plan.tagline}
-                </p>
-              )}
+                  {plan.name}
+                </h2>
 
-              <ul className="space-y-3 mb-6">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start">
-                    <Check
-                      className={`w-5 h-5 mr-2 flex-shrink-0 mt-0.5 ${
-                        plan.featured ? 'text-emerald-100' : 'text-emerald-600'
-                      }`}
-                    />
+                <div className="mb-6">
+                  <div>
                     <span
-                      className={
+                      className={`text-5xl font-bold ${
                         plan.featured
                           ? 'text-white'
-                          : 'text-neutral-700 dark:text-neutral-300'
-                      }
+                          : plan.gold
+                          ? 'text-neutral-900'
+                          : 'text-neutral-900 dark:text-neutral-100'
+                      }`}
                     >
-                      {feature}
+                      {plan.price}
                     </span>
-                  </li>
-                ))}
-              </ul>
-
-              {plan.alaCarte && (
-                <div
-                  className={`rounded-lg p-4 mb-6 ${
-                    plan.featured
-                      ? 'bg-white/10 border border-white/20'
-                      : 'bg-neutral-100 dark:bg-neutral-700/40 border border-neutral-200 dark:border-neutral-700'
-                  }`}
-                >
-                  <p
-                    className={`text-xs font-semibold uppercase tracking-wide mb-2 ${
-                      plan.featured ? 'text-emerald-50' : 'text-neutral-600 dark:text-neutral-400'
-                    }`}
-                  >
-                    À la carte options
-                  </p>
-                  <ul className="space-y-1">
-                    {plan.alaCarte.map((item) => (
-                      <li
-                        key={item.label}
-                        className={`flex items-center justify-between text-sm ${
-                          plan.featured ? 'text-white' : 'text-neutral-700 dark:text-neutral-300'
+                    {plan.period && (
+                      <span
+                        className={`text-lg ${
+                          plan.featured
+                            ? 'text-emerald-50'
+                            : plan.gold
+                            ? 'text-neutral-800'
+                            : 'text-neutral-600 dark:text-neutral-400'
                         }`}
                       >
-                        <span>{item.label}</span>
-                        <span className="font-semibold">{item.price}</span>
-                      </li>
-                    ))}
-                  </ul>
+                        /{plan.period}
+                      </span>
+                    )}
+                  </div>
+                  {plan.subPrice && (
+                    <p
+                      className={`text-sm mt-1 ${
+                        plan.featured
+                          ? 'text-emerald-50'
+                          : plan.gold
+                          ? 'text-neutral-800'
+                          : 'text-neutral-500 dark:text-neutral-400'
+                      }`}
+                    >
+                      {plan.subPrice}
+                    </p>
+                  )}
                 </div>
-              )}
 
-              {plan.footer && (
-                <p
-                  className={`text-sm font-semibold uppercase tracking-wide text-center mb-4 ${
-                    plan.featured ? 'text-emerald-50' : 'text-neutral-600 dark:text-neutral-400'
-                  }`}
-                >
-                  {plan.footer}
-                </p>
-              )}
-
-              <div className="mt-auto">
-                {plan.name === 'Emerald' ? (
-                  <Button
-                    variant={plan.featured ? 'primary' : 'secondary'}
-                    disabled={loading}
-                    className="w-full"
-                    onClick={isActiveEmerald ? handleManageBilling : handleSubscribe}
+                {plan.tagline && (
+                  <p
+                    className={`text-sm font-semibold uppercase tracking-wide mb-4 ${
+                      plan.featured
+                        ? 'text-emerald-50'
+                        : plan.gold
+                        ? 'text-neutral-800'
+                        : 'text-neutral-700 dark:text-neutral-300'
+                    }`}
                   >
-                    {loading ? 'Loading…' : plan.cta}
-                  </Button>
-                ) : plan.contact ? (
-                  <Link to="/contact" className="block w-full">
-                    <Button variant="secondary" className="w-full">
+                    {plan.tagline}
+                  </p>
+                )}
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check
+                        className={`w-5 h-5 mr-2 flex-shrink-0 mt-0.5 ${
+                          plan.featured
+                            ? 'text-emerald-100'
+                            : plan.gold
+                            ? 'text-amber-800'
+                            : 'text-emerald-600'
+                        }`}
+                      />
+                      <span
+                        className={
+                          plan.featured
+                            ? 'text-white'
+                            : plan.gold
+                            ? 'text-neutral-900'
+                            : 'text-neutral-700 dark:text-neutral-300'
+                        }
+                      >
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.alaCarte && (
+                  <div
+                    className={`rounded-lg p-4 mb-6 ${
+                      plan.featured
+                        ? 'bg-white/10 border border-white/20'
+                        : 'bg-neutral-100 dark:bg-neutral-700/40 border border-neutral-200 dark:border-neutral-700'
+                    }`}
+                  >
+                    <p
+                      className={`text-xs font-semibold uppercase tracking-wide mb-2 ${
+                        plan.featured ? 'text-emerald-50' : 'text-neutral-600 dark:text-neutral-400'
+                      }`}
+                    >
+                      À la carte options
+                    </p>
+                    <ul className="space-y-1">
+                      {plan.alaCarte.map((item) => (
+                        <li
+                          key={item.label}
+                          className={`flex items-center justify-between text-sm ${
+                            plan.featured ? 'text-white' : 'text-neutral-700 dark:text-neutral-300'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          <span className="font-semibold">{item.price}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {plan.footer && (
+                  <p
+                    className={`text-sm font-semibold uppercase tracking-wide text-center mb-4 ${
+                      plan.featured
+                        ? 'text-emerald-50'
+                        : plan.gold
+                        ? 'text-neutral-800'
+                        : 'text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    {plan.footer}
+                  </p>
+                )}
+
+                <div className="mt-auto">
+                  {plan.name === 'Emerald' ? (
+                    <Button
+                      variant="primary"
+                      disabled={loading || isActiveEmerald}
+                      className="w-full"
+                      onClick={isActiveEmerald ? undefined : handleSubscribe}
+                    >
+                      {loading ? 'Loading…' : plan.cta}
+                    </Button>
+                  ) : plan.contact ? (
+                    <Link to="/contact" className="block w-full">
+                      <Button variant="secondary" className="w-full">
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      disabled={plan.disabled}
+                      className="w-full"
+                    >
                       {plan.cta}
                     </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    disabled={plan.disabled}
-                    className="w-full"
-                  >
-                    {plan.cta}
-                  </Button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {isActiveEmerald && (
+          <div className="text-center mt-12">
+            <Button
+              variant="secondary"
+              onClick={handleManageBilling}
+              disabled={loading}
+            >
+              {loading ? 'Loading…' : 'Manage Subscription'}
+            </Button>
+          </div>
+        )}
 
         <div className="text-center mt-12">
           <Link
