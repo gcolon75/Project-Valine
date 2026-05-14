@@ -15,6 +15,7 @@ export default function PhoneVerification({ onVerified }) {
   const [phase, setPhase] = useState('enter-phone'); // 'enter-phone' | 'enter-code' | 'verified'
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [smsConsent, setSmsConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cooldown, setCooldown] = useState(0);
@@ -46,6 +47,10 @@ export default function PhoneVerification({ onVerified }) {
   const handleSendCode = async () => {
     if (!phone.trim()) {
       setError('Please enter your phone number.');
+      return;
+    }
+    if (!smsConsent) {
+      setError('Please agree to receive SMS from Joint Networking to continue.');
       return;
     }
     // Basic E.164 check — allow +1... formats as well as just digits for convenience
@@ -164,11 +169,46 @@ export default function PhoneVerification({ onVerified }) {
           )}
         </div>
 
+        {/* A2P 10DLC consent — required for SMS regulatory compliance */}
+        <label htmlFor="sms-consent" className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="sms-consent"
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(e) => { setSmsConsent(e.target.checked); setError(null); }}
+            className="w-4 h-4 mt-0.5 flex-shrink-0 rounded border-neutral-300 dark:border-neutral-600 text-[#0CCE6B] focus:ring-[#0CCE6B]"
+            aria-describedby="sms-consent-desc"
+          />
+          <p id="sms-consent-desc" className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            By submitting your phone number, you agree to receive SMS messages from Joint Networking,
+            including one-time verification codes and activity notifications (likes, comments, follows).
+            Message and data rates may apply. Message frequency varies. Reply{' '}
+            <strong>STOP</strong> to cancel, <strong>HELP</strong> for help. See our{' '}
+            <a
+              href="/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0CCE6B] underline"
+            >
+              Privacy Policy
+            </a>{' '}
+            and{' '}
+            <a
+              href="/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0CCE6B] underline"
+            >
+              Terms of Service
+            </a>.
+          </p>
+        </label>
+
         <Button
           variant="primary"
           className="w-full"
           onClick={handleSendCode}
-          disabled={isLoading}
+          disabled={isLoading || !smsConsent}
           aria-busy={isLoading}
         >
           {isLoading ? 'Sending…' : 'Send Verification Code'}
