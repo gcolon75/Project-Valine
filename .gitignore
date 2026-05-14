@@ -72,9 +72,6 @@ discord_cmd_evidence/
 # AI agent prompts (generated)
 .agent/
 
-# Claude Code project notes (local-only)
-CLAUDE.md
-
 # Internal planning docs (local-only)
 JointPlan.pdf
 
