@@ -182,18 +182,41 @@ export default function FeedbackRequestDetail() {
 
         <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow border border-neutral-200 dark:border-neutral-700 p-6 md:p-8">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 {request.title}
               </h1>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                by {request.writer?.displayName || request.writer?.username}
-              </p>
             </div>
             <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${meta.color}`}>
               {meta.label}
             </span>
+          </div>
+
+          {/* Parties — large avatars/names for writer + assigned reader */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-6">
+            <PartyCard
+              role="Writer"
+              user={request.writer}
+              highlight={isAssignedReader || (isAdmin && request.reader)}
+            />
+            {request.reader ? (
+              <PartyCard
+                role="Reader"
+                user={request.reader}
+                highlight={isWriter}
+              />
+            ) : (
+              <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl p-4 flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">
+                {request.status === 'approved'
+                  ? 'Waiting for a reader to claim…'
+                  : request.status === 'pending_approval'
+                  ? 'Reader will be assigned after admin approval'
+                  : request.status === 'pending_payment'
+                  ? 'Reader will be assigned after payment + approval'
+                  : 'No reader assigned'}
+              </div>
+            )}
           </div>
 
           {/* Stats */}
@@ -449,6 +472,59 @@ export default function FeedbackRequestDetail() {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PartyCard({ role, user, highlight = false }) {
+  if (!user) return null;
+  const name = user.displayName || user.username || 'Unknown';
+  const handle = user.username ? `@${user.username}` : '';
+  const profileHref = `/profile/${user.username || user.id}`;
+  const initial = name.charAt(0).toUpperCase();
+  const isEmerald = user.plan === 'emerald';
+
+  return (
+    <div
+      className={`flex items-center gap-4 p-4 rounded-xl border-2 transition ${
+        highlight
+          ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
+          : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/40'
+      }`}
+    >
+      <Link to={profileHref} className="flex-shrink-0">
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={name}
+            className="w-16 h-16 rounded-full object-cover ring-2 ring-white dark:ring-neutral-900 shadow"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-2xl font-semibold ring-2 ring-white dark:ring-neutral-900 shadow">
+            {initial}
+          </div>
+        )}
+      </Link>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-0.5">
+          {role}
+        </p>
+        <Link
+          to={profileHref}
+          className="block font-semibold text-neutral-900 dark:text-neutral-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition truncate"
+        >
+          {name}
+          {isEmerald && <span className="ml-1 text-emerald-500" title="Emerald member">💎</span>}
+        </Link>
+        {handle && (
+          <Link
+            to={profileHref}
+            className="block text-sm text-neutral-500 dark:text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400 truncate"
+          >
+            {handle}
+          </Link>
+        )}
       </div>
     </div>
   );
