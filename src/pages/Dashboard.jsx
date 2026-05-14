@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft } from "lucide-react";
+import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem } from "lucide-react";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
@@ -187,39 +187,66 @@ export default function Dashboard() {
             </Card>
 
             {/* Subscription CTA - Replacing Your Stats */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-bold mb-2">Unlock Full Stats</h3>
-                  <p className="text-emerald-50 text-sm">
-                    Get detailed analytics with Emerald
-                  </p>
+            {(profileData?.plan === 'emerald' || user?.plan === 'emerald') ? (
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2 inline-flex items-center gap-2">
+                      <Gem className="w-5 h-5" aria-hidden="true" />
+                      Emerald active
+                    </h3>
+                    <p className="text-emerald-50 text-sm">
+                      You have access to all premium features.
+                    </p>
+                  </div>
                 </div>
-                <TrendingUp className="w-12 h-12 text-emerald-200" aria-hidden="true" />
+
+                <p className="text-emerald-50 text-sm mb-6">
+                  Detailed analytics dashboard coming soon — your subscription is keeping the lights on while we build it.
+                </p>
+
+                <Link
+                  to="/pricing"
+                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
+                >
+                  Manage Subscription
+                </Link>
               </div>
-              
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-center text-sm">
-                  <Users className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Track connections growth
-                </li>
-                <li className="flex items-center text-sm">
-                  <Heart className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Monitor likes &amp; engagement
-                </li>
-                <li className="flex items-center text-sm">
-                  <Eye className="w-4 h-4 mr-2" aria-hidden="true" />
-                  View detailed analytics
-                </li>
-              </ul>
-              
-              <Link 
-                to="/pricing"
-                className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
-              >
-                Get Emerald
-              </Link>
-            </div>
+            ) : (
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Unlock Full Stats</h3>
+                    <p className="text-emerald-50 text-sm">
+                      Get detailed analytics with Emerald
+                    </p>
+                  </div>
+                  <TrendingUp className="w-12 h-12 text-emerald-200" aria-hidden="true" />
+                </div>
+
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center text-sm">
+                    <Users className="w-4 h-4 mr-2" aria-hidden="true" />
+                    Track connections growth
+                  </li>
+                  <li className="flex items-center text-sm">
+                    <Heart className="w-4 h-4 mr-2" aria-hidden="true" />
+                    Monitor likes &amp; engagement
+                  </li>
+                  <li className="flex items-center text-sm">
+                    <Eye className="w-4 h-4 mr-2" aria-hidden="true" />
+                    View detailed analytics
+                  </li>
+                </ul>
+
+                <Link
+                  to="/pricing"
+                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
+                >
+                  Get Emerald
+                </Link>
+              </div>
+            )}
 
             {/* Saved tags */}
             <Card padding="default">

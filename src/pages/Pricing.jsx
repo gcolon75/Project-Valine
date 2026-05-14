@@ -160,13 +160,24 @@ export default function Pricing() {
               }`}
             >
               <h2
-                className={`text-2xl font-bold mb-2 ${
+                className={`text-2xl font-bold mb-2 inline-flex items-center gap-2 ${
                   plan.featured
                     ? 'text-white'
                     : 'text-neutral-900 dark:text-neutral-100'
                 }`}
               >
                 {plan.name}
+                {plan.name === 'Emerald' && isActiveEmerald && (
+                  <span
+                    className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                      plan.featured
+                        ? 'bg-white/20 text-white'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    }`}
+                  >
+                    Owned
+                  </span>
+                )}
               </h2>
               <div className="mb-6">
                 <span
