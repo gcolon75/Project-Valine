@@ -51,4 +51,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ALLOWED_USER_EMAILS: ${{ secrets.ALLOWED_USER_EMAILS }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_EMERALD_PRICE_ID: ${{ secrets.STRIPE_EMERALD_PRICE_ID }}
         run: serverless deploy --stage prod --region us-west-2 --verbose
