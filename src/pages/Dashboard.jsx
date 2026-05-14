@@ -202,7 +202,7 @@ export default function Dashboard() {
                 </div>
 
                 <p className="text-emerald-50 text-sm mb-6">
-                  Detailed analytics dashboard coming soon — your subscription is keeping the lights on while we build it.
+                  Detailed analytics dashboard coming soon
                 </p>
 
                 <Link
