@@ -372,7 +372,7 @@ export default function Pricing() {
                     <Link to="/contact" className="block w-full">
                       <Button
                         variant="secondary"
-                        className="w-full bg-neutral-900 hover:bg-black text-amber-100 hover:text-amber-50 border-2 border-neutral-900"
+                        className="w-full bg-white hover:bg-amber-50 text-amber-700 hover:text-amber-800 border-2 border-amber-700 shadow-sm"
                       >
                         {plan.cta}
                       </Button>
