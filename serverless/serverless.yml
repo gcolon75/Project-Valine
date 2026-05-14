@@ -426,41 +426,26 @@ functions:
           path: /comments/{id}/like
           method: delete
 
-  # ========== STRIPE WEBHOOK ==========
-  stripeWebhook:
-    handler: src/handlers/payments.stripeWebhook
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
-      - httpApi:
-          path: /stripe/webhook
-          method: post
-
-  # ========== BILLING / SUBSCRIPTIONS ==========
-  createSubscriptionCheckout:
-    handler: src/handlers/payments.createSubscriptionCheckout
+  # ========== BILLING + STRIPE ROUTER ==========
+  # Single Lambda handles all /billing/* and /stripe/webhook routes.
+  # Consolidated to stay under CloudFormation's 500-resource-per-stack limit.
+  billingRouter:
+    handler: src/handlers/billingRouter.handler
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
       - httpApi:
           path: /billing/subscribe
           method: post
-  createBillingPortalSession:
-    handler: src/handlers/payments.createBillingPortalSession
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /billing/portal
           method: post
-  getBillingStatus:
-    handler: src/handlers/payments.getBillingStatus
-    layers:
-      - { Ref: PrismaV2LambdaLayer }
-    events:
       - httpApi:
           path: /billing/status
           method: get
+      - httpApi:
+          path: /stripe/webhook
+          method: post
 
   # ========== SCRIPTS ==========
   listScripts:
