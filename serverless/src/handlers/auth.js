@@ -431,6 +431,18 @@ async function login(event) {
           displayName: user.displayName || user.name || null,
           avatar: user.avatar || null,
           role: user.role || 'artist',
+          plan: user.plan || 'free',
+          isReader: user.isReader || false,
+          pendingPayoutCents: user.pendingPayoutCents || 0,
+          freeEvalEligible: (() => {
+            if (user.plan !== 'emerald') return false;
+            if (!['active', 'trialing'].includes(user.subscriptionStatus || '')) return false;
+            if (!user.monthlyFreeEvalUsedAt) return true;
+            const used = new Date(user.monthlyFreeEvalUsedAt);
+            const now = new Date();
+            return used.getUTCFullYear() !== now.getUTCFullYear()
+                || used.getUTCMonth() !== now.getUTCMonth();
+          })(),
           onboardingComplete: user.onboardingComplete || false,
           profileComplete: user.profileComplete || false,
           createdAt: user.createdAt,
@@ -648,6 +660,10 @@ async function register(event) {
         displayName: user.displayName,
         avatar: user.avatar || null,
         role: user.role || 'artist',
+        plan: user.plan || 'free',
+        isReader: user.isReader || false,
+        pendingPayoutCents: user.pendingPayoutCents || 0,
+        freeEvalEligible: false,
         onboardingComplete: user.onboardingComplete || false,
         profileComplete: user.profileComplete || false,
         createdAt: user.createdAt
