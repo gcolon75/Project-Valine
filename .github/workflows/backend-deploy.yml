@@ -54,4 +54,5 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_EMERALD_PRICE_ID: ${{ secrets.STRIPE_EMERALD_PRICE_ID }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: serverless deploy --stage prod --region us-west-2 --verbose
