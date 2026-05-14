@@ -39,6 +39,7 @@ export default function OnboardingLayout({ children, currentStep, totalSteps, st
     'Profile Basics',
     'Links & Portfolio',
     'Preferences',
+    'Phone',
   ];
 
   return (

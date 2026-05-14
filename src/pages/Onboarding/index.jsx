@@ -7,12 +7,13 @@ import Welcome from './steps/Welcome';
 import ProfileBasics from './steps/ProfileBasics';
 import LinksSetup from './steps/LinksSetup';
 import PreferencesSetup from './steps/PreferencesSetup';
+import PhoneVerification from './steps/PhoneVerification';
 import toast from 'react-hot-toast';
 import { updateMyProfile } from '../../services/profileService';
 import { uploadMedia } from '../../services/mediaService';
 
 const ONBOARDING_STORAGE_KEY = 'valine-onboarding-progress';
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 /**
  * Convert a base64 data URL to a Blob
@@ -139,6 +140,9 @@ export default function Onboarding() {
       // Skip links setup
       setOnboardingData(prev => ({ ...prev, profileLinks: [] }));
       setCurrentStep(prev => prev + 1);
+    } else if (currentStep === 5) {
+      // Skip phone verification — go to completion
+      await completeOnboarding();
     } else {
       // Skip to next step
       handleNext();
@@ -299,6 +303,8 @@ export default function Onboarding() {
         return 'Add your professional links';
       case 4:
         return 'Set your preferences';
+      case 5:
+        return 'Verify your phone (optional)';
       default:
         return 'Complete Your Profile';
     }
@@ -314,6 +320,8 @@ export default function Onboarding() {
         return <LinksSetup userData={onboardingData} onUpdate={handleStepUpdate} />;
       case 4:
         return <PreferencesSetup userData={onboardingData} onUpdate={handleStepUpdate} />;
+      case 5:
+        return <PhoneVerification onVerified={() => completeOnboarding()} />;
       default:
         return null;
     }
@@ -327,7 +335,7 @@ export default function Onboarding() {
       onNext={handleNext}
       onBack={handleBack}
       onSkip={handleSkip}
-      canSkip={currentStep === 3} // Can skip links setup
+      canSkip={currentStep === 3 || currentStep === 5} // Can skip links setup and phone verification
       canGoBack={!isSaving}
       canNext={true}
     >

@@ -70,7 +70,12 @@ export default function PhoneVerification({ onVerified }) {
       setPhase('enter-code');
       setCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Failed to send code. Please try again.';
+      const status = err?.response?.status;
+      const fallback =
+        status === 503 || status === 501
+          ? 'SMS verification will be enabled once carrier approval is complete. Your consent has been recorded — please click Skip below to continue.'
+          : 'Failed to send code. Please try again or skip this step.';
+      const msg = err?.response?.data?.message || fallback;
       setError(msg);
     } finally {
       setIsLoading(false);
