@@ -33,9 +33,9 @@ export default function SmsOptInEvidence() {
             acknowledging the following disclosure:
           </p>
           <blockquote className="border-l-4 border-[#0CCE6B] pl-4 py-2 bg-neutral-50 rounded-r-lg text-neutral-700 italic mb-4">
-            "By submitting your phone number, you agree to receive SMS notifications and verification codes
-            from Joint Networking. Message and data rates may apply. Message frequency varies. Reply STOP
-            to cancel, HELP for help."
+            "By submitting your phone number, you agree to receive SMS messages from Joint Networking,
+            including one-time verification codes and activity notifications (likes, comments, follows, direct messages).
+            Message and data rates may apply. Message frequency varies. Reply STOP to cancel, HELP for help."
           </blockquote>
           <p className="text-neutral-700 leading-relaxed">
             Users cannot proceed without checking this box. Links to the{' '}
@@ -75,8 +75,9 @@ export default function SmsOptInEvidence() {
                 </svg>
               </div>
               <p className="text-xs text-neutral-600 leading-relaxed">
-                By submitting your phone number, you agree to receive SMS notifications and verification
-                codes from Joint Networking. Message and data rates may apply. Message frequency varies.
+                By submitting your phone number, you agree to receive SMS messages from Joint Networking,
+                including one-time verification codes and activity notifications (likes, comments, follows, direct messages).
+                Message and data rates may apply. Message frequency varies.
                 Reply <strong>STOP</strong> to cancel, <strong>HELP</strong> for help.{' '}
                 <a href="/legal/privacy" className="text-[#0CCE6B] underline">Privacy Policy</a>{' '}
                 ·{' '}

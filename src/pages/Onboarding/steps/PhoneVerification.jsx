@@ -181,7 +181,7 @@ export default function PhoneVerification({ onVerified }) {
           />
           <p id="sms-consent-desc" className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
             By submitting your phone number, you agree to receive SMS messages from Joint Networking,
-            including one-time verification codes and activity notifications (likes, comments, follows).
+            including one-time verification codes and activity notifications (likes, comments, follows, direct messages).
             Message and data rates may apply. Message frequency varies. Reply{' '}
             <strong>STOP</strong> to cancel, <strong>HELP</strong> for help. See our{' '}
             <a
