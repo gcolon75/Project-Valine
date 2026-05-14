@@ -175,6 +175,7 @@ export const getProfileByVanity = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
             createdAt: true,
           },
         },
@@ -493,6 +494,7 @@ export const createProfile = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
           },
         },
       },
@@ -725,6 +727,7 @@ export const updateProfile = async (event) => {
               username: true,
               displayName: true,
               avatar: true,
+              plan: true,
             },
           },
           links: {

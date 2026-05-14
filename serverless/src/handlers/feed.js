@@ -69,7 +69,7 @@ export const getFeed = async (event) => {
       orderBy: { createdAt: 'desc' },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true }
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true }
         },
         _count: {
           select: { comments: true }
@@ -214,7 +214,7 @@ export const getDiscoverPosts = async (event) => {
       orderBy: { createdAt: 'desc' },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true }
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true }
         },
         _count: {
           select: { comments: true }

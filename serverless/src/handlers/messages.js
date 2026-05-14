@@ -46,6 +46,7 @@ export const getThreads = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
             profile: {
               select: {
                 id: true,
@@ -61,6 +62,7 @@ export const getThreads = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
             profile: {
               select: {
                 id: true,
@@ -78,6 +80,7 @@ export const getThreads = async (event) => {
                 username: true,
                 displayName: true,
                 avatar: true,
+                plan: true,
                 profile: {
                   select: {
                     id: true,
@@ -301,6 +304,7 @@ export const createThread = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
             profile: {
               select: {
                 id: true,
@@ -316,6 +320,7 @@ export const createThread = async (event) => {
             username: true,
             displayName: true,
             avatar: true,
+            plan: true,
             profile: {
               select: {
                 id: true,
@@ -435,6 +440,7 @@ export const createGroupThread = async (event) => {
         username: true,
         displayName: true,
         avatar: true,
+        plan: true,
         profile: {
           select: {
             id: true,
@@ -485,6 +491,7 @@ export const createGroupThread = async (event) => {
                 username: true,
                 displayName: true,
                 avatar: true,
+                plan: true,
                 profile: {
                   select: {
                     id: true,
@@ -549,7 +556,8 @@ export const getThread = async (event) => {
             id: true,
             username: true,
             displayName: true,
-            avatar: true
+            avatar: true,
+            plan: true
           }
         },
         userB: {
@@ -557,7 +565,8 @@ export const getThread = async (event) => {
             id: true,
             username: true,
             displayName: true,
-            avatar: true
+            avatar: true,
+            plan: true
           }
         },
         participants: {
@@ -568,6 +577,7 @@ export const getThread = async (event) => {
                 username: true,
                 displayName: true,
                 avatar: true,
+                plan: true,
                 profile: {
                   select: {
                     title: true
@@ -605,7 +615,8 @@ export const getThread = async (event) => {
             id: true,
             username: true,
             displayName: true,
-            avatar: true
+            avatar: true,
+            plan: true
           }
         },
         forwardedPost: {
@@ -787,7 +798,8 @@ export const sendMessage = async (event) => {
               id: true,
               username: true,
               displayName: true,
-              avatar: true
+              avatar: true,
+              plan: true
             }
           },
           forwardedPost: {
@@ -801,7 +813,8 @@ export const sendMessage = async (event) => {
                   id: true,
                   username: true,
                   displayName: true,
-                  avatar: true
+                  avatar: true,
+                  plan: true
                 }
               }
             }

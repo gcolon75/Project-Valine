@@ -739,6 +739,7 @@ async function me(event) {
         displayName: user.displayName || user.name || null,
         avatar: user.avatar || null,
         role: user.role || 'artist',
+        plan: user.plan || 'free',
         headline: profile?.headline || null,
         // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,

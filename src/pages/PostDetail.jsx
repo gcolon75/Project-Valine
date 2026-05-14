@@ -25,6 +25,7 @@ import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
 import ConfirmationModal from '../components/ConfirmationModal';
+import EmeraldBadge from '../components/EmeraldBadge';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -509,8 +510,9 @@ export default function PostDetail() {
             </Link>
             <div className="flex items-center gap-2 flex-wrap">
               <Link to={`/profile/${post.author?.username}`} className="hover:underline">
-                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 inline-flex items-center gap-1">
                   {post.author?.displayName || post.author?.username || 'Unknown User'}
+                  <EmeraldBadge user={post.author} />
                 </span>
               </Link>
               <span className="text-neutral-400 dark:text-neutral-500">·</span>

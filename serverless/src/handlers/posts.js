@@ -195,7 +195,7 @@ export const createPost = async (event) => {
       },
       include: { 
         author: { 
-          select: { id: true, username: true, displayName: true, avatar: true } 
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true }
         } 
       },
     });
@@ -273,7 +273,7 @@ export const listPosts = async (event) => {
       orderBy: { createdAt: 'desc' },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true }
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true }
         },
         _count: {
           select: { comments: true }
@@ -412,7 +412,7 @@ export const getPost = async (event) => {
       where: { id },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true }
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true }
         },
         _count: {
           select: { comments: true }

@@ -3,6 +3,7 @@ import { Search, Send, Phone, Video, MoreVertical, Paperclip, Smile, User, Users
 import { getThreads, getThread, sendThreadMessage } from '../services/messagesService';
 import { useAuth } from '../context/AuthContext';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
+import EmeraldBadge from '../components/EmeraldBadge';
 
 export default function Messages() {
   const { user } = useAuth();
@@ -192,8 +193,9 @@ export default function Messages() {
               {/* Content */}
               <div className="flex-1 min-w-0 text-left">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-neutral-900 dark:text-white truncate">
+                  <p className="font-semibold text-neutral-900 dark:text-white truncate inline-flex items-center gap-1">
                     {thread.isGroup ? thread.name : thread.otherUser?.displayName || 'Unknown'}
+                    {!thread.isGroup && <EmeraldBadge user={thread.otherUser} />}
                   </p>
                   <span className="text-xs text-neutral-500 flex-shrink-0 ml-2">
                     {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
@@ -241,8 +243,9 @@ export default function Messages() {
                 )}
               </div>
               <div>
-                <p className="font-semibold text-neutral-900 dark:text-white">
+                <p className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1">
                   {selectedThread.isGroup ? selectedThread.name : selectedThread.otherUser?.displayName || 'Unknown'}
+                  {!selectedThread.isGroup && <EmeraldBadge user={selectedThread.otherUser} />}
                 </p>
                 {selectedThread.isGroup && selectedThread.participants && (
                   <p className="text-sm text-neutral-500">

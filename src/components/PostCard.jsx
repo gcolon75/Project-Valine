@@ -8,6 +8,7 @@ import { useFeed } from "../context/FeedContext";
 import { useAuth } from "../context/AuthContext";
 import CommentList from "./CommentList";
 import ConfirmationModal from "./ConfirmationModal";
+import EmeraldBadge from "./EmeraldBadge";
 import { getMediaAccessUrl, requestMediaAccess, getWatermarkedPdf, uploadPdfPoster } from "../services/mediaService";
 import { generatePdfThumbnailBase64 } from "../utils/pdfThumbnailGenerator";
 import { deletePost } from "../services/postService";
@@ -291,8 +292,9 @@ export default function PostCard({ post, onDelete, onLike }) {
               ) : (
                 <div className="h-6 w-6 rounded-full bg-neutral-200 dark:bg-white/10" />
               )}
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200">
+              <span className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 inline-flex items-center gap-1">
                 {post.author.name}
+                <EmeraldBadge user={post.author} />
               </span>
             </Link>
             {post.author.role && (

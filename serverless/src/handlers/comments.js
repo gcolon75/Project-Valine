@@ -80,7 +80,7 @@ export const getPostComments = async (event) => {
       ],
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true },
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true },
         },
         _count: {
           select: { likes: true, replies: true },
@@ -100,7 +100,7 @@ export const getPostComments = async (event) => {
             ],
             include: {
               author: {
-                select: { id: true, username: true, displayName: true, avatar: true },
+                select: { id: true, username: true, displayName: true, avatar: true, plan: true },
               },
               _count: {
                 select: { likes: true, replies: true },
@@ -186,7 +186,7 @@ export const getCommentReplies = async (event) => {
       ],
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true },
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true },
         },
         _count: {
           select: { likes: true, replies: true },
@@ -282,7 +282,7 @@ export const createComment = async (event) => {
       },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true },
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true },
         },
       },
     });
@@ -390,7 +390,7 @@ export const updateComment = async (event) => {
       data: { text: validation.sanitized },
       include: {
         author: {
-          select: { id: true, username: true, displayName: true, avatar: true },
+          select: { id: true, username: true, displayName: true, avatar: true, plan: true },
         },
       },
     });

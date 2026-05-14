@@ -40,7 +40,8 @@ export const listNotifications = async (event) => {
             id: true,
             username: true,
             displayName: true,
-            avatar: true
+            avatar: true,
+            plan: true
           }
         }
       }
@@ -107,7 +108,8 @@ export const markAsRead = async (event) => {
             id: true,
             username: true,
             displayName: true,
-            avatar: true
+            avatar: true,
+            plan: true
           }
         }
       }

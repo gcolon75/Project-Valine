@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { getPostComments, addPostComment, updateComment, deleteComment, getCommentReplies, likeComment, unlikeComment } from "../services/postService";
 import { useAuth } from "../context/AuthContext";
 import { Edit2, Trash2, MessageCircle, ChevronDown, ChevronUp, Heart } from "lucide-react";
+import EmeraldBadge from "./EmeraldBadge";
 
 // Format relative time (1s, 1m, 1h, 1d, 1w, 1mo, 1yr)
 const formatRelativeTime = (dateString) => {
@@ -189,9 +190,10 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
           <div className="flex items-center gap-2">
             <Link
               to={getProfileLink(comment.author)}
-              className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-brand dark:hover:text-brand transition-colors"
+              className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-brand dark:hover:text-brand transition-colors inline-flex items-center gap-1"
             >
               {getAuthorName(comment.author)}
+              <EmeraldBadge user={comment.author} size={12} />
             </Link>
             <span className="text-xs text-neutral-400 dark:text-neutral-500">
               {formatRelativeTime(comment.createdAt)}

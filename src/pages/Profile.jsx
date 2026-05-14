@@ -17,6 +17,7 @@ import { Button, Card } from '../components/ui';
 import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, UserMinus, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
 import AdminEmailPanel from '../components/AdminEmailPanel';
 import AdminWaitlistPanel from '../components/AdminWaitlistPanel';
+import EmeraldBadge from '../components/EmeraldBadge';
 import toast from 'react-hot-toast';
 import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/imageUtils';
 
@@ -727,8 +728,12 @@ export default function Profile() {
           </div>
 
           {/* Name, Username, Bio, and Title */}
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-1 inline-flex items-center gap-2">
             {displayData.displayName}
+            <EmeraldBadge
+              user={{ plan: displayData.plan || displayData.user?.plan || (isOwnProfile ? user?.plan : null) }}
+              size={20}
+            />
           </h1>
           <div className="flex items-center gap-2 mb-2">
             <p className="text-neutral-600 dark:text-neutral-400">
