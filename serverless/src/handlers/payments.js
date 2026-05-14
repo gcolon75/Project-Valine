@@ -156,6 +156,183 @@ export const createCheckoutSession = async (event) => {
 };
 
 /**
+ * POST /billing/subscribe
+ * Creates a Stripe Checkout Session for the Emerald $9/month subscription
+ */
+export const createSubscriptionCheckout = async (event) => {
+  const route = 'POST /billing/subscribe';
+
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const priceId = process.env.STRIPE_EMERALD_PRICE_ID;
+    if (!priceId) {
+      console.error('[payments] STRIPE_EMERALD_PRICE_ID not configured');
+      return error(503, 'Subscription pricing not configured');
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return error(503, 'Payment service not configured');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      return error(503, 'Database unavailable');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: authUserId },
+      select: {
+        id: true,
+        email: true,
+        plan: true,
+        stripeCustomerId: true,
+        subscriptionStatus: true,
+      },
+    });
+
+    if (!user) {
+      return error(404, 'User not found');
+    }
+
+    if (user.plan === 'emerald' && user.subscriptionStatus === 'active') {
+      return error(400, 'You already have an active Emerald subscription');
+    }
+
+    // Reuse an existing Stripe customer if we have one
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
+      });
+      customerId = customer.id;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: {
+        userId: user.id,
+        plan: 'emerald',
+      },
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          plan: 'emerald',
+        },
+      },
+      success_url: `${frontendUrl}/pricing?subscription=success`,
+      cancel_url: `${frontendUrl}/pricing?subscription=cancelled`,
+    });
+
+    console.log('[payments] Subscription checkout session created', {
+      route,
+      sessionId: session.id,
+      userId: user.id,
+    });
+
+    return json({ checkoutUrl: session.url });
+  } catch (e) {
+    console.error('[payments] createSubscriptionCheckout error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /billing/portal
+ * Returns a Stripe Billing Portal URL so the user can manage / cancel their subscription
+ */
+export const createBillingPortalSession = async (event) => {
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return error(503, 'Payment service not configured');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      return error(503, 'Database unavailable');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: authUserId },
+      select: { stripeCustomerId: true },
+    });
+
+    if (!user?.stripeCustomerId) {
+      return error(400, 'No billing account found for this user');
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${frontendUrl}/pricing`,
+    });
+
+    return json({ portalUrl: session.url });
+  } catch (e) {
+    console.error('[payments] createBillingPortalSession error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /billing/status
+ * Returns the authenticated user's current plan + subscription status
+ */
+export const getBillingStatus = async (event) => {
+  try {
+    const authUserId = getUserIdFromEvent(event);
+    if (!authUserId) {
+      return error(401, 'Unauthorized');
+    }
+
+    const prisma = getPrisma();
+    if (!prisma) {
+      return error(503, 'Database unavailable');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: authUserId },
+      select: {
+        plan: true,
+        subscriptionStatus: true,
+        subscriptionCurrentPeriodEnd: true,
+        stripeCustomerId: true,
+      },
+    });
+
+    return json({
+      plan: user?.plan || 'free',
+      status: user?.subscriptionStatus || null,
+      currentPeriodEnd: user?.subscriptionCurrentPeriodEnd || null,
+      hasBillingAccount: Boolean(user?.stripeCustomerId),
+    });
+  } catch (e) {
+    console.error('[payments] getBillingStatus error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
  * POST /stripe/webhook
  * Handles Stripe webhook events
  */
@@ -195,7 +372,48 @@ export const stripeWebhook = async (event) => {
 
     if (stripeEvent.type === 'checkout.session.completed') {
       const session = stripeEvent.data.object;
-      const { postId, buyerId, sellerId } = session.metadata;
+
+      // ===== Subscription checkout =====
+      if (session.mode === 'subscription') {
+        const userId = session.metadata?.userId;
+        const plan = session.metadata?.plan || 'emerald';
+
+        if (!userId) {
+          console.error('[payments] Missing userId metadata on subscription session', session.id);
+          return json({ received: true });
+        }
+
+        const subscriptionId = session.subscription;
+        let subscription = null;
+        if (subscriptionId) {
+          subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        }
+
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            plan,
+            stripeCustomerId: session.customer || undefined,
+            stripeSubscriptionId: subscriptionId || undefined,
+            subscriptionStatus: subscription?.status || 'active',
+            subscriptionCurrentPeriodEnd: subscription?.current_period_end
+              ? new Date(subscription.current_period_end * 1000)
+              : null,
+          },
+        });
+
+        console.log('[payments] Subscription activated', {
+          sessionId: session.id,
+          userId,
+          plan,
+          subscriptionId,
+        });
+
+        return json({ received: true });
+      }
+
+      // ===== One-time post purchase checkout =====
+      const { postId, buyerId, sellerId } = session.metadata || {};
 
       if (!postId || !buyerId || !sellerId) {
         console.error('[payments] Missing metadata in checkout session', session.id);
@@ -270,6 +488,53 @@ export const stripeWebhook = async (event) => {
       });
 
       console.log('[payments] Checkout session expired', session.id);
+    } else if (
+      stripeEvent.type === 'customer.subscription.updated' ||
+      stripeEvent.type === 'customer.subscription.deleted'
+    ) {
+      const subscription = stripeEvent.data.object;
+      const userId = subscription.metadata?.userId;
+
+      // Find the user either by metadata or by stored subscription ID
+      const user = userId
+        ? await prisma.user.findUnique({ where: { id: userId } })
+        : await prisma.user.findFirst({ where: { stripeSubscriptionId: subscription.id } });
+
+      if (!user) {
+        console.warn('[payments] Subscription event for unknown user', subscription.id);
+        return json({ received: true });
+      }
+
+      const isDeleted = stripeEvent.type === 'customer.subscription.deleted';
+      const isActive = !isDeleted && ['active', 'trialing'].includes(subscription.status);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          plan: isActive ? (subscription.metadata?.plan || user.plan || 'emerald') : 'free',
+          subscriptionStatus: isDeleted ? 'canceled' : subscription.status,
+          subscriptionCurrentPeriodEnd: subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000)
+            : null,
+          stripeSubscriptionId: isDeleted ? null : subscription.id,
+        },
+      });
+
+      console.log('[payments] Subscription state updated', {
+        userId: user.id,
+        type: stripeEvent.type,
+        status: subscription.status,
+      });
+    } else if (stripeEvent.type === 'invoice.payment_failed') {
+      const invoice = stripeEvent.data.object;
+      const subscriptionId = invoice.subscription;
+      if (subscriptionId) {
+        await prisma.user.updateMany({
+          where: { stripeSubscriptionId: subscriptionId },
+          data: { subscriptionStatus: 'past_due' },
+        });
+      }
+      console.log('[payments] Invoice payment failed', { subscriptionId });
     }
 
     return json({ received: true });

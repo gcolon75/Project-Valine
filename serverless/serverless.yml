@@ -143,6 +143,7 @@ provider:
     ADMIN_SEED_TOKEN: ${env:ADMIN_SEED_TOKEN, ""}
     STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, ""}
     STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, ""}
+    STRIPE_EMERALD_PRICE_ID: ${env:STRIPE_EMERALD_PRICE_ID, ""}
     TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID, ""}
     TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN, ""}
     TWILIO_PHONE_NUMBER: ${env:TWILIO_PHONE_NUMBER, ""}
@@ -434,6 +435,32 @@ functions:
       - httpApi:
           path: /stripe/webhook
           method: post
+
+  # ========== BILLING / SUBSCRIPTIONS ==========
+  createSubscriptionCheckout:
+    handler: src/handlers/payments.createSubscriptionCheckout
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /billing/subscribe
+          method: post
+  createBillingPortalSession:
+    handler: src/handlers/payments.createBillingPortalSession
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /billing/portal
+          method: post
+  getBillingStatus:
+    handler: src/handlers/payments.getBillingStatus
+    layers:
+      - { Ref: PrismaV2LambdaLayer }
+    events:
+      - httpApi:
+          path: /billing/status
+          method: get
 
   # ========== SCRIPTS ==========
   listScripts:

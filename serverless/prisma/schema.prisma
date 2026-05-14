@@ -32,6 +32,13 @@ model User {
   updatedAt          DateTime  @updatedAt
   profileComplete    Boolean   @default(false)
 
+  // Subscription / billing
+  plan                          String    @default("free")
+  stripeCustomerId              String?   @unique
+  stripeSubscriptionId          String?   @unique
+  subscriptionStatus            String?
+  subscriptionCurrentPeriodEnd  DateTime?
+
   auditLogs               AuditLog[]
   auditions               Audition[]
   bookmarks               Bookmark[]
