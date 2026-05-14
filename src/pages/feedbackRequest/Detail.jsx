@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, DollarSign, FileText, ExternalLink, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -321,6 +321,77 @@ export default function FeedbackRequestDetail() {
                     <p className="text-neutral-800 dark:text-neutral-200">{a.content}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Non-admin status banners (writer + reader pool view) */}
+          {!isAdmin && request.status === 'pending_payment' && isWriter && (
+            <div className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <Hourglass className="w-5 h-5 text-neutral-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                  Awaiting payment
+                </p>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                  Complete your Stripe checkout to send this for Joint review.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin && request.status === 'pending_approval' && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <Hourglass className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                  Awaiting approval from Joint
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  A Joint admin will review your submission before it goes to the reader pool. This usually takes under 24 hours. You'll be notified once approved.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin && isWriter && request.status === 'approved' && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <Hourglass className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                  Waiting for a reader to claim your script
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
+                  Your script is live in the reader pool. Once a reader accepts it, you'll see a 24-hour countdown here.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin && isWriter && request.status === 'accepted' && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <Clock className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+                  A reader is working on your feedback
+                </p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-400 mt-0.5">
+                  {request.reader?.displayName || request.reader?.username || 'A reader'} has up to 24 hours to deliver your notes.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin && request.status === 'refunded' && isWriter && (
+            <div className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-neutral-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                  Refunded
+                </p>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                  Your payment has been returned to your card. Refunds typically post within 5–10 business days.
+                </p>
               </div>
             </div>
           )}
