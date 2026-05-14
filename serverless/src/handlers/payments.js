@@ -13,6 +13,14 @@ function getStripe() {
   return new Stripe(key);
 }
 
+function normalizeFrontendUrl(raw) {
+  const fallback = 'http://localhost:5173';
+  let url = (raw || '').trim();
+  if (!url) return fallback;
+  if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+  return url.replace(/\/+$/, '');
+}
+
 /**
  * POST /posts/{id}/create-checkout
  * Creates a Stripe Checkout Session for purchasing access to a post
@@ -91,7 +99,7 @@ export const createCheckoutSession = async (event) => {
     const platformFee = Math.round(amount * PLATFORM_FEE_PERCENT * 100) / 100;
     const sellerEarnings = Math.round((amount - platformFee) * 100) / 100;
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = normalizeFrontendUrl(process.env.FRONTEND_URL);
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -217,7 +225,7 @@ export const createSubscriptionCheckout = async (event) => {
       });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = normalizeFrontendUrl(process.env.FRONTEND_URL);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -280,7 +288,7 @@ export const createBillingPortalSession = async (event) => {
       return error(400, 'No billing account found for this user');
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = normalizeFrontendUrl(process.env.FRONTEND_URL);
 
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
