@@ -854,8 +854,8 @@ export const createAnnotation = async (event) => {
     }
 
     const { type, pageNumber, selectionData, highlightedText, content, positionX, positionY } = body;
-    if (!type || !['HIGHLIGHT', 'PAGE_COMMENT', 'GENERAL_COMMENT'].includes(type)) {
-      return error(400, 'type must be HIGHLIGHT, PAGE_COMMENT, or GENERAL_COMMENT');
+    if (!type || !['HIGHLIGHT', 'PAGE_COMMENT', 'PAGE_FEEDBACK', 'GENERAL_COMMENT'].includes(type)) {
+      return error(400, 'type must be HIGHLIGHT, PAGE_COMMENT, PAGE_FEEDBACK, or GENERAL_COMMENT');
     }
     if (!content || typeof content !== 'string' || !content.trim()) {
       return error(400, 'content is required');
