@@ -99,3 +99,13 @@ export const adminReassignReader = async (id, readerId) => {
   const { data } = await apiClient.post(`/script-feedback/${id}/reassign`, { readerId: readerId ?? null });
   return data?.request;
 };
+
+export const adminApproveSubmission = async (id) => {
+  const { data } = await apiClient.post(`/script-feedback/${id}/approve-submission`);
+  return data?.request;
+};
+
+export const adminRequestRevision = async (id, note) => {
+  const { data } = await apiClient.post(`/script-feedback/${id}/request-revision`, { note });
+  return data?.request;
+};

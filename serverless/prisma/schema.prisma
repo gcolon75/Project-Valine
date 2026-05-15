@@ -1063,6 +1063,9 @@ model ScriptFeedbackRequest {
   deadlineAt DateTime? // = acceptedAt + 24h
   completedAt DateTime?
 
+  // Admin second-gate review (after reader submits, before writer sees it)
+  revisionNote    String?  // Admin's note when requesting a revision or reassignment
+
   // Summary "1-4 pages of notes" overview (markdown).
   // Inline annotations live on FeedbackAnnotation (shared with peer feedback).
   summaryNotes String?

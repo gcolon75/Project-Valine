@@ -13,8 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
 const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 
-// Notify the writer at key lifecycle points. Wrapped so a notification
-// failure never breaks the main flow.
+// Notify the writer at key lifecycle points.
 async function notifyWriter(prisma, { type, message, writerId, triggererId, requestId, title }) {
   try {
     await createNotification(prisma, {
@@ -29,6 +28,40 @@ async function notifyWriter(prisma, { type, message, writerId, triggererId, requ
     });
   } catch (e) {
     console.error('[scriptFeedback] notifyWriter failed (non-fatal)', e);
+  }
+}
+
+async function notifyReader(prisma, { type, message, readerId, triggererId, requestId, title }) {
+  try {
+    await createNotification(prisma, {
+      type,
+      message,
+      recipientId: readerId,
+      triggererId: triggererId || null,
+      metadata: { scriptFeedbackRequestId: requestId, title },
+    });
+  } catch (e) {
+    console.error('[scriptFeedback] notifyReader failed (non-fatal)', e);
+  }
+}
+
+async function notifyAdmins(prisma, { type, message, triggererId, requestId, title }) {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true },
+    });
+    await Promise.all(admins.map((admin) =>
+      createNotification(prisma, {
+        type,
+        message,
+        recipientId: admin.id,
+        triggererId: triggererId || null,
+        metadata: { scriptFeedbackRequestId: requestId, title },
+      })
+    ));
+  } catch (e) {
+    console.error('[scriptFeedback] notifyAdmins failed (non-fatal)', e);
   }
 }
 
@@ -288,7 +321,10 @@ export const listRequests = async (event) => {
       where = { status: 'pending_approval' };
     } else if (role === 'admin-assigned') {
       if (auth.role !== 'admin') return error(403, 'Admin access required');
-      where = { readerId: { not: null }, status: { in: ['accepted', 'completed'] } };
+      where = { readerId: { not: null }, status: { in: ['accepted', 'reader_submitted', 'completed'] } };
+    } else if (role === 'admin-submitted') {
+      if (auth.role !== 'admin') return error(403, 'Admin access required');
+      where = { status: 'reader_submitted' };
     } else {
       // default: mine (as writer)
       where = { writerId: auth.id };
@@ -673,19 +709,9 @@ export const submitNotes = async (event) => {
       const updated = await tx.scriptFeedbackRequest.update({
         where: { id },
         data: {
-          status: 'completed',
-          completedAt: new Date(),
+          status: 'reader_submitted',
           summaryNotes,
-        },
-      });
-
-      // Credit reader's pending payout balance
-      await tx.user.update({
-        where: { id: auth.id },
-        data: {
-          pendingPayoutCents: {
-            increment: existing.readerEarningsCents,
-          },
+          revisionNote: null, // clear any previous revision note on re-submission
         },
       });
 
@@ -694,10 +720,9 @@ export const submitNotes = async (event) => {
 
     if (result.error) return error(result.status, result.error);
 
-    await notifyWriter(prisma, {
-      type: 'SCRIPT_FEEDBACK_COMPLETED',
-      message: `Feedback for "${result.request.title}" is ready to view.`,
-      writerId: result.request.writerId,
+    await notifyAdmins(prisma, {
+      type: 'SCRIPT_FEEDBACK_SUBMITTED',
+      message: `A reader has submitted feedback for "${result.request.title}" — ready for admin review.`,
       triggererId: auth.id,
       requestId: result.request.id,
       title: result.request.title,
@@ -736,8 +761,8 @@ export const reassignReader = async (event) => {
       select: { id: true, status: true, readerId: true },
     });
     if (!existing) return error(404, 'Request not found');
-    if (!['approved', 'accepted'].includes(existing.status)) {
-      return error(400, 'Can only reassign requests with status approved or accepted');
+    if (!['approved', 'accepted', 'reader_submitted'].includes(existing.status)) {
+      return error(400, 'Can only reassign requests with status approved, accepted, or reader_submitted');
     }
 
     let updateData;
@@ -780,6 +805,125 @@ export const reassignReader = async (event) => {
     return json({ request: updated });
   } catch (e) {
     console.error('[scriptFeedback] reassignReader error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /script-feedback/:id/approve-submission   (admin only)
+ * Approves the reader's submitted feedback — marks it completed and notifies the writer.
+ */
+export const approveSubmission = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.scriptFeedbackRequest.findUnique({ where: { id } });
+      if (!existing) return { error: 'Request not found', status: 404 };
+      if (existing.status !== 'reader_submitted') {
+        return { error: `Cannot approve submission in status: ${existing.status}`, status: 400 };
+      }
+
+      const updated = await tx.scriptFeedbackRequest.update({
+        where: { id },
+        data: { status: 'completed', completedAt: new Date() },
+        include: {
+          writer: { select: { id: true, displayName: true, username: true, avatar: true, plan: true } },
+          reader: { select: { id: true, displayName: true, username: true, avatar: true } },
+        },
+      });
+
+      // Credit reader's pending payout
+      await tx.user.update({
+        where: { id: existing.readerId },
+        data: { pendingPayoutCents: { increment: existing.readerEarningsCents } },
+      });
+
+      return { request: updated, writerId: existing.writerId, readerId: existing.readerId };
+    });
+
+    if (result.error) return error(result.status, result.error);
+
+    await notifyWriter(prisma, {
+      type: 'SCRIPT_FEEDBACK_COMPLETED',
+      message: `Feedback for "${result.request.title}" is ready to view.`,
+      writerId: result.writerId,
+      triggererId: auth.id,
+      requestId: result.request.id,
+      title: result.request.title,
+    });
+
+    return json({ request: result.request });
+  } catch (e) {
+    console.error('[scriptFeedback] approveSubmission error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /script-feedback/:id/request-revision   (admin only)
+ * Body: { note: string }
+ * Sends feedback back to the reader for revision — resets deadline, saves note, notifies reader.
+ */
+export const requestRevision = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
+    const note = (body.note || '').trim();
+    if (!note) return error(400, 'A revision note is required');
+
+    const existing = await prisma.scriptFeedbackRequest.findUnique({ where: { id } });
+    if (!existing) return error(404, 'Request not found');
+    if (existing.status !== 'reader_submitted') {
+      return error(400, `Cannot request revision in status: ${existing.status}`);
+    }
+
+    const now = new Date();
+    const deadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const updated = await prisma.scriptFeedbackRequest.update({
+      where: { id },
+      data: {
+        status: 'accepted',
+        revisionNote: note,
+        acceptedAt: now,
+        deadlineAt: deadline,
+      },
+      include: {
+        writer: { select: { id: true, displayName: true, username: true, avatar: true, plan: true } },
+        reader: { select: { id: true, displayName: true, username: true, avatar: true } },
+      },
+    });
+
+    await notifyReader(prisma, {
+      type: 'SCRIPT_FEEDBACK_REVISION_REQUESTED',
+      message: `Admin has requested revisions to your feedback for "${updated.title}". You have 24 hours to resubmit.`,
+      readerId: existing.readerId,
+      triggererId: auth.id,
+      requestId: id,
+      title: updated.title,
+    });
+
+    return json({ request: updated });
+  } catch (e) {
+    console.error('[scriptFeedback] requestRevision error', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

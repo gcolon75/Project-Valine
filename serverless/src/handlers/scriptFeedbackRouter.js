@@ -60,7 +60,7 @@ export const handler = async (event, context) => {
     }
 
     // Action routes
-    m = path.match(/^\/script-feedback\/([^/]+)\/(approve|deny|accept|submit-notes|reassign)$/);
+    m = path.match(/^\/script-feedback\/([^/]+)\/(approve|deny|accept|submit-notes|reassign|approve-submission|request-revision)$/);
     if (m && method === 'POST') {
       event.pathParameters = { ...(event.pathParameters || {}), id: m[1] };
       const action = m[2];
@@ -69,6 +69,8 @@ export const handler = async (event, context) => {
       if (action === 'accept') return sf.acceptRequest(event, context);
       if (action === 'submit-notes') return sf.submitNotes(event, context);
       if (action === 'reassign') return sf.reassignReader(event, context);
+      if (action === 'approve-submission') return sf.approveSubmission(event, context);
+      if (action === 'request-revision') return sf.requestRevision(event, context);
     }
 
     // Single-resource fetch (last, to avoid swallowing nested routes above)

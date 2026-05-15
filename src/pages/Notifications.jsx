@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, MessageSquare, CheckCircle, XCircle, DollarSign } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, MessageSquare, CheckCircle, XCircle, DollarSign, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -198,7 +198,9 @@ export default function Notifications() {
     } else if (
       normalizedType === 'script_feedback_approved' ||
       normalizedType === 'script_feedback_accepted' ||
-      normalizedType === 'script_feedback_completed'
+      normalizedType === 'script_feedback_completed' ||
+      normalizedType === 'script_feedback_submitted' ||
+      normalizedType === 'script_feedback_revision_requested'
     ) {
       const requestId = notification.metadata?.scriptFeedbackRequestId;
       if (requestId) {
@@ -237,7 +239,10 @@ export default function Notifications() {
       case 'script_feedback_approved':
       case 'script_feedback_accepted':
       case 'script_feedback_completed':
+      case 'script_feedback_submitted':
         return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
+      case 'script_feedback_revision_requested':
+        return 'text-amber-500 bg-amber-50 dark:bg-amber-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
     }
@@ -275,7 +280,10 @@ export default function Notifications() {
       case 'script_feedback_approved':
       case 'script_feedback_accepted':
       case 'script_feedback_completed':
+      case 'script_feedback_submitted':
         return FileText;
+      case 'script_feedback_revision_requested':
+        return AlertTriangle;
       default:
         return Bell;
     }
@@ -316,6 +324,8 @@ export default function Notifications() {
       case 'script_feedback_approved':
       case 'script_feedback_accepted':
       case 'script_feedback_completed':
+      case 'script_feedback_submitted':
+      case 'script_feedback_revision_requested':
         return notification.message || 'Script feedback update';
       default:
         return notification.action || notification.message || 'New notification';

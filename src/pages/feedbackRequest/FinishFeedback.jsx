@@ -24,6 +24,7 @@ export default function FinishFeedback() {
           return;
         }
         setRequest(r);
+        if (r.summaryNotes) setFinalThoughts(r.summaryNotes);
       })
       .catch(() => navigate(`/feedback-request/${id}`, { replace: true }))
       .finally(() => setLoading(false));
@@ -37,7 +38,7 @@ export default function FinishFeedback() {
     setSubmitting(true);
     try {
       await submitFeedbackNotes(id, finalThoughts.trim());
-      toast.success('Feedback submitted! Your earnings have been added to your pending payout.');
+      toast.success('Feedback submitted for admin review. You\'ll be notified once it\'s approved.');
       navigate(`/feedback-request/${id}`);
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Could not submit feedback.');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
+import { ArrowLeft, Clock, FileText, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
 import EmeraldBadge from '../../components/EmeraldBadge';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
@@ -12,13 +12,14 @@ import {
 } from '../../services/scriptFeedbackService';
 
 const STATUS_META = {
-  pending_payment:  { label: 'Awaiting payment',     color: 'bg-neutral-200 text-neutral-800' },
-  pending_approval: { label: 'Pending Joint review',  color: 'bg-amber-100 text-amber-800' },
-  approved:         { label: 'Available for readers', color: 'bg-blue-100 text-blue-800' },
-  accepted:         { label: 'In progress',           color: 'bg-indigo-100 text-indigo-800' },
-  completed:        { label: 'Feedback delivered',    color: 'bg-emerald-100 text-emerald-800' },
-  denied:           { label: 'Denied',                color: 'bg-red-100 text-red-700' },
-  refunded:         { label: 'Refunded',              color: 'bg-neutral-200 text-neutral-700' },
+  pending_payment:   { label: 'Awaiting payment',        color: 'bg-neutral-200 text-neutral-800' },
+  pending_approval:  { label: 'Pending Joint review',    color: 'bg-amber-100 text-amber-800' },
+  approved:          { label: 'Available for readers',   color: 'bg-blue-100 text-blue-800' },
+  accepted:          { label: 'In progress',             color: 'bg-indigo-100 text-indigo-800' },
+  reader_submitted:  { label: 'Under admin review',      color: 'bg-purple-100 text-purple-800' },
+  completed:         { label: 'Feedback delivered',      color: 'bg-emerald-100 text-emerald-800' },
+  denied:            { label: 'Denied',                  color: 'bg-red-100 text-red-700' },
+  refunded:          { label: 'Refunded',                color: 'bg-neutral-200 text-neutral-700' },
 };
 
 function formatUsd(cents) {
@@ -244,9 +245,8 @@ export default function FeedbackRequestDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {/* Inline reader view — available once accepted/completed */}
-                  {(isAssignedReader || isWriter || isAdmin) &&
-                   (request.status === 'accepted' || request.status === 'completed') && (
+                  {/* Reader: can open the viewer while in progress or after submitting */}
+                  {isAssignedReader && ['accepted', 'reader_submitted'].includes(request.status) && (
                     <Link
                       to={`/feedback-request/${id}/read`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
@@ -255,23 +255,16 @@ export default function FeedbackRequestDetail() {
                       Read Script
                     </Link>
                   )}
-                  {/* Fallback external open for other statuses */}
-                  {!(isAssignedReader || isWriter || isAdmin) ||
-                   (request.status !== 'accepted' && request.status !== 'completed') ? (
-                    <a
-                      href={
-                        request.requireWatermark && (isAssignedReader || canAcceptAsReader) && request.mediaId
-                          ? `/api/media/${request.mediaId}/watermarked-pdf`
-                          : request.scriptUrl
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-sm text-emerald-600 hover:underline"
+                  {/* Writer / admin: can open once feedback is delivered */}
+                  {(isWriter || isAdmin) && request.status === 'completed' && (
+                    <Link
+                      to={`/feedback-request/${id}/read`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
                     >
-                      Open
-                      <ExternalLink className="w-4 h-4 ml-1" />
-                    </a>
-                  ) : null}
+                      <BookOpen className="w-4 h-4" />
+                      Read Script
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -291,22 +284,27 @@ export default function FeedbackRequestDetail() {
             </div>
           )}
 
-          {/* Reader: prompt to use the PDF viewer to annotate and finish */}
-          {isAssignedReader && request.status === 'accepted' && (
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
-              <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 mb-1">
-                Ready to give feedback?
+          {/* Reader: revision note from admin */}
+          {isAssignedReader && request.status === 'accepted' && request.revisionNote && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-4 mb-6">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                Admin has requested a revision
               </p>
-              <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
-                Open the script, annotate every page, then click "Finish Feedback" to submit your final thoughts.
+              <p className="text-sm text-amber-700 dark:text-amber-400 whitespace-pre-wrap">
+                {request.revisionNote}
               </p>
-              <Link
-                to={`/feedback-request/${id}/read`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition"
-              >
-                <BookOpen className="w-4 h-4" />
-                Open Script
-              </Link>
+            </div>
+          )}
+
+          {/* Reader: under admin review */}
+          {isAssignedReader && request.status === 'reader_submitted' && (
+            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+              <p className="text-sm font-semibold text-purple-800 dark:text-purple-300 mb-1">
+                Feedback submitted — awaiting admin review
+              </p>
+              <p className="text-xs text-purple-700 dark:text-purple-400">
+                An admin will review your feedback before it's delivered to the writer. You'll be notified if any revisions are needed.
+              </p>
             </div>
           )}
 
