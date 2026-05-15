@@ -72,6 +72,38 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem(LS_KEY);
   }, [user]);
 
+  // Re-fetch user when the tab regains focus, so admin-flipped flags
+  // (isReader, role, plan, etc.) propagate without requiring logout.
+  // Throttled to once per 10 seconds to avoid spamming /auth/me.
+  useEffect(() => {
+    if (!user) return;
+    let lastRefresh = Date.now();
+
+    const refresh = async () => {
+      // Throttle: ignore visibility changes within 10s of last refresh
+      if (Date.now() - lastRefresh < 10_000) return;
+      lastRefresh = Date.now();
+      try {
+        if (!authService.isAuthenticated()) return;
+        const userData = await authService.getCurrentUser();
+        if (userData?.user) setUser(userData.user);
+      } catch (_) {
+        // Silent — visibility refresh is best-effort
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
+  }, [user?.id]); // re-bind only when user identity changes, not on every field update
+
   const login = async (email, password, role = "artist") => {
     setLoading(true);
     try {
@@ -160,18 +192,19 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Refresh user data from the backend
-   * Fetches /me/profile and updates the user state
+   * Refresh user data from the backend.
+   * Calls /auth/me so that flags like isReader, plan, freeEvalEligible,
+   * pendingPayoutCents, and role stay in sync without requiring logout.
    * @returns {Promise<Object|null>} Updated user data or null on error
    */
   const refreshUser = async () => {
     try {
-      const profileData = await getMyProfile();
-      if (profileData) {
-        setUser(profileData);
-        return profileData;
+      if (!authService.isAuthenticated()) return null;
+      const userData = await authService.getCurrentUser();
+      if (userData?.user) {
+        setUser(userData.user);
+        return userData.user;
       }
-      console.warn('[AuthContext.refreshUser] getMyProfile returned no data');
       return null;
     } catch (error) {
       console.error('[AuthContext.refreshUser] Failed to refresh user data:', error);

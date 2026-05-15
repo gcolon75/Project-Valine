@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { ArrowLeft, Upload, FileText, Loader2, Gem } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Loader2, Gem, Shield } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { uploadMedia } from '../../services/mediaService';
@@ -31,6 +31,7 @@ export default function SubmitFeedbackRequest() {
 
   const freeEvalEligible = !!user?.freeEvalEligible;
   const [useFreeEval, setUseFreeEval] = useState(freeEvalEligible);
+  const [requireWatermark, setRequireWatermark] = useState(false);
 
   // If the user object updates after mount, sync the default
   useEffect(() => {
@@ -102,6 +103,7 @@ export default function SubmitFeedbackRequest() {
       });
 
       const scriptUrl = upload?.s3Url || upload?.url;
+      const mediaId = upload?.id || upload?.mediaId;
       if (!scriptUrl) {
         throw new Error('Upload did not return a URL');
       }
@@ -114,6 +116,8 @@ export default function SubmitFeedbackRequest() {
         scriptUrl,
         pageCount,
         useFreeEval: isFree,
+        mediaId,
+        requireWatermark,
       });
 
       setProgress(100);
@@ -235,6 +239,32 @@ export default function SubmitFeedbackRequest() {
                 </div>
               )}
             </div>
+
+            {/* Watermark toggle */}
+            {pageCount && (
+              <label
+                htmlFor="require-watermark"
+                className="flex items-start gap-3 cursor-pointer bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 hover:border-emerald-400 transition"
+              >
+                <input
+                  id="require-watermark"
+                  type="checkbox"
+                  checked={requireWatermark}
+                  onChange={(e) => setRequireWatermark(e.target.checked)}
+                  disabled={submitting}
+                  className="w-4 h-4 mt-0.5 flex-shrink-0 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div className="text-sm">
+                  <p className="font-medium text-neutral-900 dark:text-neutral-100 inline-flex items-center gap-1">
+                    <Shield className="w-4 h-4 text-neutral-500" />
+                    Watermark the PDF before sending to the reader
+                  </p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                    Adds your name across each page. Discourages sharing or screenshotting. Reader still gets a fully readable copy.
+                  </p>
+                </div>
+              </label>
+            )}
 
             {/* Emerald free eval toggle */}
             {freeEvalEligible && pageCount && (

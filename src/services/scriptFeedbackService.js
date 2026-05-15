@@ -4,12 +4,21 @@ import { apiClient } from './api.js';
  * POST /script-feedback — writer submits a new request
  * Returns { checkoutUrl, requestId }. Caller redirects to checkoutUrl.
  */
-export const submitFeedbackRequest = async ({ title, scriptUrl, pageCount, useFreeEval }) => {
+export const submitFeedbackRequest = async ({
+  title,
+  scriptUrl,
+  pageCount,
+  useFreeEval,
+  mediaId,
+  requireWatermark,
+}) => {
   const { data } = await apiClient.post('/script-feedback', {
     title,
     scriptUrl,
     pageCount,
     useFreeEval: !!useFreeEval,
+    mediaId: mediaId || null,
+    requireWatermark: !!requireWatermark,
   });
   return data;
 };

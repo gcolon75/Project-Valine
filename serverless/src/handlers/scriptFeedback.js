@@ -5,7 +5,27 @@
 import { getPrisma } from '../db/client.js';
 import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
+import { createNotification } from './notifications.js';
 import Stripe from 'stripe';
+
+// Notify the writer at key lifecycle points. Wrapped so a notification
+// failure never breaks the main flow.
+async function notifyWriter(prisma, { type, message, writerId, triggererId, requestId, title }) {
+  try {
+    await createNotification(prisma, {
+      type,
+      message,
+      recipientId: writerId,
+      triggererId: triggererId || null,
+      metadata: {
+        scriptFeedbackRequestId: requestId,
+        title,
+      },
+    });
+  } catch (e) {
+    console.error('[scriptFeedback] notifyWriter failed (non-fatal)', e);
+  }
+}
 
 const PRICE_PER_PAGE_CENTS = 50;          // writer pays 50¢/page
 const READER_EARNINGS_PER_PAGE_CENTS = 25; // reader gets 25¢/page
@@ -101,7 +121,7 @@ export const submitRequest = async (event) => {
       return error(400, 'Invalid JSON body');
     }
 
-    const { title, scriptUrl, pageCount, useFreeEval } = body;
+    const { title, scriptUrl, pageCount, useFreeEval, mediaId, requireWatermark } = body;
     if (!title || typeof title !== 'string' || !title.trim()) {
       return error(400, 'Title is required');
     }
@@ -115,6 +135,8 @@ export const submitRequest = async (event) => {
 
     const readerEarningsCents = pages * READER_EARNINGS_PER_PAGE_CENTS;
     const platformFeeCents = pages * PLATFORM_FEE_PER_PAGE_CENTS;
+    const wantsWatermark = !!requireWatermark;
+    const mediaIdSafe = typeof mediaId === 'string' ? mediaId : null;
 
     // ── Free Emerald eval path ────────────────────────────────────────────
     if (useFreeEval) {
@@ -149,7 +171,9 @@ export const submitRequest = async (event) => {
             writerId: auth.id,
             title: title.trim().slice(0, 200),
             scriptUrl,
+            mediaId: mediaIdSafe,
             pageCount: pages,
+            requireWatermark: wantsWatermark,
             totalPaidCents: 0,           // writer pays nothing
             readerEarningsCents,         // reader still earns
             platformFeeCents: 0,         // Joint absorbs the reader cost
@@ -175,7 +199,9 @@ export const submitRequest = async (event) => {
         writerId: auth.id,
         title: title.trim().slice(0, 200),
         scriptUrl,
+        mediaId: mediaIdSafe,
         pageCount: pages,
+        requireWatermark: wantsWatermark,
         totalPaidCents,
         readerEarningsCents,
         platformFeeCents,
@@ -356,6 +382,15 @@ export const approveRequest = async (event) => {
       },
     });
 
+    await notifyWriter(prisma, {
+      type: 'SCRIPT_FEEDBACK_APPROVED',
+      message: `Your script "${updated.title}" has been approved and is now in the reader pool.`,
+      writerId: updated.writerId,
+      triggererId: auth.id,
+      requestId: updated.id,
+      title: updated.title,
+    });
+
     return json({ request: updated });
   } catch (e) {
     console.error('[scriptFeedback] approveRequest error', e);
@@ -474,6 +509,16 @@ export const acceptRequest = async (event) => {
     });
 
     if (result.error) return error(result.status, result.error);
+
+    await notifyWriter(prisma, {
+      type: 'SCRIPT_FEEDBACK_ACCEPTED',
+      message: `${auth.displayName || auth.username || 'A reader'} accepted your script "${result.request.title}" and is writing feedback now.`,
+      writerId: result.request.writerId,
+      triggererId: auth.id,
+      requestId: result.request.id,
+      title: result.request.title,
+    });
+
     return json({ request: result.request });
   } catch (e) {
     console.error('[scriptFeedback] acceptRequest error', e);
@@ -542,6 +587,16 @@ export const submitNotes = async (event) => {
     });
 
     if (result.error) return error(result.status, result.error);
+
+    await notifyWriter(prisma, {
+      type: 'SCRIPT_FEEDBACK_COMPLETED',
+      message: `Feedback for "${result.request.title}" is ready to view.`,
+      writerId: result.request.writerId,
+      triggererId: auth.id,
+      requestId: result.request.id,
+      title: result.request.title,
+    });
+
     return json({ request: result.request });
   } catch (e) {
     console.error('[scriptFeedback] submitNotes error', e);

@@ -64,7 +64,7 @@ function UserRow({ user, isReader, onToggle, pending, pendingPayoutCents }) {
 }
 
 export default function AdminReaders() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const isAdmin = user?.role === 'admin';
 
   const [readers, setReaders] = useState([]);
@@ -137,6 +137,11 @@ export default function AdminReaders() {
       setSearchResults((prev) =>
         prev.map((u) => (u.id === updated.id ? { ...u, isReader: updated.isReader } : u))
       );
+
+      // If the admin toggled their own flag, refresh their session
+      if (updated.id === user?.id && typeof refreshUser === 'function') {
+        refreshUser();
+      }
     } catch (e) {
       setError(e?.response?.data?.error || 'Could not update reader flag.');
     } finally {

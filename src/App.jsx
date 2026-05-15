@@ -27,6 +27,12 @@ import AuditionsIndex from './pages/Auditions/Index.jsx';
 import AuditionsNew from './pages/Auditions/New.jsx';
 import AuditionsShow from './pages/Auditions/Show.jsx';
 import Requests from './pages/Requests.jsx';
+import FeedbackRequestHub from './pages/feedbackRequest/Hub.jsx';
+import FeedbackRequestSubmit from './pages/feedbackRequest/Submit.jsx';
+import FeedbackRequestDetail from './pages/feedbackRequest/Detail.jsx';
+import FeedbackRequestAdminQueue from './pages/feedbackRequest/AdminQueue.jsx';
+import FeedbackRequestAdminReaders from './pages/feedbackRequest/AdminReaders.jsx';
+import ScriptReader from './pages/feedbackRequest/ScriptReader.jsx';
 import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Onboarding from './pages/Onboarding/index.jsx';
@@ -67,34 +73,43 @@ function App() {
       </Route>
       {/* Onboarding - Standalone route for multi-step wizard */}
       <Route path="/onboarding" element={<Onboarding />} />
-      {/* Authenticated pages under AppLayout — onboarding guard enforced */}
+      {/* Authenticated pages — onboarding guard enforced */}
       <Route element={<RequireOnboarding />}>
-        <Route element={<AppLayout />}>
-        <Route path="/feed" element={<Dashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/inbox" element={<Inbox />} />
-        <Route path="/inbox/:threadId" element={<Conversation />} />
-        <Route path="/bookmarks" element={<Bookmarks />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/:id" element={<Profile />} />
-        <Route path="/profile-edit" element={<ProfileEdit />} />
-        {/* Posts */}
-        <Route path="/posts/:id" element={<PostDetail />} />
-        {/* Feedback */}
+        {/* Full-screen viewers: no AppLayout chrome */}
         <Route path="/feedback/:id" element={<FeedbackView />} />
-        {/* Scripts */}
-        <Route path="/scripts" element={<ScriptsIndex />} />
-        <Route path="/scripts/new" element={<ScriptsNew />} />
-        <Route path="/scripts/:id" element={<ScriptsShow />} />
-        {/* Auditions */}
-        <Route path="/auditions" element={<AuditionsIndex />} />
-        <Route path="/auditions/new" element={<AuditionsNew />} />
-        <Route path="/auditions/:id" element={<AuditionsShow />} />
-        <Route path="/requests" element={<Requests />} />
+        <Route path="/feedback-request/:id/read" element={<ScriptReader />} />
+
+        {/* Standard pages under AppLayout */}
+        <Route element={<AppLayout />}>
+          <Route path="/feed" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/inbox" element={<Inbox />} />
+          <Route path="/inbox/:threadId" element={<Conversation />} />
+          <Route path="/bookmarks" element={<Bookmarks />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/profile-edit" element={<ProfileEdit />} />
+          {/* Posts */}
+          <Route path="/posts/:id" element={<PostDetail />} />
+          {/* Script Feedback Service (paid marketplace) */}
+          <Route path="/feedback-request" element={<FeedbackRequestHub />} />
+          <Route path="/feedback-request/new" element={<FeedbackRequestSubmit />} />
+          <Route path="/feedback-request/admin" element={<FeedbackRequestAdminQueue />} />
+          <Route path="/feedback-request/admin/readers" element={<FeedbackRequestAdminReaders />} />
+          <Route path="/feedback-request/:id" element={<FeedbackRequestDetail />} />
+          {/* Scripts */}
+          <Route path="/scripts" element={<ScriptsIndex />} />
+          <Route path="/scripts/new" element={<ScriptsNew />} />
+          <Route path="/scripts/:id" element={<ScriptsShow />} />
+          {/* Auditions */}
+          <Route path="/auditions" element={<AuditionsIndex />} />
+          <Route path="/auditions/new" element={<AuditionsNew />} />
+          <Route path="/auditions/:id" element={<AuditionsShow />} />
+          <Route path="/requests" element={<Requests />} />
         </Route>
       </Route>
       <Route path="/forbidden" element={<Forbidden />} />

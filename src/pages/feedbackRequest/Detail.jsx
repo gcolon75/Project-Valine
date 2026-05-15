@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, DollarSign, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -247,22 +247,52 @@ export default function FeedbackRequestDetail() {
 
           {/* Script link */}
           {(isWriter || isAssignedReader || isAdmin || canAcceptAsReader) && request.scriptUrl && (
-            <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 mb-6 flex items-center justify-between">
-              <div className="flex items-center min-w-0">
-                <FileText className="w-6 h-6 text-emerald-600 mr-3 flex-shrink-0" />
-                <span className="text-sm text-neutral-700 dark:text-neutral-300 truncate">
-                  Script PDF ({request.pageCount} pages)
-                </span>
+            <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center min-w-0">
+                  <FileText className="w-6 h-6 text-emerald-600 mr-3 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <span className="block text-sm text-neutral-700 dark:text-neutral-300 truncate">
+                      Script PDF ({request.pageCount} pages)
+                    </span>
+                    {request.requireWatermark && (isAssignedReader || canAcceptAsReader) && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400">
+                        Watermarked copy
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                  {/* Inline reader view — available once accepted/completed */}
+                  {(isAssignedReader || isWriter || isAdmin) &&
+                   (request.status === 'accepted' || request.status === 'completed') && (
+                    <Link
+                      to={`/feedback-request/${id}/read`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Read Script
+                    </Link>
+                  )}
+                  {/* Fallback external open for other statuses */}
+                  {!(isAssignedReader || isWriter || isAdmin) ||
+                   (request.status !== 'accepted' && request.status !== 'completed') ? (
+                    <a
+                      href={
+                        request.requireWatermark && (isAssignedReader || canAcceptAsReader) && request.mediaId
+                          ? `/api/media/${request.mediaId}/watermarked-pdf`
+                          : request.scriptUrl
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-sm text-emerald-600 hover:underline"
+                    >
+                      Open
+                      <ExternalLink className="w-4 h-4 ml-1" />
+                    </a>
+                  ) : null}
+                </div>
               </div>
-              <a
-                href={request.scriptUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-sm text-emerald-600 hover:underline ml-3"
-              >
-                Open
-                <ExternalLink className="w-4 h-4 ml-1" />
-              </a>
             </div>
           )}
 

@@ -1021,7 +1021,13 @@ model ScriptFeedbackRequest {
   readerId    String? // assigned when a reader claims the job
   title       String
   scriptUrl   String  // S3 URL of the uploaded PDF
+  mediaId     String? // ID of the Media row (for watermark endpoint)
   pageCount   Int
+
+  // Watermark option — when true, the reader views a watermarked version
+  // of the PDF (existing /media/:id/watermarked-pdf endpoint). Protects
+  // the writer's IP. Defaults to false.
+  requireWatermark Boolean @default(false)
 
   // Payment (in cents)
   totalPaidCents      Int  // pageCount * 50
