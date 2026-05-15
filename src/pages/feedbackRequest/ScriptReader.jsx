@@ -79,6 +79,7 @@ export default function ScriptReader() {
       title={request.anonymousSubmission ? 'Anonymous Script' : request.title}
       backTo={`/feedback-request/${id}`}
       backLabel="Back to Request"
+      onFinishFeedback={canAnnotate ? () => navigate(`/feedback-request/${id}/finish`) : null}
     />
   );
 }

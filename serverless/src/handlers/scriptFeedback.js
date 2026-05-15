@@ -372,8 +372,13 @@ export const getRequest = async (event) => {
       }
     }
 
-    // Mask the writer's identity for readers when anonymousSubmission is set
+    // Hide annotations from the writer until feedback is complete
     let responseRequest = { ...request, scriptPresignedUrl };
+    if (isWriter && !isAdmin && request.status !== 'completed') {
+      responseRequest = { ...responseRequest, annotations: [] };
+    }
+
+    // Mask the writer's identity for readers when anonymousSubmission is set
     if (request.anonymousSubmission && !isWriter && !isAdmin) {
       responseRequest = {
         ...responseRequest,
@@ -655,7 +660,6 @@ export const submitNotes = async (event) => {
     }
 
     const summaryNotes = (body.summaryNotes || '').trim();
-    if (!summaryNotes) return error(400, 'summaryNotes is required');
     if (summaryNotes.length > 50000) return error(400, 'summaryNotes too long (max 50000 chars)');
 
     const result = await prisma.$transaction(async (tx) => {
@@ -812,6 +816,11 @@ export const listAnnotations = async (event) => {
       auth.role === 'admin' ||
       (auth.isReader && request.status === 'approved' && !request.readerId);
     if (!allowed) return error(403, 'Forbidden');
+
+    // Writer can only see annotations once feedback is complete
+    if (request.writerId === auth.id && auth.role !== 'admin' && request.status !== 'completed') {
+      return json({ annotations: [] });
+    }
 
     const annotations = await prisma.feedbackAnnotation.findMany({
       where: { scriptFeedbackRequestId: id },

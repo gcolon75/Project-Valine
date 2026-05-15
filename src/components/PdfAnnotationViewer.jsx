@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, MessageSquare, Send, Loader2, Trash2,
-  ChevronLeft, ChevronRight, Highlighter, MessageCircle, FileText,
+  ChevronLeft, ChevronRight, Highlighter, MessageCircle, FileText, CheckSquare,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -37,6 +37,7 @@ export default function PdfAnnotationViewer({
   title = 'PDF Viewer',
   backTo = '/',
   backLabel = 'Back',
+  onFinishFeedback = null,
 }) {
   const [annotations, setAnnotations] = useState(initialAnnotations);
 
@@ -276,24 +277,54 @@ export default function PdfAnnotationViewer({
               {title}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1 || pageRendering}
-              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-sm text-neutral-600 dark:text-neutral-400 min-w-[80px] text-center">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || pageRendering}
-              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || pageRendering}
+                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-sm text-neutral-600 dark:text-neutral-400 min-w-[80px] text-center">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || pageRendering}
+                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {canAnnotate && onFinishFeedback && (() => {
+              const coveredPages = new Set(
+                annotations.filter(a => a.pageNumber != null).map(a => a.pageNumber)
+              );
+              const allPagesCovered = totalPages > 0 && coveredPages.size >= totalPages;
+              return (
+                <button
+                  onClick={onFinishFeedback}
+                  disabled={!allPagesCovered}
+                  title={
+                    allPagesCovered
+                      ? 'Submit your final thoughts'
+                      : `${coveredPages.size} / ${totalPages} pages covered — annotate every page to finish`
+                  }
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                    allPagesCovered
+                      ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                      : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                  }`}
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {allPagesCovered ? 'Finish Feedback' : `${coveredPages.size}/${totalPages} pages`}
+                  </span>
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>

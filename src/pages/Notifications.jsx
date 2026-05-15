@@ -195,6 +195,17 @@ export default function Notifications() {
       if (postId) {
         navigate(`/posts/${postId}`);
       }
+    } else if (
+      normalizedType === 'script_feedback_approved' ||
+      normalizedType === 'script_feedback_accepted' ||
+      normalizedType === 'script_feedback_completed'
+    ) {
+      const requestId = notification.metadata?.scriptFeedbackRequestId;
+      if (requestId) {
+        navigate(`/feedback-request/${requestId}`);
+      } else {
+        navigate('/feedback-request');
+      }
     }
   };
 
@@ -222,6 +233,10 @@ export default function Notifications() {
       case 'new_feedback':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       case 'purchase':
+        return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
+      case 'script_feedback_approved':
+      case 'script_feedback_accepted':
+      case 'script_feedback_completed':
         return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
@@ -257,6 +272,10 @@ export default function Notifications() {
         return FileText;
       case 'purchase':
         return DollarSign;
+      case 'script_feedback_approved':
+      case 'script_feedback_accepted':
+      case 'script_feedback_completed':
+        return FileText;
       default:
         return Bell;
     }
@@ -294,6 +313,10 @@ export default function Notifications() {
         return `@${username} left feedback on your script`;
       case 'purchase':
         return `@${username} purchased your script`;
+      case 'script_feedback_approved':
+      case 'script_feedback_accepted':
+      case 'script_feedback_completed':
+        return notification.message || 'Script feedback update';
       default:
         return notification.action || notification.message || 'New notification';
     }

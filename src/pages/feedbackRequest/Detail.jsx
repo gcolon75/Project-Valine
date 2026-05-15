@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, DollarSign, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
+import { ArrowLeft, Clock, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import {
   getFeedbackRequest,
   acceptFeedbackRequest,
-  submitFeedbackNotes,
   denyFeedbackRequest,
   approveFeedbackRequest,
 } from '../../services/scriptFeedbackService';
@@ -47,7 +46,6 @@ export default function FeedbackRequestDetail() {
   const [error, setError] = useState('');
   const [banner, setBanner] = useState('');
 
-  const [summaryNotes, setSummaryNotes] = useState('');
   const [denyReason, setDenyReason] = useState('');
   const [showDenyForm, setShowDenyForm] = useState(false);
 
@@ -65,7 +63,6 @@ export default function FeedbackRequestDetail() {
     try {
       const r = await getFeedbackRequest(id);
       setRequest(r);
-      setSummaryNotes(r?.summaryNotes || '');
     } catch (e) {
       setError(e?.response?.data?.error || 'Could not load request.');
     } finally {
@@ -89,24 +86,6 @@ export default function FeedbackRequestDetail() {
       await reload();
     } catch (e) {
       setError(e?.response?.data?.error || 'Could not accept request.');
-    } finally {
-      setActing(false);
-    }
-  };
-
-  const handleSubmitNotes = async () => {
-    if (!summaryNotes.trim()) {
-      setError('Please write your summary notes before submitting.');
-      return;
-    }
-    setActing(true);
-    setError('');
-    try {
-      await submitFeedbackNotes(id, summaryNotes.trim());
-      setBanner('Feedback submitted. Earnings have been added to your pending payout.');
-      await reload();
-    } catch (e) {
-      setError(e?.response?.data?.error || 'Could not submit notes.');
     } finally {
       setActing(false);
     }
@@ -311,39 +290,33 @@ export default function FeedbackRequestDetail() {
             </div>
           )}
 
-          {/* Reader: submit notes form */}
+          {/* Reader: prompt to use the PDF viewer to annotate and finish */}
           {isAssignedReader && request.status === 'accepted' && (
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
-                  Summary notes (1–4 pages, markdown supported)
-                </label>
-                <textarea
-                  value={summaryNotes}
-                  onChange={(e) => setSummaryNotes(e.target.value)}
-                  rows={16}
-                  placeholder="# Overall impressions&#10;&#10;## Story&#10;&#10;## Characters&#10;&#10;## Pacing&#10;&#10;## Specific suggestions"
-                  className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-                />
-                <p className="text-xs text-neutral-500 mt-1">
-                  {summaryNotes.length} characters · For inline highlights on the PDF, use the
-                  page viewer (coming soon — for now, reference page numbers in your notes).
-                </p>
-              </div>
-              <Button variant="primary" onClick={handleSubmitNotes} disabled={acting}>
-                {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit feedback'}
-              </Button>
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
+              <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300 mb-1">
+                Ready to give feedback?
+              </p>
+              <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
+                Open the script, annotate every page, then click "Finish Feedback" to submit your final thoughts.
+              </p>
+              <Link
+                to={`/feedback-request/${id}/read`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition"
+              >
+                <BookOpen className="w-4 h-4" />
+                Open Script
+              </Link>
             </div>
           )}
 
-          {/* Writer / anyone: view delivered notes */}
+          {/* Writer / anyone: view delivered final thoughts */}
           {request.status === 'completed' && request.summaryNotes && (
             <div className="border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg p-5 mb-6">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-3">
                 <CheckCircle2 className="inline w-4 h-4 mr-1" />
-                Summary notes from {request.reader?.displayName || request.reader?.username}
+                Final thoughts from {request.reader?.displayName || request.reader?.username}
               </h2>
-              <div className="text-sm text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap font-mono leading-relaxed">
+              <div className="text-sm text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap leading-relaxed">
                 {request.summaryNotes}
               </div>
             </div>

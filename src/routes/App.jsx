@@ -50,6 +50,7 @@ const FeedbackRequestDetailPage = lazy(() => import("../pages/feedbackRequest/De
 const FeedbackRequestAdminPage = lazy(() => import("../pages/feedbackRequest/AdminQueue"));
 const FeedbackRequestAdminReadersPage = lazy(() => import("../pages/feedbackRequest/AdminReaders"));
 const ScriptReaderPage = lazy(() => import("../pages/feedbackRequest/ScriptReader"));
+const FinishFeedbackPage = lazy(() => import("../pages/feedbackRequest/FinishFeedback"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
@@ -140,6 +141,14 @@ export default function App() {
           element={
             <Protected>
               <ScriptReaderPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="feedback-request/:id/finish"
+          element={
+            <Protected>
+              <FinishFeedbackPage />
             </Protected>
           }
         />
