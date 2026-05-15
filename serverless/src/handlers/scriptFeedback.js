@@ -409,7 +409,7 @@ export const getScriptUrl = async (event) => {
 
     const request = await prisma.scriptFeedbackRequest.findUnique({
       where: { id },
-      select: { writerId: true, readerId: true, mediaId: true, requireWatermark: true },
+      select: { writerId: true, readerId: true, mediaId: true, requireWatermark: true, scriptUrl: true },
     });
     if (!request) return error(404, 'Request not found');
 
@@ -418,17 +418,30 @@ export const getScriptUrl = async (event) => {
     const isAdmin = auth.role === 'admin';
     if (!isWriter && !isReader && !isAdmin) return error(403, 'Forbidden');
 
-    if (!request.mediaId) return error(404, 'No media attached to this request');
+    let url = null;
 
-    // Look up the s3Key from the media record
-    const media = await prisma.media.findUnique({
-      where: { id: request.mediaId },
-      select: { s3Key: true },
-    });
-    if (!media?.s3Key) return error(404, 'Media file not found');
+    // Try to generate a fresh pre-signed URL from the stored media record
+    if (request.mediaId) {
+      try {
+        const media = await prisma.media.findUnique({
+          where: { id: request.mediaId },
+          select: { s3Key: true },
+        });
+        if (media?.s3Key) {
+          const cmd = new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: media.s3Key });
+          url = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+        }
+      } catch (e) {
+        console.error('[scriptFeedback] getScriptUrl presign failed', e);
+      }
+    }
 
-    const cmd = new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: media.s3Key });
-    const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+    // Fall back to the raw scriptUrl stored at submission time
+    if (!url && request.scriptUrl) {
+      url = request.scriptUrl;
+    }
+
+    if (!url) return error(404, 'Script URL not available');
 
     return json({ url, requireWatermark: request.requireWatermark && isReader });
   } catch (e) {
