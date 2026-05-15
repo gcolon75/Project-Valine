@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Clock, FileText, ExternalLink, Loader2, CheckCircle2, XCircle, Hourglass, BookOpen } from 'lucide-react';
+import EmeraldBadge from '../../components/EmeraldBadge';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -510,7 +511,6 @@ function PartyCard({ role, user, highlight = false, anonymous = false }) {
   const handle = user.username ? `@${user.username}` : '';
   const profileHref = `/profile/${user.username || user.id}`;
   const initial = name.charAt(0).toUpperCase();
-  const isEmerald = user.plan === 'emerald';
 
   return (
     <div
@@ -542,7 +542,7 @@ function PartyCard({ role, user, highlight = false, anonymous = false }) {
           className="block font-semibold text-neutral-900 dark:text-neutral-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition truncate"
         >
           {name}
-          {isEmerald && <span className="ml-1 text-emerald-500" title="Emerald member">💎</span>}
+          {isEmerald && <EmeraldBadge user={user} className="ml-1" />}
         </Link>
         {handle && (
           <Link
