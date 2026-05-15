@@ -245,8 +245,8 @@ export default function FeedbackRequestDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                  {/* Reader: can open the viewer while in progress or after submitting */}
-                  {isAssignedReader && ['accepted', 'reader_submitted'].includes(request.status) && (
+                  {/* Reader: can open the viewer while in progress, after submitting, or to review completed work */}
+                  {isAssignedReader && ['accepted', 'reader_submitted', 'completed'].includes(request.status) && (
                     <Link
                       to={`/feedback-request/${id}/read`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"

@@ -6,13 +6,14 @@ import { useAuth } from '../../context/AuthContext';
 import { listFeedbackRequests } from '../../services/scriptFeedbackService';
 
 const STATUS_META = {
-  pending_payment:  { label: 'Awaiting payment',    color: 'bg-neutral-100 text-neutral-700' },
-  pending_approval: { label: 'Pending Joint review', color: 'bg-amber-100 text-amber-800' },
-  approved:         { label: 'Available to readers', color: 'bg-blue-100 text-blue-800' },
-  accepted:         { label: 'In progress',          color: 'bg-indigo-100 text-indigo-800' },
-  completed:        { label: 'Feedback delivered',   color: 'bg-emerald-100 text-emerald-800' },
-  denied:           { label: 'Denied',               color: 'bg-red-100 text-red-700' },
-  refunded:         { label: 'Refunded',             color: 'bg-neutral-100 text-neutral-600' },
+  pending_payment:  { label: 'Awaiting payment',      color: 'bg-neutral-100 text-neutral-700' },
+  pending_approval: { label: 'Pending Joint review',  color: 'bg-amber-100 text-amber-800' },
+  approved:         { label: 'Available to readers',  color: 'bg-blue-100 text-blue-800' },
+  accepted:         { label: 'In progress',           color: 'bg-indigo-100 text-indigo-800' },
+  reader_submitted: { label: 'Under admin review',    color: 'bg-purple-100 text-purple-800' },
+  completed:        { label: 'Feedback delivered',    color: 'bg-emerald-100 text-emerald-800' },
+  denied:           { label: 'Denied',                color: 'bg-red-100 text-red-700' },
+  refunded:         { label: 'Refunded',              color: 'bg-neutral-100 text-neutral-600' },
 };
 
 function formatUsd(cents) {
@@ -119,7 +120,7 @@ function ReaderTab() {
 
   if (loading) return <p className="text-neutral-500">Loading…</p>;
 
-  const active = mine.filter((r) => r.status === 'accepted');
+  const active = mine.filter((r) => ['accepted', 'reader_submitted'].includes(r.status));
   const completed = mine.filter((r) => r.status === 'completed');
 
   return (
@@ -198,23 +199,25 @@ function ReaderTab() {
             Completed reviews ({completed.length})
           </h3>
           <div className="space-y-2">
-            {completed.slice(0, 10).map((req) => (
-              <div
+            {completed.map((req) => (
+              <Link
                 key={req.id}
-                className="bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 flex items-center justify-between"
+                to={`/feedback-request/${req.id}`}
+                className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 hover:border-emerald-400 transition"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+                  <p className="font-medium text-neutral-800 dark:text-neutral-200 truncate">
                     {req.title}
                   </p>
-                  <p className="text-xs text-neutral-500">
-                    Completed {new Date(req.completedAt).toLocaleDateString()}
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    <CheckCircle2 className="inline w-3 h-3 mr-1 text-emerald-500" />
+                    Completed {new Date(req.completedAt).toLocaleDateString()} · {req.pageCount} pages
                   </p>
                 </div>
-                <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 ml-4 flex-shrink-0">
                   +{formatUsd(req.readerEarningsCents)}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
