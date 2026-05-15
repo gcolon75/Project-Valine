@@ -43,14 +43,8 @@ export const handler = async (event, context) => {
       }
     }
 
-    // Script URL (fresh pre-signed S3 URL for the PDF)
-    let m = path.match(/^\/script-feedback\/([^/]+)\/script-url$/);
-    if (m && method === 'GET') {
-      event.pathParameters = { ...(event.pathParameters || {}), id: m[1] };
-      return sf.getScriptUrl(event, context);
-    }
-
     // Annotation routes (must match before generic /:id routes)
+    let m;
     m = path.match(/^\/script-feedback\/annotations\/([^/]+)$/);
     if (m) {
       event.pathParameters = { ...(event.pathParameters || {}), annotationId: m[1] };

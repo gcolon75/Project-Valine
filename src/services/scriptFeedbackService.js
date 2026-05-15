@@ -38,10 +38,6 @@ export const getFeedbackRequest = async (id) => {
   return data?.request;
 };
 
-export const getScriptPdfUrl = async (id) => {
-  const { data } = await apiClient.get(`/script-feedback/${id}/script-url`);
-  return data; // { url, requireWatermark }
-};
 
 export const approveFeedbackRequest = async (id) => {
   const { data } = await apiClient.post(`/script-feedback/${id}/approve`);

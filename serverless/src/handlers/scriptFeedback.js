@@ -351,11 +351,29 @@ export const getRequest = async (event) => {
       return error(403, 'Forbidden');
     }
 
+    // Generate a fresh pre-signed S3 URL for the script PDF so the frontend
+    // never needs to call a separate endpoint just to get a viewable URL.
+    let scriptPresignedUrl = null;
+    if (request.mediaId) {
+      try {
+        const media = await prisma.media.findUnique({
+          where: { id: request.mediaId },
+          select: { s3Key: true },
+        });
+        if (media?.s3Key) {
+          const cmd = new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: media.s3Key });
+          scriptPresignedUrl = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+        }
+      } catch (presignErr) {
+        console.error('[scriptFeedback] presign failed (non-fatal)', presignErr);
+      }
+    }
+
     // Mask the writer's identity for readers when anonymousSubmission is set
-    let responseRequest = request;
+    let responseRequest = { ...request, scriptPresignedUrl };
     if (request.anonymousSubmission && !isWriter && !isAdmin) {
       responseRequest = {
-        ...request,
+        ...responseRequest,
         writer: {
           id: request.writer?.id,
           username: null,

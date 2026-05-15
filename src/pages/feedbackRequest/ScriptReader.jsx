@@ -7,7 +7,6 @@ import {
   listFeedbackAnnotations,
   createFeedbackAnnotation,
   deleteFeedbackAnnotation,
-  getScriptPdfUrl,
 } from '../../services/scriptFeedbackService';
 import PdfAnnotationViewer from '../../components/PdfAnnotationViewer';
 import toast from 'react-hot-toast';
@@ -25,14 +24,18 @@ export default function ScriptReader() {
   useEffect(() => {
     (async () => {
       try {
-        const [req, anns, scriptData] = await Promise.all([
+        const [req, anns] = await Promise.all([
           getFeedbackRequest(id),
           listFeedbackAnnotations(id),
-          getScriptPdfUrl(id),
         ]);
         setRequest(req);
         setAnnotations(anns);
-        setPdfUrl(scriptData.url);
+
+        // getRequest now returns scriptPresignedUrl — a fresh signed S3 URL.
+        // Fall back to scriptUrl if the backend is an older deploy without it.
+        const url = req.scriptPresignedUrl || req.scriptUrl;
+        if (!url) throw new Error('No script URL available');
+        setPdfUrl(url);
       } catch (err) {
         console.error(err);
         const status = err?.response?.status;
@@ -61,13 +64,7 @@ export default function ScriptReader() {
   if (!request || !pdfUrl) return null;
 
   const isAssignedReader = request.readerId === user?.id;
-  const isWriter = request.writerId === user?.id;
-  const isAdmin = user?.role === 'admin';
-
-  // Only the assigned reader on an accepted request can annotate
   const canAnnotate = isAssignedReader && request.status === 'accepted';
-
-  // Writer shown anonymously to reader if they opted in
   const annotatorUser = isAssignedReader ? user : request.reader;
 
   return (
