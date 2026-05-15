@@ -286,6 +286,9 @@ export const listRequests = async (event) => {
     } else if (role === 'admin') {
       if (auth.role !== 'admin') return error(403, 'Admin access required');
       where = { status: 'pending_approval' };
+    } else if (role === 'admin-assigned') {
+      if (auth.role !== 'admin') return error(403, 'Admin access required');
+      where = { readerId: { not: null }, status: { in: ['accepted', 'completed'] } };
     } else {
       // default: mine (as writer)
       where = { writerId: auth.id };
@@ -699,6 +702,80 @@ export const submitNotes = async (event) => {
     return json({ request: result.request });
   } catch (e) {
     console.error('[scriptFeedback] submitNotes error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * POST /script-feedback/:id/reassign   (admin only)
+ * Body: { readerId: string | null }
+ * - readerId provided: validates isReader=true, reassigns the request (status='accepted')
+ * - readerId null: unassigns (status back to 'approved', clears acceptedAt/deadlineAt)
+ */
+export const reassignReader = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+    if (auth.role !== 'admin') return error(403, 'Admin access required');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
+    const { readerId } = body;
+
+    const existing = await prisma.scriptFeedbackRequest.findUnique({
+      where: { id },
+      select: { id: true, status: true, readerId: true },
+    });
+    if (!existing) return error(404, 'Request not found');
+    if (!['approved', 'accepted'].includes(existing.status)) {
+      return error(400, 'Can only reassign requests with status approved or accepted');
+    }
+
+    let updateData;
+    if (readerId) {
+      // Validate the new reader
+      const newReader = await prisma.user.findUnique({
+        where: { id: readerId },
+        select: { id: true, isReader: true },
+      });
+      if (!newReader) return error(404, 'User not found');
+      if (!newReader.isReader) return error(400, 'User is not an approved reader');
+
+      const now = new Date();
+      const deadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      updateData = {
+        readerId,
+        status: 'accepted',
+        acceptedAt: now,
+        deadlineAt: deadline,
+      };
+    } else {
+      // Unassign — return to reader pool
+      updateData = {
+        readerId: null,
+        status: 'approved',
+        acceptedAt: null,
+        deadlineAt: null,
+      };
+    }
+
+    const updated = await prisma.scriptFeedbackRequest.update({
+      where: { id },
+      data: updateData,
+      include: {
+        writer: { select: { id: true, displayName: true, username: true, avatar: true, plan: true } },
+        reader: { select: { id: true, displayName: true, username: true, avatar: true } },
+      },
+    });
+
+    return json({ request: updated });
+  } catch (e) {
+    console.error('[scriptFeedback] reassignReader error', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

@@ -94,3 +94,8 @@ export const adminSetReader = async (userId, isReader) => {
   const { data } = await apiClient.post(`/script-feedback/admin/readers/${userId}`, { isReader });
   return data?.user;
 };
+
+export const adminReassignReader = async (id, readerId) => {
+  const { data } = await apiClient.post(`/script-feedback/${id}/reassign`, { readerId: readerId ?? null });
+  return data?.request;
+};

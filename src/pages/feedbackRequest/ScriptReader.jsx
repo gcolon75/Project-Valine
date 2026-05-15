@@ -63,7 +63,7 @@ export default function ScriptReader() {
 
   if (!request || !pdfUrl) return null;
 
-  const isAssignedReader = request.readerId === user?.id;
+  const isAssignedReader = user?.id && (request.readerId === user.id || request.reader?.id === user.id);
   const canAnnotate = isAssignedReader && request.status === 'accepted';
   const annotatorUser = isAssignedReader ? user : request.reader;
 
