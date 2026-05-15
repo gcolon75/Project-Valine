@@ -1,3 +1,4 @@
+// force frontend rebuild — ship ScriptReader + anonymous submission
 import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
