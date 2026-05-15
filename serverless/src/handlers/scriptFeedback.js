@@ -7,6 +7,11 @@ import { json, error } from '../utils/headers.js';
 import { getUserIdFromEvent } from '../utils/tokenManager.js';
 import { createNotification } from './notifications.js';
 import Stripe from 'stripe';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const MEDIA_BUCKET = process.env.MEDIA_BUCKET || process.env.S3_BUCKET || 'valine-media-uploads';
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 
 // Notify the writer at key lifecycle points. Wrapped so a notification
 // failure never breaks the main flow.
@@ -121,7 +126,7 @@ export const submitRequest = async (event) => {
       return error(400, 'Invalid JSON body');
     }
 
-    const { title, scriptUrl, pageCount, useFreeEval, mediaId, requireWatermark } = body;
+    const { title, scriptUrl, pageCount, useFreeEval, mediaId, requireWatermark, anonymousSubmission } = body;
     if (!title || typeof title !== 'string' || !title.trim()) {
       return error(400, 'Title is required');
     }
@@ -136,6 +141,7 @@ export const submitRequest = async (event) => {
     const readerEarningsCents = pages * READER_EARNINGS_PER_PAGE_CENTS;
     const platformFeeCents = pages * PLATFORM_FEE_PER_PAGE_CENTS;
     const wantsWatermark = !!requireWatermark;
+    const wantsAnonymous = !!anonymousSubmission;
     const mediaIdSafe = typeof mediaId === 'string' ? mediaId : null;
 
     // ── Free Emerald eval path ────────────────────────────────────────────
@@ -174,6 +180,7 @@ export const submitRequest = async (event) => {
             mediaId: mediaIdSafe,
             pageCount: pages,
             requireWatermark: wantsWatermark,
+            anonymousSubmission: wantsAnonymous,
             totalPaidCents: 0,           // writer pays nothing
             readerEarningsCents,         // reader still earns
             platformFeeCents: 0,         // Joint absorbs the reader cost
@@ -344,9 +351,70 @@ export const getRequest = async (event) => {
       return error(403, 'Forbidden');
     }
 
-    return json({ request });
+    // Mask the writer's identity for readers when anonymousSubmission is set
+    let responseRequest = request;
+    if (request.anonymousSubmission && !isWriter && !isAdmin) {
+      responseRequest = {
+        ...request,
+        writer: {
+          id: request.writer?.id,
+          username: null,
+          displayName: 'Anonymous',
+          avatar: null,
+          plan: null,
+        },
+      };
+    }
+
+    return json({ request: responseRequest });
   } catch (e) {
     console.error('[scriptFeedback] getRequest error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/**
+ * GET /script-feedback/:id/script-url
+ * Returns a fresh pre-signed S3 URL for the script PDF.
+ * Access: writer, assigned reader, admin.
+ */
+export const getScriptUrl = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const request = await prisma.scriptFeedbackRequest.findUnique({
+      where: { id },
+      select: { writerId: true, readerId: true, mediaId: true, requireWatermark: true },
+    });
+    if (!request) return error(404, 'Request not found');
+
+    const isWriter = request.writerId === auth.id;
+    const isReader = request.readerId === auth.id;
+    const isAdmin = auth.role === 'admin';
+    if (!isWriter && !isReader && !isAdmin) return error(403, 'Forbidden');
+
+    if (!request.mediaId) return error(404, 'No media attached to this request');
+
+    // Look up the s3Key from the media record
+    const media = await prisma.media.findUnique({
+      where: { id: request.mediaId },
+      select: { s3Key: true },
+    });
+    if (!media?.s3Key) return error(404, 'Media file not found');
+
+    const cmd = new GetObjectCommand({ Bucket: MEDIA_BUCKET, Key: media.s3Key });
+    const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+
+    return json({ url, requireWatermark: request.requireWatermark && isReader });
+  } catch (e) {
+    console.error('[scriptFeedback] getScriptUrl error', e);
     return error(500, 'Server error: ' + e.message);
   }
 };

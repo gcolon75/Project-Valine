@@ -65,3 +65,7 @@ CREATE INDEX IF NOT EXISTS "feedback_annotations_scriptFeedbackRequestId_idx"
 ALTER TABLE "feedback_annotations"
     ADD CONSTRAINT "feedback_annotations_scriptFeedbackRequestId_fkey"
     FOREIGN KEY ("scriptFeedbackRequestId") REFERENCES "script_feedback_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Anonymous submission option
+ALTER TABLE "script_feedback_requests" ADD COLUMN IF NOT EXISTS "anonymousSubmission" BOOLEAN NOT NULL DEFAULT false;
+

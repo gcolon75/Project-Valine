@@ -7,12 +7,10 @@ import {
   listFeedbackAnnotations,
   createFeedbackAnnotation,
   deleteFeedbackAnnotation,
+  getScriptPdfUrl,
 } from '../../services/scriptFeedbackService';
-import { getMediaAccessUrl } from '../../services/mediaService';
 import PdfAnnotationViewer from '../../components/PdfAnnotationViewer';
 import toast from 'react-hot-toast';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.joint-networking.com';
 
 export default function ScriptReader() {
   const { id } = useParams();
@@ -25,37 +23,16 @@ export default function ScriptReader() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let blobUrl = null;
-
     (async () => {
       try {
-        const [req, anns] = await Promise.all([
+        const [req, anns, scriptData] = await Promise.all([
           getFeedbackRequest(id),
           listFeedbackAnnotations(id),
+          getScriptPdfUrl(id),
         ]);
         setRequest(req);
         setAnnotations(anns);
-
-        const isAssignedReader = req.readerId === user?.id;
-
-        if (req.requireWatermark && isAssignedReader && req.mediaId) {
-          // Fetch watermarked PDF with credentials (cookies) then hand blob to PDF.js
-          const resp = await fetch(
-            `${API_BASE}/media/${req.mediaId}/watermarked-pdf`,
-            { credentials: 'include' }
-          );
-          if (!resp.ok) throw new Error(`Watermark fetch failed: ${resp.status}`);
-          const blob = await resp.blob();
-          blobUrl = URL.createObjectURL(blob);
-          setPdfUrl(blobUrl);
-        } else if (req.mediaId) {
-          // Fresh pre-signed S3 URL — no auth header needed, same pattern as FeedbackView
-          const { viewUrl } = await getMediaAccessUrl(req.mediaId);
-          setPdfUrl(viewUrl);
-        } else {
-          // Older submissions that only stored scriptUrl
-          setPdfUrl(req.scriptUrl);
-        }
+        setPdfUrl(scriptData.url);
       } catch (err) {
         console.error(err);
         const status = err?.response?.status;
@@ -71,9 +48,6 @@ export default function ScriptReader() {
         setLoading(false);
       }
     })();
-
-    // Revoke blob URL on unmount to free memory
-    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
@@ -90,10 +64,10 @@ export default function ScriptReader() {
   const isWriter = request.writerId === user?.id;
   const isAdmin = user?.role === 'admin';
 
-  // Only the assigned reader on an accepted request can add annotations
+  // Only the assigned reader on an accepted request can annotate
   const canAnnotate = isAssignedReader && request.status === 'accepted';
 
-  // Who is shown in the sidebar header as the annotator
+  // Writer shown anonymously to reader if they opted in
   const annotatorUser = isAssignedReader ? user : request.reader;
 
   return (
@@ -105,7 +79,7 @@ export default function ScriptReader() {
       canAnnotate={canAnnotate}
       annotatorUser={annotatorUser}
       currentUserId={user?.id}
-      title={request.title}
+      title={request.anonymousSubmission ? 'Anonymous Script' : request.title}
       backTo={`/feedback-request/${id}`}
       backLabel="Back to Request"
     />

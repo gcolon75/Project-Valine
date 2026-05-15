@@ -1029,6 +1029,10 @@ model ScriptFeedbackRequest {
   // the writer's IP. Defaults to false.
   requireWatermark Boolean @default(false)
 
+  // Anonymous submission — when true, the reader sees a placeholder avatar
+  // and "Anonymous" instead of the writer's name and profile.
+  anonymousSubmission Boolean @default(false)
+
   // Payment (in cents)
   totalPaidCents      Int  // pageCount * 50
   readerEarningsCents Int  // pageCount * 25

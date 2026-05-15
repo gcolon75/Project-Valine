@@ -11,6 +11,7 @@ export const submitFeedbackRequest = async ({
   useFreeEval,
   mediaId,
   requireWatermark,
+  anonymousSubmission,
 }) => {
   const { data } = await apiClient.post('/script-feedback', {
     title,
@@ -19,6 +20,7 @@ export const submitFeedbackRequest = async ({
     useFreeEval: !!useFreeEval,
     mediaId: mediaId || null,
     requireWatermark: !!requireWatermark,
+    anonymousSubmission: !!anonymousSubmission,
   });
   return data;
 };
@@ -34,6 +36,11 @@ export const listFeedbackRequests = async (role = 'mine') => {
 export const getFeedbackRequest = async (id) => {
   const { data } = await apiClient.get(`/script-feedback/${id}`);
   return data?.request;
+};
+
+export const getScriptPdfUrl = async (id) => {
+  const { data } = await apiClient.get(`/script-feedback/${id}/script-url`);
+  return data; // { url, requireWatermark }
 };
 
 export const approveFeedbackRequest = async (id) => {

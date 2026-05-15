@@ -199,6 +199,7 @@ export default function FeedbackRequestDetail() {
               role="Writer"
               user={request.writer}
               highlight={isAssignedReader || (isAdmin && request.reader)}
+              anonymous={request.anonymousSubmission && !isWriter && !isAdmin}
             />
             {request.reader ? (
               <PartyCard
@@ -507,8 +508,31 @@ export default function FeedbackRequestDetail() {
   );
 }
 
-function PartyCard({ role, user, highlight = false }) {
+function PartyCard({ role, user, highlight = false, anonymous = false }) {
   if (!user) return null;
+
+  if (anonymous) {
+    return (
+      <div
+        className={`flex items-center gap-4 p-4 rounded-xl border-2 ${
+          highlight
+            ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10'
+            : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/40'
+        }`}
+      >
+        <div className="w-16 h-16 rounded-full bg-neutral-300 dark:bg-neutral-600 flex items-center justify-center ring-2 ring-white dark:ring-neutral-900 shadow flex-shrink-0">
+          <span className="text-2xl">👤</span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-0.5">
+            {role}
+          </p>
+          <p className="font-semibold text-neutral-900 dark:text-neutral-100">Anonymous</p>
+        </div>
+      </div>
+    );
+  }
+
   const name = user.displayName || user.username || 'Unknown';
   const handle = user.username ? `@${user.username}` : '';
   const profileHref = `/profile/${user.username || user.id}`;
