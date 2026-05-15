@@ -49,6 +49,7 @@ const FeedbackRequestNewPage = lazy(() => import("../pages/feedbackRequest/Submi
 const FeedbackRequestDetailPage = lazy(() => import("../pages/feedbackRequest/Detail"));
 const FeedbackRequestAdminPage = lazy(() => import("../pages/feedbackRequest/AdminQueue"));
 const FeedbackRequestAdminReadersPage = lazy(() => import("../pages/feedbackRequest/AdminReaders"));
+const ScriptReaderPage = lazy(() => import("../pages/feedbackRequest/ScriptReader"));
 
 const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
@@ -132,6 +133,16 @@ export default function App() {
         <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
+
+        {/* Full-screen viewers — no AppLayout chrome */}
+        <Route
+          path="feedback-request/:id/read"
+          element={
+            <Protected>
+              <ScriptReaderPage />
+            </Protected>
+          }
+        />
 
         {/* Authenticated app shell */}
         <Route element={<AppLayout />}>
