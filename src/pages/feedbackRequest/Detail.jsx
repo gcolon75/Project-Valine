@@ -542,7 +542,7 @@ function PartyCard({ role, user, highlight = false, anonymous = false }) {
           className="block font-semibold text-neutral-900 dark:text-neutral-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition truncate"
         >
           {name}
-          {isEmerald && <EmeraldBadge user={user} className="ml-1" />}
+          <EmeraldBadge user={user} className="ml-1" />
         </Link>
         {handle && (
           <Link
