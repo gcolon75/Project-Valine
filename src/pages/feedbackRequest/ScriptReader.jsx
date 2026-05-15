@@ -8,8 +8,11 @@ import {
   createFeedbackAnnotation,
   deleteFeedbackAnnotation,
 } from '../../services/scriptFeedbackService';
+import { getMediaAccessUrl } from '../../services/mediaService';
 import PdfAnnotationViewer from '../../components/PdfAnnotationViewer';
 import toast from 'react-hot-toast';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.joint-networking.com';
 
 export default function ScriptReader() {
   const { id } = useParams();
@@ -18,9 +21,12 @@ export default function ScriptReader() {
 
   const [request, setRequest] = useState(null);
   const [annotations, setAnnotations] = useState([]);
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let blobUrl = null;
+
     (async () => {
       try {
         const [req, anns] = await Promise.all([
@@ -29,15 +35,46 @@ export default function ScriptReader() {
         ]);
         setRequest(req);
         setAnnotations(anns);
+
+        const isAssignedReader = req.readerId === user?.id;
+
+        if (req.requireWatermark && isAssignedReader && req.mediaId) {
+          // Fetch watermarked PDF with credentials (cookies) then hand blob to PDF.js
+          const resp = await fetch(
+            `${API_BASE}/media/${req.mediaId}/watermarked-pdf`,
+            { credentials: 'include' }
+          );
+          if (!resp.ok) throw new Error(`Watermark fetch failed: ${resp.status}`);
+          const blob = await resp.blob();
+          blobUrl = URL.createObjectURL(blob);
+          setPdfUrl(blobUrl);
+        } else if (req.mediaId) {
+          // Fresh pre-signed S3 URL — no auth header needed, same pattern as FeedbackView
+          const { viewUrl } = await getMediaAccessUrl(req.mediaId);
+          setPdfUrl(viewUrl);
+        } else {
+          // Older submissions that only stored scriptUrl
+          setPdfUrl(req.scriptUrl);
+        }
       } catch (err) {
         console.error(err);
-        toast.error('Could not load script');
+        const status = err?.response?.status;
+        if (status === 403) {
+          toast.error('You do not have access to this script.');
+        } else if (status === 404) {
+          toast.error('Script not found.');
+        } else {
+          toast.error('Could not load script.');
+        }
         navigate(`/feedback-request/${id}`);
       } finally {
         setLoading(false);
       }
     })();
-  }, [id, navigate]);
+
+    // Revoke blob URL on unmount to free memory
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -47,44 +84,24 @@ export default function ScriptReader() {
     );
   }
 
-  if (!request) return null;
+  if (!request || !pdfUrl) return null;
 
   const isAssignedReader = request.readerId === user?.id;
   const isWriter = request.writerId === user?.id;
   const isAdmin = user?.role === 'admin';
 
-  // Only the assigned reader on an in-progress request can add annotations
+  // Only the assigned reader on an accepted request can add annotations
   const canAnnotate = isAssignedReader && request.status === 'accepted';
 
-  // Reader sees watermarked copy when required
-  const scriptUrl =
-    request.requireWatermark && isAssignedReader && request.mediaId
-      ? `/api/media/${request.mediaId}/watermarked-pdf`
-      : request.scriptUrl;
-
-  const handleCreateAnnotation = async (data) => {
-    return await createFeedbackAnnotation(id, data);
-  };
-
-  const handleDeleteAnnotation = async (annotationId) => {
-    await deleteFeedbackAnnotation(annotationId);
-  };
-
-  // Who is the person doing the annotating?
+  // Who is shown in the sidebar header as the annotator
   const annotatorUser = isAssignedReader ? user : request.reader;
-
-  const canView = isWriter || isAssignedReader || isAdmin;
-  if (!canView) {
-    navigate(`/feedback-request/${id}`);
-    return null;
-  }
 
   return (
     <PdfAnnotationViewer
-      pdfUrl={scriptUrl}
+      pdfUrl={pdfUrl}
       annotations={annotations}
-      onCreateAnnotation={handleCreateAnnotation}
-      onDeleteAnnotation={handleDeleteAnnotation}
+      onCreateAnnotation={(data) => createFeedbackAnnotation(id, data)}
+      onDeleteAnnotation={(annotationId) => deleteFeedbackAnnotation(annotationId)}
       canAnnotate={canAnnotate}
       annotatorUser={annotatorUser}
       currentUserId={user?.id}
