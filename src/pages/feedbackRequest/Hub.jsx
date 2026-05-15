@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle2, XCircle, DollarSign, AlertCircle, Gem, Users, Shield } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, XCircle, BookOpen, AlertCircle, Gem, Users, Shield } from 'lucide-react';
 import { Button } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { listFeedbackRequests } from '../../services/scriptFeedbackService';
@@ -294,8 +294,8 @@ export default function FeedbackRequestHub() {
                   : 'border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
               }`}
             >
-              <DollarSign className="inline w-4 h-4 mr-1" />
-              Earn Money
+              <BookOpen className="inline w-4 h-4 mr-1" />
+              Review Scripts
             </button>
           )}
         </div>
