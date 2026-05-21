@@ -309,10 +309,10 @@ export default function FeedbackRequestHub() {
             <Gem className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                Your free Emerald evaluation is available this month
+                Your free Emerald evaluation is available
               </p>
               <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">
-                Submit a script and check the "Use my Emerald free evaluation" box at checkout to skip the payment.
+                Submit a script and check the "Use my Emerald free evaluation" box at checkout to skip the payment. (1 free eval per 3 months — does not stack)
               </p>
             </div>
           </div>

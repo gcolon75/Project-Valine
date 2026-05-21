@@ -440,8 +440,9 @@ async function login(event) {
             if (!user.monthlyFreeEvalUsedAt) return true;
             const used = new Date(user.monthlyFreeEvalUsedAt);
             const now = new Date();
-            return used.getUTCFullYear() !== now.getUTCFullYear()
-                || used.getUTCMonth() !== now.getUTCMonth();
+            const nextEligible = new Date(used);
+            nextEligible.setUTCMonth(used.getUTCMonth() + 3);
+            return now >= nextEligible;
           })(),
           onboardingComplete: user.onboardingComplete || false,
           profileComplete: user.profileComplete || false,

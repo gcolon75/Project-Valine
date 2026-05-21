@@ -108,7 +108,7 @@ async function getAuthUser(event, prisma) {
 
 /**
  * True if the user has an active Emerald subscription AND hasn't used
- * their free eval yet in the current calendar month.
+ * their free eval in the last 3 months (evals do not stack).
  */
 export function isEligibleForFreeEval(user, now = new Date()) {
   if (!user) return false;
@@ -116,10 +116,9 @@ export function isEligibleForFreeEval(user, now = new Date()) {
   if (!['active', 'trialing'].includes(user.subscriptionStatus || '')) return false;
   if (!user.monthlyFreeEvalUsedAt) return true;
   const used = new Date(user.monthlyFreeEvalUsedAt);
-  return (
-    used.getUTCFullYear() !== now.getUTCFullYear() ||
-    used.getUTCMonth() !== now.getUTCMonth()
-  );
+  const nextEligible = new Date(used);
+  nextEligible.setUTCMonth(used.getUTCMonth() + 3);
+  return now >= nextEligible;
 }
 
 function authorSelect() {
@@ -180,7 +179,7 @@ export const submitRequest = async (event) => {
     // ── Free Emerald eval path ────────────────────────────────────────────
     if (useFreeEval) {
       if (!isEligibleForFreeEval(auth)) {
-        return error(403, 'Not eligible for a free evaluation this month');
+        return error(403, 'Not eligible for a free evaluation — your next free eval is not yet available');
       }
 
       // Use a transaction to atomically claim the monthly free slot AND create
@@ -196,7 +195,7 @@ export const submitRequest = async (event) => {
           },
         });
         if (!isEligibleForFreeEval(fresh)) {
-          return { error: 'Free evaluation already used this month', status: 409 };
+          return { error: 'Free evaluation already used — next one available in 3 months', status: 409 };
         }
 
         const now = new Date();

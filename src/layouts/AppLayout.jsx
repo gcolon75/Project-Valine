@@ -47,13 +47,13 @@ export default function AppLayout() {
               <NavItem to="/discover" icon={Search} label="Discover" />
               <NavItem to="/post" icon={PlusCircle} label="Create" />
               <NavItem to="/feedback-request" icon={FileText} label="Feedback" />
-              <NavItem to="/inbox" icon={Mail} label="Messages" badge={unreadCounts.messages} />
               <NavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
               <NavItem to="/profile" icon={User} label="Profile" />
             </nav>
 
             {/* Right Actions - Desktop */}
             <div className="flex items-center space-x-3">
+              <MailIconLink badge={unreadCounts.messages} />
               <NotificationBell />
               <NavLink
                 to="/settings"
@@ -102,6 +102,30 @@ export default function AppLayout() {
         <ChatWidget />
       </div>
     </div>
+  );
+}
+
+// Mail icon link for desktop header
+function MailIconLink({ badge }) {
+  return (
+    <NavLink
+      to="/inbox"
+      aria-label={badge > 0 ? `Messages (${badge} unread)` : 'Messages'}
+      className={({ isActive }) => `
+        relative p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
+        ${isActive
+          ? 'text-[#0CCE6B] bg-[#0CCE6B]/10'
+          : 'text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/10'
+        }
+      `}
+    >
+      <Mail className="w-5 h-5" aria-hidden="true" />
+      {badge > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </NavLink>
   );
 }
 

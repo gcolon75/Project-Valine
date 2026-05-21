@@ -989,24 +989,6 @@ export default function Post() {
               </div>
             </label>
 
-            {/* Allow Feedback Toggle - Only for PDFs/Scripts */}
-            {formData.contentType === 'script' && (
-              <label className="flex items-start p-4 rounded-lg border-2 border-neutral-300 dark:border-neutral-700 cursor-pointer hover:border-emerald-300 transition-all">
-                <input
-                  type="checkbox"
-                  checked={formData.allowFeedback}
-                  onChange={(e) => handleChange('allowFeedback', e.target.checked)}
-                  className="mt-1 mr-3 w-5 h-5 rounded border-neutral-300 dark:border-neutral-700 text-emerald-600 focus:ring-emerald-500"
-                />
-                <div>
-                  <div className="font-medium text-neutral-900 dark:text-neutral-100">Allow Feedback Requests</div>
-                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Let others request to provide private feedback and annotations on your PDF
-                  </div>
-                </div>
-              </label>
-            )}
-
             {/* Include Watermark Toggle - Only for PDFs/Scripts */}
             {formData.contentType === 'script' && (
               <label className="flex items-start p-4 rounded-lg border-2 border-neutral-300 dark:border-neutral-700 cursor-pointer hover:border-emerald-300 transition-all">

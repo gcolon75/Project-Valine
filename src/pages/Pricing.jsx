@@ -116,13 +116,13 @@ export default function Pricing() {
     },
     {
       name: 'Emerald',
-      price: '$9.99',
+      price: '$14.99',
       period: 'month',
-      subPrice: 'or $100/year',
+      subPrice: 'or $150/year',
       featured: true,
       tagline: 'Everything in Basic, plus:',
       features: [
-        '1 FREE script evaluation every month',
+        '1 FREE script evaluation every 3 months',
         '6 Featured Posts/year (72-hour homepage spotlight)',
         '1 Weekly Profile Spotlight/year',
         'Access to Crowdfunding Tools',
@@ -190,7 +190,7 @@ export default function Pricing() {
                   plan.featured
                     ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-2xl md:transform md:scale-105'
                     : plan.gold
-                    ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 text-neutral-900 shadow-2xl'
+                    ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-2xl border border-indigo-800/40'
                     : 'bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700'
                 }`}
               >
@@ -201,7 +201,7 @@ export default function Pricing() {
                         plan.featured
                           ? 'bg-white/20'
                           : plan.gold
-                          ? 'bg-white/30'
+                          ? 'bg-indigo-400/20'
                           : 'bg-emerald-100 dark:bg-emerald-900/40'
                       }`}
                     >
@@ -210,7 +210,7 @@ export default function Pricing() {
                           plan.featured
                             ? 'text-white'
                             : plan.gold
-                            ? 'text-amber-700 fill-amber-700'
+                            ? 'text-indigo-300'
                             : 'text-emerald-600'
                         }`}
                       />
@@ -223,7 +223,7 @@ export default function Pricing() {
                     plan.featured
                       ? 'text-white'
                       : plan.gold
-                      ? 'text-neutral-900'
+                      ? 'text-white'
                       : 'text-neutral-900 dark:text-neutral-100'
                   }`}
                 >
@@ -237,7 +237,7 @@ export default function Pricing() {
                         plan.featured
                           ? 'text-white'
                           : plan.gold
-                          ? 'text-neutral-900'
+                          ? 'text-white'
                           : 'text-neutral-900 dark:text-neutral-100'
                       }`}
                     >
@@ -249,7 +249,7 @@ export default function Pricing() {
                           plan.featured
                             ? 'text-emerald-50'
                             : plan.gold
-                            ? 'text-neutral-800'
+                            ? 'text-indigo-300'
                             : 'text-neutral-600 dark:text-neutral-400'
                         }`}
                       >
@@ -263,7 +263,7 @@ export default function Pricing() {
                         plan.featured
                           ? 'text-emerald-50'
                           : plan.gold
-                          ? 'text-neutral-800'
+                          ? 'text-indigo-300'
                           : 'text-neutral-500 dark:text-neutral-400'
                       }`}
                     >
@@ -278,7 +278,7 @@ export default function Pricing() {
                       plan.featured
                         ? 'text-emerald-50'
                         : plan.gold
-                        ? 'text-neutral-800'
+                        ? 'text-indigo-300'
                         : 'text-neutral-700 dark:text-neutral-300'
                     }`}
                   >
@@ -294,7 +294,7 @@ export default function Pricing() {
                           plan.featured
                             ? 'text-emerald-100'
                             : plan.gold
-                            ? 'text-amber-800'
+                            ? 'text-indigo-300'
                             : 'text-emerald-600'
                         }`}
                       />
@@ -303,7 +303,7 @@ export default function Pricing() {
                           plan.featured
                             ? 'text-white'
                             : plan.gold
-                            ? 'text-neutral-900'
+                            ? 'text-white'
                             : 'text-neutral-700 dark:text-neutral-300'
                         }
                       >
@@ -350,7 +350,7 @@ export default function Pricing() {
                       plan.featured
                         ? 'text-emerald-50'
                         : plan.gold
-                        ? 'text-neutral-800'
+                        ? 'text-indigo-300'
                         : 'text-neutral-600 dark:text-neutral-400'
                     }`}
                   >
@@ -372,7 +372,7 @@ export default function Pricing() {
                     <Link to="/contact" className="block w-full">
                       <Button
                         variant="secondary"
-                        className="w-full bg-white hover:bg-amber-50 text-amber-700 hover:text-amber-800 border-2 border-amber-700 shadow-sm"
+                        className="w-full bg-white/10 hover:bg-white/20 text-white border-2 border-indigo-400/50 hover:border-indigo-300 shadow-sm"
                       >
                         {plan.cta}
                       </Button>
