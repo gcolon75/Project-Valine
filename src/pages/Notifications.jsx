@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, MessageSquare, CheckCircle, XCircle, DollarSign, AlertTriangle } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, DollarSign, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -170,26 +170,6 @@ export default function Notifications() {
       if (postId) {
         navigate(`/posts/${postId}`);
       }
-    } else if (normalizedType === 'feedback_request') {
-      // Go to profile feedback tab to manage requests
-      navigate('/profile?tab=feedback');
-    } else if (normalizedType === 'feedback_request_approved' || normalizedType === 'new_feedback') {
-      // Go to the feedback view for the specific request
-      const requestId = notification.metadata?.requestId;
-      if (requestId) {
-        navigate(`/feedback/${requestId}`);
-      } else {
-        const postId = notification.metadata?.postId;
-        if (postId) {
-          navigate(`/posts/${postId}`);
-        }
-      }
-    } else if (normalizedType === 'feedback_request_denied') {
-      // Go to the post
-      const postId = notification.metadata?.postId;
-      if (postId) {
-        navigate(`/posts/${postId}`);
-      }
     } else if (normalizedType === 'purchase') {
       const postId = notification.metadata?.postId;
       if (postId) {
@@ -229,11 +209,6 @@ export default function Notifications() {
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
       case 'script':
         return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
-      case 'feedback_request':
-      case 'feedback_request_approved':
-      case 'feedback_request_denied':
-      case 'new_feedback':
-        return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       case 'purchase':
         return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
       case 'script_feedback_approved':
@@ -266,14 +241,6 @@ export default function Notifications() {
       case 'post':
         return FileText;
       case 'script':
-        return FileText;
-      case 'feedback_request':
-        return MessageSquare;
-      case 'feedback_request_approved':
-        return CheckCircle;
-      case 'feedback_request_denied':
-        return XCircle;
-      case 'new_feedback':
         return FileText;
       case 'purchase':
         return DollarSign;
@@ -311,14 +278,6 @@ export default function Notifications() {
           : `@${username} commented on your post`;
       case 'mention':
         return `@${username} mentioned you in a comment`;
-      case 'feedback_request':
-        return `@${username} requested to give feedback on your script`;
-      case 'feedback_request_approved':
-        return 'Your feedback request was approved';
-      case 'feedback_request_denied':
-        return 'Your feedback request was denied';
-      case 'new_feedback':
-        return `@${username} left feedback on your script`;
       case 'purchase':
         return `@${username} purchased your script`;
       case 'script_feedback_approved':
