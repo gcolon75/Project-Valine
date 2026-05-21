@@ -29,8 +29,10 @@ export default function SmsOptInEvidence() {
             <a href="https://joint-networking.com/onboarding" className="text-[#0CCE6B] hover:underline">
               joint-networking.com/onboarding
             </a>
-            , users are prompted to enter their phone number. Before submitting, users must check a checkbox
-            acknowledging the following disclosure:
+            , users are offered an optional Phone Verification step. If the user chooses to provide their
+            phone number, they must actively check an unchecked consent checkbox before the
+            "Send Verification Code" button becomes enabled. The checkbox is unchecked by default and
+            cannot be pre-filled. The checkbox label states verbatim:
           </p>
           <blockquote className="border-l-4 border-[#0CCE6B] pl-4 py-2 bg-neutral-50 rounded-r-lg text-neutral-700 italic mb-4">
             "By submitting your phone number, you agree to receive SMS messages from Joint Networking,
@@ -38,7 +40,7 @@ export default function SmsOptInEvidence() {
             Message and data rates may apply. Message frequency varies. Reply STOP to cancel, HELP for help."
           </blockquote>
           <p className="text-neutral-700 leading-relaxed">
-            Users cannot proceed without checking this box. Links to the{' '}
+            The Send Verification Code button is disabled until the user manually checks this box. Links to the{' '}
             <a href="https://joint-networking.com/legal/privacy" className="text-[#0CCE6B] hover:underline">
               Privacy Policy
             </a>{' '}
@@ -69,11 +71,7 @@ export default function SmsOptInEvidence() {
             </div>
 
             <div className="flex items-start gap-3 mb-5">
-              <div className="w-4 h-4 mt-0.5 rounded border-2 border-[#0CCE6B] bg-[#0CCE6B] flex items-center justify-center flex-shrink-0">
-                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
+              <div className="w-4 h-4 mt-0.5 rounded border-2 border-neutral-400 bg-white flex-shrink-0" />
               <p className="text-xs text-neutral-600 leading-relaxed">
                 By submitting your phone number, you agree to receive SMS messages from Joint Networking,
                 including one-time verification codes and activity notifications (likes, comments, follows, direct messages).
@@ -85,9 +83,10 @@ export default function SmsOptInEvidence() {
               </p>
             </div>
 
-            <div className="w-full bg-[#0CCE6B] text-white text-sm font-medium py-2.5 rounded-lg text-center">
+            <div className="w-full bg-neutral-300 text-neutral-500 text-sm font-medium py-2.5 rounded-lg text-center cursor-not-allowed">
               Send Verification Code
             </div>
+            <p className="text-xs text-neutral-400 mt-2 text-center">Button is disabled until the consent checkbox is checked.</p>
           </div>
         </section>
 
