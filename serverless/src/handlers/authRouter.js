@@ -2,6 +2,7 @@
 // Central router for authentication HTTP endpoints
 
 import * as auth from './auth.js';
+import * as contact from './contact.js';
 
 /**
  * Normalize path to remove stage prefix if present (e.g. "/prod/auth/..." -> "/auth/...")
@@ -104,6 +105,11 @@ export const handler = async (event, context) => {
     // GET /auth/diag
     if (method === 'GET' && path === '/auth/diag') {
       return auth.authDiag(event, context);
+    }
+
+    // POST /contact
+    if (method === 'POST' && path === '/contact') {
+      return contact.submit(event, context);
     }
 
     // Fallback

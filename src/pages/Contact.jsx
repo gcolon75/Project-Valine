@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import apiClient from '../services/api';
 
 /**
  * Contact Us Page
@@ -15,6 +16,8 @@ export default function Contact() {
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     document.title = 'Contact Us — Joint';
@@ -49,13 +52,24 @@ export default function Contact() {
     setErrors(validate({ ...form, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched({ name: true, email: true, message: true });
     const errs = validate(form);
     setErrors(errs);
-    if (Object.keys(errs).length === 0) {
+    if (Object.keys(errs).length > 0) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await apiClient.post('/contact', form);
       setSubmitted(true);
+    } catch (err) {
+      setSubmitError(
+        err?.response?.data?.error || 'Failed to send message. Please email us directly at support@joint-networking.com.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,14 +131,11 @@ export default function Contact() {
         ) : (
           /* Contact Form */
           <div>
-            {/* Notice banner — form is a demo placeholder */}
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              <strong>Note:</strong> This form is currently a preview. To reach us directly, email{' '}
-              {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-              <a href="mailto:support@joint-networking.com" className="underline hover:text-amber-900">
-                support@joint-networking.com
-              </a>.
-            </div>
+            {submitError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+                {submitError}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} noValidate className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-sm space-y-6">
               {/* Name */}
@@ -222,9 +233,10 @@ export default function Contact() {
               {/* Submit */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-3 rounded-lg font-semibold transition-all hover:scale-[1.02] shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-6 py-3 rounded-lg font-semibold transition-all hover:scale-[1.02] shadow-md focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Send Message
+                {isSubmitting ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           </div>

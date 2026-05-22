@@ -280,6 +280,9 @@ functions:
       - httpApi:
           path: /auth/diag
           method: get
+      - httpApi:
+          path: /contact
+          method: post
 
   # ========== USERS ==========
   createUser:
