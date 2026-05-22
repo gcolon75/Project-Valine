@@ -22,6 +22,7 @@ export default function SubmitFeedbackRequest() {
   const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState('');
+  const [scriptType, setScriptType] = useState('Screenplay');
   const [file, setFile] = useState(null);
   const [pageCount, setPageCount] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -114,6 +115,7 @@ export default function SubmitFeedbackRequest() {
       // 2. Create feedback request — free eval skips Stripe, paid flows through Stripe
       const result = await submitFeedbackRequest({
         title: title.trim(),
+        scriptType,
         scriptUrl,
         pageCount,
         useFreeEval: isFree,
@@ -182,6 +184,30 @@ export default function SubmitFeedbackRequest() {
                 disabled={submitting}
                 className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
+            </div>
+
+            {/* Script type */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
+                Script type <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                {['Screenplay', 'Playwright', 'Book'].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setScriptType(type)}
+                    className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition ${
+                      scriptType === type
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-emerald-400'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* File upload */}

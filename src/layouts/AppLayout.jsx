@@ -29,17 +29,16 @@ export default function AppLayout() {
           <div className="flex items-center justify-between">
             
             {/* Logo */}
-            <NavLink 
-              to="/dashboard" 
-              className="flex items-center space-x-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
+            <NavLink
+              to="/dashboard"
+              className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
               aria-label="Go to Dashboard"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
-                <Home className="w-6 h-6 text-white" aria-hidden="true" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
-                Joint
-              </span>
+              <img
+                src="/assets/jointnetworkinglogo.png"
+                alt="Joint"
+                className="h-10 w-auto"
+              />
             </NavLink>
 
             {/* Main Navigation - Desktop */}

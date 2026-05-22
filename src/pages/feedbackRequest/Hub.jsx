@@ -79,9 +79,16 @@ function WriterTab() {
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                {req.title}
-              </h3>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                  {req.title}
+                </h3>
+                {req.scriptType && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 flex-shrink-0">
+                    {req.scriptType}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
                 {req.pageCount} pages · {formatUsd(req.totalPaidCents)} paid
               </p>
@@ -106,6 +113,7 @@ function ReaderTab() {
   const [pool, setPool] = useState([]);
   const [mine, setMine] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState('All');
 
   useEffect(() => {
     Promise.allSettled([
@@ -122,6 +130,7 @@ function ReaderTab() {
 
   const active = mine.filter((r) => ['accepted', 'reader_submitted'].includes(r.status));
   const completed = mine.filter((r) => r.status === 'completed');
+  const filteredPool = typeFilter === 'All' ? pool : pool.filter((r) => r.scriptType === typeFilter);
 
   return (
     <div className="space-y-8">
@@ -158,16 +167,37 @@ function ReaderTab() {
       )}
 
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300 mb-3">
-          Available scripts ({pool.length})
-        </h3>
-        {!pool.length ? (
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">
+            Available scripts ({filteredPool.length}{typeFilter !== 'All' ? ` · ${typeFilter}` : ''})
+          </h3>
+          <div className="flex gap-2">
+            {['All', 'Screenplay', 'Playwright', 'Book'].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                className={`text-xs px-3 py-1 rounded-full border font-medium transition ${
+                  typeFilter === t
+                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                    : 'border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400 hover:border-emerald-500'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+        {!filteredPool.length ? (
           <div className="text-center py-8 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">
-            <p className="text-neutral-500">No scripts in the pool right now. Check back soon.</p>
+            <p className="text-neutral-500">
+              {pool.length === 0
+                ? 'No scripts in the pool right now. Check back soon.'
+                : `No ${typeFilter} scripts available right now.`}
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
-            {pool.map((req) => (
+            {filteredPool.map((req) => (
               <Link
                 key={req.id}
                 to={`/feedback-request/${req.id}`}
@@ -175,9 +205,16 @@ function ReaderTab() {
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                      {req.title}
-                    </h4>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                        {req.title}
+                      </h4>
+                      {req.scriptType && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 flex-shrink-0">
+                          {req.scriptType}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       by {req.writer?.displayName || req.writer?.username} ·{' '}
                       {req.pageCount} pages

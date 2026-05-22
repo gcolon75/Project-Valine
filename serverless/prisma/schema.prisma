@@ -1020,6 +1020,7 @@ model ScriptFeedbackRequest {
   writerId    String
   readerId    String? // assigned when a reader claims the job
   title       String
+  scriptType  String  @default("Screenplay") // Screenplay | Playwright | Book
   scriptUrl   String  // S3 URL of the uploaded PDF
   mediaId     String? // ID of the Media row (for watermark endpoint)
   pageCount   Int

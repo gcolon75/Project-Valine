@@ -158,10 +158,12 @@ export const submitRequest = async (event) => {
       return error(400, 'Invalid JSON body');
     }
 
-    const { title, scriptUrl, pageCount, useFreeEval, mediaId, requireWatermark, anonymousSubmission } = body;
+    const { title, scriptUrl, pageCount, useFreeEval, mediaId, requireWatermark, anonymousSubmission, scriptType } = body;
     if (!title || typeof title !== 'string' || !title.trim()) {
       return error(400, 'Title is required');
     }
+    const VALID_SCRIPT_TYPES = ['Screenplay', 'Playwright', 'Book'];
+    const safeScriptType = VALID_SCRIPT_TYPES.includes(scriptType) ? scriptType : 'Screenplay';
     if (!scriptUrl || typeof scriptUrl !== 'string') {
       return error(400, 'scriptUrl is required');
     }
@@ -208,6 +210,7 @@ export const submitRequest = async (event) => {
           data: {
             writerId: auth.id,
             title: title.trim().slice(0, 200),
+            scriptType: safeScriptType,
             scriptUrl,
             mediaId: mediaIdSafe,
             pageCount: pages,
@@ -237,6 +240,7 @@ export const submitRequest = async (event) => {
       data: {
         writerId: auth.id,
         title: title.trim().slice(0, 200),
+        scriptType: safeScriptType,
         scriptUrl,
         mediaId: mediaIdSafe,
         pageCount: pages,
