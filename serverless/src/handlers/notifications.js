@@ -179,28 +179,33 @@ export const getUnreadCounts = async (event) => {
       });
     }
 
-    // Get unread notifications count
+    // Get unread notifications count (exclude MESSAGE type — those show on the inbox icon)
     const notificationsCount = await prisma.notification.count({
       where: {
         recipientId: userId,
-        isRead: false
+        isRead: false,
+        NOT: { type: 'MESSAGE' }
       }
     });
 
-    // Get unread messages count (if you have a messages table)
-    // If not, set to 0 for now
+    // Get unread direct messages count
     let messagesCount = 0;
     try {
-      // Try to count unread messages if the table exists
-      messagesCount = await prisma.message.count({
+      messagesCount = await prisma.directMessage.count({
         where: {
-          recipientId: userId,
-          isRead: false
+          readAt: null,
+          NOT: { senderId: userId },
+          thread: {
+            OR: [
+              { userAId: userId },
+              { userBId: userId },
+              { participants: { some: { userId } } }
+            ]
+          }
         }
       });
     } catch (e) {
-      // If messages table doesn't exist yet, just use 0
-      console.debug('Messages table not available yet, returning 0');
+      console.debug('DirectMessage count failed, returning 0', e.message);
     }
 
     return json({

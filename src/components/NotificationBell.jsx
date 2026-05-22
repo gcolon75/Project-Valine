@@ -11,19 +11,19 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const hideTimerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
+  const openDropdown = () => {
+    clearTimeout(hideTimerRef.current);
+    setShowDropdown(true);
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const closeDropdown = () => {
+    hideTimerRef.current = setTimeout(() => setShowDropdown(false), 150);
+  };
+
+  useEffect(() => () => clearTimeout(hideTimerRef.current), []);
 
   // Fetch notifications when dropdown opens
   useEffect(() => {
@@ -130,9 +130,9 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
       <button
-        onClick={() => setShowDropdown(!showDropdown)}
+        onClick={() => navigate('/notifications')}
         title={unreadCounts.notifications > 0 ? `Notifications (${unreadCounts.notifications} unread)` : 'Notifications'}
         className="relative p-2 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={`Notifications${unreadCounts.notifications > 0 ? `, ${unreadCounts.notifications} unread` : ''}`}

@@ -109,13 +109,6 @@ export default function Contact() {
             <p className="text-neutral-600">
               Thanks! We'll get back to you within 1–2 business days.
             </p>
-            <p className="mt-3 text-sm text-neutral-500">
-              In the meantime, you can also reach us directly at{' '}
-              {/* TODO: replace with full domain once confirmed, e.g. support@joint-networking.com */}
-              <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] hover:underline">
-                support@joint-networking.com
-              </a>.
-            </p>
             <button
               onClick={() => {
                 setSubmitted(false);
