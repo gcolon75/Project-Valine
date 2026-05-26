@@ -59,6 +59,14 @@ export const handler = async (event, context) => {
       if (method === 'POST') return sf.createAnnotation(event, context);
     }
 
+    // Chat routes (before generic /:id)
+    m = path.match(/^\/script-feedback\/([^/]+)\/chat$/);
+    if (m) {
+      event.pathParameters = { ...(event.pathParameters || {}), id: m[1] };
+      if (method === 'GET')  return sf.getChatMessages(event, context);
+      if (method === 'POST') return sf.sendChatMessage(event, context);
+    }
+
     // Action routes
     m = path.match(/^\/script-feedback\/([^/]+)\/(approve|deny|accept|submit-notes|reassign|approve-submission|request-revision)$/);
     if (m && method === 'POST') {

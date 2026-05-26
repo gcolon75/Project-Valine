@@ -109,3 +109,13 @@ export const adminRequestRevision = async (id, note) => {
   const { data } = await apiClient.post(`/script-feedback/${id}/request-revision`, { note });
   return data?.request;
 };
+
+export const getFeedbackChat = async (id) => {
+  const { data } = await apiClient.get(`/script-feedback/${id}/chat`);
+  return data?.messages || [];
+};
+
+export const sendFeedbackChatMessage = async (id, body) => {
+  const { data } = await apiClient.post(`/script-feedback/${id}/chat`, { body });
+  return data;
+};

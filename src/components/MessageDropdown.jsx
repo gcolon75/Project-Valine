@@ -31,7 +31,10 @@ export default function MessageDropdown() {
       setLoading(true);
       try {
         const data = await getThreads(5);
-        const list = Array.isArray(data) ? data : Array.isArray(data?.threads) ? data.threads : [];
+        const list = Array.isArray(data) ? data
+          : Array.isArray(data?.items) ? data.items
+          : Array.isArray(data?.threads) ? data.threads
+          : [];
         setThreads(list);
       } catch {
         setThreads([]);

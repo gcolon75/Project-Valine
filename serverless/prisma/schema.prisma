@@ -96,8 +96,9 @@ model User {
   sales     Purchase[] @relation("Sales")
 
   // Script feedback service (PDF Part 2 — paid feedback marketplace)
-  scriptFeedbackAsWriter ScriptFeedbackRequest[] @relation("ScriptFeedbackWriter")
-  scriptFeedbackAsReader ScriptFeedbackRequest[] @relation("ScriptFeedbackReader")
+  scriptFeedbackAsWriter   ScriptFeedbackRequest[] @relation("ScriptFeedbackWriter")
+  scriptFeedbackAsReader   ScriptFeedbackRequest[] @relation("ScriptFeedbackReader")
+  scriptFeedbackMessages   ScriptFeedbackMessage[]
 
   @@index([email])
   @@index([normalizedEmail])
@@ -964,6 +965,7 @@ model FeedbackAnnotation {
   content                  String   // Comment/annotation text
   positionX                Float?   // Position on page (for PAGE_COMMENT)
   positionY                Float?
+  sentiment                String?  // good, questioning, not_sure
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
@@ -1074,9 +1076,10 @@ model ScriptFeedbackRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  writer      User                  @relation("ScriptFeedbackWriter", fields: [writerId], references: [id], onDelete: Cascade)
-  reader      User?                 @relation("ScriptFeedbackReader", fields: [readerId], references: [id], onDelete: SetNull)
+  writer      User                      @relation("ScriptFeedbackWriter", fields: [writerId], references: [id], onDelete: Cascade)
+  reader      User?                     @relation("ScriptFeedbackReader", fields: [readerId], references: [id], onDelete: SetNull)
   annotations FeedbackAnnotation[]
+  messages    ScriptFeedbackMessage[]
 
   @@index([writerId])
   @@index([readerId])
@@ -1084,6 +1087,20 @@ model ScriptFeedbackRequest {
   @@index([stripeSessionId])
   @@index([createdAt])
   @@map("script_feedback_requests")
+}
+
+model ScriptFeedbackMessage {
+  id        String   @id @default(uuid())
+  requestId String
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  request ScriptFeedbackRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender  User                  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("script_feedback_messages")
 }
 
 model AllowedEmail {

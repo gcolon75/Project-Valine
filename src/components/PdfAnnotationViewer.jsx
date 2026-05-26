@@ -1,14 +1,43 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft, MessageSquare, Send, Loader2, Trash2,
+  ArrowLeft, MessageSquare, Loader2, Trash2,
   ChevronLeft, ChevronRight, Highlighter, MessageCircle, FileText, CheckSquare,
+  ThumbsUp, HelpCircle, ThumbsDown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+// Sentiment helpers
+const SENTIMENTS = [
+  { key: 'good',        label: 'Good',        bg: 'bg-emerald-500 hover:bg-emerald-600', Icon: ThumbsUp },
+  { key: 'questioning', label: 'Questioning',  bg: 'bg-amber-500 hover:bg-amber-600',    Icon: HelpCircle },
+  { key: 'not_sure',    label: 'Not Sure',     bg: 'bg-red-500 hover:bg-red-600',        Icon: ThumbsDown },
+];
+
+function highlightClass(sentiment, selected) {
+  if (sentiment === 'good')        return selected ? 'bg-emerald-400/50 ring-2 ring-emerald-500 ring-offset-1' : 'bg-emerald-300/30 hover:bg-emerald-400/40';
+  if (sentiment === 'questioning') return selected ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1'   : 'bg-amber-300/30 hover:bg-amber-400/40';
+  if (sentiment === 'not_sure')    return selected ? 'bg-red-400/50 ring-2 ring-red-500 ring-offset-1'       : 'bg-red-300/30 hover:bg-red-400/40';
+  return selected ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1' : 'bg-amber-300/30 hover:bg-amber-400/40';
+}
+
+function markerClass(sentiment, selected) {
+  if (sentiment === 'good')        return selected ? 'bg-emerald-600 scale-125 ring-2 ring-emerald-400 ring-offset-2' : 'bg-emerald-500 hover:scale-110 hover:bg-emerald-600';
+  if (sentiment === 'questioning') return selected ? 'bg-amber-600 scale-125 ring-2 ring-amber-400 ring-offset-2'   : 'bg-amber-500 hover:scale-110 hover:bg-amber-600';
+  if (sentiment === 'not_sure')    return selected ? 'bg-red-600 scale-125 ring-2 ring-red-400 ring-offset-2'       : 'bg-red-500 hover:scale-110 hover:bg-red-600';
+  return selected ? 'bg-purple-600 scale-125 ring-2 ring-purple-400 ring-offset-2' : 'bg-purple-500 hover:scale-110 hover:bg-purple-600';
+}
+
+function sentimentBadge(sentiment) {
+  if (sentiment === 'good')        return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Good</span>;
+  if (sentiment === 'questioning') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Questioning</span>;
+  if (sentiment === 'not_sure')    return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Not Sure</span>;
+  return null;
+}
 
 /**
  * Full-screen PDF viewer with inline annotation support.
@@ -197,7 +226,8 @@ export default function PdfAnnotationViewer({
     setSelectedText('');
   }, [canAnnotate, selectedText]);
 
-  const handleSubmitAnnotation = async () => {
+  // sentiment: 'good' | 'questioning' | 'not_sure'
+  const handleSubmitAnnotation = async (sentiment) => {
     if (!commentText.trim()) { toast.error('Please enter a comment'); return; }
     setSubmitting(true);
     try {
@@ -209,6 +239,7 @@ export default function PdfAnnotationViewer({
         selectionData: selectionRects.length ? { rects: selectionRects } : null,
         positionX: selectionRects[0]?.x ?? null,
         positionY: selectionRects[0]?.y ?? null,
+        sentiment: sentiment || null,
       };
       const newAnnotation = await onCreateAnnotation(data);
       setAnnotations(prev => [...prev, newAnnotation]);
@@ -232,7 +263,8 @@ export default function PdfAnnotationViewer({
     }
   };
 
-  const handleSubmitPageComment = async () => {
+  // sentiment: 'good' | 'questioning' | 'not_sure'
+  const handleSubmitPageComment = async (sentiment) => {
     if (!pageComment.trim()) return;
     setSubmittingPageComment(true);
     try {
@@ -244,6 +276,7 @@ export default function PdfAnnotationViewer({
         selectionData: null,
         positionX: null,
         positionY: null,
+        sentiment: sentiment || null,
       };
       const newAnnotation = await onCreateAnnotation(data);
       setAnnotations(prev => [...prev, newAnnotation]);
@@ -368,9 +401,7 @@ export default function PdfAnnotationViewer({
                     key={i}
                     onClick={() => setSelectedAnnotation(ann)}
                     className={`absolute cursor-pointer rounded-sm transition-all duration-200 ${
-                      selectedAnnotation?.id === ann.id
-                        ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1'
-                        : 'bg-amber-300/30 hover:bg-amber-400/40'
+                      highlightClass(ann.sentiment, selectedAnnotation?.id === ann.id)
                     }`}
                     style={{ left: r.x, top: r.y, width: r.width, height: r.height }}
                   />
@@ -384,9 +415,7 @@ export default function PdfAnnotationViewer({
                 key={ann.id}
                 onClick={() => setSelectedAnnotation(ann)}
                 className={`absolute w-7 h-7 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-all duration-200 ${
-                  selectedAnnotation?.id === ann.id
-                    ? 'bg-purple-600 scale-125 ring-2 ring-purple-400 ring-offset-2'
-                    : 'bg-purple-500 hover:scale-110 hover:bg-purple-600'
+                  markerClass(ann.sentiment, selectedAnnotation?.id === ann.id)
                 }`}
                 style={{ left: (ann.positionX || 0) - 14, top: (ann.positionY || 0) - 14 }}
               >
@@ -464,28 +493,34 @@ export default function PdfAnnotationViewer({
                 rows={3}
                 autoFocus
               />
-              <div className="flex items-center justify-end gap-2 mt-2">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 mb-2">
+                Choose a sentiment to submit:
+              </p>
+              <div className="flex items-center gap-1 flex-wrap">
                 <button
                   onClick={clearSelection}
-                  className="px-3 py-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition"
+                  className="px-3 py-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition mr-1"
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handleSubmitAnnotation}
-                  disabled={!commentText.trim() || submitting}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#0CCE6B] text-white rounded-lg hover:bg-[#0BBE60] disabled:opacity-50 transition"
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Add Comment
-                </button>
+                {SENTIMENTS.map(({ key, label, bg, Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSubmitAnnotation(key)}
+                    disabled={!commentText.trim() || submitting}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition ${bg}`}
+                  >
+                    {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Icon className="w-3 h-3" />}
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
           {/* Instructions */}
           {canAnnotate && !showCommentInput && (
-            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-gradient-to-r from-amber-50 to-purple-50 dark:from-amber-900/20 dark:to-purple-900/20">
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 bg-gradient-to-r from-emerald-50/50 via-amber-50/50 to-red-50/50 dark:from-emerald-900/10 dark:via-amber-900/10 dark:to-red-900/10">
               <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-3">How to give feedback:</p>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
@@ -493,7 +528,7 @@ export default function PdfAnnotationViewer({
                     <Highlighter className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    <span className="font-medium text-amber-600 dark:text-amber-400">Highlight text:</span> Drag to select any text
+                    <span className="font-medium text-amber-600 dark:text-amber-400">Highlight text:</span> Drag to select
                   </p>
                 </div>
                 <div className="flex items-start gap-2">
@@ -501,7 +536,7 @@ export default function PdfAnnotationViewer({
                     <MessageCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    <span className="font-medium text-purple-600 dark:text-purple-400">Page comment:</span> Click anywhere on the page
+                    <span className="font-medium text-purple-600 dark:text-purple-400">Page comment:</span> Click on page
                   </p>
                 </div>
                 <div className="flex items-start gap-2">
@@ -509,8 +544,14 @@ export default function PdfAnnotationViewer({
                     <FileText className="w-3.5 h-3.5 text-[#0CCE6B]" />
                   </div>
                   <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                    <span className="font-medium text-[#0CCE6B]">Page feedback:</span> Use the box below
+                    <span className="font-medium text-[#0CCE6B]">Page feedback:</span> Use box below
                   </p>
+                </div>
+                <div className="flex items-center gap-2 mt-1 pt-1 border-t border-neutral-200 dark:border-neutral-700">
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Good</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Questioning</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Not Sure</span>
+                  <span className="text-xs text-neutral-500">= sentiment</span>
                 </div>
               </div>
             </div>
@@ -529,15 +570,21 @@ export default function PdfAnnotationViewer({
                 className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white resize-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent text-sm"
                 rows={3}
               />
-              <div className="flex justify-end mt-2">
-                <button
-                  onClick={handleSubmitPageComment}
-                  disabled={!pageComment.trim() || submittingPageComment}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#0CCE6B] text-white rounded-lg hover:bg-[#0BBE60] disabled:opacity-50 transition"
-                >
-                  {submittingPageComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Add Page Feedback
-                </button>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 mb-1">
+                Choose a sentiment to submit:
+              </p>
+              <div className="flex gap-1 flex-wrap">
+                {SENTIMENTS.map(({ key, label, bg, Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSubmitPageComment(key)}
+                    disabled={!pageComment.trim() || submittingPageComment}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition ${bg}`}
+                  >
+                    {submittingPageComment ? <Loader2 className="w-3 h-3 animate-spin" /> : <Icon className="w-3 h-3" />}
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -627,8 +674,8 @@ function AnnotationCard({ annotation, selected, currentUserId, onSelect, onDelet
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <AnnotationTypeIcon type={annotation.type} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <AnnotationTypeIcon type={annotation.type} sentiment={annotation.sentiment} />
           {annotation.author?.avatar ? (
             <img src={annotation.author.avatar} alt="" className="w-6 h-6 rounded-full" />
           ) : (
@@ -639,11 +686,12 @@ function AnnotationCard({ annotation, selected, currentUserId, onSelect, onDelet
           <span className="text-sm font-medium text-neutral-900 dark:text-white">
             {annotation.author?.displayName || annotation.author?.username}
           </span>
+          {sentimentBadge(annotation.sentiment)}
         </div>
         {annotation.authorId === currentUserId && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(annotation.id); }}
-            className="p-1 text-neutral-400 hover:text-red-500 transition"
+            className="p-1 text-neutral-400 hover:text-red-500 transition flex-shrink-0"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -664,18 +712,22 @@ function AnnotationCard({ annotation, selected, currentUserId, onSelect, onDelet
   );
 }
 
-function AnnotationTypeIcon({ type }) {
+function AnnotationTypeIcon({ type, sentiment }) {
   if (type === 'HIGHLIGHT') {
+    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-amber-100 dark:bg-amber-900/30';
+    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400';
     return (
-      <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-        <Highlighter className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${bg}`}>
+        <Highlighter className={`w-3.5 h-3.5 ${color}`} />
       </div>
     );
   }
   if (type === 'PAGE_COMMENT') {
+    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-purple-100 dark:bg-purple-900/30';
+    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400';
     return (
-      <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-        <MessageCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${bg}`}>
+        <MessageCircle className={`w-3.5 h-3.5 ${color}`} />
       </div>
     );
   }

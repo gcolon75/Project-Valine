@@ -370,7 +370,15 @@ export default function FeedbackRequestAdminQueue() {
                           Writer: {req.writer?.displayName || req.writer?.username} · Reader: {req.reader?.displayName || req.reader?.username} · {req.pageCount} pages
                         </p>
                       </div>
-                      {statusBadge(req.status)}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {statusBadge(req.status)}
+                        <Link
+                          to={`/feedback-request/${req.id}/read`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition"
+                        >
+                          View PDF
+                        </Link>
+                      </div>
                     </div>
 
                     {req.summaryNotes && (

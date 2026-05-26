@@ -1000,12 +1000,15 @@ export const createAnnotation = async (event) => {
       return error(400, 'Invalid JSON body');
     }
 
-    const { type, pageNumber, selectionData, highlightedText, content, positionX, positionY } = body;
+    const { type, pageNumber, selectionData, highlightedText, content, positionX, positionY, sentiment } = body;
     if (!type || !['HIGHLIGHT', 'PAGE_COMMENT', 'PAGE_FEEDBACK', 'GENERAL_COMMENT'].includes(type)) {
       return error(400, 'type must be HIGHLIGHT, PAGE_COMMENT, PAGE_FEEDBACK, or GENERAL_COMMENT');
     }
     if (!content || typeof content !== 'string' || !content.trim()) {
       return error(400, 'content is required');
+    }
+    if (sentiment && !['good', 'questioning', 'not_sure'].includes(sentiment)) {
+      return error(400, 'sentiment must be good, questioning, or not_sure');
     }
 
     const request = await prisma.scriptFeedbackRequest.findUnique({
@@ -1031,6 +1034,7 @@ export const createAnnotation = async (event) => {
         content: content.trim(),
         positionX: positionX ?? null,
         positionY: positionY ?? null,
+        sentiment: sentiment ?? null,
       },
       include: { author: authorSelect() },
     });
@@ -1289,3 +1293,118 @@ export async function handleScriptFeedbackPaymentCompleted(prisma, session) {
 
   console.log('[scriptFeedback] payment completed', { requestId, paymentIntentId: session.payment_intent });
 }
+
+// ─── Chat between writer and reader ────────────────────────────────────────
+
+const CHAT_SENDER_SELECT = {
+  id: true,
+  displayName: true,
+  username: true,
+  avatar: true,
+};
+
+/** GET /script-feedback/:id/chat */
+export const getChatMessages = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const request = await prisma.scriptFeedbackRequest.findUnique({
+      where: { id },
+      select: { writerId: true, readerId: true, anonymousSubmission: true, status: true },
+    });
+    if (!request) return error(404, 'Request not found');
+
+    const isWriter = request.writerId === auth.id;
+    const isReader  = request.readerId === auth.id;
+    const isAdmin   = auth.role === 'admin';
+    if (!isWriter && !isReader && !isAdmin) return error(403, 'Forbidden');
+
+    const messages = await prisma.scriptFeedbackMessage.findMany({
+      where: { requestId: id },
+      orderBy: { createdAt: 'asc' },
+      include: { sender: { select: CHAT_SENDER_SELECT } },
+    });
+
+    // Anonymize writer identity for the reader when anonymousSubmission is on
+    const shaped = messages.map((m) => {
+      const senderIsWriter = m.senderId === request.writerId;
+      const hideIdentity = request.anonymousSubmission && senderIsWriter && isReader;
+      return {
+        id: m.id,
+        body: m.body,
+        createdAt: m.createdAt,
+        senderId: m.senderId,
+        isOwn: m.senderId === auth.id,
+        sender: hideIdentity
+          ? { displayName: 'Anonymous', username: null, avatar: null }
+          : m.sender,
+      };
+    });
+
+    return json({ messages: shaped });
+  } catch (e) {
+    console.error('[scriptFeedback] getChatMessages error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+/** POST /script-feedback/:id/chat */
+export const sendChatMessage = async (event) => {
+  try {
+    const prisma = getPrisma();
+    if (!prisma) return error(503, 'Database unavailable');
+
+    const auth = await getAuthUser(event, prisma);
+    if (!auth) return error(401, 'Unauthorized');
+
+    const id = event.pathParameters?.id;
+    if (!id) return error(400, 'Request ID required');
+
+    const request = await prisma.scriptFeedbackRequest.findUnique({
+      where: { id },
+      select: { writerId: true, readerId: true, anonymousSubmission: true, status: true },
+    });
+    if (!request) return error(404, 'Request not found');
+
+    const isWriter = request.writerId === auth.id;
+    const isReader  = request.readerId === auth.id;
+    if (!isWriter && !isReader) return error(403, 'Only the writer and reader may chat');
+
+    // Only allow chat once feedback is delivered
+    if (request.status !== 'completed') return error(400, 'Chat is only available after feedback is delivered');
+
+    const body = JSON.parse(event.body || '{}');
+    const text = (body.body || '').trim();
+    if (!text) return error(400, 'Message body required');
+    if (text.length > 2000) return error(400, 'Message too long (2000 chars max)');
+
+    const message = await prisma.scriptFeedbackMessage.create({
+      data: { requestId: id, senderId: auth.id, body: text },
+      include: { sender: { select: CHAT_SENDER_SELECT } },
+    });
+
+    const senderIsWriter = message.senderId === request.writerId;
+    const readerGetsHidden = request.anonymousSubmission && senderIsWriter;
+
+    return json({
+      id: message.id,
+      body: message.body,
+      createdAt: message.createdAt,
+      senderId: message.senderId,
+      isOwn: true,
+      sender: readerGetsHidden
+        ? { displayName: 'Anonymous', username: null, avatar: null }
+        : message.sender,
+    }, 201);
+  } catch (e) {
+    console.error('[scriptFeedback] sendChatMessage error', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Mic } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import MarketingFooter from '../components/MarketingFooter';
@@ -74,13 +73,12 @@ export default function MarketingLayout() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center">
-                <Mic className="w-6 h-6 text-white" aria-hidden="true" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent">
-                Joint
-              </span>
+            <Link to="/" className="flex items-center focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:ring-offset-2 rounded-lg" aria-label="Joint — Home">
+              <img
+                src="/assets/jointnetworkinglogo.png"
+                alt="Joint"
+                className="h-10 w-auto"
+              />
             </Link>
 
             {/* Navigation - Anchor links for landing page */}

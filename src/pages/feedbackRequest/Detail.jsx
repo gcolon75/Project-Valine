@@ -10,6 +10,7 @@ import {
   denyFeedbackRequest,
   approveFeedbackRequest,
 } from '../../services/scriptFeedbackService';
+import FeedbackChat from './FeedbackChat';
 
 const STATUS_META = {
   pending_payment:   { label: 'Awaiting payment',        color: 'bg-neutral-200 text-neutral-800' },
@@ -138,10 +139,11 @@ export default function FeedbackRequestDetail() {
   }
 
   const meta = STATUS_META[request.status] || { label: request.status, color: 'bg-neutral-100 text-neutral-700' };
+  const showChat = request.status === 'completed' && !!request.reader && (isWriter || isAssignedReader);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
+      <div className={`container mx-auto px-4 ${showChat ? 'max-w-6xl' : 'max-w-3xl'}`}>
         <Link
           to="/feedback-request"
           className="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-400 hover:text-emerald-600 mb-6"
@@ -161,7 +163,8 @@ export default function FeedbackRequestDetail() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow border border-neutral-200 dark:border-neutral-700 p-6 md:p-8">
+        <div className={`${showChat ? 'flex gap-6 items-start' : ''}`}>
+        <div className={`bg-white dark:bg-neutral-800 rounded-2xl shadow border border-neutral-200 dark:border-neutral-700 p-6 md:p-8 ${showChat ? 'flex-1 min-w-0' : ''}`}>
           {/* Header */}
           <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
             <div className="min-w-0">
@@ -255,14 +258,24 @@ export default function FeedbackRequestDetail() {
                       Read Script
                     </Link>
                   )}
-                  {/* Writer / admin: can open once feedback is delivered */}
-                  {(isWriter || isAdmin) && request.status === 'completed' && (
+                  {/* Writer: can open once feedback is delivered */}
+                  {isWriter && request.status === 'completed' && (
                     <Link
                       to={`/feedback-request/${id}/read`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
                     >
                       <BookOpen className="w-4 h-4" />
                       Read Script
+                    </Link>
+                  )}
+                  {/* Admin: can open at any stage after payment */}
+                  {isAdmin && request.status !== 'pending_payment' && (
+                    <Link
+                      to={`/feedback-request/${id}/read`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      View Script
                     </Link>
                   )}
                 </div>
@@ -333,11 +346,14 @@ export default function FeedbackRequestDetail() {
                     key={a.id}
                     className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 text-sm"
                   >
-                    <div className="flex justify-between items-start mb-1">
+                    <div className="flex justify-between items-start mb-1 gap-2 flex-wrap">
                       <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
                         {a.type === 'HIGHLIGHT' ? 'Highlight' : a.type === 'PAGE_COMMENT' ? 'Page comment' : 'General'}
                         {a.pageNumber ? ` · page ${a.pageNumber}` : ''}
                       </span>
+                      {a.sentiment === 'good' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Good</span>}
+                      {a.sentiment === 'questioning' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Questioning</span>}
+                      {a.sentiment === 'not_sure' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Not Sure</span>}
                     </div>
                     {a.highlightedText && (
                       <p className="text-neutral-600 dark:text-neutral-400 italic mb-1 border-l-2 border-emerald-400 pl-2">
@@ -474,6 +490,14 @@ export default function FeedbackRequestDetail() {
               <p className="text-red-700 dark:text-red-400">{request.denyReason}</p>
             </div>
           )}
+        </div>
+
+        {/* Chat panel — only visible to writer + reader once completed */}
+        {showChat && (
+          <div className="w-80 flex-shrink-0 sticky top-24 h-[calc(100vh-8rem)]">
+            <FeedbackChat requestId={id} request={request} />
+          </div>
+        )}
         </div>
       </div>
     </div>
