@@ -1,6 +1,7 @@
 // src/components/PostCard.jsx
 import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic } from "lucide-react";
+import UserAvatar from './UserAvatar';
 import { parseVideoEmbed } from "../utils/videoEmbed";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -280,18 +281,12 @@ export default function PostCard({ post, onDelete, onLike }) {
           {/* Author info and meta - Secondary */}
           <div className="flex items-center gap-2">
             <Link to={`/profile/${post.author.role}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="h-6 w-6 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '';
-                  }}
-                />
-              ) : (
-                <div className="h-6 w-6 rounded-full bg-neutral-200 dark:bg-white/10" />
-              )}
+              <UserAvatar
+                src={post.author.avatar}
+                name={post.author.name || post.author.displayName || post.author.username}
+                alt={post.author.name}
+                className="h-6 w-6"
+              />
               <span className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 inline-flex items-center gap-1">
                 {post.author.name}
                 <EmeraldBadge user={post.author} />

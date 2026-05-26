@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import UserAvatar from '../components/UserAvatar';
 import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, DollarSign, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
@@ -328,10 +329,11 @@ export default function Notifications() {
               >
                 <div className="flex items-start space-x-3">
                   {/* User Avatar */}
-                  <img
-                    src={user?.avatar || user?.avatarUrl || 'https://i.pravatar.cc/150?img=1'}
-                    alt={user?.name || user?.username || 'User'}
-                    className="w-12 h-12 rounded-full flex-shrink-0"
+                  <UserAvatar
+                    src={user?.avatar || user?.avatarUrl}
+                    name={user?.displayName || user?.username}
+                    alt={user?.displayName || user?.username || 'User'}
+                    className="w-12 h-12"
                   />
 
                   {/* Content */}

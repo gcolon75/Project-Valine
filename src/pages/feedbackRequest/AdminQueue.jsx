@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import UserAvatar from '../../components/UserAvatar';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldAlert, Loader2, RefreshCw, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -42,32 +43,98 @@ function statusBadge(status) {
 
 function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
   const [selected, setSelected] = useState('');
+  const [search, setSearch] = useState('');
+
+  const filtered = readers.filter((r) => {
+    const q = search.toLowerCase();
+    return (
+      !q ||
+      (r.displayName || '').toLowerCase().includes(q) ||
+      (r.username || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 pb-4">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Reassign Reader</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-5 h-5" /></button>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-          Script: <span className="font-medium text-neutral-900 dark:text-neutral-100">{request.title}</span>
-        </p>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Assign to reader</label>
-          <select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-            className="w-full bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          >
-            <option value="">— Unassign (return to pool) —</option>
-            {readers.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.displayName || r.username} {r.username ? `(@${r.username})` : ''}
-              </option>
-            ))}
-          </select>
+
+        <div className="px-6 pb-4">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            Script: <span className="font-medium text-neutral-900 dark:text-neutral-100">{request.title}</span>
+          </p>
+
+          {/* Search */}
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search readers…"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
+          />
         </div>
-        <div className="flex gap-3 justify-end">
+
+        {/* Reader list */}
+        <div className="overflow-y-auto flex-1 px-6 pb-2 space-y-2">
+          {/* Unassign option */}
+          <button
+            onClick={() => setSelected('')}
+            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${
+              selected === ''
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+            }`}
+          >
+            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center flex-shrink-0">
+              <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Unassign reader</p>
+              <p className="text-xs text-neutral-400">Returns script to the reader pool</p>
+            </div>
+          </button>
+
+          {filtered.length === 0 && search && (
+            <p className="text-sm text-neutral-500 text-center py-4">No readers match "{search}"</p>
+          )}
+
+          {filtered.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setSelected(r.id)}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${
+                selected === r.id
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                  : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+              }`}
+            >
+              <UserAvatar
+                src={r.avatar}
+                name={r.displayName || r.username}
+                alt={r.displayName || r.username}
+                className="w-10 h-10"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                  {r.displayName || r.username}
+                </p>
+                {r.username && (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">@{r.username}</p>
+                )}
+              </div>
+              {selected === r.id && (
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 justify-end p-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button variant="primary" onClick={() => onConfirm(selected || null)} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}

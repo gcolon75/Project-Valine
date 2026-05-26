@@ -1,5 +1,6 @@
 // src/pages/Dashboard.jsx
 import { useMemo, useState, useEffect } from "react";
+import UserAvatar from "../components/UserAvatar";
 import { Link, useNavigate } from "react-router-dom";
 import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem } from "lucide-react";
 import PostCard from "../components/PostCard";
@@ -155,15 +156,12 @@ export default function Dashboard() {
           <aside className="hidden lg:block space-y-4">
             <Card padding="default">
               <div className="flex items-center gap-3">
-                {profileData?.avatar ? (
-                  <img 
-                    src={profileData.avatar} 
-                    alt={profileData.displayName || 'Profile'} 
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-white/10" aria-hidden="true" />
-                )}
+                <UserAvatar
+                  src={profileData?.avatar}
+                  name={profileData?.displayName || profileData?.username}
+                  alt={profileData?.displayName || 'Profile'}
+                  className="h-10 w-10"
+                />
                 <div>
                   <div className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1">
                     {profileData?.displayName || user?.displayName || 'Your Name'}

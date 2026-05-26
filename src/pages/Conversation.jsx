@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import UserAvatar from '../components/UserAvatar';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Send, Loader2, X, Shield, User, Users } from 'lucide-react';
 import { getThread, sendThreadMessage } from '../services/messagesService';
@@ -151,15 +152,12 @@ export default function Conversation() {
             to={`/profile/${otherUser.username || otherUser.id}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            {otherUser.avatar ? (
-              <img
-                src={otherUser.avatar}
-                alt={otherUser.displayName}
-                className="w-10 h-10 rounded-full"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-            )}
+            <UserAvatar
+              src={otherUser.avatar}
+              name={otherUser.displayName || otherUser.username}
+              alt={otherUser.displayName}
+              className="w-10 h-10"
+            />
             <div>
               <div className="font-semibold text-neutral-900 dark:text-white">
                 {otherUser.displayName}

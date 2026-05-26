@@ -1,5 +1,6 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
+import UserAvatar from '../components/UserAvatar';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -448,17 +449,12 @@ export default function PostDetail() {
           {/* Author info - Secondary */}
           <div className="flex items-center gap-3">
             <Link to={`/profile/${post.author?.username}`}>
-              {post.author?.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.displayName || post.author.username}
-                  className="w-8 h-8 rounded-full object-cover hover:ring-2 ring-emerald-500 transition"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-medium text-sm hover:ring-2 ring-emerald-500 transition">
-                  {(post.author?.displayName || post.author?.username || 'U')[0].toUpperCase()}
-                </div>
-              )}
+              <UserAvatar
+                src={post.author?.avatar}
+                name={post.author?.displayName || post.author?.username}
+                alt={post.author?.displayName || post.author?.username}
+                className="w-8 h-8 hover:ring-2 ring-emerald-500 transition"
+              />
             </Link>
             <div className="flex items-center gap-2 flex-wrap">
               <Link to={`/profile/${post.author?.username}`} className="hover:underline">

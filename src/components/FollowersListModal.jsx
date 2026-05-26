@@ -1,5 +1,6 @@
 // src/components/FollowersListModal.jsx
 import { useState, useEffect } from 'react';
+import UserAvatar from './UserAvatar';
 import { useNavigate } from 'react-router-dom';
 import { X, Search, UserPlus, UserCheck } from 'lucide-react';
 import { getProfileFollowers, getProfileFollowing, followProfile, unfollowProfile } from '../services/connectionService';
@@ -178,10 +179,11 @@ export default function FollowersListModal({
                       className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
                     >
                       {/* Avatar */}
-                      <img
-                        src={item.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName || item.username || 'User')}&background=0CCE6B&color=fff`}
+                      <UserAvatar
+                        src={item.avatar}
+                        name={item.displayName || item.username}
                         alt={item.displayName || item.username}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12"
                       />
 
                       {/* User Info */}

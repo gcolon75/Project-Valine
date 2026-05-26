@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, DollarSign } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUnread } from '../context/UnreadContext';
 import { getNotifications, markAllNotificationsRead } from '../services/notificationsService';
@@ -173,10 +174,11 @@ export default function NotificationBell() {
                   >
                     <div className="flex items-start space-x-3">
                       {/* User Avatar */}
-                      <img
-                        src={notification.triggerer?.avatar || 'https://i.pravatar.cc/150?img=1'}
+                      <UserAvatar
+                        src={notification.triggerer?.avatar}
+                        name={notification.triggerer?.displayName || notification.triggerer?.username}
                         alt={notification.triggerer?.username || 'User'}
-                        className="w-10 h-10 rounded-full flex-shrink-0"
+                        className="w-10 h-10"
                       />
 
                       {/* Content */}

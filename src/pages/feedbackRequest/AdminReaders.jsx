@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import UserAvatar from '../../components/UserAvatar';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldAlert, Search, UserCheck, UserMinus, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui';
@@ -18,13 +19,7 @@ function UserRow({ user, isReader, onToggle, pending, pendingPayoutCents }) {
   return (
     <div className="flex items-center justify-between gap-3 p-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg">
       <div className="flex items-center gap-3 min-w-0">
-        {user.avatar ? (
-          <img src={user.avatar} alt={name} className="w-10 h-10 rounded-full object-cover" />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-semibold">
-            {name.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <UserAvatar src={user.avatar} name={name} alt={name} className="w-10 h-10" />
         <div className="min-w-0">
           <p className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
             {name}

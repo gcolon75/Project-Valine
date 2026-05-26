@@ -1,5 +1,6 @@
 // src/components/CommentList.jsx
 import { useState, useEffect } from "react";
+import UserAvatar from './UserAvatar';
 import { Link } from "react-router-dom";
 import { getPostComments, addPostComment, updateComment, deleteComment, getCommentReplies, likeComment, unlikeComment } from "../services/postService";
 import { useAuth } from "../context/AuthContext";
@@ -174,17 +175,12 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
     <div className={`${depth > 0 ? "ml-8 border-l-2 border-neutral-200 dark:border-neutral-700 pl-3" : ""}`}>
       <div className="flex gap-2 py-2">
         <Link to={getProfileLink(comment.author)} className="flex-shrink-0">
-          {comment.author?.avatar ? (
-            <img
-              src={comment.author.avatar}
-              alt={getAuthorName(comment.author)}
-              className="h-7 w-7 rounded-full object-cover hover:ring-2 hover:ring-brand transition-all"
-            />
-          ) : (
-            <div className="h-7 w-7 rounded-full bg-neutral-200 dark:bg-white/10 hover:ring-2 hover:ring-brand transition-all flex items-center justify-center text-xs font-medium text-neutral-600 dark:text-neutral-400">
-              {getAuthorName(comment.author).charAt(0).toUpperCase()}
-            </div>
-          )}
+          <UserAvatar
+            src={comment.author?.avatar}
+            name={getAuthorName(comment.author)}
+            alt={getAuthorName(comment.author)}
+            className="h-7 w-7 hover:ring-2 hover:ring-brand transition-all"
+          />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
