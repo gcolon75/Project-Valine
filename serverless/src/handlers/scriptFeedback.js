@@ -1007,8 +1007,8 @@ export const createAnnotation = async (event) => {
     if (!content || typeof content !== 'string' || !content.trim()) {
       return error(400, 'content is required');
     }
-    if (sentiment && !['good', 'questioning', 'not_sure'].includes(sentiment)) {
-      return error(400, 'sentiment must be good, questioning, or not_sure');
+    if (sentiment && !['good', 'questioning', 'not_sure', 'general'].includes(sentiment)) {
+      return error(400, 'sentiment must be good, questioning, not_sure, or general');
     }
 
     const request = await prisma.scriptFeedbackRequest.findUnique({

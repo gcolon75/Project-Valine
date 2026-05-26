@@ -471,6 +471,23 @@ functions:
       - httpApi:
           path: /script-feedback/annotations/{annotationId}
           method: delete
+      # Admin action routes
+      - httpApi:
+          path: /script-feedback/{id}/reassign
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/approve-submission
+          method: post
+      - httpApi:
+          path: /script-feedback/{id}/request-revision
+          method: post
+      # Chat routes
+      - httpApi:
+          path: /script-feedback/{id}/chat
+          method: get
+      - httpApi:
+          path: /script-feedback/{id}/chat
+          method: post
       # Admin reader management
       - httpApi:
           path: /script-feedback/admin/readers

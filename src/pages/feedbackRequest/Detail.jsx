@@ -139,7 +139,7 @@ export default function FeedbackRequestDetail() {
   }
 
   const meta = STATUS_META[request.status] || { label: request.status, color: 'bg-neutral-100 text-neutral-700' };
-  const showChat = request.status === 'completed' && !!request.reader && (isWriter || isAssignedReader);
+  const showChat = request.status === 'completed' && !!request.reader && (isWriter || isAssignedReader || isAdmin);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
@@ -184,6 +184,7 @@ export default function FeedbackRequestDetail() {
               user={request.writer}
               highlight={isAssignedReader || (isAdmin && request.reader)}
               anonymous={request.anonymousSubmission && !isWriter && !isAdmin}
+              note={isAdmin && request.anonymousSubmission ? 'Submitted anonymously' : null}
             />
             {request.reader ? (
               <PartyCard
@@ -354,6 +355,7 @@ export default function FeedbackRequestDetail() {
                       {a.sentiment === 'good' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Good</span>}
                       {a.sentiment === 'questioning' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Questioning</span>}
                       {a.sentiment === 'not_sure' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Not Sure</span>}
+                      {a.sentiment === 'general' && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">General</span>}
                     </div>
                     {a.highlightedText && (
                       <p className="text-neutral-600 dark:text-neutral-400 italic mb-1 border-l-2 border-emerald-400 pl-2">
@@ -504,7 +506,7 @@ export default function FeedbackRequestDetail() {
   );
 }
 
-function PartyCard({ role, user, highlight = false, anonymous = false }) {
+function PartyCard({ role, user, highlight = false, anonymous = false, note = null }) {
   if (!user) return null;
 
   if (anonymous) {
@@ -573,6 +575,11 @@ function PartyCard({ role, user, highlight = false, anonymous = false }) {
           >
             {handle}
           </Link>
+        )}
+        {note && (
+          <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+            {note}
+          </span>
         )}
       </div>
     </div>

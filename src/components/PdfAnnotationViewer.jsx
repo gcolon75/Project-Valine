@@ -16,12 +16,14 @@ const SENTIMENTS = [
   { key: 'good',        label: 'Good',        bg: 'bg-emerald-500 hover:bg-emerald-600', Icon: ThumbsUp },
   { key: 'questioning', label: 'Questioning',  bg: 'bg-amber-500 hover:bg-amber-600',    Icon: HelpCircle },
   { key: 'not_sure',    label: 'Not Sure',     bg: 'bg-red-500 hover:bg-red-600',        Icon: ThumbsDown },
+  { key: 'general',     label: 'General',      bg: 'bg-blue-500 hover:bg-blue-600',      Icon: MessageCircle },
 ];
 
 function highlightClass(sentiment, selected) {
   if (sentiment === 'good')        return selected ? 'bg-emerald-400/50 ring-2 ring-emerald-500 ring-offset-1' : 'bg-emerald-300/30 hover:bg-emerald-400/40';
   if (sentiment === 'questioning') return selected ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1'   : 'bg-amber-300/30 hover:bg-amber-400/40';
   if (sentiment === 'not_sure')    return selected ? 'bg-red-400/50 ring-2 ring-red-500 ring-offset-1'       : 'bg-red-300/30 hover:bg-red-400/40';
+  if (sentiment === 'general')     return selected ? 'bg-blue-400/50 ring-2 ring-blue-500 ring-offset-1'     : 'bg-blue-300/30 hover:bg-blue-400/40';
   return selected ? 'bg-amber-400/50 ring-2 ring-amber-500 ring-offset-1' : 'bg-amber-300/30 hover:bg-amber-400/40';
 }
 
@@ -29,6 +31,7 @@ function markerClass(sentiment, selected) {
   if (sentiment === 'good')        return selected ? 'bg-emerald-600 scale-125 ring-2 ring-emerald-400 ring-offset-2' : 'bg-emerald-500 hover:scale-110 hover:bg-emerald-600';
   if (sentiment === 'questioning') return selected ? 'bg-amber-600 scale-125 ring-2 ring-amber-400 ring-offset-2'   : 'bg-amber-500 hover:scale-110 hover:bg-amber-600';
   if (sentiment === 'not_sure')    return selected ? 'bg-red-600 scale-125 ring-2 ring-red-400 ring-offset-2'       : 'bg-red-500 hover:scale-110 hover:bg-red-600';
+  if (sentiment === 'general')     return selected ? 'bg-blue-600 scale-125 ring-2 ring-blue-400 ring-offset-2'     : 'bg-blue-500 hover:scale-110 hover:bg-blue-600';
   return selected ? 'bg-purple-600 scale-125 ring-2 ring-purple-400 ring-offset-2' : 'bg-purple-500 hover:scale-110 hover:bg-purple-600';
 }
 
@@ -36,6 +39,7 @@ function sentimentBadge(sentiment) {
   if (sentiment === 'good')        return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Good</span>;
   if (sentiment === 'questioning') return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Questioning</span>;
   if (sentiment === 'not_sure')    return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Not Sure</span>;
+  if (sentiment === 'general')     return <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">General</span>;
   return null;
 }
 
@@ -714,8 +718,8 @@ function AnnotationCard({ annotation, selected, currentUserId, onSelect, onDelet
 
 function AnnotationTypeIcon({ type, sentiment }) {
   if (type === 'HIGHLIGHT') {
-    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-amber-100 dark:bg-amber-900/30';
-    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400';
+    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : sentiment === 'general' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-amber-100 dark:bg-amber-900/30';
+    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : sentiment === 'general' ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400';
     return (
       <div className={`w-6 h-6 rounded-full flex items-center justify-center ${bg}`}>
         <Highlighter className={`w-3.5 h-3.5 ${color}`} />
@@ -723,8 +727,8 @@ function AnnotationTypeIcon({ type, sentiment }) {
     );
   }
   if (type === 'PAGE_COMMENT') {
-    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-purple-100 dark:bg-purple-900/30';
-    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400';
+    const bg = sentiment === 'good' ? 'bg-emerald-100 dark:bg-emerald-900/30' : sentiment === 'questioning' ? 'bg-amber-100 dark:bg-amber-900/30' : sentiment === 'not_sure' ? 'bg-red-100 dark:bg-red-900/30' : sentiment === 'general' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-purple-100 dark:bg-purple-900/30';
+    const color = sentiment === 'good' ? 'text-emerald-600 dark:text-emerald-400' : sentiment === 'questioning' ? 'text-amber-600 dark:text-amber-400' : sentiment === 'not_sure' ? 'text-red-600 dark:text-red-400' : sentiment === 'general' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400';
     return (
       <div className={`w-6 h-6 rounded-full flex items-center justify-center ${bg}`}>
         <MessageCircle className={`w-3.5 h-3.5 ${color}`} />
