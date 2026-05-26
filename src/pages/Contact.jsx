@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../services/api';
+
+const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 /**
  * Contact Us Page
@@ -62,11 +63,20 @@ export default function Contact() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await apiClient.post('/contact', form);
+      const res = await fetch(`${API_BASE}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to send message');
+      }
       setSubmitted(true);
     } catch (err) {
       setSubmitError(
-        err?.response?.data?.error || 'Failed to send message. Please email us directly at support@joint-networking.com.'
+        err?.message || 'Failed to send message. Please email us directly at support@joint-networking.com.'
       );
     } finally {
       setIsSubmitting(false);
