@@ -1,2 +1,7 @@
 @import url("./styles/global.css");
 @import url("./styles/marketing.css");
+
+@keyframes demo-glow {
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); }
+  50%       { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 20px 4px rgba(12,206,107,0.4); }
+}

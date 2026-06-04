@@ -186,7 +186,7 @@ export default function Dashboard() {
 
             {/* Subscription CTA - Replacing Your Stats */}
             {(profileData?.plan === 'emerald' || user?.plan === 'emerald') ? (
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold mb-2 inline-flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function Dashboard() {
                 </Link>
               </div>
             ) : (
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold mb-2">Unlock Full Stats</h3>
@@ -247,7 +247,7 @@ export default function Dashboard() {
             )}
 
             {/* Saved tags */}
-            <Card padding="default">
+            <Card padding="default" data-demo="tag-filter">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
                   {showAllTags ? "All tags" : "Trending tags"}
@@ -399,15 +399,26 @@ export default function Dashboard() {
                   onAction={() => document.querySelector('input[placeholder*="Share"]')?.focus()}
                 />
               ) : (
-                results.map((p, i) => (
-                  <PostCard
-                    key={p.id}
-                    post={p}
-                    onLike={handleLikePost}
-                    onDelete={handleDeletePost}
-                    style={{ animationDelay: `${i * 0.05}s` }}
-                  />
-                ))
+                results.map((p, i) =>
+                  i === 0 ? (
+                    <div key={p.id} data-demo="post-card">
+                      <PostCard
+                        post={p}
+                        onLike={handleLikePost}
+                        onDelete={handleDeletePost}
+                        style={{ animationDelay: `${i * 0.05}s` }}
+                      />
+                    </div>
+                  ) : (
+                    <PostCard
+                      key={p.id}
+                      post={p}
+                      onLike={handleLikePost}
+                      onDelete={handleDeletePost}
+                      style={{ animationDelay: `${i * 0.05}s` }}
+                    />
+                  )
+                )
               )}
             </div>
           </section>

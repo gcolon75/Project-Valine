@@ -7,6 +7,7 @@ import { followProfile, unfollowProfile, blockProfile, unblockProfile, getProfil
 import { createThread } from '../services/messagesService';
 import { listPosts, likePost as likePostApi, unlikePost as unlikePostApi } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
+import { useDemo } from '../context/DemoContext';
 import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
@@ -180,6 +181,7 @@ export default function Profile() {
   }, [id, user]);
 
   const isAdmin = user?.role === 'admin';
+  const { startDemo } = useDemo();
 
   // Fetch connection status for other users' profiles
   useEffect(() => {
@@ -477,13 +479,21 @@ export default function Profile() {
             <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
               {isOwnProfile ? (
                 <>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/profile-edit')}
                     variant="primary"
                     size="md"
                   >
                     Edit Profile
                   </Button>
+                  {isAdmin && (
+                    <button
+                      onClick={startDemo}
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      Start Investor Demo
+                    </button>
+                  )}
                   <Button
                     variant="secondary"
                     size="md"

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, DollarSign } from 'lucide-react';
+import { Bell, Heart, MessageCircle, UserPlus, Loader2, AtSign, DollarSign, Mail, FileText } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUnread } from '../context/UnreadContext';
@@ -77,6 +77,14 @@ export default function NotificationBell() {
         return <AtSign className="w-4 h-4 text-yellow-500" />;
       case 'purchase':
         return <DollarSign className="w-4 h-4 text-emerald-500" />;
+      case 'message':
+        return <Mail className="w-4 h-4 text-purple-500" />;
+      case 'script_feedback_approved':
+      case 'script_feedback_accepted':
+      case 'script_feedback_submitted':
+      case 'script_feedback_completed':
+      case 'script_feedback_revision_requested':
+        return <FileText className="w-4 h-4 text-orange-500" />;
       default:
         return <Bell className="w-4 h-4 text-neutral-500" />;
     }

@@ -57,16 +57,18 @@ function WriterTab() {
         <p className="text-neutral-600 dark:text-neutral-400 mb-4">
           You haven't submitted any scripts yet.
         </p>
-        <Link to="/feedback-request/new">
-          <Button variant="primary">Submit a script for review</Button>
-        </Link>
+        <div data-demo="feedback-submit">
+          <Link to="/feedback-request/new">
+            <Button variant="primary">Submit a script for review</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex justify-end" data-demo="feedback-submit">
         <Link to="/feedback-request/new">
           <Button variant="primary">+ Submit a script</Button>
         </Link>
@@ -327,6 +329,7 @@ export default function FeedbackRequestHub() {
           </button>
           {isReader && (
             <button
+              data-demo="reader-section"
               onClick={() => setTab('reader')}
               className={`px-4 py-2 font-medium border-b-2 transition ${
                 tab === 'reader'

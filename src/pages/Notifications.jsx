@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import UserAvatar from '../components/UserAvatar';
-import { Heart, MessageCircle, UserPlus, Video, FileText, Bell, Mail, UserCheck, AtSign, DollarSign, AlertTriangle } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, FileText, Bell, Mail, AtSign, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notificationsService';
 import { followUser, getConnectionStatus } from '../services/connectionService';
@@ -206,19 +206,14 @@ export default function Notifications() {
         return 'text-yellow-500 bg-yellow-50 dark:bg-yellow-500/10';
       case 'message':
         return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
-      case 'post':
-        return 'text-purple-500 bg-purple-50 dark:bg-purple-500/10';
-      case 'script':
-        return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       case 'purchase':
         return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
       case 'script_feedback_approved':
       case 'script_feedback_accepted':
       case 'script_feedback_completed':
       case 'script_feedback_submitted':
-        return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
       case 'script_feedback_revision_requested':
-        return 'text-amber-500 bg-amber-50 dark:bg-amber-500/10';
+        return 'text-orange-500 bg-orange-50 dark:bg-orange-500/10';
       default:
         return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
     }
@@ -239,19 +234,14 @@ export default function Notifications() {
         return AtSign;
       case 'message':
         return Mail;
-      case 'post':
-        return FileText;
-      case 'script':
-        return FileText;
       case 'purchase':
         return DollarSign;
       case 'script_feedback_approved':
       case 'script_feedback_accepted':
       case 'script_feedback_completed':
       case 'script_feedback_submitted':
-        return FileText;
       case 'script_feedback_revision_requested':
-        return AlertTriangle;
+        return FileText;
       default:
         return Bell;
     }

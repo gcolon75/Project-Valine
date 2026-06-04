@@ -589,7 +589,7 @@ export default function Post() {
       
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Content Type */}
-        <div>
+        <div data-demo="content-type">
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
             Content Type <span className="text-red-500">*</span>
           </label>
@@ -617,7 +617,7 @@ export default function Post() {
         </div>
         
         {/* Title */}
-        <div>
+        <div data-demo="post-title">
           <label htmlFor="title" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             Title <span className="text-red-500">*</span>
           </label>
@@ -843,7 +843,7 @@ export default function Post() {
         )}
         
         {/* Tags */}
-        <div>
+        <div data-demo="post-tags">
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             Tags <span className="text-red-500">*</span>
           </label>
@@ -855,7 +855,7 @@ export default function Post() {
         </div>
         
         {/* Visibility */}
-        <div>
+        <div data-demo="post-visibility">
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
             Visibility
           </label>

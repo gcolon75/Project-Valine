@@ -44,8 +44,8 @@ export default function AppLayout() {
             {/* Main Navigation - Desktop */}
             <nav className="flex items-center space-x-2" aria-label="Main navigation">
               <NavItem to="/dashboard" icon={Home} label="Home" />
-              <NavItem to="/discover" icon={Search} label="Discover" />
-              <NavItem to="/post" icon={PlusCircle} label="Create" />
+              <NavItem to="/discover" icon={Search} label="Discover" dataDemoValue="nav-discover" />
+              <NavItem to="/post" icon={PlusCircle} label="Create" dataDemoValue="nav-create" />
               <NavItem to="/feedback-request" icon={FileText} label="Feedback" />
               <NavItem to="/notifications" icon={Bell} label="Notifications" badge={unreadCounts.notifications} />
               <NavItem to="/profile" icon={User} label="Profile" />
@@ -106,15 +106,16 @@ export default function AppLayout() {
 }
 
 // Desktop Nav Item Component
-function NavItem({ to, icon: Icon, label, badge }) {
+function NavItem({ to, icon: Icon, label, badge, dataDemoValue }) {
   return (
     <NavLink
       to={to}
+      data-demo={dataDemoValue}
       className={({ isActive }) => `
         relative flex items-center space-x-2 px-3 py-2 rounded-lg transition-all
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand
-        ${isActive 
-          ? 'text-[#0CCE6B] bg-[#0CCE6B]/10' 
+        ${isActive
+          ? 'text-[#0CCE6B] bg-[#0CCE6B]/10'
           : 'text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/5'
         }
       `}

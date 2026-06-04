@@ -223,6 +223,7 @@ export default function Discover() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search for people, posts, or content..."
+            data-demo="search-bar"
             className="w-full pl-12 pr-4 py-4 bg-white dark:bg-[#1a1a1a] border-2 border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:border-[#0CCE6B] transition-all"
           />
           {searchLoading && (
