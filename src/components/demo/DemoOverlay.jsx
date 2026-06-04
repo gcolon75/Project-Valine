@@ -9,11 +9,18 @@ export default function DemoOverlay() {
   const isLast = currentStep === DEMO_STEPS.length - 1;
   const [highlightRect, setHighlightRect] = useState(null);
   const cancelRef = useRef(false);
+  const cleanupClickRef = useRef(null);
 
-  // Discover element with retries
+  // Discover element with retries + attach click-to-advance listener
   useEffect(() => {
     cancelRef.current = false;
     setHighlightRect(null);
+
+    // Clean up previous click listener
+    if (cleanupClickRef.current) {
+      cleanupClickRef.current();
+      cleanupClickRef.current = null;
+    }
 
     if (!step?.dataDemoSelector) return;
 
@@ -24,6 +31,12 @@ export default function DemoOverlay() {
       const el = document.querySelector(step.dataDemoSelector);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Clicking the highlighted element advances to next step
+        const handleClick = () => nextStep();
+        el.addEventListener('click', handleClick);
+        cleanupClickRef.current = () => el.removeEventListener('click', handleClick);
+
         setTimeout(() => {
           if (cancelRef.current) return;
           setHighlightRect(el.getBoundingClientRect());
@@ -32,40 +45,41 @@ export default function DemoOverlay() {
         attempts++;
         setTimeout(tryFind, 150);
       }
-      // If all attempts fail, highlightRect stays null — banner still shows
     }
 
-    // Small initial delay for page transition
     const t = setTimeout(tryFind, 150);
     return () => {
       cancelRef.current = true;
       clearTimeout(t);
+      if (cleanupClickRef.current) {
+        cleanupClickRef.current();
+        cleanupClickRef.current = null;
+      }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step?.dataDemoSelector, step?.page]);
 
   // Update rect on window resize
   useEffect(() => {
     if (!step?.dataDemoSelector) return;
-
     const handleResize = () => {
       const el = document.querySelector(step.dataDemoSelector);
       if (el) setHighlightRect(el.getBoundingClientRect());
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [step?.dataDemoSelector]);
 
-  // Add body padding so banner doesn't cover content
+  // Push content down so banner doesn't cover the top of the page
   useEffect(() => {
-    const prev = document.body.style.paddingBottom;
-    document.body.style.paddingBottom = '80px';
+    const prev = document.body.style.paddingTop;
+    document.body.style.paddingTop = '110px';
     return () => {
-      document.body.style.paddingBottom = prev;
+      document.body.style.paddingTop = prev;
     };
   }, []);
 
-  const pad = 8;
+  const pad = 10;
   const spotlightStyle = highlightRect
     ? {
         position: 'fixed',
@@ -73,27 +87,29 @@ export default function DemoOverlay() {
         left: highlightRect.left - pad,
         width: highlightRect.width + pad * 2,
         height: highlightRect.height + pad * 2,
-        borderRadius: 12,
-        boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-        border: '2px solid rgba(12,206,107,0.8)',
+        borderRadius: 14,
+        boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)',
+        border: '3px solid rgba(12,206,107,0.9)',
         zIndex: 9999,
         pointerEvents: 'none',
         animation: 'demo-glow 2s ease-in-out infinite',
+        cursor: 'pointer',
       }
     : null;
 
   const progress = ((currentStep + 1) / DEMO_STEPS.length) * 100;
+  const hasSpotlight = !!step?.dataDemoSelector;
 
   return (
     <>
-      {/* Backdrop — only when no spotlight (spotlight box-shadow handles it otherwise) */}
+      {/* Backdrop — only when no spotlight */}
       {!highlightRect && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
             zIndex: 9998,
-            background: 'rgba(0,0,0,0.6)',
+            background: 'rgba(0,0,0,0.65)',
             pointerEvents: 'none',
           }}
         />
@@ -102,75 +118,84 @@ export default function DemoOverlay() {
       {/* Spotlight ring */}
       {spotlightStyle && <div style={spotlightStyle} />}
 
-      {/* Bottom banner */}
+      {/* Top banner */}
       <div
         style={{
           position: 'fixed',
-          bottom: 0,
+          top: 0,
           left: 0,
           right: 0,
           zIndex: 10000,
         }}
-        className="bg-neutral-900 border-t-2 border-[#0CCE6B]"
+        className="bg-neutral-950 border-b-4 border-[#0CCE6B] shadow-2xl"
       >
-        {/* Progress bar */}
-        <div className="h-1 bg-neutral-700">
-          <div
-            className="h-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-5">
 
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
           {/* Step badge */}
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#0CCE6B] text-white text-xs font-bold flex items-center justify-center">
-            {currentStep + 1}
+          <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#0CCE6B]">
+              DEMO
+            </span>
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#474747] to-[#0CCE6B] text-white text-lg font-black flex items-center justify-center shadow-lg">
+              {currentStep + 1}
+            </div>
+            <span className="text-[9px] text-neutral-500 font-medium">
+              of {DEMO_STEPS.length}
+            </span>
           </div>
 
-          {/* Message */}
-          <p className="flex-1 text-sm text-white leading-snug">
-            {step?.message}
-          </p>
-
-          {/* Counter */}
-          <span className="flex-shrink-0 text-xs text-neutral-400 hidden sm:block">
-            {currentStep + 1} of {DEMO_STEPS.length}
-          </span>
+          {/* Message + hint */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-base md:text-lg font-semibold leading-snug">
+              {step?.message}
+            </p>
+            {hasSpotlight && (
+              <p className="text-[#0CCE6B] text-xs mt-1 font-medium">
+                Click the highlighted area to continue →
+              </p>
+            )}
+          </div>
 
           {/* Controls */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <button
-              onClick={endDemo}
-              className="text-xs text-neutral-400 hover:text-white transition-colors px-2 py-1"
-            >
-              Exit
-            </button>
-
+          <div className="flex-shrink-0 flex items-center gap-3">
             {!isFirst && (
               <button
                 onClick={prevStep}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white transition-colors"
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white transition-colors"
               >
-                Back
+                ← Back
               </button>
             )}
-
             {isLast ? (
               <button
                 onClick={endDemo}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity"
+                className="px-5 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity shadow-lg"
               >
                 Finish
               </button>
             ) : (
               <button
                 onClick={nextStep}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity"
+                className="px-5 py-2 text-sm font-bold rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity shadow-lg"
               >
-                Next
+                Next →
               </button>
             )}
+            <button
+              onClick={endDemo}
+              className="text-sm text-neutral-500 hover:text-white transition-colors px-2 py-1 ml-1"
+            >
+              ✕ Exit
+            </button>
           </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 bg-neutral-800">
+          <div
+            className="h-full bg-gradient-to-r from-[#474747] to-[#0CCE6B] transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
     </>
