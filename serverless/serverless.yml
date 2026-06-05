@@ -632,18 +632,40 @@ functions:
     layers:
       - { Ref: PrismaV2LambdaLayer }
     events:
-      # --- Social graph ---
+      # --- Network (mutual connections) ---
       - httpApi:
-          path: /profiles/{profileId}/follow
+          path: /profiles/{profileId}/connect/accept
           method: post
       - httpApi:
-          path: /profiles/{profileId}/follow
+          path: /profiles/{profileId}/connect/decline
+          method: post
+      - httpApi:
+          path: /profiles/{profileId}/connect
+          method: post
+      - httpApi:
+          path: /profiles/{profileId}/connect
           method: delete
       - httpApi:
+          path: /profiles/{profileId}/network
+          method: get
+      - httpApi:
+          path: /profiles/{profileId}/status
+          method: get
+      - httpApi:
           path: /profiles/{profileId}/block
           method: post
       - httpApi:
           path: /profiles/{profileId}/block
+          method: delete
+      - httpApi:
+          path: /me/blocks
+          method: get
+      # --- Deprecated follow routes (return 410) ---
+      - httpApi:
+          path: /profiles/{profileId}/follow
+          method: post
+      - httpApi:
+          path: /profiles/{profileId}/follow
           method: delete
       - httpApi:
           path: /profiles/{profileId}/followers
@@ -652,16 +674,10 @@ functions:
           path: /profiles/{profileId}/following
           method: get
       - httpApi:
-          path: /profiles/{profileId}/status
-          method: get
-      - httpApi:
           path: /me/followers
           method: get
       - httpApi:
           path: /me/following
-          method: get
-      - httpApi:
-          path: /me/blocks
           method: get
       # --- DM threads ---
       - httpApi:

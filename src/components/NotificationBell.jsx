@@ -72,6 +72,9 @@ export default function NotificationBell() {
       case 'comment':
         return <MessageCircle className="w-4 h-4 text-blue-500" />;
       case 'follow':
+      case 'network_request':
+        return <UserPlus className="w-4 h-4 text-[#0CCE6B]" />;
+      case 'network_accept':
         return <UserPlus className="w-4 h-4 text-[#0CCE6B]" />;
       case 'mention':
         return <AtSign className="w-4 h-4 text-yellow-500" />;
@@ -99,6 +102,10 @@ export default function NotificationBell() {
     switch (normalizedType) {
       case 'follow':
         return <><span className="font-semibold">{username}</span> started following you</>;
+      case 'network_request':
+        return <><span className="font-semibold">{username}</span> wants to connect</>;
+      case 'network_accept':
+        return <><span className="font-semibold">{username}</span> accepted your request</>;
       case 'like':
         return <><span className="font-semibold">{username}</span> liked your post</>;
       case 'comment_like':
@@ -120,11 +127,9 @@ export default function NotificationBell() {
 
     const normalizedType = typeof notification.type === 'string' ? notification.type.toLowerCase() : notification.type;
 
-    if (normalizedType === 'follow') {
+    if (normalizedType === 'follow' || normalizedType === 'network_request' || normalizedType === 'network_accept') {
       const username = notification.triggerer?.username || notification.triggerer?.id;
-      if (username) {
-        navigate(`/profile/${username}`);
-      }
+      if (username) navigate(`/profile/${username}`);
     } else if (normalizedType === 'like' || normalizedType === 'comment' || normalizedType === 'mention' || normalizedType === 'comment_like') {
       const postId = notification.metadata?.postId;
       if (postId) {

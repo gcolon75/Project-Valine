@@ -449,6 +449,9 @@ model Profile {
   followersCount Int @default(0)
   followingCount Int @default(0)
 
+  // Network connections count (mutual connections)
+  networkCount Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

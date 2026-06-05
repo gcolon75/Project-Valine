@@ -504,9 +504,9 @@ export default function Settings() {
                       className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
                     />
                     <div className="ml-3 flex-1">
-                      <div className="font-medium text-neutral-900 dark:text-white">Followers only</div>
+                      <div className="font-medium text-neutral-900 dark:text-white">Network only</div>
                       <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Only your followers can see your full profile
+                        Only your network connections can see your full profile
                       </div>
                     </div>
                   </label>
@@ -555,9 +555,9 @@ export default function Settings() {
                       className="mt-1 text-[#0CCE6B] focus:ring-[#0CCE6B]"
                     />
                     <div className="ml-3 flex-1">
-                      <div className="font-medium text-neutral-900 dark:text-white">Followers only</div>
+                      <div className="font-medium text-neutral-900 dark:text-white">Network only</div>
                       <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Only your followers can message you
+                        Only your network connections can message you
                       </div>
                     </div>
                   </label>

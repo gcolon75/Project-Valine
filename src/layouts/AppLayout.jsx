@@ -25,7 +25,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 
       {/* Desktop Header */}
-      <header className="hidden md:flex fixed left-0 right-0 z-50 top-0 h-16 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-white/10 items-center">
+      <header className="hidden md:flex fixed left-0 right-0 z-50 top-0 h-20 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-white/10 items-center">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between w-full h-full">
 
           {/* Logo */}
@@ -60,7 +60,7 @@ export default function AppLayout() {
               className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] rounded"
               aria-label="Settings"
             >
-              <Settings className="w-5 h-5" aria-hidden="true" />
+              <Settings className="w-6 h-6" aria-hidden="true" />
             </NavLink>
             <button
               onClick={handleLogout}
@@ -68,7 +68,7 @@ export default function AppLayout() {
               className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] rounded"
               aria-label="Log out"
             >
-              <LogOut className="w-5 h-5" aria-hidden="true" />
+              <LogOut className="w-6 h-6" aria-hidden="true" />
             </button>
           </div>
 
@@ -76,7 +76,7 @@ export default function AppLayout() {
       </header>
 
       {/* Content */}
-      <main className="pb-20 md:pb-6 md:pt-16">
+      <main className="pb-20 md:pb-6 md:pt-20">
         <Outlet />
       </main>
 
@@ -113,13 +113,13 @@ function NavItem({ to, icon: Icon, label, badge, dataDemoValue }) {
     >
       {({ isActive }) => (
         <>
-          <div className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${
+          <div className={`flex items-center gap-2 px-3 py-2 text-base font-medium transition-colors ${
             isActive
               ? 'text-[#0CCE6B]'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
           }`}>
             <div className="relative">
-              <Icon className="w-4 h-4" aria-hidden="true" />
+              <Icon className="w-5 h-5" aria-hidden="true" />
               {badge > 0 && (
                 <span
                   className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold leading-none"

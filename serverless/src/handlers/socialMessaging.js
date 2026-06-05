@@ -37,34 +37,31 @@ export const handler = async (event, context) => {
   try {
     // ===== SOCIAL =====
 
-    // /profiles/{profileId}/follow
-    if (/^\/profiles\/[^/]+\/follow$/.test(path)) {
-      if (method === 'POST') {
-        return social.followProfile(event, context);
-      }
-      if (method === 'DELETE') {
-        return social.unfollowProfile(event, context);
-      }
+    // /profiles/{profileId}/connect/accept  ← must come before /connect
+    if (method === 'POST' && /^\/profiles\/[^/]+\/connect\/accept$/.test(path)) {
+      return social.acceptNetworkRequest(event, context);
+    }
+
+    // /profiles/{profileId}/connect/decline  ← must come before /connect
+    if (method === 'POST' && /^\/profiles\/[^/]+\/connect\/decline$/.test(path)) {
+      return social.declineNetworkRequest(event, context);
+    }
+
+    // /profiles/{profileId}/connect
+    if (/^\/profiles\/[^/]+\/connect$/.test(path)) {
+      if (method === 'POST') return social.connectProfile(event, context);
+      if (method === 'DELETE') return social.disconnectProfile(event, context);
+    }
+
+    // /profiles/{profileId}/network
+    if (method === 'GET' && /^\/profiles\/[^/]+\/network$/.test(path)) {
+      return social.getProfileNetwork(event, context);
     }
 
     // /profiles/{profileId}/block
     if (/^\/profiles\/[^/]+\/block$/.test(path)) {
-      if (method === 'POST') {
-        return social.blockProfile(event, context);
-      }
-      if (method === 'DELETE') {
-        return social.unblockProfile(event, context);
-      }
-    }
-
-    // /profiles/{profileId}/followers
-    if (method === 'GET' && /^\/profiles\/[^/]+\/followers$/.test(path)) {
-      return social.getProfileFollowers(event, context);
-    }
-
-    // /profiles/{profileId}/following
-    if (method === 'GET' && /^\/profiles\/[^/]+\/following$/.test(path)) {
-      return social.getProfileFollowing(event, context);
+      if (method === 'POST') return social.blockProfile(event, context);
+      if (method === 'DELETE') return social.unblockProfile(event, context);
     }
 
     // /profiles/{profileId}/status
@@ -72,31 +69,34 @@ export const handler = async (event, context) => {
       return social.getProfileStatus(event, context);
     }
 
-    // /me/followers
-    if (method === 'GET' && path === '/me/followers') {
-      return social.getMyFollowers(event, context);
-    }
-
-    // /me/following
-    if (method === 'GET' && path === '/me/following') {
-      return social.getMyFollowing(event, context);
-    }
-
     // /me/blocks
     if (method === 'GET' && path === '/me/blocks') {
       return social.getMyBlocks(event, context);
+    }
+
+    // Deprecated follow routes — return 410
+    if (/^\/profiles\/[^/]+\/follow$/.test(path)) {
+      return social.followProfile(event, context);
+    }
+    if (method === 'GET' && /^\/profiles\/[^/]+\/followers$/.test(path)) {
+      return social.getProfileFollowers(event, context);
+    }
+    if (method === 'GET' && /^\/profiles\/[^/]+\/following$/.test(path)) {
+      return social.getProfileFollowing(event, context);
+    }
+    if (method === 'GET' && path === '/me/followers') {
+      return social.getMyFollowers(event, context);
+    }
+    if (method === 'GET' && path === '/me/following') {
+      return social.getMyFollowing(event, context);
     }
 
     // ===== MESSAGING (DM Threads) =====
 
     // /me/messages/threads (list/create)
     if (path === '/me/messages/threads') {
-      if (method === 'GET') {
-        return messages.getThreads(event, context);
-      }
-      if (method === 'POST') {
-        return messages.createThread(event, context);
-      }
+      if (method === 'GET') return messages.getThreads(event, context);
+      if (method === 'POST') return messages.createThread(event, context);
     }
 
     // /me/messages/threads/group (create group chat) - must come before generic {threadId}

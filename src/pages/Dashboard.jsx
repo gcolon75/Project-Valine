@@ -160,32 +160,28 @@ export default function Dashboard() {
           <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg sticky top-20 overflow-hidden">
 
             {/* Profile */}
-            <div className="px-5 py-5 border-b border-neutral-200 dark:border-white/10">
-              <div className="flex items-center gap-3 mb-3">
+            <div className="px-6 py-6 border-b border-neutral-200 dark:border-white/10">
+              <div className="flex items-center gap-4 mb-4">
                 <UserAvatar
                   src={profileData?.avatar}
                   name={profileData?.displayName || profileData?.username}
                   alt={profileData?.displayName || 'Profile'}
-                  className="h-10 w-10"
+                  className="h-14 w-14"
                 />
                 <div>
-                  <div className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1 text-base leading-tight">
-                    {profileData?.displayName || user?.displayName || 'Your Name'}
-                    <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} />
+                  <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-1 text-lg leading-tight min-w-0">
+                    <span className="truncate">{profileData?.displayName || user?.displayName || 'Your Name'}</span>
+                    <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} size={18} />
                   </div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <div className="text-base text-neutral-500 dark:text-neutral-400">
                     @{profileData?.username || user?.username || 'username'}
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-base text-neutral-500 dark:text-neutral-400">
                 <span className="font-semibold text-neutral-900 dark:text-white">
-                  {profileData?.stats?.followers ?? 0}
-                </span>{' '}followers
-                {' · '}
-                <span className="font-semibold text-neutral-900 dark:text-white">
-                  {profileData?.stats?.following ?? 0}
-                </span>{' '}following
+                  {profileData?.stats?.networkCount ?? profileData?.stats?.followers ?? 0}
+                </span>{' '}connections
               </p>
             </div>
 
@@ -201,7 +197,7 @@ export default function Dashboard() {
                     <p className="text-emerald-50 text-sm">You have access to all premium features.</p>
                   </div>
                 </div>
-                <p className="text-emerald-50 text-sm mb-6">Detailed analytics dashboard coming soon</p>
+
                 <Link
                   to="/pricing"
                   className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 hover:bg-emerald-50 transition"

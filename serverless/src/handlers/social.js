@@ -4,41 +4,51 @@ import { json, error } from '../utils/headers.js';
 import { getUserFromEvent } from './auth.js';
 import { createNotification } from './notifications.js';
 
-/**
- * POST /profiles/{profileId}/follow
- * Follow a user using the new Follow model
- */
-export const followProfile = async (event) => {
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Resolve profileId path param → targetUserId */
+async function resolveProfile(prisma, profileId) {
+  const profile = await prisma.profile.findUnique({
+    where: { id: profileId },
+    select: { userId: true, visibility: true, messagePermission: true }
+  });
+  return profile;
+}
+
+/** Find a ConnectionRequest between two users (either direction) */
+async function findConnection(prisma, userA, userB) {
+  return prisma.connectionRequest.findFirst({
+    where: {
+      OR: [
+        { senderId: userA, receiverId: userB },
+        { senderId: userB, receiverId: userA }
+      ]
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// POST /profiles/{profileId}/connect
+// Send a network connection request
+// ---------------------------------------------------------------------------
+export const connectProfile = async (event) => {
   try {
     const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
+    if (!userId) return error(401, 'Unauthorized');
 
     const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
+    if (!targetProfileId) return error(400, 'profileId is required');
 
     const prisma = getPrisma();
-
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
 
     const targetUserId = targetProfile.userId;
+    if (userId === targetUserId) return error(400, 'Cannot connect with yourself');
 
-    if (userId === targetUserId) {
-      return error(400, 'Cannot follow yourself');
-    }
-
-    // Check if either user has blocked the other
+    // Block check
     const blockExists = await prisma.block.findFirst({
       where: {
         OR: [
@@ -47,501 +57,410 @@ export const followProfile = async (event) => {
         ]
       }
     });
+    if (blockExists) return error(403, 'Cannot connect with this user');
 
-    if (blockExists) {
-      return error(403, 'Cannot follow this user');
-    }
-
-    // Check if already following
-    const existingFollow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: userId,
-          followingId: targetUserId
+    // Existing connection check
+    const existing = await findConnection(prisma, userId, targetUserId);
+    if (existing) {
+      if (existing.status === 'accepted') {
+        return json({ networkStatus: 'connected', message: 'Already connected' });
+      }
+      if (existing.status === 'pending') {
+        // If the OTHER user already sent a request, auto-accept
+        if (existing.senderId === targetUserId) {
+          await prisma.$transaction([
+            prisma.connectionRequest.update({
+              where: { id: existing.id },
+              data: { status: 'accepted' }
+            }),
+            prisma.profile.update({
+              where: { userId },
+              data: { networkCount: { increment: 1 } }
+            }),
+            prisma.profile.update({
+              where: { userId: targetUserId },
+              data: { networkCount: { increment: 1 } }
+            })
+          ]);
+          try {
+            await createNotification(prisma, {
+              type: 'NETWORK_ACCEPT',
+              message: 'accepted your connection request',
+              recipientId: targetUserId,
+              triggererId: userId,
+              metadata: {}
+            });
+          } catch (e) { console.error('Notification error:', e); }
+          return json({ networkStatus: 'connected', message: 'Connection accepted' }, 201);
         }
+        // Own pending request still exists
+        return json({ networkStatus: 'pending_sent', message: 'Request already sent' });
       }
-    });
-
-    if (existingFollow) {
-      return json({ isFollowing: true, message: 'Already following this user' });
+      // Was rejected — allow re-send
+      await prisma.connectionRequest.update({
+        where: { id: existing.id },
+        data: { status: 'pending', senderId: userId, receiverId: targetUserId }
+      });
+    } else {
+      await prisma.connectionRequest.create({
+        data: { senderId: userId, receiverId: targetUserId, status: 'pending' }
+      });
     }
 
-    // Create follow relationship
-    await prisma.follow.create({
-      data: {
-        followerId: userId,
-        followingId: targetUserId
-      }
+    // Notify receiver — include sender's profileId so they can accept/decline inline
+    try {
+      const senderProfile = await prisma.profile.findUnique({
+        where: { userId },
+        select: { id: true }
+      });
+      await createNotification(prisma, {
+        type: 'NETWORK_REQUEST',
+        message: 'wants to connect with you',
+        recipientId: targetUserId,
+        triggererId: userId,
+        metadata: { senderProfileId: senderProfile?.id }
+      });
+    } catch (e) { console.error('Notification error:', e); }
+
+    return json({ networkStatus: 'pending_sent', message: 'Connection request sent' }, 201);
+  } catch (e) {
+    console.error('Connect profile error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// DELETE /profiles/{profileId}/connect
+// Cancel a pending request OR remove an accepted connection
+// ---------------------------------------------------------------------------
+export const disconnectProfile = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const targetProfileId = event.pathParameters?.profileId;
+    if (!targetProfileId) return error(400, 'profileId is required');
+
+    const prisma = getPrisma();
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
+
+    const targetUserId = targetProfile.userId;
+    const existing = await findConnection(prisma, userId, targetUserId);
+
+    if (!existing) {
+      return json({ networkStatus: 'none', message: 'No connection found' });
+    }
+
+    if (existing.status === 'accepted') {
+      // Remove connection and decrement both counts
+      await prisma.$transaction([
+        prisma.connectionRequest.delete({ where: { id: existing.id } }),
+        prisma.profile.update({
+          where: { userId },
+          data: { networkCount: { decrement: 1 } }
+        }),
+        prisma.profile.update({
+          where: { userId: targetUserId },
+          data: { networkCount: { decrement: 1 } }
+        })
+      ]);
+      return json({ networkStatus: 'none', message: 'Removed from network' });
+    }
+
+    if (existing.status === 'pending' && existing.senderId === userId) {
+      // Cancel own pending request
+      await prisma.connectionRequest.delete({ where: { id: existing.id } });
+      return json({ networkStatus: 'none', message: 'Request cancelled' });
+    }
+
+    return json({ networkStatus: 'pending_received', message: 'Cannot cancel — request was received, not sent' });
+  } catch (e) {
+    console.error('Disconnect profile error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// POST /profiles/{profileId}/connect/accept
+// Accept an incoming connection request
+// ---------------------------------------------------------------------------
+export const acceptNetworkRequest = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) return error(401, 'Unauthorized');
+
+    const targetProfileId = event.pathParameters?.profileId;
+    if (!targetProfileId) return error(400, 'profileId is required');
+
+    const prisma = getPrisma();
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
+
+    const targetUserId = targetProfile.userId;
+
+    // Find the request where TARGET sent to ME
+    const request = await prisma.connectionRequest.findFirst({
+      where: { senderId: targetUserId, receiverId: userId, status: 'pending' }
     });
 
-    // Update follower counts
+    if (!request) return error(404, 'No pending request found');
+
     await prisma.$transaction([
-      prisma.profile.update({
-        where: { userId: targetUserId },
-        data: { followersCount: { increment: 1 } }
+      prisma.connectionRequest.update({
+        where: { id: request.id },
+        data: { status: 'accepted' }
       }),
       prisma.profile.update({
         where: { userId },
-        data: { followingCount: { increment: 1 } }
+        data: { networkCount: { increment: 1 } }
+      }),
+      prisma.profile.update({
+        where: { userId: targetUserId },
+        data: { networkCount: { increment: 1 } }
       })
     ]);
 
-    // Create notification for the followed user
     try {
       await createNotification(prisma, {
-        type: 'FOLLOW',
-        message: 'started following you',
+        type: 'NETWORK_ACCEPT',
+        message: 'accepted your connection request',
         recipientId: targetUserId,
         triggererId: userId,
         metadata: {}
       });
-    } catch (notifError) {
-      console.error('Failed to create follow notification:', notifError);
-      // Don't fail the request if notification fails
-    }
+    } catch (e) { console.error('Notification error:', e); }
 
-    return json({ isFollowing: true, message: 'Successfully followed user' }, 201);
+    return json({ networkStatus: 'connected', message: 'Connection accepted' });
   } catch (e) {
-    console.error('Follow profile error:', e);
+    console.error('Accept network request error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };
 
-/**
- * DELETE /profiles/{profileId}/follow
- * Unfollow a user
- */
-export const unfollowProfile = async (event) => {
+// ---------------------------------------------------------------------------
+// POST /profiles/{profileId}/connect/decline
+// Decline an incoming connection request
+// ---------------------------------------------------------------------------
+export const declineNetworkRequest = async (event) => {
   try {
     const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
+    if (!userId) return error(401, 'Unauthorized');
 
     const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
+    if (!targetProfileId) return error(400, 'profileId is required');
 
     const prisma = getPrisma();
-
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
 
     const targetUserId = targetProfile.userId;
 
-    // Delete follow relationship
-    const result = await prisma.follow.deleteMany({
-      where: {
-        followerId: userId,
-        followingId: targetUserId
-      }
+    const request = await prisma.connectionRequest.findFirst({
+      where: { senderId: targetUserId, receiverId: userId, status: 'pending' }
     });
 
-    if (result.count === 0) {
-      return json({ isFollowing: false, message: 'Not following this user' });
+    if (!request) return error(404, 'No pending request found');
+
+    await prisma.connectionRequest.update({
+      where: { id: request.id },
+      data: { status: 'rejected' }
+    });
+
+    return json({ networkStatus: 'none', message: 'Request declined' });
+  } catch (e) {
+    console.error('Decline network request error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// GET /profiles/{profileId}/network
+// List accepted network connections for a profile
+// ---------------------------------------------------------------------------
+export const getProfileNetwork = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+
+    const targetProfileId = event.pathParameters?.profileId;
+    if (!targetProfileId) return error(400, 'profileId is required');
+
+    const prisma = getPrisma();
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
+
+    const targetUserId = targetProfile.userId;
+
+    // Find all accepted connections involving this user
+    const connections = await prisma.connectionRequest.findMany({
+      where: {
+        status: 'accepted',
+        OR: [
+          { senderId: targetUserId },
+          { receiverId: targetUserId }
+        ]
+      },
+      include: {
+        sender: {
+          select: {
+            id: true, username: true, displayName: true, avatar: true,
+            profile: { select: { id: true, title: true, vanityUrl: true } }
+          }
+        },
+        receiver: {
+          select: {
+            id: true, username: true, displayName: true, avatar: true,
+            profile: { select: { id: true, title: true, vanityUrl: true } }
+          }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // Get blocks involving the viewing user
+    let blockedUserIds = new Set();
+    if (userId) {
+      const blocks = await prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true }
+      });
+      blocks.forEach(b => { blockedUserIds.add(b.blockerId); blockedUserIds.add(b.blockedId); });
     }
 
-    // Update follower counts
-    await prisma.$transaction([
-      prisma.profile.update({
-        where: { userId: targetUserId },
-        data: { followersCount: { decrement: 1 } }
+    const items = connections
+      .map(c => {
+        const other = c.senderId === targetUserId ? c.receiver : c.sender;
+        return {
+          userId: other.id,
+          username: other.username,
+          displayName: other.displayName,
+          avatar: other.avatar,
+          title: other.profile?.title,
+          profileId: other.profile?.id,
+          vanityUrl: other.profile?.vanityUrl,
+          connectedAt: c.updatedAt
+        };
+      })
+      .filter(u => !blockedUserIds.has(u.userId));
+
+    return json({ items, count: items.length });
+  } catch (e) {
+    console.error('Get profile network error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// GET /profiles/{profileId}/status
+// Get network status with a profile
+// ---------------------------------------------------------------------------
+export const getProfileStatus = async (event) => {
+  try {
+    const userId = getUserFromEvent(event);
+    if (!userId) {
+      return json({
+        networkStatus: 'none',
+        isBlocked: false,
+        isBlockedBy: false,
+        visibility: 'PUBLIC',
+        messagePermission: 'EVERYONE'
+      });
+    }
+
+    const targetProfileId = event.pathParameters?.profileId;
+    if (!targetProfileId) return error(400, 'profileId is required');
+
+    const prisma = getPrisma();
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
+
+    const targetUserId = targetProfile.userId;
+
+    const [connection, blocking, blockedBy] = await Promise.all([
+      findConnection(prisma, userId, targetUserId),
+      prisma.block.findUnique({
+        where: { blockerId_blockedId: { blockerId: userId, blockedId: targetUserId } }
       }),
-      prisma.profile.update({
-        where: { userId },
-        data: { followingCount: { decrement: 1 } }
+      prisma.block.findUnique({
+        where: { blockerId_blockedId: { blockerId: targetUserId, blockedId: userId } }
       })
     ]);
 
-    return json({ isFollowing: false, message: 'Successfully unfollowed user' });
+    let networkStatus = 'none';
+    if (connection) {
+      if (connection.status === 'accepted') {
+        networkStatus = 'connected';
+      } else if (connection.status === 'pending') {
+        networkStatus = connection.senderId === userId ? 'pending_sent' : 'pending_received';
+      }
+    }
+
+    return json({
+      networkStatus,
+      isBlocked: !!blocking,
+      isBlockedBy: !!blockedBy,
+      visibility: targetProfile.visibility || 'PUBLIC',
+      messagePermission: targetProfile.messagePermission || 'EVERYONE'
+    });
   } catch (e) {
-    console.error('Unfollow profile error:', e);
+    console.error('Get profile status error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };
 
-/**
- * GET /profiles/{profileId}/followers
- * Get followers list for a profile
- */
-export const getProfileFollowers = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    // Not required to be authenticated to view followers
-
-    const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
-
-    const prisma = getPrisma();
-
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
-
-    const targetUserId = targetProfile.userId;
-
-    // Get followers
-    const followers = await prisma.follow.findMany({
-      where: { followingId: targetUserId },
-      include: {
-        follower: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
-            profile: {
-              select: {
-                id: true,
-                title: true,
-                vanityUrl: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Check if viewing user is blocked by any of these users or has blocked them
-    let blockedUserIds = [];
-    if (userId) {
-      const blocks = await prisma.block.findMany({
-        where: {
-          OR: [
-            { blockerId: userId },
-            { blockedId: userId }
-          ]
-        },
-        select: {
-          blockerId: true,
-          blockedId: true
-        }
-      });
-
-      blockedUserIds = blocks.flatMap(b => [b.blockerId, b.blockedId]);
-    }
-
-    // Filter out blocked users
-    const filteredFollowers = followers
-      .filter(f => !blockedUserIds.includes(f.follower.id));
-
-    // Check which users the viewing user is following
-    let followingSet = new Set();
-    if (userId) {
-      const viewerFollows = await prisma.follow.findMany({
-        where: {
-          followerId: userId,
-          followingId: { in: filteredFollowers.map(f => f.follower.id) }
-        },
-        select: { followingId: true }
-      });
-      followingSet = new Set(viewerFollows.map(f => f.followingId));
-    }
-
-    const items = filteredFollowers.map(f => ({
-        userId: f.follower.id,
-        username: f.follower.username,
-        displayName: f.follower.displayName,
-        avatar: f.follower.avatar,
-        title: f.follower.profile?.title,
-        profileId: f.follower.profile?.id,
-        vanityUrl: f.follower.profile?.vanityUrl,
-        followedAt: f.createdAt,
-        isFollowing: followingSet.has(f.follower.id)
-      }));
-
-    return json({ items, count: items.length });
-  } catch (e) {
-    console.error('Get profile followers error:', e);
-    return error(500, 'Server error: ' + e.message);
-  }
-};
-
-/**
- * GET /profiles/{profileId}/following
- * Get following list for a profile
- */
-export const getProfileFollowing = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    // Not required to be authenticated to view following
-
-    const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
-
-    const prisma = getPrisma();
-
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
-
-    const targetUserId = targetProfile.userId;
-
-    // Get following
-    const following = await prisma.follow.findMany({
-      where: { followerId: targetUserId },
-      include: {
-        following: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
-            profile: {
-              select: {
-                id: true,
-                title: true,
-                vanityUrl: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Check if viewing user is blocked by any of these users or has blocked them
-    let blockedUserIds = [];
-    if (userId) {
-      const blocks = await prisma.block.findMany({
-        where: {
-          OR: [
-            { blockerId: userId },
-            { blockedId: userId }
-          ]
-        },
-        select: {
-          blockerId: true,
-          blockedId: true
-        }
-      });
-
-      blockedUserIds = blocks.flatMap(b => [b.blockerId, b.blockedId]);
-    }
-
-    // Filter out blocked users
-    const filteredFollowing = following
-      .filter(f => !blockedUserIds.includes(f.following.id));
-
-    // Check which users the viewing user is following
-    let followingSet = new Set();
-    if (userId) {
-      const viewerFollows = await prisma.follow.findMany({
-        where: {
-          followerId: userId,
-          followingId: { in: filteredFollowing.map(f => f.following.id) }
-        },
-        select: { followingId: true }
-      });
-      followingSet = new Set(viewerFollows.map(f => f.followingId));
-    }
-
-    const items = filteredFollowing.map(f => ({
-        userId: f.following.id,
-        username: f.following.username,
-        displayName: f.following.displayName,
-        avatar: f.following.avatar,
-        title: f.following.profile?.title,
-        profileId: f.following.profile?.id,
-        vanityUrl: f.following.profile?.vanityUrl,
-        followedAt: f.createdAt,
-        isFollowing: followingSet.has(f.following.id)
-      }));
-
-    return json({ items, count: items.length });
-  } catch (e) {
-    console.error('Get profile following error:', e);
-    return error(500, 'Server error: ' + e.message);
-  }
-};
-
-/**
- * GET /me/followers
- * Get current user's followers
- */
-export const getMyFollowers = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
-
-    const prisma = getPrisma();
-
-    // Get user's profile
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      select: { id: true }
-    });
-
-    if (!profile) {
-      return error(404, 'Profile not found');
-    }
-
-    // Reuse the getProfileFollowers logic
-    const modifiedEvent = {
-      ...event,
-      pathParameters: { profileId: profile.id }
-    };
-
-    return getProfileFollowers(modifiedEvent);
-  } catch (e) {
-    console.error('Get my followers error:', e);
-    return error(500, 'Server error: ' + e.message);
-  }
-};
-
-/**
- * GET /me/following
- * Get current user's following list
- */
-export const getMyFollowing = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
-
-    const prisma = getPrisma();
-
-    // Get user's profile
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      select: { id: true }
-    });
-
-    if (!profile) {
-      return error(404, 'Profile not found');
-    }
-
-    // Reuse the getProfileFollowing logic
-    const modifiedEvent = {
-      ...event,
-      pathParameters: { profileId: profile.id }
-    };
-
-    return getProfileFollowing(modifiedEvent);
-  } catch (e) {
-    console.error('Get my following error:', e);
-    return error(500, 'Server error: ' + e.message);
-  }
-};
-
-/**
- * POST /profiles/{profileId}/block
- * Block a user
- */
+// ---------------------------------------------------------------------------
+// POST /profiles/{profileId}/block
+// Block a user (also removes any network connection)
+// ---------------------------------------------------------------------------
 export const blockProfile = async (event) => {
   try {
     const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
+    if (!userId) return error(401, 'Unauthorized');
 
     const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
+    if (!targetProfileId) return error(400, 'profileId is required');
 
     const prisma = getPrisma();
-
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
 
     const targetUserId = targetProfile.userId;
+    if (userId === targetUserId) return error(400, 'Cannot block yourself');
 
-    if (userId === targetUserId) {
-      return error(400, 'Cannot block yourself');
-    }
-
-    // Check if already blocked
     const existingBlock = await prisma.block.findUnique({
-      where: {
-        blockerId_blockedId: {
-          blockerId: userId,
-          blockedId: targetUserId
-        }
-      }
+      where: { blockerId_blockedId: { blockerId: userId, blockedId: targetUserId } }
     });
+    if (existingBlock) return json({ isBlocked: true, message: 'Already blocked this user' });
 
-    if (existingBlock) {
-      return json({ isBlocked: true, message: 'Already blocked this user' });
-    }
-
-    // Create block and remove follow relationships in a transaction
     await prisma.$transaction(async (tx) => {
-      // Create block
-      await tx.block.create({
-        data: {
-          blockerId: userId,
-          blockedId: targetUserId
-        }
-      });
+      await tx.block.create({ data: { blockerId: userId, blockedId: targetUserId } });
 
-      // Remove follow relationships both ways
-      const followsToDelete = await tx.follow.findMany({
+      // Remove network connection if exists
+      const connection = await tx.connectionRequest.findFirst({
         where: {
+          status: 'accepted',
           OR: [
-            { followerId: userId, followingId: targetUserId },
-            { followerId: targetUserId, followingId: userId }
+            { senderId: userId, receiverId: targetUserId },
+            { senderId: targetUserId, receiverId: userId }
           ]
         }
       });
-
-      if (followsToDelete.length > 0) {
-        await tx.follow.deleteMany({
-          where: {
-            OR: [
-              { followerId: userId, followingId: targetUserId },
-              { followerId: targetUserId, followingId: userId }
-            ]
-          }
-        });
-
-        // Update follower counts for each deleted follow
-        for (const follow of followsToDelete) {
-          await tx.profile.update({
-            where: { userId: follow.followingId },
-            data: { followersCount: { decrement: 1 } }
-          });
-          await tx.profile.update({
-            where: { userId: follow.followerId },
-            data: { followingCount: { decrement: 1 } }
-          });
-        }
+      if (connection) {
+        await tx.connectionRequest.delete({ where: { id: connection.id } });
+        await tx.profile.update({ where: { userId }, data: { networkCount: { decrement: 1 } } });
+        await tx.profile.update({ where: { userId: targetUserId }, data: { networkCount: { decrement: 1 } } });
       }
+
+      // Remove any pending requests too
+      await tx.connectionRequest.deleteMany({
+        where: {
+          status: 'pending',
+          OR: [
+            { senderId: userId, receiverId: targetUserId },
+            { senderId: targetUserId, receiverId: userId }
+          ]
+        }
+      });
     });
 
     return json({ isBlocked: true, message: 'Successfully blocked user' }, 201);
@@ -551,84 +470,48 @@ export const blockProfile = async (event) => {
   }
 };
 
-/**
- * DELETE /profiles/{profileId}/block
- * Unblock a user
- */
+// ---------------------------------------------------------------------------
+// DELETE /profiles/{profileId}/block
+// ---------------------------------------------------------------------------
 export const unblockProfile = async (event) => {
   try {
     const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
+    if (!userId) return error(401, 'Unauthorized');
 
     const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
+    if (!targetProfileId) return error(400, 'profileId is required');
 
     const prisma = getPrisma();
+    const targetProfile = await resolveProfile(prisma, targetProfileId);
+    if (!targetProfile) return error(404, 'Profile not found');
 
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { userId: true }
-    });
-
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
-
-    const targetUserId = targetProfile.userId;
-
-    // Delete block relationship
     const result = await prisma.block.deleteMany({
-      where: {
-        blockerId: userId,
-        blockedId: targetUserId
-      }
+      where: { blockerId: userId, blockedId: targetProfile.userId }
     });
 
-    if (result.count === 0) {
-      return json({ isBlocked: false, message: 'User was not blocked' });
-    }
-
-    return json({ isBlocked: false, message: 'Successfully unblocked user' });
+    return json({ isBlocked: false, message: result.count > 0 ? 'Successfully unblocked user' : 'User was not blocked' });
   } catch (e) {
     console.error('Unblock profile error:', e);
     return error(500, 'Server error: ' + e.message);
   }
 };
 
-/**
- * GET /me/blocks
- * Get list of users current user has blocked
- */
+// ---------------------------------------------------------------------------
+// GET /me/blocks
+// ---------------------------------------------------------------------------
 export const getMyBlocks = async (event) => {
   try {
     const userId = getUserFromEvent(event);
-    if (!userId) {
-      return error(401, 'Unauthorized');
-    }
+    if (!userId) return error(401, 'Unauthorized');
 
     const prisma = getPrisma();
-
     const blocks = await prisma.block.findMany({
       where: { blockerId: userId },
       include: {
         blocked: {
           select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatar: true,
-            profile: {
-              select: {
-                id: true,
-                title: true,
-                vanityUrl: true
-              }
-            }
+            id: true, username: true, displayName: true, avatar: true,
+            profile: { select: { id: true, title: true, vanityUrl: true } }
           }
         }
       },
@@ -653,92 +536,23 @@ export const getMyBlocks = async (event) => {
   }
 };
 
-/**
- * GET /profiles/{profileId}/status
- * Get connection status with a profile (following, blocked, etc.)
- */
-export const getProfileStatus = async (event) => {
-  try {
-    const userId = getUserFromEvent(event);
-    if (!userId) {
-      return json({
-        isFollowing: false,
-        isFollowedBy: false,
-        isBlocked: false,
-        isBlockedBy: false
-      });
-    }
+// ---------------------------------------------------------------------------
+// Deprecated stubs (kept for backward compat — return 410 Gone)
+// ---------------------------------------------------------------------------
+export const followProfile = async () =>
+  error(410, 'The follow system has been replaced with the Network system. Use POST /profiles/:id/connect');
 
-    const targetProfileId = event.pathParameters?.profileId;
-    if (!targetProfileId) {
-      return error(400, 'profileId is required');
-    }
+export const unfollowProfile = async () =>
+  error(410, 'The follow system has been replaced with the Network system. Use DELETE /profiles/:id/connect');
 
-    const prisma = getPrisma();
+export const getProfileFollowers = async () =>
+  error(410, 'Use GET /profiles/:id/network instead');
 
-    // Get the target user from their profile ID
-    const targetProfile = await prisma.profile.findUnique({
-      where: { id: targetProfileId },
-      select: { 
-        userId: true,
-        visibility: true,
-        messagePermission: true
-      }
-    });
+export const getProfileFollowing = async () =>
+  error(410, 'Use GET /profiles/:id/network instead');
 
-    if (!targetProfile) {
-      return error(404, 'Profile not found');
-    }
+export const getMyFollowers = async () =>
+  error(410, 'Use GET /profiles/:id/network instead');
 
-    const targetUserId = targetProfile.userId;
-
-    // Get follow status
-    const [following, followedBy, blocking, blockedBy] = await Promise.all([
-      prisma.follow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: userId,
-            followingId: targetUserId
-          }
-        }
-      }),
-      prisma.follow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: targetUserId,
-            followingId: userId
-          }
-        }
-      }),
-      prisma.block.findUnique({
-        where: {
-          blockerId_blockedId: {
-            blockerId: userId,
-            blockedId: targetUserId
-          }
-        }
-      }),
-      prisma.block.findUnique({
-        where: {
-          blockerId_blockedId: {
-            blockerId: targetUserId,
-            blockedId: userId
-          }
-        }
-      })
-    ]);
-
-    return json({
-      isFollowing: !!following,
-      isFollowedBy: !!followedBy,
-      isBlocked: !!blocking,
-      isBlockedBy: !!blockedBy,
-      // Phase 2: Privacy & messaging preferences
-      visibility: targetProfile.visibility || 'PUBLIC',
-      messagePermission: targetProfile.messagePermission || 'EVERYONE'
-    });
-  } catch (e) {
-    console.error('Get profile status error:', e);
-    return error(500, 'Server error: ' + e.message);
-  }
-};
+export const getMyFollowing = async () =>
+  error(410, 'Use GET /profiles/:id/network instead');

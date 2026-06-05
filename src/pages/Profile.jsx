@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getUserProfile } from '../services/userService';
 import { getMyProfile } from '../services/profileService';
-import { followProfile, unfollowProfile, blockProfile, unblockProfile, getProfileStatus } from '../services/connectionService';
+import { sendNetworkRequest, cancelNetworkRequest, acceptNetworkRequest, declineNetworkRequest, blockProfile, unblockProfile, getProfileStatus } from '../services/connectionService';
 import { createThread } from '../services/messagesService';
 import { listPosts, likePost as likePostApi, unlikePost as unlikePostApi } from '../services/postService';
 import { useAuth } from '../context/AuthContext';
@@ -12,8 +12,8 @@ import SkeletonProfile from '../components/skeletons/SkeletonProfile';
 import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
 import ConfirmationModal from '../components/ConfirmationModal';
-import FollowersListModal from '../components/FollowersListModal';
-import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Clock, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
+import NetworkModal from '../components/NetworkModal';
+import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Users, Clock, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
 import AdminEmailPanel from '../components/AdminEmailPanel';
 import AdminWaitlistPanel from '../components/AdminWaitlistPanel';
 import EmeraldBadge from '../components/EmeraldBadge';
@@ -32,11 +32,13 @@ const isValidUrl = (url) => {
 };
 
 const getMessagePermission = (status) => {
-  const { messagePermission, isFollowing, isBlocked, isBlockedBy } = status;
+  const { messagePermission, networkStatus, isBlocked, isBlockedBy } = status;
   if (isBlocked) return { canMessage: false, tooltipText: 'You have blocked this user' };
   if (isBlockedBy) return { canMessage: false, tooltipText: 'You cannot message this user' };
   if (messagePermission === 'NO_ONE') return { canMessage: false, tooltipText: 'This user is not accepting messages' };
-  if (messagePermission === 'FOLLOWERS_ONLY' && !isFollowing) return { canMessage: false, tooltipText: 'Only followers can message this user' };
+  if ((messagePermission === 'FOLLOWERS_ONLY' || messagePermission === 'NETWORK_ONLY') && networkStatus !== 'connected') {
+    return { canMessage: false, tooltipText: 'Only people in this user\'s network can message them' };
+  }
   return { canMessage: true, tooltipText: '' };
 };
 
@@ -48,8 +50,7 @@ const EMPTY_PROFILE = {
   avatar: null,
   role: '',
   postsCount: 0,
-  followersCount: 0,
-  followingCount: 0,
+  networkCount: 0,
   reelsCount: 0,
   scriptsCount: 0,
   posts: [],
@@ -125,20 +126,18 @@ export default function Profile() {
   };
 
   const [connectionStatus, setConnectionStatus] = useState({
-    isFollowing: false,
-    isFollowedBy: false,
+    networkStatus: 'none',
     isBlocked: false,
     isBlockedBy: false,
     visibility: 'PUBLIC',
     messagePermission: 'EVERYONE'
   });
-  const [followLoading, setFollowLoading] = useState(false);
+  const [connectLoading, setConnectLoading] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
 
   const [showBlockMenu, setShowBlockMenu] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
-  const [showFollowersModal, setShowFollowersModal] = useState(false);
-  const [followersModalType, setFollowersModalType] = useState('followers');
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
 
   const isOwnProfile = useMemo(() => {
     if (!id) return true;
@@ -156,8 +155,7 @@ export default function Profile() {
       try {
         const status = await getProfileStatus(profileId);
         setConnectionStatus({
-          isFollowing: status.isFollowing || false,
-          isFollowedBy: status.isFollowedBy || false,
+          networkStatus: status.networkStatus || 'none',
           isBlocked: status.isBlocked || false,
           isBlockedBy: status.isBlockedBy || false,
           visibility: status.visibility || 'PUBLIC',
@@ -170,47 +168,77 @@ export default function Profile() {
     fetchConnectionStatus();
   }, [isOwnProfile, profile?.profile?.id, profile?.profileId, user]);
 
-  const handleFollow = async () => {
+  const handleConnect = async () => {
     const profileId = profile?.profile?.id || profile?.profileId;
     if (!profileId) return;
-    setFollowLoading(true);
+    setConnectLoading(true);
     try {
-      await followProfile(profileId);
-      setConnectionStatus(prev => ({ ...prev, isFollowing: true }));
-      setProfile(prev => ({
-        ...prev,
-        followersCount: (prev.followersCount || 0) + 1,
-        profile: prev.profile ? { ...prev.profile, followersCount: (prev.profile.followersCount || 0) + 1 } : prev.profile,
-        _count: prev._count ? { ...prev._count, followers: (prev._count.followers || 0) + 1 } : prev._count
-      }));
-      toast.success(`Now following ${profile.displayName || profile.username}!`);
+      const result = await sendNetworkRequest(profileId);
+      setConnectionStatus(prev => ({ ...prev, networkStatus: result.networkStatus }));
+      if (result.networkStatus === 'connected') {
+        setProfile(prev => ({ ...prev, networkCount: (prev.networkCount || 0) + 1, profile: prev.profile ? { ...prev.profile, networkCount: (prev.profile.networkCount || 0) + 1 } : prev.profile }));
+        toast.success(`Connected with ${profile.displayName || profile.username}!`);
+      } else {
+        toast.success('Connection request sent');
+      }
     } catch (err) {
-      console.error('Failed to follow:', err);
-      toast.error('Failed to follow. Please try again.');
+      console.error('Failed to send connection request:', err);
+      toast.error('Failed to send request. Please try again.');
     } finally {
-      setFollowLoading(false);
+      setConnectLoading(false);
     }
   };
 
-  const handleUnfollow = async () => {
+  const handleDisconnect = async () => {
     const profileId = profile?.profile?.id || profile?.profileId;
     if (!profileId) return;
-    setFollowLoading(true);
+    setConnectLoading(true);
     try {
-      await unfollowProfile(profileId);
-      setConnectionStatus(prev => ({ ...prev, isFollowing: false }));
-      setProfile(prev => ({
-        ...prev,
-        followersCount: Math.max(0, (prev.followersCount || 0) - 1),
-        profile: prev.profile ? { ...prev.profile, followersCount: Math.max(0, (prev.profile.followersCount || 0) - 1) } : prev.profile,
-        _count: prev._count ? { ...prev._count, followers: Math.max(0, (prev._count.followers || 0) - 1) } : prev._count
-      }));
-      toast.success('Unfollowed successfully');
+      const wasConnected = connectionStatus.networkStatus === 'connected';
+      await cancelNetworkRequest(profileId);
+      setConnectionStatus(prev => ({ ...prev, networkStatus: 'none' }));
+      if (wasConnected) {
+        setProfile(prev => ({ ...prev, networkCount: Math.max(0, (prev.networkCount || 0) - 1), profile: prev.profile ? { ...prev.profile, networkCount: Math.max(0, (prev.profile.networkCount || 0) - 1) } : prev.profile }));
+      }
+      toast.success(wasConnected ? 'Removed from network' : 'Request cancelled');
     } catch (err) {
-      console.error('Failed to unfollow:', err);
-      toast.error('Failed to unfollow. Please try again.');
+      console.error('Failed to disconnect:', err);
+      toast.error('Failed to disconnect. Please try again.');
     } finally {
-      setFollowLoading(false);
+      setConnectLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async () => {
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+    setConnectLoading(true);
+    try {
+      await acceptNetworkRequest(profileId);
+      setConnectionStatus(prev => ({ ...prev, networkStatus: 'connected' }));
+      setProfile(prev => ({ ...prev, networkCount: (prev.networkCount || 0) + 1, profile: prev.profile ? { ...prev.profile, networkCount: (prev.profile.networkCount || 0) + 1 } : prev.profile }));
+      toast.success(`Connected with ${profile.displayName || profile.username}!`);
+    } catch (err) {
+      console.error('Failed to accept request:', err);
+      toast.error('Failed to accept request. Please try again.');
+    } finally {
+      setConnectLoading(false);
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    const profileId = profile?.profile?.id || profile?.profileId;
+    if (!profileId) return;
+    setConnectLoading(true);
+    try {
+      await declineNetworkRequest(profileId);
+      setConnectionStatus(prev => ({ ...prev, networkStatus: 'none' }));
+      toast.success('Request declined');
+    } catch (err) {
+      console.error('Failed to decline request:', err);
+      toast.error('Failed to decline request. Please try again.');
+    } finally {
+      setConnectLoading(false);
     }
   };
 
@@ -237,7 +265,7 @@ export default function Profile() {
     if (!profileId) return;
     try {
       await blockProfile(profileId);
-      setConnectionStatus(prev => ({ ...prev, isBlocked: true, isFollowing: false }));
+      setConnectionStatus(prev => ({ ...prev, isBlocked: true, networkStatus: 'none' }));
       toast.success('User blocked');
     } catch (err) {
       console.error('Failed to block:', err);
@@ -259,9 +287,8 @@ export default function Profile() {
     }
   };
 
-  const openFollowersModal = (type) => {
-    setFollowersModalType(type);
-    setShowFollowersModal(true);
+  const openNetworkModal = () => {
+    setShowNetworkModal(true);
   };
 
   useEffect(() => {
@@ -489,29 +516,62 @@ export default function Profile() {
                     </div>
                   ) : (
                     <>
-                      {/* Follow / Unfollow */}
-                      {connectionStatus.isFollowing ? (
+                      {/* Network connection buttons */}
+                      {connectionStatus.networkStatus === 'connected' ? (
                         <button
-                          onClick={handleUnfollow}
-                          disabled={followLoading}
-                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-700 px-5 py-2.5 hover:border-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-50"
+                          onClick={handleDisconnect}
+                          disabled={connectLoading}
+                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-700 px-5 py-2.5 hover:border-red-200 hover:text-red-600 transition-colors disabled:opacity-50"
                         >
-                          {followLoading ? (
+                          {connectLoading ? (
                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <><UserCheck className="w-4 h-4" /> Following</>
+                            <><UserCheck className="w-4 h-4" /> Connected</>
                           )}
                         </button>
+                      ) : connectionStatus.networkStatus === 'pending_sent' ? (
+                        <button
+                          onClick={handleDisconnect}
+                          disabled={connectLoading}
+                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-500 px-5 py-2.5 hover:border-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-50"
+                        >
+                          {connectLoading ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <><Clock className="w-4 h-4" /> Pending</>
+                          )}
+                        </button>
+                      ) : connectionStatus.networkStatus === 'pending_received' ? (
+                        <>
+                          <button
+                            onClick={handleAcceptRequest}
+                            disabled={connectLoading}
+                            className="flex items-center gap-1.5 text-sm font-medium bg-neutral-900 text-white px-5 py-2.5 hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                          >
+                            {connectLoading ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <><UserPlus className="w-4 h-4" /> Accept</>
+                            )}
+                          </button>
+                          <button
+                            onClick={handleDeclineRequest}
+                            disabled={connectLoading}
+                            className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-500 px-4 py-2.5 hover:border-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-50"
+                          >
+                            Decline
+                          </button>
+                        </>
                       ) : (
                         <button
-                          onClick={handleFollow}
-                          disabled={followLoading}
+                          onClick={handleConnect}
+                          disabled={connectLoading}
                           className="flex items-center gap-1.5 text-sm font-medium bg-neutral-900 text-white px-5 py-2.5 hover:bg-neutral-700 transition-colors disabled:opacity-50"
                         >
-                          {followLoading ? (
+                          {connectLoading ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <><UserPlus className="w-4 h-4" /> Follow</>
+                            <><UserPlus className="w-4 h-4" /> Connect</>
                           )}
                         </button>
                       )}
@@ -615,9 +675,9 @@ export default function Profile() {
           {/* @username + visibility note */}
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <p className="text-neutral-400 text-sm">@{displayData.username}</p>
-            {!isOwnProfile && connectionStatus.visibility === 'FOLLOWERS_ONLY' && (
+            {!isOwnProfile && (connectionStatus.visibility === 'FOLLOWERS_ONLY' || connectionStatus.visibility === 'NETWORK_ONLY') && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
-                🔒 Followers only
+                🔒 Network only
               </span>
             )}
           </div>
@@ -683,7 +743,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Stats — compact credit line, name is the hero not the numbers */}
+          {/* Stats */}
           <div className="flex items-center gap-6 pt-5 border-t border-neutral-100 flex-wrap">
             <div>
               <span className="font-semibold text-neutral-900 text-base tabular-nums">
@@ -692,24 +752,14 @@ export default function Profile() {
               <span className="text-neutral-500 text-sm ml-1.5">posts</span>
             </div>
             <button
-              onClick={() => openFollowersModal('followers')}
+              onClick={openNetworkModal}
               className="text-left hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B]"
-              aria-label="View followers"
+              aria-label="View network"
             >
               <span className="font-semibold text-neutral-900 text-base tabular-nums">
-                {displayData._count?.followers || displayData.followersCount || displayData.profile?.followersCount || 0}
+                {displayData.networkCount || displayData.profile?.networkCount || 0}
               </span>
-              <span className="text-neutral-500 text-sm ml-1.5">followers</span>
-            </button>
-            <button
-              onClick={() => openFollowersModal('following')}
-              className="text-left hover:opacity-75 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B]"
-              aria-label="View following"
-            >
-              <span className="font-semibold text-neutral-900 text-base tabular-nums">
-                {displayData._count?.following || displayData.followingCount || displayData.profile?.followingCount || 0}
-              </span>
-              <span className="text-neutral-500 text-sm ml-1.5">following</span>
+              <span className="text-neutral-500 text-sm ml-1.5">connections</span>
             </button>
           </div>
         </div>
@@ -965,21 +1015,16 @@ export default function Profile() {
         onClose={() => setShowBlockConfirm(false)}
         onConfirm={handleBlock}
         title="Block User"
-        message={`Are you sure you want to block @${displayData.username}? They will no longer be able to follow you or see your profile.`}
+        message={`Are you sure you want to block @${displayData.username}? They will no longer be able to connect with you or see your profile.`}
         confirmText="Block"
         cancelText="Cancel"
         destructive={true}
       />
-      <FollowersListModal
-        isOpen={showFollowersModal}
-        onClose={() => setShowFollowersModal(false)}
+      <NetworkModal
+        isOpen={showNetworkModal}
+        onClose={() => setShowNetworkModal(false)}
         profileId={profile?.profile?.id || profile?.profileId || profile?.id}
-        type={followersModalType}
-        count={
-          followersModalType === 'followers'
-            ? displayData._count?.followers || displayData.followersCount || displayData.profile?.followersCount || 0
-            : displayData._count?.following || displayData.followingCount || displayData.profile?.followingCount || 0
-        }
+        count={displayData.networkCount || displayData.profile?.networkCount || 0}
       />
     </div>
   );
