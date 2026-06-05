@@ -90,8 +90,8 @@ const HeroSection = () => {
             className="font-bold leading-[1.05] bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent pb-2 lg:shrink-0"
             style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5.5rem)' }}
           >
-            Project matchmaking
-            <br />for theater and film.
+            Project based match making
+            <br />for independent film.
           </h1>
 
           <div className="hidden lg:block flex-1 max-w-[380px]">

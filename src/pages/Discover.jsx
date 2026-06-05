@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { Search, User, UserPlus, Loader2, Lock } from "lucide-react";
-import { followProfile, unfollowProfile, sendConnectionRequest, getMyFollowing } from "../services/connectionService";
+import { sendNetworkRequest, cancelNetworkRequest } from "../services/connectionService";
 import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
@@ -103,22 +103,6 @@ export default function Discover() {
     }
   };
 
-  // Fetch current user's following list on mount to know who is already followed
-  useEffect(() => {
-    const fetchFollowingList = async () => {
-      try {
-        const response = await getMyFollowing();
-        if (response?.items) {
-          const ids = new Set(response.items.map(item => item.userId || item.id));
-          setFollowingIds(ids);
-        }
-      } catch (error) {
-        console.error('Failed to fetch following list:', error);
-      }
-    };
-
-    fetchFollowingList();
-  }, []);
 
   // Search users via API
   const searchUsers = async (query) => {
@@ -163,37 +147,34 @@ export default function Discover() {
     return () => clearTimeout(timer);
   }, [q, searchType]);
 
-  // Handle follow/unfollow action
+  // Handle connect/disconnect action
   const handleFollow = async (user, e) => {
     e.stopPropagation();
 
     if (!user.profileId) {
-      toast.error('Unable to follow - profile not found');
+      toast.error('Unable to connect - profile not found');
       return;
     }
 
-    const isCurrentlyFollowing = followingIds.has(user.id);
+    const isCurrentlyConnected = followingIds.has(user.id);
 
     try {
-      if (isCurrentlyFollowing) {
-        await unfollowProfile(user.profileId);
+      if (isCurrentlyConnected) {
+        await cancelNetworkRequest(user.profileId);
         setFollowingIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(user.id);
           return newSet;
         });
-        toast.success(`Unfollowed ${user.displayName}`);
-      } else if (user.profileVisibility === 'private') {
-        await sendConnectionRequest(user.id);
-        toast.success('Follow request sent!');
+        toast.success(`Request cancelled`);
       } else {
-        await followProfile(user.profileId);
+        await sendNetworkRequest(user.profileId);
         setFollowingIds(prev => new Set([...prev, user.id]));
-        toast.success(`Now following ${user.displayName}!`);
+        toast.success('Connection request sent!');
       }
     } catch (error) {
-      console.error('Failed to follow/unfollow:', error);
-      toast.error('Failed to update follow status. Please try again.');
+      console.error('Failed to connect:', error);
+      toast.error('Failed to send connection request. Please try again.');
     }
   };
 
@@ -317,11 +298,11 @@ export default function Discover() {
                       }`}
                     >
                       {followingIds.has(user.id) ? (
-                        'Following'
+                        'Requested'
                       ) : (
                         <>
                           <UserPlus className="w-4 h-4" />
-                          {user.profileVisibility === 'private' ? 'Request' : 'Follow'}
+                          Connect
                         </>
                       )}
                     </button>
