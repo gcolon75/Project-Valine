@@ -23,10 +23,9 @@ const Card = forwardRef(({
   ...props
 }, ref) => {
   const baseStyles = `
-    bg-surface-2 
-    border border-subtle 
-    rounded-xl 
-    shadow-sm
+    bg-surface-2
+    border border-neutral-200 dark:border-white/10
+    rounded-lg
     transition-all duration-200
   `;
 

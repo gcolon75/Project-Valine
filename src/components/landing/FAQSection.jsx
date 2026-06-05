@@ -1,82 +1,86 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 
-const FAQSection = () => {
-  const faqs = [
-    {
-      question: "What is Joint?",
-      answer: "Joint is where people in entertainment connect. Actors, producers, writers, directors, agents, editors, and anyone creating or working in film, TV, theater, music, or gaming. Share your work, find collabs, and get paid."
-    },
-    {
-      question: "Is Joint free to use?",
-      answer: "Yep! You can create a profile, connect with people, share your work, and browse opportunities, all for free."
-    },
-    {
-      question: "How do I get started?",
-      answer: "Click \"Join for Free\", set up your profile, add some work, and you're good to go. Takes like 2 minutes."
-    },
-    {
-      question: "Can I showcase my work?",
-      answer: "Absolutely. Upload demos, samples, scripts, art, music, and whatever shows what you do. It all lives in your profile."
-    },
-    {
-      question: "How do I find collaboration opportunities?",
-      answer: "Scroll the feed, use search to find specific people or projects, and check out auditions and casting calls when they're posted."
-    },
-    {
-      question: "Is my content private?",
-      answer: "You have full control over your privacy settings. Choose what content is public, visible to connections only, or completely private."
-    }
-  ];
+const faqs = [
+  {
+    question: 'What is Joint?',
+    answer:
+      'Joint is a platform for the entertainment industry — writers, directors, producers, actors, composers, and industry readers. Submit scripts for professional coverage, post your work, find collaborators, and build your career in film, theater, and beyond.',
+  },
+  {
+    question: 'How does paid script review work?',
+    answer:
+      'Writers submit a PDF script and pay $0.50 per page. A vetted reader from our pool claims the script and delivers structured coverage within 24 hours — character, structure, dialogue, and marketability. Readers earn $0.25 per page.',
+  },
+  {
+    question: 'Is Joint free to use?',
+    answer:
+      'Creating a profile, posting work, connecting with people, and using peer feedback is free. Script review is a paid service ($0.50/page). An Emerald subscription ($9.99/month) includes one free script review per month plus premium visibility.',
+  },
+  {
+    question: 'How do I get started?',
+    answer:
+      'Request early access and you\'ll be notified when the platform opens. Once you\'re in, create a profile, post your work, and start connecting with writers, directors, and other creatives in the industry.',
+  },
+  {
+    question: 'What types of scripts can I submit?',
+    answer:
+      'Screenplays, teleplays, stage plays, pilots, and short film scripts. Submit as PDF. Coverage is tailored to the format you select at submission.',
+  },
+  {
+    question: 'Is my content private?',
+    answer:
+      'You have full control. Set each post to public, connections-only, or paid access. Scripts submitted for review are only visible to the assigned reader and platform admins.',
+  },
+];
+
+const FAQItem = ({ question, answer }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const id = `faq-${question.replace(/\s+/g, '-').toLowerCase()}`;
 
   return (
-    <section id="faq" className="px-4 py-16 md:py-20 bg-neutral-50 shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="faq-heading">
+    <div className="border-b border-neutral-200">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full py-5 flex items-center justify-between text-left gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
+        aria-expanded={isOpen}
+        aria-controls={id}
+      >
+        <h3 className="font-semibold text-neutral-900">{question}</h3>
+        {isOpen
+          ? <Minus className="w-4 h-4 text-[#0CCE6B] shrink-0" aria-hidden="true" />
+          : <Plus className="w-4 h-4 text-neutral-400 shrink-0" aria-hidden="true" />
+        }
+      </button>
+      {isOpen && (
+        <div id={id} className="pb-5">
+          <p className="text-neutral-600 leading-relaxed">{answer}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FAQSection = () => {
+  return (
+    <section id="faq" className="bg-white px-6 py-20" aria-labelledby="faq-heading">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="mb-12">
           <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            Frequently Asked Questions
+            Frequently asked questions
           </h2>
-          <p className="text-lg text-neutral-600">
-            Everything you need to know about Joint
+          <p className="text-neutral-500">
+            Everything you need to know about Joint.
           </p>
         </div>
-        
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <FAQItem key={index} question={faq.question} answer={faq.answer} />
+
+        <div className="border-t border-neutral-200">
+          {faqs.map(faq => (
+            <FAQItem key={faq.question} question={faq.question} answer={faq.answer} />
           ))}
         </div>
       </div>
     </section>
-  );
-};
-
-const FAQItem = ({ question, answer }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:outline-2 focus-visible:outline-[#0CCE6B] focus-visible:outline-offset-2"
-        aria-expanded={isOpen}
-        aria-controls={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
-      >
-        <h3 className="font-semibold text-neutral-900 pr-4">{question}</h3>
-        <ChevronDown 
-          className={`w-5 h-5 text-neutral-600 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-      {isOpen && (
-        <div 
-          id={`faq-answer-${question.replace(/\s+/g, '-').toLowerCase()}`}
-          className="px-6 pb-4"
-        >
-          <p className="text-neutral-600">{answer}</p>
-        </div>
-      )}
-    </div>
   );
 };
 

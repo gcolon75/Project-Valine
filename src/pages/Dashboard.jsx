@@ -2,11 +2,11 @@
 import { useMemo, useState, useEffect } from "react";
 import UserAvatar from "../components/UserAvatar";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem } from "lucide-react";
+import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem, ArrowRight } from "lucide-react";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
-import { Card, Button } from "../components/ui";
+import { Button } from "../components/ui";
 import { useFeed } from "../context/FeedContext";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
@@ -148,14 +148,20 @@ export default function Dashboard() {
     );
   }, [displayPosts, activeTag]);
 
+  const isEmerald = profileData?.plan === 'emerald' || user?.plan === 'emerald';
+
   return (
     <div className="container mx-auto px-4 max-w-7xl text-[1.1rem]">
       <h1 className="sr-only">Dashboard</h1>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] animate-fade-in">
-          {/* LEFT COLUMN */}
-          <aside className="hidden lg:block space-y-4">
-            <Card padding="default">
-              <div className="flex items-center gap-3">
+
+        {/* LEFT COLUMN — flat panel, sections divided by hairlines */}
+        <aside className="hidden lg:block">
+          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg sticky top-20 overflow-hidden">
+
+            {/* Profile */}
+            <div className="px-5 py-5 border-b border-neutral-200 dark:border-white/10">
+              <div className="flex items-center gap-3 mb-3">
                 <UserAvatar
                   src={profileData?.avatar}
                   name={profileData?.displayName || profileData?.username}
@@ -163,46 +169,39 @@ export default function Dashboard() {
                   className="h-10 w-10"
                 />
                 <div>
-                  <div className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1">
+                  <div className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-1 text-base leading-tight">
                     {profileData?.displayName || user?.displayName || 'Your Name'}
                     <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} />
                   </div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
                     @{profileData?.username || user?.username || 'username'}
                   </div>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 text-center text-sm text-neutral-700 dark:text-neutral-300">
-                <div>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="font-semibold text-neutral-900 dark:text-white">
                   {profileData?.stats?.followers ?? 0}
-                  <span className="block text-xs text-neutral-500">Followers</span>
-                </div>
-                <div>
+                </span>{' '}followers
+                {' · '}
+                <span className="font-semibold text-neutral-900 dark:text-white">
                   {profileData?.stats?.following ?? 0}
-                  <span className="block text-xs text-neutral-500">Following</span>
-                </div>
-              </div>
-            </Card>
+                </span>{' '}following
+              </p>
+            </div>
 
-            {/* Subscription CTA - Replacing Your Stats */}
-            {(profileData?.plan === 'emerald' || user?.plan === 'emerald') ? (
-              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+            {/* Emerald CTA card */}
+            {isEmerald ? (
+              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 text-white">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold mb-2 inline-flex items-center gap-2">
                       <Gem className="w-5 h-5" aria-hidden="true" />
                       Emerald active
                     </h3>
-                    <p className="text-emerald-50 text-sm">
-                      You have access to all premium features.
-                    </p>
+                    <p className="text-emerald-50 text-sm">You have access to all premium features.</p>
                   </div>
                 </div>
-
-                <p className="text-emerald-50 text-sm mb-6">
-                  Detailed analytics dashboard coming soon
-                </p>
-
+                <p className="text-emerald-50 text-sm mb-6">Detailed analytics dashboard coming soon</p>
                 <Link
                   to="/pricing"
                   className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
@@ -211,17 +210,14 @@ export default function Dashboard() {
                 </Link>
               </div>
             ) : (
-              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+              <div data-demo="emerald-cta" className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 text-white">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold mb-2">Unlock Full Stats</h3>
-                    <p className="text-emerald-50 text-sm">
-                      Get detailed analytics with Emerald
-                    </p>
+                    <p className="text-emerald-50 text-sm">Get detailed analytics with Emerald</p>
                   </div>
                   <TrendingUp className="w-12 h-12 text-emerald-200" aria-hidden="true" />
                 </div>
-
                 <ul className="space-y-2 mb-6">
                   <li className="flex items-center text-sm">
                     <Users className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -236,7 +232,6 @@ export default function Dashboard() {
                     View detailed analytics
                   </li>
                 </ul>
-
                 <Link
                   to="/pricing"
                   className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
@@ -246,12 +241,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Saved tags */}
-            <Card padding="default" data-demo="tag-filter">
+            {/* Tags */}
+            <div data-demo="tag-filter" className="px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                <span className="text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
                   {showAllTags ? "All tags" : "Trending tags"}
-                </h3>
+                </span>
                 <button
                   onClick={() => { setShowAllTags((v) => !v); setTagSearch(""); }}
                   className="text-xs font-medium text-[#0CCE6B] hover:text-[#0BBE60] transition-colors"
@@ -270,7 +265,7 @@ export default function Dashboard() {
                     placeholder="Search tags..."
                     value={tagSearch}
                     onChange={(e) => setTagSearch(e.target.value)}
-                    className="w-full bg-neutral-100 dark:bg-neutral-800 border-0 rounded-lg pl-8 pr-8 py-1.5 text-xs text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
+                    className="w-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-white/10 rounded pl-8 pr-8 py-1.5 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                   />
                   {tagSearch && (
                     <button
@@ -302,10 +297,10 @@ export default function Dashboard() {
                                 key={t}
                                 onClick={() => setActiveTag((v) => (v === t ? "" : t))}
                                 className={[
-                                  "rounded-full border px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
+                                  "rounded border px-2.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
                                   activeTag === t
                                     ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
-                                    : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
+                                    : "bg-white dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400 dark:hover:bg-white/10",
                                 ].join(" ")}
                                 aria-pressed={activeTag === t}
                                 aria-label={`Filter by ${t}`}
@@ -325,16 +320,16 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {savedTags.map((t) => (
                     <button
                       key={t}
                       onClick={() => setActiveTag((v) => (v === t ? "" : t))}
                       className={[
-                        "rounded-full border px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
+                        "rounded border px-2.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
                         activeTag === t
                           ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
-                          : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
+                          : "bg-white dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400 dark:hover:bg-white/10",
                       ].join(" ")}
                       aria-pressed={activeTag === t}
                       aria-label={`Filter by ${t}`}
@@ -344,104 +339,102 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-            </Card>
-          </aside>
+            </div>
 
-          {/* CENTER COLUMN */}
-          <section className="space-y-4 lg:border-x lg:border-[#0CCE6B]/10 lg:px-4">
-            {/* Callout Card - Replacing Post Composer */}
-            <Card padding="default">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    Ready to share your work?
-                  </h3>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                    Create scripts, auditions, readings, and reels
-                  </p>
-                </div>
-                <Link 
-                  to="/post"
-                  className="btn-primary px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold"
-                >
-                  Create Post
-                </Link>
-              </div>
-            </Card>
+          </div>
+        </aside>
 
-            {activeTag && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="rounded-full border border-[#0CCE6B] bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-3 py-1 text-[#0CCE6B] dark:text-[#0CCE6B]">
-                  {activeTag}
-                </span>
-                <button
-                  onClick={() => setActiveTag("")}
-                  className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
+        {/* CENTER COLUMN */}
+        <section className="space-y-4 lg:px-4">
 
-            <div className="space-y-4">
-              {loadingApi ? (
-                <>
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
-                </>
-              ) : results.length === 0 ? (
-                <EmptyState
-                  icon={FileText}
-                  title="No posts yet"
-                  description="Be the first to share something! Create a post and start connecting with other artists."
-                  actionText="Create Post"
-                  onAction={() => document.querySelector('input[placeholder*="Share"]')?.focus()}
-                />
-              ) : (
-                results.map((p, i) =>
-                  i === 0 ? (
-                    <div key={p.id} data-demo="post-card">
-                      <PostCard
-                        post={p}
-                        onLike={handleLikePost}
-                        onDelete={handleDeletePost}
-                        style={{ animationDelay: `${i * 0.05}s` }}
-                      />
-                    </div>
-                  ) : (
+          {/* Post prompt */}
+          <div className="bg-white border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Ready to share your work?</h3>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Create scripts, auditions, readings, and reels</p>
+            </div>
+            <Link
+              to="/post"
+              className="shrink-0 px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold focus:outline-none"
+            >
+              Create Post
+            </Link>
+          </div>
+
+          {activeTag && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="rounded border border-[#0CCE6B] bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-2.5 py-0.5 text-xs text-[#0CCE6B]">
+                {activeTag}
+              </span>
+              <button
+                onClick={() => setActiveTag("")}
+                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 text-xs"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {loadingApi ? (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : results.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title="No posts yet"
+                description="Be the first to share something! Create a post and start connecting with other artists."
+                actionText="Create Post"
+                onAction={() => document.querySelector('input[placeholder*="Share"]')?.focus()}
+              />
+            ) : (
+              results.map((p, i) =>
+                i === 0 ? (
+                  <div key={p.id} data-demo="post-card">
                     <PostCard
-                      key={p.id}
                       post={p}
                       onLike={handleLikePost}
                       onDelete={handleDeletePost}
                       style={{ animationDelay: `${i * 0.05}s` }}
                     />
-                  )
+                  </div>
+                ) : (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    onLike={handleLikePost}
+                    onDelete={handleDeletePost}
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  />
                 )
-              )}
-            </div>
-          </section>
+              )
+            )}
+          </div>
+        </section>
 
-          {/* RIGHT COLUMN */}
-          <aside className="hidden lg:block space-y-4">
-            <Card title="Discover creators" padding="default">
-              <div className="text-center py-4">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-                  Find and connect with artists in the community
-                </p>
-                <Button
-                  onClick={() => navigate('/discover')}
-                  variant="primary"
-                  size="sm"
-                >
-                  Explore Discover
-                </Button>
-              </div>
-            </Card>
+        {/* RIGHT COLUMN */}
+        <aside className="hidden lg:block">
+          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 sticky top-20">
+            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-4">
+              Discover creators
+            </p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-5 leading-relaxed">
+              Find and connect with artists, writers, and directors in the community.
+            </p>
+            <button
+              onClick={() => navigate('/discover')}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0CCE6B] hover:text-[#0BBE60] transition-colors group"
+            >
+              Explore Discover
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+            </button>
+          </div>
+        </aside>
 
-          </aside>
-        </div>
       </div>
+    </div>
   );
 }

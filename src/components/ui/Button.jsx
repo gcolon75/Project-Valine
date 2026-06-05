@@ -28,31 +28,27 @@ const Button = forwardRef(({
 }, ref) => {
   const baseStyles = `
     inline-flex items-center justify-center gap-2 font-medium
-    transition-all duration-200
+    transition-colors duration-150
     focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2
     disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
-    rounded-lg
+    rounded
   `;
 
   const variants = {
     primary: `
       bg-gradient-to-r from-[#474747] to-[#0CCE6B]
       text-white
-      hover:shadow-lg hover:scale-[1.02]
-      active:scale-[0.98]
+      hover:opacity-90
     `,
     secondary: `
       bg-surface-2 dark:bg-white/5
       border border-neutral-200 dark:border-neutral-700
       text-neutral-900 dark:text-neutral-100
       hover:bg-neutral-50 dark:hover:bg-white/10
-      hover:shadow-md
-      active:scale-[0.98]
     `,
     ghost: `
       text-neutral-700 dark:text-neutral-300
       hover:bg-neutral-100 dark:hover:bg-white/5
-      active:scale-[0.95]
     `,
   };
 

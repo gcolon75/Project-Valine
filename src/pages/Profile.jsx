@@ -443,7 +443,7 @@ export default function Profile() {
       {/* Profile Header with Gradient Accent */}
       <Card padding="none" className="animate-slide-up">
         {/* Cover Image with Gradient or Banner — 4:1 aspect ratio matches the upload cropper */}
-        <div className="aspect-[4/1] bg-gradient-to-r from-[#474747] to-[#0CCE6B] relative overflow-hidden">
+        <div className="aspect-[4/1] bg-neutral-900 relative overflow-hidden">
           {(displayData.bannerUrl || displayData.banner) && (
             <img
               src={getCacheBustedBannerUrl(displayData.bannerUrl || displayData.banner, displayData)}
@@ -461,7 +461,7 @@ export default function Profile() {
         <div className="px-4 sm:px-6 pb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-12 sm:-mt-16 mb-4 gap-4">
             {/* Avatar with Gradient Border */}
-            <div className="relative z-10 p-1 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full shadow-xl">
+            <div className="relative z-10 p-0.5 bg-[#0CCE6B] rounded-full shadow-lg">
               {displayData.avatar ? (
                 <img 
                   src={getCacheBustedAvatarUrl(displayData.avatar, displayData)}

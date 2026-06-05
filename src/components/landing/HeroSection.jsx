@@ -1,103 +1,141 @@
-import { Sparkles, ArrowRight, Mic } from 'lucide-react';
+import { ArrowRight, PenLine, Star, Film, Briefcase, Camera, Mic2, Circle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const ROLE_LINES = [
+  { icon: PenLine, role: 'Writers', description: 'Get your scripts read and reviewed.' },
+  { icon: Star, role: 'Actors', description: 'Showcase your work, upload headshots, reels, and a resume.' },
+  { icon: Film, role: 'Directors', description: 'Source talent and get paid to evaluate scripts.' },
+  { icon: Briefcase, role: 'Producers', description: 'Releasing a film? Monetize your project by charging for views.' },
+];
+
+const FilmVisual = () => {
+  const holes = Array.from({ length: 7 });
+  return (
+    <div className="relative select-none" aria-hidden="true">
+      {/* Film strip */}
+      <div className="bg-[#111] rounded-xl overflow-hidden shadow-2xl">
+
+        {/* Top sprocket strip */}
+        <div className="bg-[#0a0a0a] px-6 py-2 flex justify-between items-center border-b border-white/5">
+          {holes.map((_, i) => (
+            <div key={i} className="w-5 h-3.5 rounded-sm bg-[#1e1e1e] border border-white/10" />
+          ))}
+        </div>
+
+        {/* Main frame */}
+        <div className="relative px-6 py-10 flex items-center justify-center min-h-[320px] bg-[#111]">
+
+          {/* Viewfinder corner brackets */}
+          {[
+            'top-4 left-4 border-t-2 border-l-2',
+            'top-4 right-4 border-t-2 border-r-2',
+            'bottom-4 left-4 border-b-2 border-l-2',
+            'bottom-4 right-4 border-b-2 border-r-2',
+          ].map((cls, i) => (
+            <div key={i} className={`absolute w-6 h-6 border-[#0CCE6B] ${cls}`} />
+          ))}
+
+          {/* REC indicator */}
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            <Circle className="w-2.5 h-2.5 fill-red-500 text-red-500" />
+            <span className="text-red-500 text-xs font-mono tracking-widest">REC</span>
+          </div>
+
+          {/* Scene label */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/30 text-xs font-mono tracking-widest whitespace-nowrap">
+            SCENE 01 / TAKE 01
+          </div>
+
+          {/* Center icons */}
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-[#0CCE6B]/10 border border-[#0CCE6B]/20 flex items-center justify-center">
+                <Camera className="w-12 h-12 text-[#0CCE6B]" />
+              </div>
+              {/* orbit icons */}
+              <div className="absolute -top-3 -right-4 w-8 h-8 rounded-full bg-[#1a1a1a] border border-white/10 flex items-center justify-center">
+                <Mic2 className="w-4 h-4 text-white/50" />
+              </div>
+              <div className="absolute -bottom-3 -left-4 w-8 h-8 rounded-full bg-[#1a1a1a] border border-white/10 flex items-center justify-center">
+                <Film className="w-4 h-4 text-white/50" />
+              </div>
+            </div>
+            <div className="h-px w-32 bg-gradient-to-r from-transparent via-[#0CCE6B]/40 to-transparent" />
+          </div>
+        </div>
+
+        {/* Bottom sprocket strip */}
+        <div className="bg-[#0a0a0a] px-6 py-2 flex justify-between items-center border-t border-white/5">
+          {holes.map((_, i) => (
+            <div key={i} className="w-5 h-3.5 rounded-sm bg-[#1e1e1e] border border-white/10" />
+          ))}
+        </div>
+      </div>
+
+      {/* Subtle glow */}
+      <div className="absolute inset-0 rounded-xl pointer-events-none" style={{ boxShadow: '0 0 80px -20px rgba(12,206,107,0.15)' }} />
+    </div>
+  );
+};
 
 const HeroSection = () => {
   return (
-    <section id="hero" className="relative px-4 py-16 md:py-20 overflow-hidden" aria-labelledby="hero-heading">
-      {/* Background Pattern - Light mode only */}
-      <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-white to-[#0CCE6B]/5" aria-hidden="true" />
-      
-      {/* Decorative Elements */}
-      <div className="absolute top-20 right-10 w-72 h-72 bg-[#0CCE6B]/10 rounded-full blur-3xl" aria-hidden="true" />
-      <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#474747]/5 rounded-full blur-3xl" aria-hidden="true" />
-      
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Centered Main Content */}
-        <div className="flex flex-col items-center text-center mb-12">
-          <div className="inline-flex items-center space-x-2 bg-[#0CCE6B]/10 px-4 py-2 rounded-full mb-6 animate-slide-up">
-            <Sparkles className="w-4 h-4 text-[#0CCE6B]" aria-hidden="true" />
-            <span className="text-sm font-medium text-[#0CCE6B]">
-              Where entertainment talent connects
-            </span>
-          </div>
-          
-          {/* pb-4 and leading-[1.15] prevent gradient text clipping on descenders across screen sizes */}
-          <h1 id="hero-heading" className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-[#474747] via-[#0CCE6B] to-[#474747] bg-clip-text text-transparent animate-slide-up max-w-4xl pb-4 leading-[1.15]" style={{ animationDelay: '0.1s' }}>
-            Showcase your work. Connect with artists. Collaborate and grow.
+    <section id="hero" className="bg-white px-6 pt-20 pb-0" aria-labelledby="hero-heading">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Headline row: slogan + film visual side by side */}
+        <div className="lg:flex lg:items-center lg:gap-16 mb-10">
+          <h1
+            id="hero-heading"
+            className="font-bold leading-[1.05] bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent pb-2 lg:shrink-0"
+            style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5.5rem)' }}
+          >
+            Project matchmaking
+            <br />for theater and film.
           </h1>
 
-          {/* Subtitle Text - Directly below title, above CTA buttons */}
-          <div
-            data-testid="hero-subtitle"
-            className="text-lg md:text-xl text-neutral-600 mb-8 animate-slide-up max-w-3xl text-center space-y-4 leading-relaxed"
-            style={{ animationDelay: '0.15s' }}
+          <div className="hidden lg:block flex-1 max-w-[380px]">
+            <FilmVisual />
+          </div>
+        </div>
+
+        {/* Role bullets — full width below */}
+        <dl
+          data-testid="hero-subtitle"
+          className="mb-12 grid sm:grid-cols-2 gap-x-12 gap-y-5 max-w-3xl"
+        >
+          {ROLE_LINES.map(({ icon: Icon, role, description }) => (
+            <div key={role} className="flex gap-4 items-start">
+              <Icon className="w-5 h-5 text-[#0CCE6B] shrink-0 mt-1" aria-hidden="true" />
+              <div>
+                <dt className="font-semibold text-neutral-900 text-base mb-0.5">{role}</dt>
+                <dd className="text-neutral-500 text-base leading-relaxed">{description}</dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+
+        <div className="flex flex-wrap items-center gap-6 mb-20">
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white px-8 py-4 font-semibold hover:opacity-90 transition-opacity group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
+            aria-label="Request early access to Joint Networking"
           >
-            <p>Find scripts, auditions, and collaborators, then share voice work, music, and other creative projects.</p>
-            <p>Actors, Writers, Influencers, Musicians, and Producers — Joint Networking is a safe, secure platform built for entertainment professionals to showcase their work, earn insightful feedback, and connect with the right people.</p>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up mb-12" style={{ animationDelay: '0.2s' }}>
-            <Link
-              to="/waitlist"
-              className="group bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
-              aria-label="Join the waitlist"
-            >
-              <span>Join the Waitlist Now!</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-            </Link>
-            <a
-              href="#about"
-              className="bg-white hover:bg-neutral-50 text-neutral-900 px-8 py-4 rounded-lg font-semibold text-lg border-2 border-neutral-200 transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-2"
-              aria-label="Learn more about Joint"
-            >
-              Learn More
-            </a>
-          </div>
-
-          {/* Hero Visual - Centered */}
-          <div className="relative animate-slide-up max-w-2xl w-full" style={{ animationDelay: '0.3s' }}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
-              <div className="aspect-[4/3] bg-gradient-to-br from-[#474747]/10 to-[#0CCE6B]/10 flex items-center justify-center">
-                <Mic className="w-32 h-32 text-[#0CCE6B]/30" aria-hidden="true" />
-              </div>
-            </div>
-            
-            {/* Floating "New!" badge */}
-            <div className="absolute -top-6 -left-6 bg-white rounded-lg shadow-lg p-3 animate-pulse">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" aria-hidden="true" />
-                </div>
-                <span className="text-sm font-semibold text-neutral-900">New!</span>
-              </div>
-            </div>
-          </div>
+            Request Early Access
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+          </Link>
+          <a
+            href="#about"
+            className="text-neutral-500 hover:text-neutral-900 text-sm font-medium transition-colors border-b border-neutral-300 hover:border-neutral-600 pb-0.5"
+            aria-label="Learn more about Joint Networking"
+          >
+            Learn More
+          </a>
         </div>
 
-        {/* TODO: Re-enable stat cards when real data is available (10K+ Creators, 50K+ Posts, 5K+ Projects)
-        <div className="flex flex-wrap justify-center gap-6 mt-16 animate-slide-up" style={{ animationDelay: '0.5s' }}>
-          <StatCard number="10K+" label="Creators" delay="0s" />
-          <StatCard number="50K+" label="Posts" delay="0.1s" />
-          <StatCard number="5K+" label="Projects" delay="0.2s" />
-        </div>
-        */}
       </div>
     </section>
   );
 };
-
-// Stat Card Component
-const StatCard = ({ number, label, delay }) => (
-  <div 
-    className="bg-white/90 backdrop-blur-sm border border-neutral-200 rounded-xl p-4 text-center hover:shadow-lg transition-all duration-200 animate-slide-up"
-    style={{ animationDelay: delay }}
-    role="region"
-    aria-label={`${label} statistic`}
-  >
-    <p className="text-3xl font-bold text-[#0CCE6B] mb-1" aria-label={`${number} ${label}`}>{number}</p>
-    <p className="text-xs text-neutral-600 font-medium">{label}</p>
-  </div>
-);
 
 export default HeroSection;

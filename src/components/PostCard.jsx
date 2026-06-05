@@ -1,6 +1,6 @@
 // src/components/PostCard.jsx
 import { useState, useEffect } from "react";
-import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Download, Lock, Eye, MoreVertical, Trash2, MessageSquare, Share2, FileText, Mic, Film, Camera, Megaphone } from "lucide-react";
 import UserAvatar from './UserAvatar';
 import { parseVideoEmbed } from "../utils/videoEmbed";
 import { useNavigate, Link } from "react-router-dom";
@@ -26,23 +26,24 @@ function renderBody(text) {
 }
 
 const CONTENT_TYPE_LABELS = {
-  script: { icon: '📝', label: 'Script' },
-  audition: { icon: '🎭', label: 'Audition' },
-  reel: { icon: '🎬', label: 'Reel' },
-  audio: { icon: '🎤', label: 'Audio' },
+  script:       { label: 'Script',       Icon: FileText  },
+  audition:     { label: 'Audition',     Icon: Mic       },
+  reel:         { label: 'Film / Reel',  Icon: Film      },
+  audio:        { label: 'Audio',        Icon: Mic       },
+  headshots:    { label: 'Headshots',    Icon: Camera    },
+  casting_call: { label: 'Casting Call', Icon: Megaphone },
 };
 
 export default function PostCard({ post, onDelete, onLike }) {
   const { likePost: contextLikePost, toggleSave } = useFeed();
-  // Use provided onLike handler or fall back to context
   const likePost = onLike || contextLikePost;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [accessRequested, setAccessRequested] = useState(post.accessRequestStatus === 'pending');
   const [hasAccess, setHasAccess] = useState(
-    post.visibility === "public" || 
-    post.hasAccess || 
+    post.visibility === "public" ||
+    post.hasAccess ||
     post.accessRequestStatus === 'approved'
   );
   const [downloading, setDownloading] = useState(false);
@@ -53,13 +54,10 @@ export default function PostCard({ post, onDelete, onLike }) {
   const [commentCount, setCommentCount] = useState(post.comments || 0);
   const [localPosterUrl, setLocalPosterUrl] = useState(null);
 
-  // Handle comment added
   const handleCommentAdded = () => {
     setCommentCount((prev) => prev + 1);
   };
 
-  // Check if current user is the post author
-  // user.id may be a profile ID after refreshUser(); user.userId is always the account ID
   const myId = user?.userId || user?.id;
   const isAuthor = !!myId && (
     myId === post.author?.id ||
@@ -67,11 +65,9 @@ export default function PostCard({ post, onDelete, onLike }) {
     myId === post.userId ||
     myId === post.ownerId
   );
-  
-  // Check if content is gated (has a mediaId and is not public)
+
   const isGated = post.mediaId && (post.visibility === "on-request" || post.visibility === "private");
 
-  // Check if media is a document (PDF, script, etc.)
   const isPdf = post.mediaAttachment?.type === 'pdf' ||
                 post.mediaAttachment?.s3Key?.endsWith('.pdf');
   const isDoc = post.mediaAttachment?.type === 'document' ||
@@ -79,7 +75,6 @@ export default function PostCard({ post, onDelete, onLike }) {
                 post.mediaAttachment?.s3Key?.endsWith('.docx');
   const isDocument = isPdf || isDoc;
 
-  // Check if media is audio (by type or file extension)
   const isAudio = post.audioUrl ||
                   post.mediaAttachment?.type === 'audio' ||
                   post.mediaAttachment?.s3Key?.endsWith('.mp3') ||
@@ -88,23 +83,17 @@ export default function PostCard({ post, onDelete, onLike }) {
                   post.mediaAttachment?.s3Key?.endsWith('.ogg') ||
                   post.mediaAttachment?.s3Key?.endsWith('.aac');
 
-  // Check if media is video
   const isVideo = post.mediaAttachment?.type === 'video' ||
                   post.mediaAttachment?.s3Key?.endsWith('.mp4') ||
                   post.mediaAttachment?.s3Key?.endsWith('.mov') ||
                   post.mediaAttachment?.s3Key?.endsWith('.webm');
 
-  // Check if post has an embedded video URL (YouTube / Vimeo stored in legacy media array)
   const embedInfo = parseVideoEmbed(post.media?.[0]);
 
-  // Image fallback: use local poster (freshly generated), then mediaAttachment url, then post image
   const posterUrl = localPosterUrl || post.mediaAttachment?.posterUrl;
   const imageUrl = posterUrl || post.mediaUrl || post.imageUrl;
-
-  // Video URL
   const videoUrl = post.mediaAttachment?.url || post.mediaUrl;
 
-  // Auto-fix: if author views their own PDF with no poster, generate and upload one silently
   const mediaId = post.mediaId || post.mediaAttachment?.id;
   useEffect(() => {
     if (!isPdf || post.mediaAttachment?.posterUrl || localPosterUrl || !isAuthor || !mediaId) return;
@@ -127,13 +116,11 @@ export default function PostCard({ post, onDelete, onLike }) {
     return () => { cancelled = true; };
   }, [mediaId, isAuthor, isPdf]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle request access
   const handleRequestAccess = async () => {
     if (!user?.id) {
       toast.error("Please log in to request access");
       return;
     }
-
     try {
       if (post.mediaId) {
         await requestMediaAccess(post.mediaId, user.id);
@@ -146,20 +133,15 @@ export default function PostCard({ post, onDelete, onLike }) {
     }
   };
 
-  // Handle download
   const handleDownload = async () => {
     if (!post.mediaId) {
       toast.error("No media available for download");
       return;
     }
-
     setDownloading(true);
     try {
-      // For PDFs, use watermarked endpoint (adds viewer's username as watermark)
       if (isPdf) {
         const pdfBlob = await getWatermarkedPdf(post.mediaId);
-
-        // Create download link from blob
         const url = window.URL.createObjectURL(pdfBlob);
         const link = document.createElement("a");
         link.href = url;
@@ -168,17 +150,11 @@ export default function PostCard({ post, onDelete, onLike }) {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-
         toast.success("PDF downloaded!");
       } else {
-        // Non-PDF: use existing S3 signed URL flow
         const response = await getMediaAccessUrl(post.mediaId, user?.id);
         const downloadUrl = response.viewUrl || response.downloadUrl;
-
-        if (!downloadUrl) {
-          throw new Error('No download URL available');
-        }
-
+        if (!downloadUrl) throw new Error('No download URL available');
         const link = document.createElement("a");
         link.href = downloadUrl;
         link.download = post.title || "download";
@@ -186,7 +162,6 @@ export default function PostCard({ post, onDelete, onLike }) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
         toast.success("Download started!");
       }
     } catch (error) {
@@ -197,17 +172,13 @@ export default function PostCard({ post, onDelete, onLike }) {
     }
   };
 
-  // Handle delete post
   const handleDeletePost = async () => {
     setDeleting(true);
     try {
       await deletePost(post.id);
       toast.success("Post deleted successfully");
       setShowDeleteConfirm(false);
-      // Call parent callback if provided
-      if (onDelete) {
-        onDelete(post.id);
-      }
+      if (onDelete) onDelete(post.id);
     } catch (error) {
       console.error("Delete failed:", error);
       toast.error(error.response?.data?.message || "Failed to delete post. Please try again.");
@@ -216,26 +187,17 @@ export default function PostCard({ post, onDelete, onLike }) {
     }
   };
 
-  // Handle share via DM
   const handleShareViaDM = async () => {
     if (!user?.id) {
       toast.error("Please log in to share via DM");
       return;
     }
-
     setSharingViaDM(true);
     setShowMenu(false);
-    
     try {
-      // Create or get thread with post author
       const authorId = post.author?.id || post.authorId;
-      if (!authorId) {
-        throw new Error("Post author not found");
-      }
-      
+      if (!authorId) throw new Error("Post author not found");
       const threadData = await createThread(authorId);
-      
-      // Navigate to conversation with forwarded post in state
       navigate(`/inbox/${threadData.id}`, {
         state: {
           forwardedPost: {
@@ -246,7 +208,6 @@ export default function PostCard({ post, onDelete, onLike }) {
           }
         }
       });
-      
       toast.success("Opening conversation...");
     } catch (error) {
       console.error("Share via DM failed:", error);
@@ -258,363 +219,324 @@ export default function PostCard({ post, onDelete, onLike }) {
 
   return (
     <>
-      <article className="rounded-2xl border border-neutral-200 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 animate-slide-up relative">
-        {/* Header */}
-        <div className="px-4 py-3">
-          {/* Post Title with Content Type Emoji */}
-          {post.title && (
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h2
-                className="text-lg font-bold text-neutral-900 dark:text-white cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                onClick={() => navigate(`/posts/${post.id}`)}
-              >
-                {post.title}
-              </h2>
-              {post.contentType && CONTENT_TYPE_LABELS[post.contentType] && (
-                <span className="text-3xl flex-shrink-0" title={CONTENT_TYPE_LABELS[post.contentType].label}>
-                  {CONTENT_TYPE_LABELS[post.contentType].icon}
-                </span>
-              )}
-            </div>
-          )}
+      <article className="rounded-lg border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 overflow-hidden transition-shadow duration-200 hover:shadow-md animate-slide-up relative">
 
-          {/* Author info and meta - Secondary */}
-          <div className="flex items-center gap-2">
-            <Link to={`/profile/${post.author.role}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <UserAvatar
-                src={post.author.avatar}
-                name={post.author.name || post.author.displayName || post.author.username}
-                alt={post.author.name}
-                className="h-6 w-6"
-              />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 inline-flex items-center gap-1">
+        {/* Author row */}
+        <div className="px-5 pt-4 pb-3 flex items-start gap-3">
+          <Link to={`/profile/${post.author.role}`} className="shrink-0 mt-0.5">
+            <UserAvatar
+              src={post.author.avatar}
+              name={post.author.name || post.author.displayName || post.author.username}
+              alt={post.author.name}
+              className="h-9 w-9"
+            />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <Link
+              to={`/profile/${post.author.role}`}
+              className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
+            >
+              <span className="font-semibold text-neutral-900 dark:text-white text-sm leading-tight">
                 {post.author.name}
-                <EmeraldBadge user={post.author} />
               </span>
+              <EmeraldBadge user={post.author} />
             </Link>
-            {post.author.role && (
-              <>
-                <span className="text-neutral-400 dark:text-neutral-500">·</span>
-                <Link to={`/profile/${post.author.role}`} className="text-xs text-neutral-500 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-500 mt-0.5 flex-wrap">
+              {post.author.role && (
+                <Link
+                  to={`/profile/${post.author.role}`}
+                  className="text-[#0CCE6B] hover:text-[#0BBE60] transition-colors"
+                >
                   @{post.author.role}
                 </Link>
+              )}
+              <span aria-hidden="true">·</span>
+              <span>{timeAgo(post.createdAt)}</span>
+              {isGated && <Lock className="w-3 h-3" aria-label="Gated content" />}
+              {post.price !== undefined && post.price !== null && (() => {
+                const priceValue = parseFloat(post.price);
+                return (
+                  <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
+                    priceValue > 0
+                      ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                      : 'bg-[#0CCE6B]/10 text-[#0CCE6B] border border-[#0CCE6B]/20'
+                  }`}>
+                    {priceValue > 0 ? `$${priceValue.toFixed(2)}` : 'Free'}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* 3-dot menu */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors"
+              aria-label="Post options"
+            >
+              <MoreVertical className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            </button>
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
+                  {!isAuthor && (
+                    <button
+                      onClick={handleShareViaDM}
+                      disabled={sharingViaDM}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      {sharingViaDM ? "Opening..." : "Share via DM"}
+                    </button>
+                  )}
+                  {isAuthor && (
+                    <button
+                      onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete post
+                    </button>
+                  )}
+                </div>
               </>
             )}
-            <span className="text-neutral-400 dark:text-neutral-500">·</span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-500">
-              {timeAgo(post.createdAt)}
-            </span>
-
-            {/* Badges */}
-            {isGated && (
-              <span className="flex items-center gap-1 text-xs text-neutral-500 ml-1">
-                <Lock className="w-3 h-3" />
-              </span>
-            )}
-            {post.price !== undefined && post.price !== null && (() => {
-              const priceValue = parseFloat(post.price);
-              return (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  priceValue > 0
-                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                }`}>
-                  {priceValue > 0 ? `$${priceValue.toFixed(2)}` : 'Free'}
-                </span>
-              );
-            })()}
-
-            {/* 3-dot menu */}
-            <div className="relative ml-auto">
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                aria-label="Post options"
-              >
-                <MoreVertical className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-              </button>
-
-              {showMenu && (
-                <>
-                  {/* Backdrop to close menu */}
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowMenu(false)}
-                  />
-                  {/* Menu */}
-                  <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700 py-1">
-                    {/* Share via DM - available for all posts */}
-                    {!isAuthor && (
-                      <button
-                        onClick={handleShareViaDM}
-                        disabled={sharingViaDM}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        {sharingViaDM ? "Opening..." : "Share via DM"}
-                      </button>
-                    )}
-
-                    {/* Delete - only for author */}
-                    {isAuthor && (
-                      <button
-                        onClick={() => {
-                          setShowMenu(false);
-                          setShowDeleteConfirm(true);
-                        }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete post
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </div>
 
-      {/* Media - clickable to view post */}
-      <div
-        className="aspect-[16/9] bg-neutral-300 dark:bg-neutral-800 relative overflow-hidden cursor-pointer"
-        onClick={() => navigate(`/posts/${post.id}`)}
-      >
-        {isGated && !hasAccess ? (
-          // Gated content - show blurred preview
-          <div className="relative w-full h-full">
-            {imageUrl && (
-              <img 
-                src={imageUrl} 
-                alt={post.title || "Post preview"}
-                className="w-full h-full object-cover blur-lg opacity-50"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/40">
-              <Lock className="w-8 h-8 text-white mb-2" />
-              <span className="text-white text-sm font-medium">
-                {post.visibility === "private" ? "Private Content" : "Access Required"}
-              </span>
-            </div>
-          </div>
-        ) : embedInfo ? (
-          // Embedded video (YouTube / Vimeo)
-          <iframe
-            src={embedInfo.embedUrl}
-            className="w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title={post.title || 'Embedded video'}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : isAudio ? (
-          // Audio content - show audio player
-          <div
-            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Mic className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mb-3" />
-            <audio controls className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <source src={post.audioUrl || post.mediaAttachment?.url} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
-              {post.title || "Audio Post"}
-            </span>
-          </div>
-        ) : isVideo && videoUrl ? (
-          // Video content - show video player
-          <video
-            controls
-            className="w-full h-full object-cover"
-            onClick={(e) => e.stopPropagation()}
-            poster={post.mediaAttachment?.posterUrl}
-          >
-            <source src={videoUrl} type="video/mp4" />
-            Your browser does not support the video element.
-          </video>
-        ) : isDocument ? (
-          // Document content - show poster thumbnail if available, otherwise icon
-          posterUrl ? (
-            <img
-              src={posterUrl}
-              alt={post.title || "Document preview"}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // On error, replace with fallback
-                const fallback = document.createElement('div');
-                fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800';
-                fallback.innerHTML = '<span class="text-xs text-neutral-500">PDF Document</span>';
-                e.target.parentNode.replaceChild(fallback, e.target);
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800">
-              <FileText className="w-16 h-16 text-red-500 dark:text-red-400" />
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
-                PDF Document
-              </span>
-            </div>
-          )
-        ) : imageUrl ? (
-          // Image/video content with actual URL
-          <img
-            src={imageUrl}
-            alt={post.title || "Post image"}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        ) : (
-          // No image available - show placeholder
-          <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-200 dark:bg-neutral-700">
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              No preview available
-            </span>
+        {/* Title */}
+        {post.title && (
+          <div className="px-5 pb-2">
+            <h2
+              className="text-base font-bold text-neutral-900 cursor-pointer hover:text-[#0CCE6B] transition-colors leading-snug"
+              onClick={() => navigate(`/posts/${post.id}`)}
+            >
+              {post.title}
+            </h2>
           </div>
         )}
-      </div>
 
-      {/* Body */}
-      <div className="px-4 py-3">
-        {/* Body content - clickable to view post */}
+        {/* Body */}
+        <div className="px-5 pb-3">
+          <div
+            className="cursor-pointer"
+            onClick={() => navigate(`/posts/${post.id}`)}
+          >
+            <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+              {renderBody(post.body)}
+            </p>
+          </div>
+        </div>
+
+        {/* Media */}
         <div
-          className="cursor-pointer"
+          className="aspect-[16/9] bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden cursor-pointer"
           onClick={() => navigate(`/posts/${post.id}`)}
         >
-          <p className="text-sm text-neutral-700 dark:text-neutral-300">{renderBody(post.body)}</p>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {post.tags.map((t) => (
-            <span
-              key={t}
-              className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-2.5 py-0.5 text-xs text-neutral-700 dark:text-neutral-300"
+
+          {isGated && !hasAccess ? (
+            <div className="relative w-full h-full">
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt={post.title || "Post preview"}
+                  className="w-full h-full object-cover blur-lg opacity-50"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/40">
+                <Lock className="w-8 h-8 text-white mb-2" />
+                <span className="text-white text-sm font-medium">
+                  {post.visibility === "private" ? "Private Content" : "Access Required"}
+                </span>
+              </div>
+            </div>
+          ) : embedInfo ? (
+            <iframe
+              src={embedInfo.embedUrl}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={post.title || 'Embedded video'}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : isAudio ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-800 p-4"
+              onClick={(e) => e.stopPropagation()}
             >
-              {t}
-            </span>
-          ))}
+              <Mic className="w-10 h-10 text-[#0CCE6B] mb-3" aria-hidden="true" />
+              <audio controls className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <source src={post.audioUrl || post.mediaAttachment?.url} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                {post.title || "Audio Post"}
+              </span>
+            </div>
+          ) : isVideo && videoUrl ? (
+            <video
+              controls
+              className="w-full h-full object-cover"
+              onClick={(e) => e.stopPropagation()}
+              poster={post.mediaAttachment?.posterUrl}
+            >
+              <source src={videoUrl} type="video/mp4" />
+              Your browser does not support the video element.
+            </video>
+          ) : isDocument ? (
+            posterUrl ? (
+              <img
+                src={posterUrl}
+                alt={post.title || "Document preview"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-800';
+                  fallback.innerHTML = '<span class="text-xs text-neutral-500">PDF Document</span>';
+                  e.target.parentNode.replaceChild(fallback, e.target);
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-800">
+                <FileText className="w-14 h-14 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">PDF Document</span>
+              </div>
+            )
+          ) : imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={post.title || "Post image"}
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800">
+              <span className="text-sm text-neutral-400 dark:text-neutral-500">No preview</span>
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
+        {/* Tags */}
+        {post.tags?.length > 0 && (
+          <div className="px-5 pt-3 flex flex-wrap gap-1.5">
+            {post.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded border border-neutral-200 dark:border-white/10 px-2 py-0.5 text-xs text-neutral-500 dark:text-neutral-400"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Actions — flat, no pill borders */}
+        <div className="px-5 py-3 flex items-center gap-6 flex-wrap">
           <button
             onClick={() => likePost(post.id)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
+            className={`flex items-center gap-2 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
               post.isLiked
-                ? "border-red-500 dark:border-red-600 bg-red-50 dark:bg-red-600/20 text-red-700 dark:text-red-300"
-                : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10"
+                ? 'text-red-500 dark:text-red-400'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
-            aria-label={post.isLiked ? `Unlike post, currently ${post.likes || 0} likes` : `Like post, currently ${post.likes || 0} likes`}
+            aria-label={post.isLiked ? `Unlike post, ${post.likes || 0} likes` : `Like post, ${post.likes || 0} likes`}
           >
-            <Heart className="w-4 h-4" fill={post.isLiked ? "currentColor" : "none"} aria-hidden="true" />
+            <Heart className="w-5 h-5" fill={post.isLiked ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.likes || 0}</span>
           </button>
+
           <button
             onClick={() => setOpen((v) => !v)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
+            className={`flex items-center gap-2 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
               open
-                ? "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300"
-                : "border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 text-neutral-700 dark:text-neutral-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:hover:border-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-300"
+                ? 'text-[#0CCE6B]'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
             aria-label={`View comments, ${commentCount} comments`}
             aria-expanded={open}
           >
-            <MessageCircle className="w-4 h-4" fill={open ? "currentColor" : "none"} aria-hidden="true" />
+            <MessageCircle className="w-5 h-5" fill={open ? "currentColor" : "none"} aria-hidden="true" />
             <span>{commentCount}</span>
           </button>
+
           <button
             onClick={() => toggleSave(post.id)}
-            className={[
-              "rounded-full px-3 py-1.5 text-sm border transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1",
+            className={`flex items-center gap-2 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
               post.saved
-                ? "bg-emerald-100 dark:bg-emerald-600/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
-                : "bg-neutral-100 dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10",
-            ].join(" ")}
+                ? 'text-[#0CCE6B]'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
             aria-label={post.saved ? "Unsave post" : "Save post"}
           >
-            <Bookmark className="w-4 h-4" fill={post.saved ? "currentColor" : "none"} aria-hidden="true" />
+            <Bookmark className="w-5 h-5" fill={post.saved ? "currentColor" : "none"} aria-hidden="true" />
             <span>{post.saved ? "Saved" : "Save"}</span>
           </button>
 
-          {/* Share button - copy link to clipboard */}
           <button
             onClick={() => {
               const postUrl = `${window.location.origin}/posts/${post.id}`;
-              navigator.clipboard.writeText(postUrl).then(() => {
-                toast.success("Link copied to clipboard!");
-              }).catch(() => {
-                toast.error("Failed to copy link");
-              });
+              navigator.clipboard.writeText(postUrl)
+                .then(() => toast.success("Link copied!"))
+                .catch(() => toast.error("Failed to copy link"));
             }}
-            className="rounded-full border border-neutral-300 dark:border-white/10 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1"
+            className="flex items-center gap-2 text-base text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1"
             aria-label="Share post"
           >
-            <Share2 className="w-4 h-4" aria-hidden="true" />
+            <Share2 className="w-5 h-5" aria-hidden="true" />
             <span>Share</span>
           </button>
-          
-          {/* Request/Download button */}
+
+          {/* Right side: access / download */}
           <div className="ml-auto">
             {isGated && !hasAccess ? (
-              // Request access button
               <button
                 onClick={handleRequestAccess}
                 disabled={accessRequested}
-                className={`rounded-full border px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5 ${
+                className={`flex items-center gap-2 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${
                   accessRequested
-                    ? "border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                    : "border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30"
+                    ? 'text-neutral-400 cursor-not-allowed'
+                    : 'text-[#0CCE6B] hover:text-[#0BBE60]'
                 }`}
-                aria-label={accessRequested ? "Access requested" : "Request access to this post"}
+                aria-label={accessRequested ? "Access requested" : "Request access"}
               >
                 {accessRequested ? (
-                  <>
-                    <Eye className="w-4 h-4" />
-                    <span>Requested</span>
-                  </>
+                  <><Eye className="w-5 h-5" /><span>Requested</span></>
                 ) : (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>Request Access</span>
-                  </>
+                  <><Lock className="w-5 h-5" /><span>Request Access</span></>
                 )}
               </button>
             ) : post.allowDownload && (post.mediaId || post.mediaUrl) ? (
-              // Download button for accessible content with media (only if downloads allowed)
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="rounded-full border border-emerald-500 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-600/20 px-3 py-1.5 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 text-base text-[#0CCE6B] hover:text-[#0BBE60] transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1"
                 aria-label="Download content"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-5 h-5" />
                 <span>{downloading ? "Downloading..." : "Download"}</span>
               </button>
             ) : null}
           </div>
         </div>
-      </div>
 
-      {/* Comments */}
-      {open && <CommentList postId={post.id} onCommentAdded={handleCommentAdded} />}
-    </article>
+        {/* Comments */}
+        {open && <CommentList postId={post.id} onCommentAdded={handleCommentAdded} />}
+      </article>
 
-    {/* Delete Confirmation Modal */}
-    <ConfirmationModal
-      isOpen={showDeleteConfirm}
-      onClose={() => setShowDeleteConfirm(false)}
-      onConfirm={handleDeletePost}
-      title="Delete Post"
-      message="Are you sure you want to delete this post? This will remove it from your profile and feed and revoke access for anyone who had access. This action cannot be undone."
-      confirmText={deleting ? "Deleting..." : "Delete"}
-      cancelText="Cancel"
-      destructive={true}
-    />
-  </>
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeletePost}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This will remove it from your profile and feed and revoke access for anyone who had access. This action cannot be undone."
+        confirmText={deleting ? "Deleting..." : "Delete"}
+        cancelText="Cancel"
+        destructive={true}
+      />
+    </>
   );
 }
 

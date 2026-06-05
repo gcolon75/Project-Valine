@@ -1,68 +1,92 @@
-import { Play, Mic } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const STEPS = [
+  {
+    step: '1',
+    title: 'Writer submits a script',
+    body: 'Upload your PDF, set the page count. Pay $0.50/page. Scripts go into the review queue within minutes.',
+  },
+  {
+    step: '2',
+    title: 'A qualified reader accepts',
+    body: 'Readers from our vetted pool claim your script. They have 24 hours to deliver structured coverage: character, structure, dialogue, marketability.',
+  },
+  {
+    step: '3',
+    title: 'You get real notes',
+    body: 'Not a form response. Actual feedback from someone who reads scripts professionally. Use it to revise, pitch, or understand where your story stands.',
+  },
+];
 
 const ProductVisualSection = () => {
   return (
-    <section className="px-4 py-16 md:py-20 bg-gradient-to-br from-neutral-50 to-white shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="product-visual-heading">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Text Content */}
-          <div>
-            <h2 id="product-visual-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-6">
-              Your voice, your platform
-            </h2>
-            <p className="text-lg text-neutral-600 mb-8">
-              Showcase your talent with a professional portfolio, share your latest work, and connect with opportunities that match your unique voice and style.
-            </p>
-            <ul className="space-y-4">
-              <li className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-[#0CCE6B]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1" aria-hidden="true">
-                  <div className="w-2 h-2 bg-[#0CCE6B] rounded-full" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">Professional Portfolio</h3>
-                  <p className="text-neutral-600 text-sm">Build a stunning showcase of your best voice work and creative projects.</p>
-                </div>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-[#0CCE6B]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1" aria-hidden="true">
-                  <div className="w-2 h-2 bg-[#0CCE6B] rounded-full" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">Instant Sharing</h3>
-                  <p className="text-neutral-600 text-sm">Upload and share audio samples, videos, and scripts with your network.</p>
-                </div>
-              </li>
-              <li className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-[#0CCE6B]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1" aria-hidden="true">
-                  <div className="w-2 h-2 bg-[#0CCE6B] rounded-full" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-900 mb-1">Discover Opportunities</h3>
-                  <p className="text-neutral-600 text-sm">Get matched with casting calls and projects that fit your expertise.</p>
-                </div>
-              </li>
-            </ul>
-          </div>
+    <section className="bg-neutral-50 px-6 py-20" aria-labelledby="how-it-works-heading">
+      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-start">
 
-          {/* Visual/Demo Area */}
-          <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
-              <div className="aspect-video bg-gradient-to-br from-[#474747] to-[#0CCE6B] flex items-center justify-center">
-                <div className="text-center text-white">
-                  <Mic className="w-24 h-24 mx-auto mb-4 opacity-90" aria-hidden="true" />
-                  <p className="text-sm font-medium opacity-80">Product demo coming soon</p>
+        {/* Left: Steps */}
+        <div>
+          <h2
+            id="how-it-works-heading"
+            className="text-3xl md:text-4xl font-bold text-neutral-900 mb-12"
+          >
+            How script review works
+          </h2>
+
+          <ol className="space-y-0" aria-label="Script review process steps">
+            {STEPS.map(({ step, title, body }, i) => (
+              <li key={step} className="flex gap-6">
+                <div className="flex flex-col items-center">
+                  <span className="w-8 h-8 flex items-center justify-center border border-neutral-300 text-xs font-semibold text-neutral-500 shrink-0">
+                    {step}
+                  </span>
+                  {i < STEPS.length - 1 && (
+                    <span className="w-px flex-1 bg-neutral-200 my-2" aria-hidden="true" />
+                  )}
                 </div>
-              </div>
-            </div>
-            
-            {/* Floating play button overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-2xl" aria-hidden="true">
-                <Play className="w-10 h-10 text-[#0CCE6B] ml-1" aria-hidden="true" />
-              </div>
-            </div>
-          </div>
+                <div className={`pb-10 ${i === STEPS.length - 1 ? 'pb-0' : ''}`}>
+                  <h3 className="font-semibold text-neutral-900 mb-2">{title}</h3>
+                  <p className="text-neutral-600 text-sm leading-relaxed">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
+
+        {/* Right: Callout */}
+        <div className="border border-neutral-200 bg-white p-10">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#0CCE6B] mb-6">
+            For Readers
+          </p>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-4 leading-snug">
+            Earn for your expertise
+          </h3>
+          <p className="text-neutral-600 mb-8 leading-relaxed">
+            Readers earn $0.25 per page for every script they review. Accept work on your schedule, build your reputation, and get paid for the analytical skills you already have.
+          </p>
+          <ul className="space-y-3 mb-10" aria-label="Reader benefits">
+            {[
+              'Accept scripts on your own schedule',
+              '24-hour review window per script',
+              'Structured coverage format included',
+              'Direct payout, no platform lock-in',
+            ].map(item => (
+              <li key={item} className="flex items-start gap-3 text-sm text-neutral-700">
+                <span className="w-4 h-px bg-[#0CCE6B] mt-2.5 shrink-0" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#0CCE6B] hover:text-[#0BBE60] transition-colors group"
+            aria-label="Request early access to Joint Networking"
+          >
+            Request Early Access
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+          </Link>
+        </div>
+
       </div>
     </section>
   );

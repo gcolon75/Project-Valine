@@ -68,6 +68,17 @@ export default defineConfig(({ mode }) => {
       }
     }
   },
-  server: { port: 3000, open: true },
+  server: {
+    port: 3000,
+    open: true,
+    proxy: {
+      '/_api': {
+        target: 'https://api.joint-networking.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/_api/, ''),
+        secure: true,
+      }
+    }
+  },
   preview: { port: 3000 },
 }});

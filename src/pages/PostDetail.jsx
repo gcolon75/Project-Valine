@@ -17,18 +17,30 @@ import {
   Eye,
   EyeOff,
   Download,
-  FileText
+  FileText,
+  Film,
+  Mic,
+  Camera,
+  Megaphone,
 } from 'lucide-react';
-import { getPost, requestPostAccess, payForPostAccess, createCheckoutSession, likePost, unlikePost } from '../services/postService';
+import { getPost, requestPostAccess, createCheckoutSession, likePost, unlikePost } from '../services/postService';
 import { getMediaAccessUrl, getWatermarkedPdf } from '../services/mediaService';
 import PDFThumbnail from '../components/PDFThumbnail';
 import CommentList from '../components/CommentList';
-import ConfirmationModal from '../components/ConfirmationModal';
 import EmeraldBadge from '../components/EmeraldBadge';
 import SkeletonCard from '../components/skeletons/SkeletonCard';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { parseVideoEmbed } from '../utils/videoEmbed';
+
+const CONTENT_TYPE_MAP = {
+  script:       { label: 'Script',       Icon: FileText  },
+  audition:     { label: 'Audition',     Icon: Mic       },
+  reel:         { label: 'Film / Reel',  Icon: Film      },
+  audio:        { label: 'Audio',        Icon: Mic       },
+  headshots:    { label: 'Headshots',    Icon: Camera    },
+  casting_call: { label: 'Casting Call', Icon: Megaphone },
+};
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -47,7 +59,7 @@ export default function PostDetail() {
   const [videoUrl, setVideoUrl] = useState(null);
   const [viewingPdf, setViewingPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  // Helper function to safely format price
+
   const formatPrice = (price) => {
     const parsedPrice = parseFloat(price);
     return !isNaN(parsedPrice) ? parsedPrice.toFixed(2) : '0.00';
@@ -70,10 +82,7 @@ export default function PostDetail() {
         setLoading(false);
       }
     };
-
-    if (id) {
-      fetchPost();
-    }
+    if (id) fetchPost();
   }, [id]);
 
   // Handle payment return from Stripe
@@ -81,7 +90,6 @@ export default function PostDetail() {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
       toast.success('Payment successful! You now have access.');
-      // Remove the query param and refresh post data
       setSearchParams({}, { replace: true });
       const refreshPost = async () => {
         try {
@@ -110,7 +118,6 @@ export default function PostDetail() {
         }
       }
     };
-
     fetchPdfUrl();
   }, [post?.mediaAttachment]);
 
@@ -126,21 +133,15 @@ export default function PostDetail() {
         }
       }
     };
-
     fetchVideoUrl();
   }, [post?.mediaAttachment]);
 
   const handleRequestAccess = async () => {
-    if (!user) {
-      toast.error('Please log in to request access');
-      return;
-    }
-
+    if (!user) { toast.error('Please log in to request access'); return; }
     try {
       setRequestingAccess(true);
       await requestPostAccess(id);
       toast.success('Access request sent to post owner');
-      // Refresh post to get updated status
       const data = await getPost(id);
       setPost(data);
     } catch (err) {
@@ -152,15 +153,10 @@ export default function PostDetail() {
   };
 
   const handlePayForAccess = async () => {
-    if (!user) {
-      toast.error('Please log in to purchase access');
-      return;
-    }
-
+    if (!user) { toast.error('Please log in to purchase access'); return; }
     try {
       setProcessingPayment(true);
       const { checkoutUrl } = await createCheckoutSession(id);
-      // Redirect to Stripe Checkout
       window.location.href = checkoutUrl;
     } catch (err) {
       console.error('Error creating checkout session:', err);
@@ -170,13 +166,8 @@ export default function PostDetail() {
   };
 
   const handleLike = async () => {
-    if (!user) {
-      toast.error('Please log in to like posts');
-      return;
-    }
-
+    if (!user) { toast.error('Please log in to like posts'); return; }
     if (likingInProgress) return;
-
     try {
       setLikingInProgress(true);
       if (isLiked) {
@@ -196,24 +187,15 @@ export default function PostDetail() {
     }
   };
 
-  // Called when a new comment is added
-  const handleCommentAdded = () => {
-    setCommentsCount((prev) => prev + 1);
-  };
+  const handleCommentAdded = () => setCommentsCount((prev) => prev + 1);
 
-  // View watermarked PDF in new tab
   const handleViewPdf = async () => {
-    if (!post?.mediaAttachment?.id) {
-      toast.error('PDF not available');
-      return;
-    }
-
+    if (!post?.mediaAttachment?.id) { toast.error('PDF not available'); return; }
     setViewingPdf(true);
     try {
       const pdfBlob = await getWatermarkedPdf(post.mediaAttachment.id);
       const url = window.URL.createObjectURL(pdfBlob);
       window.open(url, '_blank');
-      // Clean up after delay
       setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (err) {
       console.error('Error viewing PDF:', err);
@@ -223,13 +205,8 @@ export default function PostDetail() {
     }
   };
 
-  // Download watermarked PDF
   const handleDownloadPdf = async () => {
-    if (!post?.mediaAttachment?.id) {
-      toast.error('PDF not available');
-      return;
-    }
-
+    if (!post?.mediaAttachment?.id) { toast.error('PDF not available'); return; }
     setDownloadingPdf(true);
     try {
       const pdfBlob = await getWatermarkedPdf(post.mediaAttachment.id);
@@ -253,11 +230,8 @@ export default function PostDetail() {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
   };
 
@@ -273,10 +247,10 @@ export default function PostDetail() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-lg text-neutral-600 dark:text-neutral-400">{error}</p>
+        <p className="text-neutral-500">{error}</p>
         <Link
           to="/dashboard"
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
@@ -285,9 +259,7 @@ export default function PostDetail() {
     );
   }
 
-  if (!post) {
-    return null;
-  }
+  if (!post) return null;
 
   const isPaidPost = !post.isFree && post.price && parseFloat(post.price) > 0;
   const isOwnPost = user?.id === post.authorId;
@@ -296,22 +268,20 @@ export default function PostDetail() {
   const accessStatus = post.accessStatus || 'granted';
   const visibility = post.visibility || 'PUBLIC';
   const isFollowersOnly = visibility === 'FOLLOWERS_ONLY';
+  const typeInfo = post.contentType && CONTENT_TYPE_MAP[post.contentType];
 
-  // Render access control UI
   const renderAccessControl = () => {
-    if (!requiresAccess || hasAccess) {
-      return null;
-    }
+    if (!requiresAccess || hasAccess) return null;
 
     if (accessStatus === 'pending') {
       return (
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Access Request Pending</h3>
+        <div className="mb-6 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+          <div className="flex items-center gap-3 mb-1.5">
+            <Clock className="w-4 h-4 text-neutral-500" />
+            <span className="text-sm font-semibold text-neutral-700">Access Request Pending</span>
           </div>
-          <p className="text-blue-700 dark:text-blue-300 text-sm">
-            Your access request is pending approval from the creator.
+          <p className="text-sm text-neutral-500 pl-7">
+            Your request is pending approval from the creator.
           </p>
         </div>
       );
@@ -319,85 +289,65 @@ export default function PostDetail() {
 
     if (accessStatus === 'denied') {
       return (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <h3 className="font-semibold text-red-900 dark:text-red-100">Access Denied</h3>
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-3 mb-1.5">
+            <XCircle className="w-4 h-4 text-red-500" />
+            <span className="text-sm font-semibold text-red-700">Access Denied</span>
           </div>
-          <p className="text-red-700 dark:text-red-300 text-sm mb-3">
+          <p className="text-sm text-red-600 mb-3 pl-7">
             Your access request was denied by the creator.
           </p>
           <button
             onClick={handleRequestAccess}
             disabled={requestingAccess}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="ml-7 inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {requestingAccess ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Requesting...
-              </>
+              <><Loader2 className="w-4 h-4 animate-spin" />Requesting...</>
             ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Request Access Again
-              </>
+              <><Lock className="w-4 h-4" />Request Again</>
             )}
           </button>
         </div>
       );
     }
 
-    // Default: not requested or expired
     return (
-      <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-        <div className="flex items-center gap-3 mb-2">
-          <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+      <div className="mb-6 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+        <div className="flex items-center gap-3 mb-1.5">
+          <Lock className="w-4 h-4 text-neutral-500" />
+          <span className="text-sm font-semibold text-neutral-700">
             {isPaidPost ? 'Paid Content' : 'Access Required'}
-          </h3>
+          </span>
         </div>
-        <p className="text-amber-700 dark:text-amber-300 mb-4">
-          {isPaidPost 
+        <p className="text-sm text-neutral-500 mb-4 pl-7">
+          {isPaidPost
             ? `This content requires payment of $${formatPrice(post.price)} to access.`
-            : 'This content requires permission from the creator to access.'
-          }
+            : 'This content requires permission from the creator to access.'}
         </p>
-        <div className="flex gap-3">
+        <div className="pl-7">
           {isPaidPost ? (
             <button
               onClick={handlePayForAccess}
               disabled={processingPayment}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0CCE6B] hover:bg-[#0BBE60] text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:opacity-90 text-white rounded-lg text-sm font-semibold transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {processingPayment ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Redirecting...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" />Redirecting...</>
               ) : (
-                <>
-                  <DollarSign className="w-4 h-4" />
-                  Purchase for ${formatPrice(post.price)}
-                </>
+                <><DollarSign className="w-4 h-4" />Purchase for ${formatPrice(post.price)}</>
               )}
             </button>
           ) : (
             <button
               onClick={handleRequestAccess}
               disabled={requestingAccess}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-900 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {requestingAccess ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Requesting...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" />Requesting...</>
               ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  Request Access
-                </>
+                <><Lock className="w-4 h-4" />Request Access</>
               )}
             </button>
           )}
@@ -408,20 +358,21 @@ export default function PostDetail() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Back Button */}
+
+      {/* Back link */}
       <Link
         to="/dashboard"
-        className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-6 transition"
+        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors mb-6"
       >
-        <ArrowLeft className="w-5 h-5" />
-        <span>Back to Feed</span>
+        <ArrowLeft className="w-4 h-4" />
+        Back to Feed
       </Link>
 
-      {/* Post Card */}
-      <article className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
-        {/* Thumbnail - only show if post has a custom thumbnail (not for PDFs - they render below) */}
+      <article className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+
+        {/* Thumbnail */}
         {post.thumbnailUrl && post.mediaAttachment?.type !== 'pdf' && (
-          <div className="w-full aspect-video bg-neutral-100 dark:bg-neutral-800">
+          <div className="w-full aspect-video bg-neutral-100">
             <img
               src={post.thumbnailUrl}
               alt="Post thumbnail"
@@ -430,47 +381,54 @@ export default function PostDetail() {
           </div>
         )}
 
-        {/* Header with Title and Author */}
-        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700 relative">
-          {/* Content type emoji - top right */}
-          {post.contentType && { script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType] && (
-            <span className="absolute top-6 right-6 text-3xl" title={{ script: 'Script', audition: 'Audition', reel: 'Reel', audio: 'Audio' }[post.contentType]}>
-              {{ script: '📝', audition: '🎭', reel: '🎬', audio: '🎤' }[post.contentType]}
-            </span>
-          )}
+        {/* Header: title + author */}
+        <div className="p-6 border-b border-neutral-100">
 
-          {/* Post Title - Primary */}
+          {/* Title row with content type icon */}
           {post.title && (
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 pr-8">
-              {post.title}
-            </h1>
+            <div className="flex items-start gap-3 mb-4">
+              {typeInfo && (
+                <div
+                  className="w-8 h-8 bg-neutral-100 rounded flex items-center justify-center shrink-0 mt-0.5"
+                  title={typeInfo.label}
+                >
+                  <typeInfo.Icon className="w-4 h-4 text-neutral-500" aria-hidden="true" />
+                </div>
+              )}
+              <h1 className="text-2xl font-bold text-neutral-900 leading-snug">
+                {post.title}
+              </h1>
+            </div>
           )}
 
-          {/* Author info - Secondary */}
+          {/* Author row */}
           <div className="flex items-center gap-3">
             <Link to={`/profile/${post.author?.username}`}>
               <UserAvatar
                 src={post.author?.avatar}
                 name={post.author?.displayName || post.author?.username}
                 alt={post.author?.displayName || post.author?.username}
-                className="w-8 h-8 hover:ring-2 ring-emerald-500 transition"
+                className="w-8 h-8 hover:ring-2 ring-[#0CCE6B] transition"
               />
             </Link>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link to={`/profile/${post.author?.username}`} className="hover:underline">
-                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 inline-flex items-center gap-1">
+            <div className="flex items-center gap-2 flex-wrap text-sm">
+              <Link to={`/profile/${post.author?.username}`} className="hover:opacity-80 transition-opacity">
+                <span className="font-semibold text-neutral-900 inline-flex items-center gap-1">
                   {post.author?.displayName || post.author?.username || 'Unknown User'}
                   <EmeraldBadge user={post.author} />
                 </span>
               </Link>
-              <span className="text-neutral-400 dark:text-neutral-500">·</span>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="text-neutral-300">·</span>
+              <Link
+                to={`/profile/${post.author?.username}`}
+                className="text-[#0CCE6B] hover:text-[#0BBE60] transition-colors"
+              >
                 @{post.author?.username || 'unknown'}
-              </span>
+              </Link>
               {isFollowersOnly && (
                 <>
-                  <span className="text-neutral-400 dark:text-neutral-500">·</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-xs font-medium">
+                  <span className="text-neutral-300">·</span>
+                  <span className="inline-flex items-center gap-1 text-neutral-500 text-xs">
                     <EyeOff className="w-3 h-3" />
                     Followers Only
                   </span>
@@ -480,41 +438,40 @@ export default function PostDetail() {
           </div>
         </div>
 
-        {/* Post Content */}
+        {/* Post body */}
         <div className="p-6">
 
-          {/* Badges */}
+          {/* Price badge */}
           <div className="flex flex-wrap gap-2 mb-4">
             {isPaidPost && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
-                <DollarSign className="w-4 h-4" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-amber-200 bg-amber-50 text-amber-700 rounded text-xs font-medium">
+                <DollarSign className="w-3 h-3" />
                 ${formatPrice(post.price)}
               </span>
             )}
             {!isPaidPost && post.isFree && requiresAccess && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                <CheckCircle className="w-4 h-4" />
-                Free (Permission Required)
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#0CCE6B]/30 bg-[#0CCE6B]/5 text-[#0CCE6B] rounded text-xs font-medium">
+                <CheckCircle className="w-3 h-3" />
+                Free — Permission Required
               </span>
             )}
           </div>
 
-          {/* Access Control UI */}
+          {/* Access control UI */}
           {renderAccessControl()}
 
-          {/* Content - show if has access or doesn't require access */}
+          {/* Content */}
           {(hasAccess || !requiresAccess) && (
             <>
-              {/* Content */}
-              <div className="prose prose-neutral dark:prose-invert max-w-none mb-6">
-                <p className="text-neutral-900 dark:text-white whitespace-pre-wrap">
+              <div className="mb-6">
+                <p className="text-neutral-800 leading-relaxed whitespace-pre-wrap">
                   {post.content}
                 </p>
               </div>
 
               {/* YouTube / Vimeo embed */}
               {parseVideoEmbed(post.media?.[0]) && (
-                <div className="aspect-video mb-6 rounded-lg overflow-hidden">
+                <div className="aspect-video mb-6 rounded-lg overflow-hidden border border-neutral-200">
                   <iframe
                     src={parseVideoEmbed(post.media?.[0]).embedUrl}
                     className="w-full h-full"
@@ -525,10 +482,10 @@ export default function PostDetail() {
                 </div>
               )}
 
-              {/* Audio Player */}
+              {/* Audio player */}
               {post.audioUrl && (
-                <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">Audio Post</p>
+                <div className="mb-6 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+                  <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Audio</p>
                   <audio controls className="w-full">
                     <source src={post.audioUrl} type="audio/mpeg" />
                     Your browser does not support the audio element.
@@ -536,7 +493,7 @@ export default function PostDetail() {
                 </div>
               )}
 
-              {/* Media Attachment */}
+              {/* Media attachment */}
               {post.mediaAttachment && (
                 <div className="mb-6">
                   {post.mediaAttachment.type === 'video' ? (
@@ -544,82 +501,65 @@ export default function PostDetail() {
                       <video
                         src={videoUrl}
                         controls
-                        className="w-full rounded-lg"
+                        className="w-full rounded-lg border border-neutral-200"
                         poster={post.mediaAttachment.posterUrl}
                       />
                     ) : (
-                      <div className="w-full aspect-video bg-neutral-200 dark:bg-neutral-800 rounded-lg flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+                      <div className="w-full aspect-video bg-neutral-100 rounded-lg flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
                       </div>
                     )
                   ) : post.mediaAttachment.type === 'image' ? (
                     <img
                       src={post.mediaAttachment.url || post.mediaAttachment.s3Key}
                       alt="Post attachment"
-                      className="w-full rounded-lg"
+                      className="w-full rounded-lg border border-neutral-200"
                     />
                   ) : post.mediaAttachment.type === 'pdf' ? (
-                    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                      {/* PDF Thumbnail Preview - rendered client-side */}
+                    <div className="border border-neutral-200 rounded-lg overflow-hidden">
                       <PDFThumbnail
                         pdfUrl={pdfUrl}
                         title={post.title || post.mediaAttachment.title || 'Document'}
                         className="w-full min-h-[400px]"
                       />
-                      {/* PDF Actions */}
-                      <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 flex items-center justify-end gap-3">
-                        {/* View/Download Buttons */}
-                        <div className="flex items-center gap-3">
-                          {post.allowDownload && (
-                            <button
-                              onClick={handleDownloadPdf}
-                              disabled={downloadingPdf}
-                              className="flex items-center gap-2 px-4 py-2 bg-neutral-600 hover:bg-neutral-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {downloadingPdf ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  Downloading...
-                                </>
-                              ) : (
-                                <>
-                                  <Download className="w-4 h-4" />
-                                  Download
-                                </>
-                              )}
-                            </button>
-                          )}
+                      <div className="p-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-end gap-3">
+                        {post.allowDownload && (
                           <button
-                            onClick={handleViewPdf}
-                            disabled={viewingPdf}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleDownloadPdf}
+                            disabled={downloadingPdf}
+                            className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {viewingPdf ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Loading...
-                              </>
+                            {downloadingPdf ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" />Downloading...</>
                             ) : (
-                              <>
-                                <Eye className="w-4 h-4" />
-                                View PDF
-                              </>
+                              <><Download className="w-4 h-4" />Download</>
                             )}
                           </button>
-                        </div>
+                        )}
+                        <button
+                          onClick={handleViewPdf}
+                          disabled={viewingPdf}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0CCE6B] hover:opacity-90 text-white rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {viewingPdf ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" />Loading...</>
+                          ) : (
+                            <><Eye className="w-4 h-4" />View PDF</>
+                          )}
+                        </button>
                       </div>
                     </div>
                   ) : null}
                 </div>
               )}
 
-              {/* Download Button - for non-PDF media (PDFs have their own download in the PDF actions section) */}
+              {/* Audio download */}
               {hasAccess && post.allowDownload && post.audioUrl && (
                 <div className="mb-6">
                   <a
                     href={post.audioUrl}
                     download
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition"
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 rounded-lg text-sm font-medium transition"
                   >
                     <Download className="w-4 h-4" />
                     Download Audio
@@ -631,11 +571,11 @@ export default function PostDetail() {
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-1.5 mb-5">
               {post.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm"
+                  className="px-2.5 py-1 border border-neutral-200 text-neutral-500 rounded text-xs"
                 >
                   #{tag}
                 </span>
@@ -644,52 +584,51 @@ export default function PostDetail() {
           )}
 
           {/* Timestamp */}
-          <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 mb-6">
-            <Clock className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+            <Clock className="w-3.5 h-3.5" />
             <span>{formatDate(post.createdAt)}</span>
           </div>
         </div>
 
-        {/* Actions Footer */}
-        <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center gap-6">
+        {/* Actions footer */}
+        <div className="px-6 py-3 border-t border-neutral-100 flex items-center gap-6">
           <button
             onClick={handleLike}
             disabled={likingInProgress}
-            className={`flex items-center gap-2 transition disabled:opacity-50 ${
-              isLiked
-                ? 'text-red-500'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-red-500'
+            className={`flex items-center gap-2 text-base transition-colors focus:outline-none disabled:opacity-50 ${
+              isLiked ? 'text-red-500' : 'text-neutral-500 hover:text-neutral-900'
             }`}
             aria-label={isLiked ? 'Unlike post' : 'Like post'}
           >
-            <Heart className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} />
+            <Heart className="w-5 h-5" fill={isLiked ? 'currentColor' : 'none'} />
             <span>{likesCount > 0 ? likesCount : 'Like'}</span>
           </button>
+
           <button
-            className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-blue-500 transition"
+            className="flex items-center gap-2 text-base text-neutral-500 hover:text-neutral-900 transition-colors focus:outline-none"
             aria-label="View comments"
             onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })}
           >
             <MessageCircle className="w-5 h-5" />
             <span>{commentsCount}</span>
           </button>
+
           <button
-            className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-emerald-500 transition"
+            className="flex items-center gap-2 text-base text-neutral-500 hover:text-neutral-900 transition-colors focus:outline-none"
             aria-label="Bookmark post"
           >
             <Bookmark className="w-5 h-5" />
             <span>Save</span>
           </button>
+
           <button
             onClick={() => {
               const postUrl = `${window.location.origin}/posts/${id}`;
-              navigator.clipboard.writeText(postUrl).then(() => {
-                toast.success("Link copied to clipboard!");
-              }).catch(() => {
-                toast.error("Failed to copy link");
-              });
+              navigator.clipboard.writeText(postUrl)
+                .then(() => toast.success('Link copied!'))
+                .catch(() => toast.error('Failed to copy link'));
             }}
-            className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-purple-500 transition ml-auto"
+            className="flex items-center gap-2 text-base text-neutral-500 hover:text-neutral-900 transition-colors focus:outline-none ml-auto"
             aria-label="Share post"
           >
             <Share2 className="w-5 h-5" />
@@ -697,12 +636,12 @@ export default function PostDetail() {
           </button>
         </div>
 
-        {/* Comments Section */}
+        {/* Comments */}
         <div id="comments-section">
           <CommentList postId={id} onCommentAdded={handleCommentAdded} />
         </div>
-      </article>
 
+      </article>
     </div>
   );
 }

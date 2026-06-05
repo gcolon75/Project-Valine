@@ -172,21 +172,21 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
   const indentClass = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
 
   return (
-    <div className={`${depth > 0 ? "ml-8 border-l-2 border-neutral-200 dark:border-neutral-700 pl-3" : ""}`}>
-      <div className="flex gap-2 py-2">
+    <div className={depth > 0 ? "ml-8 border-l border-neutral-200 dark:border-neutral-700 pl-4" : ""}>
+      <div className="flex gap-3 py-3">
         <Link to={getProfileLink(comment.author)} className="flex-shrink-0">
           <UserAvatar
             src={comment.author?.avatar}
             name={getAuthorName(comment.author)}
             alt={getAuthorName(comment.author)}
-            className="h-7 w-7 hover:ring-2 hover:ring-brand transition-all"
+            className="h-8 w-8 hover:ring-2 hover:ring-[#0CCE6B] transition-all"
           />
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={getProfileLink(comment.author)}
-              className="text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-brand dark:hover:text-brand transition-colors inline-flex items-center gap-1"
+              className="text-sm font-semibold text-neutral-900 dark:text-white hover:text-[#0CCE6B] transition-colors inline-flex items-center gap-1"
             >
               {getAuthorName(comment.author)}
               <EmeraldBadge user={comment.author} size={12} />
@@ -200,79 +200,74 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
           </div>
 
           {isEditing ? (
-            <form onSubmit={handleEditSubmit} className="mt-1">
+            <form onSubmit={handleEditSubmit} className="mt-2">
               <input
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="w-full rounded bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 px-2 py-1 text-sm text-neutral-900 dark:text-white outline-none"
+                className="w-full rounded border border-neutral-300 dark:border-white/10 bg-neutral-50 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0CCE6B]"
                 autoFocus
               />
-              <div className="flex gap-2 mt-1">
+              <div className="flex gap-3 mt-1.5">
                 <button
                   type="submit"
                   disabled={submitting || !editText.trim()}
-                  className="text-xs text-brand hover:underline disabled:opacity-50"
+                  className="text-sm text-[#0CCE6B] hover:text-[#0BBE60] font-medium disabled:opacity-50 transition-colors"
                 >
                   {submitting ? "Saving..." : "Save"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditText(comment.text || comment.content || "");
-                  }}
-                  className="text-xs text-neutral-500 hover:underline"
+                  onClick={() => { setIsEditing(false); setEditText(comment.text || comment.content || ""); }}
+                  className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           ) : (
-            <div className="text-sm text-neutral-900 dark:text-white break-words">
+            <p className="text-sm text-neutral-800 dark:text-neutral-200 mt-0.5 leading-relaxed break-words">
               {comment.text || comment.content}
-            </div>
+            </p>
           )}
 
-          {/* Action buttons */}
+          {/* Action row */}
           {!isEditing && (
-            <div className="flex items-center gap-3 mt-1">
-              {/* Like button - always visible */}
+            <div className="flex items-center gap-4 mt-2">
               <button
                 onClick={handleLike}
                 disabled={!user || likingInProgress}
-                className={`text-xs flex items-center gap-1 transition-colors ${
-                  isLiked
-                    ? "text-red-500"
-                    : "text-neutral-500 hover:text-red-500"
+                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                  isLiked ? "text-red-500" : "text-neutral-500 hover:text-red-500"
                 } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <Heart className={`w-3 h-3 ${isLiked ? "fill-current" : ""}`} />
+                <Heart className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`} aria-hidden="true" />
                 {likeCount > 0 && <span>{likeCount}</span>}
               </button>
 
               {user && depth < maxDepth && (
                 <button
                   onClick={() => setIsReplying(!isReplying)}
-                  className="text-xs text-neutral-500 hover:text-brand flex items-center gap-1"
+                  className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-[#0CCE6B] transition-colors"
                 >
-                  <MessageCircle className="w-3 h-3" />
+                  <MessageCircle className="w-4 h-4" aria-hidden="true" />
                   Reply
                 </button>
               )}
+
               {user && isAuthor && (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="text-xs text-neutral-500 hover:text-brand flex items-center gap-1"
+                    className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors"
                   >
-                    <Edit2 className="w-3 h-3" />
+                    <Edit2 className="w-4 h-4" aria-hidden="true" />
                     Edit
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="text-xs text-neutral-500 hover:text-red-500 flex items-center gap-1"
+                    className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-red-500 transition-colors"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                     Delete
                   </button>
                 </>
@@ -282,58 +277,44 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
 
           {/* Reply form */}
           {isReplying && (
-            <form onSubmit={handleReplySubmit} className="mt-2 flex gap-2">
+            <form onSubmit={handleReplySubmit} className="mt-3 flex gap-2 items-center">
               <input
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Write a reply..."
-                className="flex-1 rounded-full bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 px-3 py-1 text-sm text-neutral-900 dark:text-white outline-none"
+                className="flex-1 rounded border border-neutral-300 dark:border-white/10 bg-neutral-50 dark:bg-white/5 px-3 py-1.5 text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0CCE6B] placeholder:text-neutral-400"
                 autoFocus
               />
               <button
                 type="submit"
                 disabled={submitting || !replyText.trim()}
-                className="rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white hover:bg-brand-hover disabled:opacity-50"
+                className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white px-3 py-1.5 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {submitting ? "..." : "Reply"}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setIsReplying(false);
-                  setReplyText("");
-                }}
-                className="text-xs text-neutral-500 hover:underline"
+                onClick={() => { setIsReplying(false); setReplyText(""); }}
+                className="text-sm text-neutral-500 hover:text-neutral-700 transition-colors"
               >
                 Cancel
               </button>
             </form>
           )}
 
-          {/* Show/load replies toggle */}
+          {/* Replies toggle */}
           {replyCount > 0 && (
             <button
               onClick={() => {
-                if (!showReplies && replies.length === 0) {
-                  loadReplies();
-                } else {
-                  setShowReplies(!showReplies);
-                }
+                if (!showReplies && replies.length === 0) loadReplies();
+                else setShowReplies(!showReplies);
               }}
-              className="text-xs text-brand hover:underline mt-2 flex items-center gap-1"
+              className="mt-2 flex items-center gap-1.5 text-sm text-[#0CCE6B] hover:text-[#0BBE60] transition-colors"
             >
-              {loadingReplies ? (
-                "Loading..."
-              ) : showReplies ? (
-                <>
-                  <ChevronUp className="w-3 h-3" />
-                  Hide {replyCount} {replyCount === 1 ? "reply" : "replies"}
-                </>
+              {loadingReplies ? "Loading..." : showReplies ? (
+                <><ChevronUp className="w-4 h-4" />Hide {replyCount} {replyCount === 1 ? "reply" : "replies"}</>
               ) : (
-                <>
-                  <ChevronDown className="w-3 h-3" />
-                  View {replyCount} {replyCount === 1 ? "reply" : "replies"}
-                </>
+                <><ChevronDown className="w-4 h-4" />View {replyCount} {replyCount === 1 ? "reply" : "replies"}</>
               )}
             </button>
           )}
@@ -342,7 +323,7 @@ function Comment({ comment, postId, user, onDelete, onUpdate, onReplyAdded, dept
 
       {/* Nested replies */}
       {showReplies && replies.length > 0 && (
-        <div className="mt-1">
+        <div>
           {replies.map((reply) => (
             <Comment
               key={reply.id}
@@ -450,26 +431,26 @@ export default function CommentList({ postId, onCommentAdded }) {
       </div>
 
       {user && (
-        <form onSubmit={submit} className="mt-3 flex items-center gap-2">
+        <form onSubmit={submit} className="mt-3 flex items-center gap-2 border-t border-neutral-100 dark:border-white/5 pt-3">
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Write a comment..."
             disabled={submitting}
-            className="flex-1 rounded-full bg-neutral-100 dark:bg-white/5 border border-neutral-300 dark:border-white/10 px-3 py-1.5 text-sm text-neutral-900 dark:text-white outline-none placeholder:text-neutral-500 disabled:opacity-50"
+            className="flex-1 rounded border border-neutral-300 dark:border-white/10 bg-neutral-50 dark:bg-white/5 px-3 py-2 text-sm text-neutral-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0CCE6B] placeholder:text-neutral-400 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={submitting || !text.trim()}
-            className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? "..." : "Send"}
+            {submitting ? "..." : "Post"}
           </button>
         </form>
       )}
       {!user && (
         <div className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
-          <Link to="/login" className="text-brand hover:underline">Sign in</Link> to comment
+          <Link to="/login" className="text-[#0CCE6B] hover:text-[#0BBE60] transition-colors">Sign in</Link> to comment
         </div>
       )}
     </div>

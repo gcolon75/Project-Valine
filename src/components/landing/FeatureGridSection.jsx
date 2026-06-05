@@ -1,109 +1,92 @@
-import { Users, FileText, Mic, Video, MessageCircle, Search, Award, Shield, DollarSign, BarChart, MessageSquare } from 'lucide-react';
+import { FileText, MessageSquare, User, MessageCircle, Edit, DollarSign, Award, BarChart, Mic, Search } from 'lucide-react';
+
+const PRIMARY_FEATURES = [
+  {
+    icon: FileText,
+    label: 'Script Submission',
+    description: 'Upload your screenplay, teleplay, or stage play. Set your page count, pay per page, and your script enters the queue for review.',
+  },
+  {
+    icon: MessageSquare,
+    label: 'Paid Coverage',
+    description: 'Readers deliver structured notes: logline assessment, character, structure, dialogue, marketability. Honest feedback from people who work in the field.',
+  },
+  {
+    icon: User,
+    label: 'Portfolio and Profile',
+    description: 'Build a profile that shows what you do and who you are. Upload demos, scripts, reels, and samples. Control visibility: public, connections-only, or paid access.',
+  },
+  {
+    icon: MessageCircle,
+    label: 'Direct Messaging',
+    description: 'Reach out to collaborators, respond to interest, and keep conversations in one place. No external tools needed.',
+  },
+  {
+    icon: Edit,
+    label: 'Peer Feedback',
+    description: 'Share drafts with trusted collaborators before going to paid review. Annotate scripts, leave comments, and track revisions together.',
+  },
+  {
+    icon: DollarSign,
+    label: 'Monetize Your Work',
+    description: 'Charge for premium content, offer free previews, or accept reader applications. You set the terms and Joint handles the rest.',
+  },
+];
+
+const MORE_FEATURES = [
+  { icon: Award, label: 'Portfolio Showcase', description: 'Everything you have made in one place: scripts, art, music, samples.' },
+  { icon: BarChart, label: 'Premium Visibility', description: 'Go premium to show up higher in search and see who is viewing your profile.' },
+  { icon: Mic, label: 'Audio Samples', description: 'Share voice demos, music tracks, and sound design right in your posts.' },
+  { icon: Search, label: 'Discover Talent', description: 'Search for collaborators and grow your network without the LinkedIn feel.' },
+];
 
 const FeatureGridSection = () => {
   return (
-    <section id="features" className="px-4 py-16 md:py-20 bg-gradient-to-b from-white to-neutral-50/30 shadow-[0_8px_30px_-5px_rgba(0,0,0,0.08)]" aria-labelledby="features-heading">
+    <section id="features" className="bg-white px-6 py-20" aria-labelledby="features-heading">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 id="features-heading" className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+        <div className="mb-14">
+          <h2
+            id="features-heading"
+            className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4"
+          >
             What you can do here
           </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+          <p className="text-neutral-500 max-w-xl">
             Share your work, meet the right people, and find opportunities that actually fit what you do.
           </p>
         </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
-          <FeatureCard
-            icon={Users}
-            title="Meet the right people"
-            description="Connect with actors, producers, directors, writers, agents, and everyone making things happen in entertainment."
-          />
-          <FeatureCard
-            icon={FileText}
-            title="Share Your Work"
-            description="Post your scripts, music, demos, samples, and whatever you're working on. Decide who gets to see it: everyone, select people, or make them pay for access."
-          />
-          <FeatureCard
-            icon={Mic}
-            title="Find Opportunities"
-            description="Find auditions, collaborations, and gigs across film, TV, theater, music, and gaming, all the stuff that matches what you do."
-          />
-          <FeatureCard
-            icon={MessageSquare}
-            title="Feedback & Revisions"
-            description="Share drafts with people you trust, get feedback, and keep all the notes in one place instead of scattered across a million emails."
-          />
-          <FeatureCard
-            icon={DollarSign}
-            title="Monetize Your Craft"
-            description="Charge for your premium stuff or give free previews. You set the price, you control access, you get paid."
-          />
-          <FeatureCard
-            icon={Shield}
-            title="Privacy & Access Controls"
-            description="Full control over who sees your content and who can connect with you. Set visibility by post: public, request-only, or paid access."
-          />
-        </div>
 
-        {/* Additional Features */}
-        <div className="bg-white border border-neutral-200 rounded-2xl p-8 md:p-12">
-          <h3 className="text-2xl font-bold text-neutral-900 mb-8 text-center">
+        <ul className="grid md:grid-cols-2 gap-x-16 gap-y-8 mb-16" aria-label="Primary features">
+          {PRIMARY_FEATURES.map(({ icon: Icon, label, description }) => (
+            <li key={label} className="flex gap-4">
+              <Icon className="w-5 h-5 text-[#0CCE6B] shrink-0 mt-0.5" aria-hidden="true" />
+              <div>
+                <h3 className="font-semibold text-neutral-900 mb-1">{label}</h3>
+                <p className="text-neutral-500 text-sm leading-relaxed">{description}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="border-t border-neutral-200 pt-10">
+          <h3 className="text-sm font-semibold text-neutral-400 tracking-widest uppercase mb-8">
             More Features
           </h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <FeatureItem
-              icon={MessageCircle}
-              title="Direct Messaging"
-              description="Message people directly. No need to leave the platform to have a conversation."
-            />
-            <FeatureItem
-              icon={Award}
-              title="Portfolio Showcase"
-              description="Build your portfolio with everything you've made: scripts, art, music, samples, all in one place."
-            />
-            <FeatureItem
-              icon={BarChart}
-              title="Premium Visibility & Analytics"
-              description="Go premium to show up higher in search and see who's viewing your stuff. Know what's working so you can do more of it."
-            />
-            <FeatureItem
-              icon={Mic}
-              title="Audio Samples"
-              description="Share audio samples: voice demos, music tracks, sound design, right in your posts."
-            />
-            <FeatureItem
-              icon={Search}
-              title="Discover Talent"
-              description="Search for talent, discover new collaborators, and grow your network without the LinkedIn vibes."
-            />
-          </div>
+          <ul className="grid md:grid-cols-2 gap-x-16 gap-y-6" aria-label="Additional features">
+            {MORE_FEATURES.map(({ icon: Icon, label, description }) => (
+              <li key={label} className="flex gap-4">
+                <Icon className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <h4 className="font-medium text-neutral-700 mb-0.5 text-sm">{label}</h4>
+                  <p className="text-neutral-500 text-sm leading-relaxed">{description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
   );
 };
-
-const FeatureCard = ({ icon: Icon, title, description }) => (
-  <div className="bg-white p-8 rounded-2xl border border-neutral-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-200 shadow-sm">
-    <div className="w-12 h-12 bg-[#0CCE6B]/10 rounded-lg flex items-center justify-center mb-4">
-      <Icon className="w-6 h-6 text-[#0CCE6B]" aria-hidden="true" />
-    </div>
-    <h3 className="text-xl font-bold mb-3 text-neutral-900">{title}</h3>
-    <p className="text-neutral-600">{description}</p>
-  </div>
-);
-
-const FeatureItem = ({ icon: Icon, title, description }) => (
-  <div className="flex space-x-4">
-    <div className="w-10 h-10 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-5 h-5 text-white" aria-hidden="true" />
-    </div>
-    <div>
-      <h4 className="font-semibold text-neutral-900 mb-2">{title}</h4>
-      <p className="text-neutral-600 text-sm">{description}</p>
-    </div>
-  </div>
-);
 
 export default FeatureGridSection;
