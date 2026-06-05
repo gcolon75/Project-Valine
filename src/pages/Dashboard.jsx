@@ -151,7 +151,7 @@ export default function Dashboard() {
   const isEmerald = profileData?.plan === 'emerald' || user?.plan === 'emerald';
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl text-[1.1rem]">
+    <div className="container mx-auto px-4 max-w-[1600px] text-[1.1rem]">
       <h1 className="sr-only">Dashboard</h1>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] animate-fade-in">
 
@@ -204,7 +204,7 @@ export default function Dashboard() {
                 <p className="text-emerald-50 text-sm mb-6">Detailed analytics dashboard coming soon</p>
                 <Link
                   to="/pricing"
-                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
+                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 hover:bg-emerald-50 transition"
                 >
                   Manage Subscription
                 </Link>
@@ -234,7 +234,7 @@ export default function Dashboard() {
                 </ul>
                 <Link
                   to="/pricing"
-                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 rounded-lg hover:bg-emerald-50 transition"
+                  className="block w-full bg-white text-emerald-600 text-center font-semibold py-3 hover:bg-emerald-50 transition"
                 >
                   Get Emerald
                 </Link>
@@ -355,7 +355,7 @@ export default function Dashboard() {
             </div>
             <Link
               to="/post"
-              className="shrink-0 px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold focus:outline-none"
+              className="shrink-0 px-6 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold focus:outline-none"
             >
               Create Post
             </Link>
