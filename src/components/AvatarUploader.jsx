@@ -1,5 +1,6 @@
 // src/components/AvatarUploader.jsx
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, X, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -234,7 +235,7 @@ export default function AvatarUploader({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-md w-full shadow-2xl">
         {/* Header */}
@@ -383,6 +384,7 @@ export default function AvatarUploader({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

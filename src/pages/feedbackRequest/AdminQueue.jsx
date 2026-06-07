@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import UserAvatar from '../../components/UserAvatar';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldAlert, Loader2, RefreshCw, X, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -54,7 +55,7 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
     );
   });
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
         {/* Header */}
@@ -141,13 +142,14 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 function RevisionModal({ request, onConfirm, onClose, saving }) {
   const [note, setNote] = useState('');
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
@@ -181,7 +183,8 @@ function RevisionModal({ request, onConfirm, onClose, saving }) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

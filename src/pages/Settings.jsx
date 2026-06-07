@@ -1,5 +1,6 @@
 // src/pages/Settings.jsx
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   User, Bell, Lock, Palette, Shield, Download,
   Trash2, Monitor, MapPin, Clock, Loader2, ExternalLink
@@ -512,7 +513,7 @@ export default function Settings() {
         requirePassword={true}
       />
 
-      {activeModal === 'setup-2fa' && twoFactorQR && (
+      {activeModal === 'setup-2fa' && twoFactorQR && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white max-w-md w-full p-6 border border-neutral-200">
             <h3 className="text-base font-semibold text-neutral-900 mb-5">Set Up Two-Factor Authentication</h3>
@@ -559,10 +560,11 @@ export default function Settings() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {activeModal === 'show-recovery-codes' && recoveryCodes.length > 0 && (
+      {activeModal === 'show-recovery-codes' && recoveryCodes.length > 0 && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white max-w-md w-full p-6 border border-neutral-200">
             <h3 className="text-base font-semibold text-neutral-900 mb-5">Save Your Recovery Codes</h3>
@@ -585,7 +587,8 @@ export default function Settings() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmationModal

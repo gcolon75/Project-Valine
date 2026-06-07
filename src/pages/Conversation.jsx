@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import UserAvatar from '../components/UserAvatar';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Send, Loader2, X, Shield, Users } from 'lucide-react';
@@ -323,7 +324,7 @@ export default function Conversation() {
       </form>
 
       {/* Group members modal */}
-      {showMembers && (
+      {showMembers && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white border border-neutral-200 w-full max-w-sm shadow-xl">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-100">
@@ -368,7 +369,8 @@ export default function Conversation() {
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

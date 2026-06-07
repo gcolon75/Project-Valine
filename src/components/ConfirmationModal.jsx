@@ -1,4 +1,5 @@
 // src/components/ConfirmationModal.jsx
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 
 /**
@@ -24,7 +25,7 @@ export default function ConfirmationModal({
     onConfirm(password);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-md w-full animate-scale-in">
         {/* Header */}
@@ -99,6 +100,7 @@ export default function ConfirmationModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

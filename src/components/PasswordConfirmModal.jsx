@@ -1,5 +1,6 @@
 // src/components/PasswordConfirmModal.jsx
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Lock, Loader2 } from 'lucide-react';
 import * as authService from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +59,7 @@ export default function PasswordConfirmModal({
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-md w-full animate-scale-in">
         {/* Header */}
@@ -152,6 +153,7 @@ export default function PasswordConfirmModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

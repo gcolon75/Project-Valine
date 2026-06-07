@@ -1,5 +1,6 @@
 // src/components/NetworkModal.jsx
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import UserAvatar from './UserAvatar';
 import { useNavigate } from 'react-router-dom';
 import { X, Search } from 'lucide-react';
@@ -29,7 +30,7 @@ export default function NetworkModal({ isOpen, onClose, profileId, count = 0 }) 
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white max-w-lg w-full max-h-[80vh] flex flex-col">
 
@@ -101,6 +102,7 @@ export default function NetworkModal({ isOpen, onClose, profileId, count = 0 }) 
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,9 +1,11 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import UserAvatar from '../components/UserAvatar';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  X,
   Heart,
   MessageCircle,
   Bookmark,
@@ -56,6 +58,7 @@ export default function PostDetail() {
   const [likesCount, setLikesCount] = useState(0);
   const [likingInProgress, setLikingInProgress] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [viewingPdf, setViewingPdf] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -195,14 +198,18 @@ export default function PostDetail() {
     try {
       const pdfBlob = await getWatermarkedPdf(post.mediaAttachment.id);
       const url = window.URL.createObjectURL(pdfBlob);
-      window.open(url, '_blank');
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      setPdfViewerUrl(url);
     } catch (err) {
       console.error('Error viewing PDF:', err);
       toast.error(err.message || 'Failed to load PDF');
     } finally {
       setViewingPdf(false);
     }
+  };
+
+  const closePdfViewer = () => {
+    if (pdfViewerUrl) window.URL.revokeObjectURL(pdfViewerUrl);
+    setPdfViewerUrl(null);
   };
 
   const handleDownloadPdf = async () => {
@@ -357,6 +364,7 @@ export default function PostDetail() {
   };
 
   return (
+    <>
     <div className="max-w-3xl mx-auto px-4 py-8">
 
       {/* Back link */}
@@ -643,5 +651,27 @@ export default function PostDetail() {
 
       </article>
     </div>
+
+    {pdfViewerUrl && createPortal(
+      <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-700 shrink-0">
+          <span className="text-white text-sm font-medium truncate pr-4">{post?.title || 'Document'}</span>
+          <button
+            onClick={closePdfViewer}
+            className="p-1.5 text-neutral-400 hover:text-white transition-colors shrink-0"
+            aria-label="Close PDF viewer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <iframe
+          src={pdfViewerUrl}
+          className="flex-1 w-full"
+          title={post?.title || 'Document'}
+        />
+      </div>,
+      document.body
+    )}
+    </>
   );
 }

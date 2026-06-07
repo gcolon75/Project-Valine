@@ -151,31 +151,29 @@ export default function Dashboard() {
   const isEmerald = profileData?.plan === 'emerald' || user?.plan === 'emerald';
 
   return (
-    <div className="container mx-auto px-4 max-w-[1600px] text-[1.1rem]">
+    <div className="container mx-auto px-4 lg:px-0 max-w-[1600px] text-[1.1rem]">
       <h1 className="sr-only">Dashboard</h1>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_minmax(0,1fr)_280px] animate-fade-in">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[245px_minmax(0,1fr)_265px] animate-fade-in">
 
         {/* LEFT COLUMN — flat panel, sections divided by hairlines */}
         <aside className="hidden lg:block">
-          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg sticky top-20 overflow-hidden">
+          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg sticky top-24 overflow-hidden">
 
             {/* Profile */}
-            <div className="px-6 py-6 border-b border-neutral-200 dark:border-white/10">
-              <div className="flex items-center gap-4 mb-4">
+            <Link to="/profile" className="block px-6 py-6 border-b border-neutral-200 dark:border-white/10 hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
+              <div className="mb-4">
                 <UserAvatar
                   src={profileData?.avatar}
                   name={profileData?.displayName || profileData?.username}
                   alt={profileData?.displayName || 'Profile'}
-                  className="h-14 w-14"
+                  className="h-20 w-20 mb-3"
                 />
-                <div>
-                  <div className="font-semibold text-neutral-900 dark:text-white flex items-center gap-1 text-lg leading-tight min-w-0">
-                    <span className="truncate">{profileData?.displayName || user?.displayName || 'Your Name'}</span>
-                    <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} size={18} />
-                  </div>
-                  <div className="text-base text-neutral-500 dark:text-neutral-400">
-                    @{profileData?.username || user?.username || 'username'}
-                  </div>
+                <div className="font-semibold text-neutral-900 dark:text-white text-base leading-snug flex items-center gap-1 flex-wrap">
+                  <span>{profileData?.displayName || user?.displayName || 'Your Name'}</span>
+                  <EmeraldBadge user={{ plan: profileData?.plan || profileData?.user?.plan || user?.plan }} size={16} />
+                </div>
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  @{profileData?.username || user?.username || 'username'}
                 </div>
               </div>
               <p className="text-base text-neutral-500 dark:text-neutral-400">
@@ -183,7 +181,7 @@ export default function Dashboard() {
                   {profileData?.stats?.networkCount ?? profileData?.stats?.followers ?? 0}
                 </span>{' '}connections
               </p>
-            </div>
+            </Link>
 
             {/* Emerald CTA card */}
             {isEmerald ? (
@@ -341,7 +339,7 @@ export default function Dashboard() {
         </aside>
 
         {/* CENTER COLUMN */}
-        <section className="space-y-4 lg:px-4">
+        <section className="space-y-4">
 
           {/* Post prompt */}
           <div className="bg-white border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 flex items-center justify-between gap-4">
@@ -351,7 +349,7 @@ export default function Dashboard() {
             </div>
             <Link
               to="/post"
-              className="shrink-0 px-6 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90 transition-opacity font-semibold focus:outline-none"
+              className="shrink-0 px-6 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white hover:opacity-90 transition-opacity font-semibold focus:outline-none"
             >
               Create Post
             </Link>
@@ -413,7 +411,7 @@ export default function Dashboard() {
 
         {/* RIGHT COLUMN */}
         <aside className="hidden lg:block">
-          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 sticky top-20">
+          <div className="bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 sticky top-24">
             <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-4">
               Discover creators
             </p>

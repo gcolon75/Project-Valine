@@ -1,7 +1,7 @@
 // src/pages/Post.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, CheckCircle, FileText, Film, Camera, Megaphone, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Check, CheckCircle, FileText, Film, Camera, Megaphone, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { parseVideoEmbed } from '../utils/videoEmbed';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -82,6 +82,12 @@ export default function Post() {
   const [videoLinkInput, setVideoLinkInput] = useState('');
   const [videoEmbedUrl, setVideoEmbedUrl] = useState(null);
   const [videoLinkError, setVideoLinkError] = useState(null);
+
+  // Custom thumbnail state
+  const [useCustomThumbnail, setUseCustomThumbnail] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const [formData, setFormData] = useState({
     contentType: '',
@@ -310,6 +316,15 @@ export default function Post() {
     }
   };
 
+  const handleThumbnailFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Thumbnail must be less than 5MB'); return; }
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.contentType) newErrors.contentType = 'Please select a content type';
@@ -320,26 +335,55 @@ export default function Post() {
       if (!formData.price || isNaN(priceValue) || priceValue < 0.50) newErrors.price = 'Price must be at least $0.50';
     }
     if (formData.description.length > 1000) newErrors.description = 'Description must be 1000 characters or less';
-    const tagValidation = validateTags(formData.tags);
-    if (!tagValidation.valid) newErrors.tags = tagValidation.errors[0];
+    if (!formData.tags || formData.tags.length === 0) newErrors.tags = 'Please add at least one tag';
+    else {
+      const tagValidation = validateTags(formData.tags);
+      if (!tagValidation.valid) newErrors.tags = tagValidation.errors[0];
+    }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField === 'contentType') {
-        document.querySelector('[aria-pressed]')?.focus();
-      } else {
-        document.querySelector(`[name="${firstErrorField}"], #${firstErrorField}`)?.focus();
-      }
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      // Show the first error as a toast so the user knows exactly what's missing
+      const firstError = Object.values(validationErrors)[0];
+      toast.error(firstError);
+      // Scroll the first invalid field into view
+      const firstField = Object.keys(validationErrors)[0];
+      const el = firstField === 'contentType'
+        ? document.querySelector('[aria-pressed]')
+        : document.querySelector(`[name="${firstField}"], #${firstField}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Upload custom thumbnail if provided
+      let customThumbnailUrl = null;
+      if (useCustomThumbnail && thumbnailFile) {
+        setUploadingThumbnail(true);
+        try {
+          const targetProfileId = profileId || user?.id;
+          const { mediaId: thumbMediaId, uploadUrl: thumbUploadUrl } = await getUploadUrl(
+            targetProfileId, 'image',
+            `${formData.title || 'post'} - Thumbnail`,
+            'Post thumbnail', 'public', thumbnailFile.type, thumbnailFile.size
+          );
+          await uploadToS3(thumbUploadUrl, thumbnailFile, 'image', () => {});
+          const thumbData = await completeUpload(targetProfileId, thumbMediaId, { fileSize: thumbnailFile.size });
+          customThumbnailUrl = thumbData?.url || thumbData?.mediaUrl || thumbData?.media?.url || null;
+        } catch (err) {
+          console.warn('Failed to upload thumbnail:', err);
+          toast.error('Thumbnail upload failed — posting without thumbnail');
+        } finally {
+          setUploadingThumbnail(false);
+        }
+      }
+
       const priceValue = formData.isFree ? 0 : parseFloat(formData.price) || 0;
       const postPayload = {
         title: formData.title,
@@ -353,7 +397,7 @@ export default function Post() {
         contentType: formData.contentType || null,
         price: priceValue,
         isFree: formData.isFree,
-        thumbnailUrl: formData.thumbnailUrl || null,
+        thumbnailUrl: customThumbnailUrl || null,
         requiresAccess: formData.requiresAccess || false,
         allowDownload: formData.allowDownload || false,
         allowFeedback: formData.allowFeedback || false,
@@ -750,21 +794,48 @@ export default function Post() {
           </div>
         </div>
 
-        {/* Thumbnail URL */}
+        {/* Thumbnail */}
         <div>
-          <label htmlFor="thumbnailUrl" className="block text-sm font-medium text-neutral-700 mb-2">
-            Thumbnail URL <span className="font-normal text-neutral-400">(Optional)</span>
+          <p className="text-sm font-medium text-neutral-700 mb-1">Thumbnail <span className="font-normal text-neutral-400">(Optional)</span></p>
+          <p className="text-xs text-neutral-400 mb-3">
+            By default, the thumbnail is generated automatically from the first page or image of your file.
+          </p>
+
+          {/* Checkbox */}
+          <label className="flex items-center gap-3 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={useCustomThumbnail}
+              onChange={(e) => {
+                setUseCustomThumbnail(e.target.checked);
+                if (!e.target.checked) { setThumbnailFile(null); setThumbnailPreview(null); }
+              }}
+              className="w-5 h-5 rounded border-neutral-300 accent-[#0CCE6B]"
+            />
+            <span className="text-sm font-medium text-neutral-900">Upload custom thumbnail</span>
           </label>
-          <input
-            type="url"
-            id="thumbnailUrl"
-            name="thumbnailUrl"
-            value={formData.thumbnailUrl}
-            onChange={(e) => handleChange('thumbnailUrl', e.target.value)}
-            placeholder="https://example.com/thumbnail.jpg"
-            className="block w-full px-4 py-2.5 border border-neutral-200 bg-white text-neutral-900 rounded-lg focus:outline-none focus:border-[#0CCE6B] transition-colors placeholder:text-neutral-400"
-          />
-          <p className="mt-1 text-xs text-neutral-400">Add a thumbnail for text-only posts.</p>
+
+          {useCustomThumbnail && (
+            thumbnailPreview ? (
+              <div className="relative inline-block">
+                <img src={thumbnailPreview} alt="Thumbnail preview" className="h-32 object-cover border border-neutral-200" />
+                <button
+                  type="button"
+                  onClick={() => { setThumbnailFile(null); setThumbnailPreview(null); }}
+                  className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 text-white transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-neutral-200 cursor-pointer hover:border-neutral-400 transition-colors">
+                <Upload className="w-5 h-5 text-neutral-400 mb-1" />
+                <span className="text-xs text-neutral-500">Click to upload image</span>
+                <span className="text-xs text-neutral-400 mt-0.5">JPG, PNG, WebP · Max 5MB</span>
+                <input type="file" accept="image/*" onChange={handleThumbnailFileSelect} className="sr-only" />
+              </label>
+            )
+          )}
         </div>
 
         {/* Access Control */}
@@ -829,7 +900,7 @@ export default function Post() {
           </button>
           <button
             type="submit"
-            disabled={!isFormValid || isSubmitting}
+            disabled={isSubmitting || uploadingThumbnail}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:opacity-90 text-white rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity text-sm"
           >
             {isSubmitting ? (

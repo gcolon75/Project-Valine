@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Search, User, Plus, X, Loader2, Users, Trash2, LogOut, Check } from 'lucide-react';
 import { getThreads, createThread, createGroupThread, leaveThread } from '../services/messagesService';
@@ -377,7 +378,7 @@ export default function Inbox() {
       )}
 
       {/* New Message Modal */}
-      {showNewMessage && (
+      {showNewMessage && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white border border-neutral-200 w-full max-w-md mx-4 shadow-xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-100">
@@ -510,11 +511,12 @@ export default function Inbox() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete/Leave confirmation */}
-      {threadToDelete && (
+      {threadToDelete && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white border border-neutral-200 w-full max-w-sm mx-4 p-6 shadow-xl">
             <h3 className="text-base font-semibold text-neutral-900 mb-1.5">
@@ -549,7 +551,8 @@ export default function Inbox() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

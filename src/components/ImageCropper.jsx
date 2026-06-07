@@ -1,5 +1,6 @@
 // src/components/ImageCropper.jsx
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ZoomIn, ZoomOut, RotateCw, Loader2 } from 'lucide-react';
 
 /**
@@ -180,7 +181,7 @@ export default function ImageCropper({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -329,6 +330,7 @@ export default function ImageCropper({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

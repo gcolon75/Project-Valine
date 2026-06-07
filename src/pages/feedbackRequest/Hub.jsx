@@ -79,7 +79,7 @@ function WriterTab({ freeEvalEligible }) {
         <div data-demo="feedback-submit">
           <Link
             to="/feedback-request/new"
-            className="inline-flex items-center gap-1.5 text-sm font-medium bg-neutral-900 text-white px-4 py-2 hover:bg-neutral-700 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-medium bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-4 py-2 transition-all"
           >
             Submit a script
             <ArrowRight className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export default function FeedbackRequestHub() {
               onClick={() => setTab('writer')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                 tab === 'writer'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white'
                   : 'bg-white text-neutral-500 hover:bg-neutral-50'
               }`}
             >
@@ -369,7 +369,7 @@ export default function FeedbackRequestHub() {
               onClick={() => setTab('reader')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors border-l border-neutral-200 ${
                 tab === 'reader'
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white'
                   : 'bg-white text-neutral-500 hover:bg-neutral-50'
               }`}
             >
@@ -390,14 +390,16 @@ export default function FeedbackRequestHub() {
           </p>
         )}
 
-        {tab === 'writer' ? (
+        {/* Both tabs stay mounted to avoid refetch flicker on tab switch */}
+        <div className={tab !== 'writer' ? 'hidden' : ''}>
           <WriterTab freeEvalEligible={freeEvalEligible} />
-        ) : (
+        </div>
+        <div className={tab !== 'reader' ? 'hidden' : ''}>
           <ReaderTab
             pendingPayoutDollars={pendingPayoutDollars}
             hasPendingPayout={hasPendingPayout}
           />
-        )}
+        </div>
 
       </div>
     </div>

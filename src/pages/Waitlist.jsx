@@ -73,7 +73,7 @@ export default function Waitlist() {
           </div>
           <h1 className="text-3xl font-bold text-neutral-900 mb-4">You're on the list!</h1>
           <p className="text-lg text-neutral-600">
-            You will be notified when you are approved from the waitlist!
+            You will be notified when you are approved!
           </p>
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function Waitlist() {
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-20">
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent mb-3">Join the Waitlist</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#474747] to-[#0CCE6B] bg-clip-text text-transparent mb-3">Get Preapproved</h1>
           <p className="text-neutral-600">
             Be among the first to access Joint Networking when we open our doors.
           </p>
@@ -194,7 +194,7 @@ export default function Waitlist() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <span>Join the Waitlist</span>
+                <span>Get Preapproved</span>
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

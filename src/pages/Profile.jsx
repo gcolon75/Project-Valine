@@ -459,7 +459,7 @@ export default function Profile() {
         <div className="px-6 sm:px-8 pb-8">
 
           {/* Avatar + Actions row */}
-          <div className="flex items-end justify-between -mt-14 mb-6 flex-wrap gap-3">
+          <div className="flex items-end justify-between -mt-16 mb-6 flex-wrap gap-3">
 
             {/* Avatar — headshot, no decorative ring */}
             <div className="relative z-10">
@@ -467,11 +467,13 @@ export default function Profile() {
                 <img
                   src={getCacheBustedAvatarUrl(displayData.avatar, displayData)}
                   alt={displayData.displayName}
-                  className="w-28 h-28 rounded-full border-4 border-white object-cover"
+                  className="w-32 h-32 rounded-full border-4 border-white object-cover shadow"
                 />
               ) : (
-                <div className="w-28 h-28 rounded-full border-4 border-white bg-neutral-100 flex items-center justify-center" aria-hidden="true">
-                  <User className="w-14 h-14 text-neutral-300" />
+                <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow">
+                  <span className="text-white text-4xl font-semibold">
+                    {(displayData.displayName || displayData.username || '?').charAt(0).toUpperCase()}
+                  </span>
                 </div>
               )}
             </div>
@@ -482,7 +484,7 @@ export default function Profile() {
                 <>
                   <button
                     onClick={() => navigate('/profile-edit')}
-                    className="text-sm font-medium bg-neutral-900 text-white px-5 py-2.5 hover:bg-neutral-700 transition-colors"
+                    className="text-sm font-medium bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-5 py-2.5 transition-all shadow-sm"
                   >
                     Edit Profile
                   </button>
@@ -491,7 +493,7 @@ export default function Profile() {
                       onClick={startDemo}
                       className="text-sm font-medium bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white px-5 py-2.5 hover:opacity-90 transition-opacity"
                     >
-                      Start Investor Demo
+                      Start Demo
                     </button>
                   )}
                   <button
@@ -546,7 +548,7 @@ export default function Profile() {
                           <button
                             onClick={handleAcceptRequest}
                             disabled={connectLoading}
-                            className="flex items-center gap-1.5 text-sm font-medium bg-neutral-900 text-white px-5 py-2.5 hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 text-sm font-medium bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-5 py-2.5 transition-all shadow-sm disabled:opacity-50"
                           >
                             {connectLoading ? (
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -566,7 +568,7 @@ export default function Profile() {
                         <button
                           onClick={handleConnect}
                           disabled={connectLoading}
-                          className="flex items-center gap-1.5 text-sm font-medium bg-neutral-900 text-white px-5 py-2.5 hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 text-sm font-medium bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-5 py-2.5 transition-all shadow-sm disabled:opacity-50"
                         >
                           {connectLoading ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -999,7 +1001,7 @@ export default function Profile() {
                   adminSubTab === 'waitlist' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-700'
                 }`}
               >
-                Waitlist
+                Preapproved
                 {adminSubTab === 'waitlist' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0CCE6B]" />}
               </button>
             </div>

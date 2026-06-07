@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, ArrowLeft, Loader2, Search, Plus, Users, Check, Trash2, LogOut } from 'lucide-react';
+import { MessageSquare, Mail, ChevronUp, X, Send, ArrowLeft, Loader2, Search, Plus, Users, Check, Trash2, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getThreads, getThread, sendThreadMessage, createThread, createGroupThread, leaveThread } from '../services/messagesService';
 import { searchUsers } from '../services/search';
@@ -181,29 +181,27 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* FAB */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-        aria-label="Open messages"
-      >
-        {isOpen ? (
-          <X className="w-6 h-6 text-white" />
-        ) : (
-          <div className="relative">
-            <MessageSquare className="w-6 h-6 text-white" />
-            {unreadCounts.messages > 0 && (
-              <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none rounded-full">
-                {unreadCounts.messages > 9 ? '9+' : unreadCounts.messages}
-              </span>
-            )}
-          </div>
-        )}
-      </button>
+      {/* Tab trigger */}
+      <div className="fixed bottom-0 right-6 z-50">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="h-10 w-52 px-5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] rounded-t-lg flex items-center gap-2.5 shadow-lg transition-colors"
+          aria-label="Toggle messages"
+        >
+          <Mail className="w-4 h-4 text-white" />
+          <span className="text-sm font-semibold text-white">Messages</span>
+          {unreadCounts.messages > 0 && (
+            <span className="min-w-[18px] h-[18px] px-1 bg-white/30 text-white text-[10px] font-bold flex items-center justify-center leading-none rounded-full">
+              {unreadCounts.messages > 9 ? '9+' : unreadCounts.messages}
+            </span>
+          )}
+          <ChevronUp className={`w-4 h-4 text-white/70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 h-[500px] bg-white border border-neutral-200 shadow-xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-10 right-6 z-50 w-80 sm:w-96 h-[500px] bg-white border border-neutral-200 shadow-xl flex flex-col overflow-hidden">
 
           {/* Header */}
           <div className="bg-gradient-to-r from-[#474747] to-[#0CCE6B] px-4 py-3 flex items-center gap-2.5 flex-shrink-0">
