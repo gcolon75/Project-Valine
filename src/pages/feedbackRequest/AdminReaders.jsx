@@ -54,7 +54,7 @@ function ReaderRow({ user, isReader, onToggle, pending, pendingPayoutCents }) {
   );
 }
 
-export default function AdminReaders() {
+export function AdminReadersContent() {
   const { user, refreshUser } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -135,46 +135,23 @@ export default function AdminReaders() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <ShieldAlert className="w-10 h-10 mx-auto text-neutral-300 mb-3" />
-          <p className="text-sm text-neutral-500 mb-4">Admin access required.</p>
-          <Link to="/feedback-request" className="text-xs text-neutral-600 underline underline-offset-2">
-            Back to Feedback
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!isAdmin) return null;
 
   const hasSearchQuery = query.trim().length >= 2;
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-12">
-      <div className="max-w-4xl mx-auto px-6">
-
-        {/* Back */}
-        <Link
-          to="/feedback-request"
-          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition-colors mb-8"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Feedback Hub
-        </Link>
-
+    <div>
         {/* Header */}
-        <div className="mb-10">
-          <div className="flex items-baseline gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-neutral-900">Reader Pool</h1>
+        <div className="mb-8">
+          <div className="flex items-baseline gap-3 mb-1">
+            <h2 className="text-lg font-semibold text-neutral-900">Reader Pool</h2>
             {!readersLoading && (
               <span className="text-sm text-neutral-400 tabular-nums">
                 {readers.length} active
               </span>
             )}
           </div>
-          <p className="text-base text-neutral-500">
+          <p className="text-sm text-neutral-500">
             Vetted readers claim approved scripts and earn $0.25 per page.
           </p>
         </div>
@@ -258,7 +235,22 @@ export default function AdminReaders() {
             </div>
           )}
         </section>
+    </div>
+  );
+}
 
+export default function AdminReaders() {
+  return (
+    <div className="min-h-screen bg-neutral-50 py-12">
+      <div className="max-w-4xl mx-auto px-6">
+        <Link
+          to="/feedback-request"
+          className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-700 transition-colors mb-8"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Feedback Hub
+        </Link>
+        <AdminReadersContent />
       </div>
     </div>
   );

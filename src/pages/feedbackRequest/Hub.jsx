@@ -333,18 +333,11 @@ export default function FeedbackRequestHub() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                to="/feedback-request/admin"
+                to="/admin"
                 className="inline-flex items-center gap-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 transition-colors"
               >
                 <AlertCircle className="w-4 h-4" />
                 Review Queue
-              </Link>
-              <Link
-                to="/feedback-request/admin/readers"
-                className="inline-flex items-center gap-2 text-sm font-medium border border-amber-300 text-amber-800 hover:bg-amber-100 px-4 py-2.5 transition-colors"
-              >
-                <Users className="w-4 h-4" />
-                Manage Readers
               </Link>
             </div>
           </div>

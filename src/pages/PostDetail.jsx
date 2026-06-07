@@ -1,11 +1,11 @@
 // src/pages/PostDetail.jsx
 import { useState, useEffect } from 'react';
+import InAppPdfViewer from '../components/InAppPdfViewer';
 import { createPortal } from 'react-dom';
 import UserAvatar from '../components/UserAvatar';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  X,
   Heart,
   MessageCircle,
   Bookmark,
@@ -653,21 +653,11 @@ export default function PostDetail() {
     </div>
 
     {pdfViewerUrl && createPortal(
-      <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-700 shrink-0">
-          <span className="text-white text-sm font-medium truncate pr-4">{post?.title || 'Document'}</span>
-          <button
-            onClick={closePdfViewer}
-            className="p-1.5 text-neutral-400 hover:text-white transition-colors shrink-0"
-            aria-label="Close PDF viewer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <iframe
-          src={pdfViewerUrl}
-          className="flex-1 w-full"
+      <div className="fixed inset-0 z-50 overflow-auto">
+        <InAppPdfViewer
+          url={pdfViewerUrl}
           title={post?.title || 'Document'}
+          onClose={closePdfViewer}
         />
       </div>,
       document.body

@@ -1,8 +1,8 @@
 // src/pages/ProfileEdit.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, MapPin, Briefcase, GraduationCap, Award, 
+import {
+  User, MapPin, Briefcase, GraduationCap, Award,
   Link as LinkIcon, Film, FileText, Plus, X, Save, ArrowLeft, Trash2, Edit2
 } from 'lucide-react';
 import ImageCropper from '../components/ImageCropper';
@@ -21,10 +21,10 @@ import { getCacheBustedAvatarUrl, getCacheBustedBannerUrl } from '../utils/image
 // Helper function to convert old externalLinks format to new normalized format
 const convertLegacyLinks = (externalLinks) => {
   if (!externalLinks || typeof externalLinks !== 'object') return [];
-  
+
   // If it's already an array, assume it's the new format
   if (Array.isArray(externalLinks)) return externalLinks;
-  
+
   // Convert old format to new
   const links = [];
   if (externalLinks.website) links.push({ label: 'Website', url: externalLinks.website, type: 'website' });
@@ -32,7 +32,7 @@ const convertLegacyLinks = (externalLinks) => {
   if (externalLinks.showreel) links.push({ label: 'Showreel', url: externalLinks.showreel, type: 'showreel' });
   if (externalLinks.instagram) links.push({ label: 'Instagram', url: externalLinks.instagram, type: 'other' });
   if (externalLinks.linkedin) links.push({ label: 'LinkedIn', url: externalLinks.linkedin, type: 'other' });
-  
+
   return links;
 };
 
@@ -98,7 +98,7 @@ const mapFormToProfileUpdate = (formData) => {
     tags: formData.skills,
     links: formData.profileLinks  // Map to 'links' as expected by backend
   };
-  
+
   // Only include avatar if it exists, is not null, and is not a blob: URL
   // Blob URLs are temporary browser-local URLs that cannot be persisted or fetched by the backend
   if (formData.avatar) {
@@ -110,7 +110,7 @@ const mapFormToProfileUpdate = (formData) => {
       payload.avatarUrl = formData.avatar;  // Map frontend 'avatar' to backend 'avatarUrl'
     }
   }
-  
+
   // Only include banner if it exists, is not null, and is not a blob: URL
   const bannerValue = formData.banner || formData.bannerUrl;
   if (bannerValue) {
@@ -122,26 +122,26 @@ const mapFormToProfileUpdate = (formData) => {
       payload.bannerUrl = bannerValue;
     }
   }
-  
+
   return payload;
 };
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const { user, updateUser, refreshUser } = useAuth();
-  
+
   // Feature flag for backend integration
   const BACKEND_LINKS_ENABLED = import.meta.env.VITE_ENABLE_PROFILE_LINKS_API === 'true';
-  
+
   // Loading state
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  
+
   // Profile state - stores the full profile object from backend
   const [profile, setProfile] = useState(null);
-  
+
   // Profile ID state (needed for media uploads)
   const [profileId, setProfileId] = useState(null);
-  
+
   // Form state - initialized from profile, not user context
   const [formData, setFormData] = useState({
     displayName: '',
@@ -174,7 +174,7 @@ export default function ProfileEdit() {
     education: [],
     skills: []
   });
-  
+
   // Track initial form data for analytics
   const [initialFormData, setInitialFormData] = useState(null);
 
@@ -196,14 +196,14 @@ export default function ProfileEdit() {
           if (profileData) {
             // Store the full profile object
             setProfile(profileData);
-            
+
             // Store profile ID for media uploads
             setProfileId(profileData.id);
-            
+
             // Initialize form data from profile using helper
             const mappedFormData = mapProfileToForm(profileData);
             setFormData(mappedFormData);
-            
+
             // Set initial form data for analytics (only once)
             setInitialFormData(mappedFormData);
           }
@@ -271,8 +271,8 @@ export default function ProfileEdit() {
   }, [user?.id]);
 
   const [showAvatarUploader, setShowAvatarUploader] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
   const [showBannerCropper, setShowBannerCropper] = useState(false);
-  const [activeSection, setActiveSection] = useState('basic');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingReel, setUploadingReel] = useState(false);
@@ -287,7 +287,7 @@ export default function ProfileEdit() {
   ];
 
   const roleOptions = [
-    'Actor', 'Voice Actor', 'Playwright', 'Director', 
+    'Actor', 'Voice Actor', 'Playwright', 'Director',
     'Producer', 'Composer', 'Designer', 'Technician', 'Other'
   ];
 
@@ -400,10 +400,10 @@ export default function ProfileEdit() {
   const handleAvatarUpload = async (croppedFile) => {
     // Avatar upload with cropped file from ImageCropper
     // The file is already processed (cropped, scaled) by ImageCropper
-    
+
     setUploadingAvatar(true);
     const toastId = toast.loading('Uploading avatar...');
-    
+
     try {
       // Use profile.id if available, otherwise let backend auto-create profile
       const targetProfileId = profileId || user?.id || 'me';
@@ -427,7 +427,7 @@ export default function ProfileEdit() {
         // If s3Url is missing, this is an error - do not use blob URL as fallback
         throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
-      
+
       // Store media ID if returned for later reference
       if (result?.media?.id) {
         console.log('Avatar media ID:', result.media.id);
@@ -441,7 +441,7 @@ export default function ProfileEdit() {
       setShowAvatarUploader(false);
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      
+
       // Only show "not logged in" error if we actually got a 401/403 from the server
       const status = error?.response?.status;
       if (status === 401 || status === 403) {
@@ -458,7 +458,7 @@ export default function ProfileEdit() {
   const handleBannerUpload = async (croppedFile) => {
     // Banner upload with cropped file from ImageCropper
     // The file is already processed (cropped, scaled) by ImageCropper
-    
+
     setUploadingBanner(true);
     const toastId = toast.loading('Uploading banner...');
 
@@ -486,7 +486,7 @@ export default function ProfileEdit() {
         // If s3Url is missing, this is an error - do not use blob URL as fallback
         throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
-      
+
       // Store media ID if returned for later reference
       if (result?.media?.id) {
         console.log('Banner media ID:', result.media.id);
@@ -500,7 +500,7 @@ export default function ProfileEdit() {
       setShowBannerCropper(false);
     } catch (error) {
       console.error('Banner upload failed:', error);
-      
+
       // Only show "not logged in" error if we actually got a 401/403 from the server
       const status = error?.response?.status;
       if (status === 401 || status === 403) {
@@ -517,7 +517,7 @@ export default function ProfileEdit() {
   const handleReelUpload = async (file, onProgress) => {
     // Don't check auth here - let the API call handle 401/403
     // This prevents flaky "not logged in" errors during auth state initialization
-    
+
     setUploadingReel(true);
     const toastId = toast.loading('Uploading reel...');
 
@@ -549,7 +549,7 @@ export default function ProfileEdit() {
       toast.success('Reel uploaded successfully!', { id: toastId });
     } catch (error) {
       console.error('Reel upload failed:', error);
-      
+
       // Only show "not logged in" error if we actually got a 401/403 from the server
       const status = error?.response?.status;
       if (status === 401 || status === 403) {
@@ -570,7 +570,7 @@ export default function ProfileEdit() {
         toast.error('Please wait for uploads to complete before saving');
         return;
       }
-      
+
       // Sanitize text fields before validation and submission
       const sanitizedData = {
         ...formData,
@@ -580,7 +580,7 @@ export default function ProfileEdit() {
         location: sanitizeText(formData.location),
         pronouns: sanitizeText(formData.pronouns),
       };
-      
+
       // Validate title length
       if (sanitizedData.title && sanitizedData.title.length > 100) {
         toast.error('Title must be 100 characters or less');
@@ -621,25 +621,25 @@ export default function ProfileEdit() {
         }
         return;
       }
-      
+
       // Optimistic update - show loading toast
       const toastId = toast.loading('Saving profile changes...');
-      
+
       // Save previous state for rollback
       const previousFormData = { ...formData };
-      
+
       // Update form data with sanitized values
       setFormData(sanitizedData);
-      
+
       // Optimistically update local user context
       updateUser(sanitizedData);
-      
+
       try {
         // Backend API integration - call updateMyProfile when user is authenticated
         if (user?.id) {
           // Build profile update using helper function
           const profileUpdate = mapFormToProfileUpdate(sanitizedData);
-          
+
           // Temporary diagnostic log to verify PATCH payload
           console.log('[ProfileEdit] PATCH /me/profile payload:', {
             avatarUrl: profileUpdate.avatarUrl,
@@ -649,19 +649,19 @@ export default function ProfileEdit() {
             title: profileUpdate.title,
             allFields: Object.keys(profileUpdate)
           });
-          
+
           await updateMyProfile(profileUpdate);
-          
+
           // Refresh user data from backend to ensure consistency
           await refreshUser();
         } else {
           // Fallback: simulate API delay for realistic UX
           await new Promise(resolve => setTimeout(resolve, 500));
         }
-        
+
         // Success feedback
         toast.success('Profile saved!', { id: toastId });
-        
+
         // Track profile update with changed fields
         if (initialFormData) {
           const changedFields = [];
@@ -672,7 +672,7 @@ export default function ProfileEdit() {
           });
           trackProfileUpdate(changedFields);
         }
-        
+
         // Navigate back to profile after brief delay
         setTimeout(() => {
           navigate('/profile');
@@ -681,616 +681,20 @@ export default function ProfileEdit() {
         // Rollback optimistic update on error
         updateUser(previousFormData);
         setFormData(previousFormData);
-        
+
         console.error('Failed to update profile:', error);
         toast.error('Failed to save profile. Please try again.', { id: toastId });
       }
-      
+
     } catch (error) {
       console.error('Unexpected error saving profile:', error);
       toast.error('Failed to save profile. Please try again.');
     }
   };
 
-  // Sections configuration - Media section available only when feature flag is enabled
-  // Set VITE_ENABLE_PROFILE_MEDIA=true in .env to show Media section
-  const sections = [
-    { id: 'basic', label: 'Basic Info', icon: User },
-    { id: 'experience', label: 'Experience', icon: Briefcase },
-    { id: 'education', label: 'Education', icon: GraduationCap }
-  ];
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-6 h-6 text-neutral-600 dark:text-neutral-400" />
-          </button>
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-            Edit Profile
-          </h1>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={uploadingAvatar || uploadingBanner || uploadingReel}
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Save className="w-5 h-5" />
-          <span>{uploadingAvatar || uploadingBanner || uploadingReel ? 'Uploading...' : 'Save Changes'}</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Section Navigation */}
-        <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 sticky top-6">
-            <nav className="space-y-1">
-              {sections.map(section => {
-                const Icon = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeSection === section.id
-                        ? 'bg-gradient-to-r from-[#474747]/10 to-[#0CCE6B]/10 text-[#0CCE6B]'
-                        : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{section.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Basic Info Section */}
-          {activeSection === 'basic' && (
-            <>
-              {/* Profile Images */}
-              <FormSection title="Profile Images" icon={User}>
-                <div className="space-y-4">
-                  {/* Banner */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                      Cover Banner (1600x400 recommended, 4:1 aspect ratio)
-                    </label>
-                    {formData.banner ? (
-                      <div className="relative aspect-[4/1] rounded-lg overflow-hidden">
-                        <img src={formData.banner} alt="Banner" className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2 space-x-2 flex">
-                          <button
-                            onClick={() => setShowBannerCropper(true)}
-                            className="px-3 py-2 bg-black/50 hover:bg-black/70 text-white text-sm rounded-lg transition-colors"
-                            disabled={uploadingBanner}
-                          >
-                            Change
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleChange('banner', null);
-                              handleChange('bannerUrl', null);
-                            }}
-                            className="p-2 bg-black/50 hover:bg-black/70 rounded-lg transition-colors"
-                            disabled={uploadingBanner}
-                          >
-                            <X className="w-5 h-5 text-white" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setShowBannerCropper(true)}
-                        disabled={uploadingBanner}
-                        className="w-full aspect-[4/1] border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-[#0CCE6B] hover:bg-[#0CCE6B]/5 transition-colors flex items-center justify-center"
-                      >
-                        <div className="text-center">
-                          <Plus className="w-8 h-8 mx-auto mb-2 text-neutral-400" />
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                            Upload Banner Image
-                          </p>
-                        </div>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Avatar */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                      Profile Picture (800x800 recommended)
-                    </label>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-24 h-24 rounded-full border-2 border-neutral-200 dark:border-neutral-700 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
-                        {formData.avatar ? (
-                          <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-12 h-12 text-neutral-400" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <button
-                          onClick={() => setShowAvatarUploader(true)}
-                          className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors text-sm font-medium"
-                        >
-                          {formData.avatar ? 'Change' : 'Upload'} Photo
-                        </button>
-                        {formData.avatar && (
-                          <button
-                            onClick={() => handleChange('avatar', null)}
-                            className="block text-sm text-red-600 dark:text-red-400 hover:underline"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </FormSection>
-
-              {/* Basic Information */}
-              <FormSection title="Basic Information" icon={User}>
-                <div className="space-y-4">
-                  <FormField label="Name" required>
-                    <input
-                      type="text"
-                      value={formData.displayName}
-                      onChange={(e) => handleChange('displayName', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Your full name"
-                    />
-                  </FormField>
-
-                  <FormField label="Username" required>
-                    <div className="flex">
-                      <span className="inline-flex items-center px-3 border border-r-0 border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-l-lg">
-                        @
-                      </span>
-                      <input
-                        type="text"
-                        value={formData.username}
-                        onChange={(e) => handleChange('username', e.target.value)}
-                        className="flex-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-r-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="username"
-                      />
-                    </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
-                      Used for tagging and your profile URL
-                    </p>
-                  </FormField>
-
-                  <FormField label="Professional Title">
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => handleChange('title', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Senior Voice Actor"
-                      maxLength={100}
-                    />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
-                      {formData.title.length}/100 characters
-                    </p>
-                  </FormField>
-
-                  <FormField label="Pronouns">
-                    <input
-                      type="text"
-                      value={formData.pronouns}
-                      onChange={(e) => handleChange('pronouns', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="they/them"
-                    />
-                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      <input
-                        type="checkbox"
-                        checked={formData.showPronouns}
-                        onChange={(e) => handleChange('showPronouns', e.target.checked)}
-                        className="rounded border-neutral-300 dark:border-neutral-600"
-                      />
-                      Show on profile
-                    </label>
-                  </FormField>
-
-                  <FormField label="Location">
-                    <CityAutocomplete
-                      value={formData.location}
-                      onChange={(val) => handleChange('location', val)}
-                      placeholder="Search for your city…"
-                    />
-                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      <input
-                        type="checkbox"
-                        checked={formData.showLocation}
-                        onChange={(e) => handleChange('showLocation', e.target.checked)}
-                        className="rounded border-neutral-300 dark:border-neutral-600"
-                      />
-                      Show on profile
-                    </label>
-                  </FormField>
-
-                  <FormField label="Availability Status">
-                    <select
-                      value={formData.availabilityStatus}
-                      onChange={(e) => handleChange('availabilityStatus', e.target.value)}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="available">Available</option>
-                      <option value="not-available">Not Available</option>
-                      <option value="booking">Accepting Bookings</option>
-                    </select>
-                    <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      <input
-                        type="checkbox"
-                        checked={formData.showAvailability}
-                        onChange={(e) => handleChange('showAvailability', e.target.checked)}
-                        className="rounded border-neutral-300 dark:border-neutral-600"
-                      />
-                      Show on profile
-                    </label>
-                  </FormField>
-
-                  <FormField label="Primary Roles">
-                    <div className="space-y-2">
-                      {(() => {
-                        const hasOtherRole = formData.primaryRoles.some(r => r.startsWith('Other:')) || formData.customRole;
-                        return (
-                          <>
-                            {roleOptions.map(role => (
-                              <label key={role} className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={role === 'Other' ? hasOtherRole : formData.primaryRoles.includes(role)}
-                                  onChange={(e) => {
-                                    if (role === 'Other') {
-                                      if (!e.target.checked) {
-                                        // Clearing Other - remove custom role
-                                        handleChange('customRole', '');
-                                        handleChange('primaryRoles', formData.primaryRoles.filter(r => !r.startsWith('Other:')));
-                                      } else {
-                                        // Checking Other - add placeholder so text input appears
-                                        handleChange('primaryRoles', [...formData.primaryRoles, 'Other:']);
-                                      }
-                                    } else if (e.target.checked) {
-                                      handleChange('primaryRoles', [...formData.primaryRoles, role]);
-                                    } else {
-                                      handleChange('primaryRoles', formData.primaryRoles.filter(r => r !== role));
-                                    }
-                                  }}
-                                  className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700"
-                                />
-                                <span className="text-neutral-900 dark:text-white">{role}</span>
-                              </label>
-                            ))}
-                            {/* Custom role text input when Other is checked */}
-                            {hasOtherRole && (
-                              <div className="ml-6 mt-2">
-                                <input
-                                  type="text"
-                                  value={formData.customRole || ''}
-                                  onChange={(e) => {
-                                    const customValue = e.target.value;
-                                    handleChange('customRole', customValue);
-                                    // Update primaryRoles to include custom role
-                                    const otherRoles = formData.primaryRoles.filter(r => !r.startsWith('Other:'));
-                                    if (customValue.trim()) {
-                                      handleChange('primaryRoles', [...otherRoles, `Other: ${customValue.trim()}`]);
-                                    } else {
-                                      handleChange('primaryRoles', otherRoles);
-                                    }
-                                  }}
-                                  placeholder="Specify your role..."
-                                  className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </FormField>
-
-                  <FormField label="Bio">
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) => handleChange('bio', e.target.value)}
-                      rows={6}
-                      maxLength={600}
-                      className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                      placeholder="Tell us about yourself..."
-                    />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-600 mt-1">
-                      {formData.bio.length}/600 characters
-                    </p>
-                  </FormField>
-
-                  <FormField label="Skills & Specializations">
-                    <SkillsTags
-                      skills={formData.skills}
-                      onChange={(skills) => handleChange('skills', skills)}
-                      suggestions={skillSuggestions}
-                    />
-                  </FormField>
-                </div>
-              </FormSection>
-
-              {/* Contact & Links */}
-              <FormSection title="Contact & Links" icon={LinkIcon}>
-                <div className="space-y-4">
-                  <FormField label="External Links">
-                    <ProfileLinksEditor
-                      links={formData.profileLinks}
-                      onChange={(links) => handleChange('profileLinks', links)}
-                      maxLinks={20}
-                    />
-                  </FormField>
-
-                  <FormField label="Representative Agency">
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        value={formData.agency.name}
-                        onChange={(e) => handleNestedChange('agency', 'name', e.target.value)}
-                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Agency Name"
-                      />
-                      <input
-                        type="text"
-                        value={formData.agency.contact}
-                        onChange={(e) => handleNestedChange('agency', 'contact', e.target.value)}
-                        className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Agency Contact"
-                      />
-                    </div>
-                  </FormField>
-                </div>
-              </FormSection>
-            </>
-          )}
-
-          {/* Media Section - Feature flagged for future release */}
-          {import.meta.env.VITE_ENABLE_PROFILE_MEDIA === 'true' && activeSection === 'media' && (
-            <FormSection title="Media & Portfolio" icon={Film}>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                    Primary Reel
-                  </label>
-                  {formData.primaryReel ? (
-                    <div className="space-y-3">
-                      <div className="aspect-video rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800">
-                        <video 
-                          src={formData.primaryReel} 
-                          controls 
-                          className="w-full h-full"
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
-                      <button
-                        onClick={() => handleChange('primaryReel', null)}
-                        className="text-sm text-red-600 dark:text-red-400 hover:underline"
-                        disabled={uploadingReel}
-                      >
-                        Remove Reel
-                      </button>
-                    </div>
-                  ) : (
-                    <MediaUploader
-                      onUpload={handleReelUpload}
-                      acceptedTypes="video/*"
-                      uploadType="video"
-                      maxSize={500}
-                      showPreview={false}
-                    />
-                  )}
-                </div>
-
-                <FormField label="Reel Privacy">
-                  <select
-                    value={formData.reelPrivacy}
-                    onChange={(e) => handleChange('reelPrivacy', e.target.value)}
-                    className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={uploadingReel}
-                  >
-                    <option value="public">Public - Anyone can watch</option>
-                    <option value="on-request">On Request - Requires approval</option>
-                    <option value="private">Private - Only you</option>
-                  </select>
-                </FormField>
-              </div>
-            </FormSection>
-          )}
-
-          {/* Experience Section */}
-          {activeSection === 'experience' && (
-            <FormSection title="Experience & Credits" icon={Briefcase}>
-              <div className="space-y-4">
-                {isLoadingExperience ? (
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading experience...</p>
-                ) : (
-                  <>
-                    {/* Existing Experience Entries */}
-                    {experienceList.length > 0 && (
-                      <div className="space-y-4">
-                        {experienceList.map((exp) => (
-                          <div 
-                            key={exp.id} 
-                            className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
-                          >
-                            {editingExperience === exp.id ? (
-                              // Edit Mode
-                              <ExperienceForm
-                                initialData={exp}
-                                onSave={(data) => handleUpdateExperience(exp.id, data)}
-                                onCancel={() => setEditingExperience(null)}
-                              />
-                            ) : (
-                              // View Mode
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="font-medium text-neutral-900 dark:text-white">{exp.title}</h4>
-                                  <p className="text-neutral-600 dark:text-neutral-400 text-sm">{exp.role}</p>
-                                  {exp.company && (
-                                    <p className="text-neutral-600 dark:text-neutral-400 text-sm">{exp.company}</p>
-                                  )}
-                                  {exp.year && (
-                                    <p className="text-sm text-neutral-500">{exp.year}</p>
-                                  )}
-                                  {exp.description && (
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">{exp.description}</p>
-                                  )}
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => setEditingExperience(exp.id)}
-                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                                    aria-label="Edit experience"
-                                  >
-                                    <Edit2 className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteExperience(exp.id)}
-                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                    aria-label="Delete experience"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add Experience Form */}
-                    {showExperienceForm ? (
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <ExperienceForm
-                          onSave={handleAddExperience}
-                          onCancel={() => setShowExperienceForm(false)}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                          Add your professional experience, productions, and film/theater credits
-                        </p>
-                        <button 
-                          onClick={() => setShowExperienceForm(true)}
-                          className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
-                        >
-                          <Plus className="w-5 h-5" />
-                          <span>Add Experience</span>
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </FormSection>
-          )}
-
-          {/* Education Section */}
-          {activeSection === 'education' && (
-            <FormSection title="Education & Training" icon={GraduationCap}>
-              <div className="space-y-4">
-                {isLoadingEducation ? (
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading education...</p>
-                ) : (
-                  <>
-                    {/* Existing Education Entries */}
-                    {educationList.length > 0 && (
-                      <div className="space-y-4">
-                        {educationList.map((edu) => (
-                          <div 
-                            key={edu.id} 
-                            className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4"
-                          >
-                            {editingEducation === edu.id ? (
-                              // Edit Mode
-                              <EducationForm
-                                initialData={edu}
-                                onSave={(data) => handleUpdateEducation(edu.id, data)}
-                                onCancel={() => setEditingEducation(null)}
-                              />
-                            ) : (
-                              // View Mode
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="font-medium text-neutral-900 dark:text-white">{edu.institution}</h4>
-                                  <p className="text-neutral-600 dark:text-neutral-400">{edu.program}</p>
-                                  {(edu.startYear || edu.endYear) && (
-                                    <p className="text-sm text-neutral-500">
-                                      {edu.startYear || '?'} - {edu.endYear || 'Present'}
-                                    </p>
-                                  )}
-                                  {edu.achievements && (
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{edu.achievements}</p>
-                                  )}
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => setEditingEducation(edu.id)}
-                                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-                                    aria-label="Edit education"
-                                  >
-                                    <Edit2 className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteEducation(edu.id)}
-                                    className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                    aria-label="Delete education"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add Education Form */}
-                    {showEducationForm ? (
-                      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-                        <EducationForm
-                          onSave={handleAddEducation}
-                          onCancel={() => setShowEducationForm(false)}
-                        />
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => setShowEducationForm(true)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-lg transition-colors"
-                      >
-                        <Plus className="w-5 h-5" />
-                        <span>Add Education</span>
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </FormSection>
-          )}
-        </div>
-      </div>
-
-      {/* Avatar Cropper Modal */}
+    <>
+      {/* Modals */}
       {showAvatarUploader && (
         <ImageCropper
           onSave={handleAvatarUpload}
@@ -1300,8 +704,6 @@ export default function ProfileEdit() {
           targetSize={800}
         />
       )}
-      
-      {/* Banner Cropper Modal */}
       {showBannerCropper && (
         <ImageCropper
           onSave={handleBannerUpload}
@@ -1311,34 +713,527 @@ export default function ProfileEdit() {
           targetSize={1600}
         />
       )}
-    </div>
-  );
-}
 
-// Helper Components
-function FormSection({ title, icon: Icon, children }) {
-  return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-[#474747] to-[#0CCE6B] rounded-lg">
-          <Icon className="w-5 h-5 text-white" />
+      {/* Sticky header */}
+      <div className="sticky top-0 z-20 bg-white border-b border-neutral-200">
+        <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 hover:bg-neutral-100 transition-colors"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5 text-neutral-600" />
+            </button>
+            <span className="text-sm font-semibold text-neutral-900">Edit Profile</span>
+          </div>
         </div>
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-          {title}
-        </h2>
       </div>
-      {children}
-    </div>
+
+      {/* Body */}
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-[200px,1fr] gap-10 items-start">
+
+          {/* Sticky sidebar nav */}
+          <aside className="sticky top-24">
+            <nav className="border border-neutral-200 overflow-hidden">
+              {[
+                { id: 'section-images', label: 'Basic Info', icon: User },
+                { id: 'section-credits', label: 'Credits', icon: Briefcase },
+                { id: 'section-training', label: 'Education', icon: GraduationCap },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors border-b border-neutral-100 last:border-0"
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <button
+              onClick={handleSave}
+              disabled={uploadingAvatar || uploadingBanner || uploadingReel}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              <span>{uploadingAvatar || uploadingBanner || uploadingReel ? 'Uploading…' : 'Save Changes'}</span>
+            </button>
+          </aside>
+
+          {/* Scrollable content */}
+          <div className="space-y-14">
+
+        {/* Profile Images */}
+        <div id="section-images" className="scroll-mt-24">
+          <SectionHeading title="Profile Images" />
+          <div className="relative mb-16">
+            <div className="relative h-52 bg-neutral-100 border border-neutral-200 overflow-hidden">
+              {formData.banner ? (
+                <img src={formData.banner} alt="Banner" className="w-full h-full object-cover" />
+              ) : (
+                <button
+                  onClick={() => setShowBannerCropper(true)}
+                  disabled={uploadingBanner}
+                  className="w-full h-full flex flex-col items-center justify-center hover:bg-neutral-200 transition-colors"
+                >
+                  <Plus className="w-6 h-6 text-neutral-400 mb-1" />
+                  <span className="text-xs text-neutral-400">Upload banner · 1600 × 400</span>
+                </button>
+              )}
+              {formData.banner && (
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <button
+                    onClick={() => setShowBannerCropper(true)}
+                    disabled={uploadingBanner}
+                    className="px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white text-xs font-medium transition-colors"
+                  >
+                    Change
+                  </button>
+                  <button
+                    onClick={() => { handleChange('banner', null); handleChange('bannerUrl', null); }}
+                    disabled={uploadingBanner}
+                    className="p-1 bg-black/60 hover:bg-black/80 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="absolute -bottom-12 left-4">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full ring-4 ring-white overflow-hidden shadow">
+                  {formData.avatar ? (
+                    <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
+                      <span className="text-white text-xl font-semibold">
+                        {(formData.displayName || user?.displayName || 'U')[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowAvatarOptions(v => !v)}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                >
+                  <span className="text-white text-[10px] font-semibold">{uploadingAvatar ? '…' : 'Edit'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          {showAvatarOptions && (
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                onClick={() => { setShowAvatarUploader(true); setShowAvatarOptions(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-xs font-semibold transition-all"
+              >
+                Choose Image
+              </button>
+              {formData.avatar && (
+                <button
+                  onClick={() => { handleChange('avatar', null); setShowAvatarOptions(false); }}
+                  className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Identity */}
+        <div id="section-identity" className="scroll-mt-24">
+          <SectionHeading title="Identity" />
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.displayName}
+                  onChange={(e) => handleChange('displayName', e.target.value)}
+                  className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                  placeholder="Your full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+                  Username <span className="text-red-400">*</span>
+                </label>
+                <div className="flex items-center bg-white border border-neutral-200 px-3 focus-within:border-[#0CCE6B] transition-colors">
+                  <span className="text-neutral-400 text-sm pr-1">@</span>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => handleChange('username', e.target.value)}
+                    className="flex-1 bg-transparent border-0 px-0 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none"
+                    placeholder="username"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+                Professional Title
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => handleChange('title', e.target.value)}
+                className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                placeholder="e.g. Senior Voice Actor · Audio Drama"
+                maxLength={100}
+              />
+              <p className="mt-1 text-xs text-neutral-400">{formData.title.length}/100</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-1.5">Bio</label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => handleChange('bio', e.target.value)}
+                rows={5}
+                maxLength={600}
+                className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors resize-none"
+                placeholder="Tell the industry who you are…"
+              />
+              <p className="mt-1 text-xs text-neutral-400">{formData.bio.length}/600</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-1.5">Pronouns</label>
+                <input
+                  type="text"
+                  value={formData.pronouns}
+                  onChange={(e) => handleChange('pronouns', e.target.value)}
+                  className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                  placeholder="they/them"
+                />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input type="checkbox" checked={formData.showPronouns} onChange={(e) => handleChange('showPronouns', e.target.checked)} className="w-4 h-4 accent-[#0CCE6B]" />
+                  <span className="text-xs text-neutral-500">Show on profile</span>
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-1.5">Location</label>
+                <CityAutocomplete
+                  value={formData.location}
+                  onChange={(val) => handleChange('location', val)}
+                  placeholder="City…"
+                />
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input type="checkbox" checked={formData.showLocation} onChange={(e) => handleChange('showLocation', e.target.checked)} className="w-4 h-4 accent-[#0CCE6B]" />
+                  <span className="text-xs text-neutral-500">Show on profile</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-1.5">Availability</label>
+              <select
+                value={formData.availabilityStatus}
+                onChange={(e) => handleChange('availabilityStatus', e.target.value)}
+                className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+              >
+                <option value="available">Available</option>
+                <option value="not-available">Not Available</option>
+                <option value="booking">Accepting Bookings</option>
+              </select>
+              <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                <input type="checkbox" checked={formData.showAvailability} onChange={(e) => handleChange('showAvailability', e.target.checked)} className="w-4 h-4 accent-[#0CCE6B]" />
+                <span className="text-xs text-neutral-500">Show on profile</span>
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-3">Primary Roles</label>
+              {(() => {
+                const hasOtherRole = formData.primaryRoles.some(r => r.startsWith('Other:')) || formData.customRole;
+                return (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {roleOptions.map(role => {
+                        const isSelected = role === 'Other' ? hasOtherRole : formData.primaryRoles.includes(role);
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => {
+                              if (role === 'Other') {
+                                if (hasOtherRole) {
+                                  handleChange('customRole', '');
+                                  handleChange('primaryRoles', formData.primaryRoles.filter(r => !r.startsWith('Other:')));
+                                } else {
+                                  handleChange('primaryRoles', [...formData.primaryRoles, 'Other:']);
+                                }
+                              } else if (isSelected) {
+                                handleChange('primaryRoles', formData.primaryRoles.filter(r => r !== role));
+                              } else {
+                                handleChange('primaryRoles', [...formData.primaryRoles, role]);
+                              }
+                            }}
+                            className={`px-3 py-1.5 text-sm font-medium border transition-colors ${
+                              isSelected
+                                ? 'bg-neutral-900 border-neutral-900 text-white'
+                                : 'border-neutral-200 text-neutral-600 hover:border-neutral-400 hover:text-neutral-900'
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {hasOtherRole && (
+                      <input
+                        type="text"
+                        value={formData.customRole || ''}
+                        onChange={(e) => {
+                          const customValue = e.target.value;
+                          handleChange('customRole', customValue);
+                          const otherRoles = formData.primaryRoles.filter(r => !r.startsWith('Other:'));
+                          if (customValue.trim()) {
+                            handleChange('primaryRoles', [...otherRoles, `Other: ${customValue.trim()}`]);
+                          } else {
+                            handleChange('primaryRoles', otherRoles);
+                          }
+                        }}
+                        placeholder="Describe your role…"
+                        className="mt-3 w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                      />
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-2">Skills & Specializations</label>
+              <SkillsTags
+                skills={formData.skills}
+                onChange={(skills) => handleChange('skills', skills)}
+                suggestions={skillSuggestions}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Links & Representation */}
+        <div id="section-links" className="scroll-mt-24">
+          <SectionHeading title="Links & Representation" />
+          <div className="space-y-8">
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-3">External Links</label>
+              <ProfileLinksEditor
+                links={formData.profileLinks}
+                onChange={(links) => handleChange('profileLinks', links)}
+                maxLinks={20}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-900 mb-4">Representative Agency</label>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-1">Agency name</label>
+                  <input
+                    type="text"
+                    value={formData.agency.name}
+                    onChange={(e) => handleNestedChange('agency', 'name', e.target.value)}
+                    className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                    placeholder="e.g. Creative Artists Agency"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-1">Contact / email</label>
+                  <input
+                    type="text"
+                    value={formData.agency.contact}
+                    onChange={(e) => handleNestedChange('agency', 'contact', e.target.value)}
+                    className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                    placeholder="agent@example.com"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Credits */}
+        <div id="section-credits" className="scroll-mt-24">
+          <SectionHeading title="Credits" />
+          {isLoadingExperience ? (
+            <p className="text-sm text-neutral-400">Loading credits…</p>
+          ) : (
+            <div className="space-y-4">
+              {experienceList.length === 0 && !showExperienceForm && (
+                <p className="text-sm text-neutral-400 mb-2">
+                  Add your professional credits — productions, films, audio dramas, theater work.
+                </p>
+              )}
+              {experienceList.map((exp) => (
+                <div key={exp.id} className="border-b border-neutral-100 pb-5 last:border-0">
+                  {editingExperience === exp.id ? (
+                    <ExperienceForm
+                      initialData={exp}
+                      onSave={(data) => handleUpdateExperience(exp.id, data)}
+                      onCancel={() => setEditingExperience(null)}
+                    />
+                  ) : (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-neutral-900">{exp.title}</p>
+                        <p className="text-sm text-neutral-500 mt-0.5">
+                          {exp.role}{exp.company ? ` · ${exp.company}` : ''}{exp.year ? ` · ${exp.year}` : ''}
+                        </p>
+                        {exp.description && (
+                          <p className="text-sm text-neutral-400 mt-1">{exp.description}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-0.5 shrink-0">
+                        <button onClick={() => setEditingExperience(exp.id)} className="p-1.5 hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-700" aria-label="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteExperience(exp.id)} className="p-1.5 hover:bg-red-50 transition-colors text-neutral-400 hover:text-red-600" aria-label="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {showExperienceForm ? (
+                <div className="border border-neutral-200 bg-white p-5">
+                  <ExperienceForm
+                    onSave={handleAddExperience}
+                    onCancel={() => setShowExperienceForm(false)}
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowExperienceForm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Credit
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Education */}
+        <div id="section-training" className="scroll-mt-24">
+          <SectionHeading title="Education" />
+          {isLoadingEducation ? (
+            <p className="text-sm text-neutral-400">Loading training…</p>
+          ) : (
+            <div className="space-y-4">
+              {educationList.map((edu) => (
+                <div key={edu.id} className="border-b border-neutral-100 pb-5 last:border-0">
+                  {editingEducation === edu.id ? (
+                    <EducationForm
+                      initialData={edu}
+                      onSave={(data) => handleUpdateEducation(edu.id, data)}
+                      onCancel={() => setEditingEducation(null)}
+                    />
+                  ) : (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-neutral-900">{edu.institution}</p>
+                        <p className="text-sm text-neutral-500 mt-0.5">
+                          {edu.program}{(edu.startYear || edu.endYear) ? ` · ${edu.startYear || '?'}–${edu.endYear || 'Present'}` : ''}
+                        </p>
+                        {edu.achievements && (
+                          <p className="text-sm text-neutral-400 mt-1">{edu.achievements}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-0.5 shrink-0">
+                        <button onClick={() => setEditingEducation(edu.id)} className="p-1.5 hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-700" aria-label="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteEducation(edu.id)} className="p-1.5 hover:bg-red-50 transition-colors text-neutral-400 hover:text-red-600" aria-label="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {showEducationForm ? (
+                <div className="border border-neutral-200 bg-white p-5">
+                  <EducationForm
+                    onSave={handleAddEducation}
+                    onCancel={() => setShowEducationForm(false)}
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowEducationForm(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Education
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Media — feature-flagged */}
+        {import.meta.env.VITE_ENABLE_PROFILE_MEDIA === 'true' && (
+          <div id="section-media" className="scroll-mt-24">
+            <SectionHeading title="Media & Portfolio" />
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-3">Primary Reel</label>
+                {formData.primaryReel ? (
+                  <div className="space-y-3">
+                    <div className="aspect-video bg-neutral-100 border border-neutral-200 overflow-hidden">
+                      <video src={formData.primaryReel} controls className="w-full h-full" />
+                    </div>
+                    <button onClick={() => handleChange('primaryReel', null)} disabled={uploadingReel} className="text-xs text-red-500 hover:text-red-700 transition-colors">
+                      Remove Reel
+                    </button>
+                  </div>
+                ) : (
+                  <MediaUploader onUpload={handleReelUpload} acceptedTypes="video/*" uploadType="video" maxSize={500} showPreview={false} />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-900 mb-2">Reel Privacy</label>
+                <select
+                  value={formData.reelPrivacy}
+                  onChange={(e) => handleChange('reelPrivacy', e.target.value)}
+                  disabled={uploadingReel}
+                  className="w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 focus:outline-none focus:border-[#0CCE6B] transition-colors"
+                >
+                  <option value="public">Public — Anyone can watch</option>
+                  <option value="on-request">On Request — Requires approval</option>
+                  <option value="private">Private — Only you</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+          </div>{/* end scrollable content */}
+        </div>{/* end grid */}
+      </div>
+    </>
   );
 }
 
-function FormField({ label, required, children }) {
+function SectionHeading({ title }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {children}
+    <div className="flex items-center gap-4 mb-6">
+      <h2 className="text-base font-semibold text-neutral-900 shrink-0">{title}</h2>
+      <div className="flex-1 h-px bg-neutral-200" />
     </div>
   );
 }
@@ -1354,22 +1249,15 @@ function ExperienceForm({ initialData = {}, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validate required fields
     if (!formData.title.trim() || !formData.role.trim()) {
       toast.error('Title and Role are required');
       return;
     }
-    
-    // Parse and validate year
     const year = formData.year ? parseInt(formData.year, 10) : null;
-    
-    // Validate year range
     if (year && (year < 1900 || year > new Date().getFullYear() + 5)) {
       toast.error(`Year must be between 1900 and ${new Date().getFullYear() + 5}`);
       return;
     }
-    
     onSave({
       title: formData.title.trim(),
       role: formData.role.trim(),
@@ -1379,86 +1267,45 @@ function ExperienceForm({ initialData = {}, onSave, onCancel }) {
     });
   };
 
+  const inputCls = "w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-[#0CCE6B] transition-colors";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Production / Project Title <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., The Dark Knight, Hamilton"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Role <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.role}
-          onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., Lead Actor, Director, Cinematographer"
-          required
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Company / Organization
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+            Production / Project <span className="text-red-400">*</span>
           </label>
-          <input
-            type="text"
-            value={formData.company}
-            onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Warner Bros"
-          />
+          <input type="text" value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} className={inputCls} placeholder="e.g. The Magnus Archives" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Year
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+            Role <span className="text-red-400">*</span>
           </label>
-          <input
-            type="number"
-            value={formData.year}
-            onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
-            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="2023"
-            min="1900"
-            max={new Date().getFullYear() + 5}
-          />
+          <input type="text" value={formData.role} onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))} className={inputCls} placeholder="e.g. Lead Actor" required />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">Company</label>
+          <input type="text" value={formData.company} onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))} className={inputCls} placeholder="e.g. Rusty Quill" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">Year</label>
+          <input type="number" value={formData.year} onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))} className={inputCls} placeholder="2023" min="1900" max={new Date().getFullYear() + 5} />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Description
-        </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-          placeholder="Brief description of your role and contributions..."
-        />
+        <label className="block text-sm font-medium text-neutral-900 mb-1.5">Description</label>
+        <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className={`${inputCls} resize-none`} rows={2} placeholder="Brief description of your role…" />
       </div>
-      <div className="flex justify-end space-x-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
-        >
+      <div className="flex justify-end gap-3 pt-2">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-semibold transition-all"
-        >
-          Save Experience
+        <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold transition-all">
+          <Save className="w-3.5 h-3.5" />
+          Save Credit
         </button>
       </div>
     </form>
@@ -1476,33 +1323,12 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.institution.trim() || !formData.program.trim()) {
-      return;
-    }
-    
-    // Parse and validate years
+    if (!formData.institution.trim() || !formData.program.trim()) return;
     const startYear = formData.startYear ? parseInt(formData.startYear, 10) : null;
     const endYear = formData.endYear ? parseInt(formData.endYear, 10) : null;
-    
-    // Validate year range
-    if (startYear && (startYear < 1900 || startYear > 2035)) {
-      toast.error('Start year must be between 1900 and 2035');
-      return;
-    }
-    
-    if (endYear && (endYear < 1900 || endYear > 2035)) {
-      toast.error('End year must be between 1900 and 2035');
-      return;
-    }
-    
-    // Validate end year >= start year
-    if (startYear && endYear && endYear < startYear) {
-      toast.error('End year must be equal to or after start year');
-      return;
-    }
-    
+    if (startYear && (startYear < 1900 || startYear > 2035)) { toast.error('Start year must be between 1900 and 2035'); return; }
+    if (endYear && (endYear < 1900 || endYear > 2035)) { toast.error('End year must be between 1900 and 2035'); return; }
+    if (startYear && endYear && endYear < startYear) { toast.error('End year must be after start year'); return; }
     onSave({
       institution: formData.institution.trim(),
       program: formData.program.trim(),
@@ -1512,88 +1338,44 @@ function EducationForm({ initialData = {}, onSave, onCancel }) {
     });
   };
 
+  const inputCls = "w-full bg-white border border-neutral-200 px-3 py-2.5 text-sm text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-[#0CCE6B] transition-colors";
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Institution <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.institution}
-          onChange={(e) => setFormData(prev => ({ ...prev, institution: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., Juilliard School"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Program <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={formData.program}
-          onChange={(e) => setFormData(prev => ({ ...prev, program: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., BFA in Drama"
-          required
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Start Year
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+            Institution <span className="text-red-400">*</span>
           </label>
-          <input
-            type="number"
-            value={formData.startYear}
-            onChange={(e) => setFormData(prev => ({ ...prev, startYear: e.target.value }))}
-            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="2018"
-            min="1900"
-            max="2035"
-          />
+          <input type="text" value={formData.institution} onChange={(e) => setFormData(prev => ({ ...prev, institution: e.target.value }))} className={inputCls} placeholder="e.g. Juilliard School" required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            End Year
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">
+            Program <span className="text-red-400">*</span>
           </label>
-          <input
-            type="number"
-            value={formData.endYear}
-            onChange={(e) => setFormData(prev => ({ ...prev, endYear: e.target.value }))}
-            className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="2022 (or leave blank for present)"
-            min="1900"
-            max="2035"
-          />
+          <input type="text" value={formData.program} onChange={(e) => setFormData(prev => ({ ...prev, program: e.target.value }))} className={inputCls} placeholder="e.g. BFA in Drama" required />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">Start Year</label>
+          <input type="number" value={formData.startYear} onChange={(e) => setFormData(prev => ({ ...prev, startYear: e.target.value }))} className={inputCls} placeholder="2018" min="1900" max="2035" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-900 mb-1.5">End Year</label>
+          <input type="number" value={formData.endYear} onChange={(e) => setFormData(prev => ({ ...prev, endYear: e.target.value }))} className={inputCls} placeholder="2022 (blank = present)" min="1900" max="2035" />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Achievements / Notes
-        </label>
-        <textarea
-          value={formData.achievements}
-          onChange={(e) => setFormData(prev => ({ ...prev, achievements: e.target.value }))}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-          rows={2}
-          placeholder="e.g., Dean's List, Lead in senior production"
-        />
+        <label className="block text-sm font-medium text-neutral-900 mb-1.5">Achievements / Notes</label>
+        <textarea value={formData.achievements} onChange={(e) => setFormData(prev => ({ ...prev, achievements: e.target.value }))} className={`${inputCls} resize-none`} rows={2} placeholder="e.g. Dean's List, Lead in senior production" />
       </div>
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-        >
+      <div className="flex justify-end gap-3 pt-2">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white rounded-lg font-medium transition-all"
-        >
+        <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-semibold transition-all">
+          <Save className="w-3.5 h-3.5" />
           {initialData.id ? 'Update' : 'Add'} Education
         </button>
       </div>

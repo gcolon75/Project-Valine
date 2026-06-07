@@ -188,7 +188,7 @@ function RevisionModal({ request, onConfirm, onClose, saving }) {
   );
 }
 
-export default function FeedbackRequestAdminQueue() {
+export function AdminQueueContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -269,17 +269,7 @@ export default function FeedbackRequestAdminQueue() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <ShieldAlert className="w-12 h-12 mx-auto text-neutral-400 mb-3" />
-          <p className="text-neutral-600 dark:text-neutral-400 mb-4">Admin access required.</p>
-          <Link to="/feedback-request" className="text-emerald-600 hover:underline">← Back</Link>
-        </div>
-      </div>
-    );
-  }
+  if (!isAdmin) return null;
 
   const tabs = [
     { key: 'pending',   label: 'Pending Approval',    count: pendingItems.length,   color: 'bg-amber-100 text-amber-800' },
@@ -288,13 +278,7 @@ export default function FeedbackRequestAdminQueue() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <Link to="/feedback-request" className="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-400 hover:text-emerald-600 mb-6">
-          <ArrowLeft className="w-4 h-4 mr-1" />Back to Feedback Request
-        </Link>
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Admin Queue</h1>
-
+    <div>
         {error && <p className="text-red-600 mb-4">{error}</p>}
 
         {/* Tabs */}
@@ -467,7 +451,6 @@ export default function FeedbackRequestAdminQueue() {
             )}
           </>
         )}
-      </div>
 
       {reassignTarget && (
         <ReassignModal
@@ -486,6 +469,20 @@ export default function FeedbackRequestAdminQueue() {
           saving={saving}
         />
       )}
+    </div>
+  );
+}
+
+export default function FeedbackRequestAdminQueue() {
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <Link to="/feedback-request" className="inline-flex items-center text-sm text-neutral-600 dark:text-neutral-400 hover:text-emerald-600 mb-6">
+          <ArrowLeft className="w-4 h-4 mr-1" />Back to Feedback Request
+        </Link>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Admin Queue</h1>
+        <AdminQueueContent />
+      </div>
     </div>
   );
 }

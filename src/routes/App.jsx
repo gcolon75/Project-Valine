@@ -55,6 +55,7 @@ const ProfileSetupPage = lazy(() => import("../pages/ProfileSetup"));
 const NotFoundPage = lazy(() => import("../pages/NotFound"));
 const SkeletonTestPage = lazy(() => import("../pages/SkeletonTest"));
 const WaitlistPage = lazy(() => import("../pages/Waitlist"));
+const AdminPanelPage = lazy(() => import("../pages/AdminPanel"));
 
 function Protected({ children }) {
   const { user, isInitialized } = useAuth();
@@ -253,6 +254,14 @@ export default function App() {
             element={
               <Protected>
                 <RequestsPage />
+              </Protected>
+            }
+          />
+          <Route
+            path="admin"
+            element={
+              <Protected>
+                <AdminPanelPage />
               </Protected>
             }
           />

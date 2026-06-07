@@ -1,6 +1,6 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Search, PlusCircle, User, Settings, LogOut, Mail, FileText } from "lucide-react";
+import { Home, Search, PlusCircle, User, Settings, LogOut, Mail, FileText, ShieldCheck } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
@@ -52,6 +52,16 @@ export default function AppLayout() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-1 shrink-0">
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/admin"
+                title="Admin Panel"
+                className="p-2 text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] rounded"
+                aria-label="Admin Panel"
+              >
+                <ShieldCheck className="w-6 h-6" aria-hidden="true" />
+              </NavLink>
+            )}
             <MessageDropdown />
             <NotificationBell />
             <NavLink

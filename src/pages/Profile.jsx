@@ -13,7 +13,7 @@ import EmptyState from '../components/EmptyState';
 import PostCard from '../components/PostCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import NetworkModal from '../components/NetworkModal';
-import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Users, Clock, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings } from 'lucide-react';
+import { Share2, FileText, User, ExternalLink, Globe, Film, UserPlus, UserCheck, Users, Clock, MessageSquare, MapPin, Briefcase, MoreVertical, Shield, AlertTriangle, Settings, ChevronDown } from 'lucide-react';
 import AdminEmailPanel from '../components/AdminEmailPanel';
 import AdminWaitlistPanel from '../components/AdminWaitlistPanel';
 import EmeraldBadge from '../components/EmeraldBadge';
@@ -58,32 +58,15 @@ const EMPTY_PROFILE = {
   profileVisibility: 'public'
 };
 
-const ProfileTab = ({ active, onClick, icon: Icon, label, count }) => (
-  <button
-    onClick={onClick}
-    className={`relative flex items-center gap-2 px-4 py-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] min-h-[44px] whitespace-nowrap ${
-      active ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-700'
-    }`}
-    aria-label={`View ${label}${count !== undefined ? ` (${count})` : ''}`}
-    aria-pressed={active}
-  >
-    <Icon className="w-4 h-4" aria-hidden="true" />
-    {label}
-    {count !== undefined && (
-      <span className="text-neutral-400 text-xs">({count})</span>
-    )}
-    {active && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0CCE6B]" />}
-  </button>
-);
 
 export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'posts';
-  const [activeTab, setActiveTab] = useState(initialTab);
   const [adminSubTab, setAdminSubTab] = useState('allowlist');
+  const [postsExpanded, setPostsExpanded] = useState(true);
+  const [scriptsExpanded, setScriptsExpanded] = useState(true);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -767,248 +750,233 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── Tabs ───────────────────────────────────────────── */}
-      <div className="border-b border-neutral-200 bg-white sticky top-0 z-10">
-        <div className="flex items-center px-4 sm:px-6 overflow-x-auto scrollbar-hide">
-          <ProfileTab active={activeTab === 'posts'} onClick={() => setActiveTab('posts')} icon={FileText} label="Posts" count={displayData._count?.posts || displayData.postsCount} />
-          <ProfileTab active={activeTab === 'scripts'} onClick={() => setActiveTab('scripts')} icon={FileText} label="Scripts" count={posts.filter(p => p.contentType === 'script').length} />
-          <ProfileTab active={activeTab === 'about'} onClick={() => setActiveTab('about')} icon={User} label="About" />
-          {isAdmin && isOwnProfile && (
-            <ProfileTab active={activeTab === 'admin'} onClick={() => setActiveTab('admin')} icon={Settings} label="Admin" />
-          )}
-        </div>
-      </div>
-
-      {/* ── Tab content ────────────────────────────────────── */}
+      {/* ── Content ─────────────────────────────────────────── */}
       <div className="py-6 space-y-4">
 
-        {/* Posts */}
-        {activeTab === 'posts' && (
-          <>
-            {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
-              <EmptyState icon={Shield} title="Content Not Available" description={connectionStatus.isBlocked ? 'You have blocked this user' : 'This user has blocked you'} />
-            ) : loadingPosts ? postLoadingSkeleton
-            : posts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {posts.map(post => (
-                  <PostCard key={post.id} post={transformPost(post)} onDelete={handlePostDelete} onLike={handleLikePost} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={FileText} title="No posts yet" description="Posts shared by this user will appear here" />
-            )}
-          </>
-        )}
+        {/* About — always visible, fully expanded */}
+        <div className="space-y-px">
 
-        {/* Scripts */}
-        {activeTab === 'scripts' && (
-          <>
-            {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
-              <EmptyState icon={Shield} title="Content Not Available" description={connectionStatus.isBlocked ? 'You have blocked this user' : 'This user has blocked you'} />
-            ) : loadingPosts ? postLoadingSkeleton
-            : posts.filter(p => p.contentType === 'script').length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {posts.filter(p => p.contentType === 'script').map(post => (
-                  <PostCard key={post.id} post={transformPost(post)} onDelete={handlePostDelete} onLike={handleLikePost} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={FileText} title="No scripts yet" description="Scripts shared by this user will appear here" />
-            )}
-          </>
-        )}
-
-        {/* About — flat stacked sections, no card wrappers */}
-        {activeTab === 'about' && (
-          <div className="space-y-px">
-
-            {(displayData.title || displayData.bio ||
-              (displayData.pronouns && displayData.showPronouns !== false) ||
-              (displayData.location && displayData.showLocation !== false) ||
-              (displayData.availabilityStatus && displayData.showAvailability !== false)) && (
-              <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Overview</h3>
-                <div className="space-y-3 max-w-2xl">
-                  {displayData.title && (
-                    <p className="text-base font-semibold text-neutral-900 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-neutral-400 shrink-0" />
-                      {displayData.title}
-                    </p>
+          {(displayData.title || displayData.bio ||
+            (displayData.pronouns && displayData.showPronouns !== false) ||
+            (displayData.location && displayData.showLocation !== false) ||
+            (displayData.availabilityStatus && displayData.showAvailability !== false)) && (
+            <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Overview</h3>
+              <div className="space-y-3 max-w-2xl">
+                {displayData.title && (
+                  <p className="text-base font-semibold text-neutral-900 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-neutral-400 shrink-0" />
+                    {displayData.title}
+                  </p>
+                )}
+                {displayData.bio && (
+                  <p className="text-base text-neutral-700 leading-relaxed">{displayData.bio}</p>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-500">
+                  {displayData.pronouns && displayData.showPronouns !== false && (
+                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{displayData.pronouns}</span>
                   )}
-                  {displayData.bio && (
-                    <p className="text-base text-neutral-700 leading-relaxed">{displayData.bio}</p>
+                  {displayData.location && displayData.showLocation !== false && (
+                    <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{displayData.location}</span>
                   )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-500">
-                    {displayData.pronouns && displayData.showPronouns !== false && (
-                      <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{displayData.pronouns}</span>
-                    )}
-                    {displayData.location && displayData.showLocation !== false && (
-                      <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{displayData.location}</span>
-                    )}
-                    {displayData.availabilityStatus && displayData.showAvailability !== false && (
-                      <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 ${
-                        displayData.availabilityStatus === 'available' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                        : displayData.availabilityStatus === 'booking' ? 'bg-blue-50 border border-blue-200 text-blue-700'
-                        : 'bg-neutral-100 text-neutral-500'
-                      }`}>
-                        <Clock className="w-3.5 h-3.5" />
-                        {displayData.availabilityStatus === 'available' ? 'Available'
-                          : displayData.availabilityStatus === 'booking' ? 'Accepting Bookings'
-                          : 'Not Available'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {displayData.credits?.length > 0 && (
-              <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-6">Experience & Credits</h3>
-                <div className="space-y-7">
-                  {displayData.credits.map((credit, index) => (
-                    <div key={credit.id || index} className="relative pl-5 border-l border-neutral-200">
-                      <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#0CCE6B] border-2 border-white" />
-                      <h4 className="font-semibold text-neutral-900 text-base">{credit.title}</h4>
-                      <p className="text-sm text-neutral-500 mt-0.5">
-                        {credit.role}{credit.company ? ` · ${credit.company}` : ''}
-                      </p>
-                      {credit.year && <p className="text-xs text-neutral-400 mt-0.5">{credit.year}</p>}
-                      {credit.description && <p className="text-sm text-neutral-600 mt-2 leading-relaxed">{credit.description}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {displayData.education?.length > 0 && (
-              <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-6">Education</h3>
-                <div className="space-y-7">
-                  {displayData.education.map((edu, index) => (
-                    <div key={edu.id || index} className="relative pl-5 border-l border-neutral-200">
-                      <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#0CCE6B] border-2 border-white" />
-                      <h4 className="font-semibold text-neutral-900 text-base">{edu.institution}</h4>
-                      <p className="text-sm text-neutral-500 mt-0.5">{edu.program}</p>
-                      {(edu.startYear || edu.endYear) && (
-                        <p className="text-xs text-neutral-400 mt-0.5">{edu.startYear || '?'} – {edu.endYear || 'Present'}</p>
-                      )}
-                      {edu.achievements && <p className="text-sm text-neutral-600 mt-2 leading-relaxed">{edu.achievements}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0 || displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
-              <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Skills & Specializations</h3>
-                <div className="space-y-5">
-                  {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0) && (
-                    <div>
-                      <p className="text-xs text-neutral-400 mb-3">Primary Roles</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(displayData.roles || displayData.primaryRoles || []).map((role, index) => (
-                          <span key={`${role}-${index}`} className="px-3 py-1.5 bg-neutral-100 text-sm font-medium text-neutral-700">
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {(displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
-                    <div>
-                      <p className="text-xs text-neutral-400 mb-3">Skills & Genres</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(displayData.tags || displayData.skills || []).map((tag, index) => (
-                          <span key={`${tag}-${index}`} className="px-3 py-1.5 bg-[#0CCE6B]/10 text-[#0CCE6B] text-sm font-medium">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  {displayData.availabilityStatus && displayData.showAvailability !== false && (
+                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 ${
+                      displayData.availabilityStatus === 'available' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                      : displayData.availabilityStatus === 'booking' ? 'bg-blue-50 border border-blue-200 text-blue-700'
+                      : 'bg-neutral-100 text-neutral-500'
+                    }`}>
+                      <Clock className="w-3.5 h-3.5" />
+                      {displayData.availabilityStatus === 'available' ? 'Available'
+                        : displayData.availabilityStatus === 'booking' ? 'Accepting Bookings'
+                        : 'Not Available'}
+                    </span>
                   )}
                 </div>
               </div>
-            )}
-
-            {((displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link)) ||
-              (displayData.socialLinks && (Array.isArray(displayData.socialLinks) ? displayData.socialLinks.length > 0 : Object.values(displayData.socialLinks).some(link => link)))) && (
-              <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Contact & Links</h3>
-                <div className="space-y-1">
-                  {displayData.externalLinks?.website && isValidUrl(displayData.externalLinks.website) && (
-                    <a href={displayData.externalLinks.website} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="Visit website">
-                      <Globe className="w-4 h-4" /> Website
-                    </a>
-                  )}
-                  {displayData.externalLinks?.showreel && isValidUrl(displayData.externalLinks.showreel) && (
-                    <a href={displayData.externalLinks.showreel} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="View showreel">
-                      <Film className="w-4 h-4" /> Showreel
-                    </a>
-                  )}
-                  {displayData.externalLinks?.imdb && isValidUrl(displayData.externalLinks.imdb) && (
-                    <a href={displayData.externalLinks.imdb} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="View IMDb">
-                      <FileText className="w-4 h-4" /> IMDb
-                    </a>
-                  )}
-                  {Array.isArray(displayData.socialLinks) && displayData.socialLinks.map((link, index) => (
-                    link.url && isValidUrl(link.url) && (
-                      <a key={`${link.url}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors"
-                        aria-label={`Visit ${link.label || 'link'}`}>
-                        <ExternalLink className="w-4 h-4" />
-                        {link.label || link.url}
-                      </a>
-                    )
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!displayData.title && !displayData.bio &&
-             !displayData.credits?.length &&
-             !displayData.education?.length &&
-             !displayData.roles?.length && !displayData.primaryRoles?.length &&
-             !displayData.tags?.length && !displayData.skills?.length &&
-             !displayData.externalLinks && (
-              <div className="bg-white px-6 py-12 text-center">
-                <p className="text-neutral-400 text-sm italic">No profile information available yet</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Admin */}
-        {activeTab === 'admin' && isAdmin && isOwnProfile && (
-          <div className="bg-white border border-neutral-100 px-6 py-6">
-            <div className="flex gap-4 mb-6 border-b border-neutral-200">
-              <button
-                onClick={() => setAdminSubTab('allowlist')}
-                className={`relative pb-3 text-sm font-medium transition-colors ${
-                  adminSubTab === 'allowlist' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-700'
-                }`}
-              >
-                Allowlist
-                {adminSubTab === 'allowlist' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0CCE6B]" />}
-              </button>
-              <button
-                onClick={() => setAdminSubTab('waitlist')}
-                className={`relative pb-3 text-sm font-medium transition-colors ${
-                  adminSubTab === 'waitlist' ? 'text-neutral-900' : 'text-neutral-400 hover:text-neutral-700'
-                }`}
-              >
-                Preapproved
-                {adminSubTab === 'waitlist' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0CCE6B]" />}
-              </button>
             </div>
-            {adminSubTab === 'allowlist' && <AdminEmailPanel />}
-            {adminSubTab === 'waitlist' && <AdminWaitlistPanel />}
-          </div>
-        )}
+          )}
+
+          {displayData.credits?.length > 0 && (
+            <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-6">Experience & Credits</h3>
+              <div className="space-y-7">
+                {displayData.credits.map((credit, index) => (
+                  <div key={credit.id || index} className="relative pl-5 border-l border-neutral-200">
+                    <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#0CCE6B] border-2 border-white" />
+                    <h4 className="font-semibold text-neutral-900 text-base">{credit.title}</h4>
+                    <p className="text-sm text-neutral-500 mt-0.5">
+                      {credit.role}{credit.company ? ` · ${credit.company}` : ''}
+                    </p>
+                    {credit.year && <p className="text-xs text-neutral-400 mt-0.5">{credit.year}</p>}
+                    {credit.description && <p className="text-sm text-neutral-600 mt-2 leading-relaxed">{credit.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {displayData.education?.length > 0 && (
+            <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-6">Education</h3>
+              <div className="space-y-7">
+                {displayData.education.map((edu, index) => (
+                  <div key={edu.id || index} className="relative pl-5 border-l border-neutral-200">
+                    <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#0CCE6B] border-2 border-white" />
+                    <h4 className="font-semibold text-neutral-900 text-base">{edu.institution}</h4>
+                    <p className="text-sm text-neutral-500 mt-0.5">{edu.program}</p>
+                    {(edu.startYear || edu.endYear) && (
+                      <p className="text-xs text-neutral-400 mt-0.5">{edu.startYear || '?'} – {edu.endYear || 'Present'}</p>
+                    )}
+                    {edu.achievements && <p className="text-sm text-neutral-600 mt-2 leading-relaxed">{edu.achievements}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0 || displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+            <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Skills & Specializations</h3>
+              <div className="space-y-5">
+                {(displayData.roles?.length > 0 || displayData.primaryRoles?.length > 0) && (
+                  <div>
+                    <p className="text-xs text-neutral-400 mb-3">Primary Roles</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(displayData.roles || displayData.primaryRoles || []).map((role, index) => (
+                        <span key={`${role}-${index}`} className="px-3 py-1.5 bg-neutral-100 text-sm font-medium text-neutral-700">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(displayData.tags?.length > 0 || displayData.skills?.length > 0) && (
+                  <div>
+                    <p className="text-xs text-neutral-400 mb-3">Skills & Genres</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(displayData.tags || displayData.skills || []).map((tag, index) => (
+                        <span key={`${tag}-${index}`} className="px-3 py-1.5 bg-[#0CCE6B]/10 text-[#0CCE6B] text-sm font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {((displayData.externalLinks && Object.values(displayData.externalLinks).some(link => link)) ||
+            (displayData.socialLinks && (Array.isArray(displayData.socialLinks) ? displayData.socialLinks.length > 0 : Object.values(displayData.socialLinks).some(link => link)))) && (
+            <div className="bg-white px-6 sm:px-8 py-7 border-b border-neutral-100">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-5">Contact & Links</h3>
+              <div className="space-y-1">
+                {displayData.externalLinks?.website && isValidUrl(displayData.externalLinks.website) && (
+                  <a href={displayData.externalLinks.website} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="Visit website">
+                    <Globe className="w-4 h-4" /> Website
+                  </a>
+                )}
+                {displayData.externalLinks?.showreel && isValidUrl(displayData.externalLinks.showreel) && (
+                  <a href={displayData.externalLinks.showreel} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="View showreel">
+                    <Film className="w-4 h-4" /> Showreel
+                  </a>
+                )}
+                {displayData.externalLinks?.imdb && isValidUrl(displayData.externalLinks.imdb) && (
+                  <a href={displayData.externalLinks.imdb} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors" aria-label="View IMDb">
+                    <FileText className="w-4 h-4" /> IMDb
+                  </a>
+                )}
+                {Array.isArray(displayData.socialLinks) && displayData.socialLinks.map((link, index) => (
+                  link.url && isValidUrl(link.url) && (
+                    <a key={`${link.url}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-sm text-neutral-700 hover:text-[#0CCE6B] py-2 transition-colors"
+                      aria-label={`Visit ${link.label || 'link'}`}>
+                      <ExternalLink className="w-4 h-4" />
+                      {link.label || link.url}
+                    </a>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!displayData.title && !displayData.bio &&
+           !displayData.credits?.length &&
+           !displayData.education?.length &&
+           !displayData.roles?.length && !displayData.primaryRoles?.length &&
+           !displayData.tags?.length && !displayData.skills?.length &&
+           !displayData.externalLinks && (
+            <div className="bg-white px-6 py-12 text-center">
+              <p className="text-neutral-400 text-sm italic">No profile information available yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Posts — collapsible */}
+        <div className="bg-white border border-neutral-200">
+          <button
+            onClick={() => setPostsExpanded(v => !v)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-neutral-400" />
+              <span className="text-sm font-semibold text-neutral-900">Posts</span>
+              <span className="text-xs text-neutral-400">({posts.length || displayData._count?.posts || displayData.postsCount || 0})</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${postsExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {postsExpanded && (
+            <div className="px-6 pb-6 border-t border-neutral-100 pt-5">
+              {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
+                <EmptyState icon={Shield} title="Content Not Available" description={connectionStatus.isBlocked ? 'You have blocked this user' : 'This user has blocked you'} />
+              ) : loadingPosts ? postLoadingSkeleton
+              : posts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {posts.map(post => (
+                    <PostCard key={post.id} post={transformPost(post)} onDelete={handlePostDelete} onLike={handleLikePost} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={FileText} title="No posts yet" description="Posts shared by this user will appear here" />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Scripts — collapsible */}
+        <div className="bg-white border border-neutral-200">
+          <button
+            onClick={() => setScriptsExpanded(v => !v)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-neutral-400" />
+              <span className="text-sm font-semibold text-neutral-900">Scripts</span>
+              <span className="text-xs text-neutral-400">({posts.filter(p => p.contentType === 'script').length})</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${scriptsExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {scriptsExpanded && (
+            <div className="px-6 pb-6 border-t border-neutral-100 pt-5">
+              {(connectionStatus.isBlocked || connectionStatus.isBlockedBy) && !isOwnProfile ? (
+                <EmptyState icon={Shield} title="Content Not Available" description={connectionStatus.isBlocked ? 'You have blocked this user' : 'This user has blocked you'} />
+              ) : loadingPosts ? postLoadingSkeleton
+              : posts.filter(p => p.contentType === 'script').length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {posts.filter(p => p.contentType === 'script').map(post => (
+                    <PostCard key={post.id} post={transformPost(post)} onDelete={handlePostDelete} onLike={handleLikePost} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={FileText} title="No scripts yet" description="Scripts shared by this user will appear here" />
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Modals */}
