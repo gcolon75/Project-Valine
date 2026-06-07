@@ -333,7 +333,7 @@ export default function FeedbackRequestHub() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                to="/admin"
+                to="/admin?tab=reviewqueue"
                 className="inline-flex items-center gap-2 text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 transition-colors"
               >
                 <AlertCircle className="w-4 h-4" />
