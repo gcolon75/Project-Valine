@@ -345,7 +345,7 @@ export default function Dashboard() {
           <div className="bg-white border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 flex items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Ready to share your work?</h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Create scripts, auditions, readings, and reels</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Create scripts, films, headshots and casting calls</p>
             </div>
             <Link
               to="/post"

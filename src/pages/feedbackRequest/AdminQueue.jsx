@@ -36,7 +36,7 @@ function statusBadge(status) {
     denied:            'Denied',
   };
   return (
-    <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${styles[status] || 'bg-neutral-100 text-neutral-600'}`}>
+    <span className={`inline-block text-xs font-medium px-2 py-1 ${styles[status] || 'bg-neutral-100 text-neutral-600'}`}>
       {labels[status] || status}
     </span>
   );
@@ -57,7 +57,7 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
+      <div className="bg-white dark:bg-neutral-800 shadow-xl w-full max-w-md flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-6 pb-4">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Reassign Reader</h2>
@@ -75,7 +75,7 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search readers…"
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:border-[#0CCE6B] mb-3"
           />
         </div>
 
@@ -84,10 +84,10 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
           {/* Unassign option */}
           <button
             onClick={() => setSelected('')}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${
+            className={`w-full flex items-center gap-3 p-3 border-2 transition text-left ${
               selected === ''
-                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                ? 'border-[#0CCE6B] bg-[#0CCE6B]/5'
+                : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400'
             }`}
           >
             <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center flex-shrink-0">
@@ -107,10 +107,10 @@ function ReassignModal({ request, readers, onConfirm, onClose, saving }) {
             <button
               key={r.id}
               onClick={() => setSelected(r.id)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition text-left ${
+              className={`w-full flex items-center gap-3 p-3 border-2 transition text-left ${
                 selected === r.id
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                  : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  ? 'border-[#0CCE6B] bg-[#0CCE6B]/5'
+                  : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400'
               }`}
             >
               <UserAvatar
@@ -151,7 +151,7 @@ function RevisionModal({ request, onConfirm, onClose, saving }) {
   const [note, setNote] = useState('');
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-neutral-800 shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Request Revision</h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-5 h-5" /></button>
@@ -168,7 +168,7 @@ function RevisionModal({ request, onConfirm, onClose, saving }) {
             onChange={(e) => setNote(e.target.value)}
             rows={4}
             placeholder="Tell the reader what needs to be improved or added…"
-            className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-lg text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+            className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-amber-500 resize-none"
           />
         </div>
         <div className="flex gap-3 justify-end">
@@ -295,7 +295,7 @@ export function AdminQueueContent() {
             >
               {label}
               {count > 0 && (
-                <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${color}`}>{count}</span>
+                <span className={`ml-2 text-xs px-1.5 py-0.5 ${color}`}>{count}</span>
               )}
             </button>
           ))}
@@ -315,7 +315,7 @@ export function AdminQueueContent() {
               <div className="space-y-3">
                 {pendingItems.map((req) => (
                   <Link key={req.id} to={`/feedback-request/${req.id}`}
-                    className="block bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 hover:border-amber-500 transition"
+                    className="block bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-4 hover:border-amber-500 transition"
                   >
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
@@ -345,7 +345,7 @@ export function AdminQueueContent() {
             ) : (
               <div className="space-y-3">
                 {submittedItems.map((req) => (
-                  <div key={req.id} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4">
+                  <div key={req.id} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                       <div className="min-w-0 flex-1">
                         <Link to={`/feedback-request/${req.id}`}
@@ -361,7 +361,7 @@ export function AdminQueueContent() {
                         {statusBadge(req.status)}
                         <Link
                           to={`/feedback-request/${req.id}/read`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 text-xs font-medium transition"
                         >
                           View PDF
                         </Link>
@@ -369,7 +369,7 @@ export function AdminQueueContent() {
                     </div>
 
                     {req.summaryNotes && (
-                      <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 mb-3 text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed">
+                      <div className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-3 mb-3 text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed">
                         {req.summaryNotes}
                       </div>
                     )}
@@ -378,7 +378,7 @@ export function AdminQueueContent() {
                       <button
                         onClick={() => handleApproveSubmission(req)}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-medium transition"
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         Approve
@@ -386,7 +386,7 @@ export function AdminQueueContent() {
                       <button
                         onClick={() => setRevisionTarget(req)}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-700 border border-amber-300 text-sm font-medium rounded-lg transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-700 border border-amber-300 text-sm font-medium transition"
                       >
                         <AlertTriangle className="w-4 h-4" />
                         Request Revision
@@ -394,7 +394,7 @@ export function AdminQueueContent() {
                       <button
                         onClick={() => setReassignTarget(req)}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 text-sm font-medium rounded-lg transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-700 text-sm font-medium transition"
                       >
                         <RefreshCw className="w-4 h-4" />
                         Reassign Reader
@@ -418,7 +418,7 @@ export function AdminQueueContent() {
             ) : (
               <div className="space-y-3">
                 {assignedItems.map((req) => (
-                  <div key={req.id} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4">
+                  <div key={req.id} className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0 flex-1">
                         <Link to={`/feedback-request/${req.id}`}
@@ -489,7 +489,7 @@ export default function FeedbackRequestAdminQueue() {
 
 function Empty({ text }) {
   return (
-    <div className="text-center py-12 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl">
+    <div className="text-center py-12 border border-dashed border-neutral-300 dark:border-neutral-700">
       <p className="text-neutral-600 dark:text-neutral-400">{text}</p>
     </div>
   );

@@ -36,9 +36,9 @@ function ScriptCard({ req, to, children }) {
   return (
     <Link
       to={to}
-      className="flex overflow-hidden bg-white border border-neutral-100 hover:border-neutral-300 transition-colors"
+      className="flex overflow-hidden bg-white border border-neutral-200 hover:border-neutral-400 transition-colors"
     >
-      <div className={`w-1.5 shrink-0 ${m.bar}`} />
+      <div className={`w-2 shrink-0 ${m.bar}`} />
       <div className="flex-1 px-6 py-5">{children(m)}</div>
     </Link>
   );
@@ -178,9 +178,9 @@ function ReaderTab({ pendingPayoutDollars, hasPendingPayout }) {
               <Link
                 key={req.id}
                 to={`/feedback-request/${req.id}`}
-                className="flex overflow-hidden bg-white border border-neutral-100 hover:border-neutral-300 transition-colors"
+                className="flex overflow-hidden bg-white border border-neutral-200 hover:border-neutral-400 transition-colors"
               >
-                <div className="w-1.5 shrink-0 bg-indigo-500" />
+                <div className="w-2 shrink-0 bg-indigo-500" />
                 <div className="flex-1 px-6 py-5 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <h4 className="font-semibold text-neutral-900 text-base truncate">{req.title}</h4>
@@ -239,9 +239,9 @@ function ReaderTab({ pendingPayoutDollars, hasPendingPayout }) {
               <Link
                 key={req.id}
                 to={`/feedback-request/${req.id}`}
-                className="flex overflow-hidden bg-white border border-neutral-100 hover:border-neutral-300 transition-colors"
+                className="flex overflow-hidden bg-white border border-neutral-200 hover:border-neutral-400 transition-colors"
               >
-                <div className="w-1.5 shrink-0 bg-blue-400" />
+                <div className="w-2 shrink-0 bg-blue-400" />
                 <div className="flex-1 px-6 py-5 flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
@@ -276,9 +276,9 @@ function ReaderTab({ pendingPayoutDollars, hasPendingPayout }) {
               <Link
                 key={req.id}
                 to={`/feedback-request/${req.id}`}
-                className="flex overflow-hidden bg-white border border-neutral-100 hover:border-neutral-200 transition-colors"
+                className="flex overflow-hidden bg-white border border-neutral-200 hover:border-neutral-400 transition-colors"
               >
-                <div className="w-1.5 shrink-0 bg-[#0CCE6B]" />
+                <div className="w-2 shrink-0 bg-[#0CCE6B]" />
                 <div className="flex-1 px-6 py-5 flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-base font-medium text-neutral-700 truncate">{req.title}</p>
