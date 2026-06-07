@@ -690,8 +690,15 @@ export default function Post() {
                   value={option.value}
                   checked={formData.visibility === option.value}
                   onChange={(e) => handleChange('visibility', e.target.value)}
-                  className="mt-1 mr-3 accent-[#0CCE6B]"
+                  className="sr-only"
                 />
+                <div className={`mt-0.5 mr-3 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  formData.visibility === option.value ? 'border-emerald-400' : 'border-neutral-300'
+                }`}>
+                  {formData.visibility === option.value && (
+                    <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  )}
+                </div>
                 <div>
                   <div className="text-sm font-medium text-neutral-900">{option.label}</div>
                   <div className="text-sm text-neutral-500">{option.description}</div>

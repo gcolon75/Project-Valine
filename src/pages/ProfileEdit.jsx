@@ -959,6 +959,9 @@ export default function ProfileEdit() {
                                         // Clearing Other - remove custom role
                                         handleChange('customRole', '');
                                         handleChange('primaryRoles', formData.primaryRoles.filter(r => !r.startsWith('Other:')));
+                                      } else {
+                                        // Checking Other - add placeholder so text input appears
+                                        handleChange('primaryRoles', [...formData.primaryRoles, 'Other:']);
                                       }
                                     } else if (e.target.checked) {
                                       handleChange('primaryRoles', [...formData.primaryRoles, role]);
