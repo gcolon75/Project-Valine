@@ -1,6 +1,5 @@
 // src/components/MentionTextarea.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getMyFollowers, getMyFollowing } from "../services/connectionService";
 import { searchUsers } from "../services/search";
 
 export default function MentionTextarea({ value, onChange, placeholder, rows = 3, className = "" }) {
@@ -8,52 +7,11 @@ export default function MentionTextarea({ value, onChange, placeholder, rows = 3
   const dropdownRef = useRef(null);
   const debounceTimer = useRef(null);
 
-  const [followNetworkIds, setFollowNetworkIds] = useState(new Set());
-  const [followNetworkUsers, setFollowNetworkUsers] = useState([]);
-
   const [showDropdown, setShowDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStart, setMentionStart] = useState(-1);
   const [suggestions, setSuggestions] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  // Load follow network on mount
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [followersData, followingData] = await Promise.allSettled([
-          getMyFollowers(),
-          getMyFollowing(),
-        ]);
-        if (cancelled) return;
-
-        const users = [];
-        const ids = new Set();
-
-        const addItems = (result) => {
-          if (result.status === "fulfilled") {
-            const items = result.value?.items || [];
-            for (const u of items) {
-              if (u?.id && !ids.has(u.id)) {
-                ids.add(u.id);
-                users.push(u);
-              }
-            }
-          }
-        };
-        addItems(followersData);
-        addItems(followingData);
-
-        setFollowNetworkIds(ids);
-        setFollowNetworkUsers(users);
-      } catch {
-        // non-critical - mention still works without network prioritization
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, []);
 
   // Detect @mention at cursor
   const detectMention = useCallback((text, cursorPos) => {
@@ -73,28 +31,19 @@ export default function MentionTextarea({ value, onChange, placeholder, rows = 3
     clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(async () => {
       if (query.length === 0) {
-        // Show top 8 from follow network
-        const top = followNetworkUsers.slice(0, 8);
-        setSuggestions(top);
+        setSuggestions([]);
         setActiveIndex(0);
         return;
       }
       try {
         const result = await searchUsers({ query, limit: 8 });
-        const items = result?.items || [];
-        // Sort: follow network users float to top
-        const sorted = [...items].sort((a, b) => {
-          const aInNetwork = followNetworkIds.has(a.id) ? 0 : 1;
-          const bInNetwork = followNetworkIds.has(b.id) ? 0 : 1;
-          return aInNetwork - bInNetwork;
-        });
-        setSuggestions(sorted);
+        setSuggestions(result?.items || []);
         setActiveIndex(0);
       } catch {
         setSuggestions([]);
       }
     }, 200);
-  }, [followNetworkIds, followNetworkUsers]);
+  }, []);
 
   const handleChange = (e) => {
     const newValue = e.target.value;

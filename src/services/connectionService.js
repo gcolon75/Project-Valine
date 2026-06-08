@@ -79,19 +79,3 @@ export const getMyBlocks = async () => {
   return data;
 };
 
-// ─── Deprecated — kept so old imports don't crash at runtime ─────────────────
-
-/** @deprecated Use sendNetworkRequest */
-export const followProfile = (profileId) => sendNetworkRequest(profileId);
-
-/** @deprecated Use cancelNetworkRequest */
-export const unfollowProfile = (profileId) => cancelNetworkRequest(profileId);
-
-/** @deprecated Use getProfileNetwork */
-export const getProfileFollowers = (profileId) => getProfileNetwork(profileId);
-
-/** @deprecated Use getProfileNetwork */
-export const getProfileFollowing = (profileId) => getProfileNetwork(profileId);
-
-export const getMyFollowers = () => apiClient.get('/me/followers').then(r => r.data);
-export const getMyFollowing = () => apiClient.get('/me/following').then(r => r.data);

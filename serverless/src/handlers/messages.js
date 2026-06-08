@@ -270,19 +270,20 @@ export const createThread = async (event) => {
         return error(403, 'This user has disabled direct messages');
       }
 
-      // FOLLOWERS_ONLY: Check if requester follows recipient
+      // FOLLOWERS_ONLY (treated as NETWORK_ONLY): Check if requester is connected
       if (recipientProfile.messagePermission === 'FOLLOWERS_ONLY') {
-        const isFollowing = await prisma.follow.findUnique({
+        const isConnected = await prisma.connectionRequest.findFirst({
           where: {
-            followerId_followingId: {
-              followerId: userId,
-              followingId: recipientUserId
-            }
+            status: 'accepted',
+            OR: [
+              { senderId: userId, receiverId: recipientUserId },
+              { senderId: recipientUserId, receiverId: userId }
+            ]
           }
         });
 
-        if (!isFollowing) {
-          return error(403, 'You must follow this user to send them messages');
+        if (!isConnected) {
+          return error(403, 'You must be connected with this user to send them messages');
         }
       }
 

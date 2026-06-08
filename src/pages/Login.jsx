@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Alert from '../components/ui/Alert';
@@ -76,13 +76,17 @@ const Login = () => {
 
         {/* Beta notice */}
         <div className="bg-[#0CCE6B]/10 border border-[#0CCE6B]/20 px-5 py-4 mb-6 text-center">
-          <ShieldAlert className="w-5 h-5 text-[#0CCE6B] mx-auto mb-2" />
-          <p className="text-neutral-800 text-sm font-medium leading-snug">
+          <Clock className="w-5 h-5 text-[#0CCE6B] mx-auto mb-2" />
+          <p className="text-neutral-800 text-sm font-medium leading-snug mb-3">
             Only admin and approved beta users can log in until Q2 2026.
           </p>
-          <a href="mailto:support@joint-networking.com" className="text-[#0CCE6B] text-sm font-semibold hover:underline mt-1 inline-block">
-            Need access?
-          </a>
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white px-5 py-2 text-sm font-semibold transition-all shadow-md"
+          >
+            Get Preapproved
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Form card */}

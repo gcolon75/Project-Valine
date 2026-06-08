@@ -230,15 +230,15 @@ export const getProfileByVanity = async (event) => {
     // Phase 2: Apply profile visibility enforcement
     const isOwner = viewerId === profile.userId;
     
-    // Check if profile is FOLLOWERS_ONLY and viewer is not a follower
+    // Check if profile is FOLLOWERS_ONLY and viewer is not connected
     if (!isOwner && profile.visibility === 'FOLLOWERS_ONLY' && viewerId) {
-      // Check if viewer follows this profile
-      const isFollower = await prisma.follow.findUnique({
+      const isFollower = await prisma.connectionRequest.findFirst({
         where: {
-          followerId_followingId: {
-            followerId: viewerId,
-            followingId: profile.userId
-          }
+          status: 'accepted',
+          OR: [
+            { senderId: viewerId, receiverId: profile.userId },
+            { senderId: profile.userId, receiverId: viewerId }
+          ]
         }
       });
 
@@ -383,22 +383,11 @@ export const getProfileById = async (event) => {
       return error('Forbidden - not profile owner', 403);
     }
 
-    // Get follower/following counts
-    const [followersCount, followingCount] = await Promise.all([
-      prisma.connectionRequest.count({
-        where: { receiverId: profile.userId, status: 'accepted' }
-      }),
-      prisma.connectionRequest.count({
-        where: { senderId: profile.userId, status: 'accepted' }
-      })
-    ]);
-
     // Add stats to response
     const responseProfile = {
       ...profile,
       stats: {
-        followers: followersCount,
-        following: followingCount
+        networkCount: profile.networkCount || 0
       }
     };
 
@@ -1464,10 +1453,7 @@ export const getMyProfile = async (event) => {
       }
     }
 
-    // Get follower/following counts from the Profile model (updated by Follow system)
-    // Fallback to 0 if profile doesn't exist yet
-    const followersCount = profile?.followersCount || 0;
-    const followingCount = profile?.followingCount || 0;
+    const networkCount = profile?.networkCount || 0;
 
     // Construct response with graceful fallbacks
     // Use socialLinks from profile for links (maps frontend 'links' field)
@@ -1500,13 +1486,9 @@ export const getMyProfile = async (event) => {
       education: education,
       credits: credits,
       gallery: gallery,
-      // Follower/following counts (top-level for easy access)
-      followersCount: followersCount,
-      followingCount: followingCount,
-      // Stats (legacy format, kept for backward compatibility)
+      networkCount,
       stats: {
-        followers: followersCount,
-        following: followingCount,
+        networkCount,
       },
       // Status fields
       onboardingComplete: user.onboardingComplete || false,

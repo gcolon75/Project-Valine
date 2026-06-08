@@ -178,7 +178,7 @@ export default function Dashboard() {
               </div>
               <p className="text-base text-neutral-500 dark:text-neutral-400">
                 <span className="font-semibold text-neutral-900 dark:text-white">
-                  {profileData?.stats?.networkCount ?? profileData?.stats?.followers ?? 0}
+                  {profileData?.stats?.networkCount ?? profileData?.networkCount ?? 0}
                 </span>{' '}connections
               </p>
             </Link>

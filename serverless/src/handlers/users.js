@@ -58,8 +58,7 @@ export const getUser = async (event) => {
         profile: {
           select: {
             id: true,
-            followersCount: true,
-            followingCount: true,
+            networkCount: true,
             socialLinks: true,
             links: { orderBy: { position: 'asc' }, select: { id: true, label: true, url: true, type: true } },
           },

@@ -74,8 +74,6 @@ model User {
   settings                UserSettings?
   accessRequests          AccessRequest[]           @relation("AccessRequests")
   accessGrants            AccessGrant[]             @relation("AccessGrants")
-  followers               Follow[]                  @relation("Following")
-  following               Follow[]                  @relation("Follower")
   blocking                Block[]                   @relation("Blocker")
   blockedBy               Block[]                   @relation("Blocked")
   threadsAsA              MessageThread[]           @relation("ThreadUserA")
@@ -444,10 +442,6 @@ model Profile {
   notifyOnFollow    Boolean @default(true)
   notifyOnMessage   Boolean @default(true)
   notifyOnPostShare Boolean @default(true)
-
-  // Follower counts (denormalized for performance)
-  followersCount Int @default(0)
-  followingCount Int @default(0)
 
   // Network connections count (mutual connections)
   networkCount Int @default(0)
@@ -830,23 +824,8 @@ model AccessGrant {
 }
 
 // ========================================
-// Social Graph (Follow/Block)
+// Social Graph (Block)
 // ========================================
-
-model Follow {
-  id          String   @id @default(uuid())
-  followerId  String
-  followingId String
-  createdAt   DateTime @default(now())
-
-  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-  @@index([followerId])
-  @@index([followingId])
-  @@map("follows")
-}
 
 model Block {
   id        String   @id @default(uuid())
