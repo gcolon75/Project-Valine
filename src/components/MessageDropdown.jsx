@@ -47,16 +47,13 @@ export default function MessageDropdown() {
 
   const getThreadName = (thread) => {
     if (thread.isGroup) return thread.name || 'Group Chat';
-    const other = thread.participants?.find(p => p.userId !== user?.id)?.user
-      || (thread.userA?.id !== user?.id ? thread.userA : thread.userB);
+    const other = thread.otherUser;
     return other?.displayName || other?.username || 'Unknown';
   };
 
   const getThreadAvatar = (thread) => {
     if (thread.isGroup) return null;
-    const other = thread.participants?.find(p => p.userId !== user?.id)?.user
-      || (thread.userA?.id !== user?.id ? thread.userA : thread.userB);
-    return other?.avatar || null;
+    return thread.otherUser?.avatar || null;
   };
 
   const getLastMessage = (thread) => {
