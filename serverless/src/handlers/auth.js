@@ -772,6 +772,7 @@ async function me(event) {
         headline: profile?.headline || null,
         // bio exists on both User and Profile tables; Profile takes precedence
         bio: profile?.bio || user.bio || null,
+        bannerUrl: profile?.bannerUrl || null,
         roles: profile?.roles || [],
         tags: profile?.tags || [],
         onboardingComplete: user.onboardingComplete || false,
