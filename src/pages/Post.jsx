@@ -340,6 +340,15 @@ export default function Post() {
       const tagValidation = validateTags(formData.tags);
       if (!tagValidation.valid) newErrors.tags = tagValidation.errors[0];
     }
+    if (formData.contentType) {
+      const hasFile = uploadedMediaId || uploadedAudioUrl;
+      const hasVideo = !!videoEmbedUrl;
+      if (formData.contentType === 'reel' ? (!hasFile && !hasVideo) : !hasFile) {
+        newErrors.file = formData.contentType === 'reel'
+          ? 'Please upload a file or paste a video link'
+          : 'Please upload a file';
+      }
+    }
     setErrors(newErrors);
     return newErrors;
   };
@@ -422,7 +431,8 @@ export default function Post() {
     }
   };
 
-  const isFormValid = formData.contentType && formData.title.trim() && formData.tags.length > 0;
+  const hasMedia = !!(uploadedMediaId || uploadedAudioUrl || videoEmbedUrl);
+  const isFormValid = formData.contentType && formData.title.trim() && formData.tags.length > 0 && hasMedia;
 
   if (!isInitialized) {
     return (
@@ -540,7 +550,7 @@ export default function Post() {
         {formData.contentType && (
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">
-              Attach File
+              Attach File <span className="text-red-500">*</span>
             </label>
             <p className="text-sm text-neutral-500 mb-3">
               Upload your {CONTENT_TYPES.find(t => t.value === formData.contentType)?.label.toLowerCase()} file
@@ -697,6 +707,9 @@ export default function Post() {
               <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{uploadError}</p>
               </div>
+            )}
+            {errors.file && (
+              <p className="mt-2 text-sm text-red-600" role="alert">{errors.file}</p>
             )}
           </div>
         )}
@@ -900,7 +913,7 @@ export default function Post() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || uploadingThumbnail}
+            disabled={isSubmitting || uploadingThumbnail || !isFormValid}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:opacity-90 text-white rounded-lg font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity text-sm"
           >
             {isSubmitting ? (
