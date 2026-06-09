@@ -300,7 +300,7 @@ export default function PostComposer() {
         <div className="flex gap-2">
           {[
             { value: "PUBLIC", label: "Public", description: "Anyone can view" },
-            { value: "FOLLOWERS", label: "Followers Only", description: "Only your followers can view" }
+            { value: "FOLLOWERS", label: "Network Only", description: "Only your network can view" }
           ].map((option) => (
             <button
               key={option.value}

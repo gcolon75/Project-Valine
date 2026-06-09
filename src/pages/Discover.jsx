@@ -3,7 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
 import { Search, UserPlus, Loader2, Lock, X, ChevronDown, Users } from "lucide-react";
-import { sendNetworkRequest, cancelNetworkRequest, getDiscoverSuggestions } from "../services/connectionService";
+import { sendNetworkRequest, cancelNetworkRequest, getDiscoverSuggestions, getProfileNetwork } from "../services/connectionService";
+import { useAuth } from "../context/AuthContext";
 import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
@@ -16,7 +17,7 @@ function mutualText(mutualCount, mutualFirst) {
   return `${name} and ${others} other mutual network${others > 1 ? 's' : ''}`;
 }
 
-function SuggestionCard({ user, followingIds, onConnect, onDismiss, navigate }) {
+function SuggestionCard({ user, followingIds, connectedIds, onConnect, onDismiss, navigate }) {
   const mutual = mutualText(user.mutualCount, user.mutualFirst);
   return (
     <div className="bg-white border border-neutral-200 overflow-hidden flex flex-col relative group">
@@ -72,17 +73,23 @@ function SuggestionCard({ user, followingIds, onConnect, onDismiss, navigate }) 
 
       {/* Network button */}
       <div className="px-3 pt-3 pb-4 flex justify-center">
-        <button
-          onClick={(e) => onConnect(user, e)}
-          disabled={followingIds.has(user.id)}
-          className={`px-8 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
-            followingIds.has(user.id)
-              ? 'bg-neutral-100 text-neutral-400 cursor-default'
-              : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white'
-          }`}
-        >
-          {followingIds.has(user.id) ? 'Pending' : <><UserPlus className="w-3.5 h-3.5" /> Network</>}
-        </button>
+        {connectedIds?.has(user.id) ? (
+          <span className="px-8 py-2.5 text-sm font-semibold bg-[#0CCE6B]/10 text-[#0CCE6B] flex items-center justify-center gap-1.5">
+            In Network
+          </span>
+        ) : (
+          <button
+            onClick={(e) => onConnect(user, e)}
+            disabled={followingIds.has(user.id)}
+            className={`px-8 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              followingIds.has(user.id)
+                ? 'bg-neutral-100 text-neutral-400 cursor-default'
+                : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white'
+            }`}
+          >
+            {followingIds.has(user.id) ? 'Pending' : <><UserPlus className="w-3.5 h-3.5" /> Network</>}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -90,6 +97,7 @@ function SuggestionCard({ user, followingIds, onConnect, onDismiss, navigate }) 
 
 export default function Discover() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [discoverPosts, setDiscoverPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [q, setQ] = useState("");
@@ -97,6 +105,7 @@ export default function Discover() {
   const [userResults, setUserResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [followingIds, setFollowingIds] = useState(new Set());
+  const [connectedIds, setConnectedIds] = useState(new Set());
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
   const [dismissedIds, setDismissedIds] = useState(new Set());
@@ -106,6 +115,15 @@ export default function Discover() {
     if (searchType === 'users') setShowAllSuggestions(true);
     else setShowAllSuggestions(false);
   }, [searchType]);
+
+  // Pre-populate connected IDs so search results show correct state
+  useEffect(() => {
+    if (!user?.profile?.id && !user?.id) return;
+    const profileId = user.profile?.vanityUrl || user.profile?.id || user.id;
+    getProfileNetwork(profileId)
+      .then(res => setConnectedIds(new Set((res.items || []).map(u => u.userId))))
+      .catch(() => {});
+  }, [user]);
 
   // Fetch all public posts for discover (no following required)
   useEffect(() => {
@@ -361,7 +379,7 @@ export default function Discover() {
               return (
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {shown.map((user) => <SuggestionCard key={user.id} user={user} followingIds={followingIds} onConnect={handleFollow} onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))} navigate={navigate} />)}
+                    {shown.map((user) => <SuggestionCard key={user.id} user={user} followingIds={followingIds} connectedIds={connectedIds} onConnect={handleFollow} onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))} navigate={navigate} />)}
                   </div>
                   {visible.length > 4 && (
                     <button
@@ -392,7 +410,7 @@ export default function Discover() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {displayUsers.map((user) => (
-                  <SuggestionCard key={user.id} user={user} followingIds={followingIds} onConnect={handleFollow} navigate={navigate} />
+                  <SuggestionCard key={user.id} user={user} followingIds={followingIds} connectedIds={connectedIds} onConnect={handleFollow} navigate={navigate} />
                 ))}
               </div>
             )}

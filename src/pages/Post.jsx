@@ -26,7 +26,7 @@ const CONTENT_TYPES = [
 
 const VISIBILITY_OPTIONS = [
   { value: 'PUBLIC',          label: 'Public',         description: 'Anyone can view' },
-  { value: 'FOLLOWERS_ONLY',  label: 'Followers Only', description: 'Only your followers can view' },
+  { value: 'FOLLOWERS_ONLY',  label: 'Network Only', description: 'Only your network can view' },
 ];
 
 // Accepted file types per content type

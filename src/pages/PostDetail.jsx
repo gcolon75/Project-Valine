@@ -438,7 +438,7 @@ export default function PostDetail() {
                   <span className="text-neutral-300">·</span>
                   <span className="inline-flex items-center gap-1 text-neutral-500 text-xs">
                     <EyeOff className="w-3 h-3" />
-                    Followers Only
+                    Network Only
                   </span>
                 </>
               )}
