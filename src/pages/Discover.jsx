@@ -247,6 +247,8 @@ export default function Discover() {
           bannerUrl: user.profile?.bannerUrl || null,
           title: user.profile?.title || user.profile?.headline || user.bio || '',
           profileVisibility: user.profile?.visibility === 'FOLLOWERS_ONLY' ? 'private' : 'public',
+          mutualCount: user.mutualCount || 0,
+          mutualFirst: user.mutualFirst || null,
         }));
         setUserResults(mappedUsers);
       } else {
