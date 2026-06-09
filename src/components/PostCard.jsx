@@ -332,7 +332,7 @@ export default function PostCard({ post, onDelete, onLike }) {
 
         {/* Media */}
         <div
-          className="aspect-[16/9] bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden cursor-pointer"
+          className="aspect-[16/10] bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden cursor-pointer"
           onClick={() => navigate(`/posts/${post.id}`)}
         >
 

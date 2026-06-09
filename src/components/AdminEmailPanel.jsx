@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Trash2, Plus, Loader2, Shield } from 'lucide-react';
 import { getAllowedEmails, addAllowedEmail, removeAllowedEmail } from '../services/adminService';
-import Button from './ui/Button';
 
 export default function AdminEmailPanel() {
   const [emails, setEmails] = useState([]);
@@ -68,7 +67,7 @@ export default function AdminEmailPanel() {
     <div className="max-w-lg py-6">
       <div className="flex items-center gap-2 mb-6">
         <Shield className="w-5 h-5 text-[#0CCE6B]" />
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-neutral-900">
           Allowlist Management
         </h2>
       </div>
@@ -80,12 +79,16 @@ export default function AdminEmailPanel() {
           value={newEmail}
           onChange={e => { setNewEmail(e.target.value); setAddError(''); }}
           placeholder="new@email.com"
-          className="flex-1 px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent text-sm"
+          className="flex-1 px-4 py-2 bg-white border border-neutral-300 text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent text-sm"
         />
-        <Button type="submit" size="sm" disabled={adding || !newEmail.trim()}>
+        <button
+          type="submit"
+          disabled={adding || !newEmail.trim()}
+          className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white text-sm font-medium transition-colors disabled:opacity-50"
+        >
           {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Add
-        </Button>
+        </button>
       </form>
       {addError && (
         <p className="text-sm text-red-500 -mt-4 mb-4">{addError}</p>
@@ -99,15 +102,15 @@ export default function AdminEmailPanel() {
       ) : error ? (
         <p className="text-sm text-red-500">{error}</p>
       ) : emails.length === 0 ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">No emails on the allowlist.</p>
+        <p className="text-sm text-neutral-500">No emails on the allowlist.</p>
       ) : (
         <ul className="space-y-2">
           {emails.map(r => (
             <li
               key={r.id}
-              className="flex items-center justify-between px-4 py-2.5 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700"
+              className="flex items-center justify-between px-4 py-2.5 bg-neutral-50 border border-neutral-200"
             >
-              <span className="text-sm text-neutral-900 dark:text-white">{r.email}</span>
+              <span className="text-sm text-neutral-900">{r.email}</span>
               <button
                 onClick={() => handleRemove(r.email)}
                 disabled={removingId === r.email}
@@ -123,7 +126,7 @@ export default function AdminEmailPanel() {
         </ul>
       )}
 
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-4">
+      <p className="text-xs text-neutral-500 mt-4">
         {emails.length} email{emails.length !== 1 ? 's' : ''} on the allowlist
       </p>
     </div>

@@ -424,6 +424,7 @@ async function login(event) {
     return response(
       200,
       {
+        accessToken,
         user: {
           id: user.id,
           email: user.email,
@@ -822,7 +823,7 @@ async function refresh(event) {
     const newAccess = generateAccessToken(user.id);
     const accessCookie = generateAccessTokenCookie(newAccess);
 
-    return response(200, { ok: true }, [accessCookie], event);
+    return response(200, { ok: true, accessToken: newAccess }, [accessCookie], event);
   } catch (e) {
     console.error('[REFRESH] Unhandled error:', e);
     return error(500, 'Server error');
