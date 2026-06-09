@@ -102,6 +102,11 @@ export default function Discover() {
   const [dismissedIds, setDismissedIds] = useState(new Set());
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
+  useEffect(() => {
+    if (searchType === 'users') setShowAllSuggestions(true);
+    else setShowAllSuggestions(false);
+  }, [searchType]);
+
   // Fetch all public posts for discover (no following required)
   useEffect(() => {
     const fetchDiscoverPosts = async () => {
