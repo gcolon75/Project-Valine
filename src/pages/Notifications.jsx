@@ -241,7 +241,7 @@ export default function Notifications() {
             <div className="mt-2.5 ml-3.5">
               {requestState === 'connected' ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 border border-neutral-200 text-neutral-500 text-xs font-medium">
-                  <UserCheck className="w-3 h-3" /> Connected
+                  <UserCheck className="w-3 h-3" /> In Network
                 </span>
               ) : requestState === 'declined' ? (
                 <p className="text-xs text-neutral-400">Request declined</p>

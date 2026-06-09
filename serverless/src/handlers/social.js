@@ -590,49 +590,53 @@ export const getSuggestedUsers = async (event) => {
             sender: {
               select: {
                 id: true, username: true, displayName: true, avatar: true,
-                profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+                profile: { select: { id: true, title: true, headline: true, vanityUrl: true, bannerUrl: true } }
               }
             },
             receiver: {
               select: {
                 id: true, username: true, displayName: true, avatar: true,
-                profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+                profile: { select: { id: true, title: true, headline: true, vanityUrl: true, bannerUrl: true } }
               }
             }
           }
         });
 
-        // Build mutual map: targetUserId → { user, count, connectorNames }
+        // Build mutual map: targetUserId → { user, count, connectors: [{name, avatar}] }
         const mutualMap = new Map();
         for (const req of secondDegree) {
           const connectorIsSender = myNetworkSet.has(req.senderId);
           const targetUser = connectorIsSender ? req.receiver : req.sender;
-          const connectorName = connectorIsSender ? req.sender.displayName : req.receiver.displayName;
+          const connector = connectorIsSender ? req.sender : req.receiver;
 
           if (excluded.has(targetUser.id)) continue;
 
           if (!mutualMap.has(targetUser.id)) {
-            mutualMap.set(targetUser.id, { user: targetUser, count: 0, connectorNames: new Set() });
+            mutualMap.set(targetUser.id, { user: targetUser, count: 0, connectors: [] });
           }
           const entry = mutualMap.get(targetUser.id);
           entry.count++;
-          entry.connectorNames.add(connectorName || '');
+          // Keep first two connectors for display
+          if (entry.connectors.length < 2) {
+            entry.connectors.push({ name: connector.displayName || connector.username || '', avatar: connector.avatar || null });
+          }
         }
 
         const sorted = Array.from(mutualMap.values())
           .sort((a, b) => b.count - a.count)
           .slice(0, LIMIT);
 
-        const toItem = ({ user, count, connectorNames }) => ({
+        const toItem = ({ user, count, connectors }) => ({
           id: user.id,
           username: user.username,
           displayName: user.displayName,
           avatar: user.avatar,
+          bannerUrl: user.profile?.bannerUrl || null,
           title: user.profile?.title || user.profile?.headline || null,
           profileId: user.profile?.id || null,
           vanityUrl: user.profile?.vanityUrl || null,
           mutualCount: count,
-          mutualNames: Array.from(connectorNames).filter(Boolean).slice(0, 2)
+          mutualFirst: connectors[0] || null
         });
 
         if (sorted.length >= LIMIT) {
@@ -648,7 +652,7 @@ export const getSuggestedUsers = async (event) => {
           orderBy: { createdAt: 'desc' },
           select: {
             id: true, username: true, displayName: true, avatar: true,
-            profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+            profile: { select: { id: true, title: true, headline: true, vanityUrl: true, bannerUrl: true } }
           }
         });
 
@@ -657,9 +661,10 @@ export const getSuggestedUsers = async (event) => {
             ...sorted.map(toItem),
             ...padding.map(u => ({
               id: u.id, username: u.username, displayName: u.displayName, avatar: u.avatar,
+              bannerUrl: u.profile?.bannerUrl || null,
               title: u.profile?.title || u.profile?.headline || null,
               profileId: u.profile?.id || null, vanityUrl: u.profile?.vanityUrl || null,
-              mutualCount: 0, mutualNames: []
+              mutualCount: 0, mutualFirst: null
             }))
           ]
         });
@@ -673,16 +678,17 @@ export const getSuggestedUsers = async (event) => {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true, username: true, displayName: true, avatar: true,
-        profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+        profile: { select: { id: true, title: true, headline: true, vanityUrl: true, bannerUrl: true } }
       }
     });
 
     return json({
       items: users.map(u => ({
         id: u.id, username: u.username, displayName: u.displayName, avatar: u.avatar,
+        bannerUrl: u.profile?.bannerUrl || null,
         title: u.profile?.title || u.profile?.headline || null,
         profileId: u.profile?.id || null, vanityUrl: u.profile?.vanityUrl || null,
-        mutualCount: 0, mutualNames: []
+        mutualCount: 0, mutualFirst: null
       }))
     });
   } catch (e) {

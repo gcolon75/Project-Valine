@@ -2,16 +2,90 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
-import { Search, User, UserPlus, Loader2, Lock, Users } from "lucide-react";
+import { Search, UserPlus, Loader2, Lock, X, ChevronDown, Users } from "lucide-react";
 import { sendNetworkRequest, cancelNetworkRequest, getDiscoverSuggestions } from "../services/connectionService";
 import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
 
-function mutualLabel(mutualCount, mutualNames) {
-  if (mutualCount === 0) return null;
-  if (mutualCount === 1) return `In ${mutualNames[0] || 'their'}'s Network`;
-  return `+${mutualCount} Mutual Networks`;
+function mutualText(mutualCount, mutualFirst) {
+  if (!mutualCount || !mutualFirst) return null;
+  const name = mutualFirst.name;
+  if (mutualCount === 1) return `${name} is a mutual network`;
+  const others = mutualCount - 1;
+  return `${name} and ${others} other mutual network${others > 1 ? 's' : ''}`;
+}
+
+function SuggestionCard({ user, followingIds, onConnect, onDismiss, navigate }) {
+  const mutual = mutualText(user.mutualCount, user.mutualFirst);
+  return (
+    <div className="bg-white border border-neutral-200 overflow-hidden flex flex-col relative group">
+      {/* Dismiss */}
+      {onDismiss && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDismiss(user.id); }}
+          className="absolute top-2 right-2 z-10 p-1 rounded-full bg-black/20 hover:bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Dismiss"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Banner */}
+      <div
+        className="h-20 bg-neutral-100 cursor-pointer shrink-0"
+        style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(135deg, #474747 0%, #0CCE6B 100%)' }}
+        onClick={() => navigate(`/profile/${user.username}`)}
+      />
+
+      {/* Avatar */}
+      <div className="flex justify-center -mt-10 mb-1 cursor-pointer" onClick={() => navigate(`/profile/${user.username}`)}>
+        {user.avatar ? (
+          <img src={user.avatar} alt={user.displayName} className="w-20 h-20 rounded-full object-cover ring-2 ring-white" />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 ring-2 ring-white flex items-center justify-center text-white text-2xl font-bold select-none">
+            {(user.displayName || user.username || '?')[0].toUpperCase()}
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="px-3 text-center cursor-pointer" onClick={() => navigate(`/profile/${user.username}`)}>
+        <div className="flex items-center justify-center gap-1">
+          <p className="text-base font-semibold text-neutral-900 truncate leading-tight">{user.displayName || user.username}</p>
+          {user.profileVisibility === 'private' && <Lock className="w-3 h-3 text-neutral-400 shrink-0" />}
+        </div>
+        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2 leading-relaxed min-h-[2rem]">{user.title || ''}</p>
+        <div className="flex items-center justify-center gap-1 mt-1">
+          {mutual ? (
+            <>
+              <Users className="w-3 h-3 text-neutral-400 shrink-0" />
+              <p className="text-xs text-neutral-400 truncate">{mutual}</p>
+            </>
+          ) : (
+            <p className="text-xs text-neutral-400">Suggested</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Network button */}
+      <div className="px-3 pt-3 pb-4 flex justify-center">
+        <button
+          onClick={(e) => onConnect(user, e)}
+          disabled={followingIds.has(user.id)}
+          className={`px-8 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            followingIds.has(user.id)
+              ? 'bg-neutral-100 text-neutral-400 cursor-default'
+              : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white'
+          }`}
+        >
+          {followingIds.has(user.id) ? 'Pending' : <><UserPlus className="w-3.5 h-3.5" /> Network</>}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function Discover() {
@@ -25,6 +99,8 @@ export default function Discover() {
   const [followingIds, setFollowingIds] = useState(new Set());
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [dismissedIds, setDismissedIds] = useState(new Set());
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
 
   // Fetch all public posts for discover (no following required)
   useEffect(() => {
@@ -137,6 +213,7 @@ export default function Discover() {
           displayName: user.displayName || user.username,
           username: user.username,
           avatar: user.avatar,
+          bannerUrl: user.profile?.bannerUrl || null,
           title: user.profile?.title || user.profile?.headline || user.bio || '',
           profileVisibility: user.profile?.visibility === 'FOLLOWERS_ONLY' ? 'private' : 'public',
         }));
@@ -251,76 +328,48 @@ export default function Discover() {
         {(searchType === 'all' || searchType === 'users') && q.length < 2 && (
           <section>
             <p className="text-xs font-semibold tracking-widest uppercase text-neutral-400 mb-4">
-              Suggested
+              People you may know
             </p>
 
             {suggestionsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white border border-neutral-200 rounded-lg p-5 animate-pulse">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-neutral-100 shrink-0" />
-                      <div className="flex-1 space-y-2 pt-1">
-                        <div className="h-3.5 bg-neutral-100 w-2/3 rounded" />
-                        <div className="h-3 bg-neutral-100 w-1/3 rounded" />
-                        <div className="h-3 bg-neutral-100 w-1/2 rounded" />
-                      </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white border border-neutral-200 overflow-hidden animate-pulse">
+                    <div className="h-14 bg-neutral-100" />
+                    <div className="flex justify-center -mt-7 mb-3">
+                      <div className="w-14 h-14 rounded-full bg-neutral-200 ring-2 ring-white" />
                     </div>
-                    <div className="mt-4 h-9 bg-neutral-100 rounded" />
+                    <div className="px-4 pb-4 space-y-2 text-center">
+                      <div className="h-3.5 bg-neutral-100 w-2/3 mx-auto rounded" />
+                      <div className="h-3 bg-neutral-100 w-1/2 mx-auto rounded" />
+                      <div className="h-3 bg-neutral-100 w-3/4 mx-auto rounded" />
+                      <div className="h-8 bg-neutral-100 w-full rounded mt-3" />
+                    </div>
                   </div>
                 ))}
               </div>
-            ) : suggestions.length === 0 ? (
+            ) : suggestions.filter(u => !dismissedIds.has(u.id)).length === 0 ? (
               <p className="text-sm text-neutral-400 py-4">No suggestions right now</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {suggestions.map((user) => {
-                  const label = mutualLabel(user.mutualCount, user.mutualNames);
-                  return (
-                    <div
-                      key={user.id}
-                      className="bg-white border border-neutral-200 rounded-lg p-5 cursor-pointer hover:border-neutral-300 transition-colors"
-                      onClick={() => navigate(`/profile/${user.username}`)}
+            ) : (() => {
+              const visible = suggestions.filter(u => !dismissedIds.has(u.id));
+              const shown = showAllSuggestions ? visible : visible.slice(0, 4);
+              return (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {shown.map((user) => <SuggestionCard key={user.id} user={user} followingIds={followingIds} onConnect={handleFollow} onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))} navigate={navigate} />)}
+                  </div>
+                  {visible.length > 4 && (
+                    <button
+                      onClick={() => setShowAllSuggestions(v => !v)}
+                      className="mt-3 flex items-center gap-1.5 px-4 py-1.5 border border-neutral-200 bg-white text-sm text-neutral-600 hover:border-neutral-300 hover:text-neutral-900 transition-colors shadow-sm"
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="shrink-0">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
-                              <User className="w-6 h-6 text-neutral-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-neutral-900 truncate">{user.displayName || user.username}</p>
-                          <p className="text-xs text-[#0CCE6B] mb-1">@{user.username}</p>
-                          {user.title && (
-                            <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">{user.title}</p>
-                          )}
-                          {label && (
-                            <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1">
-                              <Users className="w-3 h-3 shrink-0" />
-                              {label}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => handleFollow(user, e)}
-                        className={`mt-4 w-full py-2 text-sm font-semibold transition-colors flex items-center justify-center gap-2 rounded ${
-                          followingIds.has(user.id)
-                            ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                            : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90'
-                        }`}
-                      >
-                        {followingIds.has(user.id) ? 'Requested' : <><UserPlus className="w-4 h-4" /> Connect</>}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                      {showAllSuggestions ? 'Show less' : `Show ${visible.length - 4} more`}
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showAllSuggestions ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </>
+              );
+            })()}
           </section>
         )}
 
@@ -336,66 +385,9 @@ export default function Discover() {
                 No people found for &ldquo;{q}&rdquo;
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {displayUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="bg-white border border-neutral-200 rounded-lg p-5 cursor-pointer hover:border-neutral-300 transition-colors"
-                    onClick={() => navigate(`/profile/${user.username}`)}
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* Avatar */}
-                      <div className="shrink-0">
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.displayName}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
-                            <User className="w-6 h-6 text-neutral-400" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-sm font-semibold text-neutral-900 truncate">
-                            {user.displayName}
-                          </span>
-                          {user.profileVisibility === 'private' && (
-                            <Lock className="w-3 h-3 text-neutral-400 shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-xs text-[#0CCE6B] mb-1">@{user.username}</p>
-                        {user.title && (
-                          <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
-                            {user.title}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={(e) => handleFollow(user, e)}
-                      className={`mt-4 w-full py-2 text-sm font-semibold transition-colors flex items-center justify-center gap-2 rounded ${
-                        followingIds.has(user.id)
-                          ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                          : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90'
-                      }`}
-                    >
-                      {followingIds.has(user.id) ? (
-                        'Requested'
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          Connect
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <SuggestionCard key={user.id} user={user} followingIds={followingIds} onConnect={handleFollow} navigate={navigate} />
                 ))}
               </div>
             )}

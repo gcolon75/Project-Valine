@@ -148,6 +148,7 @@ export const searchUsers = async (event) => {
             visibility: true,
             title: true,
             headline: true,
+            bannerUrl: true,
           },
         },
       },

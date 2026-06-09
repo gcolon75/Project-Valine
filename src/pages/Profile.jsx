@@ -503,22 +503,28 @@ export default function Profile() {
                     <>
                       {/* Network connection buttons */}
                       {connectionStatus.networkStatus === 'connected' ? (
-                        <button
-                          onClick={handleDisconnect}
-                          disabled={connectLoading}
-                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-700 px-5 py-2.5 hover:border-red-200 hover:text-red-600 transition-colors disabled:opacity-50"
-                        >
-                          {connectLoading ? (
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <><UserCheck className="w-4 h-4" /> Connected</>
-                          )}
-                        </button>
+                        <>
+                          <span className="flex items-center gap-1.5 text-sm font-medium text-[#0CCE6B] border border-[#0CCE6B]/30 bg-[#0CCE6B]/5 px-4 py-2.5 select-none">
+                            <UserCheck className="w-4 h-4" /> In Network
+                          </span>
+                          <button
+                            onClick={handleDisconnect}
+                            disabled={connectLoading}
+                            className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-500 px-4 py-2.5 hover:border-red-200 hover:text-red-600 transition-colors disabled:opacity-50"
+                          >
+                            {connectLoading ? (
+                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              'Remove from Network'
+                            )}
+                          </button>
+                        </>
                       ) : connectionStatus.networkStatus === 'pending_sent' ? (
                         <button
                           onClick={handleDisconnect}
                           disabled={connectLoading}
-                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-500 px-5 py-2.5 hover:border-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 text-sm font-medium border border-neutral-200 text-neutral-500 px-5 py-2.5 hover:border-red-200 hover:text-red-600 transition-colors disabled:opacity-50"
+                          title="Cancel connection request"
                         >
                           {connectLoading ? (
                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -556,7 +562,7 @@ export default function Profile() {
                           {connectLoading ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <><UserPlus className="w-4 h-4" /> Connect</>
+                            <><UserPlus className="w-4 h-4" /> Network</>
                           )}
                         </button>
                       )}
@@ -744,7 +750,7 @@ export default function Profile() {
               <span className="font-semibold text-neutral-900 text-base tabular-nums">
                 {displayData.networkCount || displayData.profile?.networkCount || 0}
               </span>
-              <span className="text-neutral-500 text-sm ml-1.5">connections</span>
+              <span className="text-neutral-500 text-sm ml-1.5">network</span>
             </button>
           </div>
         </div>
