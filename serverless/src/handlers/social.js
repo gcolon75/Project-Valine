@@ -537,6 +537,161 @@ export const getMyBlocks = async (event) => {
 };
 
 // ---------------------------------------------------------------------------
+// GET /discover/suggestions
+// Suggested people: 2nd-degree connections first, then recent users as padding
+// ---------------------------------------------------------------------------
+export const getSuggestedUsers = async (event) => {
+  try {
+    const userId = getUserFromEvent(event); // optional — unauthenticated gets recent users
+    const prisma = getPrisma();
+    const LIMIT = 12;
+
+    const excluded = new Set();
+
+    if (userId) {
+      excluded.add(userId);
+
+      // My accepted connections
+      const myConnections = await prisma.connectionRequest.findMany({
+        where: { status: 'accepted', OR: [{ senderId: userId }, { receiverId: userId }] },
+        select: { senderId: true, receiverId: true }
+      });
+      const myNetworkIds = myConnections.map(c => c.senderId === userId ? c.receiverId : c.senderId);
+      myNetworkIds.forEach(id => excluded.add(id));
+
+      // Pending requests — exclude these too
+      const pending = await prisma.connectionRequest.findMany({
+        where: { status: 'pending', OR: [{ senderId: userId }, { receiverId: userId }] },
+        select: { senderId: true, receiverId: true }
+      });
+      pending.forEach(r => { excluded.add(r.senderId); excluded.add(r.receiverId); });
+
+      // Blocked users
+      const blocks = await prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true }
+      });
+      blocks.forEach(b => { excluded.add(b.blockerId); excluded.add(b.blockedId); });
+
+      // 2nd-degree suggestions
+      if (myNetworkIds.length > 0) {
+        const myNetworkSet = new Set(myNetworkIds);
+        const excludedArr = Array.from(excluded);
+
+        const secondDegree = await prisma.connectionRequest.findMany({
+          where: {
+            status: 'accepted',
+            OR: [
+              { senderId: { in: myNetworkIds }, receiverId: { notIn: excludedArr } },
+              { receiverId: { in: myNetworkIds }, senderId: { notIn: excludedArr } }
+            ]
+          },
+          include: {
+            sender: {
+              select: {
+                id: true, username: true, displayName: true, avatar: true,
+                profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+              }
+            },
+            receiver: {
+              select: {
+                id: true, username: true, displayName: true, avatar: true,
+                profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+              }
+            }
+          }
+        });
+
+        // Build mutual map: targetUserId → { user, count, connectorNames }
+        const mutualMap = new Map();
+        for (const req of secondDegree) {
+          const connectorIsSender = myNetworkSet.has(req.senderId);
+          const targetUser = connectorIsSender ? req.receiver : req.sender;
+          const connectorName = connectorIsSender ? req.sender.displayName : req.receiver.displayName;
+
+          if (excluded.has(targetUser.id)) continue;
+
+          if (!mutualMap.has(targetUser.id)) {
+            mutualMap.set(targetUser.id, { user: targetUser, count: 0, connectorNames: new Set() });
+          }
+          const entry = mutualMap.get(targetUser.id);
+          entry.count++;
+          entry.connectorNames.add(connectorName || '');
+        }
+
+        const sorted = Array.from(mutualMap.values())
+          .sort((a, b) => b.count - a.count)
+          .slice(0, LIMIT);
+
+        const toItem = ({ user, count, connectorNames }) => ({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          title: user.profile?.title || user.profile?.headline || null,
+          profileId: user.profile?.id || null,
+          vanityUrl: user.profile?.vanityUrl || null,
+          mutualCount: count,
+          mutualNames: Array.from(connectorNames).filter(Boolean).slice(0, 2)
+        });
+
+        if (sorted.length >= LIMIT) {
+          return json({ items: sorted.map(toItem) });
+        }
+
+        // Pad with generic recent users
+        const alreadySuggestedIds = new Set(sorted.map(s => s.user.id));
+        const paddingExcluded = Array.from(new Set([...excludedArr, ...alreadySuggestedIds]));
+        const padding = await prisma.user.findMany({
+          where: { id: { notIn: paddingExcluded }, onboardingComplete: true },
+          take: LIMIT - sorted.length,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true, username: true, displayName: true, avatar: true,
+            profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+          }
+        });
+
+        return json({
+          items: [
+            ...sorted.map(toItem),
+            ...padding.map(u => ({
+              id: u.id, username: u.username, displayName: u.displayName, avatar: u.avatar,
+              title: u.profile?.title || u.profile?.headline || null,
+              profileId: u.profile?.id || null, vanityUrl: u.profile?.vanityUrl || null,
+              mutualCount: 0, mutualNames: []
+            }))
+          ]
+        });
+      }
+    }
+
+    // No network or unauthenticated — return recent users
+    const users = await prisma.user.findMany({
+      where: { id: { notIn: Array.from(excluded) }, onboardingComplete: true },
+      take: LIMIT,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, username: true, displayName: true, avatar: true,
+        profile: { select: { id: true, title: true, headline: true, vanityUrl: true } }
+      }
+    });
+
+    return json({
+      items: users.map(u => ({
+        id: u.id, username: u.username, displayName: u.displayName, avatar: u.avatar,
+        title: u.profile?.title || u.profile?.headline || null,
+        profileId: u.profile?.id || null, vanityUrl: u.profile?.vanityUrl || null,
+        mutualCount: 0, mutualNames: []
+      }))
+    });
+  } catch (e) {
+    console.error('Get suggested users error:', e);
+    return error(500, 'Server error: ' + e.message);
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Deprecated stubs (kept for backward compat — return 410 Gone)
 // ---------------------------------------------------------------------------
 export const followProfile = async () =>

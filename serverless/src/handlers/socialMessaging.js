@@ -74,6 +74,11 @@ export const handler = async (event, context) => {
       return social.getMyBlocks(event, context);
     }
 
+    // /discover/suggestions
+    if (method === 'GET' && path === '/discover/suggestions') {
+      return social.getSuggestedUsers(event, context);
+    }
+
     // Deprecated follow routes — return 410
     if (/^\/profiles\/[^/]+\/follow$/.test(path)) {
       return social.followProfile(event, context);

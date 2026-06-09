@@ -660,6 +660,9 @@ functions:
       - httpApi:
           path: /me/blocks
           method: get
+      - httpApi:
+          path: /discover/suggestions
+          method: get
       # --- Deprecated follow routes (return 410) ---
       - httpApi:
           path: /profiles/{profileId}/follow

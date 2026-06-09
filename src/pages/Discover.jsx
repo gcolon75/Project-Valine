@@ -2,11 +2,17 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../components/PostCard";
-import { Search, User, UserPlus, Loader2, Lock } from "lucide-react";
-import { sendNetworkRequest, cancelNetworkRequest } from "../services/connectionService";
+import { Search, User, UserPlus, Loader2, Lock, Users } from "lucide-react";
+import { sendNetworkRequest, cancelNetworkRequest, getDiscoverSuggestions } from "../services/connectionService";
 import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
+
+function mutualLabel(mutualCount, mutualNames) {
+  if (mutualCount === 0) return null;
+  if (mutualCount === 1) return `In ${mutualNames[0] || 'their'}'s Network`;
+  return `+${mutualCount} Mutual Networks`;
+}
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -17,6 +23,8 @@ export default function Discover() {
   const [userResults, setUserResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [followingIds, setFollowingIds] = useState(new Set());
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
 
   // Fetch all public posts for discover (no following required)
   useEffect(() => {
@@ -59,6 +67,14 @@ export default function Discover() {
     };
 
     fetchDiscoverPosts();
+  }, []);
+
+  // Fetch suggested people
+  useEffect(() => {
+    getDiscoverSuggestions()
+      .then(res => setSuggestions(res.items || []))
+      .catch(() => setSuggestions([]))
+      .finally(() => setSuggestionsLoading(false));
   }, []);
 
   // Filter posts based on search query
@@ -231,18 +247,91 @@ export default function Discover() {
 
       <div className="space-y-8">
 
-        {/* People section */}
-        {(searchType === 'all' || searchType === 'users') && (
+        {/* Suggested people — shown before search, hidden when actively searching */}
+        {(searchType === 'all' || searchType === 'users') && q.length < 2 && (
+          <section>
+            <p className="text-xs font-semibold tracking-widest uppercase text-neutral-400 mb-4">
+              Suggested
+            </p>
+
+            {suggestionsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white border border-neutral-200 rounded-lg p-5 animate-pulse">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-neutral-100 shrink-0" />
+                      <div className="flex-1 space-y-2 pt-1">
+                        <div className="h-3.5 bg-neutral-100 w-2/3 rounded" />
+                        <div className="h-3 bg-neutral-100 w-1/3 rounded" />
+                        <div className="h-3 bg-neutral-100 w-1/2 rounded" />
+                      </div>
+                    </div>
+                    <div className="mt-4 h-9 bg-neutral-100 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : suggestions.length === 0 ? (
+              <p className="text-sm text-neutral-400 py-4">No suggestions right now</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {suggestions.map((user) => {
+                  const label = mutualLabel(user.mutualCount, user.mutualNames);
+                  return (
+                    <div
+                      key={user.id}
+                      className="bg-white border border-neutral-200 rounded-lg p-5 cursor-pointer hover:border-neutral-300 transition-colors"
+                      onClick={() => navigate(`/profile/${user.username}`)}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="shrink-0">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.displayName} className="w-12 h-12 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
+                              <User className="w-6 h-6 text-neutral-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-neutral-900 truncate">{user.displayName || user.username}</p>
+                          <p className="text-xs text-[#0CCE6B] mb-1">@{user.username}</p>
+                          {user.title && (
+                            <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">{user.title}</p>
+                          )}
+                          {label && (
+                            <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1">
+                              <Users className="w-3 h-3 shrink-0" />
+                              {label}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => handleFollow(user, e)}
+                        className={`mt-4 w-full py-2 text-sm font-semibold transition-colors flex items-center justify-center gap-2 rounded ${
+                          followingIds.has(user.id)
+                            ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                            : 'bg-gradient-to-r from-[#474747] to-[#0CCE6B] text-white hover:opacity-90'
+                        }`}
+                      >
+                        {followingIds.has(user.id) ? 'Requested' : <><UserPlus className="w-4 h-4" /> Connect</>}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* People search results */}
+        {(searchType === 'all' || searchType === 'users') && q.length >= 2 && (
           <section>
             <p className="text-xs font-semibold tracking-widest uppercase text-neutral-400 mb-4">
               People
             </p>
 
-            {q.length < 2 ? (
-              <p className="text-sm text-neutral-400 py-4">
-                Enter at least 2 characters to search for people
-              </p>
-            ) : displayUsers.length === 0 ? (
+            {displayUsers.length === 0 ? (
               <p className="text-sm text-neutral-400 py-4">
                 No people found for &ldquo;{q}&rdquo;
               </p>

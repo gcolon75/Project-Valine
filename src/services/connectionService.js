@@ -79,3 +79,8 @@ export const getMyBlocks = async () => {
   return data;
 };
 
+export const getDiscoverSuggestions = async () => {
+  const { data } = await apiClient.get('/discover/suggestions');
+  return data;
+};
+
