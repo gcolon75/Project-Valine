@@ -90,13 +90,19 @@ export default function Conversation() {
     }
   };
 
-  const formatTime = (dateString) => {
+  const timeLabel = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    if (diffDays === 1) return 'Yesterday';
-    return date.toLocaleDateString();
+    if (isToday) return time;
+    if (isYesterday) return `Yesterday ${time}`;
+    if (diffDays < 7) return `${date.toLocaleDateString([], { weekday: 'short' }).toUpperCase()} ${time}`;
+    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
   };
 
   return (
@@ -158,7 +164,8 @@ export default function Conversation() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3 bg-neutral-50">
+      <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-col justify-end min-h-full px-4 py-5 bg-white">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-6 h-6 animate-spin text-neutral-300" />
@@ -179,71 +186,75 @@ export default function Conversation() {
             const senderAvatar = isOwn ? user?.avatar : sender?.avatar;
 
             return (
-              <div
-                key={message.id}
-                className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-              >
-                {/* Avatar */}
-                <UserAvatar
-                  src={senderAvatar}
-                  name={senderName}
-                  alt={senderName}
-                  className="w-7 h-7 flex-shrink-0"
-                />
+              <div key={message.id} className="mb-3">
+                {/* Centered timestamp */}
+                <p className="text-xs text-neutral-400 text-center mb-2">
+                  {timeLabel(message.createdAt)}
+                </p>
 
-                <div className={`max-w-[68%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
-                  {/* Sender name for group chats */}
-                  {isGroup && !isOwn && senderName && (
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 px-1">
-                      {senderName}
-                    </p>
+                {/* Message row */}
+                <div className={`flex items-end gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                  {/* Avatar for incoming messages only */}
+                  {!isOwn && (
+                    <UserAvatar
+                      src={senderAvatar}
+                      name={senderName}
+                      alt={senderName}
+                      className="w-9 h-9 flex-shrink-0"
+                    />
                   )}
 
-                  <div className={`px-3.5 py-2.5 ${
-                    isOwn
-                      ? 'bg-neutral-900 text-white rounded-2xl rounded-br-sm'
-                      : 'bg-white border border-neutral-200 text-neutral-900 rounded-2xl rounded-bl-sm'
-                  }`}>
-                    {/* Forwarded post */}
-                    {message.forwardedPost && (
-                      <div className={`mb-2 p-2.5 border text-xs rounded-lg ${
-                        isOwn ? 'border-white/20 bg-white/10' : 'border-neutral-100 bg-neutral-50'
-                      }`}>
-                        <p className={`font-medium mb-0.5 ${isOwn ? 'opacity-60' : 'text-neutral-400'}`}>
-                          Shared post
-                        </p>
-                        <p className={`font-medium line-clamp-2 break-words mb-1 ${
-                          isOwn ? 'text-white' : 'text-neutral-900'
+                  <div className={`max-w-[68%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                    {/* Sender name for group chats */}
+                    {isGroup && !isOwn && senderName && (
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 px-1">
+                        {senderName}
+                      </p>
+                    )}
+
+                    <div className={`px-4 py-2.5 rounded-2xl ${
+                      isOwn
+                        ? 'bg-[#0CCE6B] text-white rounded-br-sm'
+                        : 'bg-[#F3F4F6] text-neutral-900 rounded-bl-sm'
+                    }`}>
+                      {/* Forwarded post */}
+                      {message.forwardedPost && (
+                        <div className={`mb-2 p-2.5 border text-xs rounded-lg ${
+                          isOwn ? 'border-white/20 bg-white/10' : 'border-neutral-200 bg-white'
                         }`}>
-                          {message.forwardedPost.title}
-                        </p>
-                        {message.forwardedPost.body && (
-                          <p className={`line-clamp-2 break-words ${
-                            isOwn ? 'opacity-75' : 'text-neutral-500'
-                          }`}>
-                            {message.forwardedPost.body}
+                          <p className={`font-medium mb-0.5 ${isOwn ? 'opacity-60' : 'text-neutral-400'}`}>
+                            Shared post
                           </p>
-                        )}
-                        <p className={`mt-1 truncate ${isOwn ? 'opacity-50' : 'text-neutral-400'}`}>
-                          by {message.forwardedPost.author?.displayName || message.forwardedPost.author?.name || 'Unknown'}
-                        </p>
-                      </div>
-                    )}
+                          <p className={`font-medium line-clamp-2 break-words mb-1 ${
+                            isOwn ? 'text-white' : 'text-neutral-900'
+                          }`}>
+                            {message.forwardedPost.title}
+                          </p>
+                          {message.forwardedPost.body && (
+                            <p className={`line-clamp-2 break-words ${
+                              isOwn ? 'opacity-75' : 'text-neutral-500'
+                            }`}>
+                              {message.forwardedPost.body}
+                            </p>
+                          )}
+                          <p className={`mt-1 truncate ${isOwn ? 'opacity-50' : 'text-neutral-400'}`}>
+                            by {message.forwardedPost.author?.displayName || message.forwardedPost.author?.name || 'Unknown'}
+                          </p>
+                        </div>
+                      )}
 
-                    {message.body && (
-                      <p className="text-sm leading-relaxed">{message.body}</p>
-                    )}
+                      {message.body && (
+                        <p className="text-sm leading-relaxed">{message.body}</p>
+                      )}
+                    </div>
                   </div>
-
-                  <p className={`text-[10px] px-1 ${isOwn ? 'text-neutral-400' : 'text-neutral-400'}`}>
-                    {formatTime(message.createdAt)}
-                  </p>
                 </div>
               </div>
             );
           })
         )}
         <div ref={messagesEndRef} />
+      </div>
       </div>
 
       {/* Composer */}
@@ -290,8 +301,8 @@ export default function Conversation() {
               <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={forwardedPost ? 'Add a message (optional)…' : 'Type a message…'}
-                className="flex-1 px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent resize-none min-h-[42px] max-h-[120px]"
+                placeholder={forwardedPost ? 'Add a message (optional)…' : 'Message…'}
+                className="flex-1 px-4 py-2.5 bg-white border border-neutral-200 rounded-2xl text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent resize-none min-h-[42px] max-h-[120px]"
                 disabled={sending}
                 rows="1"
                 onKeyDown={(e) => {

@@ -103,30 +103,32 @@ export default function MessageDropdown() {
                     onClick={() => setShowDropdown(false)}
                     className="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    {getThreadAvatar(thread) ? (
-                      <img
-                        src={getThreadAvatar(thread)}
-                        alt={getThreadName(thread)}
-                        className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#0CCE6B]/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#0CCE6B] font-semibold text-sm">
-                          {getThreadName(thread).charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                    <div className="relative flex-shrink-0">
+                      {getThreadAvatar(thread) ? (
+                        <img
+                          src={getThreadAvatar(thread)}
+                          alt={getThreadName(thread)}
+                          className="w-11 h-11 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {getThreadName(thread).charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      {thread.unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#0CCE6B] rounded-full border-2 border-white" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
+                      <p className={`text-sm truncate ${thread.unreadCount > 0 ? 'font-bold text-neutral-900' : 'font-medium text-neutral-900 dark:text-white'}`}>
                         {getThreadName(thread)}
                       </p>
-                      <p className="text-xs text-neutral-500 truncate">
+                      <p className={`text-xs truncate ${thread.unreadCount > 0 ? 'text-neutral-700 font-medium' : 'text-neutral-500'}`}>
                         {getLastMessage(thread)}
                       </p>
                     </div>
-                    {thread.unreadCount > 0 && (
-                      <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                    )}
                   </Link>
                 ))}
               </div>

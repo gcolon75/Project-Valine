@@ -142,17 +142,15 @@ export default function Inbox() {
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString();
+    const s = Math.floor((Date.now() - new Date(dateString)) / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d`;
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const handleThreadClick = (thread) => {
@@ -291,43 +289,52 @@ export default function Inbox() {
                   onClick={() => handleThreadClick(thread)}
                   className="w-full px-4 py-4 flex items-center gap-3 hover:bg-neutral-50 transition-colors text-left"
                 >
-                  {/* Avatar */}
-                  {thread.isGroup ? (
-                    <div className="w-11 h-11 flex-shrink-0">
-                      {groupAvatars.length === 0 ? (
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center ring-2 ring-white shadow">
-                          <Users className="w-5 h-5 text-white" />
-                        </div>
-                      ) : groupAvatars.length === 1 ? (
-                        <img src={groupAvatars[0]} alt="" className="w-11 h-11 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-full overflow-hidden flex flex-wrap">
-                          {groupAvatars.slice(0, 4).map((avatar, idx) =>
-                            avatar ? (
-                              <img key={idx} src={avatar} alt="" className="w-[22px] h-[22px] object-cover" />
-                            ) : (
-                              <div key={idx} className="w-[22px] h-[22px] bg-neutral-200 flex items-center justify-center">
-                                <User className="w-2.5 h-2.5 text-neutral-400" />
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <UserAvatar
-                      src={thread.otherUser?.avatar}
-                      name={thread.otherUser?.displayName || thread.otherUser?.username}
-                      alt={thread.otherUser?.displayName}
-                      className="w-11 h-11 flex-shrink-0"
-                    />
-                  )}
+                  {/* Avatar with unread badge overlay */}
+                  <div className="relative flex-shrink-0">
+                    {thread.isGroup ? (
+                      <div className="w-14 h-14">
+                        {groupAvatars.length === 0 ? (
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center ring-2 ring-white shadow">
+                            <Users className="w-6 h-6 text-white" />
+                          </div>
+                        ) : groupAvatars.length === 1 ? (
+                          <img src={groupAvatars[0]} alt="" className="w-14 h-14 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full overflow-hidden flex flex-wrap">
+                            {groupAvatars.slice(0, 4).map((avatar, idx) =>
+                              avatar ? (
+                                <img key={idx} src={avatar} alt="" className="w-7 h-7 object-cover" />
+                              ) : (
+                                <div key={idx} className="w-7 h-7 bg-neutral-200 flex items-center justify-center">
+                                  <User className="w-3 h-3 text-neutral-400" />
+                                </div>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <UserAvatar
+                        src={thread.otherUser?.avatar}
+                        name={thread.otherUser?.displayName || thread.otherUser?.username}
+                        alt={thread.otherUser?.displayName}
+                        className="w-14 h-14"
+                      />
+                    )}
+                    {thread.unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-[#0CCE6B] text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {thread.unreadCount > 9 ? '9+' : thread.unreadCount}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 pr-6">
                     <div className="flex items-baseline justify-between gap-2 mb-0.5">
                       <div className="min-w-0 flex items-baseline gap-2 flex-1">
-                        <span className="text-sm font-medium text-neutral-900 truncate">{threadName}</span>
+                        <span className={`text-sm truncate ${thread.unreadCount > 0 ? 'font-bold text-neutral-900' : 'font-semibold text-neutral-800'}`}>
+                          {threadName}
+                        </span>
                         {roleLabel && (
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 flex-shrink-0 hidden sm:block">
                             {roleLabel}
@@ -339,16 +346,11 @@ export default function Inbox() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {thread.unreadCount > 0 && (
-                          <span className="min-w-[18px] h-[18px] px-1 bg-[#0CCE6B] text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                            {thread.unreadCount}
-                          </span>
-                        )}
-                        <span className="text-xs text-neutral-400">{formatTime(lastMsg?.createdAt)}</span>
-                      </div>
+                      <span className="text-xs text-neutral-400 flex-shrink-0">{formatTime(lastMsg?.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-neutral-500 truncate">{truncatedMsg}</p>
+                    <p className={`text-sm truncate ${thread.unreadCount > 0 ? 'text-neutral-900 font-medium' : 'text-neutral-500'}`}>
+                      {truncatedMsg}
+                    </p>
                     {thread.isDemo && (
                       <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">Demo</span>
                     )}

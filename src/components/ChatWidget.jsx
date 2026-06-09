@@ -166,17 +166,30 @@ export default function ChatWidget() {
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
+    const s = Math.floor((Date.now() - new Date(dateString)) / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d`;
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const timeLabel = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return 'now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString();
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    if (isToday) return time;
+    if (isYesterday) return `Yesterday ${time}`;
+    if (diffDays < 7) return `${date.toLocaleDateString([], { weekday: 'short' }).toUpperCase()} ${time}`;
+    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
   };
 
   return (
@@ -417,60 +430,55 @@ export default function ChatWidget() {
                       <div key={thread.id} className="relative group">
                         <button
                           onClick={() => openThread(thread)}
-                          className="w-full px-3 py-3 flex items-center gap-3 hover:bg-neutral-50 transition-colors text-left"
+                          className="w-full px-3 py-3 flex items-center gap-3 hover:bg-neutral-50 transition-colors text-left border-b border-neutral-100"
                         >
-                          {/* Avatar */}
-                          {thread.isGroup ? (
-                            <div className="w-10 h-10 flex-shrink-0">
-                              {groupAvatars.length <= 1 ? (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center ring-2 ring-white shadow">
-                                  <Users className="w-4 h-4 text-white" />
-                                </div>
-                              ) : (
-                                <div className="w-10 h-10 rounded-full overflow-hidden flex flex-wrap">
-                                  {groupAvatars.slice(0, 4).map((avatar, idx) =>
-                                    avatar ? (
-                                      <img key={idx} src={avatar} alt="" className="w-5 h-5 object-cover" />
-                                    ) : (
-                                      <div key={idx} className="w-5 h-5 bg-neutral-200 flex items-center justify-center">
-                                        <Users className="w-2.5 h-2.5 text-neutral-400" />
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <UserAvatar
-                              src={thread.otherUser?.avatar}
-                              name={thread.otherUser?.displayName || thread.otherUser?.username}
-                              alt={thread.otherUser?.displayName}
-                              className="w-10 h-10 flex-shrink-0"
-                            />
-                          )}
+                          {/* Avatar with unread badge overlay */}
+                          <div className="relative flex-shrink-0">
+                            {thread.isGroup ? (
+                              <div className="w-12 h-12">
+                                {groupAvatars.length <= 1 ? (
+                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
+                                    <Users className="w-5 h-5 text-white" />
+                                  </div>
+                                ) : (
+                                  <div className="w-12 h-12 rounded-full overflow-hidden flex flex-wrap">
+                                    {groupAvatars.slice(0, 4).map((avatar, idx) =>
+                                      avatar ? (
+                                        <img key={idx} src={avatar} alt="" className="w-6 h-6 object-cover" />
+                                      ) : (
+                                        <div key={idx} className="w-6 h-6 bg-neutral-200 flex items-center justify-center">
+                                          <Users className="w-3 h-3 text-neutral-400" />
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <UserAvatar
+                                src={thread.otherUser?.avatar}
+                                name={thread.otherUser?.displayName || thread.otherUser?.username}
+                                alt={thread.otherUser?.displayName}
+                                className="w-12 h-12"
+                              />
+                            )}
+                            {thread.unreadCount > 0 && (
+                              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-[#0CCE6B] text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                                {thread.unreadCount > 9 ? '9+' : thread.unreadCount}
+                              </span>
+                            )}
+                          </div>
 
                           <div className="flex-1 min-w-0 pr-4">
                             <div className="flex items-baseline justify-between gap-1 mb-0.5">
-                              <div className="min-w-0 flex items-baseline gap-1.5 flex-1">
-                                <span className="text-sm font-medium text-neutral-900 truncate">{threadName}</span>
-                                {roleLabel && (
-                                  <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 flex-shrink-0 hidden sm:block">
-                                    {roleLabel}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                {thread.unreadCount > 0 && (
-                                  <span className="min-w-[16px] h-[16px] px-1 bg-[#0CCE6B] text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                                    {thread.unreadCount}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-neutral-400">
-                                  {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
-                                </span>
-                              </div>
+                              <span className={`text-sm truncate ${thread.unreadCount > 0 ? 'font-bold text-neutral-900' : 'font-semibold text-neutral-800'}`}>
+                                {threadName}
+                              </span>
+                              <span className="text-[10px] text-neutral-400 flex-shrink-0">
+                                {thread.lastMessage && formatTime(thread.lastMessage.createdAt)}
+                              </span>
                             </div>
-                            <p className="text-xs text-neutral-500 truncate">
+                            <p className={`text-xs truncate ${thread.unreadCount > 0 ? 'text-neutral-900 font-medium' : 'text-neutral-500'}`}>
                               {thread.lastMessage?.body || 'No messages yet'}
                             </p>
                           </div>
@@ -492,49 +500,56 @@ export default function ChatWidget() {
 
             ) : (
               /* Conversation */
-              <div className="flex flex-col p-3 space-y-2.5 bg-neutral-50 min-h-full">
-                {messages.map(msg => {
-                  const isOwn = msg.senderId === user?.id;
-                  const senderAvatar = isOwn
-                    ? user?.avatar
-                    : msg.sender?.avatar || currentThread?.otherUser?.avatar;
-                  const senderName = isOwn
-                    ? null
-                    : msg.sender?.displayName || currentThread?.otherUser?.displayName;
+              <div className="flex flex-col justify-end min-h-full p-3 bg-white">
+                  {messages.map(msg => {
+                    const isOwn = msg.senderId === user?.id;
+                    const senderAvatar = !isOwn
+                      ? msg.sender?.avatar || currentThread?.otherUser?.avatar
+                      : null;
+                    const senderName = !isOwn
+                      ? msg.sender?.displayName || currentThread?.otherUser?.displayName
+                      : null;
+                    const senderInitial = senderName?.charAt(0)?.toUpperCase() || '?';
 
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex items-end gap-1.5 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-                    >
-                      <UserAvatar
-                        src={senderAvatar}
-                        name={senderName || user?.displayName}
-                        alt={senderName || 'You'}
-                        className="w-6 h-6 flex-shrink-0"
-                      />
-                      <div className={`max-w-[75%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
-                        {currentThread?.isGroup && !isOwn && senderName && (
-                          <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 px-1">
-                            {senderName}
-                          </p>
-                        )}
-                        <div className={`px-3 py-2 text-sm ${
-                          isOwn
-                            ? 'bg-neutral-900 text-white rounded-2xl rounded-br-sm'
-                            : 'bg-white border border-neutral-200 text-neutral-900 rounded-2xl rounded-bl-sm'
-                        }`}>
-                          <p>{msg.body}</p>
-                          <p className={`text-[10px] mt-0.5 ${isOwn ? 'text-white/60' : 'text-neutral-400'}`}>
-                            {formatTime(msg.createdAt)}
-                          </p>
+                    return (
+                      <div key={msg.id} className="mb-2.5">
+                        {/* Centered timestamp */}
+                        <p className="text-[10px] text-neutral-400 text-center mb-1.5">
+                          {timeLabel(msg.createdAt)}
+                        </p>
+
+                        <div className={`flex items-end gap-1.5 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                          {/* Avatar for incoming only */}
+                          {!isOwn && (
+                            senderAvatar ? (
+                              <img src={senderAvatar} alt={senderName || ''} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center flex-shrink-0">
+                                <span className="text-white text-xs font-semibold">{senderInitial}</span>
+                              </div>
+                            )
+                          )}
+
+                          <div className={`max-w-[75%] flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                            {currentThread?.isGroup && !isOwn && senderName && (
+                              <p className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400 px-1">
+                                {senderName}
+                              </p>
+                            )}
+                            <div className={`px-3 py-2 text-sm rounded-2xl ${
+                              isOwn
+                                ? 'bg-[#0CCE6B] text-white rounded-br-sm'
+                                : 'bg-[#F3F4F6] text-neutral-900 rounded-bl-sm'
+                            }`}>
+                              <p>{msg.body}</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
             )}
           </div>
 
@@ -546,8 +561,8 @@ export default function ChatWidget() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message…"
-                  className="flex-1 px-3 py-2 bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
+                  placeholder="Message…"
+                  className="flex-1 px-3 py-2 bg-white border border-neutral-200 rounded-2xl text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0CCE6B] focus:border-transparent"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); }
                   }}
@@ -557,7 +572,7 @@ export default function ChatWidget() {
                   disabled={!newMessage.trim() || sending}
                   className="p-2 bg-gradient-to-r from-[#474747] to-[#0CCE6B] hover:from-[#363636] hover:to-[#0BBE60] text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </form>
