@@ -5,6 +5,7 @@ import PostCard from "../components/PostCard";
 import { Search, UserPlus, Loader2, Lock, X, ChevronDown, Users } from "lucide-react";
 import { sendNetworkRequest, cancelNetworkRequest, getDiscoverSuggestions, getProfileNetwork } from "../services/connectionService";
 import { useAuth } from "../context/AuthContext";
+import { getMyProfile } from "../services/profileService";
 import { searchUsers as searchUsersApi, searchPosts } from "../services/search";
 import { getDiscoverPosts, likePost as likePostApi, unlikePost as unlikePostApi } from "../services/postService";
 import toast from "react-hot-toast";
@@ -17,7 +18,7 @@ function mutualText(mutualCount, mutualFirst) {
   return `${name} and ${others} other mutual network${others > 1 ? 's' : ''}`;
 }
 
-function SuggestionCard({ user, followingIds, connectedIds, onConnect, onDismiss, navigate }) {
+function SuggestionCard({ user, followingIds, connectedIds, onConnect, onDismiss, navigate, showSuggested = true }) {
   const mutual = mutualText(user.mutualCount, user.mutualFirst);
   return (
     <div className="bg-white border border-neutral-200 overflow-hidden flex flex-col relative group">
@@ -57,16 +58,18 @@ function SuggestionCard({ user, followingIds, connectedIds, onConnect, onDismiss
           {user.profileVisibility === 'private' && <Lock className="w-3 h-3 text-neutral-400 shrink-0" />}
         </div>
         <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2 leading-relaxed min-h-[2rem]">{user.title || ''}</p>
-        <div className="flex items-center justify-center gap-1 mt-1">
-          {mutual ? (
-            <>
-              <Users className="w-3 h-3 text-neutral-400 shrink-0" />
-              <p className="text-xs text-neutral-400 truncate">{mutual}</p>
-            </>
-          ) : (
-            <p className="text-xs text-neutral-400">Suggested</p>
-          )}
-        </div>
+        {(mutual || showSuggested) && (
+          <div className="flex items-center justify-center gap-1 mt-1">
+            {mutual ? (
+              <>
+                <Users className="w-3 h-3 text-neutral-400 shrink-0" />
+                <p className="text-xs text-neutral-400 truncate">{mutual}</p>
+              </>
+            ) : (
+              <p className="text-xs text-neutral-400">Suggested</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1" />
@@ -118,12 +121,17 @@ export default function Discover() {
 
   // Pre-populate connected IDs so search results show correct state
   useEffect(() => {
-    if (!user?.profile?.id && !user?.id) return;
-    const profileId = user.profile?.vanityUrl || user.profile?.id || user.id;
-    getProfileNetwork(profileId)
-      .then(res => setConnectedIds(new Set((res.items || []).map(u => u.userId))))
+    if (!user?.id) return;
+    getMyProfile()
+      .then(profile => {
+        if (!profile?.id) return;
+        return getProfileNetwork(profile.id);
+      })
+      .then(res => {
+        if (res) setConnectedIds(new Set((res.items || []).map(u => u.userId)));
+      })
       .catch(() => {});
-  }, [user]);
+  }, [user?.id]);
 
   // Fetch all public posts for discover (no following required)
   useEffect(() => {
@@ -410,7 +418,7 @@ export default function Discover() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {displayUsers.map((user) => (
-                  <SuggestionCard key={user.id} user={user} followingIds={followingIds} connectedIds={connectedIds} onConnect={handleFollow} navigate={navigate} />
+                  <SuggestionCard key={user.id} user={user} followingIds={followingIds} connectedIds={connectedIds} onConnect={handleFollow} navigate={navigate} showSuggested={false} />
                 ))}
               </div>
             )}
