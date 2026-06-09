@@ -420,24 +420,17 @@ export default function ProfileEdit() {
       // CRITICAL: Use the S3 URL returned from backend, NOT a blob URL
       // Blob URLs only exist in the browser and cannot be fetched by CloudFront/API
       if (result?.s3Url) {
-        // Use the persisted S3 URL for the avatar
         handleChange('avatar', result.s3Url);
-        console.log('Avatar uploaded to S3:', result.s3Url);
+        await updateMyProfile({ avatarUrl: result.s3Url });
+        await refreshUser();
       } else {
-        // If s3Url is missing, this is an error - do not use blob URL as fallback
         throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
 
-      // Store media ID if returned for later reference
-      if (result?.media?.id) {
-        console.log('Avatar media ID:', result.media.id);
-      }
-
-      // Track media upload
       const sizeBucket = croppedFile.size < 1024 * 1024 ? 'small' : croppedFile.size < 5 * 1024 * 1024 ? 'medium' : 'large';
       trackMediaUpload('image', sizeBucket);
 
-      toast.success('Avatar uploaded successfully!', { id: toastId });
+      toast.success('Profile picture saved!', { id: toastId });
       setShowAvatarUploader(false);
     } catch (error) {
       console.error('Avatar upload failed:', error);
@@ -478,25 +471,18 @@ export default function ProfileEdit() {
       // CRITICAL: Use the S3 URL returned from backend, NOT a blob URL
       // Blob URLs only exist in the browser and cannot be fetched by CloudFront/API
       if (result?.s3Url) {
-        // Use the persisted S3 URL for both banner and bannerUrl
         handleChange('banner', result.s3Url);
         handleChange('bannerUrl', result.s3Url);
-        console.log('Banner uploaded to S3:', result.s3Url);
+        await updateMyProfile({ bannerUrl: result.s3Url });
+        await refreshUser();
       } else {
-        // If s3Url is missing, this is an error - do not use blob URL as fallback
         throw new Error(UPLOAD_ERROR_MESSAGES.MISSING_S3_URL);
       }
 
-      // Store media ID if returned for later reference
-      if (result?.media?.id) {
-        console.log('Banner media ID:', result.media.id);
-      }
-
-      // Track media upload
       const sizeBucket = croppedFile.size < 1024 * 1024 ? 'small' : croppedFile.size < 5 * 1024 * 1024 ? 'medium' : 'large';
       trackMediaUpload('image', sizeBucket);
 
-      toast.success('Banner uploaded successfully!', { id: toastId });
+      toast.success('Banner saved!', { id: toastId });
       setShowBannerCropper(false);
     } catch (error) {
       console.error('Banner upload failed:', error);

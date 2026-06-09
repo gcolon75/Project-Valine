@@ -327,6 +327,7 @@ export const getProfileNetwork = async (event) => {
       blocks.forEach(b => { blockedUserIds.add(b.blockerId); blockedUserIds.add(b.blockedId); });
     }
 
+    const seen = new Set();
     const items = connections
       .map(c => {
         const other = c.senderId === targetUserId ? c.receiver : c.sender;
@@ -341,7 +342,12 @@ export const getProfileNetwork = async (event) => {
           connectedAt: c.updatedAt
         };
       })
-      .filter(u => !blockedUserIds.has(u.userId));
+      .filter(u => {
+        if (blockedUserIds.has(u.userId)) return false;
+        if (seen.has(u.userId)) return false;
+        seen.add(u.userId);
+        return true;
+      });
 
     return json({ items, count: items.length });
   } catch (e) {
