@@ -383,12 +383,17 @@ export const getProfileById = async (event) => {
       return error('Forbidden - not profile owner', 403);
     }
 
-    // Add stats to response
+    const networkCount = await prisma.connectionRequest.count({
+      where: {
+        status: 'accepted',
+        OR: [{ senderId: profile.userId }, { receiverId: profile.userId }]
+      }
+    });
+
     const responseProfile = {
       ...profile,
-      stats: {
-        networkCount: profile.networkCount || 0
-      }
+      networkCount,
+      stats: { networkCount }
     };
 
     // Use no-cache to ensure profile changes are seen immediately
@@ -1453,7 +1458,12 @@ export const getMyProfile = async (event) => {
       }
     }
 
-    const networkCount = profile?.networkCount || 0;
+    const networkCount = await prisma.connectionRequest.count({
+      where: {
+        status: 'accepted',
+        OR: [{ senderId: user.id }, { receiverId: user.id }]
+      }
+    });
 
     // Construct response with graceful fallbacks
     // Use socialLinks from profile for links (maps frontend 'links' field)

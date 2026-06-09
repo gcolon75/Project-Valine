@@ -70,8 +70,15 @@ export const getUser = async (event) => {
     if (!user) {
       return error('User not found', 404);
     }
-    
-    return json(user);
+
+    const networkCount = await prisma.connectionRequest.count({
+      where: {
+        status: 'accepted',
+        OR: [{ senderId: user.id }, { receiverId: user.id }]
+      }
+    });
+
+    return json({ ...user, networkCount, profile: user.profile ? { ...user.profile, networkCount } : user.profile });
   } catch (e) {
     console.error(e);
     return error('Server error: ' + e.message, 500);
