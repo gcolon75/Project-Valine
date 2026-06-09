@@ -383,12 +383,11 @@ export const getProfileById = async (event) => {
       return error('Forbidden - not profile owner', 403);
     }
 
-    const networkCount = await prisma.connectionRequest.count({
-      where: {
-        status: 'accepted',
-        OR: [{ senderId: profile.userId }, { receiverId: profile.userId }]
-      }
+    const networkRows = await prisma.connectionRequest.findMany({
+      where: { status: 'accepted', OR: [{ senderId: profile.userId }, { receiverId: profile.userId }] },
+      select: { senderId: true, receiverId: true }
     });
+    const networkCount = new Set(networkRows.map(r => r.senderId === profile.userId ? r.receiverId : r.senderId)).size;
 
     const responseProfile = {
       ...profile,
@@ -1458,12 +1457,11 @@ export const getMyProfile = async (event) => {
       }
     }
 
-    const networkCount = await prisma.connectionRequest.count({
-      where: {
-        status: 'accepted',
-        OR: [{ senderId: user.id }, { receiverId: user.id }]
-      }
+    const networkRows2 = await prisma.connectionRequest.findMany({
+      where: { status: 'accepted', OR: [{ senderId: user.id }, { receiverId: user.id }] },
+      select: { senderId: true, receiverId: true }
     });
+    const networkCount = new Set(networkRows2.map(r => r.senderId === user.id ? r.receiverId : r.senderId)).size;
 
     // Construct response with graceful fallbacks
     // Use socialLinks from profile for links (maps frontend 'links' field)

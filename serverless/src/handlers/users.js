@@ -71,12 +71,11 @@ export const getUser = async (event) => {
       return error('User not found', 404);
     }
 
-    const networkCount = await prisma.connectionRequest.count({
-      where: {
-        status: 'accepted',
-        OR: [{ senderId: user.id }, { receiverId: user.id }]
-      }
+    const networkRows = await prisma.connectionRequest.findMany({
+      where: { status: 'accepted', OR: [{ senderId: user.id }, { receiverId: user.id }] },
+      select: { senderId: true, receiverId: true }
     });
+    const networkCount = new Set(networkRows.map(r => r.senderId === user.id ? r.receiverId : r.senderId)).size;
 
     return json({ ...user, networkCount, profile: user.profile ? { ...user.profile, networkCount } : user.profile });
   } catch (e) {
