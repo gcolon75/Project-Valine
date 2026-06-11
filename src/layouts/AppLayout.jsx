@@ -1,11 +1,12 @@
 // src/layouts/AppLayout.jsx
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Home, Search, PlusCircle, User, Settings, LogOut, Mail, FileText, ShieldCheck } from "lucide-react";
+import { Home, Search, Plus, PlusCircle, User, Settings, LogOut, Mail, FileText, ShieldCheck } from "lucide-react";
 import { useUnread } from "../context/UnreadContext";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "../components/NotificationBell";
 import MessageDropdown from "../components/MessageDropdown";
 import ChatWidget from "../components/ChatWidget";
+import UserAvatar from "../components/UserAvatar";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -23,6 +24,25 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+
+      {/* Mobile Top Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-white/10 flex items-center justify-between px-4">
+        <NavLink to="/dashboard" aria-label="Go to Dashboard">
+          <img src="/assets/jointnetworkinglogo.png" alt="Joint" className="h-8 w-auto" />
+        </NavLink>
+        <div className="flex items-center gap-1">
+          {user?.role === 'admin' && (
+            <NavLink to="/admin" className="p-1.5 text-neutral-600 dark:text-neutral-400" aria-label="Admin Panel">
+              <ShieldCheck className="w-5 h-5" />
+            </NavLink>
+          )}
+          <MessageDropdown />
+          <NotificationBell />
+          <NavLink to="/profile" className="ml-1" aria-label="Profile">
+            <UserAvatar src={user?.avatar} name={user?.displayName || user?.username} className="h-7 w-7" />
+          </NavLink>
+        </div>
+      </header>
 
       {/* Desktop Header */}
       <header className="hidden md:flex fixed left-0 right-0 z-50 top-0 h-20 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-white/10 items-center">
@@ -86,21 +106,31 @@ export default function AppLayout() {
       </header>
 
       {/* Content */}
-      <main className="pb-20 md:pb-6 md:pt-20">
+      <main className="pt-14 pb-24 md:pt-20 md:pb-6">
         <Outlet />
       </main>
 
       {/* Mobile Bottom Nav */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-white/10"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Mobile navigation"
       >
-        <div className="flex items-center justify-around px-2 py-2 pb-safe">
+        <div className="flex items-center pt-1 pb-0">
           <MobileNavItem to="/dashboard" icon={Home} label="Home" />
           <MobileNavItem to="/discover" icon={Search} label="Discover" />
-          <MobileNavItem to="/post" icon={PlusCircle} label="Create" />
+          {/* Create — gradient square matching JointApp tab bar */}
+          <NavLink
+            to="/post"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] rounded"
+            aria-label="Create"
+          >
+            <div className="w-9 h-9 rounded flex items-center justify-center bg-gradient-to-r from-[#474747] to-[#0CCE6B]">
+              <Plus className="w-5 h-5 text-white" aria-hidden="true" />
+            </div>
+            <span className="text-[10px] font-medium text-neutral-400">Create</span>
+          </NavLink>
           <MobileNavItem to="/feedback-request" icon={FileText} label="Feedback" />
-          <MobileNavItem to="/inbox" icon={Mail} label="Messages" badge={unreadCounts.messages} />
           <MobileNavItem to="/profile" icon={User} label="Profile" />
         </div>
       </nav>
@@ -155,8 +185,8 @@ function MobileNavItem({ to, icon: Icon, label, badge }) {
     <NavLink
       to={to}
       className={({ isActive }) => `
-        relative flex flex-col items-center justify-center gap-1
-        min-w-[44px] min-h-[44px] px-3 py-1.5 rounded transition-colors
+        flex-1 flex flex-col items-center justify-center gap-1
+        py-1 rounded transition-colors
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B]
         ${isActive
           ? 'text-[#0CCE6B]'

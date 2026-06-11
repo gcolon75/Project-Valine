@@ -77,6 +77,19 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/_api/, ''),
         secure: true,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            const cookies = proxyRes.headers['set-cookie'];
+            if (cookies) {
+              proxyRes.headers['set-cookie'] = cookies.map(c =>
+                c
+                  .replace(/;\s*Secure/gi, '')
+                  .replace(/;\s*SameSite=None/gi, '; SameSite=Lax')
+                  .replace(/;\s*Domain=[^;]*/gi, '')
+              );
+            }
+          });
+        },
       }
     }
   },

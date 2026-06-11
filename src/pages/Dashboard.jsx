@@ -2,7 +2,7 @@
 import { useMemo, useState, useEffect } from "react";
 import UserAvatar from "../components/UserAvatar";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem, ArrowRight } from "lucide-react";
+import { FileText, Eye, TrendingUp, Image, Mic, Users, Heart, Search, X, ChevronLeft, Gem, ArrowRight, Star } from "lucide-react";
 import PostCard from "../components/PostCard";
 import SkeletonCard from "../components/skeletons/SkeletonCard";
 import EmptyState from "../components/EmptyState";
@@ -136,24 +136,27 @@ export default function Dashboard() {
   const [savedTags, setSavedTags] = useState(
     ALLOWED_TAGS.slice(0, 8)
   );
-  const [activeTag, setActiveTag] = useState("");
+  const [activeTags, setActiveTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(false);
   const [tagSearch, setTagSearch] = useState("");
 
+  const toggleTag = (tag) => setActiveTags(prev =>
+    prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+  );
+
   const results = useMemo(() => {
-    if (!activeTag) return displayPosts;
-    const needle = activeTag.toLowerCase();
+    if (activeTags.length === 0) return displayPosts;
     return displayPosts.filter((p) =>
-      (p.tags || []).some((t) => t.toLowerCase() === needle)
+      (p.tags || []).some((t) => activeTags.some(a => a.toLowerCase() === t.toLowerCase()))
     );
-  }, [displayPosts, activeTag]);
+  }, [displayPosts, activeTags]);
 
   const isEmerald = profileData?.plan === 'emerald' || user?.plan === 'emerald';
 
   return (
-    <div className="container mx-auto px-4 lg:px-0 max-w-[1600px] text-[1.1rem]">
+    <div className="mx-auto px-4 lg:px-6 max-w-[1600px]">
       <h1 className="sr-only">Dashboard</h1>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[245px_minmax(0,1fr)_265px] animate-fade-in">
+      <div className="grid lg:gap-6 lg:grid-cols-[245px_minmax(0,1fr)_265px] animate-fade-in">
 
         {/* LEFT COLUMN — flat panel, sections divided by hairlines */}
         <aside className="hidden lg:block">
@@ -289,14 +292,14 @@ export default function Dashboard() {
                             {filtered.map((t) => (
                               <button
                                 key={t}
-                                onClick={() => setActiveTag((v) => (v === t ? "" : t))}
+                                onClick={() => toggleTag(t)}
                                 className={[
                                   "rounded border px-2.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
-                                  activeTag === t
+                                  activeTags.includes(t)
                                     ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
                                     : "bg-white dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400 dark:hover:bg-white/10",
                                 ].join(" ")}
-                                aria-pressed={activeTag === t}
+                                aria-pressed={activeTags.includes(t)}
                                 aria-label={`Filter by ${t}`}
                               >
                                 {t}
@@ -318,14 +321,14 @@ export default function Dashboard() {
                   {savedTags.map((t) => (
                     <button
                       key={t}
-                      onClick={() => setActiveTag((v) => (v === t ? "" : t))}
+                      onClick={() => toggleTag(t)}
                       className={[
                         "rounded border px-2.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition-all",
-                        activeTag === t
+                        activeTags.includes(t)
                           ? "bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 border-[#0CCE6B] text-[#0CCE6B]"
                           : "bg-white dark:bg-white/5 border-neutral-300 dark:border-white/10 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400 dark:hover:bg-white/10",
                       ].join(" ")}
-                      aria-pressed={activeTag === t}
+                      aria-pressed={activeTags.includes(t)}
                       aria-label={`Filter by ${t}`}
                     >
                       {t}
@@ -339,10 +342,40 @@ export default function Dashboard() {
         </aside>
 
         {/* CENTER COLUMN */}
-        <section className="space-y-4">
+        <section className="space-y-4 min-w-0 w-full">
+
+          {/* Mobile tag filter chips — horizontal scroll, hidden on desktop (sidebar has tags there) */}
+          <div
+            className="lg:hidden sticky top-14 z-10 -mx-4 flex gap-2 overflow-x-auto bg-white border-b border-neutral-200 dark:border-white/10 px-4 py-3"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <button
+              onClick={() => setActiveTags([])}
+              className={`shrink-0 rounded px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${
+                activeTags.length === 0
+                  ? 'bg-[#0CCE6B] text-white'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+              }`}
+            >
+              All
+            </button>
+            {ALLOWED_TAGS.map(tag => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={`shrink-0 rounded px-3 py-1.5 text-xs font-medium whitespace-nowrap ${
+                  activeTags.includes(tag)
+                    ? 'bg-[#0CCE6B] text-white'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
 
           {/* Post prompt */}
-          <div className="bg-white border border-neutral-200 dark:border-white/10 rounded-lg px-5 py-5 flex items-center justify-between gap-4">
+          <div className="hidden md:flex bg-white border border-neutral-200 dark:border-white/10 rounded-lg px-4 md:px-5 py-4 md:py-5 items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Ready to share your work?</h3>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Create scripts, films, headshots and casting calls</p>
@@ -355,16 +388,56 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          {activeTag && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="rounded border border-[#0CCE6B] bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-2.5 py-0.5 text-xs text-[#0CCE6B]">
-                {activeTag}
-              </span>
+          {/* Mobile Emerald banner — matches JointApp feed banner, hidden on desktop (sidebar has it) */}
+          <div className="lg:hidden bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Gem className="w-4 h-4" aria-hidden="true" />
+                  <span className="text-base font-bold">
+                    {isEmerald ? 'Emerald Active' : 'Unlock Emerald'}
+                  </span>
+                </div>
+                <p className="text-emerald-50 text-sm">
+                  {isEmerald ? 'You have access to all premium features.' : 'Get premium features for $9.99/month.'}
+                </p>
+              </div>
+              {!isEmerald && <TrendingUp className="w-9 h-9 text-emerald-200/40 shrink-0" aria-hidden="true" />}
+            </div>
+            {!isEmerald && (
+              <ul className="space-y-1.5 mb-3">
+                {[
+                  { Icon: Star,  text: '1 free script feedback per month' },
+                  { Icon: Heart, text: 'Monitor likes & engagement' },
+                  { Icon: Eye,   text: 'Detailed profile analytics' },
+                ].map(({ Icon, text }) => (
+                  <li key={text} className="flex items-center gap-2 text-emerald-50 text-sm">
+                    <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link
+              to="/pricing"
+              className="block w-full bg-white text-emerald-600 text-center font-semibold py-2.5 text-sm hover:bg-emerald-50 transition-colors"
+            >
+              {isEmerald ? 'Manage Subscription' : 'Get Emerald'}
+            </Link>
+          </div>
+
+          {activeTags.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {activeTags.map(tag => (
+                <span key={tag} className="rounded border border-[#0CCE6B] bg-[#0CCE6B]/10 dark:bg-[#0CCE6B]/20 px-2.5 py-0.5 text-xs text-[#0CCE6B]">
+                  {tag}
+                </span>
+              ))}
               <button
-                onClick={() => setActiveTag("")}
+                onClick={() => setActiveTags([])}
                 className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 text-xs"
               >
-                Clear
+                Clear all
               </button>
             </div>
           )}

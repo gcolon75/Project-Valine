@@ -219,10 +219,10 @@ export default function PostCard({ post, onDelete, onLike }) {
 
   return (
     <>
-      <article className="rounded-lg border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 overflow-hidden transition-shadow duration-200 hover:shadow-md animate-slide-up relative">
+      <article className="w-full min-w-0 rounded-none md:rounded-lg border border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-900/40 overflow-hidden transition-shadow duration-200 md:hover:shadow-md animate-slide-up relative">
 
         {/* Author row */}
-        <div className="px-5 pt-4 pb-3 flex items-start gap-3">
+        <div className="px-4 md:px-5 pt-4 pb-3 flex items-start gap-3">
           <Link to={`/profile/${post.author.role}`} className="shrink-0 mt-0.5">
             <UserAvatar
               src={post.author.avatar}
@@ -308,7 +308,7 @@ export default function PostCard({ post, onDelete, onLike }) {
 
         {/* Title */}
         {post.title && (
-          <div className="px-5 pb-2">
+          <div className="px-4 md:px-5 pb-2">
             <h2
               className="text-base font-bold text-neutral-900 cursor-pointer hover:text-[#0CCE6B] transition-colors leading-snug"
               onClick={() => navigate(`/posts/${post.id}`)}
@@ -319,7 +319,7 @@ export default function PostCard({ post, onDelete, onLike }) {
         )}
 
         {/* Body */}
-        <div className="px-5 pb-3">
+        <div className="px-4 md:px-5 pb-3">
           <div
             className="cursor-pointer"
             onClick={() => navigate(`/posts/${post.id}`)}
@@ -421,7 +421,7 @@ export default function PostCard({ post, onDelete, onLike }) {
 
         {/* Tags */}
         {post.tags?.length > 0 && (
-          <div className="px-5 pt-3 flex flex-wrap gap-1.5">
+          <div className="px-4 md:px-5 pt-3 flex flex-wrap gap-1.5">
             {post.tags.map((t) => (
               <span
                 key={t}
@@ -434,7 +434,7 @@ export default function PostCard({ post, onDelete, onLike }) {
         )}
 
         {/* Actions — flat, no pill borders */}
-        <div className="px-5 py-3 flex items-center gap-6 flex-wrap">
+        <div className="px-4 md:px-5 py-3 flex items-center gap-6 flex-wrap">
           <button
             onClick={() => likePost(post.id)}
             className={`flex items-center gap-2 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0CCE6B] focus-visible:ring-offset-1 ${

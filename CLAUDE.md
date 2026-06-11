@@ -154,6 +154,27 @@ Public visual reference page at `/sms-opt-in-evidence` — submitted with the A2
 
 Activity SMS sending (likes/comments/follows/DMs) is **not implemented yet**. Only phone verification SMS actually sends. The 5 sample messages in the Twilio submission are aspirational for when activity SMS is built.
 
+## Mobile Web Design
+
+The web app has a **responsive mobile layout** that mirrors the React Native app at `C:\Users\Brendan\Documents\JointApp`. Desktop and mobile are intentionally different — use Tailwind breakpoints to target each.
+
+**Mobile layout (< `md`, i.e. < 768px):**
+- **Top header** (`md:hidden` in `AppLayout.jsx`) — logo left, admin/messages/notifications/profile avatar right. Height `h-14`. Matches the JointApp feed header.
+- **Bottom tab nav** (`md:hidden` in `AppLayout.jsx`) — Home, Discover, Create, Feedback, Profile. Messages is in the top header, not the bottom nav.
+- Main content has `pt-14 pb-20` to clear both fixed bars.
+- **PostCard** — square corners (`rounded-none md:rounded-lg`), `px-4` padding (vs desktop `px-5`).
+- **Dashboard feed** — horizontal scrollable tag filter chips row (`lg:hidden`) above the post list, matching JointApp's tag bar.
+
+**Desktop layout (≥ `md`):**
+- Top header is `hidden md:flex` — full nav with logo, nav items, and icon buttons.
+- No bottom nav.
+- Dashboard is a 3-column grid (`lg:grid-cols-[245px_minmax(0,1fr)_265px]`) with sidebar for profile/tags/discover.
+- PostCard has `rounded-lg` and `px-5`.
+
+**Reference app:** `C:\Users\Brendan\Documents\JointApp` — Expo/React Native. When designing new mobile views, use this as the visual reference. Key files: `app/(app)/(tabs)/feed.tsx`, `components/PostCard.tsx`, `app/(app)/(tabs)/profile.tsx`.
+
+**Local dev on phone:** run `npm run dev -- --host`, then open `http://192.168.68.60:3001` on a phone on the same WiFi. The Vite proxy (`vite.config.js`) strips `Secure` and `Domain` cookie attributes so auth works over HTTP from a local IP.
+
 ## Conventions
 - Backend handler responses use `json()` / `error()` helpers from `serverless/src/utils/headers.js`.
 - Path normalization in routers: stage prefix (`/prod/...`) is stripped via `normalizePath`. See `postsRouter.js`.
