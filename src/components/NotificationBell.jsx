@@ -148,7 +148,7 @@ export default function NotificationBell() {
       <button
         onClick={() => navigate('/notifications')}
         title={unreadCounts.notifications > 0 ? `Notifications (${unreadCounts.notifications} unread)` : 'Notifications'}
-        className="relative p-2 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-[#0CCE6B] hover:bg-[#0CCE6B]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="relative p-2 rounded-lg text-neutral-600 dark:text-neutral-400 md:hover:text-[#0CCE6B] md:hover:bg-[#0CCE6B]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         aria-label={`Notifications${unreadCounts.notifications > 0 ? `, ${unreadCounts.notifications} unread` : ''}`}
       >
         <Bell className="w-5 h-5" />
