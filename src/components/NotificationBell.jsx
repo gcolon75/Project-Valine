@@ -13,6 +13,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const hideTimerRef = useRef(null);
+  const isHoverDevice = useState(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches)[0];
   const navigate = useNavigate();
 
   const openDropdown = () => {
@@ -144,7 +145,7 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef} onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
+    <div className="relative" ref={dropdownRef} onMouseEnter={isHoverDevice ? openDropdown : undefined} onMouseLeave={isHoverDevice ? closeDropdown : undefined}>
       <button
         onClick={() => navigate('/notifications')}
         title={unreadCounts.notifications > 0 ? `Notifications (${unreadCounts.notifications} unread)` : 'Notifications'}

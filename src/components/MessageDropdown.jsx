@@ -12,6 +12,7 @@ export default function MessageDropdown() {
   const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(false);
   const hideTimerRef = useRef(null);
+  const isHoverDevice = useState(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches)[0];
   const navigate = useNavigate();
 
   const openDropdown = () => {
@@ -64,7 +65,7 @@ export default function MessageDropdown() {
   };
 
   return (
-    <div className="relative" onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
+    <div className="relative" onMouseEnter={isHoverDevice ? openDropdown : undefined} onMouseLeave={isHoverDevice ? closeDropdown : undefined}>
       <button
         onClick={() => navigate('/inbox')}
         aria-label={unreadCounts.messages > 0 ? `Messages (${unreadCounts.messages} unread)` : 'Messages'}
