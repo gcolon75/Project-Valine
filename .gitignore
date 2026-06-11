@@ -74,6 +74,7 @@ discord_cmd_evidence/
 
 # Internal planning docs (local-only)
 JointPlan.pdf
+CLAUDE.md
 
 # Test coverage and artifacts
 coverage/
